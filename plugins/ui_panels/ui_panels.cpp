@@ -1000,11 +1000,11 @@ static int HookServesBuilding(int idx)
 // [RSP+0x50] read-back) stays self-consistent within the trampoline chain,
 // and the epilogue (ADD RSP,0x40/POP RBX/RET) unwinds it - including the
 // hidden-window early-out path.
-// v6.13: storage inline-hook prologue - 21 bytes from live dump 0x4CABD0 = 40 55 57 41 54 41 56 41 55 48 8D AC 24 ... (full 21 logged in diag, verified to match shop/factory layout)
+// v6.14: storage inline-hook prologue - 22 bytes from live dump 0x4CABD0 = 40 55 57 41 54 41 56 41 57 48 8D AC 24 B0 C9 FF FF B8 50 37 00 00 (bumped from 21, fixes B0 C9 mismatch) (full 21 logged in diag, verified to match shop/factory layout)
 static const BYTE kStorageExpect[] = {
     0x40, 0x55, 0x57, 0x41, 0x54, 0x41, 0x56, 0x41,
-    0x55, 0x48, 0x8D, 0xAC, 0x24, 0x00, 0xEC, 0xFF,
-    0xFF, 0x48, 0x8B, 0xEC, 0xB8
+    0x57, 0x48, 0x8D, 0xAC, 0x24, 0xB0, 0xC9, 0xFF,
+    0xFF, 0xB8, 0x50, 0x37, 0x00, 0x00
 };
 static const BYTE kCitizenExpect[] = {
     0x48, 0x8B, 0xC4, 0x53,
@@ -2723,7 +2723,7 @@ static bool InstallStorageCallSiteHook(void)
     }
     // Diagnostic: keep the original exact-byte expectation for the known site
     static const BYTE expect[5] = { 0xE8, 0xBF, 0x03, 0xDE, 0xFF };
-    if (firstAt == RVA_STORAGE_CALLSITE && memcmp(site, expect, sizeof(expect)) != 0) {
+    if (firstAt == RVA_STORAGE_CALLSITE && memcmp(site, expect, sizeof(expect)) != 0)) {
         Logf("ui_panels  storage: call site 0x%06X bytes mismatch (expected E8 BF 03 DE FF) - still hooking the rel32 target", firstAt);
     }
     if (site + 5 + *(const int32_t*)(site + 1) != target) {
@@ -2876,7 +2876,7 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
 {
     TsmBind(host);
     info->name    = "ui_panels";
-    info->version = "6.13";  // v6.12: dispatcher diagnostic for warehouse variant
+    info->version = "6.14";  // v6.12: dispatcher diagnostic for warehouse variant
 
     ReadSettings();
     if (!g_enabled) {
@@ -3037,7 +3037,7 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
         return 1;
     }
 
-    Logf("ui_panels  live v6.13: %d hook(s), max_rows %d, font 0x%X, "
+    Logf("ui_panels  live v6.14: %d hook(s), max_rows %d, font 0x%X, "
          "colour 0x%08lX, test_row %d, probe %d, buttons %s, "
          "toolbar size %.0f, "
          "ESC probe %s, wallet row %s",
