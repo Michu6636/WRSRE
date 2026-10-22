@@ -2633,6 +2633,40 @@ static bool InstallDoCallSiteHook(void)
 }
 
 
+// v6.12 diag: dump every E8 in the dispatcher so the warehouse builder can be
+// identified from a live log without a new Ghidra run. Warehouse_covered_combined
+// (type 5) never fired 0x4CABD0 - 1 site at 0x6EA80C installed but zero
+// "probe storage" in 1688- and 1949-line logs. It must use a second storage
+// builder in the same 0x4Cxxxx region or a separate dispatcher arm. This helper
+// logs each E8 target RVA and its first 8 bytes; the storage installer can then
+// be extended to hook all storage-like candidates (0x4A0000..0x4E0000) instead
+// of only 0x4CABD0 in the next build.
+static void DumpDispatcherTargets(void)
+{
+    Logf("ui_panels  storage diag: dumping dispatcher 0x%06X..+0x%X E8 targets (warehouse variant hunt)", RVA_WINDOW_DISPATCH, DISPATCH_SCAN_LEN);
+    unsigned total = 0, storageish = 0;
+    for (DWORD off = 0; off + 5 <= DISPATCH_SCAN_LEN; off++) {
+        const BYTE* p = g_exeBase + RVA_WINDOW_DISPATCH + off;
+        if (!ReadablePtr(p, 5)) break;
+        if (p[0] != 0xE8) continue;
+        const int32_t rel = *(const int32_t*)(p + 1);
+        BYTE* target = (BYTE*)p + 5 + rel;
+        if (target < g_exeBase + 0x1000 || target >= g_exeBase + 0xA00000) continue;
+        DWORD rva = (DWORD)(target - g_exeBase);
+        BYTE head[8] = {0};
+        if (ReadablePtr(target, sizeof(head))) memcpy(head, target, sizeof(head));
+        const bool isStorageRange = (rva >= 0x4A0000 && rva <= 0x4E0000);
+        if (isStorageRange) storageish++;
+        total++;
+        Logf("ui_panels  dispatcher E8 at 0x%06X -> 0x%06X  head %02X %02X %02X %02X %02X %02X %02X %02X%s", RVA_WINDOW_DISPATCH + off, rva, head[0], head[1], head[2], head[3], head[4], head[5], head[6], head[7], isStorageRange ? "  <- storage-range" : "");
+    }
+    Logf("ui_panels  storage diag: %u calls, %u in storage range 0x4A0000..0x4E0000", total, storageish);
+    if (ReadablePtr(g_exeBase + RVA_WINDOW_DISPATCH, 32)) {
+        BYTE* d = g_exeBase + RVA_WINDOW_DISPATCH;
+        Logf("ui_panels  dispatcher prologue 0x%06X: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X", RVA_WINDOW_DISPATCH, d[0],d[1],d[2],d[3],d[4],d[5],d[6],d[7],d[8],d[9],d[10],d[11],d[12],d[13],d[14],d[15]);
+    }
+}
+
 // v6.11: storage panel hook for the type-5 storage builder. Previously verified
 // as a single fixed call site at 0x6EA80C (E8 BF 03 DE FF -> 0x4CABD0). The new
 // warehouse_covered_combined asset (state_storage=1 in live saves) did not
@@ -2829,7 +2863,7 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
 {
     TsmBind(host);
     info->name    = "ui_panels";
-    info->version = "6.11";  // v6.11: verified type-5 storage panel hook
+    info->version = "6.12";  // v6.12: dispatcher diagnostic for warehouse variant
 
     ReadSettings();
     if (!g_enabled) {
@@ -2935,6 +2969,11 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
              "sound %d, clip %d (fallbacks active)",
              (o_Collision != NULL), (o_PrintCenter != NULL),
              (o_PlaySound != NULL), (o_ClipPush != NULL));
+
+    // v6.12 diag: log all dispatcher E8 targets before installing hooks so a
+    // warehouse_covered_combined open can be correlated without a Ghidra run.
+    // Costs one scan (~32 KiB) at startup; no hooks are added yet.
+    DumpDispatcherTargets();
 
     int installed = 0;
     for (int i = 0; i < MAX_HOOKS; i++)
