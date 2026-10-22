@@ -2125,17 +2125,25 @@ static void StateStorageWidgetProvider(void* building, void*)
         if (dbgKey != s_lastWidgetKey) {
             s_lastWidgetKey = dbgKey;
             const int isPriv = g_enterprise->isBuildingPrivate(building) ? 1 : 0;
-            Logf("[AUTO DO] storage widget probe: building=%p type=%d key=%016llX priv=%d nativeStorage=%d willDraw=%d",
-                 building, type, (unsigned long long)dbgKey, isPriv, AutoHasNativeStorage(building) ? 1 : 0, (type == AUTO_STORAGE_BUILDING_TYPE && !isPriv) ? 1 : 0);
+            const int hasStore = AutoHasNativeStorage(building) ? 1 : 0;
+            const int willDraw = (!isPriv && hasStore) ? 1 : 0;
+            Logf("[AUTO DO] storage widget probe: building=%p type=%d key=%016llX priv=%d nativeStorage=%d willDraw=%d (broadened: hasStore=%d)",
+                 building, type, (unsigned long long)dbgKey, isPriv, hasStore, willDraw, hasStore);
         }
     }
-    if (type != AUTO_STORAGE_BUILDING_TYPE) {
-        // still counted as hook proof, just not a storage panel
+    // v6.14: warehouse_covered_combined is type=3 in-window but state_storage=1 via world scan (has native storage). Gate on hasStore, not type==5.
+    const int hasNative = AutoHasNativeStorage(building) ? 1 : 0;
+    if (!hasNative) {
+        // not a storage-capable building at all - skip silently (still logged above as proof)
         return;
     }
     if (g_enterprise->isBuildingPrivate(building)) {
-        Logf("[AUTO DO] storage widget: type=5 but isPrivate=1, skipping checkbox (building=%p)", building);
+        Logf("[AUTO DO] storage widget: hasStore but isPrivate=1, skipping checkbox (building=%p type=%d)", building, type);
         return;
+    }
+    // hasNative && !private => state storage => draw checkbox even if type !=5 (e.g. warehouse type=3). Keep type log for diagnostics.
+    if (type != AUTO_STORAGE_BUILDING_TYPE) {
+        Logf("[AUTO DO] storage widget: type %d != %d but hasNative=1 -> drawing anyway (warehouse fix)", type, AUTO_STORAGE_BUILDING_TYPE);
     }
 
     uint64_t key = 0;
