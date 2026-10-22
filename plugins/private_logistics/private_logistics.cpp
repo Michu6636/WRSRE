@@ -2105,12 +2105,24 @@ static bool AutoStatePermissionSet(uint64_t key, unsigned char mode)
 
 static void StateStorageWidgetProvider(void* building, void*)
 {
+    static uint64_t s_lastWidgetKey = 0;
     if (!g_autoTargetsEnabled || !g_uiPanels || !TsmUiPanelsHasWidgets(g_uiPanels) ||
         !building || !TsmIsValidGamePtr(building) ||
         !ReadablePtr(building, TSM_BLD_MIN_READABLE) || !g_enterprise ||
         !g_enterprise->isBuildingPrivate) return;
     int type = -1;
-    if (!AutoReadBuildingType(building, &type) || type != AUTO_STORAGE_BUILDING_TYPE)
+    if (!AutoReadBuildingType(building, &type)) return;
+    // Diagnostic: log the first time we see a building on this panel, even non-storage, throttled by key
+    if (type == AUTO_STORAGE_BUILDING_TYPE) {
+        uint64_t dbgKey = 0;
+        if (AutoBuildingKey(building, &dbgKey, nullptr) && dbgKey != s_lastWidgetKey) {
+            s_lastWidgetKey = dbgKey;
+            const int isPriv = g_enterprise->isBuildingPrivate(building) ? 1 : 0;
+            Logf("[AUTO DO] storage widget probe: building=%p type=%d key=%016llX priv=%d nativeStorage=%d",
+                 building, type, (unsigned long long)dbgKey, isPriv, AutoHasNativeStorage(building) ? 1 : 0);
+        }
+    }
+    if (type != AUTO_STORAGE_BUILDING_TYPE)
         return;
     if (g_enterprise->isBuildingPrivate(building)) return;
 
@@ -2118,16 +2130,25 @@ static void StateStorageWidgetProvider(void* building, void*)
     if (!AutoBuildingKey(building, &key, nullptr)) return;
     const unsigned char oldMode = AutoStatePermissionGet(key);
     unsigned checked = (oldMode == 1) ? 1u : 0u;
+    const unsigned before = checked;
     if (!g_uiPanels->widgetCheckbox(&checked,
-            L"Allow private DOs to load here", 0)) return;
+            L"Allow private DOs to load here", 0)) {
+        // widgetCheckbox can return 0 when budget exhausted or widgets disabled - log once per key
+        Logf("[AUTO DO] storage widget: widgetCheckbox returned 0 for key=%016llX (budget or disabled)", (unsigned long long)key);
+        return;
+    }
+    if (checked != before) {
+        Logf("[AUTO DO] storage widget: checkbox toggled key=%016llX %u -> %u", (unsigned long long)key, before, checked);
+    }
 
     const unsigned char newMode = checked ? 1 : ((oldMode == 1) ? 2 : 0);
     if (!AutoStatePermissionSet(key, newMode)) {
         Logf("[AUTO DO] storage permission table full; toggle not retained");
         return;
     }
-    Logf("[AUTO DO] state storage permission key=%016llX -> %s",
-         (unsigned long long)key, checked ? "load enabled" : "load disabled");
+    if (newMode != oldMode)
+        Logf("[AUTO DO] state storage permission key=%016llX -> %s",
+             (unsigned long long)key, checked ? "load enabled" : "load disabled");
 }
 
 static bool AutoHasNativeStorage(void* b)

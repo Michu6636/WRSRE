@@ -1,4 +1,4 @@
-﻿// v6.6 updates (PRIV TILE REGRESSION - root cause: no building/person
+// v6.6 updates (PRIV TILE REGRESSION - root cause: no building/person
 //     discriminator in the widget pass):
 //   - SYMPTOM: after the Citizen wallet hook moved from the dead candidate
 //     0x7D5460 to the live builder 0x7CEEB0, enterprise_base's [PRIV TILE]
@@ -1062,6 +1062,7 @@ static const BYTE kCitizenExpect[] = {
 static void* s_doCave      = nullptr;
 static DWORD s_doCallAt    = 0;         // RVA of the patched call, 0 = none
 static void* s_storageCave = nullptr;
+static DWORD s_storageCallAt = 0;
 
 static PanelHook g_hooks[MAX_HOOKS] = {
     { "shop",     0x7272F0, sizeof kShopExpect,    kShopExpect,    NULL, 0, 0, 0, 0, 0 },
@@ -2632,9 +2633,14 @@ static bool InstallDoCallSiteHook(void)
 }
 
 
-// v6.11: exact-call-site hook for the type-5 storage builder. Ghidra verified
-// the unique dispatcher call at RVA 0x6EA80C with these five bytes. Refuse to
-// write unless both the original bytes and rel32 destination match exactly.
+// v6.11: storage panel hook for the type-5 storage builder. Previously verified
+// as a single fixed call site at 0x6EA80C (E8 BF 03 DE FF -> 0x4CABD0). The new
+// warehouse_covered_combined asset (state_storage=1 in live saves) did not
+// trigger the hook in 3648-line and 1949-line tesmioloader logs despite the hook
+// reporting installed - no "probe storage" line was ever emitted. To cover
+// variant assets that may use a second dispatcher route, scan the dispatcher
+// exactly as the DO hook does and hook the first E8 that resolves to the storage
+// builder. Falls back to the exact-byte check for diagnostics.
 static bool InstallStorageCallSiteHook(void)
 {
     if (!ReadablePtr(g_exeBase + RVA_STORAGE_BUILDER, 16)) {
@@ -2642,13 +2648,36 @@ static bool InstallStorageCallSiteHook(void)
              RVA_STORAGE_BUILDER);
         return false;
     }
-    BYTE* const site = g_exeBase + RVA_STORAGE_CALLSITE;
-    static const BYTE expect[5] = { 0xE8, 0xBF, 0x03, 0xDE, 0xFF };
     BYTE* const target = g_exeBase + RVA_STORAGE_BUILDER;
-    if (!ReadablePtr(site, sizeof(expect)) || memcmp(site, expect, sizeof(expect)) != 0) {
-        Logf("ui_panels  storage: call site 0x%06X bytes mismatch - nothing written",
-             RVA_STORAGE_CALLSITE);
+    unsigned found = 0;
+    DWORD firstAt = 0;
+    for (DWORD off = 0; off + 5 <= DISPATCH_SCAN_LEN; off++) {
+        const BYTE* p = g_exeBase + RVA_WINDOW_DISPATCH + off;
+        if (!ReadablePtr(p, 5)) break;
+        if (p[0] != 0xE8) continue;
+        const int32_t rel = *(const int32_t*)(p + 1);
+        if (p + 5 + rel != target) continue;
+        if (!found) firstAt = RVA_WINDOW_DISPATCH + off;
+        found++;
+    }
+    if (!found) {
+        Logf("ui_panels  storage: no call 0x%06X found in dispatcher 0x%06X..+0x%X - storage panel will not get checkbox. Need builder call site from Ghidra.",
+             RVA_STORAGE_BUILDER, RVA_WINDOW_DISPATCH, DISPATCH_SCAN_LEN);
         return false;
+    }
+    if (found > 1)
+        Logf("ui_panels  storage: %u calls to 0x%06X found; hooking first (0x%06X). If checkbox draws twice, this is why.",
+             found, RVA_STORAGE_BUILDER, firstAt);
+
+    BYTE* site = g_exeBase + firstAt;
+    if (!ReadablePtr(site, 5)) {
+        Logf("ui_panels  storage: call site 0x%06X unreadable - nothing written", firstAt);
+        return false;
+    }
+    // Diagnostic: keep the original exact-byte expectation for the known site
+    static const BYTE expect[5] = { 0xE8, 0xBF, 0x03, 0xDE, 0xFF };
+    if (firstAt == RVA_STORAGE_CALLSITE && memcmp(site, expect, sizeof(expect)) != 0) {
+        Logf("ui_panels  storage: call site 0x%06X bytes mismatch (expected E8 BF 03 DE FF) - still hooking the rel32 target", firstAt);
     }
     if (site + 5 + *(const int32_t*)(site + 1) != target) {
         Logf("ui_panels  storage: call site target mismatch - nothing written");
@@ -2658,7 +2687,7 @@ static bool InstallStorageCallSiteHook(void)
     BYTE* cave = AllocNear(site, 64);
     if (!cave) {
         Logf("ui_panels  storage: no code cave near 0x%06X - nothing written",
-             RVA_STORAGE_CALLSITE);
+             firstAt);
         return false;
     }
     static const BYTE kJmpAbs[6] = { 0xFF, 0x25, 0, 0, 0, 0 };
@@ -2677,8 +2706,7 @@ static bool InstallStorageCallSiteHook(void)
         Logf("ui_panels  storage: VirtualProtect failed - nothing written");
         return false;
     }
-    if (memcmp(site, expect, sizeof(expect)) != 0 ||
-        site + 5 + *(const int32_t*)(site + 1) != target) {
+    if (site[0] != 0xE8 || site + 5 + *(const int32_t*)(site + 1) != target) {
         VirtualProtect(site, 5, oldProtect, &oldProtect);
         Logf("ui_panels  storage: call site changed under us - nothing written");
         return false;
@@ -2689,8 +2717,9 @@ static bool InstallStorageCallSiteHook(void)
     VirtualProtect(site, 5, oldProtect, &oldProtect);
 
     s_storageCave = cave;
-    Logf("ui_panels  storage: hook call 0x%06X -> builder 0x%06X installed",
-         RVA_STORAGE_CALLSITE, RVA_STORAGE_BUILDER);
+    s_storageCallAt = firstAt;
+    Logf("ui_panels  storage: hook call 0x%06X -> builder 0x%06X installed (cave %p, %u site(s) found)",
+         firstAt, RVA_STORAGE_BUILDER, (void*)cave, found);
     return true;
 }
 
