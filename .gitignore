@@ -1,0 +1,14 @@
+build/
+out/
+x64/
+Debug/
+Release/
+.vs/
+.kilo/
+scratch/
+tools/peinfo-out/
+*.log
+*.pdb
+*.ilk
+*.dll
+*.exe

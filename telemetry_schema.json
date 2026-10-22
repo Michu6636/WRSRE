@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "msg_type": "TELEMETRY",
+  "seq": 105,
+  "game_state": {
+    "tick": 24500,
+    "is_paused": false,
+    "date": {
+      "year": 1974,
+      "month": 8,
+      "day": 12,
+      "day_of_year": 224
+    }
+  },
+  "population": {
+    "total_citizens": 18450,
+    "total_tourists": 420,
+    "demographics": {
+      "infants": 1600,
+      "students": 3150,
+      "workers": 11500,
+      "pensioners": 2200
+    },
+    "education": {
+      "uneducated": 1500,
+      "basic": 12600,
+      "university": 4350
+    },
+    "averages": {
+      "happiness": 0.7650,
+      "loyalty": 0.6320,
+      "health": 0.8140,
+      "food": 0.9120,
+      "clothing": 0.8200,
+      "electronics": 0.6950,
+      "alcohol": 0.2840,
+      "culture": 0.6120,
+      "sport": 0.6400,
+      "religion": 0.0950,
+      "crime": 0.0380
+    }
+  },
+  "economy": {
+    "rub_balance": 2410500.00,
+    "usd_balance": 512000.00,
+    "infrastructure": {
+      "total_buildings": 512,
+      "constructed_buildings": 486,
+      "under_construction": 26
+    },
+    "sectors": {
+      "residential": 142,
+      "commercial_retail": 38,
+      "industry_heavy": 28,
+      "mining": 12,
+      "agriculture": 18,
+      "logistics_transport": 24,
+      "utilities": 62,
+      "civic_admin": 8,
+      "healthcare": 6,
+      "education": 16,
+      "other": 132
+    }
+  }
+}
