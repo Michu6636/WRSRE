@@ -344,3 +344,4 @@ static inline int TsmUiPanelsHasWideButton(const TsmUiPanelsApi* api)
 #endif
 
 #endif // TSM_UI_PANELS_API_H
+
