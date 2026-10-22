@@ -2103,6 +2103,8 @@ static bool AutoStatePermissionSet(uint64_t key, unsigned char mode)
     return true;
 }
 
+static bool AutoHasNativeStorage(void* b);
+
 static void StateStorageWidgetProvider(void* building, void*)
 {
     static uint64_t s_lastWidgetKey = 0;
