@@ -1,0 +1,11 @@
+# Enforce LF for docs and source so CRLF uploads don't create noisy diffs
+* text=auto
+*.md text eol=lf
+*.h text eol=lf
+*.cpp text eol=lf
+*.ini text eol=lf
+*.txt text eol=lf
+*.py text eol=lf
+*.json text eol=lf
+# Windows batch files keep CRLF
+*.bat text eol=crlf

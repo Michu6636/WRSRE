@@ -6,6 +6,8 @@
 
 ---
 
+> **Update 2026-10-22 (Rev 4):** Added `private_logistics` L3, corrected `TSM_GO_BUILDINGS_VEC` to `0x11B08/0x11B10`, added DO task/storage/connection offsets. Previous staging docs in `docs/README.md` and `docs/ghidra-do-storage-findings.md` supersede `docs/Logistics_Investigation.md` for DO task details. See evidence labels in `docs/README.md`.
+
 ## 1. Architectural Hierarchy & Dependency Rules
 
 The ecosystem is organized into a strict **4-Tier Level Hierarchy**. Higher levels may consume services from lower levels. **Cyclic dependencies between plugins are strictly prohibited.**
@@ -15,6 +17,7 @@ The ecosystem is organized into a strict **4-Tier Level Hierarchy**. Higher leve
 │ LEVEL 3: AUTONOMOUS APPLICATION SYSTEMS                                │
 │ - private_construction (Autonomous building, native phase pricing)      │
 │ - private_shops (Wholesale deliveries, procurement, service fees)       │
+│ - private_logistics (Transfer accounting, freight/fuel, opt-in DO targets)│
 │ - state_ledger (Macro financial balance sheet, CSV exports, HUD stats) │
 └───────────────────────────────────┬────────────────────────────────────┘
                                     │ consumes
@@ -56,15 +59,17 @@ The ecosystem is organized into a strict **4-Tier Level Hierarchy**. Higher leve
 | **`sim_clock`**            |   0   |   1.1   | _None_                                                                                                        | `sim_clock`               | Provides in-game day/month/year calendar, scheduled callbacks (`TSM_FREQ_*`), and game speed/pause telemetry.                                                                     |
 | **`currency`**             |   0   |   4.0   | `sim_clock`, `persistence`                                                                                    | `currency` (v3 & v4)      | Tracks citizen wallets, direct read/write to state treasuries (`game+0x580` USD / `+0x588` RUB), and publishes labelled flow observer events.                                     |
 | **`persistence`**          |   0   |   1.0   | _None_                                                                                                        | `persistence`             | Hooks CRT file operations (`fopen`, `_wfopen`) on save triggers (`stats.ini` / `workers.bin`); provides atomic file writing.                                                      |
-| **`resource_pricing`**     |   1   |   1.1   | _None_                                                                                                        | `resource_pricing`        | Linear scan of native resource vector (`game+0xC2B0`); reads live border commodity prices (`+0x58` RUB / `+0x5C` USD) and fallbacks.                                              |
-| **`citizen_labor`**        |   1   |   2.0   | `sim_clock`, `currency`, `persistence`                                                                        | `citizen_labor` (v2 & v3) | Tracks citizen employment, executes daily paydays, enforces the **Statutory Minimum Wage**, maps 6 industrial sectors, persists coordinate wage overrides.                        |
-| **`citizen_retail`**       |   1   |   1.2   | `sim_clock`, `currency`, `resource_pricing`, `persistence`                                                    | `citizen_retail`          | Iterates active shops, validates physical store inventory, charges citizen wallets for multi-item consumer baskets.                                                               |
-| **`enterprise_base`**      |   2   |   7.0   | `sim_clock`, `currency`, `persistence`, `ui_overlay`, `ui_panels`, `citizen_labor`, `citizen_retail`, `taxes` | `enterprise_base`         | Commercial firm registry for `[P]` buildings, company capital balances, residential rent collection, investment pool siphon, dynamic wage bidding.                                |
-| **`taxes`**                |   2   |   1.1   | `sim_clock`, `currency`, `enterprise_base`                                                                    | `taxes`                   | Calculates and settles VAT (sales), Corporate Profit Tax (net operating margins), and flat Property Tax on scheduled calendar boundaries.                                         |
+| **`resource_pricing`**     |   1   |   3.0   | _None_                                                                                                        | `resource_pricing` (v1–v3) | Live commodity pricing (v3 adds `getCpiDailyBasket`/`getCpiBasketInfo`), `+0x58`/`+0x5C` plus border multipliers.                                              |
+| **`citizen_labor`**        |   1   |   4.8   | `sim_clock`, `currency`, `persistence`                                                                        | `citizen_labor` (v2–v4) | Tracks citizen employment, executes daily paydays, enforces the **Statutory Minimum Wage**, maps 6 industrial sectors, persists coordinate wage overrides.                        |
+| **`citizen_retail`**       |   1   |   2.9   | `sim_clock`, `currency`, `resource_pricing`, `persistence`                                                    | `citizen_retail` (v2) | Iterates active shops, validates physical store inventory, charges citizen wallets for multi-item consumer baskets.                                                               |
+| **`enterprise_base`**      |   2   |  9.18  | `sim_clock`, `currency`, `persistence`, `ui_overlay`, `ui_panels`, `citizen_labor`, `citizen_retail`, `taxes` | `enterprise_base` (v7–v8) | Commercial firm registry for `[P]` buildings, company capital balances, residential rent collection, investment pool siphon, dynamic wage bidding.                                |
+| **`taxes`**                |   2   |   4.2   | `sim_clock`, `currency`, `enterprise_base`                                                                    | `taxes` (v1–v2, provider `4.2`) | Calculates and settles VAT, Corporate Profit Tax, and flat Property Tax on scheduled calendar boundaries.                                         |
 | **`ui_overlay`**           |   2   |   1.0   | _None_                                                                                                        | `ui_overlay`              | Hooks `C3D_TERRAIN::Render` to draw DPI-scaled outlined HUD text; provides F8 toggleable drawer bus.                                                                              |
-| **`ui_panels`**            |   2   |   1.0   | _None_                                                                                                        | `ui_panels`               | Hooks native panel builders (shop, residence, pub, factory) to append custom telemetry rows at `window+0x250`.                                                                    |
-| **`private_shops`**        |   3   |   3.0   | `sim_clock`, `currency`, `resource_pricing`, `enterprise_base`, `taxes`, `persistence`                        | _None_                    | Auto-imports foreign restock, bills state wholesale delivery, credits state procurement revenue on export-flagged storages (`+0x85`), collects pub service fees.                  |
+| **`ui_panels`**            |   2   |  6.11  | _None_                                                                                                        | `ui_panels` (v1–v6) | Hooks native panel builders (shop, residence, pub, factory, cityhall, citizen, **do, storage**) to append custom telemetry rows at `window+0x250`; type-5 storage checkbox via `widgetCheckbox`. |
+| **`private_shops`**        |   3   |   3.4   | `sim_clock`, `currency`, `resource_pricing`, `enterprise_base`, `taxes`, `persistence`                        | _None_                    | Auto-imports foreign restock, bills state wholesale delivery, credits state procurement revenue on export-flagged storages (`+0x85`), collects pub service fees.                  |
+| **`private_logistics`**    |   3   |  0.17   | `sim_clock`, `currency`, `resource_pricing`, `enterprise_base`, `ui_panels`, `persistence`                                                    | _None_                    | Transfer accounting, producer settlement (90% retail), freight/fuel billing, and bounded opt-in state-storage targets (load-only `TaskCfg+0x04=1.0/+0xC8=0/+0xCC=0`, cap 5, `auto_targets_dry_run=1`). See `docs/ghidra-do-storage-findings.md` and `docs/current-task-state-storage.md`. |
 | **`private_construction`** |   3   |  3.5.2  | `sim_clock`, `enterprise_base`, `ui_overlay`, `citizen_labor`, `currency`, `resource_pricing`, `persistence`  | _None_                    | Autonomously builds `[P]` sites using investment pool funds; prices natively via type descriptor phases (`typedesc+0x370`); implements State Acceptance Commission (99% handoff). |
+| **`map_expander`**         |  util |   1.0   | _None_                                                                                                        | _None_                    | Map/placement expansion utilities. Separate from core economic loop. |
 | **`state_ledger`**         |   3   |   1.4   | `sim_clock`, `currency`, `persistence`, `ui_overlay`                                                          | _None_                    | Observes all macro cash movements; records monthly double-entry statements to `tesmio_ledger.csv`; renders financial HUD card.                                                    |
 
 ---
@@ -79,7 +84,7 @@ All addresses are relative to `SOVIET64.exe` image base (`0x140000000`).
 - **`TSM_GO_TREASURY_USD` = `0x580`** (`double`) $\rightarrow$ State US Dollar treasury balance.
 - **`TSM_GO_TREASURY_RUB` = `0x588`** (`double`) $\rightarrow$ State Soviet Ruble treasury balance.
 - **`TSM_GO_RES_VEC` = `0xC2B0`** $\rightarrow$ Vector (`begin/end/cap`) of all resource records (Stride = `832` / `0x340`).
-- **`TSM_GO_BUILDINGS_VEC` = `0xC2C8`** $\rightarrow$ Vector of all building pointers on the active map.
+- **`TSM_GO_BUILDINGS_VEC` = `0x11B08` / `0x11B10`** (`TSM_GO_BLD_VEC_BEGIN/END`) $\rightarrow$ Vector of all building pointers on the active map. *Correction 2026-10-22: `src/game_world.h` authoritative; `0xC2C8` was stale.*
 - **`TSM_GO_POLLUTION_GRID` = `0x120A8`** $\rightarrow$ Bilinear environmental/pollution grid pointer.
 
 ### 3.2 Building Struct (`bld`)
@@ -93,6 +98,12 @@ All addresses are relative to `SOVIET64.exe` image base (`0x140000000`).
 - **`+0xBC0` / `+0xBC8` (`TSM_BLD_RESIDENTS_BEGIN / END` / `TSM_BLD_WORKERS_BEGIN / END`)**: Pointer vector of permanent tenants (Residential) or active workers/staff (workplaces).
 - **`+0xDDC` (`TSM_BLD_CUSTOMER_CAP`)** (`float`): Customer service capacity — max customers attended at once. NOT the worker limit.
 - **`+0xDEC` (`TSM_BLD_MAX_WORKERS`)** (`int`): Maximum worker limit, initialized from type descriptor `$WORKERS_NEEDED` at construction.
+- **`+0x970` / `+0x978` (`TSM_BLD_STORAGES_BEGIN/END`)**: Storage vector (stride `0xE0`, import `+0x84`/export `+0x85`, capacity `+0x8C`).
+- **`+0xC70` / `+0xC78`**: Vehicle vector of owning DO (stride 8).
+- **`+0xD38` / `+0xD40`**: DO task vector (stride `0x18` Entry `{+0x00 enabled byte, +0x08 target*, +0x10 TaskCfg*}`; `TaskCfg` `0x198` via `0x1512A0`; dirty `+0xD50=1`, schedule `+0xFC0=3.0`). See `docs/ghidra-do-storage-findings.md`.
+- **`+0xA10`**: Connection records (stride `0x60`, type 3 road / 6 rail).
+- **`+0x108` (`TSM_BLD_CITY`)**: City/NamePoint*.
+- **Correction:** `+0xC38` is idle counter, not residents vector. Use `+0xBC0` per `Building_Vectors_Investigation` and `Citizen_Housing_Relocation`.
 - **`+0x11B0`** (`float`, `0.0f` to `1.0f`): Daily sampled environmental attractiveness score.
 
 ### 3.3 Building Type Descriptor (`typedesc`)

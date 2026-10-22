@@ -1,4 +1,5 @@
 # Logistics Investigation — Distribution Office (Autonomous Private Logistics)
+> **Status 2026-10-22 — Superseded in part:** For DO task storage, see `docs/ghidra-do-storage-findings.md` (stride `0x18` Entry `+0x00/+0x08/+0x10`, `TaskCfg 0x198`, dirty `+0xD50`/`+0xFC0`, save `1EDC40/6C5350` load `1F0BE0`, type-3 road / type-6 rail, cap 5 policy, `panel+0x310` unverified). The `Logistics_Investigation` `0xD38 stride 8` pointer-vector model is incomplete; use the new doc as source of truth. Original kept for history.
 
 **Target:** `SOVIET64.exe` v1.1.1.9 (base `0x140000000`). Addresses are file-based
 (`0x140` + RVA). **Raw evidence:** `scratch/distribution_office.txt`.
@@ -221,4 +222,3 @@ something else changes the DO.
 > Caveat: `TaskCfg` is `0x198` bytes with additional vectors at `+0x38..+0x188` and
 > flags at `+0x28`/`+0xF0` beyond the two documented triples; those are read by the
 > runtime sim and should be left at their ctor defaults unless you map them fully.
-
