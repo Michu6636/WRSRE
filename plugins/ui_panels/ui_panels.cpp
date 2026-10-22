@@ -2723,7 +2723,7 @@ static bool InstallStorageCallSiteHook(void)
     }
     // Diagnostic: keep the original exact-byte expectation for the known site
     static const BYTE expect[5] = { 0xE8, 0xBF, 0x03, 0xDE, 0xFF };
-    if (firstAt == RVA_STORAGE_CALLSITE && memcmp(site, expect, sizeof(expect)) != 0)) {
+    if (firstAt == RVA_STORAGE_CALLSITE && memcmp(site, expect, sizeof(expect)) != 0) {
         Logf("ui_panels  storage: call site 0x%06X bytes mismatch (expected E8 BF 03 DE FF) - still hooking the rel32 target", firstAt);
     }
     if (site + 5 + *(const int32_t*)(site + 1) != target) {
