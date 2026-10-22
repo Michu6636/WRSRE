@@ -8,9 +8,9 @@ This folder consolidates the current design and status for the mod, the private-
 ## Documents
 
 1. [`ghidra-do-storage-findings.md`](ghidra-do-storage-findings.md) — distribution-office TaskEntry/TaskCfg layout, save/load, native add/remove behavior, road/rail/type-5 reachability, count limits, and remaining unknowns.
-2. [`current-task-state-storage.md`](current-task-state-storage.md) — the active opt-in source-only state-storage feature, staged implementation, safety limits, and validation checklist.
-3. [`vision-private-logistics.md`](vision-private-logistics.md) — the purpose, responsibilities, economics, invariants, and roadmap of `private_logistics`.
-4. [`vision-whole-mod.md`](vision-whole-mod.md) — the broader economic model and modular architecture for the WRSRE mod.
+2. [`current-task-state-storage.md`](tasks/active/current-task-state-storage.md) — the active opt-in source-only state-storage feature, staged implementation, safety limits, and validation checklist.
+3. [`vision-private-logistics.md`](visions/vision-private-logistics.md) — the purpose, responsibilities, economics, invariants, and roadmap of `private_logistics`.
+4. [`vision-whole-mod.md`](visions/vision-whole-mod.md) — the broader economic model and modular architecture for the WRSRE mod.
 
 ## Source material consolidated
 
