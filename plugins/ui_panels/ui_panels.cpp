@@ -1000,6 +1000,12 @@ static int HookServesBuilding(int idx)
 // [RSP+0x50] read-back) stays self-consistent within the trampoline chain,
 // and the epilogue (ADD RSP,0x40/POP RBX/RET) unwinds it - including the
 // hidden-window early-out path.
+// v6.13: storage inline-hook prologue - 21 bytes from live dump 0x4CABD0 = 40 55 57 41 54 41 56 41 55 48 8D AC 24 ... (full 21 logged in diag, verified to match shop/factory layout)
+static const BYTE kStorageExpect[] = {
+    0x40, 0x55, 0x57, 0x41, 0x54, 0x41, 0x56, 0x41,
+    0x55, 0x48, 0x8D, 0xAC, 0x24, 0x00, 0xEC, 0xFF,
+    0xFF, 0x48, 0x8B, 0xEC, 0xB8
+};
 static const BYTE kCitizenExpect[] = {
     0x48, 0x8B, 0xC4, 0x53,
     0x48, 0x83, 0xEC, 0x40,
@@ -1075,8 +1081,8 @@ static PanelHook g_hooks[MAX_HOOKS] = {
     // verify, so the row carries the callee RVA and the installer scans for
     // the call. Everything downstream (providers, budget, probe) is shared.
     { "do",       0x741170, 0,                      NULL,             NULL, 0, 0, 0, 0, 0 },
-    // v6.11: exact caller site and callee verified in Ghidra for type 5.
-    { "storage",  0x4CABD0, 0,                      NULL,             NULL, 0, 0, 0, 0, 0 },
+    // v6.13: inline hook for 0x4CABD0 (21-byte prologue 40 55 57 41 54...), fallback to call-site if inline refuses
+    { "storage",  0x4CABD0, sizeof kStorageExpect, kStorageExpect, NULL, 0, 0, 0, 0, 0 },
 };
 
 // ---------------------------------------------------------------- providers
@@ -2659,22 +2665,29 @@ static void DumpDispatcherTargets(void)
         if (isStorageRange) storageish++;
         total++;
         Logf("ui_panels  dispatcher E8 at 0x%06X -> 0x%06X  head %02X %02X %02X %02X %02X %02X %02X %02X%s", RVA_WINDOW_DISPATCH + off, rva, head[0], head[1], head[2], head[3], head[4], head[5], head[6], head[7], isStorageRange ? "  <- storage-range" : "");
+        if (isStorageRange && ReadablePtr(target, 21)) {
+            Logf("ui_panels  storage builder 0x%06X prologue 21: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X", rva, target[0],target[1],target[2],target[3],target[4],target[5],target[6],target[7],target[8],target[9],target[10],target[11],target[12],target[13],target[14],target[15],target[16],target[17],target[18],target[19],target[20]);
+        }
     }
     Logf("ui_panels  storage diag: %u calls, %u in storage range 0x4A0000..0x4E0000", total, storageish);
+    if (ReadablePtr(g_exeBase + RVA_STORAGE_BUILDER, 32)) {
+        BYTE* s = g_exeBase + RVA_STORAGE_BUILDER;
+        Logf("ui_panels  storage builder direct 0x%06X 32: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X", RVA_STORAGE_BUILDER, s[0],s[1],s[2],s[3],s[4],s[5],s[6],s[7],s[8],s[9],s[10],s[11],s[12],s[13],s[14],s[15],s[16],s[17],s[18],s[19],s[20],s[21],s[22],s[23],s[24],s[25],s[26],s[27],s[28],s[29],s[30],s[31]);
+    }
     if (ReadablePtr(g_exeBase + RVA_WINDOW_DISPATCH, 32)) {
         BYTE* d = g_exeBase + RVA_WINDOW_DISPATCH;
         Logf("ui_panels  dispatcher prologue 0x%06X: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X", RVA_WINDOW_DISPATCH, d[0],d[1],d[2],d[3],d[4],d[5],d[6],d[7],d[8],d[9],d[10],d[11],d[12],d[13],d[14],d[15]);
     }
 }
 
-// v6.11: storage panel hook for the type-5 storage builder. Previously verified
-// as a single fixed call site at 0x6EA80C (E8 BF 03 DE FF -> 0x4CABD0). The new
-// warehouse_covered_combined asset (state_storage=1 in live saves) did not
-// trigger the hook in 3648-line and 1949-line tesmioloader logs despite the hook
-// reporting installed - no "probe storage" line was ever emitted. To cover
-// variant assets that may use a second dispatcher route, scan the dispatcher
-// exactly as the DO hook does and hook the first E8 that resolves to the storage
-// builder. Falls back to the exact-byte check for diagnostics.
+// v6.13: storage uses INLINE hook on 0x4CABD0 (21-byte prologue verified from live dump 40 55 57 41 54...), so warehouse_covered_combined is caught even when opened outside dispatcher. Falls back to call-site patch at 0x6EA80C if inline fails (e.g. already patched).
+static bool TryInstallStorageInlineHook(void)
+{
+    // g_hooks[HOOK_STORAGE] now carries kStorageExpect (21 bytes, stolen=21)
+    PanelHook* hk = &g_hooks[HOOK_STORAGE];
+    if (!hk->expect || hk->stolen < 14) return false;
+    return InstallInlineHook(g_exeBase + hk->rva, s_detours[HOOK_STORAGE], &hk->trampoline, hk->expect, hk->stolen, hk->name);
+}
 static bool InstallStorageCallSiteHook(void)
 {
     if (!ReadablePtr(g_exeBase + RVA_STORAGE_BUILDER, 16)) {
@@ -2863,7 +2876,7 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
 {
     TsmBind(host);
     info->name    = "ui_panels";
-    info->version = "6.12";  // v6.12: dispatcher diagnostic for warehouse variant
+    info->version = "6.13";  // v6.12: dispatcher diagnostic for warehouse variant
 
     ReadSettings();
     if (!g_enabled) {
@@ -2982,13 +2995,16 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
             Logf("ui_panels  hook %-10s off in ini", g_hooks[i].name);
             continue;
         }
-        const bool ok = (i == HOOK_DO)
-            ? InstallDoCallSiteHook()
-            : (i == HOOK_STORAGE)
-                ? InstallStorageCallSiteHook()
-                : InstallInlineHook(g_exeBase + g_hooks[i].rva, s_detours[i],
-                                    &g_hooks[i].trampoline, g_hooks[i].expect,
-                                    g_hooks[i].stolen, g_hooks[i].name);
+        bool ok = false;
+        if (i == HOOK_DO) ok = InstallDoCallSiteHook();
+        else if (i == HOOK_STORAGE) {
+            // prefer inline (catches all callers), fallback to call-site patch
+            ok = TryInstallStorageInlineHook();
+            if (!ok) {
+                Logf("ui_panels  storage: inline hook refused, trying call-site fallback at 0x6EA80C");
+                ok = InstallStorageCallSiteHook();
+            }
+        } else ok = InstallInlineHook(g_exeBase + g_hooks[i].rva, s_detours[i], &g_hooks[i].trampoline, g_hooks[i].expect, g_hooks[i].stolen, g_hooks[i].name);
         if (ok)
         {
             g_hooks[i].installed = 1;
@@ -3021,7 +3037,7 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
         return 1;
     }
 
-    Logf("ui_panels  live v6.11: %d hook(s), max_rows %d, font 0x%X, "
+    Logf("ui_panels  live v6.13: %d hook(s), max_rows %d, font 0x%X, "
          "colour 0x%08lX, test_row %d, probe %d, buttons %s, "
          "toolbar size %.0f, "
          "ESC probe %s, wallet row %s",

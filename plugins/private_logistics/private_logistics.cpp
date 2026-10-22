@@ -2114,20 +2114,29 @@ static void StateStorageWidgetProvider(void* building, void*)
         !ReadablePtr(building, TSM_BLD_MIN_READABLE) || !g_enterprise ||
         !g_enterprise->isBuildingPrivate) return;
     int type = -1;
-    if (!AutoReadBuildingType(building, &type)) return;
-    // Diagnostic: log the first time we see a building on this panel, even non-storage, throttled by key
-    if (type == AUTO_STORAGE_BUILDING_TYPE) {
+    if (!AutoReadBuildingType(building, &type)) {
+        Logf("[AUTO DO] storage widget: AutoReadBuildingType failed for building=%p", building);
+        return;
+    }
+    // Diagnostic: ALWAYS log first sight of any building that reaches widget pass (throttled) to prove hook fired
+    {
         uint64_t dbgKey = 0;
-        if (AutoBuildingKey(building, &dbgKey, nullptr) && dbgKey != s_lastWidgetKey) {
+        AutoBuildingKey(building, &dbgKey, nullptr);
+        if (dbgKey != s_lastWidgetKey) {
             s_lastWidgetKey = dbgKey;
             const int isPriv = g_enterprise->isBuildingPrivate(building) ? 1 : 0;
-            Logf("[AUTO DO] storage widget probe: building=%p type=%d key=%016llX priv=%d nativeStorage=%d",
-                 building, type, (unsigned long long)dbgKey, isPriv, AutoHasNativeStorage(building) ? 1 : 0);
+            Logf("[AUTO DO] storage widget probe: building=%p type=%d key=%016llX priv=%d nativeStorage=%d willDraw=%d",
+                 building, type, (unsigned long long)dbgKey, isPriv, AutoHasNativeStorage(building) ? 1 : 0, (type == AUTO_STORAGE_BUILDING_TYPE && !isPriv) ? 1 : 0);
         }
     }
-    if (type != AUTO_STORAGE_BUILDING_TYPE)
+    if (type != AUTO_STORAGE_BUILDING_TYPE) {
+        // still counted as hook proof, just not a storage panel
         return;
-    if (g_enterprise->isBuildingPrivate(building)) return;
+    }
+    if (g_enterprise->isBuildingPrivate(building)) {
+        Logf("[AUTO DO] storage widget: type=5 but isPrivate=1, skipping checkbox (building=%p)", building);
+        return;
+    }
 
     uint64_t key = 0;
     if (!AutoBuildingKey(building, &key, nullptr)) return;
