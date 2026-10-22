@@ -565,6 +565,7 @@ static int                           g_stateStorageWidgetHandle = 0;
 static int g_autoTargetsEnabled = 0;
 static int g_autoTargetsDryRun  = 1;
 static int g_autoTargetLogLimit = 80;
+static int g_stateStorageForceOn = 0; // ini: state_storage_always_on=1 bypasses checkbox
 static volatile LONG g_autoResetActiveMemoAfterLoad = 0;
 #define AUTO_ENTITY_MAX 8704
 #define AUTO_MEMO_MAX   262144
@@ -2585,10 +2586,15 @@ static void AutoTargetsOnDay(int day, int closedDay)
         if (!site.building || !site.key) continue;
         AutoEntity& e = g_autoEntities[entityCount++];
         e.building = site.building; e.key = site.key; e.type = AUTO_STORAGE_BUILDING_TYPE;
-        e.hasStorage = (site.permission == 1) ? 1 : 0;
+        // LIVE workaround for broken storage panel: ini state_storage_always_on=1 treats every discovered state storage as enabled
+        const bool forceOn = g_stateStorageForceOn != 0;
+        e.hasStorage = (forceOn || site.permission == 1) ? 1 : 0;
         e.isStateStorage = 1; e.statePermission = site.permission; e.targetPresent = 0;
-        if (site.permission == 1) ++candidateCount;
+        if (forceOn || site.permission == 1) ++candidateCount;
         if (site.permission == 2) hasExplicitStateOff = true;
+        if (forceOn && site.permission == 0) {
+            Logf("[AUTO DO] state storage candidate name=%s key=%016llX force-enabled via ini (was OFF-DEFAULT)", site.name, (unsigned long long)site.key);
+        }
     }
 
     if (officeCount == 0 || (candidateCount == 0 && !hasExplicitStateOff)) {
@@ -2777,6 +2783,7 @@ static void ReadSettings(void)
     g_autoTargetsEnabled = H->configInt(ini, "private_logistics", "auto_targets_enabled", 0);
     g_autoTargetsDryRun  = H->configInt(ini, "private_logistics", "auto_targets_dry_run", 1);
     g_autoTargetLogLimit = H->configInt(ini, "private_logistics", "auto_targets_log_limit", 80);
+    g_stateStorageForceOn = H->configInt(ini, "private_logistics", "state_storage_always_on", 0);
     if (g_autoTargetLogLimit < 0) g_autoTargetLogLimit = 0;
     if (g_autoTargetLogLimit > 1000) g_autoTargetLogLimit = 1000;
 
