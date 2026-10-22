@@ -1,4 +1,5 @@
 # Private Industry RE â€” attribution of goods movement
+> **Status 2026-10-22 — Superseded in part:** For DO task storage, see `docs/ghidra-do-storage-findings.md` (stride `0x18` Entry `+0x00/+0x08/+0x10`, `TaskCfg 0x198`, dirty `+0xD50`/`+0xFC0`, save `1EDC40/6C5350` load `1F0BE0`, type-3 road / type-6 rail, cap 5 policy, `panel+0x310` unverified). The `Logistics_Investigation` `0xD38 stride 8` pointer-vector model is incomplete; use the new doc as source of truth. Original kept for history.
 
 Target: SOVIET64.exe v1.1.1.9 (PE timestamp 0x6A3EB6AD), base 0x140000000, ASLR on.
 Mode: investigation only. RVAs in text; file-based (0x140+RVA) only in dumps.
@@ -200,11 +201,14 @@ So `order+0x50[i]` is a pointer to a record whose `+0x28` is a pointer to a **co
 **Changes:** forecloses "read buyer at the call site"; S2 must bill sea/rail via `param_9` now, road via the completed-delivery log once its building field is confirmed.
 
 ### H2 — G3: vehicle purchase *(blocks the private-logistics cost model)*
-**Answer:** **Found.** FUN_1401aad70 (RVA  x1AAD70) is the vehicle purchase transaction: it checks the vehicle type (0x14), reads the price, verifies treasury sufficiency, deducts cost from game+0x580 (USD) and game+0x588 (RUB), creates the vehicle via FUN_1403e4a00, and sets ehicle+0x4F8 via FUN_1401aaaa0 — all at purchase time, not just at assignment.
+**Answer:** **Found.** FUN_1401aad70 (RVA  x1AAD70) is the vehicle purchase transaction: it checks the vehicle type (0x14), reads the price, verifies treasury sufficiency, deducts cost from game+0x580 (USD) and game+0x588 (RUB), creates the vehicle via FUN_1403e4a00, and sets 
+ehicle+0x4F8 via FUN_1401aaaa0 — all at purchase time, not just at assignment.
 
-**Ask #1 — purchase transaction:** FUN_1401aad70 (RVA  x1AAD70). Deducts local_res20 from RUB treasury (DAT_1409d5498 = game+0x588) and StackX_24 from USD treasury (DAT_1409d5490 = game+0x580), then calls FUN_1403e4a00 to spawn the vehicle and FUN_1401aaaa0 to assign it to the buying building. Aborts if treasury insufficient.
+**Ask #1 — purchase transaction:** FUN_1401aad70 (RVA  x1AAD70). Deducts local_res20 from RUB treasury (DAT_1409d5498 = game+0x588) and 
+StackX_24 from USD treasury (DAT_1409d5490 = game+0x580), then calls FUN_1403e4a00 to spawn the vehicle and FUN_1401aaaa0 to assign it to the buying building. Aborts if treasury insufficient.
 
-**Ask #2 — price location:** Two-part price passed via param_4 (64-bit): high 32 bits = USD cost (StackX_24 = param_4 >> 32), low 32 bits → RUB base from FUN_1403e3f40 then modified by FUN_1403f7ce0(&local_res20, ...). The base price ultimately comes from $COST_RUB/$COST_USD in the vehicle's script.ini (e.g. ust_skd_14Tr: $COST_RUB 4300), parsed at vehicle-type load time. Runtime price not traced to a specific descriptor offset — FUN_1403f7ce0 not decompiled.
+**Ask #2 — price location:** Two-part price passed via param_4 (64-bit): high 32 bits = USD cost (
+StackX_24 = param_4 >> 32), low 32 bits → RUB base from FUN_1403e3f40 then modified by FUN_1403f7ce0(&local_res20, ...). The base price ultimately comes from $COST_RUB/$COST_USD in the vehicle's script.ini (e.g. ust_skd_14Tr: $COST_RUB 4300), parsed at vehicle-type load time. Runtime price not traced to a specific descriptor offset — FUN_1403f7ce0 not decompiled.
 
 **Ask #3 — +0x4F8 timing:** Set at **purchase time** by FUN_1401aaaa0(game, building, vehicle, 1) called immediately after FUN_1403e4a00 creates the vehicle (d_h2_purchase.c, lines after treasury deduction). Also overwritten at assignment time by FUN_1401C6DD0 (*(longlong *)(lVar22 + 0x4f8) = param_2; at d_h2_setter.c:318).
 
@@ -212,7 +216,8 @@ So `order+0x50[i]` is a pointer to a record whose `+0x28` is a pointer to a **co
 
 **Offset(s):** game+0x580 (treasury USD), game+0x588 (treasury RUB) — confirmed from 17-ui-and-integration.md and treasury xrefs. Vehicle record stride  x9f08, +0x200 = object name, +0x9c88 = ownership flag (from FUN_1402ff840 world saver, d_worldwrite.txt).
 
-**Function(s):** FUN_1401aad70 (RVA  x1AAD70), game-tick/UI thread — purchase transaction. FUN_1403e4a00 — vehicle spawn. FUN_1401aaaa0 — sets ehicle+0x4F8 = building (likely, pattern match). FUN_1401C6DD0 (RVA  x1C6DD0) — +0x4F8 setter, assignment only.
+**Function(s):** FUN_1401aad70 (RVA  x1AAD70), game-tick/UI thread — purchase transaction. FUN_1403e4a00 — vehicle spawn. FUN_1401aaaa0 — sets 
+ehicle+0x4F8 = building (likely, pattern match). FUN_1401C6DD0 (RVA  x1C6DD0) — +0x4F8 setter, assignment only.
 
 **Evidence:** scratch/d_h2_purchase.c (full decompile of  x1AAD70 — treasury check/deduct, vehicle spawn, +0x4F8 assignment), scratch/x_h2_treasury2.txt (xrefs to game+0x580 showing writes at  x1401AAF12 in FUN_1401AAD70), scratch/d_h2_setter.c:318 (assignment-time +0x4F8 write), scratch/x_q6_owner.txt (no owner field).
 
@@ -807,6 +812,5 @@ scripts only, JDK 21, single -scriptPath via scratch\ghidra_run.bat, file-based
 11. DecompAt.java scratch/d_h16_factory.c (0x1403E4A00) - vehicle factory
 12. Xrefs.java scratch/x_h16_purchase.txt (0x1401AAD70) + DisasmMany
     scratch/asm_h16_buycall.txt (0x1402B4440:0x1402B4560) - buy call site
-
 
 

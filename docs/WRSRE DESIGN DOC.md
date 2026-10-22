@@ -49,10 +49,12 @@
   └──────────────────────────────────────┬──────────────────────────────────────┘
                                          │
                                          ▼
-  │ [DROPPED / DEFERRED] Task 6: Autonomous Private Logistics (DO Fleet Engine) │
+  │ Task 6b: Bounded Opt-In State-Storage Source (private_logistics v0.17) [STAGED] │
   │ [DEFERRED] Task 5: Sovereign Currency & Central Bank FX Reserves            │
   └─────────────────────────────────────────────────────────────────────────────┘
 ```
+
+> **Update 2026-10-22 (Rev 4):** Task 6b state-storage is now staged (v0.17/v6.11) with native DO task lifecycle (`0xD38/0xD40` stride `0x18`, `0x198` TaskCfg, save `1EDC40/6C5350` load `1F0BE0`). See `docs/ghidra-do-storage-findings.md`, `docs/current-task-state-storage.md`, `docs/NEXT_PHASE.md`. Task 6 original autonomous fleet remains deferred; Task 6b is bounded source-only.
 
 ---
 
@@ -77,7 +79,7 @@ _Victoria 3_ serves as our macroeconomic inspiration, but _Workers & Resources_ 
 | **Pops & Strata**                  | Individual citizens (`TSM_PERSON_SIZE`), classified into 4 Strata; aggregated into Pop Groups | `citizen_retail.cpp`, `citizen_labor.cpp` | `[IN PROGRESS]`   |
 | **Standard of Living (SoL)**       | 4-Tier Hierarchy evaluated via Purchasing Power Ratio (Flow) and Liquidity Runway (Stock)     | `citizen_retail.cpp`                      | `[IN PROGRESS]`   |
 | **Goods Markets**                  | Local Town Markets grounded by physical stock cover via native `NamePoint` (`0x108`)          | `resource_pricing.cpp`, `14-cities.md`    | `[NEXT PRIORITY]` |
-| **Market Access / Infrastructure** | Real road, rail, and warehouse network simulated via freight distance penalties               | `private_shops.cpp`                       | `[PLANNED]`       |
+| **Market Access / Infrastructure** | Real road, rail, and warehouse network simulated via freight distance penalties               | `private_shops.cpp`, `private_logistics.cpp` (type-5 road `0xA10` type-3) | `[STAGED]` (6b) |
 | **Corporate Balance Sheets**       | `[P]` enterprises with operating capital, wage bidding, and the 3-month distress ladder       | `enterprise_base.cpp`                     | `[COMPLETE]`      |
 | **Investment Pool**                | Capitalist Investment Pool accumulated strictly from net operating profits                    | `enterprise_base.cpp`                     | `[COMPLETE]`      |
 | **Construction Capacity**          | Turnkey private construction competing with state mega-projects for physical materials        | `private_construction.cpp`                | `[PLANNED]`       |
@@ -318,7 +320,7 @@ Private construction must not conjure structures out of currency balances:
 
 ### 10.1 Rescoped Systems
 
-- **Task 6: Autonomous Private Logistics:** Dropped. Manipulating Distribution Office task vectors from background simulation threads poses severe memory corruption risks and bypasses WRSR's core logistics gameplay.
+- **Task 6: Autonomous Private Logistics:** Original broad fleet engine **remains dropped**. **Task 6b state-storage source (private_logistics v0.17) is staged** — bounded opt-in, load-only (`TaskCfg+0x04=1.0/+0xC8=0/+0xCC=0`), road type-3, cap 5, `dry_run=1`. Direct DO vector manipulation via background threads is still unsafe for general fleet use; Task 6b uses validated native lifecycle (`TaskEntry 0x18/TaskCfg 0x198` via `0x08E050`, `+0xD50=1/+0xFC0=3.0`, save `1EDC40/6C5350` load `1F0BE0`). See `docs/ghidra-do-storage-findings.md`.
 - **Task 5: Sovereign Currency & Central Bank:** Deferred indefinitely. Simulating a virtual third currency desynchronizes `state_ledger`. The unified Dual-Currency Regime (`RUB` / `USD` via `currency_api` v4.0) remains the active standard.
 
 ### 10.2 Recent Bug Fixes (Revision 3 Audit)
