@@ -1081,7 +1081,8 @@ static PanelHook g_hooks[MAX_HOOKS] = {
     // verify, so the row carries the callee RVA and the installer scans for
     // the call. Everything downstream (providers, budget, probe) is shared.
     { "do",       0x741170, 0,                      NULL,             NULL, 0, 0, 0, 0, 0 },
-    // v6.13: inline hook for 0x4CABD0 (21-byte prologue 40 55 57 41 54...), fallback to call-site if inline refuses
+    // v6.15: inline hook for 0x4CABD0 — 22B prologue 40 55 57 41 54 41 56 41 57 48 8D AC 24 B0 C9 FF FF B8 50 37 00 00
+    // verified via Ghidra Blocks A/B + live dump (§8.1/§8.7); no change to RVA. Falls back to call-site 0x6EA80C if inline refuses.
     { "storage",  0x4CABD0, sizeof kStorageExpect, kStorageExpect, NULL, 0, 0, 0, 0, 0 },
 };
 

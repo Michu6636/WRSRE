@@ -2458,7 +2458,12 @@ static void AutoProbeStateInfrastructure(int closedDay, unsigned entityCount)
             !ReadablePtr((BYTE*)b + TSM_BLD_DEMOLISHED, 1) || TsmIsDemolished(b)) continue;
         int type = -1;
         if (!AutoReadBuildingType(b, &type)) continue;
-        if (type == AUTO_STORAGE_BUILDING_TYPE && AutoHasNativeStorage(b)) {
+        // v6.15 Block C (§8.2/§8.7): hasNative b+0x970/0x978 stride 0xE0 is SOUND (FindDisp 970/978).
+        // Warehouse asset $TYPE_STORAGE(5) but live log type=3 shop builder → missing checkbox; do not gate on type==5.
+        // World scan now consistent with StateStorageWidgetProvider (!priv && hasNative) → warehouse willDraw=1.
+        // Broaden from type==5 to hasNative; exclude customs/DOs from storage pool (own vectors, not storage sources).
+        if (AutoHasNativeStorage(b) && type != AUTO_CUSTOMS_TYPE &&
+            type != AUTO_DO_ROAD_TYPE && type != AUTO_DO_RAIL_TYPE) {
             const bool isPrivate = g_enterprise && g_enterprise->isBuildingPrivate &&
                                    g_enterprise->isBuildingPrivate(b);
             if (isPrivate) ++privateStorages;
@@ -2475,6 +2480,7 @@ static void AutoProbeStateInfrastructure(int closedDay, unsigned entityCount)
                     AutoBuildingName(b, site.name, sizeof(site.name));
                 }
             }
+            continue;
         }
         if (type != AUTO_CUSTOMS_TYPE) continue;
         ++customsCount;
