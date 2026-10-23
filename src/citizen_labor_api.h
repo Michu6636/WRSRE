@@ -63,7 +63,9 @@ extern "C" {
 // a truncated v3 view (structSize stops before setSectorWage). Both
 // v3 and v4 views carry the M1 tail, so TsmLaborHasV3 stays true on
 // every current provider.
-#define TSM_CITIZEN_LABOR_VERSION 4u
+#define TSM_CITIZEN_LABOR_VERSION 5u
+#define TSM_CITIZEN_LABOR_VERSION_V5 5u
+#define TSM_CITIZEN_LABOR_VERSION_V4 4u
 #define TSM_CITIZEN_LABOR_VERSION_V3 3u
 #define TSM_CITIZEN_LABOR_VERSION_V2 2u
 
@@ -168,6 +170,12 @@ typedef struct TsmCitizenLaborApi {
     // Runtime-only by design: sector wages reset from the INI on the
     // next world load (workplace overrides persist - see the v3 tail).
     int   (*setSectorWage)(int sectorId, float dailyWage);
+
+    // --- v5: wage mobility hook status ----------------------------------
+    // Returns 1 if the inline wage-mobility hook is installed, 0 if AllocNear
+    // failed and wages are static INI-only. H4 FIX: lets enterprise_base
+    // degrade private_market_wages instead of advertising dynamic bidding.
+    int   (*isWageMobilityHookInstalled)(void);
 } TsmCitizenLaborApi;
 
 // --- v3 sector ids ---------------------------------------------------------
@@ -201,6 +209,14 @@ static inline int TsmLaborHasV4(const TsmCitizenLaborApi* api)
         api->structSize >= offsetof(TsmCitizenLaborApi, setSectorWage) +
                               sizeof(api->setSectorWage) &&
         api->setSectorWage;
+}
+// Guard: does this iface carry the v5 wage-mobility hook tail? (H4 fix)
+static inline int TsmLaborHasV5(const TsmCitizenLaborApi* api)
+{
+    return TsmLaborHasV4(api) &&
+        api->structSize >= offsetof(TsmCitizenLaborApi, isWageMobilityHookInstalled) +
+                              sizeof(api->isWageMobilityHookInstalled) &&
+        api->isWageMobilityHookInstalled;
 }
 
 #ifdef __cplusplus

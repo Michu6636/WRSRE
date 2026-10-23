@@ -905,8 +905,12 @@ static void WholesaleSlot(void* storage, void* slotBytes, void* res,
         snap.content = content;
     } else if (!ctx->allowDebt) {
         double affordable = (ctx->capital > 0.0) ? ctx->capital : 0.0;
+        double denom = (double)perTon * (double)g_wholesaleRatio;
+        if (!(denom > 1e-6)) { snap.content = content; return; } // C1 guard: tiny ratio or perTon
         float  affordableTons =
-            (float)(affordable / ((double)perTon * (double)g_wholesaleRatio));
+            (float)(affordable / denom);
+        // C1 guard: reject INF/NaN/huge tons
+        if (!(affordableTons == affordableTons) || !(affordableTons >= 0.0f) || affordableTons > 1e6f) { snap.content = content; return; }
         if (affordable > 0.0) {
             g_enterprise->chargeWholesaleDelivery(ctx->shop, affordable);
             ctx->charged += affordable;
@@ -1637,6 +1641,11 @@ static void ReadSettings(void)
     if (H->configString(ini, "private_shops", "wholesale_ratio", v, sizeof(v), "") && v[0]) {
         float f = (float)atof(v);
         if (f >= 0.0f && f <= 5.0f) g_wholesaleRatio = f;
+    }
+    // C1 FIX: clamp tiny ratios to 0.01 — prevents INF tons via divide-by-zero in WholesaleSlot affordable path
+    if (g_wholesaleRatio < 0.01f) {
+        Logf("private_shops  wholesale_ratio %.3f < 0.01 — clamped to 0.01 (C1 fix)", (double)g_wholesaleRatio);
+        g_wholesaleRatio = 0.01f;
     }
     g_procureFallback = H->configInt(ini, "private_shops",
                                      "procurement_flag_fallback", 1);
