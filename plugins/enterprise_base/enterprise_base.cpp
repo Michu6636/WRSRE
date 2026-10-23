@@ -2830,13 +2830,16 @@ static int OnPayroll(void* workplace, void* person, float grossWage,
     float  capDaily = 0.0f;
     float  capMin   = 0.0f;
     int    capRateBad = 0;
-    if (g_wageCapEnabled && g_labor && TsmLaborHasV3(g_labor) && g_simClock) {
-        capDaily = g_labor->getEffectiveWageForBuilding(workplace);
-        capMin   = g_labor->getMinimumWage();
-        if (g_simClock->structSize >=
+    // H3 FIX: snapshot globals to avoid race on unload (lock not held across tick)
+    auto* laborSnap = g_labor;
+    auto* clockSnap = g_simClock;
+    if (g_wageCapEnabled && laborSnap && TsmLaborHasV3(laborSnap) && clockSnap) {
+        capDaily = laborSnap->getEffectiveWageForBuilding(workplace);
+        capMin   = laborSnap->getMinimumWage();
+        if (clockSnap->structSize >=
             offsetof(TsmSimClockApi, getDaysPerMonth) +
-                sizeof(g_simClock->getDaysPerMonth)) {
-            int d = g_simClock->getDaysPerMonth();
+                sizeof(clockSnap->getDaysPerMonth)) {
+            int d = clockSnap->getDaysPerMonth();
             if (d > 0 && d <= 400) capDpm = d;
         }
         // v9.14: the rate this cap multiplies is itself persisted data.
@@ -4573,6 +4576,12 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
         if (!TsmLaborHasV3(g_labor))
             Logf("enterprise_base  WARN  citizen_labor v3 not available - "
                  "wages will not be floored to the statutory minimum");
+        // H4 FIX: degrade private_market_wages if mobility hook missing
+        if (TsmLaborHasV5(g_labor) && !g_labor->isWageMobilityHookInstalled()) {
+            Logf("enterprise_base  WARN  citizen_labor wage mobility hook not installed — "
+                 "private_market_wages dynamic bidding disabled, using static INI wages");
+            g_dynamicBidding = 0;
+        }
     } else {
         Logf("enterprise_base  WARN  citizen_labor not available - "
              "private wages will not be intercepted");

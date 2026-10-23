@@ -2030,6 +2030,13 @@ static bool AutoBuildingKey(void* b, uint64_t* outKey, int* outType)
     const uint32_t values[3] = { (uint32_t)type, (uint32_t)qx, (uint32_t)qz };
     const uint8_t* bytes = (const uint8_t*)values;
     for (size_t i = 0; i < sizeof(values); ++i) h = AutoHashMix(h, bytes[i]);
+    // H1 FIX: mix raw float bits to break 0.1m quantized collisions (two clones within 10cm)
+    // keeps qx/qz for backward compat but adds sub-decimeter entropy; one-time permission reset for old saves
+    uint32_t fx = 0, fz = 0;
+    memcpy(&fx, &x, sizeof(fx));
+    memcpy(&fz, &z, sizeof(fz));
+    const uint8_t* fxB = (const uint8_t*)&fx; for (size_t i = 0; i < sizeof(fx); ++i) h = AutoHashMix(h, fxB[i]);
+    const uint8_t* fzB = (const uint8_t*)&fz; for (size_t i = 0; i < sizeof(fz); ++i) h = AutoHashMix(h, fzB[i]);
     *outKey = h ? h : 1;
     if (outType) *outType = type;
     return true;
@@ -2545,6 +2552,18 @@ static bool AutoSetStateTargetTaskMode(void* entry, unsigned char permission)
     const BYTE unload = 0;
     const float unloadPct = 0.0f;
     bool changed = false;
+    // H2 FIX: re-enable disabled entry (native upkeep clears entry[0] for unreachable)
+    // when user explicitly enabled checkbox (LOAD-ON). Without this, disabled-but-present
+    // dedup keeps it counted as existing and never re-enabled after road reconnect.
+    if (permission == 1 && *(BYTE*)entry == 0) {
+        *(BYTE*)entry = 1; changed = true;
+        Logf("[AUTO DO] re-enabled disabled target entry %p for permission LOAD-ON", entry);
+    }
+    // H2 FIX: ensure TaskCfg active/validated flags reflect LOAD-ON
+    if (permission == 1) {
+        if (*((BYTE*)cfg + 0x28) == 0) { *((BYTE*)cfg + 0x28) = 1; changed = true; }
+        if (*((BYTE*)cfg + 0xF0) == 0) { *((BYTE*)cfg + 0xF0) = 1; changed = true; }
+    }
     if (*(float*)((BYTE*)cfg + 0x04) != load) {
         *(float*)((BYTE*)cfg + 0x04) = load; changed = true;
     }

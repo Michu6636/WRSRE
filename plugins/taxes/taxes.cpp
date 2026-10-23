@@ -246,6 +246,22 @@ static void SnapshotMacroStats(MacroStats* out, float cpi)
     out->cpi = (cpi == cpi && cpi > 0.0f) ? cpi : 0.0f;
     if (!g_currency || !g_currency->forEachWallet) return;
 
+    // H5 FIX: when CPI unavailable (resource_pricing disabled), poverty is n/a — don't report 0%
+    if (!(out->cpi > 0.0f)) {
+        static bool logged = false;
+        if (!logged) { Logf("taxes  CPI unavailable (resource_pricing disabled) — poverty rate n/a"); logged = true; }
+        // still collect wallets for avgWallet but skip poverty calc
+        struct { int n; double total; uint64_t id[64]; float bal[64]; } snap2 = {0};
+        g_currency->forEachWallet([](uint64_t /*cid*/, float bal, void* ud) {
+            auto* s = (decltype(snap2)*)ud;
+            if (s->n < 64) { s->bal[s->n] = (bal < 0.0f) ? 0.0f : bal; s->n++; }
+            return 1;
+        }, &snap2);
+        for (int i = 0; i < snap2.n; i++) { out->totalWallet += (double)snap2.bal[i]; out->count++; }
+        if (out->count > 0) out->avgWallet = out->totalWallet / (double)out->count;
+        return;
+    }
+
     // v4.2: poverty = less than poverty_runway_days of survival runway.
     const float floor = g_povertyRunwayDays * out->cpi;
     struct { int n; double total; uint64_t id[64]; float bal[64]; } snap = {0};
@@ -835,12 +851,16 @@ static void TaxPanelRows(void* building, TsmPanelRows* out, void* /*ud*/)
         PushTaxRow(out, L"Cost of Living", v);
 
         // Poverty Rate: share of citizens below poverty_runway_days of
-        // survival runway (wallet < days x CPI), "XX.X%".
-        double poorPct = (stats.count > 0)
-                             ? ((double)stats.belowFloor /
-                                (double)stats.count * 100.0)
-                             : 0.0;
-        _snwprintf_s(v, _countof(v), _TRUNCATE, L"%.1f%%", poorPct);
+        // survival runway (wallet < days x CPI), "XX.X%" — H5 FIX: n/a when CPI missing
+        if (!(stats.cpi > 0.0f)) {
+            _snwprintf_s(v, _countof(v), _TRUNCATE, L"n/a (no CPI)");
+        } else {
+            double poorPct = (stats.count > 0)
+                                 ? ((double)stats.belowFloor /
+                                    (double)stats.count * 100.0)
+                                 : 0.0;
+            _snwprintf_s(v, _countof(v), _TRUNCATE, L"%.1f%%", poorPct);
+        }
         PushTaxRow(out, L"Poverty Rate", v);
 
         // Evictions (Mo): successful evictions executed this month.

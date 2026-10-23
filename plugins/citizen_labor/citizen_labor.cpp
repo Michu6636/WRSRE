@@ -333,6 +333,7 @@ static float g_wageMobilityClampMin = -0.30f;// clamp lower bound
 static float g_wageMobilityClampMax = 0.60f; // clamp upper bound
 static float g_wageMobilityVarBase  = 0.90f; // variance base
 static float g_wageMobilityVarSpan  = 0.20f; // variance span
+static int   g_wageMobilityHookInstalled = 0; // H4 FIX: 1 if inline hook installed
 
 static float g_defaultDailyWage  = 28.0f;
 static float g_unemployedWelfare = 6.0f;
@@ -1481,6 +1482,8 @@ static int Api_SetSectorWage(int sectorId, float wage)
     return 1;
 }
 
+static int Api_IsWageMobilityHookInstalled(void) { return g_wageMobilityHookInstalled; } // H4 FIX
+
 // Pending v3 overrides (loaded before their buildings spawned): walk the
 // live building list once per day and bind by type+coords. Runs inside
 // OnDay under g_lock; the walk reuses the span OnDay already holds.
@@ -2268,7 +2271,8 @@ static bool InstallLaborMobilityHook(void)
                                     sizeof(kStubBase));
     if (!g_laborMobilityStub) {
         Logf("citizen_labor  WAGE MOBILITY hook FAILED (AllocNear - no page "
-             "within rel32 range of the JBE target)");
+             "within rel32 range of the JBE target) — private_market_wages will use static INI wages");
+        g_wageMobilityHookInstalled = 0;
         return false;
     }
 
@@ -2308,9 +2312,12 @@ static bool InstallLaborMobilityHook(void)
     {
         VirtualFree(g_laborMobilityStub, 0, MEM_RELEASE);
         g_laborMobilityStub = nullptr;
+        g_wageMobilityHookInstalled = 0;
+        Logf("citizen_labor  WAGE MOBILITY hook FAILED (InstallInlineHook) — static INI wages only");
         return false;
     }
 
+    g_wageMobilityHookInstalled = 1;
     Logf("citizen_labor  wage mobility hook installed at RVA 0x%06X",
          TSM_HOOK_LABOR_DEST_RVA);
     return true;
@@ -2547,6 +2554,8 @@ static const TsmCitizenLaborApi kApi = {
     Api_GetEffectiveWageForBuilding,
     // --- v4 tail (M3): runtime sector wage write
     Api_SetSectorWage,
+    // --- v5 tail: wage mobility hook status (H4 FIX)
+    Api_IsWageMobilityHookInstalled,
 };
 
 // ---------------------------------------------------------------- lifecycle
@@ -2561,7 +2570,7 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
 {
     TsmBind(host);
     info->name    = "citizen_labor";
-    info->version = "4.8";
+    info->version = "4.9"; // H4 FIX: wage mobility hook status v5
 
     ReadSettings();
     if (!g_enabled) {
@@ -2582,17 +2591,22 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
     // the full v4 iface. Every view carries at least its own tail; a
     // consumer reading past its version's structSize gets nothing,
     // which is the whole point.
-    static TsmCitizenLaborApi kApiV2, kApiV3;
+    static TsmCitizenLaborApi kApiV2, kApiV3, kApiV4;
     memcpy(&kApiV2, &kApi, sizeof(kApiV2));
     kApiV2.structSize =
         (unsigned)offsetof(TsmCitizenLaborApi, getMinimumWage);
     memcpy(&kApiV3, &kApi, sizeof(kApiV3));
     kApiV3.structSize =
         (unsigned)offsetof(TsmCitizenLaborApi, setSectorWage);
+    memcpy(&kApiV4, &kApi, sizeof(kApiV4));
+    kApiV4.structSize =
+        (unsigned)offsetof(TsmCitizenLaborApi, isWageMobilityHookInstalled);
     H->provide(TSM_SERVICE_CITIZEN_LABOR,
                TSM_CITIZEN_LABOR_VERSION_V2, &kApiV2);
     H->provide(TSM_SERVICE_CITIZEN_LABOR,
                TSM_CITIZEN_LABOR_VERSION_V3, &kApiV3);
+    H->provide(TSM_SERVICE_CITIZEN_LABOR,
+               TSM_CITIZEN_LABOR_VERSION_V4, &kApiV4);
     H->provide(TSM_SERVICE_CITIZEN_LABOR,
                TSM_CITIZEN_LABOR_VERSION, &kApi);
     return 0;
