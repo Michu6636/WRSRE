@@ -113,6 +113,7 @@ for /d %%d in (plugins\*) do (
             ) else (
                 set /a BUILT+=1
                 if exist "%%d\!NAME!.ini" (
+                    if exist "build\plugins\!NAME!.ini" del /q "build\plugins\!NAME!.ini" >nul 2>&1
                     copy /Y "%%d\!NAME!.ini" "build\plugins\!NAME!.ini" >nul
                 )
                 REM Remove intermediate compiler files from the source directory
