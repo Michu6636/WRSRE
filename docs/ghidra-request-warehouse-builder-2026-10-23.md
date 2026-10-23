@@ -16,24 +16,42 @@ The player reports two symptoms, and the 2026-10-23 `tesmioloader.log` (17:09:46
 
 > "The check box for the panel of the warehouse did not appear, nor did the DO detect it."
 
-### 1.1 What the log proves
+### 1.1 What the log shows
 
-Log: 3,080 lines, `17:09:46.742` → `17:14:57.369` (the span is **~5 min 11 s**, not seconds).
+Log: 3,080 lines, `17:09:46.742` → `17:14:57.369` (~5 min 11 s).
 
-| Observation | Evidence |
-|---|---|
-| The storage-widget provider ran **only** on the private DO | one `[AUTO DO] storage widget probe:` line, `:855`, `building=000002979ACC9580 type=43 priv=1 nativeStorage=1 willDraw=0` |
-| Every widget pass was rejected by the private gate | 590 × `[AUTO DO] storage widget: hasStore but isPrivate=1, skipping checkbox (building=000002979ACC9580 type=43)`, `:856` → `:3039` (`17:13:54.556` → `17:14:46.329`) |
-| `type=43` is the **DO**, not the warehouse | `AUTO_DO_ROAD_TYPE 43` (`private_logistics.cpp:1929`) |
-| **Only the DO window was ever opened in this run** | exactly 6 × `ESC probe: new window`, and each is paired within 2 ms with `DEBUG hook=do idx=6 object=0x2979acc9580` (`:849/851`, `:1636/1637`, `:2203/2204`, `:2457/2458`, `:2583/2584`, `:2883/2884`). No `hook=shop/storage/residence/pub/factory/cityhall/citizen` anywhere. |
-| The warehouse **is** discovered by the world scan | `:1751` `state storage candidate name=warehouse_covered_combined key=D0BA81CF239FFE8F pos=(-5758.8,5325.1) permission=OFF-DEFAULT` (1 of 18 candidates) |
-| …but it is never planned as a target | `:2141` `e.hasStorage = (forceOn || site.permission == 1) ? 1 : 0;` — `state_storage_always_on=0` and permission is `OFF-DEFAULT`; `:1754` `candidates=2 planned=2` (the two *private* storages) |
+The player states the warehouse panel was opened **several times** during this run. Four independent once-per-building probes agree that **no widget provider was ever invoked with the warehouse building**:
 
-**Critical limitation — read this before drawing conclusions.** The warehouse window was **never opened** in this run. All six window opens are the DO. So this log says **nothing** about which builder draws the warehouse panel; it cannot distinguish "not hooked" from "hooked but gated in `AppendRowsImpl`". That is exactly what **Block 0** must settle, and it is a 2-minute test.
+| # | Probe | Where | Throttle | Fired for | Warehouse |
+|---|---|---|---|---|---|
+| 1 | `[PRIV TILE] reached <ptr>` | `enterprise_base.cpp:3506-3513` via `:3552` | once per distinct building ptr (`s_seen`) | DO only, `:852` | **absent** |
+| 2 | `[AUTO DO] storage widget probe:` | `private_logistics.cpp:2128-2139` | once per distinct building key (`s_lastWidgetKey`) | DO only, `:855` | **absent** |
+| 3 | `ui_panels  widget pass refused:` | `ui_panels.cpp:2186-2192` | none | — | **absent** |
+| 4 | `ui_panels  DEBUG hook=<name>` | `ui_panels.cpp:2460-2477` | once per distinct window ptr (`s_lastDbgWin`) | `do` ×6, all `object=0x2979acc9580` | **absent** |
 
-### 1.2 What the log *does* prove — the provider's preconditions already pass
+Probes 1 and 2 are the strong ones: both are keyed per building and fire on **first sight** of any building that reaches the pass, before any type or privacy gate can suppress them. `TileProbeOnce` (`:3506`) logs before the `type == 39` bail; the storage probe (`:2128`) is commented "ALWAYS log first sight of any building that reaches widget pass (throttled) to prove hook fired". Neither ever saw the warehouse, although the warehouse is a live building whose pointer appears 384 times in the log as a passive B2B delivery target.
 
-This is the one genuinely decisive inference available, and it is worth stating precisely because it eliminates the two most obvious hypotheses.
+### 1.2 The ESC probe cannot see an unhooked window — correcting an earlier misreading
+
+An earlier draft of this document concluded from "6 × `ESC probe: new window`, all paired with `DEBUG hook=do`" that **only the DO window was opened** in the run. **That inference was invalid and has been retracted.**
+
+`EscCloseProbe` (`ui_panels.cpp:1693-1739`) reads `g_frame.win`, and `g_frame` is populated **exclusively** inside `AppendWidgetsImpl` at `:2197-2209` (`g_frame.active = 1; g_frame.win = w;`), cleared at `:2243`, and zeroed on every early return (`:2183`, `:2191`). It also bails at `:1697` when `!g_frame.game || !g_frame.win`.
+
+So the ESC probe is **hook-driven, not a window-system hook**: it can only ever report windows that already reached one of the 8 hooked builders. A window built by an unhooked builder leaves `g_frame` at its previous/zero state and produces **no ESC line at all**. The probe's silence about the warehouse is therefore *expected* if the warehouse is unhooked — it is not evidence that the window was never opened.
+
+The same blindness explains the other silences: `AppendWidgetsImpl` only runs from `RunHookBody`, so no hook ⇒ no provider ⇒ no `[PRIV TILE]`, no storage probe, no `refused` line.
+
+### 1.3 What this now establishes
+
+Given the player opened the warehouse several times and **all four** independent probes are silent for it, the conclusion is:
+
+> **The `warehouse_covered_combined` window is not served by any of the 8 hooked builders.** Its panel is completely vanilla — no plugin rows and no plugin widgets of any kind, from any of the four providers.
+
+This is consistent with the player's report and is *stronger* than the previous draft's conclusion, not weaker, because it rests on per-building first-sight probes rather than on the hook-driven ESC probe.
+
+**One residual doubt, and it is cheap to kill:** probe 4 is the only one throttled on *window pointer* rather than building, and the engine reuses window allocations. If the warehouse repeatedly reused the exact window pointer that `s_lastDbgWin` already held, its `DEBUG hook=` line could be suppressed. Probes 1 and 2 are keyed per *building* and could not be suppressed this way — but they sit downstream of `AppendWidgetsImpl` being reached at all. To make the case airtight, drop the throttle for one run (see Block 0).
+
+### 1.4 What else the log proves — the provider's preconditions already pass
 
 The world scan at `private_logistics.cpp:2472` and the widget provider at `:2142` use **the same predicate**:
 
@@ -46,32 +64,42 @@ if (AutoHasNativeStorage(b) &&                 hasNative = AutoHasNativeStorage(
       if (isPrivate) ... else -> state pool
 ```
 
-`warehouse_covered_combined` was added to `g_autoStateStorageSites` — the `else` (non-private) branch of that exact predicate. Therefore, **at runtime**:
+`:1751` records `state storage candidate name=warehouse_covered_combined key=D0BA81CF239FFE8F pos=(-5758.8,5325.1) permission=OFF-DEFAULT`, emitted from the **non-private branch** of that exact predicate. Therefore, at runtime:
 
-* `AutoHasNativeStorage(warehouse) == true` — otherwise it would never have reached the `else` branch;
-* `isBuildingPrivate(warehouse) == false` — it took the state branch (and every B2B line logs `priv=0`);
+* `AutoHasNativeStorage(warehouse) == true` — it could not have reached that branch otherwise;
+* `isBuildingPrivate(warehouse) == false` — it took the state branch (every B2B line logs `priv=0`);
 * `type != 43 / customs` — it passed those guards.
 
-**Both conditions the widget provider checks are already satisfied for the warehouse.** If the provider were ever called with the warehouse's `Building*`, it *would* draw the checkbox — `type != 5` is explicitly tolerated at `:2152-2154` ("drawing anyway (warehouse fix)").
+**Both conditions the widget provider checks are already satisfied for the warehouse.** If the provider were ever called with the warehouse's `Building*`, it *would* draw the checkbox — `type != 5` is explicitly tolerated at `:2152-2154`.
 
-So the failure is **not** in the provider, **not** in `AutoHasNativeStorage`, and **not** in the privacy gate. It is upstream: the provider is only ever called from `AppendRowsImpl` (`ui_panels.cpp:2401`), which only runs from `RunHookBody` for the 8 hooked surfaces. The remaining possibilities are exactly two:
+So the defect is **not** in the provider, **not** in `AutoHasNativeStorage`, and **not** in the privacy gate. It is upstream: no hooked builder fires for that window.
 
-```
-(A) no hooked builder draws the warehouse window   -> need a 9th hook   (Block A0 / A)
-(B) a hooked builder does draw it, but the window fails
-    AppendRowsImpl's own gates (W_HIDDEN / W_BUILDING /
-    TsmLooksLikeBuilding)                            -> no new hook     (Block 0 / Block E)
-```
-
-The deadlock is then:
+The deadlock:
 
 ```
 permission = 1   <-  only set by the checkbox (AutoStatePermissionSet)
-checkbox drawn   <-  provider called AND hasNative AND !private   (all three already true for the warehouse)
-provider called  <-  AppendRowsImpl runs, i.e. a hooked builder fired
+checkbox drawn   <-  provider called AND hasNative AND !private   (all three already true)
+provider called  <-  AppendRowsImpl runs, i.e. a hooked builder fired   <-- BREAKS HERE
 ```
 
-### 1.3 Why the existing evidence does not settle it
+`:2141` then explains the second symptom: `hasStorage = (forceOn || site.permission == 1) ? 1 : 0`, and the day summary reads `candidates=2 planned=2` (`:1754`) out of 18 discovered candidates — the warehouse's `OFF-DEFAULT` keeps it out of the plan.
+
+### 1.5 The four widget providers (corrected inventory)
+
+An earlier draft said the shop checkboxes came from one provider. That was wrong. Four providers are registered, in this order (`tesmioloader.log:70/108/126/173`):
+
+| # | plugin | widget | type gate |
+|---|---|---|---|
+| 1 | `citizen_labor` | wage slider + **`"Apply to Whole Sector"`** checkbox (`:2502`, `:2521`) — workplace vs whole-category scope, exactly the pattern the player cites as the model | `LaborWindowType` (`:2364`): type in `[g_workplaceMin, g_workplaceMax]`, not excluded, not 39, not private |
+| 2 | `enterprise_base` | `[ Private Enterprise ]` checkbox (`:3600`) or the wide `MAKE IT PRIVATE` bar (`:3579`) | `TsmLooksLikeBuilding`, bail on type 39 |
+| 3 | `private_logistics` | **`"Allow private DOs to load here"`** checkbox (`:2161`) — the one this request is about | `hasNative && !private` only; **no type gate** |
+| 4 | `taxes` | `[ Fiscal Policy & Taxes ]` (`:974`) | type 39 |
+
+`private_shops`, `citizen_retail` and `private_construction` register no widget provider at all — their panels are text-row only, and `private_construction` is a stub. So the checkbox a player sees on a shop is provider 2, and on a wage building it is provider 1.
+
+This is the precedent that matters: providers 1 and 3 both draw a plain scope checkbox on a **state** building. The warehouse is a state building (`priv=0`, proven). Nothing distinguishes it from a wage building except that no hooked builder fires for its window.
+
+### 1.6 Why the v6.15 evidence does not settle it
 
 `docs/ghidra-request-warehouse-storage-v6.15.md` §1 concluded:
 
@@ -85,9 +113,9 @@ So the question this request must answer is narrow:
 
 > **When the player opens the `warehouse_covered_combined` window, which function draws it, and is that function one of the 8 currently hooked builders?**
 
-If the answer is "one of the 8", the defect is in the plugin's append gates (§1.4) and no new hook is needed. If it is a 9th builder, the deliverable is a hookable RVA with verified prologue bytes.
+If the answer is "one of the 8", the defect is in the plugin's append gates (§1.7) and no new hook is needed. If it is a 9th builder, the deliverable is a hookable RVA with verified prologue bytes.
 
-### 1.4 The 8 hooked surfaces (for cross-reference)
+### 1.7 The 8 hooked surfaces (for cross-reference)
 
 | idx | name | target RVA | hook kind |
 |---|---|---|---|
@@ -106,20 +134,20 @@ All 8 reported `hook ok` in the log. Widget providers run only from `AppendRowsI
 
 ## 2. Work to run
 
-### Block 0 — Runtime discriminator first (no Ghidra, 2 minutes, decisive)
+### Block 0 — Confirm the unhooked finding (no Ghidra, ~3 minutes)
 
-Before any static work, settle whether the warehouse window reaches a hooked builder **at all**:
+§1.1 already points hard at "no hooked builder fires for the warehouse window", but probe 4 is throttled on window pointer (`s_lastDbgWin`, `:2466`), so a reused allocation could in principle hide it. One run makes it airtight.
 
-1. Start the game, load the save, open **only** the `warehouse_covered_combined` window, leave it open ≥5 s, then close it.
-2. `grep "DEBUG hook=" tesmioloader.log`
-3. Interpret:
-   * a new line appears (e.g. `hook=shop idx=0` or `hook=storage idx=7`) → the builder **is** hooked, and the defect is downstream. Go to **Block E**.
-   * no new line appears → no hooked builder draws that window. Go to **Block A**.
-4. Also record whether any `ui_panels  widget pass refused:` or `TsmLooksLikeBuilding` line appears — that is Block E evidence.
+1. Temporarily change `ui_panels.cpp:2467` so the `DEBUG hook=` line logs **once per (hook, window) pair** rather than only on a window change — e.g. key the static on `idx` and log whenever `hk->probed` is still 0, or simply drop the `if (w != s_lastDbgWin)` guard for the test. Rebuild `ui_panels`, confirm a fresh DLL timestamp (`INSTRUCTIONS.md:122-130`).
+2. Load the save, open **only** the `warehouse_covered_combined` panel, leave it open ≥5 s, close it, then open one shop and one wage building as controls.
+3. Read the log:
+   * `hook=<name>` for the warehouse → the builder **is** hooked; go to **Block E**.
+   * nothing for the warehouse, but `hook=shop` / `hook=<wage building>` for the controls → the warehouse window is **unhooked**; go to **Block A0**.
+4. Also record: does the warehouse panel show the `citizen_labor` wage slider? If `LaborWindowType` accepts its type (`:2372`), the warehouse panel should carry provider 1's controls as well. Their presence or absence is an independent signal about whether the pass ran at all, and which providers saw it.
 
-**Pass criteria:** one line stating which (if any) hook fired for the warehouse window, with the `object=` pointer, plus the `w` pointer implied by the `DEBUG` throttle.
+**Pass criteria:** for the warehouse window, a definite statement — "these hooks fired: …" or "no hook fired" — plus the `object=` (`window+0x240`) value.
 
-> Note: the `DEBUG hook=` line is throttled on a *changing window pointer* (`ui_panels.cpp:2466-2475`, `static void* s_lastDbgWin`), and it is emitted whenever `g_probe` is on (it is: `probe 1`). If the engine reuses one window object for all building panels, a repeat open of a *different* building may not log. If that is suspected, temporarily log unconditionally for the test, or rely on Block A.
+> Note: per §1.2, `ESC probe` is **not** usable as a window detector here. It reads `g_frame.win`, which only exists during a hook-driven append pass. Do not draw conclusions from ESC lines alone.
 
 ### Block A0 — The dispatcher dump is already in the log, and it has a repeating structure
 
@@ -309,7 +337,7 @@ The investigation has exactly four possible outcomes. Each maps to one edit; pic
 | **A** | `0x6F8CC0` is called once per window open and receives both the window and the building | **1 hook on `0x6F8CC0`** as a 9th `g_hooks[]` row | small | **all ~69 window kinds** — warehouse, construction sites, everything currently unhooked |
 | **B** | `0x6F8CC0` is a preamble that does *not* receive the window, but Block A0.4 names the warehouse's arm target | **1 hook on that arm target** as a 9th row | small | the warehouse only |
 | **C** | The arm target's prologue has no clean ≥14-byte steal (Block D) | **call-site hook** on the arm's `call`, pattern already proven for the DO at `0x6EB4FD` | medium | the warehouse only |
-| **D** | Block 0 shows a hooked builder *does* fire for the warehouse | **no new hook** — fix `AppendRowsImpl`'s gates (`W_HIDDEN` 0x01, `W_BUILDING` 0x240, `TsmLooksLikeBuilding`) | small | n/a |
+| **D** | Block 0 shows a hooked builder *does* fire for the warehouse — **unlikely** after §1.1, but not yet excluded | **no new hook** — fix `AppendRowsImpl`'s gates (`W_HIDDEN` 0x01, `W_BUILDING` 0x240, `TsmLooksLikeBuilding`) | small | n/a |
 
 Why option **A** is worth testing first: if it holds, one hook replaces the per-type table and the "9th builder" treadmill ends permanently. Every future building type gets widgets for free. If it fails A0.2 (no window argument), fall back to **B** without further analysis.
 
@@ -320,7 +348,9 @@ Why option **A** is worth testing first: if it holds, one hook replaces the per-
 ## 5. What NOT to do
 
 - **Do not** re-derive what is already proven: the tank offsets, the burn/refuel path, the 16 transfer call sites, `param_9`'s per-site values. None of that is in scope.
-- **Do not** treat `storage diag: 307 calls, 1 in storage range` as proof that all buildings share one builder. That is the specific over-reading this request exists to correct.
+- **Do not** treat `storage diag: 307 calls, 1 in storage range` as proof that all buildings share one builder. That is the specific over-reading this request exists to correct. Note also that `DumpDispatcherTargets` (`:2651`) is a blind byte scan that treats every `0xE8` byte as a call, so some of its 172 "targets" are false positives.
+- **Do not** use `ESC probe` lines as a window detector. `EscCloseProbe` reads `g_frame.win`, which is only set inside the hook-driven `AppendWidgetsImpl`; an unhooked window produces no ESC line. See §1.2.
+- **Do not** conclude from an absence of `DEBUG hook=` lines alone that a window was never opened — that line is throttled on window pointer (`s_lastDbgWin`). Use the per-building probes 1 and 2 from §1.1, or Block 0.
 - **Do not** change `private_logistics.cpp`, `ui_panels.cpp`, the ini, or the build during the investigation.
 - **Do not** propose a name-based allowlist (`if name == "warehouse_*"`) as the fix. It is the interim workaround, not the answer.
 - **Do not** run two `analyzeHeadless` sessions concurrently — the project takes an exclusive lock.
