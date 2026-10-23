@@ -12,7 +12,7 @@
 
 ## 0. What changed in this revision
 
-The previous revision adopted Option A but its §4.2 pseudocode contained thirteen defects that would have shipped bugs. This revision fixes them. Each is marked `C#` in the body so the diff is legible.
+The previous revision adopted Option A, but its §4.2 pseudocode contained thirteen defects that would have shipped bugs, and its §10.0 decision rule was tautological — it could only ever return one answer, at every site, regardless of the truth. This revision fixes both. Each item is marked `C#` in the body so the diff is legible.
 
 | # | Defect in the previous revision | Fix |
 |---|---|---|
@@ -29,6 +29,7 @@ The previous revision adopted Option A but its §4.2 pseudocode contained thirte
 | **C11** | The `[TARIFF]` line and the `g_tariff*` counters stayed at mode 0 while the money moved at mode 1, so the calibration log no longer matched the payment (review G11). | Emit the line at the paid event, carrying measured and constant figures (§8.3). |
 | **C13** | `TariffFor()` unconditionally adds the wear reserve, so a delivery that falls back mid-trip pays the reserve twice. | Optional `wearLitresOverride` on `TariffFor()`, defaulted so existing call sites are untouched (§4.6). |
 | **C12** | §14 cited `AGENT_REPORT_private_industry.md` for "`param_9` = fleet owner". That document says the opposite, and the previous §4.2 used `vehicleHome == p9` as the return predicate — a predicate that fires on **every** delivery if `p9` is in fact the owner. | `p9` becomes an explicit pre-step (§10.0). The return leg is gated behind `trip_return_via_p9` and is never required for correct pricing (§4.4). |
+| **C14** | §10.0's decision rule tested `p9 == vhome` "on ordinary deliveries" — but the delivery site `0x68F7F9` loads `param_9` from `*(veh+0x4F8)`, so that test is **tautologically true** and can only ever return its first branch. | Compare `p9` against `p2` at mode 0 on `0x68F792` instead, with four outcomes; `p9` is documented as site-dependent, not a single meaning (§4.5, §10.0). |
 
 **Numbering caution:** `B#`/`G#` below are the findings of `docs/review-per-trip-fuel-plan.md` §2–§3. They are **not** the `G1`–`G10` of `docs/AGENT_REPORT_private_industry.md`, which is a different investigation with colliding numbering. Where the AGENT_REPORT is cited it is named in full.
 
@@ -229,9 +230,10 @@ static void OnVehicleEvent(void* vehicle, void* home, void* p9,
     const bool isDelivery = (tons < 0.0f);                       // C3, site 0x68F7F9
     const bool isLoad     = (tons > 0.0f);                       // C3, site 0x6953C4
 
-    // The return leg is OPTIONAL and disabled until §10.0 settles what p9 is.
-    // If p9 is the fleet owner (the plugin comment), home == p9 is true on
-    // EVERY delivery and this predicate would swallow every payment.
+    // The return leg is OPTIONAL and ships DISABLED (default 0).
+    // At 0x68F7F9 the engine loads param_9 from *(veh+0x4F8), so home == p9 is
+    // true on EVERY delivery by construction - not because p9 is the owner.
+    // Leaving this on would swallow every payment. See §4.4 and §10.0.
     const bool isReturn = g_tripReturnViaP9 && isDelivery && home && home == p9;
 
     if (isLoad) {                 // the load ALWAYS starts a trip (C5)
@@ -290,22 +292,29 @@ static double ReadTankNow(void* v)
 | Refill | `tank - lastTons > 0.02` | skip the interval, advance the baseline, **do not** close the trip | Yes |
 | TTL | no event for `per_trip_ttl_sec` | log `source=expired`, reset the accumulators | Yes |
 
-`load -> next load` is the primary boundary because both events are emitted for every trip regardless of `param_9`. The return leg is worth having — it lets `tripFuel` be reported per trip rather than per load cycle — but it must not be the thing the money depends on until §10.0 confirms that `p9` is the destination building rather than the fleet owner.
+`load -> next load` is the primary boundary because both events are emitted for every trip regardless of `param_9`. The return leg is worth having — it lets `tripFuel` be reported per trip rather than per load cycle — but it must not be the thing the money depends on.
+
+> **Why `trip_return_via_p9` ships at `0`.** At `0x68F7F9`, `p9 == vhome` is guaranteed by the engine: `param_9` is loaded from `*(veh+0x4F8)` (`docs/AGENT_REPORT_private_industry.md:114`, store at `:121`). A return predicate built on that comparison would classify **every** delivery as a return leg. v0.17 escapes this only because `isStaging` sets a ledger label and never gates money — see §4.5.
 
 Neither boundary uses the `known` site label. The site table's labels are for the log only (`:594-596`), and three of them (`0x68EECA`, `0x1CB7FF`, `0x1B2898`) are `+tons` at mode 0 even though they are labelled load/delivery.
 
 ### 4.5 Payee resolution — and the `p9` question
 
-**This is the one open question in the plan and it must be settled before §4.2 ships.** The two documents in this repo disagree:
+**This is the one open question in the plan and it must be settled before §4.2 ships.** The sources in this repo disagree with each other — and the AGENT_REPORT's summary line disagrees with its own per-site detail:
 
 | Source | Claim |
 |---|---|
 | `private_logistics.cpp:1148-1149` | `p9` = **fleet owner** on the delivery family, NULL on the load family, "NOT an endpoint" (proven in two sessions) |
 | `private_logistics.cpp:629` | `0x68F792` — "param_2 = building, **param_9 = fleet owner**" |
-| `docs/AGENT_REPORT_private_industry.md:33` | `Transfer param_9 (stack+0x40)` = **dest Building***, NULL = order-scan mode — "likely (banked)" |
+| `docs/AGENT_REPORT_private_industry.md:33` | summary line — `Transfer param_9 (stack+0x40)` = **dest Building***, NULL = order-scan mode, "likely (banked)" |
+| `docs/AGENT_REPORT_private_industry.md:110-115` | **the per-site table**, from literal disassembly — NULL at `0x1B2898`/`0x1B484B`, `*(veh+0x4F8)` at `0x68F7F9`, `RSI` at `0x6953C4` (store provenance `:121`, callee slot `:139`) |
 | `docs/AGENT_REPORT_private_industry.md:130` | "For `bld=NULL` sites, read the destination from the resolved order (`+0x50` records), **not from `param_9`**" |
 
-The previous revision's §14 cited the AGENT_REPORT for "param_9 = fleet owner", which that document does **not** say. Resolve it with the zero-risk instrumentation in §10.0, then:
+The previous revision's §14 cited the AGENT_REPORT for "param_9 = fleet owner", which that document does **not** say. But the report's summary line is also incomplete, because **`p9` is site-dependent, not a single thing**:
+
+> At `0x68F7F9` `p9` equals the vehicle's home depot **by construction** (`param_9` is loaded from `*(veh+0x4F8)`); at `0x68F792` it may be the destination; at `0x1B2898` and `0x1B484B` it is NULL, and the destination is resolved from the order. Neither the plugin comment (`:1148-1149`) nor the AGENT_REPORT summary (`:33`) describes all four sites.
+
+Resolve the `0x68F792` case with the read-only procedure in §10.0, then:
 
 ```cpp
 // The vehicle's own home building is the fleet owner the engine refuels from
@@ -526,7 +535,7 @@ If measured burn in the CPI path is ever wanted, add `baskets_per_litre` as an e
 | `per_trip_fallback_skip` | `0` | With `per_trip_fallback = 0`: 0 = skip silently, 1 = skip and log each one |
 | `per_trip_log_per_day` | `60` | Per-delivery `[TRIP FUEL]` lines |
 | `per_trip_ttl_sec` | `600` | Close/skip trip state idle for this long |
-| `trip_return_via_p9` | `0` | Treat `vehicleHome == p9` at a delivery as the return leg. Leave `0` until §10.0 settles what `p9` is |
+| `trip_return_via_p9` | `0` | Treat `vehicleHome == p9` at a delivery as the return leg. **Disabled:** at `0x68F7F9` the engine loads `param_9` from `*(veh+0x4F8)`, so the predicate is true on every delivery (§4.4) |
 
 | State | Behaviour |
 |---|---|
@@ -598,20 +607,27 @@ Move `g_tariffCount`, `g_tariffSum`, `g_tariffCostSum` and `g_tariffShareSum` to
 
 ## 10. Validation
 
-### 10.0 Pre-step: settle `p9` (do this first — it is a one-line log change)
+### 10.0 Pre-step: settle `p9` (read-only — no instrumentation required)
 
-Before any of the above is built, add to the existing `[B2B SITE]` line (`:1316-1323`):
+The existing `[B2B SITE]` line already prints everything this experiment needs
+(`private_logistics.cpp:1318-1323`):
 
 ```
-p9=%p vhome=%p p9_eq_home=%d
+[B2B SITE] rva=0x%06X mode=%u sign=%c tons=%.3f commit=%d flag=%u p2=%p "%s" priv=%d p9=%p vhome=%p class=%s
 ```
 
-Then read the log:
+Compare `p9` against `p2` at **mode 0** on `0x68F792`, where `p2` is the destination building:
 
-- if `p9 == vhome` on ordinary deliveries, `p9` is plausibly the fleet owner;
-- if `p9` is a variety of unrelated buildings, it is the destination and §4.5's `home`-first ordering is required.
+| Observation | Conclusion | Consequence |
+|---|---|---|
+| `p9 == p2` | `p9` is the destination | `pd.owner` is unusable; `ResolvePayee()` must lead with `home` |
+| `p9 == vhome` | `p9` is the fleet owner | keep `pd.owner` as the primary candidate |
+| `p9 == NULL` | the plugin comment is wrong | `pd.owner` is never set; `home`-first is mandatory |
+| anything else | ambiguous | keep `home`-first; leave `trip_return_via_p9 = 0` |
 
-This costs one `Logf` argument and settles the question that §4.5 otherwise has to hedge. It is the only place the two documents in this repo disagree.
+Adding `BuildingName(p9)` to the same line is the only code change worth making, and it is optional — a building name makes the verdict readable without matching raw pointers by hand.
+
+> **Do not** test `p9 == vhome` at `0x68F7F9`. There `param_9` is loaded from `*(veh+0x4F8)` (`docs/AGENT_REPORT_private_industry.md:114`, store at `:121`), so the comparison is **tautologically true** and cannot distinguish the hypotheses. That is why the earlier form of this section was wrong: it would have reported "`p9` is plausibly the fleet owner" on every run, at every site, regardless of the truth.
 
 ### 10.1 Procedure
 
@@ -694,4 +710,4 @@ No changes to `ui_panels.cpp`, `enterprise_base.cpp`, or any other plugin.
 - `plugins/private_logistics/private_logistics.cpp` — `:355` (`veh+0x4F8`, mode 1 only), `:959-993` (`TariffFor` returns a total), `:971-973` (density conversion), `:1053-1089` (`Pay` guards), `:1146-1152` (`p2`/`p9` roles), `:1179-1182`, `:1197` (`isStaging`), `:1245-1257` (carrier ring), `:1332` (billing gate), `:1375-1378` (payee rules), `:1414-1421` (factory block), `:1648-1651` (counter reset), `:1815`, `:1833-1849` (`[TANK]` denominators), `:2966-2974` (`VehSlot`), `:3039-3092` (`FuelSlotTons`, `MirrorTons`, `TankCapacity`), `:3237-3269` (`ReadTank`)
 - `src/resource_pricing_api.h:104` — "The live price of **one ton** of the given resource"
 - `docs/engine/vehicle-fuel-system.md` — tank is the `veh+0x3B8` slot matching `game+0xC3F0`; refuel draws from `veh+0x4F8` with `game+0xC330`; burn gate `veh+0x448 ∈ {1,2}` and `veh+0x440 == 9` ("no burn, no refuel"); refuel is stochastic (§3.4, §4.1)
-- `docs/AGENT_REPORT_private_industry.md` — `:33` `param_9` = destination, "likely (banked)" (conflicts with the plugin comment; see §4.5); `:130` destination from order records for `bld = NULL`; `:163-166` `bld+0xC70/+0xC78` fleet vector; G6 "billing must key on `mode==1`, never on `flag`"
+- `docs/AGENT_REPORT_private_industry.md` — `:33` summary line `param_9` = destination, "likely (banked)" (conflicts with the plugin comment; see §4.5); **`:110-115` the per-site `param_9` table** (NULL at `0x1B2898`/`0x1B484B`, `*(veh+0x4F8)` at `0x68F7F9`, `RSI` at `0x6953C4`); `:121` the `MOV [RSP+0x40],R15` store that makes `param_9` readable at the call; `:139` its callee slot `[RSP+0xD8]`; `:130` destination from order records for `bld = NULL`; `:163-166` `bld+0xC70/+0xC78` fleet vector; G6 "billing must key on `mode==1`, never on `flag`"
