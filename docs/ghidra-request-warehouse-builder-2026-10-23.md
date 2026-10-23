@@ -143,6 +143,8 @@ All 8 reported `hook ok` in the log. Widget providers run only from `AppendRowsI
 3. Read the log:
    * `hook=<name>` for the warehouse → the builder **is** hooked; go to **Block E**.
    * nothing for the warehouse, but `hook=shop` / `hook=<wage building>` for the controls → the warehouse window is **unhooked**; go to **Block A0**.
+   * `hook=<name>` for the warehouse **but no providers ran** → the pass was reached and returned silently. The only silent returns above the providers are `ui_panels.cpp:2172` (`g_widgetCount <= 0`) and **`:2173` (`!building || !game || !w`)** — i.e. `window+0x240` was NULL. That is the one alternative to "unhooked" that all four §1.1 probes cannot distinguish, because a NULL building also suppresses `[PRIV TILE]`, the storage probe and `widget pass refused` (`:2186` is only reached when `building` is non-NULL). Record the `object=` value explicitly to settle it.
+
 4. Also record: does the warehouse panel show the `citizen_labor` wage slider? If `LaborWindowType` accepts its type (`:2372`), the warehouse panel should carry provider 1's controls as well. Their presence or absence is an independent signal about whether the pass ran at all, and which providers saw it.
 
 **Pass criteria:** for the warehouse window, a definite statement — "these hooks fired: …" or "no hook fired" — plus the `object=` (`window+0x240`) value.
