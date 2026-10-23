@@ -1,3 +1,22 @@
+// v6.15 updates (the warehouse window - dispatcher Level 1B):
+//   - The dispatcher FUN_1406E9B80 is a TWO-LEVEL switch, and the plugin only
+//     ever sat on level one. Level 1 is `kind = *(int*)(window+0x34)` (W_KIND,
+//     :558): kind == 0 falls through to a sub-switch and then to the building's
+//     td+0x360; kind != 0 goes straight to its own builder family. All eight
+//     builders we hook are kind == 0. The warehouse window is kind == 3, so it
+//     never reached any of them - which is why its panel carried no rows and no
+//     widgets at all, and why the storage checkbox (private_logistics) could
+//     never draw: the provider needs AppendRowsImpl to run, and AppendRowsImpl
+//     needs a hook to fire.
+//   - NEW 9th hook: "warehouse", call-site patch at 0x6EA5EF (`E8 8C 22 11 00`
+//     -> 0x7FC880), guarded by a byte-exact check of the kind==3 cluster at
+//     0x6EA5E3. No inline hook: 0x7FC880 starts MOV RAX,RSP and only reaches a
+//     clean boundary 18 bytes in.
+//   - DEBUG hook lines now print wkind=<window+0x34> so the model is verifiable
+//     from a live log: every pre-existing hook must read wkind=0.
+//   - The storage checkbox needs no change. hasNative and !isPrivate already
+//     hold for the warehouse (it is a world-scan state-storage candidate), so
+//     once the append pass runs the checkbox appears and can set permission=1.
 // v6.6 updates (PRIV TILE REGRESSION - root cause: no building/person
 //     discriminator in the widget pass):
 //   - SYMPTOM: after the Citizen wallet hook moved from the dead candidate
@@ -928,8 +947,9 @@ struct PanelHook {
                             // draws), it just stops appending to it.
 };
 
-#define MAX_HOOKS 8
+#define MAX_HOOKS 9
 #define HOOK_STORAGE 7    // v6.11: type-5 storage panel, verified call-site hook
+#define HOOK_WAREHOUSE 8  // v6.15: Level 1B window kind 3 (0x7FC880), CALL-SITE hook
 #define HOOK_CITYHALL 4     // index of the City Hall builder (0x72DBF0)
 #define HOOK_CITIZEN  5     // index of the citizen panel builder (candidate RVA below)
 #define HOOK_DO       6     // v6.7: distribution office (type 43), CALL-SITE hook
@@ -1006,6 +1026,25 @@ static const BYTE kStorageExpect[] = {
     0x57, 0x48, 0x8D, 0xAC, 0x24, 0xB0, 0xC9, 0xFF,
     0xFF, 0xB8, 0x50, 0x37, 0x00, 0x00
 };
+// v6.15: the warehouse/window-kind-3 guard and its CALL, 17 bytes at 0x6EA5E3.
+//
+//   6EA5E3  83 7E 34 03        CMP dword ptr [RSI+0x34], 3   ; W_KIND == 3?
+//   6EA5E7  75 0B              JNZ  +0x0B                    ; not this arm
+//   6EA5E9  48 8B D6           MOV  RDX, RSI                 ; arg2 = window
+//   6EA5EC  48 8B CF           MOV  RCX, RDI                 ; arg1 = context
+//   6EA5EF  E8 8C 22 11 00     CALL 0x7FC880                 ; the builder
+//
+// RSI is the WINDOW (W_KIND 0x34 is the window kind, :558), which is why the
+// same (context, window) argument pair reaches this builder as every hooked
+// one - the call-site cave can therefore reuse RunHookBody unchanged.
+// 0x6EA5EF + 5 + 0x0011228C = 0x7FC880.
+static const BYTE kWarehouseExpect[] = {
+    0x83, 0x7E, 0x34, 0x03,
+    0x75, 0x0B,
+    0x48, 0x8B, 0xD6,
+    0x48, 0x8B, 0xCF,
+    0xE8, 0x8C, 0x22, 0x11, 0x00
+};
 static const BYTE kCitizenExpect[] = {
     0x48, 0x8B, 0xC4, 0x53,
     0x48, 0x83, 0xEC, 0x40,
@@ -1060,6 +1099,8 @@ static const BYTE kCitizenExpect[] = {
 // after the callee returns, so no trampoline and no reordering is needed -
 // the shim simply calls FUN_140741170 by address and then appends.
 #define RVA_DO_BUILDER      0x741170
+#define RVA_WAREHOUSE_BUILDER 0x7FC880  // v6.15: Level 1B kind==3 window builder
+#define RVA_WAREHOUSE_GUARD   0x6EA5E3  // CMP dword ptr [RSI+0x34], 3
 #define RVA_STORAGE_BUILDER 0x4CABD0
 #define RVA_STORAGE_CALLSITE 0x6EA80C
 #define RVA_WINDOW_DISPATCH 0x6E9B80
@@ -1084,6 +1125,11 @@ static PanelHook g_hooks[MAX_HOOKS] = {
     // v6.15: inline hook for 0x4CABD0 — 22B prologue 40 55 57 41 54 41 56 41 57 48 8D AC 24 B0 C9 FF FF B8 50 37 00 00
     // verified via Ghidra Blocks A/B + live dump (§8.1/§8.7); no change to RVA. Falls back to call-site 0x6EA80C if inline refuses.
     { "storage",  0x4CABD0, sizeof kStorageExpect, kStorageExpect, NULL, 0, 0, 0, 0, 0 },
+    // v6.15: stolen == 0 -> call-site hook, same convention as "do". The warehouse
+    // window sits on the dispatcher's kind==3 Level 1B arm, which none of the
+    // kind==0 builders above ever see. kWarehouseExpect verifies the guard, not a
+    // prologue, so it is carried in `expect` purely as site identification.
+    { "warehouse", 0x7FC880, 0,                   kWarehouseExpect, NULL, 0, 0, 0, 0, 0 },
 };
 
 // ---------------------------------------------------------------- providers
@@ -2470,8 +2516,15 @@ static void RunHookBody(void* g, void* w, void* p3, int idx, t_PanelFn real)
                 uintptr_t obj = 0;
                 if (ReadablePtr(ww + W_BUILDING, sizeof(void*)))
                     obj = (uintptr_t)*(void**)(ww + W_BUILDING);
-                Logf("ui_panels  DEBUG hook=%s idx=%d kind=%d  object=0x%llx",
-                     hk->name, idx, kind, obj);
+                // v6.15: W_KIND (window+0x34) is the dispatcher's Level 1
+                // discriminator - `CMP dword ptr [RSI+0x34], imm` at 0x6EA5E3
+                // selects the kind==3 arm. Every hooked window should read 0;
+                // a non-zero value here means the arm is not one we own.
+                int wkind = -1;
+                if (ReadablePtr(ww + W_KIND, sizeof(int)))
+                    wkind = *(int*)(ww + W_KIND);
+                Logf("ui_panels  DEBUG hook=%s idx=%d kind=%d wkind=%d  object=0x%llx",
+                     hk->name, idx, kind, wkind, obj);
             }
         }
     }
@@ -2531,9 +2584,18 @@ static void h_Factory(void* g, void* w, void* p3)   { RunHook(g, w, p3, 3); }
 static void h_CityHall(void* g, void* w, void* p3)  { RunHook(g, w, p3, HOOK_CITYHALL); }
 static void h_Citizen(void* g, void* w, void* p3)    { RunHook(g, w, p3, HOOK_CITIZEN); }
 
+// v6.15: no trampoline - nothing was overwritten in the callee. The cave calls
+// FUN_1407FC880 by absolute address through RunHookBody, exactly like h_Do.
+static void h_Warehouse(void* g, void* w, void* p3)
+{
+    RunHookBody(g, w, p3, HOOK_WAREHOUSE,
+                (t_PanelFn)(g_exeBase + RVA_WAREHOUSE_BUILDER));
+}
+
 static void* s_detours[MAX_HOOKS] = {
     (void*)h_Shop, (void*)h_Residence, (void*)h_Pub, (void*)h_Factory,
-    (void*)h_CityHall, (void*)h_Citizen, (void*)h_Do, (void*)h_Storage
+    (void*)h_CityHall, (void*)h_Citizen, (void*)h_Do, (void*)h_Storage,
+    (void*)h_Warehouse
 };
 
 // ---------------------------------------------------------------- v6.7 call-site hook
@@ -2639,6 +2701,85 @@ static bool InstallDoCallSiteHook(void)
     return true;
 }
 
+
+// v6.15: call-site hook for the warehouse window (dispatcher kind == 3 -> 0x7FC880).
+//
+// Why not an inline hook: 0x7FC880 opens MOV RAX,RSP / PUSH RBP / PUSH RSI /
+// PUSH RDI / PUSH R14 / PUSH R15 / LEA RBP,[RAX-0x1d8], so the first clean
+// boundary is 18 bytes in and it starts by capturing RSP. A call-site patch
+// avoids both problems, and 0x7FC880 has exactly one caller.
+//
+// Why the guard is verified first: the kind==3 arm sits in a chain of
+// `CMP [RSI+0x34], imm / JNZ` cases, so the CALL is only meaningful together
+// with the compare that selects it. Both the 17-byte cluster and the rel32 are
+// checked before a byte is written, and re-checked under the write protection.
+static bool InstallWarehouseCallSiteHook(void)
+{
+    BYTE* const target = g_exeBase + RVA_WAREHOUSE_BUILDER;
+    if (!ReadablePtr(g_exeBase + RVA_WAREHOUSE_GUARD, sizeof(kWarehouseExpect)) ||
+        !ReadablePtr(target, 16)) {
+        Logf("ui_panels  warehouse: guard 0x%06X or builder 0x%06X is not readable "
+             "- no rows on a warehouse window", RVA_WAREHOUSE_GUARD, RVA_WAREHOUSE_BUILDER);
+        return false;
+    }
+
+    const BYTE* guard = g_exeBase + RVA_WAREHOUSE_GUARD;
+    if (memcmp(guard, kWarehouseExpect, sizeof(kWarehouseExpect)) != 0) {
+        Logf("ui_panels  warehouse: guard at 0x%06X does not match kWarehouseExpect "
+             "- the dispatcher differs from the 2026-10-23 build, nothing written",
+             RVA_WAREHOUSE_GUARD);
+        return false;
+    }
+
+    // The CALL is the last 5 bytes of the verified cluster (0x6EA5E3 + 12 = 0x6EA5EF).
+    const DWORD callAt = RVA_WAREHOUSE_GUARD + (DWORD)(sizeof(kWarehouseExpect) - 5);
+    BYTE* site = g_exeBase + callAt;
+    if (site[0] != 0xE8 || site + 5 + *(const int32_t*)(site + 1) != target) {
+        Logf("ui_panels  warehouse: call at 0x%06X does not resolve to 0x%06X "
+             "- nothing written", callAt, RVA_WAREHOUSE_BUILDER);
+        return false;
+    }
+
+    BYTE* cave = AllocNear(site, 64);
+    if (!cave) {
+        Logf("ui_panels  warehouse: no code cave near 0x%06X - nothing written", callAt);
+        return false;
+    }
+
+    static const BYTE kJmpAbs[6] = { 0xFF, 0x25, 0x00, 0x00, 0x00, 0x00 };
+    memcpy(cave, kJmpAbs, sizeof(kJmpAbs));
+    void* detour = (void*)&h_Warehouse;
+    memcpy(cave + 6, &detour, sizeof(detour));
+    FlushInstructionCache(GetCurrentProcess(), cave, 14);
+
+    const int64_t toCave = (int64_t)(cave - (site + 5));
+    if (toCave > 0x7FFFFFFFLL || toCave < -0x80000000LL) {
+        Logf("ui_panels  warehouse: cave out of rel32 range - nothing written");
+        return false;
+    }
+
+    DWORD oldProtect = 0;
+    if (!VirtualProtect(site, 5, PAGE_EXECUTE_READWRITE, &oldProtect)) {
+        Logf("ui_panels  warehouse: VirtualProtect failed at 0x%06X - nothing written", callAt);
+        return false;
+    }
+    // Re-verify under the protection: still a call to 0x7FC880?
+    if (site[0] != 0xE8 || site + 5 + *(const int32_t*)(site + 1) != target) {
+        VirtualProtect(site, 5, oldProtect, &oldProtect);
+        Logf("ui_panels  warehouse: the call site changed under us - nothing written");
+        return false;
+    }
+
+    site[0] = 0xE8;                              // same opcode: still a call
+    *(int32_t*)(site + 1) = (int32_t)toCave;
+    FlushInstructionCache(GetCurrentProcess(), site, 5);
+    VirtualProtect(site, 5, oldProtect, &oldProtect);
+
+    Logf("ui_panels  warehouse: hook 0x%06X -> builder 0x%06X ok (cave %p). "
+         "Window-kind-3 panels now get rows and widgets.",
+         callAt, RVA_WAREHOUSE_BUILDER, (void*)cave);
+    return true;
+}
 
 // v6.12 diag: dump every E8 in the dispatcher so the warehouse builder can be
 // identified from a live log without a new Ghidra run. Warehouse_covered_combined
@@ -2820,7 +2961,7 @@ static void ReadSettings(void)
         g_fontRva = RVA_FONT_DEFAULT;
 
     H->configString(ini, "ui_panels", "enable", v, sizeof(v),
-                    "shop,residence,pub,factory,cityhall,citizen,do,storage");
+                    "shop,residence,pub,factory,cityhall,citizen,do,storage,warehouse");
     for (int i = 0; i < MAX_HOOKS; i++)
         g_hooks[i].wanted = ListHas(v, g_hooks[i].name);
 
@@ -2998,6 +3139,7 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
         }
         bool ok = false;
         if (i == HOOK_DO) ok = InstallDoCallSiteHook();
+        else if (i == HOOK_WAREHOUSE) ok = InstallWarehouseCallSiteHook();
         else if (i == HOOK_STORAGE) {
             // prefer inline (catches all callers), fallback to call-site patch
             ok = TryInstallStorageInlineHook();
@@ -3038,7 +3180,7 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
         return 1;
     }
 
-    Logf("ui_panels  live v6.14: %d hook(s), max_rows %d, font 0x%X, "
+    Logf("ui_panels  live v6.15: %d hook(s), max_rows %d, font 0x%X, "
          "colour 0x%08lX, test_row %d, probe %d, buttons %s, "
          "toolbar size %.0f, "
          "ESC probe %s, wallet row %s",
