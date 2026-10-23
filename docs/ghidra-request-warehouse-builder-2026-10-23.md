@@ -18,24 +18,58 @@ The player reports two symptoms, and the 2026-10-23 `tesmioloader.log` (17:09:46
 
 ### 1.1 What the log proves
 
+Log: 3,080 lines, `17:09:46.742` → `17:14:57.369` (the span is **~5 min 11 s**, not seconds).
+
 | Observation | Evidence |
 |---|---|
-| The widget pass ran **590 times in 4.1 s**, always on the **private DO** | `17:13:54.555 → 17:13:58.636`, every line `building=000002979ACC9580 type=43 … priv=1 nativeStorage=1 willDraw=0` |
-| Every one was rejected by the private gate | `private_logistics.cpp:2147` → `"[AUTO DO] storage widget: hasStore but isPrivate=1, skipping checkbox"` ×590 |
-| `type=43` is the **DO**, not the warehouse | `AUTO_DO_ROAD_TYPE 43` (`private_logistics.cpp:1929`); the same building carries office key `3D976F9DD50CEB5D` in the day-8 summary |
-| **No other building ever reached a hooked builder** | All six `DEBUG hook=` lines are `hook=do idx=6 object=0x2979acc9580`; no `hook=shop`, `hook=storage`, `hook=residence`, `hook=pub`, `hook=factory`, `hook=cityhall` anywhere in the log |
-| The warehouse **was** discovered by the world scan | `17:14:11.743  state storage candidate name=warehouse_covered_combined key=D0BA81CF239FFE8F pos=(-5758.8,5325.1) permission=OFF-DEFAULT` |
-| …but never planned as a target | `:2633` `e.hasStorage = (forceOn \|\| site.permission == 1) ? 1 : 0;` — `state_storage_always_on=0`, so `hasStorage=0`; day-8 line reads `candidates=2 planned=2 added=2` (the two *private* storages) |
+| The storage-widget provider ran **only** on the private DO | one `[AUTO DO] storage widget probe:` line, `:855`, `building=000002979ACC9580 type=43 priv=1 nativeStorage=1 willDraw=0` |
+| Every widget pass was rejected by the private gate | 590 × `[AUTO DO] storage widget: hasStore but isPrivate=1, skipping checkbox (building=000002979ACC9580 type=43)`, `:856` → `:3039` (`17:13:54.556` → `17:14:46.329`) |
+| `type=43` is the **DO**, not the warehouse | `AUTO_DO_ROAD_TYPE 43` (`private_logistics.cpp:1929`) |
+| **Only the DO window was ever opened in this run** | exactly 6 × `ESC probe: new window`, and each is paired within 2 ms with `DEBUG hook=do idx=6 object=0x2979acc9580` (`:849/851`, `:1636/1637`, `:2203/2204`, `:2457/2458`, `:2583/2584`, `:2883/2884`). No `hook=shop/storage/residence/pub/factory/cityhall/citizen` anywhere. |
+| The warehouse **is** discovered by the world scan | `:1751` `state storage candidate name=warehouse_covered_combined key=D0BA81CF239FFE8F pos=(-5758.8,5325.1) permission=OFF-DEFAULT` (1 of 18 candidates) |
+| …but it is never planned as a target | `:2141` `e.hasStorage = (forceOn || site.permission == 1) ? 1 : 0;` — `state_storage_always_on=0` and permission is `OFF-DEFAULT`; `:1754` `candidates=2 planned=2` (the two *private* storages) |
 
-### 1.2 The deadlock
+**Critical limitation — read this before drawing conclusions.** The warehouse window was **never opened** in this run. All six window opens are the DO. So this log says **nothing** about which builder draws the warehouse panel; it cannot distinguish "not hooked" from "hooked but gated in `AppendRowsImpl`". That is exactly what **Block 0** must settle, and it is a 2-minute test.
+
+### 1.2 What the log *does* prove — the provider's preconditions already pass
+
+This is the one genuinely decisive inference available, and it is worth stating precisely because it eliminates the two most obvious hypotheses.
+
+The world scan at `private_logistics.cpp:2472` and the widget provider at `:2142` use **the same predicate**:
+
+```c
+// world scan (:2472)                          // widget provider (:2142-2150)
+if (AutoHasNativeStorage(b) &&                 hasNative = AutoHasNativeStorage(b);
+    type != AUTO_CUSTOMS_TYPE &&               if (!hasNative) return;
+    type != AUTO_DO_ROAD_TYPE &&               if (isBuildingPrivate(b)) return;
+    type != AUTO_DO_RAIL_TYPE) {               // else: draw the checkbox
+      if (isPrivate) ... else -> state pool
+```
+
+`warehouse_covered_combined` was added to `g_autoStateStorageSites` — the `else` (non-private) branch of that exact predicate. Therefore, **at runtime**:
+
+* `AutoHasNativeStorage(warehouse) == true` — otherwise it would never have reached the `else` branch;
+* `isBuildingPrivate(warehouse) == false` — it took the state branch (and every B2B line logs `priv=0`);
+* `type != 43 / customs` — it passed those guards.
+
+**Both conditions the widget provider checks are already satisfied for the warehouse.** If the provider were ever called with the warehouse's `Building*`, it *would* draw the checkbox — `type != 5` is explicitly tolerated at `:2152-2154` ("drawing anyway (warehouse fix)").
+
+So the failure is **not** in the provider, **not** in `AutoHasNativeStorage`, and **not** in the privacy gate. It is upstream: the provider is only ever called from `AppendRowsImpl` (`ui_panels.cpp:2401`), which only runs from `RunHookBody` for the 8 hooked surfaces. The remaining possibilities are exactly two:
 
 ```
-permission = 1   ←  only set by the checkbox (AutoStatePermissionSet)
-checkbox drawn   ←  provider called AND building is not private  (:2147)
-provider called  ←  AppendRowsImpl runs, i.e. one of the 8 hooked builders fired
+(A) no hooked builder draws the warehouse window   -> need a 9th hook   (Block A0 / A)
+(B) a hooked builder does draw it, but the window fails
+    AppendRowsImpl's own gates (W_HIDDEN / W_BUILDING /
+    TsmLooksLikeBuilding)                            -> no new hook     (Block 0 / Block E)
 ```
 
-The log shows the provider never ran on a warehouse, so the checked state can never be created, so the DO never plans the warehouse.
+The deadlock is then:
+
+```
+permission = 1   <-  only set by the checkbox (AutoStatePermissionSet)
+checkbox drawn   <-  provider called AND hasNative AND !private   (all three already true for the warehouse)
+provider called  <-  AppendRowsImpl runs, i.e. a hooked builder fired
+```
 
 ### 1.3 Why the existing evidence does not settle it
 
@@ -57,12 +91,12 @@ If the answer is "one of the 8", the defect is in the plugin's append gates (§1
 
 | idx | name | target RVA | hook kind |
 |---|---|---|---|
-| 0 | shop | `0x6B72F0` | inline, 21 B |
-| 1 | residence | `0x6F1300` | inline, 19 B |
-| 2 | pub | `0x6B3950` | inline, 21 B |
-| 3 | factory | `0x729630` | inline, 21 B |
-| 4 | cityhall | `0x6BDBF0` | inline, 17 B |
-| 5 | citizen | `0x75EEB0` | inline, 15 B |
+| 0 | shop | `0x7272F0` | inline, 21 B |
+| 1 | residence | `0x761300` | inline, 19 B |
+| 2 | pub | `0x723950` | inline, 21 B |
+| 3 | factory | `0x799630` | inline, 21 B |
+| 4 | cityhall | `0x72DBF0` | inline, 17 B |
+| 5 | citizen | `0x7CEEB0` | inline, 15 B |
 | 6 | DO | `0x741170` | **call-site** at `0x6EB4FD` |
 | 7 | storage | `0x4CABD0` | inline, 22 B |
 
@@ -86,6 +120,54 @@ Before any static work, settle whether the warehouse window reaches a hooked bui
 **Pass criteria:** one line stating which (if any) hook fired for the warehouse window, with the `object=` pointer, plus the `w` pointer implied by the `DEBUG` throttle.
 
 > Note: the `DEBUG hook=` line is throttled on a *changing window pointer* (`ui_panels.cpp:2466-2475`, `static void* s_lastDbgWin`), and it is emitted whenever `g_probe` is on (it is: `probe 1`). If the engine reuses one window object for all building panels, a repeat open of a *different* building may not log. If that is suspected, temporarily log unconditionally for the test, or rely on Block A.
+
+### Block A0 — The dispatcher dump is already in the log, and it has a repeating structure
+
+`DumpDispatcherTargets` (`ui_panels.cpp:2651-2682`) does a **blind byte-wise linear sweep**: for `off` in `0..DISPATCH_SCAN_LEN` (`0x8000`, `:1066`) starting at `RVA_WINDOW_DISPATCH 0x6E9B80` (`:1065`), it treats **every `0xE8` byte** as a `call rel32`. It is therefore *not* function-scoped, and some hits are false positives (immediate/displacement bytes equal to `0xE8`). Treat all 172 "targets" as candidates, not as call sites.
+
+The 2026-10-23 log (`tesmioloader.log:180-489`) contains **307 hits / 172 distinct targets**.
+
+#### A0.1 — Confirmed finding: `0x6F8CC0` is a shared per-arm preamble, NOT a builder
+
+This matters because it was the leading hypothesis and it is **wrong**. Evidence:
+
+1. The 69 hits on `0x6F8CC0` are **not** scattered. They occupy `0x6EA7D1` … `0x6EB5FE`, a span of only `0xE2D`, at a near-constant stride (`0x23` = 35 on 39 of 68 gaps, `0x20` = 32 on 10). That is a **switch with ~69 arms of equal size**, not 69 unrelated callers.
+2. Inside every arm the same idiom repeats: `call 0x6F8CC0` at `S`, then **0x0B bytes later** `call <kind-specific target>`, with a **different** target in each of the 69 arms (69 distinct).
+3. Decisive: **five of the eight already-hooked builders are exactly that second call**, at delta `0x0B`:
+
+   | arm head | +0x0B target | hooked builder |
+   |---|---|---|
+   | `0x6EAF2D` | `0x6EAF38` | pub (idx 2) |
+   | `0x6EAF73` | `0x6EAF7E` | shop (idx 0) |
+   | `0x6EB262` | `0x6EB26D` | factory (idx 3) |
+   | `0x6EB3BD` | `0x6EB3C8` | residence (idx 1) |
+   | `0x6EB4F2` | `0x6EB4FD` | DO (idx 6) |
+
+   5/5 at exactly `+0x0B` is not coincidence: `0x6F8CC0` is the **common preamble each arm runs before its own builder**.
+
+4. The other three hooked builders are in the same region but not at `+0x0B`, because their arms have extra code between: storage `0x6EA80C` is `+0x3B` from the arm head `0x6EA7D1`; cityhall `0x6EA8EF` is `+0x11E`; citizen `0x6EA931` is `+0x160`. (Those three arms therefore contain *several* calls each.)
+
+**Consequence:** `0x6F8CC0` is very probably the shared "create/attach the panel window" helper that all ~69 window kinds call. Hooking it once could cover every window kind at a stroke — **if** it is handed the window pointer. That is now the highest-value question, because it would fix the warehouse *and* every other unhooked panel permanently. But do **not** assume it receives the window; A0.2/A0.3 decide.
+
+**The warehouse's own builder is one of the ~64 kind-specific second-call targets that are not yet hooked.**
+
+#### Questions
+
+**A0.2 — What is `0x6F8CC0`'s signature?** Decompile it. Report:
+   - how many arguments, and which register/stack slot carries the **window** object (the thing `AppendRowsImpl` receives as `w`), and
+   - which carries the **building** (`W_BUILDING` at `w+0x240` is what the plugin needs), and
+   - whether it is called exactly once per window open (69 arms × one window each ⇒ 69 window kinds).
+
+**A0.3 — Is `0x6F8CC0` hookable inline?** Report its first **32 bytes**. The known head `48 8B C4 55 56 57 41 54` is `mov rax,rsp; push rbp; push rsi; push rdi; push r12` = 9 bytes, which is **short of the 14 bytes** needed for the abs-jmp trampoline (`INSTRUCTIONS.md:122-130`, `.clinerules` §B). Report instruction boundaries up to the first clean boundary ≥14, and flag any RIP-relative/`rel32` operand or `/GS` cookie in that range. If no clean ≥14 exists, say so (`0x6F8CC0` being a *naked-ish* short prologue makes this likely) and fall back to A0.4.
+
+**A0.4 — Identify the warehouse arm.** For each of the ~69 arms, report the arm head `S`, the `+0x0B` target, and the guard that selects that arm (`CMP reg,imm` or jump-table index). Then answer: **which arm is reached for `warehouse_covered_combined` / a type-5-or-`$TYPE_STORAGE` building?**
+   - Give the `+0x0B` target for that arm: that is the candidate 9th hook.
+   - Say whether the guard keys on a **building type id**, a **window kind**, or something else. Note the live log prints `kind 0x0` for every panel and `ui_panels`'s own `PanelHook` carries a `kind`, so "type" and "kind" may be different fields — do not conflate them.
+   - If the arms are *not* type-keyed, state exactly what the discriminator is.
+
+**A0.5 — Cross-check against the already-hooked set.** Confirm that the 69 arm targets, minus {shop, pub, factory, residence, DO, cityhall, citizen, storage}, leave the ~64 candidates. If `0x6F8CC0` is the preamble, the cleanest fix may be **one hook on `0x6F8CC0`** instead of a 9th per-kind hook — report which of the two you recommend and why.
+
+**Pass criteria:** (a) `0x6F8CC0`'s signature, naming the window and building arguments; (b) a yes/no on whether it is called once per window open; (c) the arm target for the warehouse, or a precise statement of what the arms are actually keyed on; (d) a hookability verdict for `0x6F8CC0`.
 
 ### Block A — Dispatcher case table → builder RVA, complete (answers the routing question)
 
@@ -174,14 +256,36 @@ dispatcher -> storage      CALL at 0x6EA80C -> 0x4CABD0
 dispatcher -> DO           CALL at 0x6EB4FD -> 0x741170
 storage builder            0x4CABD0   prologue 22:
   40 55 57 41 54 41 56 41 57 48 8D AC 24 B0 C9 FF FF B8 50 37 00
-shop                       0x6B72F0   (inline, 21 B)
-residence                  0x6F1300   (inline, 19 B)
-pub                        0x6B3950   (inline, 21 B)
-factory                    0x729630   (inline, 21 B)
-cityhall                   0x6BDBF0   (inline, 17 B)
-citizen                    0x75EEB0   (inline, 15 B)
+shop                       0x7272F0   (inline, 21 B)
+residence                  0x761300   (inline, 19 B)
+pub                        0x723950   (inline, 21 B)
+factory                    0x799630   (inline, 21 B)
+cityhall                   0x72DBF0   (inline, 17 B)
+citizen                    0x7CEEB0   (inline, 15 B)
 warehouse name string      ~0x8EBF00  (reader FUN_140652580 at 0x652694)
+
+candidate preamble         0x6F8CC0   head 48 8B C4 55 56 57 41 54
 ```
+
+**The 5 verified arm pairs** — each row is `call 0x6F8CC0` at `S`, then `call <builder>` exactly 0x0B later. These are already-hooked builders, so this correspondence is self-validating:
+
+```
+0x6EAF2D -> 0x6F8CC0   ...  0x6EAF38 -> 0x723950   pub        (idx 2)
+0x6EAF73 -> 0x6F8CC0   ...  0x6EAF7E -> 0x7272F0   shop       (idx 0)
+0x6EB262 -> 0x6F8CC0   ...  0x6EB26D -> 0x799630   factory    (idx 3)
+0x6EB3BD -> 0x6F8CC0   ...  0x6EB3C8 -> 0x761300   residence  (idx 1)
+0x6EB4F2 -> 0x6F8CC0   ...  0x6EB4FD -> 0x741170   DO         (idx 6)
+```
+
+The three arms with extra code between preamble and builder (so *not* at `+0x0B`):
+
+```
+0x6EA7D1 -> 0x6F8CC0   ...  0x6EA80C -> 0x4CABD0   storage    (idx 7)   delta 0x3B
+0x6EA7D1 -> 0x6F8CC0   ...  0x6EA8EF -> 0x72DBF0   cityhall   (idx 4)   delta 0x11E
+0x6EA7D1 -> 0x6F8CC0   ...  0x6EA931 -> 0x7CEEB0   citizen    (idx 5)   delta 0x160
+```
+
+The 69 arms span `0x6EA7D1`–`0x6EB5FE` (0xE2D bytes); stride histogram `{0x23:39, 0x20:10, 0x27:3, ...}`. Full ordered list is `tesmioloader.log:180-489`.
 
 Log excerpts (2026-10-23 run):
 
@@ -192,8 +296,26 @@ Log excerpts (2026-10-23 run):
 [17:13:54.555] [AUTO DO] storage widget probe: building=000002979ACC9580 type=43 key=3D976F9DD50CEB5D priv=1 nativeStorage=1 willDraw=0
 [17:13:54.556] [AUTO DO] storage widget: hasStore but isPrivate=1, skipping checkbox (building=000002979ACC9580 type=43)
 [17:14:11.743] [AUTO DO] state storage candidate name=warehouse_covered_combined key=D0BA81CF239FFE8F pos=(-5758.8,5325.1) permission=OFF-DEFAULT
-[17:14:11.745] [AUTO DO] day 8 office=3D976F9DD50CEB5D type=43 existing=0 planned=2 added=2
+[17:14:11.745] [AUTO DO] day 8 summary: private offices=1 candidates=2 planned=2 added=2 existing=0 suppressed=0 invalid=0 mode=WRITE
+[17:13:54.548] ui_panels  ESC probe: new window | ... win 000002969E9EB760 kind 0x0 hidden 0 winClose 0
 ```
+
+## 4b. Fix plan — the four outcomes and what to do in each
+
+The investigation has exactly four possible outcomes. Each maps to one edit; pick the row that matches the findings.
+
+| # | Finding | Fix | Effort | Coverage |
+|---|---|---|---|---|
+| **A** | `0x6F8CC0` is called once per window open and receives both the window and the building | **1 hook on `0x6F8CC0`** as a 9th `g_hooks[]` row | small | **all ~69 window kinds** — warehouse, construction sites, everything currently unhooked |
+| **B** | `0x6F8CC0` is a preamble that does *not* receive the window, but Block A0.4 names the warehouse's arm target | **1 hook on that arm target** as a 9th row | small | the warehouse only |
+| **C** | The arm target's prologue has no clean ≥14-byte steal (Block D) | **call-site hook** on the arm's `call`, pattern already proven for the DO at `0x6EB4FD` | medium | the warehouse only |
+| **D** | Block 0 shows a hooked builder *does* fire for the warehouse | **no new hook** — fix `AppendRowsImpl`'s gates (`W_HIDDEN` 0x01, `W_BUILDING` 0x240, `TsmLooksLikeBuilding`) | small | n/a |
+
+Why option **A** is worth testing first: if it holds, one hook replaces the per-type table and the "9th builder" treadmill ends permanently. Every future building type gets widgets for free. If it fails A0.2 (no window argument), fall back to **B** without further analysis.
+
+**No plugin change is needed for any of A–C.** The storage checkbox is already gated on `hasNative && !isPrivate`, both of which the warehouse already satisfies (§1.2). Once `AppendRowsImpl` runs for the warehouse window, the checkbox appears and `AutoStatePermissionSet` can set `permission=1`, which is the only thing standing between the warehouse and `planned=`. Options A–C are `ui_panels` `g_hooks[]` edits only.
+
+**Wiring after the hook exists** (unchanged, for completeness): `ui_panels.cpp:1073-1087` `g_hooks[]` row + `install` path; `state_storage_always_on` and the name-based allowlist are **not** the fix and should not be reintroduced.
 
 ## 5. What NOT to do
 
