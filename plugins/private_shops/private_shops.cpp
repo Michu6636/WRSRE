@@ -268,7 +268,7 @@ static int    g_retailTypes[MAX_TYPE_LIST];
 static int    g_retailTypeCount;
 
 static float  g_wholesaleRatio       = 0.70f;
-static int    g_foreignEnabled       = 1;
+static int    g_foreignEnabled       = 0;  // Physical deliveries by default; opt in to foreign restock.
 static float  g_foreignTargetRatio   = 0.30f;
 // v3.4: the shelf empties to this fraction of its capacity before an order is
 // placed, and is then filled back to foreign_restock_target. Two numbers, so
@@ -692,7 +692,6 @@ struct WholesaleContext {
     void*      shop;
     ShopState* state;
     double     capital;
-    bool       allowDebt;
     bool       isRetail;      // v2.8: retail still only gets billed
     int        procured;      // v2.8: slots that dispatched output
     double     revenue;       // v2.8: procurement credited this walk
@@ -897,38 +896,18 @@ static void WholesaleSlot(void* storage, void* slotBytes, void* res,
     double wholesale = (double)delta * (double)perTon * (double)g_wholesaleRatio;
     if (wholesale <= 0.0) { snap.content = content; return; }
 
-    if (ctx->capital >= wholesale) {
-        g_enterprise->chargeWholesaleDelivery(ctx->shop, wholesale);
-        ctx->capital -= wholesale;
-        ctx->charged += wholesale;
-        ctx->billed++;
-        snap.content = content;
-    } else if (!ctx->allowDebt) {
-        double affordable = (ctx->capital > 0.0) ? ctx->capital : 0.0;
-        double denom = (double)perTon * (double)g_wholesaleRatio;
-        if (!(denom > 1e-6)) { snap.content = content; return; } // C1 guard: tiny ratio or perTon
-        float  affordableTons =
-            (float)(affordable / denom);
-        // C1 guard: reject INF/NaN/huge tons
-        if (!(affordableTons == affordableTons) || !(affordableTons >= 0.0f) || affordableTons > 1e6f) { snap.content = content; return; }
-        if (affordable > 0.0) {
-            g_enterprise->chargeWholesaleDelivery(ctx->shop, affordable);
-            ctx->charged += affordable;
-            ctx->capital = 0.0;
-        }
-        float newContent = snap.content + affordableTons;
-        *(float*)((BYTE*)slotBytes + TSM_SLOT_CONTENT) = newContent;
-        snap.content = newContent;
-    } else {
-        g_enterprise->chargeWholesaleDelivery(ctx->shop, wholesale);
-        ctx->charged += wholesale;
-        ctx->capital -= wholesale;
-        ctx->billed++;
-        snap.content = content;
-    }
+    // A native delivery has already happened. Settle its full wholesale cost,
+    // allowing company capital to become negative; never erase delivered stock
+    // to enforce affordability after the vehicle has relinquished the goods.
+    g_enterprise->chargeWholesaleDelivery(ctx->shop, wholesale);
+    ctx->capital -= wholesale;
+    ctx->charged += wholesale;
+    ctx->billed++;
+    snap.content = content;
+
 }
 
-static void RunWholesaleBilling(void* building, ShopState& st, bool allowDebt)
+static void RunWholesaleBilling(void* building, ShopState& st)
 {
     int type = TsmBuildingType(building);
     bool isRetail = IsRetailType(type);
@@ -947,7 +926,6 @@ static void RunWholesaleBilling(void* building, ShopState& st, bool allowDebt)
     WholesaleContext ctx = {
         building, &st,
         g_enterprise->getCompanyCapital(building),
-        allowDebt,
         isRetail,
         0, 0.0,
         0, 0.0,
@@ -970,8 +948,10 @@ static void RunWholesaleBilling(void* building, ShopState& st, bool allowDebt)
         if (g_probe) {
             wchar_t name[128] = {0};
             g_enterprise->getBuildingCustomName(building, name, 128);
-            Logf("private_shops  \"%ls\" paid %.2f for state delivery (%d slot(s))",
-                 name, ctx.charged, ctx.billed);
+            const double capital = g_enterprise->getCompanyCapital(building);
+            Logf("private_shops  \"%ls\" charged %.2f for state delivery (%d slot(s)); capital %.2f%s",
+                 name, ctx.charged, ctx.billed, capital,
+                 capital < 0.0 ? " (debt; delivered stock retained)" : "");
         }
     }
 }
@@ -1229,7 +1209,7 @@ static void GuardedRestock(void* b, ShopState* st, int day)
 
 static void GuardedWholesale(void* b, ShopState* st)
 {
-    __try { RunWholesaleBilling(b, *st, false); }
+    __try { RunWholesaleBilling(b, *st); }
     __except (FaultFilter("private_shops wholesale billing", GetExceptionInformation())) {}
 }
 
@@ -1659,7 +1639,7 @@ static void ReadSettings(void)
         if (f >= 1.0f && f <= 1000.0f && f == f) g_usdDivisor = f;
     }
 
-    g_foreignEnabled = H->configInt(ini, "private_shops", "foreign_restock_enabled", 1);
+    g_foreignEnabled = H->configInt(ini, "private_shops", "foreign_restock_enabled", 0);
     if (H->configString(ini, "private_shops", "foreign_restock_target", v, sizeof(v), "") && v[0]) {
         float f = (float)atof(v);
         if (f > 0.0f && f <= 1.0f) g_foreignTargetRatio = f;
