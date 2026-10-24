@@ -1,4 +1,4 @@
-// private_logistics_probe - disabled-by-default diagnostic probe.
+// private_logistics_probe - enabled-by-default diagnostic probe.
 //
 // Exploratory read-only snapshot of ONE road DO truck via the sim_clock
 // SUB_TICK subscriber (the only supported recurring callback in the loader
@@ -21,8 +21,8 @@
 //   - Enabled modules are pinned for process lifetime. DllMain does nothing.
 //     No queue/lock is freed while the worker can run. Restart to remove probe.
 //
-// Default loading (probe.enabled = 0): inert, no callback, no game reads.
-// Armed loading (probe.enabled = 1): consumes sim_clock, registers SUB_TICK.
+// Default loading (enabled = 1): consumes sim_clock, registers SUB_TICK.
+// Explicit opt-out (enabled = 0): inert, no callback, no game reads.
 
 #define WIN32_LEAN_AND_MEAN
 #include "../../src/tesmio_plugin.h"
@@ -72,7 +72,7 @@
 // settings
 // ===========================================================================
 
-static int   g_enabled        = 0;   // DISABLED BY DEFAULT
+static int   g_enabled        = 1;   // Enabled by default; INI enabled=0 opts out.
 static int   g_tickInterval   = 60;
 static int   g_maxSnapshots   = 100;
 static int   g_maxQueue       = 256;
@@ -1154,7 +1154,7 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
 
     const char* ini = "plugins\\private_logistics_probe.ini";
 
-    g_enabled      = H->configInt(ini, "private_logistics_probe", "enabled", 0);
+    g_enabled      = H->configInt(ini, "private_logistics_probe", "enabled", 1);
     g_tickInterval = H->configInt(ini, "private_logistics_probe", "tick_interval", 60);
     g_maxSnapshots = H->configInt(ini, "private_logistics_probe", "max_snapshots", 100);
     g_maxQueue     = H->configInt(ini, "private_logistics_probe", "max_queue", 256);
@@ -1185,8 +1185,8 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
 
     if (!g_enabled) {
         LogSession("disabled", "Exploratory probe present; no sim_clock subscription; no game reads");
-        Logf("private_logistics_probe  disabled by default - no callback registered, no game object dereferenced, "
-             "no treasury/payment API consumed. Enable probe.enabled=1 to arm the tick subscriber.");
+        Logf("private_logistics_probe  disabled by configuration - no callback registered, no game object dereferenced, "
+             "no treasury/payment API consumed. Set [private_logistics_probe] enabled=1 to arm the tick subscriber.");
         return 0;
     }
 

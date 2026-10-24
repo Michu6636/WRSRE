@@ -71,7 +71,7 @@ max_queue=256
 selftest=0
 ```
 
-Keep ASCII/UTF-8 without BOM. Default package is disabled until explicitly edited.
+Keep ASCII/UTF-8 without BOM. Current source/INI enable the probe by default; set `enabled=0` to opt out. An existing deployed INI with `enabled=0` still overrides the DLL fallback. The original v0.2.3 download ZIP predates this default change and remains disabled by default; rebuild and deploy the current DLL/INI. The suggested sampling settings above are for the controlled test.
 6. Start one game process, load one copied save. Do NOT reload, switch worlds, reassign/sell/demolish the selected truck/DO, or hot-unload DLLs during this run. Full game exit between experiments. World-load invalidation is not claimed verified.
 7. Unpause at normal speed for 20–30 seconds. Check `tesmioloader.log` for version `0.2.3-exploratory`, successful tick registration and `[PROBE SNAPSHOT]` records. If no selection, fault, identity mismatch or load failure occurs, stop and send the log; do not change offsets or try old DLLs blindly.
 8. If measurement records appear, take a screenshot of the truck/DO UI showing cargo/fuel, record the wall time, then let it perform a simple source-to-destination journey (and a second if the sample budget allows). Note loading, departure, arrival/unloading and refuel times. Do not force expected raw state values; discovering them is part of the experiment.
