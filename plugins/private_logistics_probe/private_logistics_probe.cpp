@@ -73,8 +73,8 @@
 // ===========================================================================
 
 static int   g_enabled        = 1;   // Enabled by default; INI enabled=0 opts out.
-static int   g_tickInterval   = 60;
-static int   g_maxSnapshots   = 100;
+static int   g_tickInterval   = 30;
+static int   g_maxSnapshots   = 1000;
 static int   g_maxQueue       = 256;
 static int   g_selftest       = 0;
 
@@ -1155,8 +1155,8 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
     const char* ini = "plugins\\private_logistics_probe.ini";
 
     g_enabled      = H->configInt(ini, "private_logistics_probe", "enabled", 1);
-    g_tickInterval = H->configInt(ini, "private_logistics_probe", "tick_interval", 60);
-    g_maxSnapshots = H->configInt(ini, "private_logistics_probe", "max_snapshots", 100);
+    g_tickInterval = H->configInt(ini, "private_logistics_probe", "tick_interval", 30);
+    g_maxSnapshots = H->configInt(ini, "private_logistics_probe", "max_snapshots", 1000);
     g_maxQueue     = H->configInt(ini, "private_logistics_probe", "max_queue", 256);
     g_selftest     = H->configInt(ini, "private_logistics_probe", "selftest", 0);
 
