@@ -2,6 +2,8 @@
 
 ## Current status
 
+**Latest regression: unresolved.** The v0.18.2 run writes 20/30 correctly but the player reports movement only after clicking a native percentage control. Do not advance to fuel work or assume direct field writes reproduce the native commit lifecycle. See `DO_PERCENTAGE_WAKEUP_INVESTIGATION.md` for the new log evidence and bounded native-handler trace request.
+
 Implemented locally: autonomous reconnection, role-aware state-site controls, independent directions, permission migration and TaskCfg reconciliation. `private_logistics` now reports **0.18.2-thresholds**. The latest player test reports working connections and deliveries; its log contains state-warehouse pickups and state-store deliveries. This is not comprehensive planner validation. The remaining daily threshold-reset defect is corrected below, pending the next in-game check. Probe, fuel lookup and freight billing algorithms were deliberately left unchanged.
 
 ## Ownership and direction policy
