@@ -553,7 +553,7 @@ static char   gFuelResource[64] = "fuel";  // resolved through resource_pricing
 static double gBasketsPerTrip   = 0.80;    // CPI fallback, in daily survival baskets
 static double gBasketsPerTonne  = 0.02;
 
-#define PL_VERSION "0.18.1-permissions"
+#define PL_VERSION "0.18.2-thresholds"
 static float g_minPayment      = 0.01f;
 static double g_dailyPayCap    = 0.0;    // 0 = no cap
 
@@ -570,6 +570,8 @@ static int                           g_stateStorageWidgetHandle = 0;
 // once-per-day sim_clock callback, never from a per-frame/render hook.
 static int g_autoTargetsEnabled = 1;
 static int g_autoTargetsDryRun  = 0;
+static int g_autoSourcePercent = 20;
+static int g_autoDestinationPercent = 30;
 static int g_autoTargetLogLimit = 80;
 static volatile LONG g_autoResetActiveMemoAfterLoad = 0;
 #define AUTO_ENTITY_MAX 8704
@@ -2366,7 +2368,7 @@ static bool AutoAppendNativeTarget(void* office, void* target, unsigned directio
     // Ghidra reports no resource-filter field in this 0x18-byte TaskEntry.
     // The planner's target/connection index is rebuilt in its working area
     // by reachability; do not invent or write a filter at entry+0x0C.
-    AutoApplyTaskDirections(cfg, directions & AUTO_ALLOW_BOTH);
+    AutoApplyTaskDirections(cfg, directions & AUTO_ALLOW_BOTH, g_autoSourcePercent, g_autoDestinationPercent);
     *((BYTE*)cfg + 0x28) = 1;                    // native active flag
     *((BYTE*)cfg + 0xF0) = 1;                    // native validated flag
 
@@ -2561,7 +2563,7 @@ static bool AutoSetTargetDirections(void* entry, unsigned directions)
         Logf("[AUTO DO] invalid task config; cannot enforce direction mask=%u", directions);
         return false;
     }
-    const bool directionsChanged = AutoApplyTaskDirections(cfg, directions & AUTO_ALLOW_BOTH);
+    const bool directionsChanged = AutoApplyTaskDirections(cfg, directions & AUTO_ALLOW_BOTH, g_autoSourcePercent, g_autoDestinationPercent);
     const bool activationChanged = AutoApplyEntryActivation(entry, directions);
     const bool changed = directionsChanged || activationChanged;
     if (changed && g_autoLogLines < (unsigned)g_autoTargetLogLimit) {
@@ -2838,6 +2840,10 @@ static void ReadSettings(void)
     g_autoTargetsEnabled = H->configInt(ini, "private_logistics", "auto_targets_enabled", 1);
     g_autoTargetsDryRun  = H->configInt(ini, "private_logistics", "auto_targets_dry_run", 0);
     g_autoTargetLogLimit = H->configInt(ini, "private_logistics", "auto_targets_log_limit", 80);
+    g_autoSourcePercent = AutoClampSourcePercent(H->configInt(ini, "private_logistics", "auto_source_percent", 20));
+    g_autoDestinationPercent = AutoClampDestinationPercent(H->configInt(ini, "private_logistics", "auto_destination_percent", 30));
+    Logf("[AUTO DO] company thresholds: load above %d%% / deliver below %d%% (managed tasks, reconciled daily)",
+         g_autoSourcePercent, g_autoDestinationPercent);
     Logf("[AUTO DO] permission-test profile: billing=%d auto_targets=%d apply=%d (expected 0/1/1)",
          g_billing, g_autoTargetsEnabled, !g_autoTargetsDryRun);
     if (g_billing || !g_autoTargetsEnabled || g_autoTargetsDryRun)

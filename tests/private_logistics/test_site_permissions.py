@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[2]
 HARNESS = r'''
 #include <cassert>
 #include <cstring>
+#include <initializer_list>
 #include "site_permissions.h"
 static uintptr_t Ptr(const unsigned char* p) { uintptr_t v; memcpy(&v,p,8); return v; }
 static float Float(const unsigned char* p) { float v; memcpy(&v,p,4); return v; }
@@ -58,6 +59,26 @@ int main(int argc, char**) {
             assert(AutoPermissionToggle(mask,1,1,caps)==((mask|1)&caps));
             assert(AutoPermissionToggle(mask,2,0,caps)==((mask&~2u)&caps));
         }
+    // Legacy 100%/90% or player-adjusted values converge to company defaults,
+    // then daily reconciliation is idempotent instead of fighting native clamp.
+    alignas(8) unsigned char legacy[0x198] = {};
+    legacy[0]=legacy[0xC8]=1;
+    for (float old : {1.0f,0.90f,0.19f}) {
+        memcpy(legacy+4,&old,4); memcpy(legacy+0xCC,&old,4);
+        assert(AutoApplyTaskDirections(legacy,3));
+        assert(Float(legacy+4)==0.20f && Float(legacy+0xCC)==0.30f);
+        assert(!AutoApplyTaskDirections(legacy,3));
+    }
+    for (int load : {-100,0,20,90,100,10000})
+        for (int unload : {-100,0,10,30,100,10000})
+            for (unsigned mask=0; mask<4; ++mask) {
+                AutoApplyTaskDirections(legacy,mask,load,unload);
+                assert(Float(legacy+4)==((mask&1) ? AutoClampSourcePercent(load)/100.0f : 0.0f));
+                assert(Float(legacy+0xCC)==((mask&2) ? AutoClampDestinationPercent(unload)/100.0f : 0.0f));
+                assert(!AutoApplyTaskDirections(legacy,mask,load,unload));
+            }
+    assert(AutoClampSourcePercent(-1)==0 && AutoClampSourcePercent(100)==90);
+    assert(AutoClampDestinationPercent(-1)==10 && AutoClampDestinationPercent(101)==100);
     // Existing native resource lists: deny must clear the selector's END,
     // not just set percentage=0 or disable wildcard while retaining a list.
     for (unsigned mask=0; mask<4; ++mask) {
@@ -77,7 +98,7 @@ int main(int argc, char**) {
             const unsigned off=side ? 0xC8:0;
             const bool enabled=(mask & (side ? 2:1))!=0;
             assert(cfg[off]==(enabled ? 1:0));
-            assert(Float(cfg+off+4)==(enabled ? 1.0f:0.0f));
+            assert(Float(cfg+off+4)==(enabled ? (side ? 0.30f:0.20f):0.0f));
             assert(Ptr(cfg+off+8)==0x1000 && Ptr(cfg+off+24)==0x1100);
             assert(Ptr(cfg+off+16)==(enabled ? 0x1020:0x1000));
         }
@@ -113,7 +134,7 @@ class SitePermissionsTest(unittest.TestCase):
         source = (ROOT / 'plugins/private_logistics/private_logistics.cpp').read_text()
         self.assertIn('memcpy(data, "PLSTOR18", 8)', source)
         self.assertIn('AutoMigratePermission(*((BYTE*)raw + at++), legacy)', source)
-        self.assertIn('AutoApplyTaskDirections(cfg, directions & AUTO_ALLOW_BOTH)', source)
+        self.assertEqual(source.count('AutoApplyTaskDirections(cfg, directions & AUTO_ALLOW_BOTH, g_autoSourcePercent, g_autoDestinationPercent)'), 2)
         self.assertNotIn('g_stateStorageForceOn', source)
         self.assertNotIn('target.statePermission != 0', source)  # default OFF must also be enforced
         self.assertNotIn('candidateCount == 0', source)  # still revoke old entries when no allowed candidates

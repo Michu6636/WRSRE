@@ -2,7 +2,7 @@
 
 ## Current status
 
-Implemented locally: autonomous reconnection, role-aware state-site controls, independent directions, permission migration and TaskCfg reconciliation. `private_logistics` now reports **0.18.1-permissions**. This is ready for a controlled permissions experiment, NOT a claim of validated native planner enforcement. Probe, fuel lookup and freight billing algorithms were deliberately left unchanged.
+Implemented locally: autonomous reconnection, role-aware state-site controls, independent directions, permission migration and TaskCfg reconciliation. `private_logistics` now reports **0.18.2-thresholds**. The latest player test reports working connections and deliveries; its log contains state-warehouse pickups and state-store deliveries. This is not comprehensive planner validation. The remaining daily threshold-reset defect is corrected below, pending the next in-game check. Probe, fuel lookup and freight billing algorithms were deliberately left unchanged.
 
 ## Ownership and direction policy
 
@@ -35,7 +35,7 @@ Evidence consulted: `docs/engine/logistics.md` sections 5–6, `docs/ghidra-do-s
 - LOAD wildcard/percentage/list at cfg+0x00/+0x04/+0x08..0x10.
 - UNLOAD wildcard/percentage/list at cfg+0xC8/+0xCC/+0xD0..0xD8.
 - Denial now sets wildcard=0, percentage=0 and makes that resource selector list empty (end=begin). Previously setting only the load threshold to zero left loading selectors enabled.
-- Allowed direction uses wildcard=1 and percentage=1. Native storage modes, accepted resources and connection reachability remain the planner's responsibility. This is per-target direction permission, not a replacement for resource/input/output validation in the engine.
+- Allowed directions use wildcard=1 and the configured company percentage (source 0.20 / destination 0.30 by default since v0.18.2). Native storage modes, accepted resources and connection reachability remain the planner's responsibility. This is per-target direction permission, not a replacement for resource/input/output validation in the engine.
 - Reconciliation applies to ALL entries of a private DO, including existing manually added public entries, unknown/unindexed targets and default-OFF sites. It does not skip revocation when no permitted candidates remain.
 - Native vector spans are checked before existing config writes. Invalid configuration logs a failure to enforce; do not continue a test with such a failure. The v0.18 test exposed that leaving the entry enabled byte at zero never requested activation. v0.18.1 requests entry activation when any direction is allowed, and disables it when neither is allowed, then uses native dirty/replanning. Existing active/validated config fields are not forced. Native route validation is still required; activation alone is not proof of reachability.
 - Only list ends are shortened; allocation begin/capacity and backing items are not freed or overwritten. This private company owns its DO task selectors: old user per-resource selections can be replaced by company wildcard directions, and a denied selector list is not restored on re-allow. Native storage/resource compatibility is not changed. Back up the save before this policy migration.
@@ -92,7 +92,7 @@ Keep `private_logistics=1` in the loader: this plugin must run to manage permiss
 
 ### A. Startup and UI
 
-1. Confirm `0.18.1-permissions`, billing=0, auto-target write mode, and private_shops `foreign off` in the log.
+1. Confirm `0.18.2-thresholds`, billing=0, auto-target write mode, and private_shops `foreign off` in the log.
 2. State shop: only `Allow private DO deliveries (receive goods)`. No loading control.
 3. Factory/warehouse: independent `Allow private DO loading (take goods)` and deliveries controls.
 4. Private endpoint: neither state-access checkbox. Unsupported infrastructure: no misleading loading control. Capture each panel; `state panel ... capabilities=...` identifies the classifier result.
@@ -148,3 +148,30 @@ First verify a fresh/denied state grocery is visibly unchecked, checking it logs
 
 
 **Existing-save caveat:** v0.18 may already have saved a customs task with both directions zeroed. Preserving it now cannot reconstruct the prior resource selections or original intent. Prefer a copied save from before that corruption; otherwise reassign/configure the customs task once through the native UI and then verify it survives daily reconciliation. Do not silently force-enable arbitrary old customs configurations or mistake preservation for automatic customs sourcing.
+
+
+## Working connections; correct company stock thresholds — 2026-10-24
+
+### New evidence and cause
+
+Latest attachment: 3,867-line `tesmioloader.log`, SHA-256 `3030810df24744528f1f46f50b57d5087de36d187a02d533eb7f86c0cad6566e`; screenshot shows native per-task and office-wide threshold controls. Startup reports v0.18.1-permissions with `billing=0 auto_targets=1 apply=1`, confirming the intended test defaults were deployed. The player reports that connections now work. The log contains 62 `class=load` fragments and 50 `class=delivery` fragments, including state warehouse pickups and state grocery deliveries; these are callbacks, NOT counts of journeys.
+
+However the log repeatedly shows the managed warehouse rewritten to `load_pct=1.000 unload_pct=1.000`, including 20:25:31, 20:25:54 and 20:26:15. The helper wrote 1.0 for every allowed direction on every daily reconciliation, so native adjustments (including the source-side 90% ceiling reported by the player) and manual edits were overwritten. This is an implementation default, not a missing offset. Existing TaskCfg evidence and the runtime UI/log correlation establish `cfg+0x04` as source percentage and `cfg+0xCC` as destination percentage, fractions rather than whole integers. No new Ghidra work is needed for this bounded change.
+
+### Implemented policy: v0.18.2-thresholds
+
+- Source: request pickup when stock is **above 20%**. This uses a low source-stock trigger rather than waiting until a warehouse is almost full; it is not a newly verified guarantee about final stock after a loaded order.
+- Destination: request delivery when stock is **below 30%**. This is a native dispatch trigger, not a monetary budget or exact final-stock ceiling. Vehicle cargo and outstanding orders can cause delivered stock to exceed the trigger.
+- Shipped INI, static defaults, helper defaults and missing-key fallbacks agree. Optional `[private_logistics]` keys: `auto_source_percent=20`, `auto_destination_percent=30`. Config values are clamped to our policy ranges source 0..90, destination 10..100. The latter is a conservative supported operating range, not a newly reverse-engineered claim about every native boundary.
+- Both newly appended and existing managed targets use the same configured fractions, so legacy 100%/90% values converge on the next daily reconciliation. Denied directions still have wildcard zero, percentage zero and empty resource selectors; their permission is not re-enabled by choosing a threshold.
+- Private-company managed tasks still reconcile daily. Native per-connection or office-wide edits are NOT persisted as separate player overrides; they will be replaced by company policy. This change does not add per-DO preferences. State access checkboxes remain the independent player permission controls.
+- Manually assigned customs remain preserved, including their thresholds. No automatic customs routing, stock simulation, cash/debt, tariff, fuel or settlement algorithm changes.
+- Startup reports the effective `company thresholds: load above 20% / deliver below 30%`; bounded daily native task audits show actual fields (`0.200` / `0.300` for allowed sides). Historical constructor defaults of 100% are superseded by this writer; active/validated flags and native routing are untouched.
+
+### Validation and deployment
+
+108 tests pass: 11 logistics, 4 shops, 93 probe. The production C++ helper harness now covers legacy 100%/90% and manual 19% replacement, configured threshold combinations with boundary clamping, all direction masks, daily idempotence, resource-vector preservation/denial, and unrelated-byte invariants. Production call-site checks require both appending and reconciliation to pass configured values. The harness passes GCC ASan/UBSan. The updated logistics DLL compiled and linked successfully for Windows x64 using Zig Windows-GNU; its three plugin exports were inspected. This was not an MSVC build or native game execution. Host tests do not prove native dispatch timing or post-delivery inventory limits.
+
+After merging, rebuild **private_logistics only** (`build.bat private_logistics`), deploy its DLL and shipped INI, and fully restart. Probe and shops do not need rebuilding for this patch. Billing remains OFF, auto targets ON/apply, foreign restock OFF, probe ON. Missing new keys also default to 20/30; no manual INI correction is needed.
+
+On a copied save, let one daily reconciliation run. Check startup version and threshold line, source-enabled warehouse `load_pct=0.200`, destination-enabled store `unload_pct=0.300`, and disabled retail load remains off/zero. Wait through several days to confirm values no longer revert to 90/100, observe pickup at a warehouse well below 90% but above 20%, and observe delivery eligibility for a destination below 30%. Native UI global header values are not necessarily the managed per-task policy; inspect each row and the actual task audit. Do not count callback fragments as trips or treat the destination trigger as a spending cap.
