@@ -365,7 +365,7 @@ static tTransfer g_realTransfer = nullptr;
 // ---------------------------------------------------------------------------
 
 static int   g_enabled         = 1;
-static int   g_billing         = 1;
+static int   g_billing         = 0; // Permissions-test default: no freight payments.
 static int   g_dryRun          = 1;      // SAFE DEFAULT: compute, log, do not pay
 static int   g_payFactory      = 1;
 static int   g_payCarrier      = 1;
@@ -553,7 +553,7 @@ static char   gFuelResource[64] = "fuel";  // resolved through resource_pricing
 static double gBasketsPerTrip   = 0.80;    // CPI fallback, in daily survival baskets
 static double gBasketsPerTonne  = 0.02;
 
-#define PL_VERSION "0.18-permissions"
+#define PL_VERSION "0.18.1-permissions"
 static float g_minPayment      = 0.01f;
 static double g_dailyPayCap    = 0.0;    // 0 = no cap
 
@@ -568,8 +568,8 @@ static int                           g_stateStorageWidgetHandle = 0;
 
 // Automatic DO-target generation. Fixed buffers only; discovery runs from the
 // once-per-day sim_clock callback, never from a per-frame/render hook.
-static int g_autoTargetsEnabled = 0;
-static int g_autoTargetsDryRun  = 1;
+static int g_autoTargetsEnabled = 1;
+static int g_autoTargetsDryRun  = 0;
 static int g_autoTargetLogLimit = 80;
 static volatile LONG g_autoResetActiveMemoAfterLoad = 0;
 #define AUTO_ENTITY_MAX 8704
@@ -2132,14 +2132,14 @@ static void AutoDrawStatePermissions(uint64_t key, unsigned capabilities)
     const unsigned char oldMode = AutoStatePermissionGet(key);
     unsigned char newMode = (unsigned char)(oldMode & capabilities);
     if (capabilities & AUTO_ALLOW_LOAD) {
-        unsigned checked = (newMode & AUTO_ALLOW_LOAD) ? 1u : 0u;
+        unsigned checked = AutoNativeCheckboxValue((newMode & AUTO_ALLOW_LOAD) != 0);
         if (g_uiPanels->widgetCheckbox(&checked, L"Allow private DO loading (take goods)", 0))
-            newMode = AutoPermissionToggle(newMode, AUTO_ALLOW_LOAD, checked, capabilities);
+            newMode = AutoPermissionToggle(newMode, AUTO_ALLOW_LOAD, AutoNativeCheckboxChecked(checked), capabilities);
     }
     if (capabilities & AUTO_ALLOW_UNLOAD) {
-        unsigned checked = (newMode & AUTO_ALLOW_UNLOAD) ? 1u : 0u;
+        unsigned checked = AutoNativeCheckboxValue((newMode & AUTO_ALLOW_UNLOAD) != 0);
         if (g_uiPanels->widgetCheckbox(&checked, L"Allow private DO deliveries (receive goods)", 0))
-            newMode = AutoPermissionToggle(newMode, AUTO_ALLOW_UNLOAD, checked, capabilities);
+            newMode = AutoPermissionToggle(newMode, AUTO_ALLOW_UNLOAD, AutoNativeCheckboxChecked(checked), capabilities);
     }
     if (newMode != oldMode) {
         if (!AutoStatePermissionSet(key, newMode)) {
@@ -2166,8 +2166,11 @@ static void StateStorageWidgetProvider(void* building, void*)
         lastPanelKey = key;
         int type = -1; AutoReadBuildingType(building, &type);
         char asset[128]; AutoBuildingName(building, asset, sizeof(asset));
-        Logf("[AUTO DO] state panel key=%016llX type=%d asset=%s capabilities=%u%s",
-             (unsigned long long)key, type, asset, capabilities,
+        const unsigned effective = AutoStatePermissionGet(key) & capabilities;
+        Logf("[AUTO DO] state panel key=%016llX type=%d asset=%s capabilities=%u permissions=%u native_load=%u native_unload=%u (native 0=checked,1=unchecked)%s",
+             (unsigned long long)key, type, asset, capabilities, effective,
+             AutoNativeCheckboxValue((effective & AUTO_ALLOW_LOAD) != 0),
+             AutoNativeCheckboxValue((effective & AUTO_ALLOW_UNLOAD) != 0),
              capabilities ? "" : " (unsupported role: controls hidden, automatic access denied)");
     }
     if (!capabilities) return; // unknown roles do not get a misleading loading control
@@ -2354,10 +2357,10 @@ static bool AutoAppendNativeTarget(void* office, void* target, unsigned directio
     try { cfg = ctor(cfgMem); } catch (...) { cfg = nullptr; }
     if (!cfg) { ::operator delete(entry); ::operator delete(cfgMem); return false; }
 
-    // Mirror native add initialization: a new TaskEntry starts disabled;
-    // native upkeep enables it after reachability succeeds. Do not pre-enable
-    // a target before the DO's normal connection/rebuild path has validated it.
-    *(BYTE*)entry = 0;
+    // The native UI adds entries OFF, awaiting its activation checkbox. An
+    // autonomous company must request activation itself, not only add the row.
+    // Native dirty/upkeep/planner paths still validate route compatibility.
+    AutoApplyEntryActivation(entry, directions);
     *(void**)((BYTE*)entry + 0x08) = target;
     *(void**)((BYTE*)entry + 0x10) = cfg;
     // Ghidra reports no resource-filter field in this 0x18-byte TaskEntry.
@@ -2558,15 +2561,32 @@ static bool AutoSetTargetDirections(void* entry, unsigned directions)
         Logf("[AUTO DO] invalid task config; cannot enforce direction mask=%u", directions);
         return false;
     }
-    // No entry[0]/active/validated writes: native upkeep decides reachability.
-    const bool changed = AutoApplyTaskDirections(cfg, directions & AUTO_ALLOW_BOTH);
+    const bool directionsChanged = AutoApplyTaskDirections(cfg, directions & AUTO_ALLOW_BOTH);
+    const bool activationChanged = AutoApplyEntryActivation(entry, directions);
+    const bool changed = directionsChanged || activationChanged;
     if (changed && g_autoLogLines < (unsigned)g_autoTargetLogLimit) {
-        Logf("[AUTO DO] task directions target=%p load=%u unload=%u (native reachability unchanged)",
+        Logf("[AUTO DO] task directions target=%p load=%u unload=%u entry_enabled=%u (native route validation still required)",
              *(void**)((BYTE*)entry + 0x08), (directions & AUTO_ALLOW_LOAD) ? 1u : 0u,
-             (directions & AUTO_ALLOW_UNLOAD) ? 1u : 0u);
+             (directions & AUTO_ALLOW_UNLOAD) ? 1u : 0u, (unsigned)*(BYTE*)entry);
         ++g_autoLogLines;
     }
     return changed;
+}
+
+static void AutoLogNativeTarget(void* entry, int type, unsigned requested, bool preserve)
+{
+    if (g_autoLogLines >= (unsigned)g_autoTargetLogLimit) return;
+    void* cfg = *(void**)((BYTE*)entry + 0x10);
+    if (!AutoTaskConfigValid(cfg)) return; // enforcement path reports invalid configs
+    const BYTE* p = (const BYTE*)cfg;
+    const uintptr_t lb = *(const uintptr_t*)(p + 8), le = *(const uintptr_t*)(p + 16);
+    const uintptr_t ub = *(const uintptr_t*)(p + 0xD0), ue = *(const uintptr_t*)(p + 0xD8);
+    Logf("[AUTO DO] native target=%p type=%d policy=%s requested_mask=%u enabled=%u load_all=%u load_pct=%.3f load_selectors=%llu unload_all=%u unload_pct=%.3f unload_selectors=%llu",
+         *(void**)((BYTE*)entry + 8), type, preserve ? "preserve-customs" : "managed",
+         requested, (unsigned)*(BYTE*)entry, (unsigned)p[0], (double)*(const float*)(p + 4),
+         (unsigned long long)((le - lb) / 16), (unsigned)p[0xC8], (double)*(const float*)(p + 0xCC),
+         (unsigned long long)((ue - ub) / 16));
+    ++g_autoLogLines;
 }
 
 static void AutoTargetsOnDay(int day, int closedDay)
@@ -2655,6 +2675,19 @@ static void AutoTargetsOnDay(int day, int closedDay)
             void* targetBuilding = *(void**)((BYTE*)entry + 0x08);
             if (!targetBuilding || !TsmIsValidGamePtr(targetBuilding) ||
                 !ReadablePtr(targetBuilding, TSM_BLD_MIN_READABLE)) continue;
+            int targetType = -1;
+            if (AutoReadBuildingType(targetBuilding, &targetType) && AutoPreserveManualCustoms(targetType)) {
+                // Border trade is not a state-enterprise permission. Preserve
+                // the user's native customs task, including its resource lists
+                // and activation. Customs auto-selection is not implemented.
+                if (g_autoLogLines < (unsigned)g_autoTargetLogLimit) {
+                    Logf("[AUTO DO] preserving manual customs target=%p entry_enabled=%u",
+                         targetBuilding, (unsigned)*(BYTE*)entry);
+                    ++g_autoLogLines;
+                }
+                AutoLogNativeTarget(entry, targetType, 0, true);
+                continue;
+            }
             const int targetIndex = AutoPointerIndex(targetBuilding);
             if (targetIndex >= 0) g_autoEntities[targetIndex].targetPresent = 1;
             // Enforce all targets of this PRIVATE office, including manually
@@ -2670,6 +2703,7 @@ static void AutoTargetsOnDay(int day, int closedDay)
             const unsigned directions = AutoEffectiveDirections(isPrivate, permissions, capabilities);
             if (!g_autoTargetsDryRun)
                 doConfigChanged |= AutoSetTargetDirections(entry, directions);
+            AutoLogNativeTarget(entry, targetType, directions, false);
         }
 
         // Native upkeep can disable an entry in place: keep deduplication for
@@ -2794,16 +2828,20 @@ static void ReadSettings(void)
     char v[256];
 
     g_enabled        = H->configInt(ini, "private_logistics", "enabled", 1);
-    g_billing        = H->configInt(ini, "private_logistics", "billing", 1);
+    g_billing        = H->configInt(ini, "private_logistics", "billing", 0);
     g_dryRun         = H->configInt(ini, "private_logistics", "dry_run", 1);
     g_payFactory     = H->configInt(ini, "private_logistics", "pay_factory", 1);
     g_payCarrier     = H->configInt(ini, "private_logistics", "pay_carrier", 1);
     g_logCapPerDay   = H->configInt(ini, "private_logistics", "log_cap_per_day", 400);
     g_ledgerCapacity = H->configInt(ini, "private_logistics", "ledger_capacity", 512);
     g_siteLog        = H->configInt(ini, "private_logistics", "site_log", 1);
-    g_autoTargetsEnabled = H->configInt(ini, "private_logistics", "auto_targets_enabled", 0);
-    g_autoTargetsDryRun  = H->configInt(ini, "private_logistics", "auto_targets_dry_run", 1);
+    g_autoTargetsEnabled = H->configInt(ini, "private_logistics", "auto_targets_enabled", 1);
+    g_autoTargetsDryRun  = H->configInt(ini, "private_logistics", "auto_targets_dry_run", 0);
     g_autoTargetLogLimit = H->configInt(ini, "private_logistics", "auto_targets_log_limit", 80);
+    Logf("[AUTO DO] permission-test profile: billing=%d auto_targets=%d apply=%d (expected 0/1/1)",
+         g_billing, g_autoTargetsEnabled, !g_autoTargetsDryRun);
+    if (g_billing || !g_autoTargetsEnabled || g_autoTargetsDryRun)
+        Logf("[AUTO DO] WARNING deployed INI overrides the permission-test defaults; rebuild/deploy the shipped INI for this test");
     if (H->configInt(ini, "private_logistics", "state_storage_always_on", 0))
         Logf("[AUTO DO] state_storage_always_on is obsolete and ignored; per-building permissions are required");
     if (g_autoTargetLogLimit < 0) g_autoTargetLogLimit = 0;

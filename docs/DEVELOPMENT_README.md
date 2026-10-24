@@ -8,6 +8,23 @@
 
 > **Update 2026-10-22 (Rev 4):** Added `private_logistics` L3, corrected `TSM_GO_BUILDINGS_VEC` to `0x11B08/0x11B10`, added DO task/storage/connection offsets. Previous staging docs in `docs/README.md` and `docs/ghidra-do-storage-findings.md` supersede `docs/Logistics_Investigation.md` for DO task details. See evidence labels in `docs/README.md`.
 
+## Standing rule for gameplay test builds (2026-10-24)
+
+The user requires the shipped defaults to match the next requested test. Set both
+plugin INIs and missing-key C++ fallbacks accordingly; add regression tests for
+that profile. Do not ask the user to discover or manually repair mismatched test
+settings. Deploy the updated INIs along with rebuilt DLLs; old explicit INI
+values remain overrides and must be clearly diagnosed at startup. Preserve saved
+player permissions rather than silently resetting them. Do not confuse test
+defaults with claims of runtime validation.
+
+Current private-DO permissions test: logistics enabled, legacy billing OFF,
+automatic targets enabled/apply mode, probe enabled with interval 30 and budget
+1000, synthetic self-test OFF, private-shop foreign restocking OFF. See
+`private-logistics-runtime/AUTONOMOUS_DO_PERMISSIONS_PLAN.md` for the active build,
+log conclusions, and acceptance test. Future test stages must update the defaults
+and their tests together before offering a build.
+
 ## 1. Architectural Hierarchy & Dependency Rules
 
 The ecosystem is organized into a strict **4-Tier Level Hierarchy**. Higher levels may consume services from lower levels. **Cyclic dependencies between plugins are strictly prohibited.**

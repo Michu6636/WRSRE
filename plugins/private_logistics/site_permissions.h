@@ -26,6 +26,26 @@ inline unsigned AutoSiteCapabilities(int type, const char* asset)
     }
 }
 
+// Native labelled widget polarity established by the user's v0.18 game test:
+// raw 0 draws CHECKED; raw 1 draws UNCHECKED. Keep it at the UI boundary;
+// saved permission bits and TaskCfg directions retain their logical meaning.
+inline unsigned AutoNativeCheckboxValue(bool allowed) { return allowed ? 0u : 1u; }
+inline bool AutoNativeCheckboxChecked(unsigned raw) { return raw == 0; }
+
+inline bool AutoPreserveManualCustoms(int type) { return type == 20; }
+
+// Entry activation is separate from direction selectors. Appending an OFF
+// entry is not a functioning company connection. Request native activation;
+// the engine must still validate roads, vehicle compatibility and orders.
+inline bool AutoApplyEntryActivation(void* entry, unsigned directions)
+{
+    unsigned char* enabled = (unsigned char*)entry;
+    const unsigned char wanted = (directions & AUTO_ALLOW_BOTH) ? 1 : 0;
+    if (*enabled == wanted) return false;
+    *enabled = wanted;
+    return true;
+}
+
 inline unsigned AutoEffectiveDirections(bool isPrivate, unsigned permissions,
                                         unsigned capabilities)
 {

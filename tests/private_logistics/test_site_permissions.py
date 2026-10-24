@@ -19,6 +19,20 @@ static float Float(const unsigned char* p) { float v; memcpy(&v,p,4); return v; 
 static void SetPtr(unsigned char* p, uintptr_t v) { memcpy(p,&v,8); }
 int main(int argc, char**) {
     assert(argc==1);
+    assert(AutoNativeCheckboxValue(false)==1 && AutoNativeCheckboxValue(true)==0);
+    assert(AutoNativeCheckboxChecked(0) && !AutoNativeCheckboxChecked(1));
+    assert(AutoPreserveManualCustoms(20));
+    assert(!AutoPreserveManualCustoms(3) && !AutoPreserveManualCustoms(5));
+    // Activation is separate from selectors; no entry metadata may change.
+    for (unsigned mask=0;mask<4;++mask) {
+        unsigned char entry[0x18]; memset(entry,0xA5,sizeof(entry));
+        assert(AutoApplyEntryActivation(entry,mask));
+        assert(entry[0]==(mask ? 1:0));
+        assert(!AutoApplyEntryActivation(entry,mask));
+        for (unsigned i=1;i<sizeof(entry);++i) assert(entry[i]==0xA5);
+        AutoApplyEntryActivation(entry,0); assert(entry[0]==0);
+        AutoApplyEntryActivation(entry,mask); assert(entry[0]==(mask ? 1:0));
+    }
     // Same numeric type, different verified asset: consumer vs warehouse.
     assert(AutoSiteCapabilities(3,"MIRRORZ_DLC3_small_store")==2);
     assert(AutoSiteCapabilities(3,"2119881153/sklep3")==2);
@@ -106,4 +120,4 @@ class SitePermissionsTest(unittest.TestCase):
         self.assertIn('doConfigChanged |= AutoSetTargetDirections(entry, directions)', source)
         wrapper = source.split('static bool AutoSetTargetDirections(',1)[1].split('static void AutoTargetsOnDay(int day, int closedDay)\n{',1)[0]
         self.assertIn('AutoTaskConfigValid(cfg)', wrapper)
-        self.assertNotIn('*(BYTE*)entry = 1', wrapper)
+        self.assertIn('AutoApplyEntryActivation(entry, directions)', wrapper)
