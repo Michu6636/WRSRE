@@ -1,7 +1,12 @@
 // private_logistics - what a private company earns, and what it pays.
 //
 // ---------------------------------------------------------------------------
-// v0.17 updates (state-storage source opt-in):
+// v0.18-permissions: independent state-site directions; consumer sites never
+// supply goods; state default deny applies to existing/manual targets too.
+// Missing eligible connections are recreated by the company. No fuel/billing
+// policy changes in this version. Native direction semantics need game testing.
+//
+// Historical v0.17 updates (state-storage source opt-in):
 //   - Register a storage-panel checkbox through ui_panels' widget API; each
 //     public type-5 storage defaults OFF and its permission is persisted by a
 //     stable type/name/position key, never by retaining a Building pointer.
@@ -36,8 +41,8 @@
 //      still need verification before assigning state storage as load-only.
 //   3. Generated entries are enabled, deduplicated, and trigger the verified DO
 //      dirty flag. Existing entries/configs are never rewritten or removed.
-//   4. A session-local identity ledger suppresses repeat allocation if the game
-//      prunes a generated target; keys are hashes, not cached Building pointers.
+//   4. A session-local identity ledger tracks generated targets by stable
+//      keys. Missing eligible targets are recreated; manual removal is not a veto.
 //   5. This is a daily callback, not a per-frame hook. Save/load and manual-removal
 //      UI behavior remain runtime validation items; write mode ships off.
 // ---------------------------------------------------------------------------
@@ -334,6 +339,7 @@
 #include "../../src/resource_pricing_api.h"
 #include "../../src/persistence_api.h"
 #include "../../src/ui_panels_api.h"
+#include "site_permissions.h"
 
 #include <stdint.h>
 #include <math.h>
@@ -547,7 +553,7 @@ static char   gFuelResource[64] = "fuel";  // resolved through resource_pricing
 static double gBasketsPerTrip   = 0.80;    // CPI fallback, in daily survival baskets
 static double gBasketsPerTonne  = 0.02;
 
-#define PL_VERSION "0.17"
+#define PL_VERSION "0.18-permissions"
 static float g_minPayment      = 0.01f;
 static double g_dailyPayCap    = 0.0;    // 0 = no cap
 
@@ -565,7 +571,6 @@ static int                           g_stateStorageWidgetHandle = 0;
 static int g_autoTargetsEnabled = 0;
 static int g_autoTargetsDryRun  = 1;
 static int g_autoTargetLogLimit = 80;
-static int g_stateStorageForceOn = 0; // ini: state_storage_always_on=1 bypasses checkbox
 static volatile LONG g_autoResetActiveMemoAfterLoad = 0;
 #define AUTO_ENTITY_MAX 8704
 #define AUTO_MEMO_MAX   262144
@@ -1935,7 +1940,7 @@ static void OnDay(void*, int day, int month, int year)
 #define AUTO_STATE_PERMISSION_MAX 512
 #define AUTO_STATE_PREF_FILE "private_logistics_state.bin"
 struct AutoCustomSite { void* building; float x; float z; char name[64]; };
-// permission: 0=default off, 1=allowed, 2=explicitly turned off after opting in
+// permission bits: 1=load FROM site, 2=deliver INTO site; zero=deny both.
 struct AutoStateStorageSite { void* building; uint64_t key; float x; float z; char name[64]; unsigned char permission; };
 struct AutoStatePermission { uint64_t key; unsigned char mode; };
 static AutoCustomSite g_autoCustomSites[AUTO_CUSTOMS_MAX];
@@ -2081,7 +2086,7 @@ static unsigned char AutoStatePermissionGet(uint64_t key)
 
 static bool AutoStatePermissionSet(uint64_t key, unsigned char mode)
 {
-    if (!key || mode > 2) return false;
+    if (!key || mode > AUTO_ALLOW_BOTH) return false;
     EnterCriticalSection(&g_lock);
     unsigned found = g_statePermissionCount;
     for (unsigned i = 0; i < g_statePermissionCount; ++i) {
@@ -2113,70 +2118,60 @@ static bool AutoStatePermissionSet(uint64_t key, unsigned char mode)
 
 static bool AutoHasNativeStorage(void* b);
 
+static unsigned AutoBuildingCapabilities(void* building)
+{
+    int type = -1;
+    if (!AutoReadBuildingType(building, &type) || !AutoHasNativeStorage(building)) return 0;
+    char asset[128];
+    AutoBuildingName(building, asset, sizeof(asset));
+    return AutoSiteCapabilities(type, asset);
+}
+
+static void AutoDrawStatePermissions(uint64_t key, unsigned capabilities)
+{
+    const unsigned char oldMode = AutoStatePermissionGet(key);
+    unsigned char newMode = (unsigned char)(oldMode & capabilities);
+    if (capabilities & AUTO_ALLOW_LOAD) {
+        unsigned checked = (newMode & AUTO_ALLOW_LOAD) ? 1u : 0u;
+        if (g_uiPanels->widgetCheckbox(&checked, L"Allow private DO loading (take goods)", 0))
+            newMode = AutoPermissionToggle(newMode, AUTO_ALLOW_LOAD, checked, capabilities);
+    }
+    if (capabilities & AUTO_ALLOW_UNLOAD) {
+        unsigned checked = (newMode & AUTO_ALLOW_UNLOAD) ? 1u : 0u;
+        if (g_uiPanels->widgetCheckbox(&checked, L"Allow private DO deliveries (receive goods)", 0))
+            newMode = AutoPermissionToggle(newMode, AUTO_ALLOW_UNLOAD, checked, capabilities);
+    }
+    if (newMode != oldMode) {
+        if (!AutoStatePermissionSet(key, newMode)) {
+            Logf("[AUTO DO] state permission table full; change not retained");
+            return;
+        }
+        Logf("[AUTO DO] state permissions key=%016llX load=%u unload=%u",
+             (unsigned long long)key, (newMode & AUTO_ALLOW_LOAD) ? 1u : 0u,
+             (newMode & AUTO_ALLOW_UNLOAD) ? 1u : 0u);
+    }
+}
+
 static void StateStorageWidgetProvider(void* building, void*)
 {
-    static uint64_t s_lastWidgetKey = 0;
     if (!g_autoTargetsEnabled || !g_uiPanels || !TsmUiPanelsHasWidgets(g_uiPanels) ||
         !building || !TsmIsValidGamePtr(building) ||
         !ReadablePtr(building, TSM_BLD_MIN_READABLE) || !g_enterprise ||
-        !g_enterprise->isBuildingPrivate) return;
-    int type = -1;
-    if (!AutoReadBuildingType(building, &type)) {
-        Logf("[AUTO DO] storage widget: AutoReadBuildingType failed for building=%p", building);
-        return;
-    }
-    // Diagnostic: ALWAYS log first sight of any building that reaches widget pass (throttled) to prove hook fired
-    {
-        uint64_t dbgKey = 0;
-        AutoBuildingKey(building, &dbgKey, nullptr);
-        if (dbgKey != s_lastWidgetKey) {
-            s_lastWidgetKey = dbgKey;
-            const int isPriv = g_enterprise->isBuildingPrivate(building) ? 1 : 0;
-            const int hasStore = AutoHasNativeStorage(building) ? 1 : 0;
-            const int willDraw = (!isPriv && hasStore) ? 1 : 0;
-            Logf("[AUTO DO] storage widget probe: building=%p type=%d key=%016llX priv=%d nativeStorage=%d willDraw=%d (broadened: hasStore=%d)",
-                 building, type, (unsigned long long)dbgKey, isPriv, hasStore, willDraw, hasStore);
-        }
-    }
-    // v6.14: warehouse_covered_combined is type=3 in-window but state_storage=1 via world scan (has native storage). Gate on hasStore, not type==5.
-    const int hasNative = AutoHasNativeStorage(building) ? 1 : 0;
-    if (!hasNative) {
-        // not a storage-capable building at all - skip silently (still logged above as proof)
-        return;
-    }
-    if (g_enterprise->isBuildingPrivate(building)) {
-        Logf("[AUTO DO] storage widget: hasStore but isPrivate=1, skipping checkbox (building=%p type=%d)", building, type);
-        return;
-    }
-    // hasNative && !private => state storage => draw checkbox even if type !=5 (e.g. warehouse type=3). Keep type log for diagnostics.
-    if (type != AUTO_STORAGE_BUILDING_TYPE) {
-        Logf("[AUTO DO] storage widget: type %d != %d but hasNative=1 -> drawing anyway (warehouse fix)", type, AUTO_STORAGE_BUILDING_TYPE);
-    }
-
+        !g_enterprise->isBuildingPrivate || g_enterprise->isBuildingPrivate(building)) return;
+    const unsigned capabilities = AutoBuildingCapabilities(building);
     uint64_t key = 0;
     if (!AutoBuildingKey(building, &key, nullptr)) return;
-    const unsigned char oldMode = AutoStatePermissionGet(key);
-    // Native checkbox: 1 = checked/allowed, 0 = unchecked/not allowed.
-    unsigned sq = (oldMode == 1) ? 1u : 0u;
-    const unsigned beforeSq = sq;
-    // Add visual spacing above the checkbox by prefixing label with newline
-    if (!g_uiPanels->widgetCheckbox(&sq,
-            L"\nAllow private DOs to load here", 0)) {
-        // API returns 0 on every unchanged frame too; this is not an error.
-        return;
+    static uint64_t lastPanelKey = 0;
+    if (lastPanelKey != key) {
+        lastPanelKey = key;
+        int type = -1; AutoReadBuildingType(building, &type);
+        char asset[128]; AutoBuildingName(building, asset, sizeof(asset));
+        Logf("[AUTO DO] state panel key=%016llX type=%d asset=%s capabilities=%u%s",
+             (unsigned long long)key, type, asset, capabilities,
+             capabilities ? "" : " (unsupported role: controls hidden, automatic access denied)");
     }
-    if (sq != beforeSq) {
-        Logf("[AUTO DO] storage widget: checkbox toggled key=%016llX %u -> %u", (unsigned long long)key, beforeSq, sq);
-    }
-
-    const unsigned char newMode = (sq != 0) ? 1 : 2;
-    if (!AutoStatePermissionSet(key, newMode)) {
-        Logf("[AUTO DO] state storage permission table full; toggle not retained");
-        return;
-    }
-    if (newMode != oldMode)
-        Logf("[AUTO DO] state storage permission key=%016llX -> %s",
-             (unsigned long long)key, (sq != 0) ? "load enabled" : "load disabled");
+    if (!capabilities) return; // unknown roles do not get a misleading loading control
+    AutoDrawStatePermissions(key, capabilities);
 }
 
 static bool AutoHasNativeStorage(void* b)
@@ -2332,7 +2327,7 @@ static int AutoMemoInsert(uint64_t officeKey, uint64_t targetKey)
     return -1;
 }
 
-static bool AutoAppendNativeTarget(void* office, void* target, bool loadOnly)
+static bool AutoAppendNativeTarget(void* office, void* target, unsigned directions)
 {
     if (!g_exeBase || g_exeSize <= AUTO_RVA_TASKCFG_CTOR + 1 ||
         g_exeSize <= AUTO_RVA_VECTOR_PUSH_BACK + 1) return false;
@@ -2368,10 +2363,7 @@ static bool AutoAppendNativeTarget(void* office, void* target, bool loadOnly)
     // Ghidra reports no resource-filter field in this 0x18-byte TaskEntry.
     // The planner's target/connection index is rebuilt in its working area
     // by reachability; do not invent or write a filter at entry+0x0C.
-    *(BYTE*)cfg = 1;                              // native wildcard selector
-    *(float*)((BYTE*)cfg + 0x04) = 1.0f;         // native 100% load threshold
-    *((BYTE*)cfg + 0xC8) = loadOnly ? 0 : 1;     // unload disabled for source-only state storage
-    *(float*)((BYTE*)cfg + 0xCC) = loadOnly ? 0.0f : 1.0f;
+    AutoApplyTaskDirections(cfg, directions & AUTO_ALLOW_BOTH);
     *((BYTE*)cfg + 0x28) = 1;                    // native active flag
     *((BYTE*)cfg + 0xF0) = 1;                    // native validated flag
 
@@ -2393,7 +2385,7 @@ static void AutoPersistenceEvent(TsmSaveEvent event, const char* dir, void*)
     if (event == TSM_SAVE_WRITING) {
         if (!g_persistence->writeAtomic) return;
         BYTE data[12 + AUTO_STATE_PERMISSION_MAX * 9];
-        memcpy(data, "PLSTOR17", 8);
+        memcpy(data, "PLSTOR18", 8);
         uint32_t count = 0;
         EnterCriticalSection(&g_lock);
         count = g_statePermissionCount;
@@ -2413,7 +2405,8 @@ static void AutoPersistenceEvent(TsmSaveEvent event, const char* dir, void*)
             void* raw = g_persistence->readFile(dir, AUTO_STATE_PREF_FILE, &len);
             AutoStatePermission loaded[AUTO_STATE_PERMISSION_MAX];
             unsigned loadedCount = 0;
-            if (raw && len >= 12 && memcmp(raw, "PLSTOR17", 8) == 0) {
+            const bool legacy = raw && len >= 12 && memcmp(raw, "PLSTOR17", 8) == 0;
+            if (raw && len >= 12 && (legacy || memcmp(raw, "PLSTOR18", 8) == 0)) {
                 uint32_t count = 0;
                 memcpy(&count, (BYTE*)raw + 8, sizeof(count));
                 if (count <= AUTO_STATE_PERMISSION_MAX && len == 12 + (size_t)count * 9) {
@@ -2422,8 +2415,8 @@ static void AutoPersistenceEvent(TsmSaveEvent event, const char* dir, void*)
                         uint64_t key = 0;
                         memcpy(&key, (BYTE*)raw + at, sizeof(key));
                         at += sizeof(key);
-                        const unsigned char mode = *((BYTE*)raw + at++);
-                        if (key && (mode == 1 || mode == 2)) {
+                        const unsigned char mode = AutoMigratePermission(*((BYTE*)raw + at++), legacy);
+                        if (key && mode != 0) {
                             loaded[loadedCount].key = key;
                             loaded[loadedCount].mode = mode;
                             ++loadedCount;
@@ -2466,10 +2459,8 @@ static void AutoProbeStateInfrastructure(int closedDay, unsigned entityCount)
             !ReadablePtr((BYTE*)b + TSM_BLD_DEMOLISHED, 1) || TsmIsDemolished(b)) continue;
         int type = -1;
         if (!AutoReadBuildingType(b, &type)) continue;
-        // v6.15 Block C (§8.2/§8.7): hasNative b+0x970/0x978 stride 0xE0 is SOUND (FindDisp 970/978).
-        // Warehouse asset $TYPE_STORAGE(5) but live log type=3 shop builder → missing checkbox; do not gate on type==5.
-        // World scan now consistent with StateStorageWidgetProvider (!priv && hasNative) → warehouse willDraw=1.
-        // Broaden from type==5 to hasNative; exclude customs/DOs from storage pool (own vectors, not storage sources).
+        // Discover storage-bearing sites for enforcement; classification, not
+        // mere storage presence, determines allowed directions/visible widgets.
         if (AutoHasNativeStorage(b) && type != AUTO_CUSTOMS_TYPE &&
             type != AUTO_DO_ROAD_TYPE && type != AUTO_DO_RAIL_TYPE) {
             const bool isPrivate = g_enterprise && g_enterprise->isBuildingPrivate &&
@@ -2482,7 +2473,7 @@ static void AutoProbeStateInfrastructure(int closedDay, unsigned entityCount)
                     site.building = b;
                     site.key = 0;
                     AutoBuildingKey(b, &site.key, nullptr);
-                    site.permission = site.key ? AutoStatePermissionGet(site.key) : 0;
+                    site.permission = site.key ? (unsigned char)(AutoStatePermissionGet(site.key) & AutoBuildingCapabilities(b)) : 0;
                     site.x = 0.0f; site.z = 0.0f;
                     AutoBuildingPosition(b, &site.x, &site.z);
                     AutoBuildingName(b, site.name, sizeof(site.name));
@@ -2514,8 +2505,9 @@ static void AutoProbeStateInfrastructure(int closedDay, unsigned entityCount)
                  g_autoStateStorageSites[i].name,
                  (unsigned long long)g_autoStateStorageSites[i].key,
                  g_autoStateStorageSites[i].x, g_autoStateStorageSites[i].z,
-                 g_autoStateStorageSites[i].permission == 1 ? "LOAD-ON" :
-                 (g_autoStateStorageSites[i].permission == 2 ? "OFF-EXPLICIT" : "OFF-DEFAULT"));
+                 g_autoStateStorageSites[i].permission == AUTO_ALLOW_BOTH ? "LOAD+UNLOAD" :
+                 (g_autoStateStorageSites[i].permission == AUTO_ALLOW_LOAD ? "LOAD" :
+                  (g_autoStateStorageSites[i].permission == AUTO_ALLOW_UNLOAD ? "UNLOAD" : "DENY")));
         if (stateStoragesStored > show)
             Logf("[AUTO DO] state storage list truncated: %u of %u shown",
                  show, stateStorages);
@@ -2543,36 +2535,36 @@ static void AutoProbeStateInfrastructure(int closedDay, unsigned entityCount)
     }
 }
 
-static bool AutoSetStateTargetTaskMode(void* entry, unsigned char permission)
+static bool AutoTaskConfigValid(void* cfg)
 {
-    if (!entry || (permission != 1 && permission != 2) ||
-        !ReadablePtr(entry, AUTO_TARGET_ENTRY_SIZE)) return false;
-    void* cfg = *(void**)((BYTE*)entry + 0x10);
     if (!cfg || !TsmIsValidGamePtr(cfg) || !ReadablePtr(cfg, AUTO_TASKCFG_SIZE)) return false;
-    const float load = (permission == 1) ? 1.0f : 0.0f;
-    const BYTE unload = 0;
-    const float unloadPct = 0.0f;
-    bool changed = false;
-    // H2 FIX: re-enable disabled entry (native upkeep clears entry[0] for unreachable)
-    // when user explicitly enabled checkbox (LOAD-ON). Without this, disabled-but-present
-    // dedup keeps it counted as existing and never re-enabled after road reconnect.
-    if (permission == 1 && *(BYTE*)entry == 0) {
-        *(BYTE*)entry = 1; changed = true;
-        Logf("[AUTO DO] re-enabled disabled target entry %p for permission LOAD-ON", entry);
+    for (unsigned side = 0; side < 2; ++side) {
+        const BYTE* p = (const BYTE*)cfg + (side ? 0xC8 : 0);
+        const uintptr_t begin = *(const uintptr_t*)(p + 8);
+        const uintptr_t end = *(const uintptr_t*)(p + 16);
+        if ((!begin && end) || end < begin || (end - begin) % 16 != 0 ||
+            (end - begin) / 16 > 4096) return false;
+        if (end != begin && (!TsmIsValidGamePtr((void*)begin) ||
+                            !ReadablePtr((void*)begin, end - begin))) return false;
     }
-    // H2 FIX: ensure TaskCfg active/validated flags reflect LOAD-ON
-    if (permission == 1) {
-        if (*((BYTE*)cfg + 0x28) == 0) { *((BYTE*)cfg + 0x28) = 1; changed = true; }
-        if (*((BYTE*)cfg + 0xF0) == 0) { *((BYTE*)cfg + 0xF0) = 1; changed = true; }
+    return true;
+}
+
+static bool AutoSetTargetDirections(void* entry, unsigned directions)
+{
+    if (!entry || !ReadablePtr(entry, AUTO_TARGET_ENTRY_SIZE)) return false;
+    void* cfg = *(void**)((BYTE*)entry + 0x10);
+    if (!AutoTaskConfigValid(cfg)) {
+        Logf("[AUTO DO] invalid task config; cannot enforce direction mask=%u", directions);
+        return false;
     }
-    if (*(float*)((BYTE*)cfg + 0x04) != load) {
-        *(float*)((BYTE*)cfg + 0x04) = load; changed = true;
-    }
-    if (*((BYTE*)cfg + 0xC8) != unload) {
-        *((BYTE*)cfg + 0xC8) = unload; changed = true;
-    }
-    if (*(float*)((BYTE*)cfg + 0xCC) != unloadPct) {
-        *(float*)((BYTE*)cfg + 0xCC) = unloadPct; changed = true;
+    // No entry[0]/active/validated writes: native upkeep decides reachability.
+    const bool changed = AutoApplyTaskDirections(cfg, directions & AUTO_ALLOW_BOTH);
+    if (changed && g_autoLogLines < (unsigned)g_autoTargetLogLimit) {
+        Logf("[AUTO DO] task directions target=%p load=%u unload=%u (native reachability unchanged)",
+             *(void**)((BYTE*)entry + 0x08), (directions & AUTO_ALLOW_LOAD) ? 1u : 0u,
+             (directions & AUTO_ALLOW_UNLOAD) ? 1u : 0u);
+        ++g_autoLogLines;
     }
     return changed;
 }
@@ -2605,14 +2597,15 @@ static void AutoTargetsOnDay(int day, int closedDay)
         uint64_t key = 0; int type = -1;
         if (!AutoBuildingKey(b, &key, &type)) continue;
         const bool isOffice = (type == AUTO_DO_ROAD_TYPE || type == AUTO_DO_RAIL_TYPE);
-        const bool hasStorage = isOffice || AutoHasNativeStorage(b);
+        const unsigned capabilities = isOffice ? 0 : AutoBuildingCapabilities(b);
+        const bool hasStorage = isOffice || capabilities != 0;
         if (!hasStorage) continue;
         g_autoEntities[entityCount].building = b;
         g_autoEntities[entityCount].key = key;
         g_autoEntities[entityCount].type = type;
         g_autoEntities[entityCount].hasStorage = isOffice ? 0 : 1;
         g_autoEntities[entityCount].isStateStorage = 0;
-        g_autoEntities[entityCount].statePermission = 0;
+        g_autoEntities[entityCount].statePermission = (unsigned char)capabilities;
         g_autoEntities[entityCount].targetPresent = 0;
         ++entityCount;
         if (isOffice) ++officeCount; else ++candidateCount;
@@ -2620,31 +2613,19 @@ static void AutoTargetsOnDay(int day, int closedDay)
 
     AutoProbeStateInfrastructure(closedDay, entityCount);
 
-    // Include every discovered public type-5 storage in the pointer index so
-    // an explicit OFF can disable a previously auto-created load task. Only
-    // explicitly opted-in storage is an auto-add candidate (default is OFF).
-    bool hasExplicitStateOff = false;
+    // Public access defaults deny. Keep denied sites indexed too: existing
+    // native/manual entries must obey the same state permissions as new ones.
     for (unsigned si = 0; si < g_autoStateStorageCount && entityCount < AUTO_ENTITY_MAX; ++si) {
         AutoStateStorageSite& site = g_autoStateStorageSites[si];
         if (!site.building || !site.key) continue;
         AutoEntity& e = g_autoEntities[entityCount++];
         e.building = site.building; e.key = site.key; e.type = AUTO_STORAGE_BUILDING_TYPE;
-        // LIVE workaround for broken storage panel: ini state_storage_always_on=1 treats every discovered state storage as enabled
-        const bool forceOn = g_stateStorageForceOn != 0;
-        e.hasStorage = (forceOn || site.permission == 1) ? 1 : 0;
+        e.hasStorage = site.permission != 0;
         e.isStateStorage = 1; e.statePermission = site.permission; e.targetPresent = 0;
-        if (forceOn || site.permission == 1) ++candidateCount;
-        if (site.permission == 2) hasExplicitStateOff = true;
-        if (forceOn && site.permission == 0) {
-            Logf("[AUTO DO] state storage candidate name=%s key=%016llX force-enabled via ini (was OFF-DEFAULT)", site.name, (unsigned long long)site.key);
-        }
+        if (site.permission != 0) ++candidateCount;
     }
 
-    if (officeCount == 0 || (candidateCount == 0 && !hasExplicitStateOff)) {
-        Logf("[AUTO DO] day %d: private offices=%u candidates=%u (nothing to sync)",
-             closedDay, officeCount, candidateCount);
-        return;
-    }
+    if (officeCount == 0) return;
     if (!AutoBuildPointerIndex(entityCount)) {
         Logf("[AUTO DO] day %d: pointer index capacity exhausted; scan aborted", closedDay);
         return;
@@ -2671,22 +2652,31 @@ static void AutoTargetsOnDay(int day, int closedDay)
         for (size_t ei = 0; ei < entryCount; ++ei) {
             void* entry = entries[ei];
             if (!entry || !TsmIsValidGamePtr(entry) || !ReadablePtr(entry, AUTO_TARGET_ENTRY_SIZE)) continue;
-            const int targetIndex = AutoPointerIndex(*(void**)((BYTE*)entry + 0x08));
-            if (targetIndex >= 0) {
-                AutoEntity& target = g_autoEntities[targetIndex];
-                target.targetPresent = 1;
-                // An explicit storage checkbox choice controls only this type-5
-                // target. Default OFF leaves pre-existing manual entries alone.
-                if (!g_autoTargetsDryRun && target.isStateStorage && target.statePermission != 0)
-                    doConfigChanged |= AutoSetStateTargetTaskMode(entry, target.statePermission);
+            void* targetBuilding = *(void**)((BYTE*)entry + 0x08);
+            if (!targetBuilding || !TsmIsValidGamePtr(targetBuilding) ||
+                !ReadablePtr(targetBuilding, TSM_BLD_MIN_READABLE)) continue;
+            const int targetIndex = AutoPointerIndex(targetBuilding);
+            if (targetIndex >= 0) g_autoEntities[targetIndex].targetPresent = 1;
+            // Enforce all targets of this PRIVATE office, including manually
+            // present public entries, unindexed/unknown roles and default OFF.
+            const unsigned capabilities = AutoBuildingCapabilities(targetBuilding);
+            const bool isPrivate = g_enterprise->isBuildingPrivate(targetBuilding) != 0;
+            unsigned permissions = 0;
+            if (!isPrivate) {
+                uint64_t key = 0;
+                permissions = AutoBuildingKey(targetBuilding, &key, nullptr) ?
+                    AutoStatePermissionGet(key) : 0;
             }
+            const unsigned directions = AutoEffectiveDirections(isPrivate, permissions, capabilities);
+            if (!g_autoTargetsDryRun)
+                doConfigChanged |= AutoSetTargetDirections(entry, directions);
         }
 
-        // Native upkeep disables unreachable entries in place; it does not
-        // remove/free their TaskEntry or TaskCfg. Therefore a present-but-
-        // disabled target remains a valid deduplication hit. The player remove
-        // path does erase/free an entry; suppress a missing generated pair for
-        // this session so daily reconciliation does not undo that removal.
+        // Native upkeep can disable an entry in place: keep deduplication for
+        // entries still present. Missing generated entries are eligible for
+        // recreation regardless of why they disappeared. A private company
+        // owns its target list; manual removal is not a persistent veto.
+        // State-building permissions remain a separate eligibility gate.
         for (int mi = AutoOfficeMemoHeadIndex(office.key); mi >= 0;
              mi = g_autoMemo[mi].nextOffice == 0xFFFFFFFFu ? -1 : (int)g_autoMemo[mi].nextOffice) {
             AutoMemo& memo = g_autoMemo[mi];
@@ -2702,18 +2692,9 @@ static void AutoTargetsOnDay(int day, int closedDay)
                 }
             }
             if (!found) {
-                if (afterLoad) {
-                    // The native loader reconstructs TaskEntry/TaskCfg objects;
-                    // an absent generated pair can be reconciled without
-                    // confusing it with a player removal in this session.
-                    memo.state = 3; // tombstone: preserve hash probe chain, but allow re-add
-                    Logf("[AUTO DO] day %d target key=%016llX absent after load; eligible for reconciliation",
-                         closedDay, (unsigned long long)memo.targetKey);
-                } else {
-                    memo.state = 2; ++suppressed;
-                    Logf("[AUTO DO] day %d target key=%016llX disappeared; suppressing retry",
-                         closedDay, (unsigned long long)memo.targetKey);
-                }
+                memo.state = 3; // preserve hash chain; allow normal eligibility/re-add
+                Logf("[AUTO DO] day %d target key=%016llX absent; eligible for automatic reconnection",
+                     closedDay, (unsigned long long)memo.targetKey);
             }
         }
 
@@ -2729,9 +2710,6 @@ static void AutoTargetsOnDay(int day, int closedDay)
                 ++existing; ++doExisting; continue;
             }
             const int memoIndex = AutoMemoFind(office.key, target.key);
-            if (memoIndex >= 0 && g_autoMemo[memoIndex].state == 2) {
-                ++suppressed; ++doSuppressed; continue;
-            }
             if (entryCountAtStart + projectedAdds >= AUTO_DO_SAFE_TARGET_COUNT) {
                 ++suppressed; ++doSuppressed;
                 if (g_autoLogLines < (unsigned)g_autoTargetLogLimit) {
@@ -2763,7 +2741,7 @@ static void AutoTargetsOnDay(int day, int closedDay)
                 }
                 continue;
             }
-            if (!AutoAppendNativeTarget(office.building, target.building, target.isStateStorage != 0)) {
+            if (!AutoAppendNativeTarget(office.building, target.building, target.statePermission)) {
                 ++invalid;
                 if (g_autoLogLines < (unsigned)g_autoTargetLogLimit) {
                     Logf("[AUTO DO] day %d append failed office=%016llX target=%016llX",
@@ -2826,7 +2804,8 @@ static void ReadSettings(void)
     g_autoTargetsEnabled = H->configInt(ini, "private_logistics", "auto_targets_enabled", 0);
     g_autoTargetsDryRun  = H->configInt(ini, "private_logistics", "auto_targets_dry_run", 1);
     g_autoTargetLogLimit = H->configInt(ini, "private_logistics", "auto_targets_log_limit", 80);
-    g_stateStorageForceOn = H->configInt(ini, "private_logistics", "state_storage_always_on", 0);
+    if (H->configInt(ini, "private_logistics", "state_storage_always_on", 0))
+        Logf("[AUTO DO] state_storage_always_on is obsolete and ignored; per-building permissions are required");
     if (g_autoTargetLogLimit < 0) g_autoTargetLogLimit = 0;
     if (g_autoTargetLogLimit > 1000) g_autoTargetLogLimit = 1000;
 
