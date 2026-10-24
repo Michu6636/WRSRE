@@ -12,3 +12,8 @@ tools/peinfo-out/
 *.ilk
 *.dll
 *.exe
+
+# Local agent review exports and Python-generated files
+.cache/
+__pycache__/
+*.py[cod]
