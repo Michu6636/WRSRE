@@ -65,12 +65,18 @@ inline unsigned char AutoPermissionToggle(unsigned mask, unsigned direction,
     return (unsigned char)((checked ? (mask | direction) : (mask & ~direction)) & capabilities);
 }
 
+// Company policy bounds (not permission bits): keep source thresholds below
+// the native 90% ceiling and use a positive destination replenishment trigger.
+inline int AutoClampSourcePercent(int value) { return value < 0 ? 0 : (value > 90 ? 90 : value); }
+inline int AutoClampDestinationPercent(int value) { return value < 10 ? 10 : (value > 100 ? 100 : value); }
+
 // The caller validates cfg and both native vector spans before calling.
 // Deny = no wildcard AND empty resource selector list, not just threshold=0.
 // Keep allocation begin/capacity untouched: native code still owns the vector.
 // The private DO owns its task resource selectors; native storage/resource and
 // reachability rules remain the planner's responsibility.
-inline bool AutoApplyTaskDirections(void* cfg, unsigned directions)
+inline bool AutoApplyTaskDirections(void* cfg, unsigned directions,
+                                    int sourcePercent = 20, int destinationPercent = 30)
 {
     unsigned char* p = (unsigned char*)cfg;
     bool changed = false;
@@ -78,7 +84,8 @@ inline bool AutoApplyTaskDirections(void* cfg, unsigned directions)
         const size_t offset = side ? 0xC8 : 0;
         const bool allowed = (directions & (side ? AUTO_ALLOW_UNLOAD : AUTO_ALLOW_LOAD)) != 0;
         const unsigned char all = allowed ? 1 : 0;
-        const float percentage = allowed ? 1.0f : 0.0f;
+        const int threshold = side ? AutoClampDestinationPercent(destinationPercent) : AutoClampSourcePercent(sourcePercent);
+        const float percentage = allowed ? (float)threshold / 100.0f : 0.0f;
         float previous;
         memcpy(&previous, p + offset + 4, sizeof(previous));
         if (p[offset] != all) { p[offset] = all; changed = true; }
