@@ -2156,26 +2156,28 @@ static void StateStorageWidgetProvider(void* building, void*)
     uint64_t key = 0;
     if (!AutoBuildingKey(building, &key, nullptr)) return;
     const unsigned char oldMode = AutoStatePermissionGet(key);
-    unsigned checked = (oldMode == 1) ? 1u : 0u;
-    const unsigned before = checked;
-    if (!g_uiPanels->widgetCheckbox(&checked,
-            L"Allow private DOs to load here", 0)) {
+    // widgetCheckbox renders inverted: sq=0 = visually checked [X], sq=1 = visually unchecked [ ]
+    unsigned sq = (oldMode == 1) ? 0u : 1u;
+    const unsigned beforeSq = sq;
+    // Add visual spacing above the checkbox by prefixing label with newline
+    if (!g_uiPanels->widgetCheckbox(&sq,
+            L"\nAllow private DOs to load here", 0)) {
         // widgetCheckbox can return 0 when budget exhausted or widgets disabled - log once per key
         Logf("[AUTO DO] storage widget: widgetCheckbox returned 0 for key=%016llX (budget or disabled)", (unsigned long long)key);
         return;
     }
-    if (checked != before) {
-        Logf("[AUTO DO] storage widget: checkbox toggled key=%016llX %u -> %u", (unsigned long long)key, before, checked);
+    if (sq != beforeSq) {
+        Logf("[AUTO DO] storage widget: checkbox toggled key=%016llX %u -> %u", (unsigned long long)key, beforeSq, sq);
     }
 
-    const unsigned char newMode = checked ? 1 : ((oldMode == 1) ? 2 : 0);
+    const unsigned char newMode = (sq == 0) ? 1 : ((oldMode == 1) ? 2 : 0);
     if (!AutoStatePermissionSet(key, newMode)) {
-        Logf("[AUTO DO] storage permission table full; toggle not retained");
+        Logf("[AUTO DO] state storage permission table full; toggle not retained");
         return;
     }
     if (newMode != oldMode)
         Logf("[AUTO DO] state storage permission key=%016llX -> %s",
-             (unsigned long long)key, checked ? "load enabled" : "load disabled");
+             (unsigned long long)key, (sq == 0) ? "load enabled" : "load disabled");
 }
 
 static bool AutoHasNativeStorage(void* b)

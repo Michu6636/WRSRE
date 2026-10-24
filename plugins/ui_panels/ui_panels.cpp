@@ -947,9 +947,10 @@ struct PanelHook {
                             // draws), it just stops appending to it.
 };
 
-#define MAX_HOOKS 9
+#define MAX_HOOKS 10
 #define HOOK_STORAGE 7    // v6.11: type-5 storage panel, verified call-site hook
 #define HOOK_WAREHOUSE 8  // v6.15: Level 1B window kind 3 (0x7FC880), CALL-SITE hook
+#define HOOK_STORAGE_TD5 9  // v?: storage td+0x360==5 path (0x71D290), CALL-SITE hook
 #define HOOK_CITYHALL 4     // index of the City Hall builder (0x72DBF0)
 #define HOOK_CITIZEN  5     // index of the citizen panel builder (candidate RVA below)
 #define HOOK_DO       6     // v6.7: distribution office (type 43), CALL-SITE hook
@@ -1045,6 +1046,13 @@ static const BYTE kWarehouseExpect[] = {
     0x48, 0x8B, 0xCF,
     0xE8, 0x8C, 0x22, 0x11, 0x00
 };
+static const BYTE kStorageTD5Expect[] = {
+    0x83, 0xBA, 0x60, 0x03, 0x00, 0x00, 0x05,   // CMP dword ptr [RDX+0x360], 5
+    0x75, 0x00,                                   // JNZ <rel8>  (offset build-dependent)
+    0x48, 0x8B, 0xD6,                             // MOV RDX, RSI
+    0x48, 0x8B, 0xCF,                             // MOV RCX, RDI
+    0xE8, 0x00, 0x00, 0x00, 0x00                  // CALL rel32 (target verified separately)
+};
 static const BYTE kCitizenExpect[] = {
     0x48, 0x8B, 0xC4, 0x53,
     0x48, 0x83, 0xEC, 0x40,
@@ -1105,11 +1113,15 @@ static const BYTE kCitizenExpect[] = {
 #define RVA_STORAGE_CALLSITE 0x6EA80C
 #define RVA_WINDOW_DISPATCH 0x6E9B80
 #define DISPATCH_SCAN_LEN   0x8000   // 32 KiB - the switch plus its branches
+#define RVA_STORAGE_TD5_BUILDER 0x71D290  // FUN_14071d290: storage td+0x360==5 builder
+#define RVA_STORAGE_TD5_GUARD   0x6EAE07  // CMP dword ptr [RDX+0x360], 5 / ... / CALL 0x71D290
 
 static void* s_doCave      = nullptr;
 static DWORD s_doCallAt    = 0;         // RVA of the patched call, 0 = none
 static void* s_storageCave = nullptr;
 static DWORD s_storageCallAt = 0;
+static void* s_storageTd5Cave = nullptr;
+static DWORD s_storageTd5CallAt = 0;
 
 static PanelHook g_hooks[MAX_HOOKS] = {
     { "shop",     0x7272F0, sizeof kShopExpect,    kShopExpect,    NULL, 0, 0, 0, 0, 0 },
@@ -1130,6 +1142,12 @@ static PanelHook g_hooks[MAX_HOOKS] = {
     // kind==0 builders above ever see. kWarehouseExpect verifies the guard, not a
     // prologue, so it is carried in `expect` purely as site identification.
     { "warehouse", 0x7FC880, 0,                   kWarehouseExpect, NULL, 0, 0, 0, 0, 0 },
+    // v?: call-site hook for storage td+0x360==5 (FUN_14071d290 at 0x71D290).
+    // The guard at 0x6EAE07 selects td==5 storage buildings and the dispatcher
+    // call routes them to 0x71D290. kStorageTD5Expect verifies the guard
+    // cluster (JNZ offset and CALL rel32 are build-dependent wildcards); the
+    // call target is re-verified before any byte is written.
+    { "storage_td5", 0x71D290, 0,                   kStorageTD5Expect, NULL, 0, 0, 0, 0, 0 },
 };
 
 // ---------------------------------------------------------------- providers
@@ -2507,7 +2525,7 @@ static void RunHookBody(void* g, void* w, void* p3, int idx, t_PanelFn real)
     if (ww && ReadablePtr(ww + 0x248, sizeof(int)))
     {
         int kind = *(int*)(ww + 0x248);
-        if (idx == HOOK_CITIZEN || kind == 8 || g_probe)
+        if (idx == HOOK_CITIZEN || idx == HOOK_WAREHOUSE || idx == HOOK_STORAGE || kind == 8 || g_probe)
         {
             static void* s_lastDbgWin = nullptr;
             if (w != s_lastDbgWin)
@@ -2592,10 +2610,20 @@ static void h_Warehouse(void* g, void* w, void* p3)
                 (t_PanelFn)(g_exeBase + RVA_WAREHOUSE_BUILDER));
 }
 
+// v?: call-site detour for storage td+0x360==5. The cave calls FUN_14071d290
+// by absolute address and then runs the shared hook body, exactly like h_Do
+// and h_Warehouse.
+static void h_StorageTD5(void* g, void* w, void* p3)
+{
+    RunHookBody(g, w, p3, HOOK_STORAGE_TD5,
+                (t_PanelFn)(g_exeBase + RVA_STORAGE_TD5_BUILDER));
+}
+
 static void* s_detours[MAX_HOOKS] = {
     (void*)h_Shop, (void*)h_Residence, (void*)h_Pub, (void*)h_Factory,
     (void*)h_CityHall, (void*)h_Citizen, (void*)h_Do, (void*)h_Storage,
-    (void*)h_Warehouse
+    (void*)h_Warehouse,
+    (void*)h_StorageTD5
 };
 
 // ---------------------------------------------------------------- v6.7 call-site hook
@@ -2781,6 +2809,97 @@ static bool InstallWarehouseCallSiteHook(void)
     return true;
 }
 
+
+static bool InstallStorageTD5CallSiteHook(void)
+{
+    if (!ReadablePtr(g_exeBase + RVA_WINDOW_DISPATCH, 16) ||
+        !ReadablePtr(g_exeBase + RVA_STORAGE_TD5_BUILDER, 16)) {
+        Logf("ui_panels  storage_td5: the dispatcher or the builder is not readable "
+             "at the expected RVA - no rows on a td+0x360==5 storage window");
+        return false;
+    }
+
+    BYTE* const target = g_exeBase + RVA_STORAGE_TD5_BUILDER;
+
+    // Scan the dispatcher for an E8 whose rel32 resolves to the storage td+0x360==5 builder.
+    // A match is exact, so a false positive is impossible; a missed call is
+    // reported rather than guessed at.
+    unsigned found = 0;
+    DWORD    firstAt = 0;
+    for (DWORD off = 0; off + 5 <= DISPATCH_SCAN_LEN; off++) {
+        const BYTE* p = g_exeBase + RVA_WINDOW_DISPATCH + off;
+        if (!ReadablePtr(p, 5)) break;
+        if (p[0] != 0xE8) continue;
+        const int32_t rel = *(const int32_t*)(p + 1);
+        if (p + 5 + rel != target) continue;
+        if (!found) firstAt = RVA_WINDOW_DISPATCH + off;
+        found++;
+    }
+
+    if (!found) {
+        Logf("ui_panels  storage_td5: no `call 0x%06X` found in the dispatcher "
+             "0x%06X..+0x%X - the td+0x360==5 storage window still has no rows. Nothing "
+             "was written. Need FUN_14071d290's call site from Ghidra.",
+             RVA_STORAGE_TD5_BUILDER, RVA_WINDOW_DISPATCH, DISPATCH_SCAN_LEN);
+        return false;
+    }
+
+    if (found > 1)
+        Logf("ui_panels  storage_td5: %u calls to 0x%06X found; hooking the first "
+             "(0x%06X). If rows appear twice, this is why.",
+             found, RVA_STORAGE_TD5_BUILDER, firstAt);
+
+    BYTE* site = g_exeBase + firstAt;
+    if (!ReadablePtr(site, 5)) {
+        Logf("ui_panels  storage_td5: call site 0x%06X unreadable - nothing written", firstAt);
+        return false;
+    }
+
+    BYTE* cave = AllocNear(site, 64);
+    if (!cave) {
+        Logf("ui_panels  storage_td5: no code cave near 0x%06X - nothing written", firstAt);
+        return false;
+    }
+
+    // Cave: FF 25 00000000 <imm64 h_StorageTD5>   jmp qword ptr [rip+0]
+    static const BYTE kJmpAbs[6] = { 0xFF, 0x25, 0x00, 0x00, 0x00, 0x00 };
+    memcpy(cave, kJmpAbs, sizeof(kJmpAbs));
+    void* detour = (void*)&h_StorageTD5;
+    memcpy(cave + 6, &detour, sizeof(detour));
+    FlushInstructionCache(GetCurrentProcess(), cave, 14);
+
+    const int64_t toCave = (int64_t)(cave - (site + 5));
+    if (toCave > 0x7FFFFFFFLL || toCave < -0x80000000LL) {
+        Logf("ui_panels  storage_td5: cave out of rel32 range - nothing written");
+        return false;
+    }
+
+    DWORD oldProtect = 0;
+    if (!VirtualProtect(site, 5, PAGE_EXECUTE_READWRITE, &oldProtect)) {
+        Logf("ui_panels  storage_td5: VirtualProtect failed at 0x%06X - nothing written", firstAt);
+        return false;
+    }
+
+    // Re-verify under the protection: still a call to the storage td+0x360==5 builder?
+    if (site[0] != 0xE8 || site + 5 + *(const int32_t*)(site + 1) != target) {
+        VirtualProtect(site, 5, oldProtect, &oldProtect);
+        Logf("ui_panels  storage_td5: the call site changed under us - nothing written");
+        return false;
+    }
+
+    site[0] = 0xE8;                              // same opcode: still a call
+    *(int32_t*)(site + 1) = (int32_t)toCave;
+    FlushInstructionCache(GetCurrentProcess(), site, 5);
+    VirtualProtect(site, 5, oldProtect, &oldProtect);
+
+    s_storageTd5CallAt = firstAt;
+    s_storageTd5Cave = cave;
+
+    Logf("ui_panels  storage_td5: hook 0x%06X -> builder 0x%06X ok (cave %p). "
+         "td+0x360==5 storage panels now get rows and widgets.",
+         firstAt, RVA_STORAGE_TD5_BUILDER, (void*)cave);
+    return true;
+}
 // v6.12 diag: dump every E8 in the dispatcher so the warehouse builder can be
 // identified from a live log without a new Ghidra run. Warehouse_covered_combined
 // (type 5) never fired 0x4CABD0 - 1 site at 0x6EA80C installed but zero
@@ -2961,7 +3080,7 @@ static void ReadSettings(void)
         g_fontRva = RVA_FONT_DEFAULT;
 
     H->configString(ini, "ui_panels", "enable", v, sizeof(v),
-                    "shop,residence,pub,factory,cityhall,citizen,do,storage,warehouse");
+                    "shop,residence,pub,factory,cityhall,citizen,do,storage,warehouse,storage_td5");
     for (int i = 0; i < MAX_HOOKS; i++)
         g_hooks[i].wanted = ListHas(v, g_hooks[i].name);
 
@@ -3140,6 +3259,7 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
         bool ok = false;
         if (i == HOOK_DO) ok = InstallDoCallSiteHook();
         else if (i == HOOK_WAREHOUSE) ok = InstallWarehouseCallSiteHook();
+        else if (i == HOOK_STORAGE_TD5) ok = InstallStorageTD5CallSiteHook();
         else if (i == HOOK_STORAGE) {
             // prefer inline (catches all callers), fallback to call-site patch
             ok = TryInstallStorageInlineHook();
