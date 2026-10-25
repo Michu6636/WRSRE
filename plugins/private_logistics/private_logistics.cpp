@@ -340,6 +340,7 @@
 #include "../../src/persistence_api.h"
 #include "../../src/ui_panels_api.h"
 #include "site_permissions.h"
+#include "task_audit.h"
 
 #include <stdint.h>
 #include <math.h>
@@ -553,7 +554,7 @@ static char   gFuelResource[64] = "fuel";  // resolved through resource_pricing
 static double gBasketsPerTrip   = 0.80;    // CPI fallback, in daily survival baskets
 static double gBasketsPerTonne  = 0.02;
 
-#define PL_VERSION "0.18.2-thresholds"
+#define PL_VERSION "0.18.3-audit"
 static float g_minPayment      = 0.01f;
 static double g_dailyPayCap    = 0.0;    // 0 = no cap
 
@@ -2563,6 +2564,9 @@ static bool AutoSetTargetDirections(void* entry, unsigned directions)
         Logf("[AUTO DO] invalid task config; cannot enforce direction mask=%u", directions);
         return false;
     }
+    const bool audit = g_autoLogLines < (unsigned)g_autoTargetLogLimit;
+    AutoTaskAudit before = {};
+    if (audit) before = AutoReadTaskAudit(entry, cfg);
     const bool directionsChanged = AutoApplyTaskDirections(cfg, directions & AUTO_ALLOW_BOTH, g_autoSourcePercent, g_autoDestinationPercent);
     const bool activationChanged = AutoApplyEntryActivation(entry, directions);
     const bool changed = directionsChanged || activationChanged;
@@ -2570,6 +2574,19 @@ static bool AutoSetTargetDirections(void* entry, unsigned directions)
         Logf("[AUTO DO] task directions target=%p load=%u unload=%u entry_enabled=%u (native route validation still required)",
              *(void**)((BYTE*)entry + 0x08), (directions & AUTO_ALLOW_LOAD) ? 1u : 0u,
              (directions & AUTO_ALLOW_UNLOAD) ? 1u : 0u, (unsigned)*(BYTE*)entry);
+        ++g_autoLogLines;
+    }
+    if (changed && audit && g_autoLogLines < (unsigned)g_autoTargetLogLimit) {
+        const AutoTaskAudit after = AutoReadTaskAudit(entry, cfg);
+        Logf("[AUTO DO AUDIT] target=%p changed_fields=0x%02X enabled=%u->%u load_all=%u->%u unload_all=%u->%u load_pct=%.9g->%.9g unload_pct=%.9g->%.9g load_bits=%08X->%08X unload_bits=%08X->%08X",
+             *(void**)((BYTE*)entry + 8), AutoTaskAuditChanges(before, after),
+             (unsigned)before.enabled, (unsigned)after.enabled,
+             (unsigned)before.loadAll, (unsigned)after.loadAll,
+             (unsigned)before.unloadAll, (unsigned)after.unloadAll,
+             AutoAuditPercent(before.loadBits), AutoAuditPercent(after.loadBits),
+             AutoAuditPercent(before.unloadBits), AutoAuditPercent(after.unloadBits),
+             (unsigned)before.loadBits, (unsigned)after.loadBits,
+             (unsigned)before.unloadBits, (unsigned)after.unloadBits);
         ++g_autoLogLines;
     }
     return changed;
@@ -2588,6 +2605,23 @@ static void AutoLogNativeTarget(void* entry, int type, unsigned requested, bool 
          requested, (unsigned)*(BYTE*)entry, (unsigned)p[0], (double)*(const float*)(p + 4),
          (unsigned long long)((le - lb) / 16), (unsigned)p[0xC8], (double)*(const float*)(p + 0xCC),
          (unsigned long long)((ue - ub) / 16));
+    ++g_autoLogLines;
+}
+
+
+// Called only from daily reconciliation; does not arm, clear or advance timers.
+static void AutoLogOfficePlanState(void* office, uint64_t key, int day,
+                                   const char* phase, bool notificationRequested)
+{
+    if (g_autoLogLines >= (unsigned)g_autoTargetLogLimit) return;
+    const BYTE* p = (const BYTE*)office;
+    const bool dirtyReadable = ReadablePtr(p + AUTO_DO_DIRTY, 1);
+    const bool timerReadable = ReadablePtr(p + AUTO_DO_UI_TIMER, sizeof(float));
+    float timer = 0.0f;
+    if (timerReadable) memcpy(&timer, p + AUTO_DO_UI_TIMER, sizeof(timer));
+    Logf("[AUTO DO AUDIT] day=%d office=%p key=%016llX phase=%s notification_requested=%u dirty=%d timer_readable=%u countdown=%.9g",
+         day, office, (unsigned long long)key, phase, notificationRequested ? 1u : 0u,
+         dirtyReadable ? (int)p[AUTO_DO_DIRTY] : -1, timerReadable ? 1u : 0u, (double)timer);
     ++g_autoLogLines;
 }
 
@@ -2668,6 +2702,7 @@ static void AutoTargetsOnDay(int day, int closedDay)
                  closedDay, (unsigned long long)office.key);
             ++invalid; continue;
         }
+        AutoLogOfficePlanState(office.building, office.key, closedDay, "before-reconcile", false);
         const size_t entryCountAtStart = entryCount;
         for (unsigned ei = 0; ei < entityCount; ++ei) g_autoEntities[ei].targetPresent = 0;
         bool doConfigChanged = false;
@@ -2803,12 +2838,14 @@ static void AutoTargetsOnDay(int day, int closedDay)
             }
         }
 
+        AutoLogOfficePlanState(office.building, office.key, closedDay, "before-notify", doAdded > 0 || doConfigChanged);
         if (doAdded > 0 || doConfigChanged) {
             if (ReadablePtr((BYTE*)office.building + AUTO_DO_DIRTY, 1))
                 *((BYTE*)office.building + AUTO_DO_DIRTY) = 1;
             if (ReadablePtr((BYTE*)office.building + AUTO_DO_UI_TIMER, sizeof(float)))
                 *(float*)((BYTE*)office.building + AUTO_DO_UI_TIMER) = 3.0f;
         }
+        AutoLogOfficePlanState(office.building, office.key, closedDay, "after-notify", doAdded > 0 || doConfigChanged);
         if (doPlanned || doExisting || doSuppressed || doAdded || doConfigChanged)
             Logf("[AUTO DO] day %d office=%016llX type=%d existing=%u planned=%u added=%u config_changed=%u suppressed=%u",
                  closedDay, (unsigned long long)office.key, office.type, doExisting,

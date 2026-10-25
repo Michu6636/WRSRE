@@ -4,7 +4,7 @@
 
 **Latest regression: unresolved.** The v0.18.2 run writes 20/30 correctly but the player reports movement only after clicking a native percentage control. Do not advance to fuel work or assume direct field writes reproduce the native commit lifecycle. See `DO_PERCENTAGE_WAKEUP_INVESTIGATION.md` for the new log evidence and bounded native-handler trace request.
 
-Implemented locally: autonomous reconnection, role-aware state-site controls, independent directions, permission migration and TaskCfg reconciliation. `private_logistics` now reports **0.18.2-thresholds**. The latest player test reports working connections and deliveries; its log contains state-warehouse pickups and state-store deliveries. This is not comprehensive planner validation. The remaining daily threshold-reset defect is corrected below, pending the next in-game check. Probe, fuel lookup and freight billing algorithms were deliberately left unchanged.
+Implemented locally: autonomous reconnection, role-aware state-site controls, independent directions, permission migration and TaskCfg reconciliation. `private_logistics` now reports **0.18.3-audit**. The latest player test reports working connections and deliveries; its log contains state-warehouse pickups and state-store deliveries. This is not comprehensive planner validation. The remaining daily threshold-reset defect is corrected below, pending the next in-game check. Probe, fuel lookup and freight billing algorithms were deliberately left unchanged.
 
 ## Ownership and direction policy
 
@@ -177,3 +177,123 @@ However the log repeatedly shows the managed warehouse rewritten to `load_pct=1.
 After merging, rebuild **private_logistics only** (`build.bat private_logistics`), deploy its DLL and shipped INI, and fully restart. Probe and shops do not need rebuilding for this patch. Billing remains OFF, auto targets ON/apply, foreign restock OFF, probe ON. Missing new keys also default to 20/30; no manual INI correction is needed.
 
 On a copied save, let one daily reconciliation run. Check startup version and threshold line, source-enabled warehouse `load_pct=0.200`, destination-enabled store `unload_pct=0.300`, and disabled retail load remains off/zero. Wait through several days to confirm values no longer revert to 90/100, observe pickup at a warehouse well below 90% but above 20%, and observe delivery eligibility for a destination below 30%. Native UI global header values are not necessarily the managed per-task policy; inspect each row and the actual task audit. Do not count callback fragments as trips or treat the destination trigger as a spending cap.
+
+
+## V2 report review and logging-only build — 2026-10-24
+
+The pushed `DO_PERCENTAGE_WAKEUP_FINDINGS_V2.md` was fetched from the actual fuel branch and read in full. Its native-constant bytes support double 0.1, but the report's claim that this is the effective source upper bound is not sufficient to justify changing source defaults: the raw decompilation/assembly establishing the complete bound expression is not committed. A 0.1 constant may be used directly or in a derived bound; do not assume either without the actual use-site dataflow. Its proposed workaround of raising a value before clamping it to the same 0.1 is mathematically ineffective. Also do not collapse separate slider branches into one unconditional operation that toggles directions on every percentage click.
+
+The actual prior attachment was re-read: SHA-256 `07872a414a0bf1ed4fb043228e39484461fad7adb63cf24724ae8929b44266ed`, 2,556 lines. Days 3–6 had config_changed=0. Repeated changes begin on day 7 when the warehouse becomes load-only (unload is denied). This is NOT evidence that a 20% source was clamped on every day. Native normalization of a denied unload percentage is another plausible explanation, not an established diagnosis. Post-write audits cannot distinguish these cases.
+
+**Build v0.18.3-audit is diagnostic, NOT a dispatch fix.** It adds no game-memory writes, new native calls, hooks, UI callbacks, gates or scheduling changes. Existing policy writes and existing dirty/timer writes are unchanged. Read-only snapshots are taken on the existing daily simulation callback, after validating the same entry/config spans as before. They do not retain game pointers across callbacks.
+
+- `[AUTO DO AUDIT] target=... changed_fields=...` reports incoming and outgoing activation/wildcards, nine-significant-digit percentages, and exact float bit patterns. Mask: 0x01 activation, 0x02 load wildcard, 0x04 unload wildcard, 0x08 load percentage, 0x10 unload percentage, 0x20 load selector span, 0x40 unload selector span. This identifies the actual field(s) corrected by our writer rather than guessing from identical final values. Mask zero with a reported change would be a diagnostic discrepancy, not a scheduling instruction.
+- `[AUTO DO AUDIT] office=... phase=before-reconcile/before-notify/after-notify` reports guarded reads of dirty and countdown, plus whether a notification was requested. Unreadable dirty is -1; an unreadable timer has timer_readable=0 and its placeholder value must not be interpreted. Daily snapshots do NOT prove per-frame consumption, intermediate state, or root cause.
+- All new records share the existing auto_targets_log_limit=80 per reconciliation; 0 suppresses them. No unbounded per-frame logging. Fresh INI and fallback defaults already turn diagnostics on without a manual setting change. Billing remains OFF; source/destination remain 20/30; auto targets remain ON/apply; customs preservation, resource permissions, foreign restocking, probe, fuel and settlement remain unchanged.
+
+Validation: 110 tests pass (13 logistics, 4 shops, 93 probe). New native host tests execute the actual production setter and office logger with pointer/log stubs, checking all direction masks with budgets 0/1/80, idempotence, exact bit changes, memory transparency and unreadable-field markers. Read-only snapshots and field masks are tested directly. The actual setter/logger harness passed GCC ASan/UBSan. The updated DLL compiled and linked for Windows x64 with Zig Windows-GNU; not MSVC or in-game execution. Host tests do not reproduce native dispatch or verify any Ghidra claim.
+
+For the next controlled test, build `private_logistics` only and deploy its DLL (the shipped INI keeps the existing matching test profile). No probe/shop rebuild or manual INI repair is needed. Use a copied save with eligible stock/demand and a usable road/truck. First leave the DO panel closed for two reconciliations, then open it WITHOUT clicking for two reconciliations. Finally record which control is clicked and its before/after value; for a notification-versus-eligibility comparison, pause and use + then - to restore the SAME final value before resuming. Return the full log and note those phase/click times. This audit is already enabled in the shipped defaults, but does not timestamp native UI clicks itself. No claim that movement will be repaired by this diagnostic build.
+
+Interpretation: incoming source 0.1 -> 0.2 with mask 0x08 supports a source-value rewrite; incoming denied unload 0.1 -> 0 with mask 0x10 points to denied-side normalization instead. Other masks expose activation/wildcard/vector changes. Neither observation alone establishes why dispatch failed. If source stays 0.2 and config_changed=0 while idle, source-clamp churn does not explain that interval. Compare office pre/post notification state without changing the countdown policy based solely on daily observations.
+
+### Complete diagnostic helper source for a single-file handoff
+
+The existing validation/policy functions and daily notification writes remain in the repository unchanged. Below are the complete new snapshot header and updated setter/office observation functions. New observation call sites run before reconciliation and immediately before/after the existing notification block; executable regression tests are in `tests/private_logistics/test_task_audit.py`.
+
+```cpp
+#ifndef PRIVATE_LOGISTICS_TASK_AUDIT_H
+#define PRIVATE_LOGISTICS_TASK_AUDIT_H
+#include <stdint.h>
+#include <string.h>
+
+// Read-only value snapshots, no retained game pointers. Caller validates entry
+// and cfg spans. Compare float representations, not rounded log strings.
+struct AutoTaskAudit {
+    unsigned char enabled, loadAll, unloadAll;
+    uint32_t loadBits, unloadBits;
+    uintptr_t loadBegin, loadEnd, unloadBegin, unloadEnd;
+};
+inline AutoTaskAudit AutoReadTaskAudit(const void* entry, const void* cfg)
+{
+    const unsigned char* p = (const unsigned char*)cfg;
+    AutoTaskAudit a = {};
+    a.enabled = *(const unsigned char*)entry;
+    a.loadAll = p[0]; a.unloadAll = p[0xC8];
+    memcpy(&a.loadBits, p + 4, 4); memcpy(&a.unloadBits, p + 0xCC, 4);
+    memcpy(&a.loadBegin, p + 8, sizeof(uintptr_t));
+    memcpy(&a.loadEnd, p + 16, sizeof(uintptr_t));
+    memcpy(&a.unloadBegin, p + 0xD0, sizeof(uintptr_t));
+    memcpy(&a.unloadEnd, p + 0xD8, sizeof(uintptr_t));
+    return a;
+}
+inline double AutoAuditPercent(uint32_t bits)
+{
+    float f; memcpy(&f, &bits, sizeof(f)); return (double)f;
+}
+// 1=activation, 2/4=load/unload wildcard, 8/16=load/unload percentage,
+// 32/64=load/unload selector span. Diagnostic only: never drives policy.
+inline unsigned AutoTaskAuditChanges(const AutoTaskAudit& a, const AutoTaskAudit& b)
+{
+    return (a.enabled != b.enabled ? 1u : 0u) |
+        (a.loadAll != b.loadAll ? 2u : 0u) |
+        (a.unloadAll != b.unloadAll ? 4u : 0u) |
+        (a.loadBits != b.loadBits ? 8u : 0u) |
+        (a.unloadBits != b.unloadBits ? 16u : 0u) |
+        ((a.loadBegin != b.loadBegin || a.loadEnd != b.loadEnd) ? 32u : 0u) |
+        ((a.unloadBegin != b.unloadBegin || a.unloadEnd != b.unloadEnd) ? 64u : 0u);
+}
+#endif
+
+static bool AutoSetTargetDirections(void* entry, unsigned directions)
+{
+    if (!entry || !ReadablePtr(entry, AUTO_TARGET_ENTRY_SIZE)) return false;
+    void* cfg = *(void**)((BYTE*)entry + 0x10);
+    if (!AutoTaskConfigValid(cfg)) {
+        Logf("[AUTO DO] invalid task config; cannot enforce direction mask=%u", directions);
+        return false;
+    }
+    const bool audit = g_autoLogLines < (unsigned)g_autoTargetLogLimit;
+    AutoTaskAudit before = {};
+    if (audit) before = AutoReadTaskAudit(entry, cfg);
+    const bool directionsChanged = AutoApplyTaskDirections(cfg, directions & AUTO_ALLOW_BOTH, g_autoSourcePercent, g_autoDestinationPercent);
+    const bool activationChanged = AutoApplyEntryActivation(entry, directions);
+    const bool changed = directionsChanged || activationChanged;
+    if (changed && g_autoLogLines < (unsigned)g_autoTargetLogLimit) {
+        Logf("[AUTO DO] task directions target=%p load=%u unload=%u entry_enabled=%u (native route validation still required)",
+             *(void**)((BYTE*)entry + 0x08), (directions & AUTO_ALLOW_LOAD) ? 1u : 0u,
+             (directions & AUTO_ALLOW_UNLOAD) ? 1u : 0u, (unsigned)*(BYTE*)entry);
+        ++g_autoLogLines;
+    }
+    if (changed && audit && g_autoLogLines < (unsigned)g_autoTargetLogLimit) {
+        const AutoTaskAudit after = AutoReadTaskAudit(entry, cfg);
+        Logf("[AUTO DO AUDIT] target=%p changed_fields=0x%02X enabled=%u->%u load_all=%u->%u unload_all=%u->%u load_pct=%.9g->%.9g unload_pct=%.9g->%.9g load_bits=%08X->%08X unload_bits=%08X->%08X",
+             *(void**)((BYTE*)entry + 8), AutoTaskAuditChanges(before, after),
+             (unsigned)before.enabled, (unsigned)after.enabled,
+             (unsigned)before.loadAll, (unsigned)after.loadAll,
+             (unsigned)before.unloadAll, (unsigned)after.unloadAll,
+             AutoAuditPercent(before.loadBits), AutoAuditPercent(after.loadBits),
+             AutoAuditPercent(before.unloadBits), AutoAuditPercent(after.unloadBits),
+             (unsigned)before.loadBits, (unsigned)after.loadBits,
+             (unsigned)before.unloadBits, (unsigned)after.unloadBits);
+        ++g_autoLogLines;
+    }
+    return changed;
+}
+
+static void AutoLogOfficePlanState(void* office, uint64_t key, int day,
+                                   const char* phase, bool notificationRequested)
+{
+    if (g_autoLogLines >= (unsigned)g_autoTargetLogLimit) return;
+    const BYTE* p = (const BYTE*)office;
+    const bool dirtyReadable = ReadablePtr(p + AUTO_DO_DIRTY, 1);
+    const bool timerReadable = ReadablePtr(p + AUTO_DO_UI_TIMER, sizeof(float));
+    float timer = 0.0f;
+    if (timerReadable) memcpy(&timer, p + AUTO_DO_UI_TIMER, sizeof(timer));
+    Logf("[AUTO DO AUDIT] day=%d office=%p key=%016llX phase=%s notification_requested=%u dirty=%d timer_readable=%u countdown=%.9g",
+         day, office, (unsigned long long)key, phase, notificationRequested ? 1u : 0u,
+         dirtyReadable ? (int)p[AUTO_DO_DIRTY] : -1, timerReadable ? 1u : 0u, (double)timer);
+    ++g_autoLogLines;
+}
+
+```
