@@ -82,6 +82,38 @@ int main() {
     assert(AutoSetTargetDirections(entry,3));
     assert(logs.size()==2 && logs[1].find("changed_fields=0x08")!=std::string::npos);
     assert(logs[1].find("load_bits=3DCCCCCD->3E4CCCCD")!=std::string::npos);
+    // Actual captured regression: source-only 20%, denied unload normalized
+    // to 10% by native code. Daily reconciliation MUST be a no-op, so the
+    // caller does not request another dirty/countdown reset.
+    AutoApplyTaskDirections(cfg,1); entry[0]=1;
+    float nativeDisabled=0.1f; memcpy(cfg+0xCC,&nativeDisabled,4);
+    logs.clear(); g_autoLogLines=0;
+    for (unsigned day=0;day<100;++day) {
+        assert(!AutoSetTargetDirections(entry,1));
+        assert(cfg[0]==1 && cfg[0xC8]==0);
+        assert(AutoReadTaskAudit(entry,cfg).unloadBits==0x3DCCCCCD);
+    }
+    assert(logs.empty());
+    // Office-wide native edits may change a DENIED load percentage too.
+    // No work is permitted merely because its unused threshold is nonzero.
+    AutoApplyTaskDirections(cfg,2);
+    nativeDisabled=0.3f; memcpy(cfg+4,&nativeDisabled,4);
+    logs.clear(); g_autoLogLines=0;
+    assert(!AutoSetTargetDirections(entry,2));
+    assert(cfg[0]==0 && cfg[0xC8]==1 && logs.empty());
+    // Permission revocation still disables wildcards and empties filters,
+    // without moving cargo, freeing allocation or changing unused thresholds.
+    uintptr_t begin=0x1000, end=0x1020;
+    memcpy(cfg+8,&begin,8); memcpy(cfg+16,&end,8); cfg[0]=1;
+    const auto prior=AutoReadTaskAudit(entry,cfg);
+    assert(AutoSetTargetDirections(entry,2));
+    const auto denied=AutoReadTaskAudit(entry,cfg);
+    assert(denied.loadAll==0 && denied.loadEnd==denied.loadBegin);
+    assert(denied.loadBits==prior.loadBits);
+    assert(!AutoSetTargetDirections(entry,2));
+    // Re-authorizing source restores company 20%, not the retained 30%.
+    assert(AutoSetTargetDirections(entry,3));
+    assert(AutoReadTaskAudit(entry,cfg).loadBits==0x3E4CCCCD);
     // Office snapshots must not write scheduling fields, including when
     // unreadable. Missing reads are explicitly marked, not interpreted as 0.
     alignas(8) BYTE building[0x1000]={}, original[0x1000];
