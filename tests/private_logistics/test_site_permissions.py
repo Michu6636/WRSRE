@@ -66,7 +66,7 @@ int main(int argc, char**) {
     for (float old : {1.0f,0.90f,0.19f}) {
         memcpy(legacy+4,&old,4); memcpy(legacy+0xCC,&old,4);
         assert(AutoApplyTaskDirections(legacy,3));
-        assert(Float(legacy+4)==0.20f && Float(legacy+0xCC)==0.30f);
+        assert(Float(legacy+4)==0.10f && Float(legacy+0xCC)==0.30f);
         assert(!AutoApplyTaskDirections(legacy,3));
     }
     for (int load : {-100,0,20,90,100,10000})
@@ -99,7 +99,7 @@ int main(int argc, char**) {
             const unsigned off=side ? 0xC8:0;
             const bool enabled=(mask & (side ? 2:1))!=0;
             assert(cfg[off]==(enabled ? 1:0));
-            assert(Float(cfg+off+4)==(enabled ? (side ? 0.30f:0.20f):0.75f));
+            assert(Float(cfg+off+4)==(enabled ? (side ? 0.30f:0.10f):0.75f));
             assert(Ptr(cfg+off+8)==0x1000 && Ptr(cfg+off+24)==0x1100);
             assert(Ptr(cfg+off+16)==(enabled ? 0x1020:0x1000));
         }

@@ -76,7 +76,7 @@ inline int AutoClampDestinationPercent(int value) { return value < 10 ? 10 : (va
 // The private DO owns its task resource selectors; native storage/resource and
 // reachability rules remain the planner's responsibility.
 inline bool AutoApplyTaskDirections(void* cfg, unsigned directions,
-                                    int sourcePercent = 20, int destinationPercent = 30)
+                                    int sourcePercent = 10, int destinationPercent = 30)
 {
     unsigned char* p = (unsigned char*)cfg;
     bool changed = false;
