@@ -84,13 +84,19 @@ inline bool AutoApplyTaskDirections(void* cfg, unsigned directions,
         const size_t offset = side ? 0xC8 : 0;
         const bool allowed = (directions & (side ? AUTO_ALLOW_UNLOAD : AUTO_ALLOW_LOAD)) != 0;
         const unsigned char all = allowed ? 1 : 0;
-        const int threshold = side ? AutoClampDestinationPercent(destinationPercent) : AutoClampSourcePercent(sourcePercent);
-        const float percentage = allowed ? (float)threshold / 100.0f : 0.0f;
-        float previous;
-        memcpy(&previous, p + offset + 4, sizeof(previous));
         if (p[offset] != all) { p[offset] = all; changed = true; }
-        if (previous != percentage) {
-            memcpy(p + offset + 4, &percentage, sizeof(percentage)); changed = true;
+        // A denied direction is enforced by wildcard OFF plus an empty list,
+        // NOT its percentage. Native UI normalizes disabled unload to 10%.
+        // Rewriting that unused value to zero on every day needlessly marks
+        // the office dirty and rearms its countdown. Preserve it verbatim.
+        if (allowed) {
+            const int threshold = side ? AutoClampDestinationPercent(destinationPercent) : AutoClampSourcePercent(sourcePercent);
+            const float percentage = (float)threshold / 100.0f;
+            float previous;
+            memcpy(&previous, p + offset + 4, sizeof(previous));
+            if (previous != percentage) {
+                memcpy(p + offset + 4, &percentage, sizeof(percentage)); changed = true;
+            }
         }
         if (!allowed) {
             uintptr_t begin, end;

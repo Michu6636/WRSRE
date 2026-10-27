@@ -554,7 +554,7 @@ static char   gFuelResource[64] = "fuel";  // resolved through resource_pricing
 static double gBasketsPerTrip   = 0.80;    // CPI fallback, in daily survival baskets
 static double gBasketsPerTonne  = 0.02;
 
-#define PL_VERSION "0.18.3-audit"
+#define PL_VERSION "0.18.4-denied-threshold"
 static float g_minPayment      = 0.01f;
 static double g_dailyPayCap    = 0.0;    // 0 = no cap
 

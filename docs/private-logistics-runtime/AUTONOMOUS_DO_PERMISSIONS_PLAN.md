@@ -2,9 +2,9 @@
 
 ## Current status
 
-**Latest regression: unresolved.** The v0.18.2 run writes 20/30 correctly but the player reports movement only after clicking a native percentage control. Do not advance to fuel work or assume direct field writes reproduce the native commit lifecycle. See `DO_PERCENTAGE_WAKEUP_INVESTIGATION.md` for the new log evidence and bounded native-handler trace request.
+**Latest status:** v0.18.4 fixes confirmed unused-percentage churn exposed by the diagnostic run. Why a reportedly full source dispatches only after lowering its threshold remains unresolved; this is NOT a claim that all dispatch failures are fixed. Do not advance to fuel work or assume direct field writes reproduce the complete native lifecycle. See `DO_PERCENTAGE_WAKEUP_INVESTIGATION.md` for the new log evidence and bounded native-handler trace request.
 
-Implemented locally: autonomous reconnection, role-aware state-site controls, independent directions, permission migration and TaskCfg reconciliation. `private_logistics` now reports **0.18.3-audit**. The latest player test reports working connections and deliveries; its log contains state-warehouse pickups and state-store deliveries. This is not comprehensive planner validation. The remaining daily threshold-reset defect is corrected below, pending the next in-game check. Probe, fuel lookup and freight billing algorithms were deliberately left unchanged.
+Implemented locally: autonomous reconnection, role-aware state-site controls, independent directions, permission migration and TaskCfg reconciliation. `private_logistics` now reports **0.18.4-denied-threshold**. The latest player test reports working connections and deliveries; its log contains state-warehouse pickups and state-store deliveries. This is not comprehensive planner validation. The remaining daily threshold-reset defect is corrected below, pending the next in-game check. Probe, fuel lookup and freight billing algorithms were deliberately left unchanged.
 
 ## Ownership and direction policy
 
@@ -36,7 +36,7 @@ Evidence consulted: `docs/engine/logistics.md` sections 5–6, `docs/ghidra-do-s
 
 - LOAD wildcard/percentage/list at cfg+0x00/+0x04/+0x08..0x10.
 - UNLOAD wildcard/percentage/list at cfg+0xC8/+0xCC/+0xD0..0xD8.
-- Denial now sets wildcard=0, percentage=0 and makes that resource selector list empty (end=begin). Previously setting only the load threshold to zero left loading selectors enabled.
+- Denial sets wildcard=0 and makes that resource selector list empty (end=begin). Since v0.18.4 it preserves the unused percentage, because native code can normalize it even while the direction is denied. Setting only a percentage to zero is not a denial mechanism; retaining a nonzero unused percentage does not grant resource access.
 - Allowed directions use wildcard=1 and the configured company percentage (source 0.20 / destination 0.30 by default since v0.18.2). Native storage modes, accepted resources and connection reachability remain the planner's responsibility. This is per-target direction permission, not a replacement for resource/input/output validation in the engine.
 - Reconciliation applies to ALL entries of a private DO, including existing manually added public entries, unknown/unindexed targets and default-OFF sites. It does not skip revocation when no permitted candidates remain.
 - Native vector spans are checked before existing config writes. Invalid configuration logs a failure to enforce; do not continue a test with such a failure. The v0.18 test exposed that leaving the entry enabled byte at zero never requested activation. v0.18.1 requests entry activation when any direction is allowed, and disables it when neither is allowed, then uses native dirty/replanning. Existing active/validated config fields are not forced. Native route validation is still required; activation alone is not proof of reachability.
@@ -295,5 +295,152 @@ static void AutoLogOfficePlanState(void* office, uint64_t key, int day,
          dirtyReadable ? (int)p[AUTO_DO_DIRTY] : -1, timerReadable ? 1u : 0u, (double)timer);
     ++g_autoLogLines;
 }
+
+```
+
+
+## Latest native log: disabled-percentage churn confirmed — 2026-10-25
+
+Attachment: 5,485-line `tesmioloader.log`, SHA-256 `0c51bfcba19711b65aff4d3f676fc61a02a0021092ab87d81ed9b5649fcd4d63`. This supersedes earlier attachments for current runtime conclusions. The player reports the source was filled fully; do not dismiss that observation or assert it was empty. The log does not include the planner's resource-specific stock/capacity/available-quantity calculation, so the 10%-versus-20% eligibility discrepancy is not resolved.
+
+### Actual evidence
+
+- Source warehouse `0000018FA1A1CB50` repeatedly arrives with load wildcard 1, load percentage 0.200000003, unload wildcard 0 and unused unload percentage 0.100000001. The old writer changes only the unused unload percentage to zero: `changed_fields=0x10`. First example 21:24:40.895; 34 audit records overall have mask 0x10 (not all necessarily this target).
+- Audits also have 8 records with mask 0x08 (load percentage only) and 6 with mask 0x18 (both percentages). There are no activation/wildcard/vector changes in these recorded masks. Native or office-wide UI edits to denied retail loading thresholds also caused pointless rewrites to zero.
+- At 21:26:44.299 (and other times), incoming source percentage is 0.300000012 before our writer restores configured 0.200000003. This does NOT support a universal assertion that any source value above 10% is automatically clamped to 10%. Manual trials at 30% are also not persistent under the current 20% company policy.
+- Dirty/countdown notifications are real: the old policy repeatedly writes dirty=1, countdown=3 solely because an UNUSED percentage differs. Native code sometimes clears dirty between callbacks, and countdowns can be negative. Therefore there is confirmed churn, but complete planner starvation is NOT established.
+- Actual loading starts 21:25:42.803; destination delivery starts 21:25:56.993. There are 22 load callbacks (21 committed) and 23 delivery callbacks (all committed), NOT counts of trips. The first source 10% -> 20% normalization is logged at 21:25:38.230; this does not tell us whether a later pickup's order had already been generated while the lower value was active.
+
+### Bounded correction: v0.18.4-denied-threshold
+
+`AutoApplyTaskDirections` now controls percentages ONLY for allowed directions. It leaves a denied direction's existing float bits untouched, while still switching its wildcard OFF and emptying its selector list. The established matcher truth table is wildcard off plus empty list => no resource match; percentage is not an independent access grant. New zero-initialized configs may still start with zero on a denied side, but subsequent native normalization no longer causes daily corrections.
+
+No timer-policy change, forced replanning call, new hooks, cargo changes, blanket direction enablement or resource purchases. Permissions and re-allow still behave as before: re-authorizing a direction restores its configured company threshold, not an arbitrary retained percentage. Existing activation management and customs preservation remain unchanged. Diagnostics remain enabled by the existing 80-line budget; billing stays OFF; source/destination defaults remain 20/30 in INI/static/fallbacks. Earlier historical sections showing denied percentage zero describe older builds, not a required invariant of v0.18.4.
+
+### Regression validation
+
+110 tests pass (13 logistics, 4 shops, 93 probe). Expanded native tests execute the actual production setter for 100 repeated daily reconciliations with observed source-only 20%, denied unload 10%: no change return and no mutation logs, hence no config-change notification requested by that setter. Tests cover nonzero denied source percentages, explicit resource-list revocation without changing the unused float, and re-authorizing back to company 20%. All ownership/migration/wildcard/vector invariants remain tested. Both actual production policy and setter/logger harnesses pass GCC ASan/UBSan. The updated DLL compiled and linked for Windows x64 using Zig Windows-GNU and its plugin exports were inspected; this is not an MSVC build or native game execution. Host tests do not prove native dispatch.
+
+### Deployment and remaining investigation
+
+Rebuild `private_logistics` only, deploy DLL and matching shipped INI, fully restart on a copied save. No manual INI correction: enabled=1, billing=0, dry_run=1, auto targets ON/apply, source20/destination30, diagnostics80 are still the shipped test defaults. Probe and shops unchanged, no rebuild needed.
+
+Check that source-only warehouse audits no longer report unload 0.1 -> 0 every day; allowed source 20% remains controlled, denied unloading remains OFF even if its UI percentage is 10%. If dispatch still needs a 10% source setting with full stock, do not call this a complete fix or reduce defaults merely to hide the discrepancy. We need the raw `planner_424430.c` and `rebuild_1E2380.c` (and relevant callees) to inspect the actual source reserve/available-quantity and destination-demand calculations, not another summary. The current attachment does not justify claiming a particular capacity denominator or minimum truck-load rule. Fuel costing remains deferred.
+
+### Complete corrected production writer
+
+```cpp
+#ifndef PRIVATE_LOGISTICS_SITE_PERMISSIONS_H
+#define PRIVATE_LOGISTICS_SITE_PERMISSIONS_H
+
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+
+// Directions are from the truck's perspective. No game pointers retained here.
+enum { AUTO_ALLOW_LOAD = 1, AUTO_ALLOW_UNLOAD = 2, AUTO_ALLOW_BOTH = 3 };
+
+inline unsigned AutoSiteCapabilities(int type, const char* asset)
+{
+    // Explicit asset exception: observed warehouse can report shop type 3.
+    // Do not use substring "store"/"warehouse" guesses for Workshop assets.
+    const char* name = asset ? asset : "";
+    for (const char* p = name; *p; ++p)
+        if (*p == '/' || *p == '\\') name = p + 1;
+    if (strcmp(name, "warehouse_covered_combined") == 0 ||
+        strcmp(name, "warehouse_open") == 0) return AUTO_ALLOW_BOTH;
+    if (type == 5 || type == 6) return AUTO_ALLOW_BOTH; // storage / factory
+    switch (type) {
+        // Known retail/service consumer families; never loading sources.
+        case 3: case 4: case 10: case 23: case 24: case 25: case 26: case 28:
+            return AUTO_ALLOW_UNLOAD;
+        default: return 0; // unknown, infrastructure, customs, DO: no guessed role
+    }
+}
+
+// Native labelled widget polarity established by the user's v0.18 game test:
+// raw 0 draws CHECKED; raw 1 draws UNCHECKED. Keep it at the UI boundary;
+// saved permission bits and TaskCfg directions retain their logical meaning.
+inline unsigned AutoNativeCheckboxValue(bool allowed) { return allowed ? 0u : 1u; }
+inline bool AutoNativeCheckboxChecked(unsigned raw) { return raw == 0; }
+
+inline bool AutoPreserveManualCustoms(int type) { return type == 20; }
+
+// Entry activation is separate from direction selectors. Appending an OFF
+// entry is not a functioning company connection. Request native activation;
+// the engine must still validate roads, vehicle compatibility and orders.
+inline bool AutoApplyEntryActivation(void* entry, unsigned directions)
+{
+    unsigned char* enabled = (unsigned char*)entry;
+    const unsigned char wanted = (directions & AUTO_ALLOW_BOTH) ? 1 : 0;
+    if (*enabled == wanted) return false;
+    *enabled = wanted;
+    return true;
+}
+
+inline unsigned AutoEffectiveDirections(bool isPrivate, unsigned permissions,
+                                        unsigned capabilities)
+{
+    return (isPrivate ? capabilities : (permissions & capabilities)) & AUTO_ALLOW_BOTH;
+}
+
+inline unsigned char AutoMigratePermission(unsigned char value, bool legacy)
+{
+    // PLSTOR17: 1=LOAD, 2=explicit OFF. Never turn old OFF into UNLOAD.
+    if (legacy) return value == 1 ? AUTO_ALLOW_LOAD : 0;
+    return value <= AUTO_ALLOW_BOTH ? value : 0;
+}
+
+inline unsigned char AutoPermissionToggle(unsigned mask, unsigned direction,
+                                           unsigned checked, unsigned capabilities)
+{
+    return (unsigned char)((checked ? (mask | direction) : (mask & ~direction)) & capabilities);
+}
+
+// Company policy bounds (not permission bits): keep source thresholds below
+// the native 90% ceiling and use a positive destination replenishment trigger.
+inline int AutoClampSourcePercent(int value) { return value < 0 ? 0 : (value > 90 ? 90 : value); }
+inline int AutoClampDestinationPercent(int value) { return value < 10 ? 10 : (value > 100 ? 100 : value); }
+
+// The caller validates cfg and both native vector spans before calling.
+// Deny = no wildcard AND empty resource selector list, not just threshold=0.
+// Keep allocation begin/capacity untouched: native code still owns the vector.
+// The private DO owns its task resource selectors; native storage/resource and
+// reachability rules remain the planner's responsibility.
+inline bool AutoApplyTaskDirections(void* cfg, unsigned directions,
+                                    int sourcePercent = 20, int destinationPercent = 30)
+{
+    unsigned char* p = (unsigned char*)cfg;
+    bool changed = false;
+    for (unsigned side = 0; side != 2; ++side) {
+        const size_t offset = side ? 0xC8 : 0;
+        const bool allowed = (directions & (side ? AUTO_ALLOW_UNLOAD : AUTO_ALLOW_LOAD)) != 0;
+        const unsigned char all = allowed ? 1 : 0;
+        if (p[offset] != all) { p[offset] = all; changed = true; }
+        // A denied direction is enforced by wildcard OFF plus an empty list,
+        // NOT its percentage. Native UI normalizes disabled unload to 10%.
+        // Rewriting that unused value to zero on every day needlessly marks
+        // the office dirty and rearms its countdown. Preserve it verbatim.
+        if (allowed) {
+            const int threshold = side ? AutoClampDestinationPercent(destinationPercent) : AutoClampSourcePercent(sourcePercent);
+            const float percentage = (float)threshold / 100.0f;
+            float previous;
+            memcpy(&previous, p + offset + 4, sizeof(previous));
+            if (previous != percentage) {
+                memcpy(p + offset + 4, &percentage, sizeof(percentage)); changed = true;
+            }
+        }
+        if (!allowed) {
+            uintptr_t begin, end;
+            memcpy(&begin, p + offset + 8, sizeof(begin));
+            memcpy(&end, p + offset + 16, sizeof(end));
+            if (end != begin) {
+                memcpy(p + offset + 16, &begin, sizeof(begin)); changed = true;
+            }
+        }
+    }
+    return changed;
+}
+#endif
 
 ```

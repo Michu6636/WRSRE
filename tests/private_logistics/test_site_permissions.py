@@ -72,9 +72,10 @@ int main(int argc, char**) {
     for (int load : {-100,0,20,90,100,10000})
         for (int unload : {-100,0,10,30,100,10000})
             for (unsigned mask=0; mask<4; ++mask) {
+                const float beforeLoad=Float(legacy+4), beforeUnload=Float(legacy+0xCC);
                 AutoApplyTaskDirections(legacy,mask,load,unload);
-                assert(Float(legacy+4)==((mask&1) ? AutoClampSourcePercent(load)/100.0f : 0.0f));
-                assert(Float(legacy+0xCC)==((mask&2) ? AutoClampDestinationPercent(unload)/100.0f : 0.0f));
+                assert(Float(legacy+4)==((mask&1) ? AutoClampSourcePercent(load)/100.0f : beforeLoad));
+                assert(Float(legacy+0xCC)==((mask&2) ? AutoClampDestinationPercent(unload)/100.0f : beforeUnload));
                 assert(!AutoApplyTaskDirections(legacy,mask,load,unload));
             }
     assert(AutoClampSourcePercent(-1)==0 && AutoClampSourcePercent(100)==90);
@@ -98,7 +99,7 @@ int main(int argc, char**) {
             const unsigned off=side ? 0xC8:0;
             const bool enabled=(mask & (side ? 2:1))!=0;
             assert(cfg[off]==(enabled ? 1:0));
-            assert(Float(cfg+off+4)==(enabled ? (side ? 0.30f:0.20f):0.0f));
+            assert(Float(cfg+off+4)==(enabled ? (side ? 0.30f:0.20f):0.75f));
             assert(Ptr(cfg+off+8)==0x1000 && Ptr(cfg+off+24)==0x1100);
             assert(Ptr(cfg+off+16)==(enabled ? 0x1020:0x1000));
         }
