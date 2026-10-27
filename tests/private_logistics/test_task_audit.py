@@ -31,6 +31,8 @@ using BYTE = unsigned char;
 #define AUTO_DO_DIRTY 0xD50
 #define AUTO_DO_UI_TIMER 0xFC0
 static unsigned g_autoLogLines;
+// Explicit 20% fixture preserves earlier regressions; the final section
+// switches to the new 10% profile. Real defaults are tested against INI/source.
 static int g_autoTargetLogLimit=80, g_autoSourcePercent=20, g_autoDestinationPercent=30;
 static bool readable=true;
 static bool ReadablePtr(const void* p, size_t) { return p && readable; }
@@ -85,7 +87,7 @@ int main() {
     // Actual captured regression: source-only 20%, denied unload normalized
     // to 10% by native code. Daily reconciliation MUST be a no-op, so the
     // caller does not request another dirty/countdown reset.
-    AutoApplyTaskDirections(cfg,1); entry[0]=1;
+    AutoApplyTaskDirections(cfg,1,20,30); entry[0]=1;
     float nativeDisabled=0.1f; memcpy(cfg+0xCC,&nativeDisabled,4);
     logs.clear(); g_autoLogLines=0;
     for (unsigned day=0;day<100;++day) {
@@ -113,6 +115,31 @@ int main() {
     assert(!AutoSetTargetDirections(entry,2));
     // Re-authorizing source restores company 20%, not the retained 30%.
     assert(AutoSetTargetDirections(entry,3));
+    assert(AutoReadTaskAudit(entry,cfg).loadBits==0x3E4CCCCD);
+    // New default profile: a task starts with 10% without a UI click.
+    // A legacy 20% source converges once; an observed manual 10% value is
+    // no longer undone by our setter. This does NOT simulate native dispatch.
+    g_autoSourcePercent=10; logs.clear(); g_autoLogLines=0;
+    AutoApplyTaskDirections(cfg,1,20,30); entry[0]=1;
+    nativeDisabled=0.1f; memcpy(cfg+0xCC,&nativeDisabled,4);
+    const auto oldTwenty=AutoReadTaskAudit(entry,cfg);
+    assert(AutoSetTargetDirections(entry,1));
+    const auto newTen=AutoReadTaskAudit(entry,cfg);
+    assert(AutoTaskAuditChanges(oldTwenty,newTen)==8);
+    assert(newTen.loadBits==0x3DCCCCCD && newTen.unloadBits==0x3DCCCCCD);
+    assert(newTen.loadAll==1 && newTen.unloadAll==0);
+    const size_t afterConvergence=logs.size();
+    for (unsigned day=0;day<100;++day) assert(!AutoSetTargetDirections(entry,1));
+    assert(logs.size()==afterConvergence);
+    // The actual default writer used by new-task setup also produces 10/30.
+    alignas(8) BYTE fresh[0x198]={};
+    assert(AutoApplyTaskDirections(fresh,3));
+    assert(AutoReadTaskAudit(entry,fresh).loadBits==0x3DCCCCCD);
+    assert(AutoReadTaskAudit(entry,fresh).unloadBits==0x3E99999A);
+    assert(!AutoApplyTaskDirections(fresh,3));
+    // Explicit overrides are still supported; do not silently force 10%.
+    g_autoSourcePercent=20;
+    assert(AutoSetTargetDirections(entry,1));
     assert(AutoReadTaskAudit(entry,cfg).loadBits==0x3E4CCCCD);
     // Office snapshots must not write scheduling fields, including when
     // unreadable. Missing reads are explicitly marked, not interpreted as 0.

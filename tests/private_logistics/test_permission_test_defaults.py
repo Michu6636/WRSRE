@@ -12,11 +12,13 @@ class PermissionTestDefaults(unittest.TestCase):
         config = configparser.ConfigParser()
         config.read(plugin / 'private_logistics.ini')
         source = (plugin / 'private_logistics.cpp').read_text()
-        for key, value in {'enabled': 1, 'billing': 0, 'dry_run': 1, 'auto_targets_enabled': 1, 'auto_targets_dry_run': 0, 'auto_source_percent': 20, 'auto_destination_percent': 30, 'auto_targets_log_limit': 80}.items():
+        for key, value in {'enabled': 1, 'billing': 0, 'dry_run': 1, 'auto_targets_enabled': 1, 'auto_targets_dry_run': 0, 'auto_source_percent': 10, 'auto_destination_percent': 30, 'auto_targets_log_limit': 80}.items():
             with self.subTest(key=key):
                 self.assertEqual(config.getint('private_logistics', key), value)
                 self.assertIn(f'H->configInt(ini, "private_logistics", "{key}", {value})', source)
         self.assertIn('permission-test profile:', source)
+        self.assertIn('static int g_autoSourcePercent = 10;', source)
+        self.assertIn('source threshold override=', source)
 
     def test_probe_defaults_match_required_capture_budget(self):
         plugin = ROOT / 'plugins/private_logistics_probe'

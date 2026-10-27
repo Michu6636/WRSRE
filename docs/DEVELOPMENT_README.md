@@ -19,7 +19,7 @@ player permissions rather than silently resetting them. Do not confuse test
 defaults with claims of runtime validation.
 
 Current private-DO permissions test: logistics enabled, legacy billing OFF,
-automatic targets enabled/apply mode with source threshold 20% and destination
+automatic targets enabled/apply mode with source threshold 10% and destination
 threshold 30%, probe enabled with interval 30 and budget
 1000, synthetic self-test OFF, private-shop foreign restocking OFF. See
 `private-logistics-runtime/AUTONOMOUS_DO_PERMISSIONS_PLAN.md` for the active build,
