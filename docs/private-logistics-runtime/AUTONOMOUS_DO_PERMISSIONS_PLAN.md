@@ -2,9 +2,9 @@
 
 ## Current status
 
-**Latest status:** the new v0.18.4 test confirms the unused-percentage churn fix, but the player still reports needing to lower source20 to10 manually. v0.18.5-source10 now ships source10/destination30 as a controlled, no-percentage-click test. The underlying native calculation remains unresolved; this is NOT a claim that all dispatch failures are fixed. Do not advance to fuel work or assume direct field writes reproduce the complete native lifecycle. See `DO_PERCENTAGE_WAKEUP_INVESTIGATION.md` for the new log evidence and bounded native-handler trace request.
+**Latest status:** the player reports that the working DO also passes the full save/exit/restart/reload check in v0.18.5-source10. The new log shows three existing tasks, no additions or configuration corrections, and subsequent warehouse pickups and attributed state-shop deliveries. The tested dispatch/save-load acceptance check is passed; this does not prove universal native compatibility or explain the older office's failure. Keep source10/destination30 and billing OFF. No blanket persistence reset or unknown-flag repair is justified. Next development stage is actual fuel-resource validation, not live settlement.
 
-Implemented locally: autonomous reconnection, role-aware state-site controls, independent directions, permission migration and TaskCfg reconciliation. `private_logistics` now reports **0.18.5-source10**. The latest player test reports working connections and deliveries; its log contains state-warehouse pickups and state-store deliveries. This is not comprehensive planner validation. The remaining daily threshold-reset defect is corrected below, pending the next in-game check. Probe, fuel lookup and freight billing algorithms were deliberately left unchanged.
+Implemented locally: autonomous reconnection, role-aware state-site controls, independent directions, permission migration and TaskCfg reconciliation. `private_logistics` now reports **0.18.5-source10**. The latest player test reports working connections and deliveries; its log contains state-warehouse pickups and state-store deliveries. This is not comprehensive planner validation. The disabled-threshold churn fix and current10/30 policy are retained; the latest tested office also works after reload, as recorded below. Probe, fuel lookup and freight billing algorithms were deliberately left unchanged.
 
 ## Ownership and direction policy
 
@@ -593,3 +593,40 @@ inline bool AutoApplyTaskDirections(void* cfg, unsigned directions,
 #endif
 
 ```
+
+
+## New-office success: distinguish legacy state from save/load persistence — 2026-10-27
+
+Latest attachment: 3,614-line `tesmioloader.log`, SHA-256 `a4ff744b039ae2c682161546d2a3bb33ba2f255662935921f2453652568a5510`. Startup confirms v0.18.5-source10, source10/destination30, billing0 and automatic targets ON/apply. The player reports that placing a new DO makes tasks work without percentage intervention. This is important positive runtime evidence, not a reason to force unknown native flags or assume all earlier versions were functional.
+
+### Correlated office timeline
+
+- Existing office: pointer `000001CF220785B0`, stable key `83DDA9FCBA29D771`. At 20:42:32.926, the source target is reconciled once from20 to10, retaining denied unload10. It already has three tasks. Delivery callbacks attributed to THIS office occur 20:42:44.762–20:42:45.979, before the new office is registered: 17 records, 12 committed. This establishes that the old office was not completely incapable of delivering during the run; it does NOT prove independent/repeated scheduling rather than completion of an existing order.
+- New office: pointer `000001CF35BFB620`, stable key `853E177928D83F2D`. Privatization logged 20:43:36.734. Day21 at20:43:39.691 shows existing0/planned3/added3. First attributed destination transfer20:43:42.124; latest20:44:06.600. Fifteen destination callbacks, all committed, NOT fifteen journeys. No later config changes are recorded for this office across the following daily reconciliations. The user's no-percentage-intervention report supplies the UI observation that this log does not independently instrument.
+- Both offices coexist and target the same three candidates. Demand, source stock and scheduling interactions must be controlled in any comparison; one office becoming idle after another supplies a destination is not, by itself, a persistence failure.
+- The startup `save/load detected` line is the plugin's reconciliation diagnostic. It does not verify the native serializer's individual fields, prove a failed native restore, or demonstrate a save/reload of the newly created office.
+
+### Interpretation and next acceptance test
+
+The result supports checking legacy office/task/vehicle state and initialization/restore differences rather than assuming automatic configuration is universally broken. It does not yet distinguish saved bad state from transient caches, old task data, vehicle orders, or a numeric-threshold effect. Since this run uses10%, it also does not establish that older20% or100% builds would work with a fresh office.
+
+No runtime code or settings change is warranted from this observation alone. Preserve the original save and keep current10/30 defaults. Save a copy containing the WORKING new office, fully exit the game (also respecting the probe's one-world-per-process restriction), restart, reload that copy, and observe additional scheduling/deliveries with source stock and destination demand available, without percentage clicks. Record whether a truck was already loaded or had an order at save time; completing that pending order is weaker evidence than starting subsequent jobs after reload.
+
+- If the new office works again through fresh jobs after reload, a general save/load failure is less likely; investigate or replace legacy per-instance/task state rather than adding a blanket load-time reset.
+- If the new office consistently fails only after reload, focus native task/office restore and post-load initialization. Then compare pre-save/post-load field evidence before designing a minimal repair.
+- If task-versus-office isolation later becomes necessary, use only a backed-up idle/empty office before rebuilding its target list; never erase in-flight orders, cargo or ownership to force a reset.
+
+All findings remain in this single plan. No new game-memory writes, hooks, force-enablement, payment changes or migration implemented; no runtime tests rerun for this documentation-only update. Prior host/cross-build results remain historical validation of the unchanged v0.18.5 code, not proof of persistence.
+
+
+## Working office after restart/reload: acceptance result — 2026-10-27
+
+Input: 2,230-line `tesmioloader.log`, SHA-256 `87a73c905564c04e1e24659de752fd1ef66de83f2b2e89773bd846675440d7f3`. Following the requested save/exit/restart/reload check, the player reports it worked perfectly. The log starts a new v0.18.5-source10 session, confirms source10/destination30, billing0/dry_run1, automatic targets ON/apply, and corroborates restored-task operation:
+
+- Office in this run: pointer `000001C520167AA0`, key `BF99DCF6FA074EA1`. At20:52:21.870, first reconciliation day13 reports existing3/planned0/added0/config_changed0. Subsequent logged reconciliations through day25 remain existing3 and config_changed0. No target-change audit lines occur. This is not a case where the plugin silently rebuilt three missing tasks on its first scan.
+- State warehouse `000001C520165080` has committed loading callbacks from20:52:28.513, including a later loading interval around20:52:50. State-shop delivery callbacks begin20:52:29.964 and continue in a later interval through20:53:04.745. All 37 recorded destination callbacks attribute office `000001C520167AA0`. Fifty committed loading callbacks and37 committed destination callbacks are transfer fragments, NOT counts of completed journeys.
+- The player's observation supplies the no-percentage-intervention/reload outcome; the existing log does not instrument every native UI click or prove each serialized field. Native pointers are process-local; do not match offices across runs solely by pointer values.
+
+Conclusion: current fresh-office dispatch and the tested save/restart/reload lifecycle are working. There is no evidence here for a general persistence failure requiring a destructive migration. The older office's specific state remains unexplained; do not assert its corruption is proven, that older20/100% profiles would work, or that every building/route/type has now been validated. Keep current defaults and avoid unnecessary runtime changes.
+
+Next stage may proceed to identifying/validating actual vehicle fuel, with billing OFF. Probe outputs still report invalid fuel-slot readings; successful logistics does not validate fuel measurement or justify fragment-based/live settlement. No runtime files, INIs, hooks, payment algorithms or migration changed for this documentation-only result; no source tests rerun because executable code is unchanged. The full latest log is not committed; its provenance and relevant results are preserved here.
