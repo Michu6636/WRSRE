@@ -117805,172 +117805,146 @@ if __name__ == "__main__":
 
 ---
 
-# Ghidra Investigation â€” Additional Findings: Vehicle Fuel Gauge Source Trace
+# Corrections — Vehicle Fuel Gauge Source Trace
 
-## 1. GetString(0xDEA9 / 57001) â€” Localized Unit String Resolution
+## 1. GetString(0xDEA9 / 57001) — Unit: UNRESOLVED
 
-### Call site (0x140353D60â€“0x140353D6C)
-`
+### Correction
+The prior claim that text ID 0xDEA9 resolves to `"l"` (litres) based on nearby format-string bytes is **withdrawn**. Nearby standalone `"l"` strings in contiguous storage around VA 0x1408B7E40 are **not unit evidence** — they are coincidental data layout, not a resolved string-ID mapping.
+
+### Call site (0x140353D60–0x140353D6C)
+```
 140353d60:  BA A9 DE 00 00           MOV EDX,0xdea9             ; text ID 57001
-140353d65:  48 8D 0D 24 38 64 00     LEA RCX,[0x140997590]      ; C3D_LANGUAGE object
+140353d65:  48 8D 0D 24 38 64 00     LEA RCX,[0x140997590]      ; C3D_LANGUAGE object (RVA 0x997590)
 140353d6c:  FF 15 1E 8B 51 00        CALL qword ptr [0x14086c890]  ; C3D_LANGUAGE::GetString
-`
+```
 
 ### Function pointer target
-[0x14086c890] reads as BE-A4-98-00-00-00-00-00 from the PE file at file offset 0x86B890 (RVA 0x86C890, in .rdata section). The stored value is 0x000000000098A4BE. This does not map cleanly to any PE section (.rdata ends at VA 0x991C62, .data starts at VA 0x992000; 0x98A4BE falls in the gap). The function pointer is resolved at runtime via the import address table or relocation processing.
+[0x14086c890] reads as `BE-A4-98-00-00-00-00-00` from PE file offset 0x86B890 (RVA 0x86C890, .rdata section). The stored value 0x000000000098A4BE does not map cleanly to any PE section and is resolved at runtime via IAT/relocation.
 
-### Localized string for text ID 0xDEA9
-The C3D_LANGUAGE object is stored inline at RVA 0x997590 (file offset 0x996390, in .data section). Its first 8 bytes are F0-3E-0B-00-B7-3F-0B-00. The internal text-ID-to-string mapping structure could not be fully decoded from static analysis of the PE data.
+### C3D_LANGUAGE object
+Stored inline at RVA 0x997590 (.data section, file offset 0x996390). First 8 bytes: `F0-3E-0B-00-B7-3F-0B-00`. The text-ID-to-string mapping table within this object was not decoded from static PE analysis.
 
-**Observed evidence:** The format string %.2f %ls is at VA 0x1408B7E40. In the contiguous string storage surrounding this address, every standalone string is "l" (lowercase L, UTF-16LE 6C 00). Representative nearby addresses:
+### Status
+**UNRESOLVED.** The actual localized string returned by GetString(0xDEA9) is not established. No unit (litres, tonnes, etc.) is confirmed for the `%ls` format argument.
 
-| VA | Text |
-|----|------|
-| 0x1408B7E3A | "l" |
-| 0x1408B7E40 | "%.2f %ls" |
-| 0x1408B7E4C | "l" |
-| 0x1408B7E60 | "l" |
-| 0x1408B7E70 | "l" |
-| 0x1408B7EFA | "l" |
-| 0x1408B7F02 | "l" |
+## 2. Eight Bytes at VA 0x14090A5E0 / PE Offset 0x9095E0
 
-**Interpretation:** Text ID 0xDEA9 resolves to "l" (litres). All candidate unit strings in the immediate vicinity of the format string are "l". No other unit string (e.g., "L", "gal", "tonnes") appears in this storage region.
-
-**Unresolved:** The exact VA within the contiguous "l" string block that corresponds to text ID 0xDEA9 could not be determined without decoding the C3D_LANGUAGE text-ID table or running the program.
-
-## 2. Exact Eight Bytes at 0x14090A5E0
+### Section mapping
+| Property | Value |
+|----------|-------|
+| Ghidra VA | 0x14090A5E0 |
+| RVA | 0x90A5E0 |
+| Section | .rdata |
+| Section VA range | 0x86C000 – 0x991C62 |
+| Section raw offset | 0x86B000 |
+| PE file offset | 0x86B000 + (0x90A5E0 − 0x86C000) = **0x9095E0** |
 
 ### PE file read
-- RVA: 0x90A5E0
-- Section: .data (VA 0x992000â€“0xA56718, raw offset 0x990E00)
-- File offset: 0x990E00 + (0x90A5E0 âˆ’ 0x992000) = 0x9495E0
-- **8 bytes (LE):**  0-00-00-00-00-D4-76-40
-
-### Interpretation
+- PE file offset 0x9095E0 matches computed offset from section mapping: **True**
+- **8 bytes (LE):** `00-00-00-00-00-D4-76-40`
 - As 64-bit IEEE-754 double: **365.25**
-- As two 32-bit floats: float1 = 0.0f, float2 â‰ˆ 3.856689f
-- The DIVSD instruction at 0x140353D7B reads this as a **double** (8 bytes).
+- As two 32-bit floats: float1 = 0.0f, float2 ≈ 3.856689f
 
-### Interpretation notes
-- 365.25 is not the expected litres-per-tonne conversion (~1176.0f). It may represent days-per-year or another calendar constant.
-- The value at PE load time is 365.25 as a double. It may be patched at runtime by game initialization code before the division executes.
-- Reading only the first 4 bytes as a float yields 0.0f â€” this is NOT the value used by DIVSD, which reads all 8 bytes as a double.
+### Instruction usage
+`DIVSD XMM1, qword ptr [0x14090a5e0]` at 0x140353D7B reads all 8 bytes as a double.
 
-## 3. Continuous Disassembly: 0x140353D60â€“0x140353DF9
+### Status
+PE-resident value is **365.25 as a double**. This may be patched at runtime by game initialization before the division executes. Not confirmed as the litres-per-tonne conversion factor (~1176.0f expected).
 
-Full instruction bytes from scratch/disasm_353d60_full.txt:
-
-| Address | Bytes | Instruction |
-|---------|-------|-------------|
-| 140353D60 | BA A9 DE 00 00 | MOV EDX,0xdea9 |
-| 140353D65 | 48 8D 0D 24 38 64 00 | LEA RCX,[0x140997590] |
-| 140353D6C | FF 15 1E 8B 51 00 | CALL qword ptr [0x14086c890] |
-| 140353D72 | F2 41 0F 10 8E 48 1A 00 00 | MOVSD XMM1,qword ptr [R14 + 0x1a48] |
-| 140353D7B | F2 0F 5E 0D 5D 68 5B 00 | DIVSD XMM1,qword ptr [0x14090a5e0] |
-| 140353D83 | F3 0F 10 05 FD E2 63 00 | MOVSS XMM0,dword ptr [0x140992088] |
-| 140353D8B | F3 0F 59 05 95 6A 5B 00 | MULSS XMM0,dword ptr [0x14090a828] |
-| 140353D93 | 0F 28 DE | MOVAPS XMM3,XMM6 |
-| 140353D96 | F3 0F 5C D8 | SUBSS XMM3,XMM0 |
-| 140353D9A | 48 89 44 24 38 | MOV qword ptr [RSP + 0x38],RAX |
-| 140353D9F | F2 0F 11 4C 24 30 | MOVSD qword ptr [RSP + 0x30],XMM1 |
-| 140353DA5 | 48 8D 05 94 40 56 00 | LEA RAX,[0x1408b7e40] |
-| 140353DAC | 48 89 44 24 28 | MOV qword ptr [RSP + 0x28],RAX |
-| 140353DB1 | C7 44 24 20 00 00 00 FF | MOV dword ptr [RSP + 0x20],0xff000000 |
-| 140353DB9 | 66 41 0F 7E D9 | MOVD R9D,XMM3 |
-| 140353DBE | 41 0F 28 D3 | MOVAPS XMM2,XMM11 |
-| 140353DC2 | 66 41 0F 7E D0 | MOVD R8D,XMM2 |
-| 140353DC7 | 48 8B 15 3A 04 64 00 | MOV RDX,qword ptr [0x140994208] |
-| 140353DCE | 48 8D 0D DB 31 64 00 | LEA RCX,[0x140996fb0] |
-| 140353DD5 | FF 15 A5 8A 51 00 | CALL qword ptr [0x14086c880] |
-| 140353DDB | 49 8B D6 | MOV RDX,R14 |
-| 140353DDE | 49 83 BE 98 03 00 00 00 | CMP qword ptr [R14 + 0x398],0x0 |
-| 140353DE6 | 74 11 | JZ 0x140353df9 |
-| 140353DE8 | 41 83 BE C0 04 00 00 00 | CMP dword ptr [R14 + 0x4c0],0x0 |
-| 140353DF0 | 7E 07 | JLE 0x140353df9 |
-| 140353DF2 | 49 8B 96 98 03 00 00 | MOV RDX,qword ptr [R14 + 0x398] |
-| 140353DF9 | 41 0F 28 D0 | MOVAPS XMM2,XMM8 |
-
-## 4. R14 Reaching Definitions and Object-Type Evidence
+## 3. R14 Reaching Definition at 0x140353D72
 
 ### Function: FUN_14034D590 (VA 0x14034D590, size 45,395 bytes)
 
-**Function entry and argument setup (0x14034D590â€“0x14034D6C4):**
-`
-14034d63b:  MOV RSI,RCX              ; RSI = context/window pointer (1st x64 arg, RCX)
+**Caller context (1st x64 argument, RCX):**
+```
+14034d63b:  MOV RSI,RCX              ; RSI = context/window pointer (RCX = 1st arg)
 14034d63e:  MOV qword ptr [RBP],RCX  ; save context to stack
-`
+```
 
-**Fleet access (0x14034D6C4â€“0x14034D71C):**
-`
-14034d6c4:  MOV R8,qword ptr [RSI + 0xc650]  ; R8 = context + 0xC650 (fleet array pointer)
-14034d6cb:  ADD R8,0x48              ; R8 += 0x48 (skip fleet header)
+**Fleet array access:**
+```
+14034d6c4:  MOV R8,qword ptr [RSI + 0xc650]  ; R8 = context + 0xC650 = fleet array base pointer
+14034d6cb:  ADD R8,0x48              ; R8 += 0x48 (skip 72-byte fleet header)
 14034d6cf:  MOV RCX,qword ptr [R8 + 0x8]   ; RCX = fleet end pointer ([R8+8])
-14034d6d3:  SUB RCX,qword ptr [R8]         ; RCX = fleet size in bytes ([R8+8] - [R8])
-14034d6d6:  MOV R12,0x6666666666666667     ; magic number for unsigned division by 100
+14034d6d3:  SUB RCX,qword ptr [R8]         ; RCX = fleet size in bytes ([R8+8] − [R8])
+```
+
+**Vehicle count computation — CORRECTED: division by 80, not 100:**
+```
+14034d6d6:  MOV R12,0x6666666666666667     ; magic divisor
 14034d6e0:  MOV RAX,R12
-14034d6e3:  IMUL RCX
-14034d6e6:  SAR RDX,0x5                  ; RDX = high32(fleet_size * magic) >> 5
+14034d6e3:  IMUL RCX                        ; RDX:RAX = magic * fleet_size_bytes
+14034d6e6:  SAR RDX,0x5                     ; high32 result >> 5
 14034d6ea:  MOV RAX,RDX
-14034d6ed:  SHR RAX,0x3f                 ; sign correction
-14034d6f1:  ADD RDX,RAX                  ; RDX = fleet_size / 100 = vehicle count
-`
+14034d6ed:  SHR RAX,0x3f                    ; sign correction
+14034d6f1:  ADD RDX,RAX                     ; RDX = fleet_size_bytes / 80 = vehicle_count
+```
 
-**Correction on division-by-100:** The IMUL RCX / SAR RDX,0x5 sequence with magic number  x6666666666666667 computes leet_size / 100. This is **correct** â€” it divides the fleet size in bytes by 100 to obtain the number of vehicle entries (each vehicle entry is 100 bytes). This is fleet arithmetic, not fuel conversion arithmetic.
+**Correction on division:** The prior annotation stated division by 100. The loop increment at 0x14034D9EA (`ADD R15,0x50`) advances R15 by **0x50 = 80 bytes** per vehicle entry. The magic-number sequence therefore computes `fleet_size_bytes / 80 = vehicle_count`, not /100.
 
-**Loop counter initialization (0x14034D6BEâ€“0x14034D6F4):**
-`
-14034d6be:  XOR R13D,R13D              ; R13D = 0 (loop counter, vehicle index)
-14034d6c1:  MOV EDI,R13D               ; EDI = R13D
-...
-14034d6f4:  LEA R14D,[R13 + 0x6]       ; R14D = R13D + 6
-`
+**R14 initialization (loop entry, 0x14034D6BE–0x14034D6F4):**
+```
+14034d6be:  XOR R13D,R13D              ; R13D = 0 (loop counter)
+14034d6c1:  MOV EDI,R13D               ; EDI = 0 (parallel counter)
+14034d6f4:  LEA R14D,[R13 + 0x6]       ; R14D = R13D + 0x6 = 6 (initial)
+```
 
-**Per-iteration vehicle pointer computation (0x14034D724â€“0x14034D733):**
-`
-14034d724:  MOV R15D,R13D              ; R15D = current loop counter (R13D)
+**Loop body (0x14034D730–0x14034D733):**
+```
+14034d724:  MOV R15D,R13D              ; R15D = current loop index (zero-extended)
 14034d730:  MOV RBX,qword ptr [R8]     ; RBX = fleet base pointer ([R8] = context+0xC698)
-14034d733:  ADD RBX,R15                ; RBX = fleet_base + R13D
-`
+14034d733:  ADD RBX,R15                ; RBX = fleet_base + index
+14034d751:  MOV RCX,qword ptr [RBX + 0x48]  ; RCX = *(RBX + 0x48) — vehicle-associated object pointer
+14034d755:  MOV RAX,qword ptr [RCX]   ; RAX = *(RCX) — vtable or object data
+14034d761:  CALL qword ptr [RAX + 0x70]  ; virtual method call on vehicle object
+```
 
-**Object type evidence:** R14/R15 is used as a Vehicle* pointer throughout the function:
-- [R14 + 0x1a48] â€” fuel tonnes (double), read at 0x140353D72
-- [R14 + 0x398] â€” associated object pointer, checked for NULL at 0x140353DDE
-- [R14 + 0x4c0] â€” DWORD field, compared against 0 at 0x140353DE8
+**Loop increment (0x14034D9E4–0x14034DA16):**
+```
+14034d9e4:  ADDSS XMM6,XMM7
+14034d9e8:  INC EDI                    ; EDI++ (index counter)
+14034d9ea:  ADD R15,0x50               ; R15 += 80 bytes per vehicle entry
+14034d9ee:  MOV R8,qword ptr [RSI + 0xc650]
+14034d9f5:  ADD R8,0x48
+...
+14034da14:  CMP EDI,EDX                ; compare index with vehicle count
+14034da16:  JL 0x14034d730             ; loop back if EDI < count
+```
 
-The same Vehicle* object type is confirmed by FUN_1407D5460 (vehicle detail panel), which accesses R15+0x398 and R15+0x4C0 on the same vehicle pointer type. Both functions operate on Vehicle* objects from the same fleet structure at context + 0xC650.
+**R14 at 0x140353D72:**
+```
+140353d72:  MOVSD XMM1,qword ptr [R14 + 0x1a48]  ; READ double from [R14 + 0x1A48]
+140353d7b:  DIVSD XMM1,qword ptr [0x14090a5e0]   ; divide by conversion factor
+```
 
-## 5. Fuel Value Chain â€” Complete Observed Facts
+### Object type evidence
+- R14 is initialized as a small integer (R13D + 6) at loop entry, **not** as a vehicle pointer
+- R14D is passed as R9D argument to FUN_1404461f0 at 0x14034D7B2
+- R14D is stored to `context + 0xada8` at 0x14034DA25 after loop completion
+- Between 0x14034DA25 and 0x140353D72, R14 must be recomputed into a vehicle pointer, but that code was not examined (gap in the 45KB function)
+- The gap between loop end (0x14034DA25) and fuel read (0x140353D72) spans ~3.4KB of unexamined code
 
-`
-Context (RCX)
-  â””â”€â”€ [context + 0xC650] â†’ fleet array base
-        â””â”€â”€ fleet entry (100 bytes each) â†’ Vehicle* (R14/R15/RBX)
-              â””â”€â”€ [vehicle + 0x1A48] â†’ fuel tonnes (double, 8 bytes)
-                    â””â”€â”€ DIVSD by [0x14090a5e0] (double = 365.25 at PE load time)
-                          â””â”€â”€ converted fuel value
-                                â””â”€â”€ rendered with "%.2f %ls" at 0x1408B7E40
-                                      â””â”€â”€ %ls = GetString(0xDEA9) â†’ "l" (litres)
-`
+### Object provenance (caller chain)
+- RCX (1st arg to FUN_14034D590) = context/window pointer, passed from an unknown caller
+- Fleet array at `context + 0xC650` — same structure accessed by FUN_1407D5460 (vehicle detail panel)
+- Vehicle fields +0x398 and +0x4C0 are checked at 0x140353DDE–0x140353DF0 on R14, matching FUN_1407D5460's R15+0x398/R15+0x4C0 access pattern
 
-### Proven
-1. FUN_14034D590 reads ehicle + 0x1A48 (double) as the fuel quantity.
-2. The value is divided by [0x14090a5e0] (double, PE reads as 365.25).
-3. The result is rendered with %.2f %ls format (format string at 0x1408B7E40).
-4. The %ls unit string comes from C3D_LANGUAGE::GetString(text_id=0xDEA9).
-5. All nearby standalone strings are "l" â€” the unit is litres.
-6. ehicle + 0x1A48 is accessed through a Vehicle* pointer from the fleet at context + 0xC650.
-7. The same Vehicle* type is confirmed by FUN_1407D5460 accessing identical offsets (+0x398, +0x4C0).
+## 4. Status Summary
 
-### Not yet proven
-1. The exact runtime value of [0x14090a5e0] (PE reads as 365.25 double; may be patched at runtime).
-2. That ehicle + 0x1A48 is specifically a fuel cargo slot (vs. some other double field). Writer tracing needed.
-3. The exact VA within the contiguous "l" string block corresponding to text ID 0xDEA9.
-4. The caller of FUN_14034D590 (not traced, per task limits).
-5. Who writes to ehicle + 0x1A48 (burn, refill, reset, clamping not traced).
+| Claim | Status |
+|-------|--------|
+| GetString(0xDEA9) → "l" (litres) | **UNRESOLVED** — nearby bytes are not evidence |
+| [0x14090a5e0] = 365.25 double | **CONFIRMED** (PE-resident value) |
+| Division by 100 | **INCORRECT** — corrected to division by 80 |
+| R14 = vehicle pointer at 0x140353D72 | **UNVERIFIED** — reaching definition not traced through 3.4KB gap |
+| vehicle + 0x1A48 = fuel tonnes | **UNPROVEN** — field not traced to writers |
+| Same Vehicle* type as FUN_1407D5460 | **SUPPORTED** — identical field offsets (+0x398, +0x4C0) accessed |
 
-## 6. Limitations
+## 5. Limitations
 - Static analysis only; no runtime execution.
-- C3D_LANGUAGE text-ID-to-string mapping table not fully decoded.
-- [0x14086c890] function pointer target not resolved from PE (stored value doesn't map to a section).
-- Runtime value of [0x14090a5e0] unknown (may differ from PE-resident 365.25).
+- R14 reaching definition at 0x140353D72 not fully traced (3.4KB gap between 0x14034DA25 and 0x140353D60).
+- C3D_LANGUAGE text-ID-to-string mapping not decoded.
+- [0x14086c890] function pointer target unresolved from PE.
+- [0x14090a5e0] runtime value unknown (may differ from PE-resident 365.25).
 - No runtime code, hooks, configuration, or billing changes were made.
