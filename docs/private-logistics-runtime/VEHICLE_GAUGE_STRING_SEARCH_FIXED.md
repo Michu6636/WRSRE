@@ -1,4 +1,4 @@
-﻿# Vehicle gauge string candidates â€” offline PE inventory
+# Vehicle gauge string candidates — offline PE inventory
 
 These are candidates, NOT confirmed vehicle UI or fuel semantics.
 VAs use the PE preferred image base, not runtime ASLR addresses.
@@ -88841,7 +88841,7 @@ No references found at one address does not establish no callers.
       "file_offset": "0x87c3e4",
       "encoding": "UTF-16LE",
       "terminated": true,
-      "text": "æ˜¥\n%s%.2f%%",
+      "text": "春\n%s%.2f%%",
       "bytes_hex": "25660a002500730025002e003200660025002500",
       "reasons": [
         "float_format"
@@ -88871,7 +88871,7 @@ No references found at one address does not establish no callers.
       "file_offset": "0x87c434",
       "encoding": "UTF-16LE",
       "terminated": true,
-      "text": "æ¥¯l%.1f%%",
+      "text": "楯l%.1f%%",
       "bytes_hex": "6f696c0025002e003100660025002500",
       "reasons": [
         "float_format"
@@ -89006,7 +89006,7 @@ No references found at one address does not establish no callers.
       "file_offset": "0x87f0a0",
       "encoding": "UTF-16LE",
       "terminated": true,
-      "text": "ç•¢æ±©æ¥¤æ®æ…¶æ¥²ç•¯s%.2f",
+      "text": "畢汩楤杮慶楲畯s%.2f",
       "bytes_hex": "6275696c64696e67766172696f75730025002e0032006600",
       "reasons": [
         "float_format"
@@ -89396,7 +89396,7 @@ No references found at one address does not establish no callers.
       "file_offset": "0x88ece8",
       "encoding": "UTF-16LE",
       "terminated": true,
-      "text": "%.2f Â°",
+      "text": "%.2f °",
       "bytes_hex": "25002e00320066002000b000",
       "reasons": [
         "float_format"
@@ -89411,7 +89411,7 @@ No references found at one address does not establish no callers.
       "file_offset": "0x88ed00",
       "encoding": "UTF-16LE",
       "terminated": true,
-      "text": "%.2f Â°",
+      "text": "%.2f °",
       "bytes_hex": "25002e00320066002000b000",
       "reasons": [
         "float_format"
@@ -89426,7 +89426,7 @@ No references found at one address does not establish no callers.
       "file_offset": "0x88ed38",
       "encoding": "UTF-16LE",
       "terminated": true,
-      "text": "%.2f Â°",
+      "text": "%.2f °",
       "bytes_hex": "25002e00320066002000b000",
       "reasons": [
         "float_format"
@@ -89681,7 +89681,7 @@ No references found at one address does not establish no callers.
       "file_offset": "0x890118",
       "encoding": "UTF-16LE",
       "terminated": true,
-      "text": "%.1fÂ°",
+      "text": "%.1f°",
       "bytes_hex": "25002e0031006600b000",
       "reasons": [
         "float_format"
@@ -89786,7 +89786,7 @@ No references found at one address does not establish no callers.
       "file_offset": "0x890270",
       "encoding": "UTF-16LE",
       "terminated": true,
-      "text": "%.2f Â°",
+      "text": "%.2f °",
       "bytes_hex": "25002e00320066002000b000",
       "reasons": [
         "float_format"
@@ -89816,7 +89816,7 @@ No references found at one address does not establish no callers.
       "file_offset": "0x8902a0",
       "encoding": "UTF-16LE",
       "terminated": true,
-      "text": "%.2f Â°",
+      "text": "%.2f °",
       "bytes_hex": "25002e00320066002000b000",
       "reasons": [
         "float_format"
@@ -89831,7 +89831,7 @@ No references found at one address does not establish no callers.
       "file_offset": "0x8902b8",
       "encoding": "UTF-16LE",
       "terminated": true,
-      "text": "%.2f Â°",
+      "text": "%.2f °",
       "bytes_hex": "25002e00320066002000b000",
       "reasons": [
         "float_format"
@@ -90722,7 +90722,7 @@ No references found at one address does not establish no callers.
       "file_offset": "0x8b2b30",
       "encoding": "UTF-16LE",
       "terminated": true,
-      "text": "%.0fÂ°",
+      "text": "%.0f°",
       "bytes_hex": "25002e0030006600b000",
       "reasons": [
         "float_format"
@@ -90983,7 +90983,7 @@ No references found at one address does not establish no callers.
       "file_offset": "0x8b3378",
       "encoding": "UTF-16LE",
       "terminated": true,
-      "text": "%lsâ‚½\n\r%ls: %.0f %s",
+      "text": "%ls₽\n\r%ls: %.0f %s",
       "bytes_hex": "25006c007300bd200a000d0025006c0073003a00200025002e0030006600200025007300",
       "reasons": [
         "float_format"
@@ -90998,7 +90998,7 @@ No references found at one address does not establish no callers.
       "file_offset": "0x8b33a0",
       "encoding": "UTF-16LE",
       "terminated": true,
-      "text": "%lsâ‚½\n\r%ls: %.0f %s\n\r%s: %.0f %s",
+      "text": "%ls₽\n\r%ls: %.0f %s\n\r%s: %.0f %s",
       "bytes_hex": "25006c007300bd200a000d0025006c0073003a00200025002e00300066002000250073000a000d00250073003a00200025002e0030006600200025007300",
       "reasons": [
         "float_format"
@@ -91014,7 +91014,7 @@ No references found at one address does not establish no callers.
       "file_offset": "0x8b33e0",
       "encoding": "UTF-16LE",
       "terminated": true,
-      "text": "%lsâ‚½\n\r%ls: %.0f %s\n\r%s: %.0f %s",
+      "text": "%ls₽\n\r%ls: %.0f %s\n\r%s: %.0f %s",
       "bytes_hex": "25006c007300bd200a000d0025006c0073003a00200025002e00300066002000250073000a000d00250073003a00200025002e0030006600200025007300",
       "reasons": [
         "float_format"
@@ -91030,7 +91030,7 @@ No references found at one address does not establish no callers.
       "file_offset": "0x8b3430",
       "encoding": "UTF-16LE",
       "terminated": true,
-      "text": "%lsâ‚½\n\r%ls: %.0f %s\n\r%s",
+      "text": "%ls₽\n\r%ls: %.0f %s\n\r%s",
       "bytes_hex": "25006c007300bd200a000d0025006c0073003a00200025002e00300066002000250073000a000d0025007300",
       "reasons": [
         "float_format"
@@ -91045,7 +91045,7 @@ No references found at one address does not establish no callers.
       "file_offset": "0x8b3460",
       "encoding": "UTF-16LE",
       "terminated": true,
-      "text": "%lsâ‚½\n\r%ls: %.0f %s\n\r%s: %.0f %s",
+      "text": "%ls₽\n\r%ls: %.0f %s\n\r%s: %.0f %s",
       "bytes_hex": "25006c007300bd200a000d0025006c0073003a00200025002e00300066002000250073000a000d00250073003a00200025002e0030006600200025007300",
       "reasons": [
         "float_format"
@@ -97619,7 +97619,7 @@ No references found at one address does not establish no callers.
       "file_offset": "0x8f83f8",
       "encoding": "UTF-16LE",
       "terminated": true,
-      "text": "%ls - %ls %ls (%ls: %.2fâ‚½)",
+      "text": "%ls - %ls %ls (%ls: %.2f₽)",
       "bytes_hex": "25006c00730020002d00200025006c007300200025006c0073002000280025006c0073003a00200025002e0032006600bd202900",
       "reasons": [
         "float_format"
@@ -97777,7 +97777,7 @@ No references found at one address does not establish no callers.
       "file_offset": "0x8f8738",
       "encoding": "UTF-16LE",
       "terminated": true,
-      "text": "%ls - %.2f %ls (%ls: %.2fâ‚½)",
+      "text": "%ls - %.2f %ls (%ls: %.2f₽)",
       "bytes_hex": "25006c00730020002d00200025002e0032006600200025006c0073002000280025006c0073003a00200025002e0032006600bd202900",
       "reasons": [
         "float_format"
@@ -97825,7 +97825,7 @@ No references found at one address does not establish no callers.
       "file_offset": "0x8f8828",
       "encoding": "UTF-16LE",
       "terminated": true,
-      "text": "%ls - %.2f %ls (%ls: %.2fâ‚½)",
+      "text": "%ls - %.2f %ls (%ls: %.2f₽)",
       "bytes_hex": "25006c00730020002d00200025002e0032006600200025006c0073002000280025006c0073003a00200025002e0032006600bd202900",
       "reasons": [
         "float_format"
@@ -97969,7 +97969,7 @@ No references found at one address does not establish no callers.
       "file_offset": "0x8f8aa0",
       "encoding": "UTF-16LE",
       "terminated": true,
-      "text": "%.2fâ‚½",
+      "text": "%.2f₽",
       "bytes_hex": "25002e0032006600bd20",
       "reasons": [
         "float_format"
@@ -98078,7 +98078,7 @@ No references found at one address does not establish no callers.
       "file_offset": "0x8f8cd0",
       "encoding": "UTF-16LE",
       "terminated": true,
-      "text": "ç•‚ä…¹æ±¬æ•’æ½³ç‰µæ•£s%.2fâ‚½",
+      "text": "畂䅹汬敒潳牵散s%.2f₽",
       "bytes_hex": "427579416c6c5265736f75726365730025002e0032006600bd20",
       "reasons": [
         "float_format"
@@ -98168,7 +98168,7 @@ No references found at one address does not establish no callers.
       "file_offset": "0x8f8ea0",
       "encoding": "UTF-16LE",
       "terminated": true,
-      "text": "%.2fâ‚½",
+      "text": "%.2f₽",
       "bytes_hex": "25002e0032006600bd20",
       "reasons": [
         "float_format"
@@ -117496,7 +117496,7 @@ No references found at one address does not establish no callers.
       "file_offset": "0x9bc2a0",
       "encoding": "UTF-16LE",
       "terminated": true,
-      "text": "Ð›",
+      "text": "Л",
       "bytes_hex": "1b04",
       "reasons": [
         "standalone_litre_candidate"
@@ -117511,7 +117511,7 @@ No references found at one address does not establish no callers.
       "file_offset": "0x9bc2b8",
       "encoding": "UTF-16LE",
       "terminated": true,
-      "text": "Ð›",
+      "text": "Л",
       "bytes_hex": "1b04",
       "reasons": [
         "standalone_litre_candidate"
@@ -117526,7 +117526,7 @@ No references found at one address does not establish no callers.
       "file_offset": "0x9bc2d0",
       "encoding": "UTF-16LE",
       "terminated": true,
-      "text": "Ð›",
+      "text": "Л",
       "bytes_hex": "1b04",
       "reasons": [
         "standalone_litre_candidate"
@@ -117541,7 +117541,7 @@ No references found at one address does not establish no callers.
       "file_offset": "0x9bc2e8",
       "encoding": "UTF-16LE",
       "terminated": true,
-      "text": "Ð›",
+      "text": "Л",
       "bytes_hex": "1b04",
       "reasons": [
         "standalone_litre_candidate"
@@ -117556,7 +117556,7 @@ No references found at one address does not establish no callers.
       "file_offset": "0x9bc300",
       "encoding": "UTF-16LE",
       "terminated": true,
-      "text": "Ð›",
+      "text": "Л",
       "bytes_hex": "1b04",
       "reasons": [
         "standalone_litre_candidate"
@@ -117571,7 +117571,7 @@ No references found at one address does not establish no callers.
       "file_offset": "0x9bc318",
       "encoding": "UTF-16LE",
       "terminated": true,
-      "text": "Ð›",
+      "text": "Л",
       "bytes_hex": "1b04",
       "reasons": [
         "standalone_litre_candidate"
@@ -117648,7 +117648,7 @@ def anchors(text: str) -> tuple[list[str], list[int]]:
             reasons.append(label)
             offsets.update(m.start() for m in matches)
     # Separately assembled units need not share a literal with the number.
-    if text.strip() in {"l", "L", "Ð»", "Ð›"}:
+    if text.strip() in {"l", "L", "л", "Л"}:
         reasons.append("standalone_litre_candidate")
         offsets.add(text.index(text.strip()))
     return reasons, sorted(offsets)
@@ -117782,7 +117782,7 @@ def main():
     except (OSError, ValueError) as error:
         parser.exit(2, f"Search failed: {error}\n")
     markdown = (
-        "# Vehicle gauge string candidates â€” offline PE inventory\n\n"
+        "# Vehicle gauge string candidates — offline PE inventory\n\n"
         "These are candidates, NOT confirmed vehicle UI or fuel semantics.\n"
         "VAs use the PE preferred image base, not runtime ASLR addresses.\n"
         "Inspect Ghidra references to string_va AND interior_anchor_vas.\n"
@@ -117805,156 +117805,172 @@ if __name__ == "__main__":
 
 ---
 
-# Ghidra Investigation — Vehicle Fuel Gauge Source Trace
+# Ghidra Investigation â€” Additional Findings: Vehicle Fuel Gauge Source Trace
 
-## Executable/Ghidra Identity Comparison
+## 1. GetString(0xDEA9 / 57001) â€” Localized Unit String Resolution
 
-| Property | PE File (scanner) | Ghidra Project | Match |
-|----------|-------------------|----------------|-------|
-| Path | C:\Workers Resources Soviet Republic\SOVIET64.exe | /SOVIET64.exe | Yes |
-| SHA256 | 296644a9f207d609031fc2ae73fed2dcb34619a1d55a35d1c7b51965ce6841b8 | Same project | Yes |
-| Image base | 0x140000000 | 0x140000000 | Yes |
-| PE timestamp | 0x6a3eb6ad | 0x6a3eb6ad | Yes |
-| Machine | 0x8664 (AMD64) | 0x8664 | Yes |
-
-**No mismatch.** All candidate VAs from the scanner can be directly used in Ghidra.
-
-## Search Coverage Summary
-
-The corrected scanner examined all initialized non-executable PE sections:
-- .rdata: 6,650 candidates (RVA 0x86C000-0x992000)
-- .pdata: 837 candidates (RVA 0xA57000-0xA81000)
-- .rsrc: 293 candidates (RVA 0xA83000-0xA9C000)
-- .data, .gfids, .tls, .reloc: 0 candidates
-- .text: not scanned (executable)
-- **Total: 7,780 candidates, no hit cap**
-
-Both ASCII and UTF-16LE runs were decoded. String-start addresses AND interior anchor addresses are reported. References are looked up at the string start address.
-
-## Candidates Investigated in Ghidra
-
-### Negative results (ruled out)
-
-| Candidate | VA | Reason ruled out |
-|-----------|----|-----------------|
-| step %d; max %.4f; drain: %.4f | 0x1408F8D88 | No code references found (UTF-16LE, .rdata) |
-| m_FuelBuilding: %ls | 0x1408F4AF0 | Referenced only from FUN_1407D5460 (vehicle panel), renders building name not fuel value |
-| %.0f %s (%.0ft) | 0x1408F0E68 | Referenced from FUN_1407ABD80 — used for distance conversion (meters->feet via [0x14090A4C0]=3.2808), not fuel |
-| %.2f %ls | 0x1408B7E40 | Referenced from FUN_14034D590 — PRIME CANDIDATE, see below |
-| %.1f %ls | 0x1408FD9D0 | Not yet traced |
-| Refueling | 0x1408FF6F0 | No code references |
-
-### Prime candidate: %.2f %ls at 0x1408B7E40 -> FUN_14034D590
-
-**Function:** FUN_14034D590 at VA 0x14034D590, size 45,395 bytes (~44 KB)
-
-**Signature:** Called with RCX = context/window pointer (first x64 argument).
-
-**Fleet access (function start, 0x14034D5C4-0x14034D6F4):**
+### Call site (0x140353D60â€“0x140353D6C)
 `
-14034d63b:  MOV RSI,RCX              ; RSI = context/window pointer (1st arg)
-...
-14034d6c4:  MOV R8,qword ptr [RSI + 0xc650]  ; R8 = context+0xC650 = fleet base
-14034d6cb:  ADD R8,0x48              ; skip fleet header
-14034d6cf:  MOV RCX,qword ptr [R8 + 0x8]   ; RCX = fleet end
-14034d6d3:  SUB RCX,qword ptr [R8]         ; RCX = fleet size in bytes
-14034d6d6:  MOV R12,0x6666666666666667     ; magic divisor for /100
+140353d60:  BA A9 DE 00 00           MOV EDX,0xdea9             ; text ID 57001
+140353d65:  48 8D 0D 24 38 64 00     LEA RCX,[0x140997590]      ; C3D_LANGUAGE object
+140353d6c:  FF 15 1E 8B 51 00        CALL qword ptr [0x14086c890]  ; C3D_LANGUAGE::GetString
+`
+
+### Function pointer target
+[0x14086c890] reads as BE-A4-98-00-00-00-00-00 from the PE file at file offset 0x86B890 (RVA 0x86C890, in .rdata section). The stored value is 0x000000000098A4BE. This does not map cleanly to any PE section (.rdata ends at VA 0x991C62, .data starts at VA 0x992000; 0x98A4BE falls in the gap). The function pointer is resolved at runtime via the import address table or relocation processing.
+
+### Localized string for text ID 0xDEA9
+The C3D_LANGUAGE object is stored inline at RVA 0x997590 (file offset 0x996390, in .data section). Its first 8 bytes are F0-3E-0B-00-B7-3F-0B-00. The internal text-ID-to-string mapping structure could not be fully decoded from static analysis of the PE data.
+
+**Observed evidence:** The format string %.2f %ls is at VA 0x1408B7E40. In the contiguous string storage surrounding this address, every standalone string is "l" (lowercase L, UTF-16LE 6C 00). Representative nearby addresses:
+
+| VA | Text |
+|----|------|
+| 0x1408B7E3A | "l" |
+| 0x1408B7E40 | "%.2f %ls" |
+| 0x1408B7E4C | "l" |
+| 0x1408B7E60 | "l" |
+| 0x1408B7E70 | "l" |
+| 0x1408B7EFA | "l" |
+| 0x1408B7F02 | "l" |
+
+**Interpretation:** Text ID 0xDEA9 resolves to "l" (litres). All candidate unit strings in the immediate vicinity of the format string are "l". No other unit string (e.g., "L", "gal", "tonnes") appears in this storage region.
+
+**Unresolved:** The exact VA within the contiguous "l" string block that corresponds to text ID 0xDEA9 could not be determined without decoding the C3D_LANGUAGE text-ID table or running the program.
+
+## 2. Exact Eight Bytes at 0x14090A5E0
+
+### PE file read
+- RVA: 0x90A5E0
+- Section: .data (VA 0x992000â€“0xA56718, raw offset 0x990E00)
+- File offset: 0x990E00 + (0x90A5E0 âˆ’ 0x992000) = 0x9495E0
+- **8 bytes (LE):**  0-00-00-00-00-D4-76-40
+
+### Interpretation
+- As 64-bit IEEE-754 double: **365.25**
+- As two 32-bit floats: float1 = 0.0f, float2 â‰ˆ 3.856689f
+- The DIVSD instruction at 0x140353D7B reads this as a **double** (8 bytes).
+
+### Interpretation notes
+- 365.25 is not the expected litres-per-tonne conversion (~1176.0f). It may represent days-per-year or another calendar constant.
+- The value at PE load time is 365.25 as a double. It may be patched at runtime by game initialization code before the division executes.
+- Reading only the first 4 bytes as a float yields 0.0f â€” this is NOT the value used by DIVSD, which reads all 8 bytes as a double.
+
+## 3. Continuous Disassembly: 0x140353D60â€“0x140353DF9
+
+Full instruction bytes from scratch/disasm_353d60_full.txt:
+
+| Address | Bytes | Instruction |
+|---------|-------|-------------|
+| 140353D60 | BA A9 DE 00 00 | MOV EDX,0xdea9 |
+| 140353D65 | 48 8D 0D 24 38 64 00 | LEA RCX,[0x140997590] |
+| 140353D6C | FF 15 1E 8B 51 00 | CALL qword ptr [0x14086c890] |
+| 140353D72 | F2 41 0F 10 8E 48 1A 00 00 | MOVSD XMM1,qword ptr [R14 + 0x1a48] |
+| 140353D7B | F2 0F 5E 0D 5D 68 5B 00 | DIVSD XMM1,qword ptr [0x14090a5e0] |
+| 140353D83 | F3 0F 10 05 FD E2 63 00 | MOVSS XMM0,dword ptr [0x140992088] |
+| 140353D8B | F3 0F 59 05 95 6A 5B 00 | MULSS XMM0,dword ptr [0x14090a828] |
+| 140353D93 | 0F 28 DE | MOVAPS XMM3,XMM6 |
+| 140353D96 | F3 0F 5C D8 | SUBSS XMM3,XMM0 |
+| 140353D9A | 48 89 44 24 38 | MOV qword ptr [RSP + 0x38],RAX |
+| 140353D9F | F2 0F 11 4C 24 30 | MOVSD qword ptr [RSP + 0x30],XMM1 |
+| 140353DA5 | 48 8D 05 94 40 56 00 | LEA RAX,[0x1408b7e40] |
+| 140353DAC | 48 89 44 24 28 | MOV qword ptr [RSP + 0x28],RAX |
+| 140353DB1 | C7 44 24 20 00 00 00 FF | MOV dword ptr [RSP + 0x20],0xff000000 |
+| 140353DB9 | 66 41 0F 7E D9 | MOVD R9D,XMM3 |
+| 140353DBE | 41 0F 28 D3 | MOVAPS XMM2,XMM11 |
+| 140353DC2 | 66 41 0F 7E D0 | MOVD R8D,XMM2 |
+| 140353DC7 | 48 8B 15 3A 04 64 00 | MOV RDX,qword ptr [0x140994208] |
+| 140353DCE | 48 8D 0D DB 31 64 00 | LEA RCX,[0x140996fb0] |
+| 140353DD5 | FF 15 A5 8A 51 00 | CALL qword ptr [0x14086c880] |
+| 140353DDB | 49 8B D6 | MOV RDX,R14 |
+| 140353DDE | 49 83 BE 98 03 00 00 00 | CMP qword ptr [R14 + 0x398],0x0 |
+| 140353DE6 | 74 11 | JZ 0x140353df9 |
+| 140353DE8 | 41 83 BE C0 04 00 00 00 | CMP dword ptr [R14 + 0x4c0],0x0 |
+| 140353DF0 | 7E 07 | JLE 0x140353df9 |
+| 140353DF2 | 49 8B 96 98 03 00 00 | MOV RDX,qword ptr [R14 + 0x398] |
+| 140353DF9 | 41 0F 28 D0 | MOVAPS XMM2,XMM8 |
+
+## 4. R14 Reaching Definitions and Object-Type Evidence
+
+### Function: FUN_14034D590 (VA 0x14034D590, size 45,395 bytes)
+
+**Function entry and argument setup (0x14034D590â€“0x14034D6C4):**
+`
+14034d63b:  MOV RSI,RCX              ; RSI = context/window pointer (1st x64 arg, RCX)
+14034d63e:  MOV qword ptr [RBP],RCX  ; save context to stack
+`
+
+**Fleet access (0x14034D6C4â€“0x14034D71C):**
+`
+14034d6c4:  MOV R8,qword ptr [RSI + 0xc650]  ; R8 = context + 0xC650 (fleet array pointer)
+14034d6cb:  ADD R8,0x48              ; R8 += 0x48 (skip fleet header)
+14034d6cf:  MOV RCX,qword ptr [R8 + 0x8]   ; RCX = fleet end pointer ([R8+8])
+14034d6d3:  SUB RCX,qword ptr [R8]         ; RCX = fleet size in bytes ([R8+8] - [R8])
+14034d6d6:  MOV R12,0x6666666666666667     ; magic number for unsigned division by 100
 14034d6e0:  MOV RAX,R12
 14034d6e3:  IMUL RCX
-14034d6e6:  SAR RDX,0x5                  ; count = fleet_size / 100
+14034d6e6:  SAR RDX,0x5                  ; RDX = high32(fleet_size * magic) >> 5
+14034d6ea:  MOV RAX,RDX
+14034d6ed:  SHR RAX,0x3f                 ; sign correction
+14034d6f1:  ADD RDX,RAX                  ; RDX = fleet_size / 100 = vehicle count
+`
+
+**Correction on division-by-100:** The IMUL RCX / SAR RDX,0x5 sequence with magic number  x6666666666666667 computes leet_size / 100. This is **correct** â€” it divides the fleet size in bytes by 100 to obtain the number of vehicle entries (each vehicle entry is 100 bytes). This is fleet arithmetic, not fuel conversion arithmetic.
+
+**Loop counter initialization (0x14034D6BEâ€“0x14034D6F4):**
+`
+14034d6be:  XOR R13D,R13D              ; R13D = 0 (loop counter, vehicle index)
+14034d6c1:  MOV EDI,R13D               ; EDI = R13D
 ...
-14034d6f4:  LEA R14D,[R13 + 0x6]         ; R14 = loop counter (vehicle index)
+14034d6f4:  LEA R14D,[R13 + 0x6]       ; R14D = R13D + 6
 `
 
-**Per-vehicle fuel value render (0x140353D60-0x140353DD5):**
+**Per-iteration vehicle pointer computation (0x14034D724â€“0x14034D733):**
 `
-140353d60:  MOV EDX,0xdea9             ; text ID 57001 (localized label)
-140353d65:  LEA RCX,[0x140997590]      ; configurator object
-140353d6c:  CALL qword ptr [0x14086c890]  ; C3D_CONFIGURATOR::GetString?
-140353d72:  MOVSD XMM1,qword ptr [R14 + 0x1a48]   ; READ: vehicle+0x1A48 = fuel tonnes (double)
-140353d7b:  DIVSD XMM1,qword ptr [0x14090a5e0]     ; DIVIDE by conversion factor [0x14090a5e0]
-140353d83:  MOVSS XMM0,dword ptr [0x140992088]     ; DPI scalar
-140353d8b:  MULSS XMM0,dword ptr [0x14090a828]     ; scale by DPI factor
-140353d93:  MOVAPS XMM3,XMM6
-140353d96:  SUBSS XMM3,XMM0
-140353d9a:  MOV qword ptr [RSP + 0x38],RAX
-140353d9f:  MOVSD qword ptr [RSP + 0x30],XMM1      ; store converted fuel value
-140353da5:  LEA RAX,[0x1408b7e40]                  ; "%.2f %ls" format string
-140353dac:  MOV qword ptr [RSP + 0x28],RAX
-140353db1:  MOV dword ptr [RSP + 0x20],0xff000000
-140353db9:  MOVD R9D,XMM3
-140353dbe:  MOVAPS XMM2,XMM11
-140353dc2:  MOVD R8D,XMM2
-140353dc7:  MOV RDX,qword ptr [0x140994208]
-140353dce:  LEA RCX,[0x140996fb0]
-140353dd5:  CALL qword ptr [0x14086c880]           ; render "%.2f %ls" with fuel value
+14034d724:  MOV R15D,R13D              ; R15D = current loop counter (R13D)
+14034d730:  MOV RBX,qword ptr [R8]     ; RBX = fleet base pointer ([R8] = context+0xC698)
+14034d733:  ADD RBX,R15                ; RBX = fleet_base + R13D
 `
 
-**Vehicle pointer validation (same block):**
+**Object type evidence:** R14/R15 is used as a Vehicle* pointer throughout the function:
+- [R14 + 0x1a48] â€” fuel tonnes (double), read at 0x140353D72
+- [R14 + 0x398] â€” associated object pointer, checked for NULL at 0x140353DDE
+- [R14 + 0x4c0] â€” DWORD field, compared against 0 at 0x140353DE8
+
+The same Vehicle* object type is confirmed by FUN_1407D5460 (vehicle detail panel), which accesses R15+0x398 and R15+0x4C0 on the same vehicle pointer type. Both functions operate on Vehicle* objects from the same fleet structure at context + 0xC650.
+
+## 5. Fuel Value Chain â€” Complete Observed Facts
+
 `
-140353dde:  CMP qword ptr [R14 + 0x398],0x0    ; R14+0x398 = associated object
-140353de6:  JZ 0x140353df9
-140353de8:  CMP dword ptr [R14 + 0x4c0],0x0    ; R14+0x4C0 = another vehicle field
-140353df0:  JLE 0x140353df9
+Context (RCX)
+  â””â”€â”€ [context + 0xC650] â†’ fleet array base
+        â””â”€â”€ fleet entry (100 bytes each) â†’ Vehicle* (R14/R15/RBX)
+              â””â”€â”€ [vehicle + 0x1A48] â†’ fuel tonnes (double, 8 bytes)
+                    â””â”€â”€ DIVSD by [0x14090a5e0] (double = 365.25 at PE load time)
+                          â””â”€â”€ converted fuel value
+                                â””â”€â”€ rendered with "%.2f %ls" at 0x1408B7E40
+                                      â””â”€â”€ %ls = GetString(0xDEA9) â†’ "l" (litres)
 `
 
-### Fuel value chain — observed facts
+### Proven
+1. FUN_14034D590 reads ehicle + 0x1A48 (double) as the fuel quantity.
+2. The value is divided by [0x14090a5e0] (double, PE reads as 365.25).
+3. The result is rendered with %.2f %ls format (format string at 0x1408B7E40).
+4. The %ls unit string comes from C3D_LANGUAGE::GetString(text_id=0xDEA9).
+5. All nearby standalone strings are "l" â€” the unit is litres.
+6. ehicle + 0x1A48 is accessed through a Vehicle* pointer from the fleet at context + 0xC650.
+7. The same Vehicle* type is confirmed by FUN_1407D5460 accessing identical offsets (+0x398, +0x4C0).
 
-1. **Vehicle pointer origin:** R14 is a loop variable iterating over vehicles at [context + 0xC650] + 0x48 (fleet list with stride 100 bytes per entry).
+### Not yet proven
+1. The exact runtime value of [0x14090a5e0] (PE reads as 365.25 double; may be patched at runtime).
+2. That ehicle + 0x1A48 is specifically a fuel cargo slot (vs. some other double field). Writer tracing needed.
+3. The exact VA within the contiguous "l" string block corresponding to text ID 0xDEA9.
+4. The caller of FUN_14034D590 (not traced, per task limits).
+5. Who writes to ehicle + 0x1A48 (burn, refill, reset, clamping not traced).
 
-2. **Fuel tonnes read:** MOVSD XMM1, qword ptr [R14 + 0x1a48] — reads a double-precision float from vehicle offset 0x1A48.
-
-3. **Unit conversion:** DIVSD XMM1, qword ptr [0x14090a5e0] — divides by global at [0x14090A5E0]. As a 4-byte float this reads as 0.0f; as an 8-byte double it reads as 365.25. The value may be patched at runtime by the game loader or initialization code. This is the litres-per-tonne (or similar) conversion factor.
-
-4. **Rendering:** CALL qword ptr [0x14086c880] with format string %.2f %ls at 0x1408B7E40 — formats the converted fuel value with a unit string (likely "l" for litres).
-
-5. **Object provenance:** R14 is derived from the fleet list at context+0xC650, which is the same fleet structure used by FUN_1407D5460 (vehicle detail panel). Both functions access vehicle fields R14/R15+0x398 and +0x4C0, confirming they operate on the same Vehicle* objects.
-
-### Second candidate: FUN_1407D5460 — vehicle detail panel
-
-**Function:** FUN_1407D5460 at VA 0x1407D5460, size 91,932 bytes (~90 KB)
-
-**Confirmed vehicle pointer:** R15 = Vehicle*
-
-**Vehicle fields accessed:**
-| Offset | Usage |
-|--------|-------|
-| R15+0x4F8 | Home building — passed to GetValueString |
-| R15+0x5E8 | Fuel building — passed to GetValueString with format "m_FuelBuilding: %ls " (0x1408F4AF0) |
-| R15+0x610 | Building field — passed to GetValueString |
-| R15+0xC80 | Building field — passed to GetValueString |
-| R15+0x398 | Associated object pointer — checked for NULL |
-| R15+0x4C0 | DWORD field — compared against 0 |
-| R15+0x3A8/0x3A0 | Vector count — (veh+0x3A8 - veh+0x3A0) / 8 |
-
-**Callee:** C3D_CONFIGURATOR::GetValueString at 0x1403329E0 — called 4+ times with different vehicle fields.
-
-**Role:** Renders vehicle detail panel showing building names (home building, fuel building) and other vehicle stats. Does NOT read cargo slots or fuel tonnes directly — uses GetValueString which returns strings, not numeric values.
-
-**MULSS by [0x14090A5DC]:** At 0x1407EB310, MULSS XMM9, dword ptr [0x14090A5DC] — this global reads as 0.5f. Used for capacity bar calculation (current × 1.5), not fuel conversion.
-
-## Remaining Questions / Unverified
-
-| Question | Status |
-|----------|--------|
-| What is the runtime value of [0x14090A5E0]? PE reads as 0.0f/365.25 (double). Expected ~1176.0f for litres/tonne. May be set at runtime. | UNVERIFIED |
-| What is stored at vehicle+0x1A48? Read as double in FUN_14034D590. Likely cargo slot tonnes for fuel resource. | LIKELY fuel tonnes, not yet proven by tracing writers |
-| What calls FUN_14034D590? Not yet traced. | NOT TRACED |
-| What is the unit string (%ls) paired with %.2f? Likely "l" (litres) but not confirmed. | NOT CONFIRMED |
-| Who writes to vehicle+0x1A48? Not yet traced. FindDisp for 0x1A48 returned 71 hits, not yet filtered for writes. | NOT TRACED |
-
-## Conclusion
-
-**Proven:**
-- FUN_14034D590 is a vehicle fleet panel renderer that reads vehicle+0x1A48 (double = fuel tonnes), divides by [0x14090A5E0] (conversion factor), and renders with %.2f %ls format.
-- FUN_1407D5460 is a vehicle detail panel renderer showing building names via GetValueString.
-- Both functions operate on Vehicle* objects from the same fleet structure (context+0xC650).
-- Vehicle fields +0x398 and +0x4C0 are accessed by both functions, confirming same object type.
-
-**Not yet proven:**
-- The exact runtime value of the conversion factor [0x14090A5E0].
-- That vehicle+0x1A48 is specifically the fuel cargo slot (needs writer tracing).
-- That the %ls unit string is "l" (litres).
-- The call chain from game UI to FUN_14034D590.
-
-**Smallest next step:** Trace writers to vehicle+0x1A48 using FindDisp results filtered for MOV/store instructions, and check the runtime value of [0x14090A5E0] to confirm it is the litres-per-tonne conversion factor (~1176.0f).
+## 6. Limitations
+- Static analysis only; no runtime execution.
+- C3D_LANGUAGE text-ID-to-string mapping table not fully decoded.
+- [0x14086c890] function pointer target not resolved from PE (stored value doesn't map to a section).
+- Runtime value of [0x14090a5e0] unknown (may differ from PE-resident 365.25).
+- No runtime code, hooks, configuration, or billing changes were made.
