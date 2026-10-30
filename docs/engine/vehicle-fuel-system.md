@@ -1,7 +1,14 @@
 # Vehicle Fuel System — Ghidra Reverse Engineering Report
 
 **Target:** `SOVIET64.exe` v1.1.1.9 (PE `0x6A3EB6AD`), base `0x140000000`, ASLR ON. All addresses are RVAs; file-based addresses = `0x140` + RVA.
-**Status:** Complete. All six sub-questions (G1–G6) answered.
+**Status:** Historical attribution, NOT verified for the actual road truck.
+
+> **2026-10-30 correction:** the real-game road-truck test does not validate
+> this report's fuel-slot, activity-gate, native clamp or writer attribution.
+> Do not use its addresses as verified truck burn/refill hooks. The original
+> text below is retained as historical candidate evidence. Current findings,
+> missing raw artifacts and implementation status are in
+> [the single cumulative handover](../private-logistics-runtime/VEHICLE_PANEL_FUEL_INVESTIGATION.md).
 
 ---
 

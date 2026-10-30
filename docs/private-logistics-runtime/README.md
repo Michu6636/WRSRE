@@ -1,5 +1,24 @@
 # Private logistics — runtime observation work package
 
+> **2026-10-30 implementation checkpoint:** working source is
+> **0.18.7-diagnostic-provenance**. Tariff/reader provenance and paused-queue
+> gap/coalescing fixes are implemented; 220 host regressions pass. No MSVC build
+> or game run of this revision is claimed. Simulation deduction/refill/clamp
+> tracing is blocked on the missing raw writer evidence or matching executable;
+> the native journey adapter remains unwired and billing OFF. **Not ready for
+> the requested end-to-end adapter game test.** Exact unblock request, complete
+> final changed source and actual results are appended to the single
+> [`VEHICLE_PANEL_FUEL_INVESTIGATION.md`](VEHICLE_PANEL_FUEL_INVESTIGATION.md).
+>
+> **2026-10-30 game-test result:** the panel observer ran in Windows and
+> all five screenshot fuel values matched the same actual DO-fleet truck.
+> This passes display-source/identity correlation, NOT exact fuel burn or
+> journey settlement. The latest full review and next work are at the end of
+> [`VEHICLE_PANEL_FUEL_INVESTIGATION.md`](VEHICLE_PANEL_FUEL_INVESTIGATION.md).
+> Billing remains OFF; the journey core remains disconnected. The following
+> implementation-stage notice is historical; its build/game-test gate has now
+> been exercised for this observer path by the user's supplied run.
+>
 > **2026-10-29:** The actual `%.2fl` display chain and its **1000.0f**
 > multiplier are traced. A bounded read-only observer is implemented in the
 > existing private_logistics plugin (**0.18.6-panel-observer**), awaiting a
@@ -25,7 +44,7 @@ Compute fuel-only cost = summed actual tonnes deducted during the loaded trip ×
 
 ## Status and provenance
 
-- Current Arena branch: `arena/15fdac3e-wrsre`; observer source is v0.18.6. No new DLL build/deployment is claimed. Older agent reports below are historical.
+- Current Arena branch: `arena/0a144a79-wrsre`; working source is v0.18.7 (diagnostic-only checkpoint); last real-game observer test was v0.18.6. See the latest checkpoint and log review. Older agent reports below are historical.
 - Old Agent 1 report fetched at `80a4404d8d3fa5161bcaaf8de8cfd0a7fc7a72b7`, branch `reverse-engineering-and-verified-transport-associa`. Clean of conflict markers; not accepted as a verified road load/burn/unload implementation. Still contains task-stride/prototype inconsistencies.
 - Old Agent 2 model fetched at `94d304dfbd182aef6464ff35315de8d16ae1a694`, branch `executable-accounting-model-and-deterministic-test`. Independently ran 27 tests, all pass. Additional probes: CLOSED prevents a legitimate second trip; UNSUPPORTED can be reactivated by a repeated load. Not production-ready.
 - Review exports exist only in ignored `.cache/agent-review/` in this checkout. Remote reports/model have NOT been merged here. New agents must obtain the exact artifacts without blindly merging old branches.
