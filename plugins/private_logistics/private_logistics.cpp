@@ -1,6 +1,10 @@
 // private_logistics - what a private company earns, and what it pays.
 //
 // ---------------------------------------------------------------------------
+// v0.18.6 updates: bounded, read-only panel-object/fleet observer.
+// Verified 7D5460 prologue, scale and format fingerprints; one sample/second,
+// at most 240 per load epoch. No exact burn/tracker/billing integration.
+//
 // v0.18-permissions: independent state-site directions; consumer sites never
 // supply goods; state default deny applies to existing/manual targets too.
 // Missing eligible connections are recreated by the company. No fuel/billing
@@ -341,6 +345,9 @@
 #include "../../src/ui_panels_api.h"
 #include "site_permissions.h"
 #include "task_audit.h"
+// Compiled/tested core only. No runtime consumer until native vehicle, cargo
+// boundaries and actual fuel-deduction provenance/order have been validated.
+#include "journey_tracker.h"
 
 #include <stdint.h>
 #include <math.h>
@@ -554,7 +561,9 @@ static char   gFuelResource[64] = "fuel";  // resolved through resource_pricing
 static double gBasketsPerTrip   = 0.80;    // CPI fallback, in daily survival baskets
 static double gBasketsPerTonne  = 0.02;
 
-#define PL_VERSION "0.18.5-source10"
+#define PL_VERSION "0.18.6-panel-observer"
+static int g_panelObserverEnabled = 1;
+static void PanelObserverLoading(void);
 static float g_minPayment      = 0.01f;
 static double g_dailyPayCap    = 0.0;    // 0 = no cap
 
@@ -2385,6 +2394,7 @@ static bool AutoAppendNativeTarget(void* office, void* target, unsigned directio
 
 static void AutoPersistenceEvent(TsmSaveEvent event, const char* dir, void*)
 {
+    if (event == TSM_SAVE_LOADING) PanelObserverLoading();
     // Persist permission keys only; never retain building pointers. Save/load
     // callbacks run on the file thread, so no game-memory access is performed.
     if (!g_persistence || !dir) return;
@@ -2868,6 +2878,7 @@ static void ReadSettings(void)
 
     g_enabled        = H->configInt(ini, "private_logistics", "enabled", 1);
     g_billing        = H->configInt(ini, "private_logistics", "billing", 0);
+    g_panelObserverEnabled = H->configInt(ini, "private_logistics", "panel_fuel_observer", 1);
     g_dryRun         = H->configInt(ini, "private_logistics", "dry_run", 1);
     g_payFactory     = H->configInt(ini, "private_logistics", "pay_factory", 1);
     g_payCarrier     = H->configInt(ini, "private_logistics", "pay_carrier", 1);
@@ -3509,6 +3520,8 @@ static void CensusFleets(int closedDay)
 // entry points
 // ---------------------------------------------------------------------------
 
+#include "panel_fuel_runtime.h"
+
 extern "C" __declspec(dllexport) unsigned TsmPluginApiVersion(void)
 {
     return TSM_API_VERSION;
@@ -3627,6 +3640,8 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
             Logf("private_logistics  [AUTO DO] WARN persistence load signal unavailable; "
                  "reconciliation after load may wait for date rewind or restart");
     }
+
+    PanelObserverStart();
 
     PatchAllSites();
 

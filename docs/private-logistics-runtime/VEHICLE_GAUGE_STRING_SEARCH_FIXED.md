@@ -117948,3 +117948,185 @@ PE-resident value is **365.25 as a double**. This may be patched at runtime by g
 - [0x14086c890] function pointer target unresolved from PE.
 - [0x14090a5e0] runtime value unknown (may differ from PE-resident 365.25).
 - No runtime code, hooks, configuration, or billing changes were made.
+
+---
+
+## Direct review of e1589de — 2026-10-29
+
+Reviewed the actual 117,960-line report from the checkout at e1589de on active branch arena/15fdac3e-wrsre, including the complete JSON inventory and Ghidra appendix. Original report SHA-256 before this appendix: `7aac96d67811b44e841c144becf4fdad222d6489f89a350068ef20c1af6f6559`. No actual executable/Ghidra project is present here. This review validates report consistency and examines supplied instruction excerpts; it does NOT constitute a new native disassembly, game run or confirmed physical fuel read.
+
+### Inventory checks actually executed
+
+- JSON parses successfully; declared candidate_count equals 7,780 actual records.
+- Section counts reproduce exactly: .rdata 6,650, .pdata 837, .rsrc 293.
+- Encodings: ASCII 6,972; UTF-16LE 808.
+- All 7,780 `(section, encoding, file_offset)` candidate keys are unique. Different encodings may still overlap physically; candidate count is not a count of genuine semantic string literals.
+- The full `%.2f %ls` candidate is at 0x1408B7E40; `m_FuelBuilding: %ls ` is at 0x1408F4AF0, with interior fuel anchor 0x1408F4AF4.
+- The inventory records executable SHA-256 `296644a9f207d609031fc2ae73fed2dcb34619a1d55a35d1c7b51965ce6841b8`. The Ghidra identity table says "Same project", not an independently emitted Ghidra executable SHA-256. This does not show a mismatch, but independent hash equality is not demonstrated in the appendix.
+
+### Corrections to the claimed fuel chain
+
+1. **Float/double reinterpretation is not evidence of runtime patching.** The reported instruction is DIVSD, so its operand is an eight-byte double. Double 365.25 has bytes `00 00 00 00 00 d4 76 40`; interpreting its first four bytes as a float naturally yields 0.0. These two readings are consistent with an ordinary constant, not a contradiction. No writer/runtime patch was supplied. Division by 365.25 is compatible with converting days to years; age/service-life is a hypothesis to discriminate, not a proven new interpretation. Nothing supplied establishes tonnes-to-litres here. Do not assume a target value of 1176.
+
+2. **The vector divisor annotation is wrong.** For the shown positive byte-difference input, multiply-high by 0x6666666666666667 followed by arithmetic shift 5 implements division by 80 (0x50), not 100. For input 800 the excerpt produces 10, not 8. The omitted instructions still need inspection before the full algorithm/stride is finalized. Neither a vehicle vector nor vehicle objects are established by this count computation.
+
+3. **The actual reaching definition of R14 at 0x140353D72 is absent.** The earlier excerpt sets R14D to R13+6 at 0x14034D6F4, which is not a pointer derivation. The render is 0x667E bytes (26,238 bytes) later. Registers may be repurposed over that distance. The report supplies no intervening dataflow linking R14 at the read to a fleet element. The render block supports only a reported double read from `[R14+0x1A48]`, division, formatting and pointer/flag checks. The semantic labels Vehicle*, fuel and tonnes are not established by those instructions.
+
+4. **context+0xC650 has conflicting prior evidence.** `docs/UI investigation.md`, sections 13.2 and 14, documents game+0xC650 as the selected sidebar entry, with an entry vector at game+C608/C610 (entry stride 0x68). The new excerpt accesses a vector via selected-object+0x48. If this context is the same Game object, that may be panel-specific data rather than a fleet; if the context is another type, prove the caller and distinguish the bases. Shared numeric offsets alone do not resolve identity.
+
+5. **The unit argument has an immediate, bounded source.** In the supplied excerpt GetString is called with EDX=0xDEA9 (57001); RAX is placed at RSP+0x38 for the `%ls` argument. Resolve that string using the actual localization/configurator before any 71-hit writer hunt. The `GetString?` import name and calling convention should also be confirmed. If the string denotes years/age, close this numerical block as a fuel lead; do not assume the entire 45KB function has no other relevant subsection.
+
+6. **Partial excerpts do not establish whole-function negatives.** The claim that 7D5460 never reads fuel numerically is not auditable without complete instructions or exhaustive checked search output. GetValueString may format data upstream. Matching +398/+4C0 accesses does not prove exact vehicle type or same selected DO truck. The stated 0.5f MULSS also does not itself explain a current-times-1.5 annotation; additional arithmetic is needed.
+
+7. **Xref-negative conclusions remain bounded.** The appendix says references were looked up at string starts, despite the request to inspect both starts and interior anchors. A no-xrefs result at one address does not rule out interior/suffix references, dynamic/resource lookup or indirect references. No full caller/branch evidence was supplied to exclude the large 09DC80/59F1F0 functions. Do not repeat the size/caller-scope exclusion.
+
+### Actual reproducible review check (complete source)
+
+Executed with Python 3 in the repository; all assertions passed. The arithmetic check models the supplied positive-input multiply-high/shift excerpt, not a complete native function.
+
+```python
+from pathlib import Path
+import json, struct, collections
+p = Path('docs/private-logistics-runtime/VEHICLE_GAUGE_STRING_SEARCH_FIXED.md')
+s = p.read_text(encoding='utf-8-sig')
+start = s.index('```json\n') + 8
+d = json.loads(s[start:s.index('\n```', start)])
+assert d['candidate_count'] == len(d['candidates']) == 7780
+assert collections.Counter(c['section'] for c in d['candidates']) == {
+    '.rdata': 6650, '.pdata': 837, '.rsrc': 293}
+assert len({(c['section'], c['encoding'], c['file_offset'])
+            for c in d['candidates']}) == 7780
+b = struct.pack('<d', 365.25)
+print(b.hex(' '), struct.unpack('<f', b[:4])[0])
+m = 0x6666666666666667
+for n in (79, 80, 99, 100, 159, 160, 200, 800):
+    print(n, ((n * m) >> 64) >> 5, n // 80, n // 100)
+```
+
+```text
+PASS: declared count, per-section counts, and unique candidate keys
+365.25 double bytes: 00 00 00 00 00 d4 76 40; low float: 0.0
+n     high64>>5   n//80   n//100
+79    0           0       0
+80    1           1       0
+99    1           1       0
+100   1           1       1
+159   1           1       1
+160   2           2       1
+200   2           2       2
+800   10          10      8
+```
+
+### Smallest next investigation
+
+Do NOT start by searching all +1A48 writers or measuring runtime constants. First resolve GetString(0xDEA9), verify the exact eight constant bytes/address, and export continuous addressed instruction bytes around 0x140353D60-0x140353DF9 plus R14's reaching definitions/loop element origin. Include the minimal callers proving the context type and the vector count calculation. Label interpretations separately from observations. Append all resulting evidence to this one Markdown. No need to repeat the scanner or supply another 117K-line inventory. No runtime/plugin/INI changes in this review; billing remains OFF and the loaded-journey tracker remains unimplemented.
+
+---
+
+## Direct source review of fa8f36a — 2026-10-29
+
+Fetched `DO-fuel-cost-calculatotr` explicitly and read `git show fa8f36a:docs/private-logistics-runtime/VEHICLE_GAUGE_STRING_SEARCH_FIXED.md`, without overwriting the existing local review. SHA-256 of that fetched report: `4342adca176c4c0442cb9bf18369b878eed508779ce84624cbbe76954eb9e85c`. No native binary or Ghidra project is available in this checkout. This is a source/report audit, not independent native execution.
+
+### Accepted improvement: instruction table consistency
+
+The new table supplies 27 contiguous instructions from 0x140353D60 through the instruction at 0x140353DF9. All nine RIP-relative operand targets recompute correctly from their bytes. Both short branches target 0x140353DF9. This materially improves the evidence for the mechanical read/divide/format block. It does not establish the base pointer's type or the localized unit's value.
+
+### The unit is NOT resolved
+
+The report explicitly says the text-ID table could not be decoded. Nearby constants cannot establish the return value of a lookup by ID 57001.
+
+More concretely, the six cited `l` candidate addresses (8B7E3A, 8B7E4C, 8B7E60, 8B7E70, 8B7EFA and 8B7F02, all relative to image base 0x140000000) are **ASCII** records in the scanner JSON, not standalone UTF-16LE strings. The scanner intentionally inventories multiple interpretations of data, so ASCII runs may be individual low bytes inside wide strings. They are candidates, not semantic units.
+
+The supplied UTF-16 candidate at 0x1408B7E40 is `%.2f %ls`. At 0x1408B7E4C its tail bytes are `6c 00 73 00`, i.e. `ls`: the `l` length modifier of `%ls`, followed by `s`, NOT a standalone wide `l` unit. Likewise 0x1408B7E3A is inside the wide `%.1f%ls` string at 0x1408B7E30. This is a concrete false positive in the proposed unit evidence. It does not prove that the actual returned unit is not litres; it proves the lookup has not been resolved by these observations.
+
+### PE mapping errors invalidate the documented constant-read provenance
+
+According to the report's own JSON section table:
+
+- RVA 0x90A5E0 belongs to **.rdata**, not .data. .rdata RVA is 0x86C000 and its raw offset is 0x86B000.
+- Correct file offset is `0x86B000 + (0x90A5E0 - 0x86C000) = 0x9095E0`.
+- The new appendix incorrectly selects .data starting at RVA 0x992000 even though the target is below that RVA. Its written .data formula would evaluate to 0x9093E0, NOT its stated 0x9495E0. Neither is the correct mapped offset.
+- The supplied `00 00 00 00 00 d4 76 40` does decode as double 365.25. But a read at the correct file offset or Ghidra address is needed to authenticate those bytes for this operand; the recorded file-read method does not do so. No runtime patching is established.
+- The reported import-slot value 0x98A4BE, interpreted as an RVA, is inside .rdata (0x86C000 to 0x991C62), not a gap. A file-state IAT entry can point to import metadata; parse the import directory to establish the symbol, rather than treating that RVA as resolved function code.
+- The reported inline object at RVA 0x997590 lies beyond .data's file-backed extent: .data RVA 0x992000, raw size 0x1600. Its virtual address cannot be translated to meaningful on-disk initialized object contents by reading beyond that raw extent into later sections. Runtime initialization must be considered separately.
+
+### Object provenance and arithmetic remain unproved/misannotated
+
+The report insists again that signed multiply-high by 0x6666666666666667 then SAR 5 and sign correction divides by 100. It does not: for positive input 800, the complete shown sequence returns 10, not 8. That is division by 80 (0x50). `IMUL RCX` writes a 128-bit RDX:RAX product; RDX is the high **64** bits, not high32. The added sign correction does not change this positive-input counterexample.
+
+The new loop excerpt sets R15D to the integer loop index and forms RBX from a vector base plus R15. It still supplies no reaching definition of R14 at 0x140353D72, nor a dereference connecting the earlier vector entry to that R14 object. R14/R15/RBX cannot be treated as interchangeable pointers without dataflow. Calling all these fields Vehicle* is circular. The prior game+C650 selected-tab evidence remains unresolved; callers establishing context type are still absent.
+
+### Actual executed validation source and result
+
+Complete Python used to check the fetched artifact (read-only git plus standard library):
+
+```python
+from pathlib import Path
+import subprocess, json, re
+source = subprocess.check_output([
+    'git', 'show',
+    'fa8f36a:docs/private-logistics-runtime/VEHICLE_GAUGE_STRING_SEARCH_FIXED.md'
+]).decode('utf-8-sig')
+a = source.index('```json\n') + 8
+d = json.loads(source[a:source.index('\n```', a)])
+sec = next(x for x in d['sections'] if x['name'] == '.rdata')
+delta = 0x90a5e0 - int(sec['rva'], 16)
+assert 0 <= delta < sec['scan_bytes']
+assert sec['raw_offset'] + delta == 0x9095e0
+fmt = next(x for x in d['candidates']
+           if x['string_va'] == '0x1408b7e40'
+           and x['encoding'] == 'UTF-16LE')
+assert bytes.fromhex(fmt['bytes_hex'])[12:] == bytes.fromhex('6c007300')
+for address in ('0x1408b7e3a', '0x1408b7e4c', '0x1408b7e60',
+                '0x1408b7e70', '0x1408b7efa', '0x1408b7f02'):
+    c = [x for x in d['candidates']
+         if x['string_va'] == address and x['text'] == 'l']
+    assert len(c) == 1 and c[0]['encoding'] == 'ASCII'
+rows = [(int(m[1], 16), bytes.fromhex(m[2]), m[3])
+        for m in re.finditer(
+            r'^\| ([0-9A-Fa-f]{9,16}) \| ([0-9A-Fa-f ]+) \| (.*?) \|$',
+            source, re.M)]
+assert len(rows) == 27
+assert all(a + len(b) == rows[i + 1][0]
+           for i, (a, b, t) in enumerate(rows[:-1]))
+rip = 0
+for a, b, t in rows:
+    target = re.search(r'\[(0x[0-9a-fA-F]+)\]', t)
+    if target:
+        assert a + len(b) + int.from_bytes(
+            b[-4:], 'little', signed=True) == int(target[1], 16)
+        rip += 1
+assert rip == 9
+m, n = 0x6666666666666667, 800
+rdx = ((n * m) >> 64) >> 5
+rax = (rdx & ((1 << 64) - 1)) >> 63
+assert rdx + rax == n // 80 != n // 100
+assert int(sec['rva'], 16) <= 0x98a4be < int(sec['rva'], 16) + sec['scan_bytes']
+```
+
+All assertions passed. Executed output confirmed correct constant mapping to .rdata/0x9095E0; `ls` inside the wide format; all six alleged unit candidates encoded ASCII; 27 contiguous instruction rows with nine matching RIP targets; divide result 10 vs expected 8 for /100; import RVA inside .rdata. These checks validate/correct the artifact only, not native fuel semantics.
+
+### Next bounded evidence request
+
+No rescan and no +1A48 writer hunt yet. First obtain the actual ID-57001 language-table/file entry or an observed GetString return with language and runtime context. If unavailable, label the unit UNRESOLVED rather than inferring it from adjacent bytes. Read eight bytes at Ghidra VA 0x14090A5E0 and independently at correctly mapped file offset 0x9095E0, including the section row. Then supply R14's reaching definition at 0x140353D72 and minimal callers proving the base/context type, correcting /100 to /80 for the supplied sequence. A static inability to resolve the unit is a valid blocker; another confident unsupported fuel conclusion is not. Append actual evidence to this same file. No runtime/plugin/INI changes; billing remains OFF; fuel reader and journey tracker remain unvalidated/unimplemented.
+
+---
+
+## Direct review of 000ff73 — 2026-10-29
+
+Fetched the actual target branch and read the complete new appendix using `git show 000ff73:docs/private-logistics-runtime/VEHICLE_GAUGE_STRING_SEARCH_FIXED.md`; did not overwrite local earlier reviews. Fetched report SHA-256: `c6bcc1785b4beb1a9217d949b5e6170680291ab1b41208c4717295433bbb93d0`. Embedded inventory still contains 7,780 candidates. No native binary/project is available locally.
+
+The withdrawal of the unit claim, corrected .rdata/0x9095E0 mapping, reported matching 365.25-double read and division-by-80 correction are accepted as improvements to the supplied evidence. The added ADD R15,0x50 is consistent with 80-byte entries, but does not establish that the entries are vehicles. Exact repeated offsets remain a compatibility observation, not proof of vehicle identity. No runtime patch is demonstrated and there is no basis to assume an expected 1176 conversion for this untyped numeric block.
+
+The central dataflow question is explicitly still unexamined. The reported gap is also miscalculated:
+
+```text
+0x140353D60 - 0x14034DA25 = 0x633B = 25,403 bytes (~24.81 KiB)
+0x140353D72 - 0x14034DA25 = 0x634D = 25,421 bytes (~24.83 KiB)
+```
+
+This is not a 3.4KB gap. The assertion that R14 "must be recomputed into a vehicle pointer" must instead read "R14's reaching definition and object type are unknown." The unexamined intervening code could repurpose R14 for another object type. The high32 IMUL annotation is still incorrect: the high product half is 64 bits. Earlier import-RVA and inline-object file-backing errors remain in the appendix; they were not fixed by resolving the constant's separate section mapping.
+
+Decision: do not start writers or another broad offset search. Stop cycling interpretations of the same short excerpts. Request one complete raw export of FUN_14034D590's body, its decompiler output and direct caller sites, in a compact single Markdown separate from the unchanged candidate inventory. Complete addressed instruction bytes and body-range coverage are needed so the register reaching definitions and context can be reviewed directly here. Do not assume the function or vector is a vehicle fleet in annotations. If ID57001 cannot actually be resolved, preserve that blocker instead of guessing from storage adjacency. No game test or runtime edit justified. Billing remains OFF; no validated physical fuel source or loaded-journey tracker yet.
+
+Actual review checks were Python standard-library parsing of the fetched Markdown JSON (7,780 candidates), SHA-256, arithmetic address subtraction above and `struct.unpack('<d', bytes.fromhex('0000000000d47640'))` (365.25). These are report/arithmetic checks, not native fuel validation.
