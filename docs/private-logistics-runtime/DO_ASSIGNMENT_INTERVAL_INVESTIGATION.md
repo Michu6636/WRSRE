@@ -2,11 +2,11 @@
 
 ## Executive result
 
-**The smallest credible native interval signal is the reciprocal pair `DO+0xBB0 = truck` and `truck+0xC80 = DO`, observed at its attach and detach boundaries.** The dispatch-side attach and same-receiver detach paths are now proven, including the state-10 cleanup branch. These are native assignment-association transitions, not UI schedule changes.
+**The earlier road-DO conclusion was too broad.** The direct `[DO+0xBB0]=truck` / `[truck+0xC80]=DO` installation cited below belongs to type `0x5C` and type `7` paths, not the actual road distribution-office type `0x2B`.
 
-This is not yet a complete accounting proof: the pair identifies the associated DO, not an individual job; the evidence does not establish that every internal pickup/unload advancement preserves it or that every replacement creates a separately observable detach; and reload continuity is unknown. Use guarded observation of these native boundaries as a candidate, not billing, until those semantics are confirmed.
+The type-`0x2B` updater does process a truck from that same office's `+0xC70/+0xC78` fleet and calls `FUN_1406B8EB0` on that truck. The helper can write `truck+0xC80 = office` and `office+0xBB0 = truck+0x390`. The latter is an opaque truck field value, not a proven truck pointer or job ID. This is a verified road-DO association path, but the available static evidence does not establish that it is an assignment-interval boundary or that it remains stable across stops, cancellation, and replacement.
 
-The helper requested first, `FUN_1406BF1D0`, has now been fully decoded from the verified executable. Its renderer callers pass the selected panel root, and its body aggregates per-root/per-entry quantity data into `root+0x458` and `root+0x470` vectors. It does not expose a proven assignment lifecycle field or native task boundary. The start-side association and a same-receiver reciprocal detach are traced below; exact task semantics across internal stops and replacement remain unresolved.
+The requested `FUN_1406BF1D0` renderer investigation remains documented below for continuity; it is not repeated or used as an assignment signal here. The exact type-`0x2B` receiver path, opaque `+0x390` provenance, corrected direct bytes, and remaining lifecycle gaps follow.
 
 No plugin, dispatch, permission, default, or billing behavior was changed. No hooks were installed and no live-game run was performed or requested.
 
@@ -32,6 +32,8 @@ Read the latest interval-policy and helper sections of [VEHICLE_PANEL_FUEL_INVES
 The workspace has existing Ghidra decompilation/function-listing exports in `scratch`, but no discoverable Ghidra command or project file. The Ghidra function metadata and signature below are from those exports. To avoid relying on the truncated existing `disasm_bf1d0_full.txt`, the full function bytes were independently decoded with Capstone 5.0.7 directly from the identity-verified executable. The decoder consumed the entire Ghidra-reported 3,760-byte function body and ended at its `RET`.
 
 All lifecycle conclusions below are **static deductions or explicit unknowns**. There is no live-game validation of assignment presence, removal, replacement, cancellation, reload survival, or return travel in this investigation.
+
+Throughout this report, a read at `vehicle+0x1708` followed by a comparison at `object+0x294` establishes only that metadata-kind dword's numeric value. No vehicle-state enum meaning is inferred for values `4`, `8`, or `10`.
 
 ## `FUN_1406BF1D0`: identity, bounds, signature, and behavior
 
@@ -111,15 +113,17 @@ The selected-root schedule fields currently read by the observer are:
 
 The DO storage findings separately identify `DO+0xC70/+0xC78` as a fleet vector and `DO+0xD38/+0xD40` as target/task-configuration entries. Those entries persist/reconstruct on save load, but are not a verified per-vehicle active-job pointer or assignment history. A candidate/home DO is not the buyer. No receiver-preserving dataflow from the DO configuration vector to a particular truck's active assignment was established here.
 
-## Simulation-side association install candidate
+## Earlier association paths: not the road-DO receiver
+
+The following paths were previously overgeneralized as road-DO evidence. Their dispatch guards identify type `0x5C` and type `7`, not road distribution office type `0x2B`; they are retained only to show why those writes cannot establish the target lifecycle.
 
 The renderer helper is not the only relevant path. The available dispatcher/decompiler exports establish a native, non-UI association write:
 
 1. In `d_h11_dispatcher.c`, an object whose type metadata has `+0x360 == 0x5C` is passed as `local_648` to `FUN_140189030(param_1, local_648)`.
 2. At `0x14018909E`, `FUN_140189030` copies `RDX` to `R13`; at `0x1401890A1` it calls `FUN_1401B1290` without replacing `RCX` or `RDX`. Thus `FUN_1401B1290` receives the same `local_648` object as `param_2`.
 3. `FUN_1401B1290` has the exported signature `void FUN_1401b1290(longlong param_1, longlong param_2)` and a Ghidra-reported size of 9,323 bytes. Its loop obtains candidate trucks from `param_2+0xC70`; the decompilation names the current truck `lVar12` and the loop's fleet object is the same `param_2`. This is receiver provenance, not an offset match on an unrelated object.
-4. The candidate branch checks `truck+0x4F0 == DO`, `DO+0xBB0 == 0`, and `truck+0xC80 == 0`. `R15` is initialized to zero at `0x1401B1318`.
-5. After selecting route/cargo data, the branch installs the reciprocal pointers and resets the truck route state.
+4. The candidate branch checks `truck+0x4F0 == dispatcher`, `dispatcher+0xBB0 == 0`, and `truck+0xC80 == 0`. `R15` is initialized to zero at `0x1401B1318`.
+5. After selecting route/cargo data, this type-`0x5C` branch installs its association pointers and resets the candidate vehicle's route state.
 
 Relevant raw instructions from the verified-address export:
 
@@ -132,7 +136,7 @@ Relevant raw instructions from the verified-address export:
 1401b1315: 4C 8B F1                    MOV R14,RCX
 1401b1318: 45 33 FF                    XOR R15D,R15D
 
-; candidate guard; RDI is the current element read from DO+0xC70
+; candidate guard; RDI is the current element read from the type-0x5C receiver+0xC70
 1401b225a: 48 8B 86 70 0C 00 00       MOV RAX,[RSI+0xc70]
 1401b2261: 4A 8B 3C E8                 MOV RDI,[RAX+R13*0x8]
 1401b2416: 4C 8B 87 F0 04 00 00       MOV R8,[RDI+0x4f0]
@@ -149,26 +153,140 @@ Relevant raw instructions from the verified-address export:
 1401b25db: 48 8B 87 80 06 00 00       MOV RAX,[RDI+0x680]
 1401b25e2: 48 89 87 88 06 00 00       MOV [RDI+0x688],RAX
 
-; route point copied from the DO-side +0xE90 vector after association
+; route point copied from the type-0x5C receiver+0xE90 vector after association
 1401b246f: 4C 8D A7 38 07 00 00       LEA R12,[RDI+0x738]
 1401b2672: 48 6B DB 1C                 IMUL RBX,RBX,0x1c
 1401b2676: 48 8B 86 90 0E 00 00       MOV RAX,[RSI+0xe90]
 1401b267d: F3 0F 10 04 03              MOVSS XMM0,[RBX+RAX]
-1401b26c1: 48 8B CF                    MOV RCX,RDI
-1401b26c4: E8 CA 6B 4D 00              CALL 0x140689290
+1401b26be: 48 8B CF                    MOV RCX,RDI
+1401b26c1: E8 CA 6B 4D 00              CALL 0x140689290
 1401b26c6: 48 8B 96 90 0E 00 00       MOV RDX,[RSI+0xe90]
 1401b26cd: 48 03 D3                    ADD RDX,RBX
 1401b26d0: 49 8B CC                    MOV RCX,R12
 1401b26d3: E8 18 CC E7 FF              CALL 0x14002f2f0
 ```
 
-In the Windows x64 calling convention, `RSI` is `param_2` (the fleet-bearing dispatcher object), while `RDI` is the candidate fleet vehicle. The relevant decompilation also shows subsequent route-point writes to the same `lVar12`/`RDI` vehicle. The association writes occur before those route writes. This is an assignment-like simulation transition, not a UI-selected-row store.
+In the Windows x64 calling convention, `RSI` is `param_2` (the type-`0x5C` receiver), while `RDI` is its candidate vehicle. The relevant decompilation also shows subsequent route-point writes to the same `lVar12`/`RDI` vehicle. This proves an association write on that receiver only; it is not evidence for a type-`0x2B` road office.
 
-`FUN_1401B3CE0` contains a similar guarded reciprocal write at `0x1401B45E4`/`0x1401B4604` (`[RSI+0xBB0]=RDI`, `[RDI+0xC80]=RSI`) and then calls `FUN_14067CB30` to reset schedule state. Its immediate caller is `FUN_1401B3700`; this corroborates another association path but is not used to infer that all object types or task modes share one lifecycle.
+`FUN_1401B3CE0` contains a similar guarded write at `0x1401B45E4`/`0x1401B4604` (`[RSI+0xBB0]=RDI`, `[RDI+0xC80]=RSI`) and then calls `FUN_14067CB30` to reset schedule state. Its immediate caller `FUN_1401B3700` is dispatched for metadata type `7`. Neither this nor the type-`0x5C` path establishes road-DO assignment semantics.
 
-## Same-receiver detach and candidate close boundary
+## Actual road-DO type `0x2B`: receiver and association dataflow
 
-The relevant cleanup function has exported signature `void FUN_1403fbdc0(longlong param_1, longlong param_2, char param_3, char param_4, char param_5, undefined1 param_6)`. Its raw prologue copies `RDX` (`param_2`) into `RDI`, the receiver used below. At `0x1403FC085`, it loads that receiver's `+0xC80` association. If the vehicle has no state object at `+0x1708`, or its state code at `state+0x294` is not `10`, the reciprocal pair is cleared in this order:
+The dispatch guard is direct: at `0x14013E2BA` the dispatcher compares metadata `+0x360` with `0x2B`; on equality it passes the office in `RDX` to `FUN_1401C6050` at `0x14013E2C9`. In `FUN_1401C6050`, `RDI` is that office and the `+0xC70/+0xC78` vector is iterated. The loop loads each element into `RSI`, checks `truck+0xC80 == 0` at `0x1401C61E6`, and checks `truck+0x4F8 == office` at `0x1401C61F4`. This proves that the following call is reached from a candidate in this same type-`0x2B` office's fleet; it is not receiver inference from matching offsets.
+
+At `0x1401C646E`, `FUN_1401C6050` calls `FUN_1406B8EB0` with `RCX=RSI` (the same fleet truck), with `RDX`, `R8`, and `R9` zero. Before the call, the path requires `office+0xBB0 == 0`, `truck+0xD39 == 0`, `truck+0x698 == 0`, a nonempty `truck+0x680/+0x688` list, `truck+0x528 == 0`, and `truck+0x4F0 == truck+0x4F8`. The loop already established `truck+0x4F8 == office`, so the helper's `truck+0x4F0` receiver is the same office.
+
+```asm
+; dispatch on metadata type 0x2B; R8 is the office argument
+14013e2ba: 83 B8 60 03 00 00 2B       CMP [RAX+0x360],0x2b
+14013e2c1: 75 10                       JNE 0x14013e2d3
+14013e2c3: 49 8B D0                    MOV RDX,R8
+14013e2c6: 48 8B CE                    MOV RCX,RSI
+14013e2c9: E8 82 7D 08 00              CALL 0x1401c6050
+
+; FUN_1401C6050: fleet base, candidate load, and same-office guard
+1401c6154: 4C 8D BF 70 0C 00 00       LEA R15,[RDI+0xc70]
+1401c61d8: 49 8B 07                    MOV RAX,[R15]
+1401c61db: 4A 8B 34 F0                 MOV RSI,[RAX+R14*8]
+1401c61e6: 48 83 BE 80 0C 00 00 00    CMP qword ptr [RSI+0xc80],0
+1401c61f4: 48 39 BE F8 04 00 00       CMP qword ptr [RSI+0x4f8],RDI
+
+; active-list/association guards and same-truck helper call
+1401c6408: 48 83 BF B0 0B 00 00 00    CMP qword ptr [RDI+0xbb0],0
+1401c6429: 83 BE 98 06 00 00 00       CMP dword ptr [RSI+0x698],0
+1401c6432: 48 8B 86 88 06 00 00       MOV RAX,[RSI+0x688]
+1401c6439: 48 2B 86 80 06 00 00       SUB RAX,[RSI+0x680]
+1401c6449: 48 83 BE 28 05 00 00 00    CMP qword ptr [RSI+0x528],0
+1401c6453: 48 8B 86 F8 04 00 00       MOV RAX,[RSI+0x4f8]
+1401c645a: 48 39 86 F0 04 00 00       CMP [RSI+0x4f0],RAX
+1401c6463: 45 33 C9                    XOR R9D,R9D
+1401c6466: 45 33 C0                    XOR R8D,R8D
+1401c6469: 33 D2                       XOR EDX,EDX
+1401c646b: 48 8B CE                    MOV RCX,RSI
+1401c646e: E8 3D 2A 4F 00              CALL 0x1406b8eb0
+```
+
+In the callee, `RDI=RCX` is still that truck. The complete raw body is 7,687 bytes; direct decoding yields 1,710 instructions and ends at `0x1406BACB6` (`RET`). Entry checks `truck+0xC80 == 0` and `truck+0x4F0 != 0`. One guarded path reads `truck+0x4F0` into `RCX` (the same office established by the caller), then writes:
+
+```asm
+1406b9d68: 48 8B 8F F0 04 00 00       MOV RCX,[RDI+0x4f0]
+1406b9d6f: 48 8B 81 18 03 00 00       MOV RAX,[RCX+0x318]
+1406b9d7b: 80 B8 79 09 00 00 00       CMP byte ptr [RAX+0x979],0
+1406b9d84: 48 8B 87 90 03 00 00       MOV RAX,[RDI+0x390]
+1406b9d8b: 48 89 81 B0 0B 00 00       MOV [RCX+0xbb0],RAX
+1406b9d92: 48 8B 87 F0 04 00 00       MOV RAX,[RDI+0x4f0]
+1406b9d99: 48 89 87 80 0C 00 00       MOV [RDI+0xc80],RAX
+```
+
+Thus `truck+0xC80 = office` is a direct, read-only snapshot candidate for an office association on this type-`0x2B` path. `office+0xBB0` receives the value loaded from `truck+0x390`; no evidence here proves that this value equals the truck pointer, is stable across tasks, or identifies a job. Do not call these writes a reciprocal truck-pointer pair or a task start without further lifecycle proof.
+
+The helper's nearby clear logic compares the metadata-kind value at `truck+0x1708+0x294` with `8`, `10`, and `6`. For value `10`, it conditionally clears the current office token and truck association only when the token equals `truck+0x390`; later control can reach the write at `0x1406B9D99`. This is not proof of task removal or replacement. The known type-`0x2B` caller enters with `truck+0xC80 == 0`, and the meaning of these metadata-kind values is unknown.
+
+```asm
+1406b9be8: 48 8B 87 08 17 00 00       MOV RAX,[RDI+0x1708]
+1406b9bef: 8B 88 94 02 00 00          MOV ECX,[RAX+0x294]
+1406b9bf5: 83 F9 08                    CMP ECX,8
+1406b9bf8: 75 7B                       JNE 0x1406b9c75
+1406b9bfa: 48 8B 8F 80 0C 00 00       MOV RCX,[RDI+0xc80]
+1406b9c01: 48 85 C9                    TEST RCX,RCX
+1406b9c04: 74 17                       JE 0x1406b9c1d
+1406b9c06: 48 8B 87 90 03 00 00       MOV RAX,[RDI+0x390]
+1406b9c0d: 48 39 81 B0 0B 00 00       CMP [RCX+0xbb0],RAX
+1406b9c14: 75 07                       JNE 0x1406b9c1d
+1406b9c16: 4C 89 B1 B0 0B 00 00       MOV [RCX+0xbb0],R14
+1406b9c75: 83 F9 0A                    CMP ECX,0xa
+1406b9c78: 75 49                       JNE 0x1406b9cc3
+1406b9c7a: 48 8B 8F 80 0C 00 00       MOV RCX,[RDI+0xc80]
+1406b9c81: 48 85 C9                    TEST RCX,RCX
+1406b9c84: 74 1E                       JE 0x1406b9ca4
+1406b9c86: 48 8B 87 90 03 00 00       MOV RAX,[RDI+0x390]
+1406b9c8d: 48 39 81 B0 0B 00 00       CMP [RCX+0xbb0],RAX
+1406b9c94: 75 0E                       JNE 0x1406b9ca4
+1406b9c96: 4C 89 B1 B0 0B 00 00       MOV [RCX+0xbb0],R14
+1406b9c9d: 4C 89 B7 80 0C 00 00       MOV [RDI+0xc80],R14
+1406b9cab: 0F 8D E1 00 00 00          JGE 0x1406b9d92
+1406b9cbe: E9 CF 00 00 00             JMP 0x1406b9d92
+```
+
+### Direct executable bytes for `0x1401B2580..0x1401B26E0`
+
+The verified executable was re-read directly. The half-open range is 352 bytes. It starts in the middle of a preceding instruction, so instruction decoding below is anchored at the known instruction boundary `0x1401B258C`, not guessed from `0x1401B2580`.
+
+```text
+sha256=296644A9F207D609031FC2AE73FED2DCB34619A1D55A35D1C7B51965CE6841B8 timestamp=0x6a3eb6ad image_base=0x140000000
+range=0x1401b2580..0x1401b26e0 length=352
+```
+
+```text
+00000001401B2580: 04 8B 40 0C 89 45 B8 F2 0F 11 45 B0 48 89 BE B0
+00000001401B2590: 0B 00 00 48 89 B7 80 0C 00 00 4C 89 BF F0 04 00
+00000001401B25A0: 00 48 8B 87 08 17 00 00 48 85 C0 74 13 83 B8 94
+00000001401B25B0: 02 00 00 04 75 0A B2 01 48 8B CF E8 60 41 4F 00
+00000001401B25C0: 48 8B D7 48 8B 0D 46 51 83 00 E8 81 53 2E 00 48
+00000001401B25D0: 8D 8F 38 06 00 00 E8 C5 D1 04 00 48 8B 87 80 06
+00000001401B25E0: 00 00 48 89 87 88 06 00 00 48 8B 87 A0 06 00 00
+00000001401B25F0: 48 89 87 A8 06 00 00 48 8B 87 B8 06 00 00 48 89
+00000001401B2600: 87 C0 06 00 00 49 8B 04 24 49 89 44 24 08 48 8B
+00000001401B2610: 87 50 07 00 00 48 89 87 58 07 00 00 4C 89 BF 98
+00000001401B2620: 07 00 00 48 8B 87 C0 07 00 00 48 2B 87 B8 07 00
+00000001401B2630: 00 48 C1 F8 03 48 85 C0 74 08 48 8B CF E8 2E F3
+00000001401B2640: 4C 00 44 89 BF 34 0D 00 00 44 89 BF 68 07 00 00
+00000001401B2650: C7 87 00 07 00 00 FF FF FF FF 48 8D 55 10 49 8B
+00000001401B2660: CC E8 8A CC E7 FF 48 8D 55 B0 49 8B CC E8 7E CC
+00000001401B2670: E7 FF 48 6B DB 1C 48 8B 86 90 0E 00 00 F3 0F 10
+00000001401B2680: 04 03 F3 0F 11 45 20 F3 0F 10 4C 03 04 F3 0F 11
+00000001401B2690: 4D 24 F3 0F 10 44 03 08 F3 0F 11 45 28 F2 0F 10
+00000001401B26A0: 45 B0 F2 0F 11 85 D0 00 00 00 8B 45 B8 89 85 D8
+00000001401B26B0: 00 00 00 4C 8D 45 20 48 8D 95 D0 00 00 00 48 8B
+00000001401B26C0: CF E8 CA 6B 4D 00 48 8B 96 90 0E 00 00 48 03 D3
+00000001401B26D0: 49 8B CC E8 18 CC E7 FF 8B 44 24 64 89 87 0C 05
+```
+
+At `0x1401B26C1`, the bytes are `E8 CA 6B 4D 00`; the next instruction begins at `0x1401B26C6`. The relative call target is `0x140689290`. Address `0x1401B26C4` is inside the call displacement, not an instruction boundary; interpreting those five bytes as starting at `0x1401B26C4` does not match the directly extracted file bytes. There is no overlapping instruction at `0x1401B26C6`.
+
+## Generic detach helpers: receiver proven, road-task meaning unresolved
+
+`FUN_1403FBDC0` has exported signature `void FUN_1403fbdc0(longlong param_1, longlong param_2, char param_3, char param_4, char param_5, undefined1 param_6)`. Its raw prologue copies `RDX` (`param_2`) into `RDI`, the vehicle receiver used below. At `0x1403FC085`, it loads that receiver's `+0xC80`. If the vehicle has no object at `+0x1708`, or the dword at that object's `+0x294` is not `10`, the helper clears the pointer in `DO+0xBB0` before clearing `vehicle+0xC80`:
 
 ```asm
 1403fbdec:  48 8B FA                 MOV RDI,RDX
@@ -188,11 +306,11 @@ The relevant cleanup function has exported signature `void FUN_1403fbdc0(longlon
 1403fc0b7:  48 89 9F 80 0C 00 00     MOV [RDI+0xc80],RBX
 ```
 
-`RBX` is zero on this path. `RAX` is the DO loaded from the vehicle's `+0xC80`; `RDI` remains the same vehicle passed as `param_2`. Thus the ordinary branch clears `DO+0xBB0` before `truck+0xC80`.
+`RBX` is zero on this path. `RAX` is loaded from the vehicle's `+0xC80`; `RDI` remains the same vehicle passed as `param_2`. The ordinary branch clears `[RAX+0xBB0]` unconditionally, then clears `[RDI+0xC80]`. The type-`0x2B` updater calls this helper on fleet vehicles during configuration/update processing, but this call is not proven to mean final task removal.
 
-The ordinary branch does not compare `[RAX+0xBB0]` with `RDI` before clearing it. A later observer must validate the reciprocal pair before attributing this write to the candidate assignment.
+This generic clear does not compare `[RAX+0xBB0]` with either the truck pointer or `[RDI+0x390]`. A later observer must validate the receiver and current association token before attributing it to a task boundary.
 
-For state code `10`, the call at `0x1403FC0A9` passes the same vehicle in `RCX` to `FUN_1406DCF20`. Its Ghidra-reported body is 640 bytes (`0x280`), from `0x1406DCF20` through the `RET` at `0x1406DD19F`. The raw body confirms `RBX=RCX` (vehicle) and `RBP=0`; after broader detach work, the tail loads `vehicle+0xC80`, clears the DO back-pointer only if `DO+0xBB0 == vehicle`, then clears `vehicle+0xC80` and `vehicle+0x4F0`. The raw export also shows calls to this helper at `0x1406DB35B` and `0x1406DD6D0`; it is not unique to the FBDC0 state-10 path. The complete body is included below:
+When the object at `vehicle+0x1708` has dword `+0x294 == 10`, the call at `0x1403FC0A9` passes the same vehicle in `RCX` to `FUN_1406DCF20`. These are metadata-kind comparisons; the semantic meaning of value `10` is not independently established. The helper's Ghidra-reported body is 640 bytes (`0x280`), from `0x1406DCF20` through the `RET` at `0x1406DD19F`. The raw body confirms `RBX=RCX` (vehicle) and `RBP=0`; its tail conditionally clears `DO+0xBB0` only if that value equals the truck pointer in `RBX`, then clears `vehicle+0xC80` and `vehicle+0x4F0`. It does not prove a close for the type-`0x2B` association, whose `DO+0xBB0` value was observed to come from `vehicle+0x390`; equality between those values is unproved. The raw export also shows calls to this helper at `0x1406DB35B` and `0x1406DD6D0`; it is not unique to the FBDC0 metadata-kind-10 path. The complete body is included below:
 
 ```asm
 1406dcf20:  48 89 5C 24 18           MOV qword ptr [RSP + 0x18],RBX
@@ -352,12 +470,13 @@ For state code `10`, the call at `0x1403FC0A9` passes the same vehicle in `RCX` 
 1406dd19f:  C3                       RET
 ```
 
-### Why the reciprocal pair is not yet a complete interval signal
+### Why the type-0x2B association is not yet a complete interval signal
 
-- The pair records a DO/vehicle association, not a stable task identity. Two consecutive tasks for the same DO are distinguishable only if the pair actually detaches between them and that transition is observed; an uninterrupted same-DO pair cannot identify a task replacement.
-- The install branches require an empty pair. This proves those branches do not directly overwrite an existing association, but it does not rule out a detach/reattach in another path or a same-update transition that a polling snapshot could miss.
-- The reciprocal clears in `FUN_1403FBDC0` and `FUN_1406DCF20` are real same-receiver detach boundaries, but the cleanup is reused from update/configuration paths as well as dispatch-related code. For example, `FUN_1401C1770` processes DO target configurations and calls `FUN_1403FBDC0` on a fleet vehicle. The clear is not a success marker, nor does every callsite alone prove why the association ended. Under the requested policy it is a close only when that association represents the assigned task and the detach is not an internal stop transition.
-- `FUN_14067CB30` resets schedule/list state without writing `truck+0xC80`; this helps distinguish schedule reset from the reciprocal association. Its complete 264-byte body shows the reset paths explicitly:
+- The type-`0x2B` helper writes `truck+0xC80 = office`, but `office+0xBB0 = truck+0x390` is an opaque token, not a proven stable task identity. Two assignments to the same office cannot be distinguished from snapshots if the association remains continuously present.
+- `FUN_1406B8EB0` itself compares the metadata-kind dword at `truck+0x1708+0x294` with `8`, `10`, and `6`. The value meanings are unknown. Its value-`8` path can clear `office+0xBB0` only when it equals `truck+0x390`; its value-`10` path can clear that value and `truck+0xC80` under the same token comparison. These paths can continue to later association writes in the same helper. They do not prove which events are internal stops versus task removal/replacement.
+- The type-`0x2B` caller's empty-association and route-list guards establish an association-creation candidate, not an unconditional task-start event. It does not prove that every assigned-but-not-loaded task reaches this path.
+- `FUN_1403FBDC0` and `FUN_1406DCF20` are reused cleanup helpers. The type-`0x2B` updater calls `FUN_1403FBDC0` on a fleet vehicle during configuration/update processing; a call alone is not final task removal. The metadata-kind-10 path in `FUN_1406DCF20` compares the DO token with the truck pointer, unlike the observed type-`0x2B` token source `truck+0x390`. No success/cancellation meaning is established.
+- `FUN_14067CB30` resets schedule/list state without writing `truck+0xC80`; this does not prove that the type-`0x2B` association survives every internal stop. Its complete 264-byte body shows the reset paths explicitly:
 
 ```asm
 14067cb30:  48 89 5C 24 08           MOV qword ptr [RSP + 0x8],RBX
@@ -418,39 +537,112 @@ For state code `10`, the call at `0x1403FC0A9` passes the same vehicle in `RCX` 
 14067cc37:  C3                       RET
 ```
 
-This proves only that this helper's reset does not clear the association; it does not prove that every pickup/unload advancement preserves the pair.
-- `FUN_1406B8EB0` and other functions also write `+0xC80`, but their aliases and call ordering are not classified as DO-task transitions here. Do not treat every program-wide `+0xC80` store as an assignment boundary.
+This proves only that this helper's reset does not clear `truck+0xC80`; it does not prove that every pickup/unload advancement preserves the type-`0x2B` association.
+- The helper's attach/clear writes are observed on the same fleet truck, but no complete CFG or live event sequence classifies all of them as assignment start, internal-stop update, cancellation, replacement, or final removal. Do not treat every program-wide `+0xC80` store as a task boundary.
 
 ## Interval-signal test matrix
 
 | Required state or transition | What static evidence proves | Interval conclusion |
 |---|---|---|
-| Idle at a DO | The install candidate requires `truck+0xC80 == 0` and `DO+0xBB0 == 0`; this is an eligibility guard, not a complete idle-state definition. | Candidate idle marker only; default/return rows are unresolved. |
-| Assigned but not yet loaded | The reciprocal pair is installed before route-state reset/rebuild, but no loading-state mapping was established. | Native start-boundary candidate; loaded-state relation unknown. |
-| Internal pickup/unload stop advancement | `FUN_14067CB30` can reset schedule/list state without touching `+0xC80`; no trace proves the pair stays stable through every internal stop. | Do not use row/index changes as a boundary; continuity remains unproven. |
-| Final task removal | `FUN_1403FBDC0` clears the reciprocal pair for the ordinary state branch; state `10` delegates to `FUN_1406DCF20`, which also clears it on the same vehicle. | Verified association-detach boundary candidate; the lifecycle reason is not established at every caller. |
-| Cancellation or replacement | The setter requires empty pointers, and same-receiver detach paths exist. No proof covers every replacement path or whether detach/reattach can occur within one update. | Observe native boundary events, not just snapshots; replacement semantics remain incomplete. |
-| Empty return | The pair's clear is a potential cutoff, but no mapping ties it to a particular return route phase. | Travel after a verified task detach is outside; whether the observed clear precedes all return travel remains unresolved. |
-| Identical consecutive assignments | `truck+0xC80` points to the DO, not an order/job ID. | Same-DO tasks can be separated only when a detach/reattach boundary is actually observed. |
-| Save/reload | DO target configurations are serialized/reconstructed; persistence/reconstruction of the reciprocal pointers and assignment continuity is not established. | No post-load interval rule can be claimed. |
+| Idle at a DO | The type-`0x2B` candidate path requires `truck+0xC80 == 0`, `office+0xBB0 == 0`, a nonempty route list, and additional truck guards. | These are eligibility guards, not a complete idle definition; retained default/return rows remain unresolved. |
+| Assigned but not yet loaded | The type-`0x2B` helper can write `truck+0xC80 = office` and `office+0xBB0 = truck+0x390`. No load-state mapping is established. | Association-install candidate only; assignment-before-loading is unproved. |
+| Internal pickup/unload stop advancement | `FUN_14067CB30` resets list state without writing `truck+0xC80`, but there is no complete type-`0x2B` stop-transition trace. `FUN_1406B8EB0` also has conditional clear/rewrite paths. | Whether the association survives every internal stop is unresolved. |
+| Final task removal | Generic helpers can clear `truck+0xC80`; the type-`0x2B` helper also conditionally clears `office+0xBB0` when it matches `truck+0x390`. The lifecycle reason for those writes is not proved. | No verified final-removal boundary. |
+| Cancellation or replacement | No proof shows that every cancellation/replacement reaches a distinct clear, or that a clear/rewrite within one helper invocation means replacement rather than an internal transition. | Cannot guarantee a close on cancellation/replacement from snapshots or these candidate stores yet. |
+| Empty return | No mapping ties the type-`0x2B` association clear to the beginning of a return route. | Whether the candidate close precedes all post-removal return travel is unresolved. |
+| Identical consecutive assignments | `truck+0xC80` identifies an office pointer on the observed path; `office+0xBB0` stores opaque `truck+0x390`, not a proven task identity. | Identical tasks for the same office cannot be distinguished unless a separately validated boundary exists. |
+| Save/reload | DO target configurations are serialized/reconstructed; persistence/reconstruction of the type-`0x2B` association pointer/token and assignment continuity is not established. | No post-load interval rule can be claimed. |
 
-Therefore the requested interval rule is clear, but no native observation currently implements it: begin on actual assignment to a vehicle working for a DO, remain through internal stops and travel while assigned, close on actual task removal/cancellation/replacement, and exclude travel after removal. Success is not needed to close it.
+The requested policy remains: begin on actual assignment to a vehicle working for a DO, remain through internal stops and travel while assigned, and close on removal/cancellation/replacement regardless of success; exclude travel after removal. This report does not yet identify a native signal that proves those boundaries for every type-`0x2B` task.
 
 ## Read-only recommendation, destination, and payer
 
-The current schedule observer's bounded fields are useful diagnostics but **insufficient for interval accounting**. A list clear/change, nonempty list, row index, config/storage relocation, opaque UI context, invalid read, or panel closure is not a verified assignment event. A snapshot of `truck+0xC80` plus reciprocal `DO+0xBB0` can show the current association, but can miss a same-update detach/reattach and cannot distinguish uninterrupted same-DO tasks.
+The current schedule observer's bounded fields are useful diagnostics but **insufficient for interval accounting**. A list clear/change, nonempty list, row index, config/storage relocation, opaque UI context, invalid read, or panel closure is not a verified assignment event. For this road-DO path, a read-only snapshot of `truck+0xC80` can indicate the observed office association; `office+0xBB0` is only a comparison token sourced from `truck+0x390`, not a proven reciprocal truck pointer. Snapshots can miss a same-update clear/rewrite and cannot distinguish uninterrupted identical tasks.
 
-For later guarded observation only, the verified start candidates are `FUN_1401B1290` at `0x1401B258C`/`0x1401B2593` and the similar `FUN_1401B3CE0` writes at `0x1401B45E4`/`0x1401B4604`. The verified close candidates on the same vehicle receiver are `FUN_1403FBDC0` at `0x1403FC0B0`/`0x1403FC0B7` for the non-10 state path, and the state-10 path `0x1403FC0A9` into `FUN_1406DCF20`, whose reciprocal clears are at `0x1406DD17B`/`0x1406DD182`. A future observer must validate the vehicle/DO reciprocal pair and task context at these boundaries; the generic cleanup call alone is not a success/cancellation classification. No hook is installed here. Do not hook `FUN_1406BF1D0`.
+If a later guarded native observation is pursued, the type-`0x2B` install candidate is the call `FUN_1401C6050 -> FUN_1406B8EB0` at `0x1401C646E`, with same-truck stores at `0x1406B9D8B` (`office+0xBB0 = truck+0x390`) and `0x1406B9D99` (`truck+0xC80 = office`). Candidate clear sites include `0x1406B9C96/0x1406B9C9D` on the metadata-kind-10 branch and the generic cleanup stores; neither is proven to mean task removal. The exact receiver and token must be guarded, and a same-call clear/rewrite must not be collapsed into a polling snapshot. These are investigation candidates, not a recommended interval hook. No hook is installed. No plugin, dispatch, permissions, defaults, or billing behavior changed.
 
-Adjacent route evidence reads point data from `DO+0xE90` and feeds it to `FUN_140689290`/the vehicle route-point vector; that establishes route construction only, not a buyer or payer. No destination-to-payer mapping is verified; cancelled work must not be charged to a guessed party.
+Adjacent route evidence on the type-`0x5C` path reads point data from receiver `+0xE90` and feeds it to `FUN_140689290`/a vehicle route-point vector. This establishes route construction only, not a type-`0x2B` payer. No destination-to-payer mapping is verified; cancelled work must not be charged to a guessed party.
 
 ## Smallest missing artifact
 
-The helper's full body, start-side attach, and same-receiver detach instructions are no longer missing. The smallest remaining artifact is a **same-vehicle simulation trace/CFG spanning assignment, internal pickup/unload advancement, replacement, and final detach**, proving whether the reciprocal pair survives every internal stop and whether every replacement emits a separately observable detach. A save/load trace is additionally required before claiming that an interval can continue across reload.
+No executable input is missing: the identity-matched binary and full `FUN_1406B8EB0` bytes are available. The smallest unresolved artifact is a **receiver-preserving type-`0x2B` lifecycle trace/CFG on one office-fleet truck**, spanning the helper install, internal pickup/unload advancement, replacement/cancellation, and final removal. It must establish what `truck+0x390` represents and prove whether every replacement emits an observable boundary distinct from internal-stop changes, including identical consecutive tasks. A save/load trace is additionally required before claiming interval continuity across reload.
 
-Static evidence cannot by itself validate whether idle/default/return entries are retained, whether identical tasks replace without an empty state, or whether the association survives reload. These remain unvalidated; no unchanged game run is requested.
+Static evidence cannot by itself validate whether idle/default/return entries are retained, whether identical tasks replace without an empty state, or whether the association survives reload. These remain unvalidated. No live-game validation was performed, and no unchanged game replay is requested.
 
 ## Analysis script and actual output
+
+### Direct executable byte-window exporter
+
+This script reproduces the contiguous byte dump above and decodes the known instruction-aligned association and call snippets. It verifies the executable identity before mapping VAs to file offsets; it writes no files.
+
+```python
+from pathlib import Path
+import hashlib
+import struct
+from capstone import Cs, CS_ARCH_X86, CS_MODE_64
+
+exe = Path(r"C:\Workers Resources Soviet Republic\SOVIET64.exe")
+expected_sha256 = "296644A9F207D609031FC2AE73FED2DCB34619A1D55A35D1C7B51965CE6841B8"
+expected_timestamp = 0x6A3EB6AD
+expected_image_base = 0x140000000
+data = exe.read_bytes()
+sha256 = hashlib.sha256(data).hexdigest().upper()
+pe = struct.unpack_from("<I", data, 0x3C)[0]
+timestamp = struct.unpack_from("<I", data, pe + 8)[0]
+section_count = struct.unpack_from("<H", data, pe + 6)[0]
+optional_size = struct.unpack_from("<H", data, pe + 20)[0]
+image_base = struct.unpack_from("<Q", data, pe + 24 + 24)[0]
+if (sha256, timestamp, image_base) != (
+    expected_sha256,
+    expected_timestamp,
+    expected_image_base,
+):
+    raise ValueError("Executable identity mismatch")
+
+section_table = pe + 24 + optional_size
+sections = []
+for index in range(section_count):
+    offset = section_table + index * 40
+    virtual_size, rva, raw_size, raw_offset = struct.unpack_from("<IIII", data, offset + 8)
+    sections.append((rva, raw_size, raw_offset))
+
+def read_va(va, size):
+    rva = va - image_base
+    for section_rva, raw_size, raw_offset in sections:
+        if section_rva <= rva and rva + size <= section_rva + raw_size:
+            file_offset = raw_offset + rva - section_rva
+            return data[file_offset:file_offset + size]
+    raise ValueError(f"VA is outside a raw PE section: {va:#x}")
+
+start, end = 0x1401B2580, 0x1401B26E0
+raw = read_va(start, end - start)
+print(f"sha256={sha256} timestamp={timestamp:#x} image_base={image_base:#x}")
+for offset in range(0, len(raw), 16):
+    print(f"{start + offset:016X}: {raw[offset:offset + 16].hex(' ').upper()}")
+
+decoder = Cs(CS_ARCH_X86, CS_MODE_64)
+for va, size in ((0x1401B258C, 0x15), (0x1401B26BE, 0x1A)):
+    print(f"-- {va:#x} --")
+    for instruction in decoder.disasm(read_va(va, size), va):
+        print(
+            f"{instruction.address:016X}: "
+            f"{instruction.bytes.hex(' ').upper():<27} "
+            f"{instruction.mnemonic.upper():<8} {instruction.op_str}"
+        )
+```
+
+Actual output identity and the complete 352-byte dump are shown in the preceding direct-byte section. The aligned decode around the route call is:
+
+```text
+00000001401B26BE: 48 8B CF                    MOV      rcx, rdi
+00000001401B26C1: E8 CA 6B 4D 00              CALL     0x140689290
+00000001401B26C6: 48 8B 96 90 0E 00 00        MOV      rdx, qword ptr [rsi + 0xe90]
+00000001401B26CD: 48 03 D3                    ADD      rdx, rbx
+00000001401B26D0: 49 8B CC                    MOV      rcx, r12
+00000001401B26D3: E8 18 CC E7 FF              CALL     0x14002f2f0
+```
+
+### Existing renderer-helper export
 
 The following complete local script verifies the file identity, maps RVA `0x6BF1D0` to `.text`, and prints the complete addressed bytes/disassembly. It requires `capstone==5.0.7` and performs no writes to the executable or game.
 
