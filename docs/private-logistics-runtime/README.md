@@ -1,8 +1,19 @@
 # Private logistics — runtime observation work package
 
-> Current implementation: see `RUNTIME_PROTOTYPE.md` for the Arena-fixed
-> v0.2.3 snapshot prototype, local checks, Windows cross-build and controlled
-> test instructions. Agent assignments below are historical planning.
+> **2026-10-29:** The actual `%.2fl` display chain and its **1000.0f**
+> multiplier are traced. A bounded read-only observer is implemented in the
+> existing private_logistics plugin (**0.18.6-panel-observer**), awaiting a
+> Windows DLL build and real-game validation. It compares actual panel-object
+> pointers with candidate-home road-DO fleet entries; it is NOT an exact burn
+> meter. See [`VEHICLE_PANEL_FUEL_INVESTIGATION.md`](VEHICLE_PANEL_FUEL_INVESTIGATION.md)
+> for the latest review, complete observer/plugin source, actual test output,
+> limitations and the proposed next game test. No observer build has been deployed.
+>
+> The tested C++ journey core remains **disconnected from runtime events**;
+> its source/results are in [`JOURNEY_TRACKER_CORE.md`](JOURNEY_TRACKER_CORE.md).
+> Billing remains OFF, source10/destination30 dispatch is preserved.
+> `RUNTIME_PROTOTYPE.md`, older agent assignments and proposal sections below
+> describe historical work, not the new observer or a validated fuel tracker.
 
 ## Current goal
 
@@ -14,7 +25,7 @@ Compute fuel-only cost = summed actual tonnes deducted during the loaded trip ×
 
 ## Status and provenance
 
-- Arena branch: `arena/83c93542-wrsre`; production remains v0.17, unchanged.
+- Current Arena branch: `arena/15fdac3e-wrsre`; observer source is v0.18.6. No new DLL build/deployment is claimed. Older agent reports below are historical.
 - Old Agent 1 report fetched at `80a4404d8d3fa5161bcaaf8de8cfd0a7fc7a72b7`, branch `reverse-engineering-and-verified-transport-associa`. Clean of conflict markers; not accepted as a verified road load/burn/unload implementation. Still contains task-stride/prototype inconsistencies.
 - Old Agent 2 model fetched at `94d304dfbd182aef6464ff35315de8d16ae1a694`, branch `executable-accounting-model-and-deterministic-test`. Independently ran 27 tests, all pass. Additional probes: CLOSED prevents a legitimate second trip; UNSUPPORTED can be reactivated by a repeated load. Not production-ready.
 - Review exports exist only in ignored `.cache/agent-review/` in this checkout. Remote reports/model have NOT been merged here. New agents must obtain the exact artifacts without blindly merging old branches.
