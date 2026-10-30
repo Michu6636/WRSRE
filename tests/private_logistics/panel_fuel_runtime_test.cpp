@@ -20,7 +20,9 @@ static ULONGLONG GetTickCount64() { return clockMs; }
 static std::vector<BYTE> image(0x90B080);
 static BYTE* g_exeBase=image.data();
 static std::size_t g_exeSize=image.size();
+static bool throwOnRead=false;
 static bool ReadablePtr(const void* p,std::size_t n) {
+    if(throwOnRead) throw 1;
     const auto a=(uintptr_t)p,b=(uintptr_t)g_exeBase;
     return a>=b && a-b<=image.size() && n<=image.size()-(a-b);
 }
@@ -33,6 +35,9 @@ struct IMAGE_NT_HEADERS64 {
     struct { unsigned Magic; } OptionalHeader;
 };
 static std::vector<std::string> logs;
+#if defined(__GNUC__) || defined(__clang__)
+static void Logf(const char*,...) __attribute__((format(printf,1,2)));
+#endif
 static void Logf(const char* format,...) {
     char line[2048];va_list args;va_start(args,format);std::vsnprintf(line,sizeof(line),format,args);va_end(args);logs.emplace_back(line);
 }
@@ -45,8 +50,10 @@ static bool InstallInlineHook(void*,void*,void** trampoline,const BYTE*,std::siz
 using Tick=void(*)(void*,float,float);
 static Tick tick=nullptr;
 static int RegisterTick(Tick fn,void*) { tick=fn;return 1; }
-struct ClockApi { int(*registerTick)(Tick,void*); };
-static ClockApi api{RegisterTick};
+static bool paused=false;
+static int IsPaused() { return paused ? 1 : 0; }
+struct ClockApi { int(*registerTick)(Tick,void*); int(*isPaused)(); };
+static ClockApi api{RegisterTick,IsPaused};
 static ClockApi* g_simClock=&api;
 #define __fastcall
 #define __try try
@@ -79,20 +86,63 @@ int main() {
     CHECK(logs[logged].find("litres_candidate=549.54")!=std::string::npos);
     CHECK(logs[logged+1].find("exact_fleet_pointer")!=std::string::npos);
     std::puts("PASS runtime_post_render_throttle_and_deferred_log");
+    paused=true;
+    const auto pausedLogs=logs.size();
+    for(unsigned i=0;i<72;++i) {clockMs+=1000;PanelCapture(context,window);}
+    CHECK(g_panelCount==1 && g_panelDropped==0 && g_panelSamples==2);
+    CHECK(g_panelQueue[g_panelHead].coalesced==71 && logs.size()==pausedLogs);
+    paused=false;clockMs+=1000;PanelCapture(context,window);
+    CHECK(g_panelCount==2);tick(nullptr,1,1);
+    CHECK(logs[pausedLogs].find("reason=paused_snapshot_coalescing")!=std::string::npos);
+    CHECK(logs[pausedLogs].find("discarded_paused_snapshots=71")!=std::string::npos);
+    CHECK(logs[pausedLogs+1].find("captured_paused=1")!=std::string::npos);
+    tick(nullptr,1,1);CHECK(g_panelCount==0);
+    std::puts("PASS runtime_long_pause_coalesces_and_reports_omissions");
+    PanelObserverLoading();tick(nullptr,1,1);paused=true;
+    clockMs+=1000;PanelCapture(context,window);
+    put(fixture.window+0x240,ptr(0x90000)); // another root, no assumed native metadata
+    clockMs+=1000;PanelCapture(context,window);
+    CHECK(g_panelCount==2 && g_panelQueue[g_panelHead].snapshot.root==ptr(fixture.root));
+    CHECK(g_panelQueue[(g_panelHead+1)%16].snapshot.root==ptr(0x90000));
+    std::memcpy(g_exeBase+0xB0000,g_exeBase+fixture.window,0x500);
+    clockMs+=1000;PanelCapture(context,(void*)ptr(0xB0000));CHECK(g_panelCount==3);
+    paused=false;clockMs+=1000;PanelCapture(context,(void*)ptr(0xB0000));CHECK(g_panelCount==4);
+    put(fixture.window+0x240,ptr(fixture.root));
+    PanelObserverLoading();tick(nullptr,1,1);
+    std::puts("PASS runtime_pause_coalescing_never_overwrites_other_root_window_or_unpaused_record");
     for(unsigned i=0;i<17;++i) {clockMs+=1000;PanelCapture(context,window);}
     CHECK(g_panelCount==16 && g_panelDropped==1);
-    g_panelQueueLock.busy=true;clockMs+=1000;PanelCapture(context,window);CHECK(g_panelCount==16);
-    g_panelQueueLock.busy=false;
+    const auto fullLogs=logs.size();tick(nullptr,1,1);
+    CHECK(logs[fullLogs].find("reason=queue_full")!=std::string::npos);
+    CHECK(logs[fullLogs].find("skipped_snapshot_captures=1")!=std::string::npos);
+    CHECK(logs[fullLogs+1].find("queue_full_total_at_capture=0 queue_full_total_at_drain=1")!=std::string::npos);
+    const auto afterGap=logs.size();tick(nullptr,1,1);
+    CHECK(logs[afterGap].find("[PANEL FUEL]")!=std::string::npos); // no duplicate gap
+    g_panelQueueLock.busy=true;clockMs+=1000;PanelCapture(context,window);
+    g_panelQueueLock.busy=false;const auto contentionLogs=logs.size();tick(nullptr,1,1);
+    CHECK(logs[contentionLogs].find("reason=render_trylock_contention")!=std::string::npos);
     PanelObserverLoading();const auto oldLogs=logs.size();tick(nullptr,1,1);
     CHECK(g_panelCount==0 && g_panelSamples==0 && logs.size()==oldLogs);
-    std::puts("PASS runtime_queue_bound_trylock_and_load_discard");
+    std::puts("PASS runtime_queue_gap_capture_vs_drain_contention_and_load_discard");
     clockMs+=1000;PanelCapture(context,nullptr);CHECK(g_panelLastMs==0);
     PanelCapture(context,window);CHECK(g_panelCount==1);
     g_panelSamples=239;clockMs+=1000;PanelCapture(context,window);CHECK(g_panelSamples==240);
     clockMs+=1000;PanelCapture(context,window);CHECK(g_panelSamples==240);
+    const auto capLogs=logs.size();tick(nullptr,1,1);
+    CHECK(logs[capLogs].find("reason=capture_cap cap=240 capture=stopped")!=std::string::npos);
+    tick(nullptr,1,1);const auto drainedLogs=logs.size();tick(nullptr,1,1);
+    CHECK(logs.size()==drainedLogs);
     std::puts("PASS runtime_inactive_does_not_starve_capture_and_cap");
+    PanelObserverLoading();tick(nullptr,1,1);clockMs+=1000;
+    throwOnRead=true;PanelCapture(context,window);throwOnRead=false;
+    CHECK(g_panelFault && g_panelCount==0);
+    const auto faultLogs=logs.size();tick(nullptr,1,1);
+    CHECK(logs[faultLogs].find("reason=guarded_read_fault observer=disabled")!=std::string::npos);
+    const auto disabledLogs=logs.size();clockMs+=1000;PanelCapture(context,window);tick(nullptr,1,1);
+    CHECK(g_panelCount==0 && logs.size()==disabledLogs);
+    std::puts("PASS runtime_guarded_fault_disables_and_reports_once");
     g_exeBase[0x90B07C]=1;CHECK(!PanelTargetMatches());g_exeBase[0x90B07C]=0;
     g_exeBase[0x8F3E98]=0;CHECK(!PanelTargetMatches());
     std::puts("PASS runtime_changed_data_refused");
-    std::puts("5 host-shim scenarios PASS (not Windows ABI/SEH or a DLL)");return 0;
+    std::puts("8 host-shim scenarios PASS (not Windows ABI/SEH or a DLL)");return 0;
 }

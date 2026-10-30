@@ -41,7 +41,7 @@ class PanelFuelObserverTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         result = subprocess.run([str(exe)], capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertIn('5 host-shim scenarios PASS', result.stdout)
+        self.assertIn('8 host-shim scenarios PASS', result.stdout)
 
     def test_matching_test_defaults_and_no_tracker_wiring(self):
         config = configparser.ConfigParser()
@@ -55,7 +55,8 @@ class PanelFuelObserverTest(unittest.TestCase):
         self.assertEqual(config.getint('private_logistics', 'auto_destination_percent'), 30)
         self.assertNotIn('private_logistics_journey::Tracker', cpp)
         self.assertIn('PanelObserverStart();', cpp)
-        self.assertIn('if (event == TSM_SAVE_LOADING) PanelObserverLoading();', cpp)
+        self.assertRegex(cpp, r'if \(event == TSM_SAVE_LOADING\) \{\s*'
+                         r'InterlockedIncrement\(&g_fuelDiagnosticEpoch\);\s*PanelObserverLoading\(\);')
 
     def test_hook_fingerprint_and_full_instruction_boundary(self):
         runtime = (PLUGIN / 'panel_fuel_runtime.h').read_text()

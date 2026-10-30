@@ -5,16 +5,21 @@
 #include "panel_fuel_observer.h"
 
 static CRITICAL_SECTION g_panelQueueLock;
-static volatile LONG g_panelEpoch = 1, g_panelStarted = 0, g_panelFault = 0;
+static volatile LONG g_panelEpoch = 1, g_panelStarted = 0, g_panelFault = 0, g_panelContention = 0;
 static LONG g_panelQueueEpoch = 0;
 static unsigned g_panelHead = 0, g_panelCount = 0, g_panelSamples = 0, g_panelDropped = 0;
 static ULONGLONG g_panelLastMs = 0;
+static unsigned g_panelDroppedReported = 0;
+static ULONGLONG g_panelFirstDropMs = 0, g_panelLastDropMs = 0;
 static bool g_panelCapLogged = false, g_panelFaultLogged = false;
 struct PanelRecord {
     private_logistics_panel::Snapshot snapshot;
     LONG epoch;
     unsigned sequence;
     ULONGLONG milliseconds;
+    ULONGLONG firstMilliseconds;
+    unsigned queueFullAtCapture, coalesced;
+    bool paused;
 };
 static PanelRecord g_panelQueue[16];
 using PanelRenderer = void (__fastcall*)(void*, void*);
@@ -37,38 +42,62 @@ static void PanelResetQueueLocked(LONG epoch)
     g_panelQueueEpoch = epoch;
     g_panelHead = g_panelCount = g_panelSamples = g_panelDropped = 0;
     g_panelLastMs = 0;
+    g_panelDroppedReported = 0;
+    g_panelFirstDropMs = g_panelLastDropMs = 0;
     g_panelCapLogged = false;
+    InterlockedExchange(&g_panelContention, 0);
 }
 static void PanelCapture(void* context, void* window)
 {
     if (!InterlockedCompareExchange(&g_panelStarted, 0, 0) ||
-        InterlockedCompareExchange(&g_panelFault, 0, 0) ||
-        !TryEnterCriticalSection(&g_panelQueueLock)) return;
+        InterlockedCompareExchange(&g_panelFault, 0, 0)) return;
+    if (!TryEnterCriticalSection(&g_panelQueueLock)) {
+        InterlockedExchange(&g_panelContention, 1); return;
+    }
     const LONG epoch = InterlockedCompareExchange(&g_panelEpoch, 0, 0);
     PanelResetQueueLocked(epoch);
     const ULONGLONG now = GetTickCount64();
     if (g_panelSamples >= 240 || (g_panelLastMs && now - g_panelLastMs < 1000)) {
         LeaveCriticalSection(&g_panelQueueLock); return;
     }
-    if (g_panelCount == 16) {
-        g_panelLastMs = now;
-        if (g_panelDropped < 0x7FFFFFFFu) ++g_panelDropped;
-        LeaveCriticalSection(&g_panelQueueLock); return;
-    }
-    const unsigned slot = (g_panelHead + g_panelCount) % 16;
+    const bool paused = g_simClock && g_simClock->isPaused && g_simClock->isPaused() == 1;
+    const unsigned tail = (g_panelHead + g_panelCount + 15) % 16;
+    // Only replace a queued paused snapshot of the SAME window/root. Preserve
+    // other vehicles and unpaused samples; no extra storage or render-thread I/O.
+    private_logistics_panel::Snapshot snapshot{};
     bool captured = false;
     __try {
         captured = private_logistics_panel::Capture({PanelRead, nullptr},
-            (uintptr_t)context, (uintptr_t)window, g_panelQueue[slot].snapshot);
+            (uintptr_t)context, (uintptr_t)window, snapshot);
     } __except (EXCEPTION_EXECUTE_HANDLER) {
-        InterlockedExchange(&g_panelFault, 1); // no logging/I/O in the render hook
+        InterlockedExchange(&g_panelFault, 1);
     }
     if (captured && epoch == InterlockedCompareExchange(&g_panelEpoch, 0, 0)) {
-        g_panelLastMs = now; // inactive windows must not consume the sample slot
-        g_panelQueue[slot].epoch = epoch;
-        g_panelQueue[slot].sequence = ++g_panelSamples;
-        g_panelQueue[slot].milliseconds = now;
-        ++g_panelCount;
+        g_panelLastMs = now; // inactive windows do not consume the capture slot
+        const bool coalesce = paused && snapshot.root && g_panelCount && g_panelQueue[tail].paused &&
+            g_panelQueue[tail].snapshot.window == snapshot.window &&
+            g_panelQueue[tail].snapshot.root == snapshot.root;
+        if (coalesce) {
+            auto& record = g_panelQueue[tail];
+            record.snapshot = snapshot;
+            record.milliseconds = now;
+            record.queueFullAtCapture = g_panelDropped;
+            if (record.coalesced < 0x7FFFFFFFu) ++record.coalesced;
+        } else if (g_panelCount == 16) {
+            if (!g_panelFirstDropMs) g_panelFirstDropMs = now;
+            g_panelLastDropMs = now;
+            if (g_panelDropped < 0x7FFFFFFFu) ++g_panelDropped;
+        } else {
+            auto& record = g_panelQueue[(g_panelHead + g_panelCount) % 16];
+            record.snapshot = snapshot;
+            record.epoch = epoch;
+            record.sequence = ++g_panelSamples;
+            record.milliseconds = record.firstMilliseconds = now;
+            record.queueFullAtCapture = g_panelDropped;
+            record.coalesced = 0;
+            record.paused = paused;
+            ++g_panelCount;
+        }
     }
     LeaveCriticalSection(&g_panelQueueLock);
 }
@@ -102,8 +131,9 @@ static const char* PanelMatch(private_logistics_panel::Match m)
 static void PanelObserverTick(void*, float, float)
 {
     PanelRecord record{};
-    bool have = false, cap = false, fault = false;
-    unsigned dropped = 0;
+    bool have = false, cap = false, fault = false, contention = false;
+    unsigned dropped = 0, newDrops = 0;
+    ULONGLONG firstDropMs = 0, lastDropMs = 0;
     if (!TryEnterCriticalSection(&g_panelQueueLock)) return;
     const LONG epoch = InterlockedCompareExchange(&g_panelEpoch, 0, 0);
     PanelResetQueueLocked(epoch);
@@ -111,21 +141,44 @@ static void PanelObserverTick(void*, float, float)
         record = g_panelQueue[g_panelHead];
         g_panelHead = (g_panelHead + 1) % 16; --g_panelCount; have = true;
     }
+    contention = InterlockedExchange(&g_panelContention, 0) != 0;
     dropped = g_panelDropped;
+    newDrops = dropped - g_panelDroppedReported;
+    g_panelDroppedReported = dropped;
+    firstDropMs = g_panelFirstDropMs; lastDropMs = g_panelLastDropMs;
+    g_panelFirstDropMs = g_panelLastDropMs = 0;
     cap = g_panelSamples >= 240 && !g_panelCapLogged;
     if (cap) g_panelCapLogged = true;
     fault = InterlockedCompareExchange(&g_panelFault, 0, 0) && !g_panelFaultLogged;
     if (fault) g_panelFaultLogged = true;
     LeaveCriticalSection(&g_panelQueueLock);
-    if (fault) Logf("[PANEL FUEL] observer disabled after guarded read fault; no game fuel writes or billing");
-    if (cap) Logf("[PANEL FUEL] epoch=%ld capture cap=240 reached; restart/load for another bounded capture", epoch);
+    if (epoch != InterlockedCompareExchange(&g_panelEpoch, 0, 0)) return;
+    if (fault) Logf("[PANEL GAP] epoch=%ld reason=guarded_read_fault observer=disabled exact_burn=0", epoch);
+    if (cap) Logf("[PANEL GAP] epoch=%ld reason=capture_cap cap=240 capture=stopped exact_burn=0", epoch);
+    if (contention)
+        Logf("[PANEL GAP] epoch=%ld reason=render_trylock_contention skipped_render_attempts=unknown "
+             "simulation_event_coverage=unverified exact_burn=0", epoch);
+    if (newDrops)
+        Logf("[PANEL GAP] epoch=%ld reason=queue_full skipped_snapshot_captures=%u "
+             "first_ms=%llu last_ms=%llu queue_full_total_at_drain=%u "
+             "sample_ids=accepted_records_only simulation_event_coverage=unverified exact_burn=0",
+             epoch, newDrops, (unsigned long long)firstDropMs,
+             (unsigned long long)lastDropMs, dropped);
     if (!have || record.epoch != InterlockedCompareExchange(&g_panelEpoch, 0, 0)) return;
+    if (record.coalesced)
+        Logf("[PANEL GAP] epoch=%ld sample=%u reason=paused_snapshot_coalescing "
+             "discarded_paused_snapshots=%u first_ms=%llu latest_ms=%llu "
+             "policy=keep_latest_same_window_root simulation_event_coverage=unverified exact_burn=0",
+             record.epoch, record.sequence, record.coalesced,
+             (unsigned long long)record.firstMilliseconds, (unsigned long long)record.milliseconds);
     const auto& s = record.snapshot;
     Logf("[PANEL FUEL] epoch=%ld sample=%u ms=%llu phase=post_render window=%p root=%p "
          "status=%s aggregate_valid=%d current_raw=%.9g litres_candidate=%.2f "
          "capacity_unadjusted=%.9g ratio_valid=%d ratio=%.9g links=%u "
          "mode=%d metadata_kind=%d flags_read=%d flag8681=%u flag8682=%u "
-         "adjustment_read=%d adjustment_needed=%d presentation=%s dropped=%u "
+         "adjustment_read=%d adjustment_needed=%d presentation=%s "
+         "queue_full_total_at_capture=%u queue_full_total_at_drain=%u "
+         "captured_paused=%d coalesced_snapshots=%u sample_ids=accepted_records_only "
          "physical_fuel=unverified exact_burn=0 billing=off",
          record.epoch, record.sequence, (unsigned long long)record.milliseconds,
          (void*)s.window, (void*)s.root, PanelStatus(s.status), s.aggregateValid ? 1 : 0,
@@ -134,7 +187,7 @@ static void PanelObserverTick(void*, float, float)
          s.flagsRead ? 1 : 0, (unsigned)s.flag8681, (unsigned)s.flag8682,
          s.adjustmentRead ? 1 : 0, s.adjustmentNeeded ? 1 : 0,
          s.flagsRead && (s.flag8681 || s.flag8682) ? "alternate_if_shown" : "unresolved_7c58",
-         dropped);
+         record.queueFullAtCapture, dropped, record.paused ? 1 : 0, record.coalesced);
     for (unsigned i = 0; i < s.count; ++i) {
         const auto& o = s.objects[i];
         Logf("[PANEL OBJECT] epoch=%ld sample=%u index=%u role=%s object=%p metadata=%p "
@@ -187,7 +240,8 @@ static void PanelObserverStart(void)
     }
     InterlockedExchange(&g_panelStarted, 1);
     Logf("[PANEL FUEL] installed renderer=0x7D5460 stolen=20 scale=1000 format=%%.2fl "
-         "interval_ms=1000 cap=240 queue=16; logs drain on unpaused ticks; "
-         "candidate_home fleet comparison only; no exact burn, tracker or billing");
+         "interval_ms=1000 cap=240 queue=16 paused_coalescing=%s; logs drain on unpaused ticks; "
+         "candidate_home fleet comparison only; accepted sample IDs do not prove coverage; "
+         "no exact burn, tracker or billing", g_simClock->isPaused ? "keep_latest_same_window_root" : "unavailable");
 }
 #endif

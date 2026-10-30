@@ -1,6 +1,10 @@
 // private_logistics - what a private company earns, and what it pays.
 //
 // ---------------------------------------------------------------------------
+// v0.18.7: diagnostic provenance and explicit sampled-stream gaps.
+// Historical fuel claims below are superseded: sampled changes are NOT burn,
+// native fuel units/events remain unverified and the journey adapter is unwired.
+//
 // v0.18.6 updates: bounded, read-only panel-object/fleet observer.
 // Verified 7D5460 prologue, scale and format fingerprints; one sample/second,
 // at most 240 per load epoch. No exact burn/tracker/billing integration.
@@ -348,6 +352,7 @@
 // Compiled/tested core only. No runtime consumer until native vehicle, cargo
 // boundaries and actual fuel-deduction provenance/order have been validated.
 #include "journey_tracker.h"
+#include "fuel_diagnostics.h"
 
 #include <stdint.h>
 #include <math.h>
@@ -406,7 +411,7 @@ static int    g_litresAuto      = 0;     // re-tune litres_per_trip from the fue
 // assumption, the DO's monthly foreign-cost total is the bill.
 //
 // Fuel is bought in bulk and stored, so a day's purchases are NOT a day's
-// burn. Over a run the tank delta washes out; the average is the burn.
+// burn. Run averages also do not establish exact native journey burn.
 // v0.8: the vehicle census. A republic has tens of vehicles, not thousands;
 // 64 slots is four times the largest fleet seen so far and keeps the table in
 // static storage, as the render/tick rules require.
@@ -421,59 +426,29 @@ static int      g_censusLog  = 1;
 #define VEH_SCAN_WORDS 512
 static unsigned g_vehSnap[VEH_MAX][VEH_SCAN_WORDS];
 static bool     g_vehSnapValid[VEH_MAX];
-// v0.10: THE TANK. veh+0x5F0 is fuel, in TONNES, and the v0.9 field scanner
-// found it the honest way - by watching which words move.
-//
-// The evidence, from the v0.9 run (51 days, two active vehicles):
-//   - the word falls every day the truck works: 0.4527 -> 0.4307 -> 0.4073 ...
-//   - it runs to ~0 and then JUMPS: 0.0024 -> 0.4527  (+0.4503, a refill)
-//   - three refills per vehicle, each +0.26 to +0.48, and the tanks top out at
-//     ~0.46 - which is the player's own reported 456 LITRE tank at 1 kg/L.
-//   - the refills over the run (2.66 t) match the diesel the company PAID for
-//     (389.23 RUB = 2.99 t at 133/RUB), less what was left in the tanks.
-//
-// That is five independent agreements, so the field is fuel and the unit is
-// tonnes. Nothing else in the vehicle moved like that.
-static double   g_vehFuel[VEH_MAX];          // last reading, tonnes
+// Legacy candidate sampling. Physical units, native deduction/refill writers
+// and activity gates are NOT verified for the selected road truck. Variable
+// names retain old units for compatibility; logs explicitly say raw/estimate.
+static double   g_vehFuel[VEH_MAX];          // last valid raw candidate
 static bool     g_vehFuelValid[VEH_MAX];
-static double   g_burnTonsRun   = 0.0;       // burned this run, tonnes
+static double   g_burnTonsRun   = 0.0;       // sum of candidate sample decreases
 static unsigned g_refillsRun    = 0;
-// v0.11: the denominator the physics actually has. Burn is per TICK, so the
-// honest rate is litres per fleet-day, not litres per delivery - and it scales
-// with HOW MANY TRUCKS and HOW LONG, never with how much they carry.
+// Historical denominators retained for candidate diagnostics, not physics.
 static unsigned g_tankDaysRun    = 0;        // closes with at least one tank read
 static unsigned g_tankVehDaysRun = 0;        // (vehicle, close) pairs
 static int      g_cargoDump      = 1;        // [CARGO] - settle where fuel lives
 static int      g_tankCrossLog   = 40;       // v0.13: [TANK] slot-vs-mirror lines
-static unsigned char g_vehNoSlotWarned[VEH_MAX];
+static private_logistics_fuel_diagnostics::Samples g_vehFuelSamples[VEH_MAX];
+static volatile LONG g_fuelDiagnosticEpoch = 1;
 static unsigned char g_vehCapValid[VEH_MAX];
-static double        g_vehCap[VEH_MAX];      // per-vehicle tank capacity, tonnes
+static double        g_vehCap[VEH_MAX];      // metadata capacity candidate, raw
 
-// v0.13: THE ACTIVITY GATE, straight out of the follow-up report.
-//
-// The engine skips a vehicle entirely unless veh+0x448 is 1 or 2 (and +0x440
-// is 9): no burn, no refuel, nothing. That means the honest denominator for a
-// fuel rate is not "fleet-day" but "TRUCK-DAY ACTIVE", and it means the ~40 L
-// this fleet burned on days with no private deliveries was burned doing work
-// that was not ours.
-//
+// Legacy state-word guesses only; never gate native events using these.
 static unsigned g_activeVehDaysRun = 0;
 static unsigned g_idleVehDaysRun   = 0;
 
-// v0.11: THE PER-TRIP FUEL PROBE.
-//
-// The player's question was exact: "You were able to see the fuel used for
-// every trip?" No. Every number this plugin has ever printed about fuel came
-// from PURCHASES divided by trips, and purchases are a stock movement, not a
-// burn. With 4,558 L bought and 4,157 L pumped into tanks in the v0.7 run, the
-// ratio could have been anywhere between 7.0 and 8.7 L/trip.
-//
-// The fix costs one pointer walk: at every committed delivery, total the tanks
-// of the fleet that did it. The difference from the previous delivery is the
-// fuel burned between the two - no purchases, no storage, no assumptions. A
-// refill (tank goes UP) or a change in fleet size invalidates that one
-// interval, and those are counted separately rather than averaged in.
-static const int VEH_FUEL_OFF = 0x5F0;     // the tank, in tonnes (see ReadTank)
+// Legacy fleet endpoint sampling. It cannot prove individual fuel events.
+static const int VEH_FUEL_OFF = 0x5F0;     // panel backing candidate; physical units unverified
 
 static void*    g_probeBld      = nullptr;
 static double   g_probeFuelTons = -1.0;
@@ -493,75 +468,22 @@ static double             g_fuelPaidRun  = 0.0;
 static double             g_fuelLitresRun = 0.0;
 static unsigned long long g_fuelTripsRun = 0;
 
-// v0.11 updates:
-//   1. litres_per_tonne ships at 0. Load does not enter the burn formula -
-//      Ghidra, FUN_14016E3B0 - and the v0.10 log agrees (r = -0.03).
-//   2. [TANK] run prints LITRES PER FLEET-DAY and per truck-day beside L/trip.
-//      L/trip is a ratio of two unrelated things; L/day is the physics.
-//   3. [CARGO] dumps the raw cargo vector, uncapped, to settle where fuel
-//      actually lives. The Ghidra report says veh+0x3B8; our own census says
-//      the trucks carry 0 slots while holding 0.29 t in the tank. One of those
-//      is wrong and a dump costs nothing.
-//   4. A NEGATIVE tank reading is read as empty, not as extra burn. Day 13 of
-//      the v0.10 run read -0.0302 t; +0x5F0 is derived, not the level.
-//   5. BURN PROBE: the fleet's tanks are totalled at every committed delivery,
-//      so the next run reports diesel that actually left the tanks BETWEEN two
-//      deliveries. That is the player's question answered with a measurement
-//      instead of purchases divided by trips.
-//
-// v0.12 updates:
-//   1. The cargo census no longer hides vectors longer than eight slots. That
-//      cap is what made this plugin report "0 slot(s)" on trucks holding fuel,
-//      and I used that as evidence. It was not evidence - it was a bug here.
-//   2. [CARGO] dumps BOTH storage vectors, 0x3A0 and 0x3B8, every slot.
-//   3. [VEH] now prints kind=, the int at +0x50C that the report calls the
-//      fuel-consumer flag. +0x510 was never a pointer; that is why it printed
-//      nonsense.
-//
-// v0.13 updates (follow-up disassembly):
-//   1. THE TANK IS THE CARGO SLOT, not +0x5F0. The slot at veh+0x3B8 whose
-//      resource pointer is diesel's, +0x08 tonnes, clamped at zero.
-//   2. +0x5F0 is an UNCLAMPED MIRROR written by the refuel and drive paths.
-//      That is why it went negative; it is now a cross-check, not the source.
-//   3. The fleet's tank can be read per vehicle in two places - the slot for
-//      the level, and *(veh+0x1708)+0x8684 for that vehicle's CAPACITY. The
-//      capacity is logged once per vehicle, so no arbitrary vehicle stands in
-//      for the fleet.
-//   4. [VEH] prints state (veh+0x448) and mode (veh+0x440). The engine skips a
-//      vehicle entirely unless the state is 1 or 2, so "litres per ACTIVE
-//      truck-day" is the only fuel rate that means anything; it is now on the
-//      [TANK] run line.
-//
+// Earlier slot/clamp/activity attribution is superseded by the real-game review.
 // v0.5: the cost side, in physical units. No rouble constant may appear here:
 // prices move, litres and ratios do not.
 static int    g_tariffProbe     = 1;       // compute + log the tariff, never charge
 static int    g_balanceLog      = 1;       // [BAL] treasury + carrier capital per day
 static int    g_tariffLogPerDay = 60;      // per-delivery [TARIFF] lines, then totals only
-static double gLitresPerTrip    = 14.75;   // v0.10: measured from the TANKS, not purchases
-// v0.11: ZERO - and this retires a term I invented.
-//
-// Ghidra on FUN_14016E3B0 (the per-tick upkeep function) shows the burn is
-//
-//   consumption = (slot_rate / *(float*)(bld+0xE30)) * base_rate
-//                 * (tick_delta / DAT_14090AA78) * fVar24
-//   fVar24      = DAT_140909F58 / ((bld+0xE68 - bld+0xE60) / 0xC)
-//
-// fVar24 is a BUILDING-level constant and cargo weight never enters it. A full
-// truck burns what an empty one burns. `litres_per_tonne` was my invention and
-// it is falsified by the code as well as by the v0.10 log (daily burn vs daily
-// deliveries: correlation -0.03 over 51 days).
-//
-// Kept as a key so the claim can be re-tested, but it ships at zero.
-static double gLitresPerTonne   = 0.0;     // FALSIFIED - load does not burn
+static double gLitresPerTrip    = 14.75;   // historical model parameter, NOT verified journey burn
+// Retained legacy model knob; actual cargo-load dependence is unverified.
+static double gLitresPerTonne   = 0.0;     // legacy model default; not native physics
 static double gTariffMargin     = 0.35;    // dimensionless: 35 % over fuel cost
-static double gDieselDensity    = 0.00100; // t/L - v0.10: the game uses 1 kg/L
-                                            // (a 456 L tank reads 0.456 t), not
-                                            // real diesel's 0.84
+static double gDieselDensity    = 0.00100; // legacy model t/L, NOT proof of native mass units
 static char   gFuelResource[64] = "fuel";  // resolved through resource_pricing
 static double gBasketsPerTrip   = 0.80;    // CPI fallback, in daily survival baskets
 static double gBasketsPerTonne  = 0.02;
 
-#define PL_VERSION "0.18.6-panel-observer"
+#define PL_VERSION "0.18.7-diagnostic-provenance"
 static int g_panelObserverEnabled = 1;
 static void PanelObserverLoading(void);
 static float g_minPayment      = 0.01f;
@@ -1419,12 +1341,13 @@ static int DetourTransfer(void* game, void* p2, unsigned mode, void* res,
             if (probeLine) {
                 char bname[64];
                 BuildingName(building, bname, sizeof(bname));
-                Logf("[TARIFF] %s %.3ft @%.2f = %.2f -> %s: %.2f = fuel %.2f x%.2f "
-                     "+ wear %.2f (index %s) | charged %.2f by the state",
+                Logf("[TARIFF MODEL] %s %.3ft @%.2f = %.2f -> %s: %.2f = fuel %.2f x%.2f "
+                     "+ wear %.2f (index %s) | transfer_fragment=1 journey=0 "
+                     "| payment_returned=%.2f billing=%d dry_run=%d",
                      rname, (double)tons, unitPrice, (double)tons * unitPrice, bname,
                      probeTariff, probeCost, 1.0 + (double)gTariffMargin, probeShare,
                      probeIndex == 1 ? "fuel" : (probeIndex == 2 ? "cpi" : "none"),
-                     freightPaid);
+                     freightPaid, g_billing, g_dryRun);
             }
         }
 
@@ -1710,12 +1633,13 @@ static void OnDay(void*, int day, int month, int year)
     // `unindexed` is the honest failure: neither a fuel price nor a CPI
     // basket resolved, so the probe refused to invent a figure.
     if (g_tariffProbe || g_tripTariff) {
-        Logf("[TARIFF] day %d closed: %u delivery(ies), %s %.2f = fuel %.2f x%.2f + "
-             "wear %.2f, mean %.2f | indexed by fuel %u, by cpi %u, unindexed %u",
-             closedDay, tCount, g_tripTariff ? "charged" : "model",
+        Logf("[TARIFF MODEL] day %d closed: %u priced_transfer_fragment(s), model %.2f = fuel %.2f x%.2f + "
+             "wear %.2f, mean %.2f | indexed by fuel %u, by cpi %u, unindexed %u "
+             "| NOT journeys or payment totals; billing=%d dry_run=%d",
+             closedDay, tCount,
              tSum, tCostSum, 1.0 + (double)gTariffMargin, tShareSum,
              tCount ? tSum / (double)tCount : 0.0,
-             tFuelIdx, tCpiIdx, tNoIndex);
+             tFuelIdx, tCpiIdx, tNoIndex, g_billing, g_dryRun);
     }
 
     // v0.5: THE MONEY PATH, BOTH ENDS (H33, H37).
@@ -1836,17 +1760,12 @@ static void OnDay(void*, int day, int month, int year)
             // and sits in tanks, so a short run and a long run give different
             // answers from the same fleet - 3.27 L/trip over 1,100 trips,
             // 7.14 over 214. Do not treat it as a measurement of the burn.
-            Logf("[FUEL] run: %.2f RUB = %.2f L BOUGHT over %llu delivery(ies) = %.3f L/trip "
+            Logf("[FUEL PURCHASE MODEL] run: %.2f RUB = %.2f configured_litres_estimate over %llu transfer_fragment(s) = %.3f estimate_per_fragment "
                  "| configured %.2f L | fuel sits in tanks: this is purchases, not burn",
                  g_fuelPaidRun, g_fuelLitresRun, g_fuelTripsRun, perTrip, gLitresPerTrip);
         }
 
-        // v0.10: THE BURN, from the tanks.
-        //
-        // This is the number the tariff has been missing since v0.5. It is not
-        // purchases (which include tank fill), it is not a model (which was
-        // wrong by 4x): it is what actually left the vehicles' tanks while
-        // they worked. Refills are counted separately and never subtract.
+        // Legacy candidate differences: not native burn and not loaded journeys.
         if (g_fuelTripsRun > 0 && g_burnTonsRun > 0.0 && gDieselDensity > 0.0) {
             const double litres = g_burnTonsRun / gDieselDensity;
             const double lpt    = litres / (double)g_fuelTripsRun;
@@ -1857,43 +1776,32 @@ static void OnDay(void*, int day, int month, int year)
             const double lpd = g_tankDaysRun ? litres / (double)g_tankDaysRun : 0.0;
             const double lvd = g_tankVehDaysRun ? litres / (double)g_tankVehDaysRun : 0.0;
             const double lva = g_activeVehDaysRun ? litres / (double)g_activeVehDaysRun : 0.0;
-            Logf("[TANK] run: burned %.4f t = %.1f L | %.2f L/trip over %llu delivery(ies) "
-                 "| %.2f L per fleet-day over %u close(s) | %.2f L per truck-day over %u "
-                 "| %.2f L per ACTIVE truck-day over %u active / %u idle "
-                 "| %u refill(s) | configured %.2f L/trip",
+            Logf("[TANK SAMPLE] run: decrease_raw=%.4f configured_density_litres_estimate=%.1f "
+                 "| estimate_per_transfer_fragment=%.2f over %llu fragment(s) "
+                 "| estimate_per_fleet_day=%.2f over %u close(s) | estimate_per_vehicle_day=%.2f over %u "
+                 "| estimate_per_legacy_active_day=%.2f over %u legacy_active / %u legacy_idle "
+                 "| sample_increases=%u | configured_model_litres=%.2f "
+                 "units=unverified native_activity=unverified exact_burn=0 verified_refill=0",
                  g_burnTonsRun, litres, lpt, g_fuelTripsRun, lpd, g_tankDaysRun, lvd,
                  g_tankVehDaysRun, lva, g_activeVehDaysRun, g_idleVehDaysRun,
                  g_refillsRun, gLitresPerTrip);
-            if (g_litresAuto) {
-                const double before = gLitresPerTrip;
-                gLitresPerTrip = before * 0.70 + lpt * 0.30;
-                if (gLitresPerTrip < 0.5)   gLitresPerTrip = 0.5;
-                if (gLitresPerTrip > 500.0) gLitresPerTrip = 500.0;
-                if (fabs(gLitresPerTrip - before) > 0.01)
-                    Logf("[TANK] auto-tune: litres_per_trip %.3f -> %.3f (tank says %.3f)",
-                         before, gLitresPerTrip, lpt);
-            }
+            if (g_litresAuto)
+                Logf("[TANK SAMPLE] auto-tune NOT applied: sampled changes/units are unverified; "
+                     "configured litres_per_trip remains %.3f", gLitresPerTrip);
         }
     }
 
-    // v0.11: THE MEASURED BURN, per delivery rather than per day.
-    //
-    // This is the number the player asked for: diesel that actually left the
-    // tanks between one delivery and the next. It needs no purchases, no
-    // storage, and no guess about how far a truck drives. Once it has enough
-    // intervals it replaces the configured figure - one fleet, one republic,
-    // measured where it is used.
+    // Legacy inter-transfer endpoint samples are not deduction events.
     if (g_probeStepsRun > 0 && gDieselDensity > 0.0) {
         const double litres = g_probeBurnRun / gDieselDensity;
         const double lpt    = litres / (double)g_probeStepsRun;
-        Logf("[BURN] run: measured %.4f t = %.1f L between %u delivery pair(s) "
-             "= %.2f L/trip | %u interval(s) skipped (refill or fleet change) "
-             "| configured %.2f L/trip | %s",
+        Logf("[FUEL SAMPLE] run: net_raw=%.4f configured_density_litres_estimate=%.1f "
+             "between %u transfer_fragment_pair(s) = %.2f estimate_per_pair "
+             "| %u interval(s) skipped (sample increase or candidate-count change) "
+             "| configured_model_litres=%.2f | %s",
              g_probeBurnRun, litres, g_probeStepsRun, lpt, g_probeSkipRun,
              gLitresPerTrip,
-             (g_probeStepsRun >= 20 && fabs(lpt - gLitresPerTrip) > 0.5)
-                 ? "SET litres_per_trip TO THE MEASURED FIGURE"
-                 : "no action");
+             "units=unverified exact_burn=0 journey_count=unknown calibration_input=0");
     }
 
     // v0.8: who does this company actually own, and what can they carry?
@@ -2394,7 +2302,10 @@ static bool AutoAppendNativeTarget(void* office, void* target, unsigned directio
 
 static void AutoPersistenceEvent(TsmSaveEvent event, const char* dir, void*)
 {
-    if (event == TSM_SAVE_LOADING) PanelObserverLoading();
+    if (event == TSM_SAVE_LOADING) {
+        InterlockedIncrement(&g_fuelDiagnosticEpoch);
+        PanelObserverLoading();
+    }
     // Persist permission keys only; never retain building pointers. Save/load
     // callbacks run on the file thread, so no game-memory access is performed.
     if (!g_persistence || !dir) return;
@@ -3081,23 +2992,10 @@ static double CargoTons(void* veh, int* slots)
 }
 
 // ---------------------------------------------------------------------------
-// v0.13: WHERE THE FUEL ACTUALLY IS
+// Candidate resource-slot and display-field readers, NOT authoritative fuel.
+// The old building/upkeep report does not prove this road truck's burn or
+// refill writer, canonical store, native clamp, or physical mass conversion.
 // ---------------------------------------------------------------------------
-//
-// The follow-up Ghidra report settled it, and it corrected two of my readings.
-//
-//   AUTHORITATIVE: the cargo vector at veh+0x3B8, stride 0x10, the slot whose
-//                  +0x00 Resource* equals the diesel resource. +0x08 is the
-//                  level in tonnes and the engine clamps it at zero.
-//   MIRROR:        veh+0x5F0. Written by the refuel function (140142430) as
-//                  min(available, capacity - current) + current, and by the
-//                  drive function (14014B920) as (rate + current). NOT clamped,
-//                  which is why it went NEGATIVE eight times in one run. That
-//                  was never a mystery - it was a mirror with no floor.
-//
-// So the tank we read from now on is the slot, and +0x5F0 is kept only as a
-// cross-check that gets printed beside it. If the two ever disagree by more
-// than a few kilos, the log says so and we stop trusting the measurement.
 static void* FuelResourcePtr(void)
 {
     if (!g_pricing || !g_pricing->getByName) return nullptr;
@@ -3108,7 +3006,8 @@ static void* FuelResourcePtr(void)
     return g_fuelRes;
 }
 
-// Returns the fuel slot's tonnage. *found = 1 when the slot exists.
+// Returns raw quantity from a matching resource slot. Units/classification are
+// unverified for this road truck. *found = 1 even if the quantity is invalid.
 // -1 when the vector cannot be read at all.
 static double FuelSlotTons(void* v, int* found)
 {
@@ -3132,16 +3031,16 @@ static double FuelSlotTons(void* v, int* found)
         const BYTE* e = beg + i * 16;
         if (*(const void* const*)e != fuel) continue;
         float t = *(const float*)(e + 8);
-        if (!(t == t) || t < -1000.0f || t > 1000.0f) return -1.0;
-        if (t < 0.0f) t = 0.0f;
+        // Preserve invalid/negative raw values: diagnostics must never invent
+        // an empty tank by applying an unverified native clamp.
         *found = 1;
         return (double)t;
     }
     return 0.0;
 }
 
-// The mirror at +0x5F0, and the per-vehicle capacity the refuel code clamps to
-// (*(veh+0x1708) + 0x8684). Both are evidence, not the measurement.
+// The panel backing quantity (+0x5F0) and metadata capacity (+0x8684).
+// Display correlation alone does not establish native burn/refill semantics.
 static double MirrorTons(void* v)
 {
     const BYTE* p = (const BYTE*)v;
@@ -3184,9 +3083,10 @@ static double FleetFuelTons(void* b, int* outCount)
         if (!v) continue;
         int found = 0;
         double lvl = FuelSlotTons(v, &found);
-        if (!found) lvl = MirrorTons(v);         // fall back to +0x5F0
-        if (lvl < 0.0) continue;
-        t += lvl;
+        const auto reading = private_logistics_fuel_diagnostics::Select(
+            found != 0, lvl, MirrorTons(v));
+        if (!reading.valid) continue;
+        t += reading.value;
         c++;
     }
     *outCount = c;
@@ -3302,55 +3202,33 @@ static bool VehScanSkip(int off)
 // v0.10: read the tank
 // ---------------------------------------------------------------------------
 //
-// veh+0x5F0 is fuel in tonnes (see the evidence at the globals). This turns it
-// into the number the whole tariff has been missing: litres actually BURNED
-// per delivery, with no purchases and no tank-fill error.
-//
-// A refill shows up as an increase and is counted, not charged as negative
-// burn. A vehicle seen for the first time only sets a baseline.
+// Legacy daily candidate sampling, NOT a native deduction/refill adapter.
+// Reading, provenance and baseline changes are explicit. A negative candidate
+// is invalid, not zero; changing source, invalid reads and load reset baselines.
 static void ReadTank(int slot, void* v, int closedDay, double* burned, unsigned* refills)
 {
     if (slot < 0 || slot >= VEH_MAX) return;
-
-    // v0.13: the SLOT is the tank. +0x5F0 is the unclamped mirror, kept as a
-    // cross-check - it is the thing that went negative, and now we can show why.
+    using namespace private_logistics_fuel_diagnostics;
     int found = 0;
-    double level = FuelSlotTons(v, &found);
-    const double mirror = MirrorTons(v);
-
-    if (!found) {
-        if (level < 0.0 && mirror < 0.0) return;
-        level = (mirror > 0.0) ? mirror : 0.0;   // no fuel slot: fall back
-        if (!g_vehNoSlotWarned[slot]) {
-            g_vehNoSlotWarned[slot] = 1;
-            Logf("[TANK] day %d   v=%p has NO fuel slot in the cargo vector "
-                 "-> falling back to +0x5F0 (%.4f t)", closedDay, v, mirror);
-        }
-    }
-
-    if (!g_vehFuelValid[slot]) {
-        g_vehFuel[slot] = level;
-        g_vehFuelValid[slot] = true;
-        return;
-    }
-
-    const double prev = g_vehFuel[slot];
-    if (level > prev + 0.02) {              // a refill, not burn
-        if (refills) (*refills)++;
-    } else if (prev > level) {
-        if (burned) *burned += (prev - level);
-    }
-    g_vehFuel[slot] = level;
-
-    // v0.13: one line per vehicle per day saying WHICH source was read and how
-    // far the mirror has drifted from it. If these two ever part company by
-    // more than a few kilos, the measurement is suspect and this says so.
+    const double slotRaw = FuelSlotTons(v, &found);
+    const double displayRaw = MirrorTons(v);
+    const Reading reading = Select(found != 0, slotRaw, displayRaw);
+    const Result result = g_vehFuelSamples[slot].Observe(reading,
+        (unsigned long long)InterlockedCompareExchange(&g_fuelDiagnosticEpoch, 0, 0));
+    g_vehFuelValid[slot] = reading.valid;
+    if (reading.valid) g_vehFuel[slot] = reading.value;
+    // Legacy accumulators are candidate sample changes ONLY. No tracker feed.
+    if (burned) *burned += result.decrease;
+    if (refills && result.change == Change::Increase) ++*refills;
     if (g_tankCrossLog > 0) {
-        const double drift = (mirror >= 0.0) ? (mirror - level) : 0.0;
-        Logf("[TANK] day %d   v=%p slot %.4f t | mirror +0x5F0 %.4f t | drift %+.4f t | %s",
-             closedDay, v, level, mirror, drift,
-             (fabs(drift) > 0.01) ? "MIRROR HAS DRIFTED" : "agree");
-        g_tankCrossLog--;
+        Logf("[TANK] day %d v=%p selected_source=%s source_valid=%d "
+             "slot_found=%d slot_candidate_raw=%.9g display_5f0_raw=%.9g "
+             "drift_valid=%d drift_raw=%+.9g change=%s decrease_raw=%.9g "
+             "units=unverified exact_burn=0 verified_refill=0 billing_input=0",
+             closedDay, v, SourceName(reading.source), reading.valid ? 1 : 0,
+             found, slotRaw, displayRaw, reading.comparable ? 1 : 0,
+             reading.drift, ChangeName(result.change), result.decrease);
+        --g_tankCrossLog;
     }
 }
 
@@ -3460,8 +3338,8 @@ static void CensusFleets(int closedDay)
                 if (tons > g_vehPeakTons[s]) g_vehPeakTons[s] = tons;
             }
 
-            // v0.13: the state gate the report found. 1 and 2 = working;
-            // anything else and the engine does not even look at the truck.
+            // Retained raw words and legacy guess; disproven as road-truck
+            // activity evidence in the supplied game test. Never gate on them.
             int state = -1, mode = -1;
             if (ReadablePtr((const BYTE*)v + 0x448, 4))
                 state = *(const int*)((const BYTE*)v + 0x448);
@@ -3470,22 +3348,22 @@ static void CensusFleets(int closedDay)
             const bool active = (state == 1 || state == 2);
             if (active) g_activeVehDaysRun++; else g_idleVehDaysRun++;
 
-            // Per-vehicle tank capacity, from the field the REFUEL code clamps
-            // to. This is the "never assume an arbitrary vehicle" requirement
-            // answered with a number the game itself uses.
+            // Metadata capacity candidate used by the panel, NOT proof of a
+            // native refill clamp or physical tonnes.
             const double cap = TankCapacity(v);
             if (cap > 0.0 && s >= 0 && !g_vehCapValid[s]) {
                 g_vehCapValid[s] = 1;
                 g_vehCap[s] = cap;
-                Logf("[VEH] day %d   v=%p tank capacity %.4f t (%.0f L at 1 kg/L)",
+                Logf("[VEH] day %d v=%p capacity8684_raw=%.9g display_scale1000_estimate=%.2f "
+                     "physical_units=unverified refill_clamp=unverified",
                      closedDay, v, cap, cap * 1000.0);
             }
 
-            Logf("[VEH] day %d   v=%p home=%s cargo %.3ft in %d slot(s) kind=%d cat=%p peak %.3ft "
-                 "state=%d mode=%d %s",
+            Logf("[VEH] day %d   v=%p home=%s cargo %.3ft in %d slot(s) legacy_kind50c=%d catalogue510_candidate=%p peak %.3ft "
+                 "legacy_state448=%d legacy_mode440=%d %s native_activity=unverified",
                  closedDay, v, (home == b) ? "this" : "other",
                  tons, slots, kind, cat, (s >= 0) ? g_vehPeakTons[s] : 0.0,
-                 state, mode, active ? "ACTIVE" : "idle");
+                 state, mode, active ? "legacy_active_guess" : "legacy_idle_guess");
 
             // One dump per vehicle, ever. +0x510 is the lead for capacity,
             // speed, price and consumption; this tells us what it actually is
@@ -3498,7 +3376,8 @@ static void CensusFleets(int closedDay)
             g_refillsRun  += refills;
             if (g_vehFuelValid[s]) g_tankVehDaysRun++;
             if (burned > 0.0 || refills > 0)
-                Logf("[TANK] day %d   v=%p fuel %.4f t | burned %.4f t | refills %u",
+                Logf("[TANK SAMPLE] day %d v=%p candidate_raw=%.4f | decrease_raw=%.4f "
+                     "| sample_increases=%u units=unverified exact_burn=0 verified_refill=0",
                      closedDay, v, g_vehFuelValid[s] ? g_vehFuel[s] : 0.0,
                      burned, refills);
 
@@ -3651,7 +3530,7 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
          "%d sites, cap %.0f/day, price = %s, factory share %.2f",
          PL_VERSION, g_billing, g_dryRun, g_payFactory, g_payCarrier,
          g_siteCount, (double)g_dailyPayCap,
-         g_tripTariff ? "TRIP TARIFF (fuel x margin + wear)"
+         g_tripTariff ? "LEGACY FRAGMENT MODEL (fuel x margin + wear), NOT journey settlement"
                       : "value share (v0.6 path, for comparison)",
          (double)g_factoryShare);
 
@@ -3661,7 +3540,7 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
 
     if (g_freightShareRetired > 0.0f)
         Logf("private_logistics  WARN freight_share = %.3f is RETIRED in v0.7 and was "
-             "ignored - the trip tariff prices the delivery now. Remove the key.",
+             "ignored - the legacy model prices transfer fragments, NOT journeys. Remove the key.",
              (double)g_freightShareRetired);
 
     // v0.5: name both indices before a single delivery is priced. A probe that
@@ -3672,11 +3551,11 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
         float basket = 0.0f;
         if (g_pricing) basket = TsmPricingCpiBasket(g_pricing, 0.0f);
 
-        Logf("private_logistics  v%s tariff: %.2f L/trip + %.2f L/t, wear %.2f L, "
+        Logf("private_logistics  v%s legacy fragment model: %.2f configured L/fragment + %.2f L/t, wear %.2f L, "
              "margin %.0f%%, density %.5f t/L, index '%s', auto-tune %s",
              PL_VERSION, gLitresPerTrip, gLitresPerTonne, gWearLitres,
              gTariffMargin * 100.0, gDieselDensity, gFuelResource,
-             g_litresAuto ? "on" : "off");
+             g_litresAuto ? "requested_but_blocked_unverified_samples" : "off");
 
         // The world is not loaded yet at plugin start, so both of these read
         // zero here and are re-read at every day close. Say that rather than
@@ -3685,8 +3564,10 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
              "the world is still loading; both are re-read at every day close",
              gFuelResource, fp, (double)basket);
 
-        Logf("private_logistics  the tariff IS charged: every delivery is paid the "
-             "trip price, indexed to the live fuel price. Cargo value is not a basis.");
+        Logf("private_logistics  legacy tariff is a MODEL per transfer fragment, NOT per journey; "
+             "billing=%d dry_run=%d carrier_enabled=%d tariff_mode=%s. "
+             "Only [PAY] reports payments; native journey settlement OFF.",
+             g_billing, g_dryRun, g_payCarrier, g_tripTariff ? "model" : "value_share");
     }
 
     if (g_balanceLog) {

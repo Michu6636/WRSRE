@@ -1,6 +1,12 @@
 # ROAD_PATH_EVIDENCE_COMPLETE.md
 ## Road Distribution Office Truck — Minimum Game-Facing Observations Evidence
 
+> **Historical, NOT a verified road-truck fuel contract.** The 2026-10-30
+> actual-truck test contradicts the assumed slot/state identification below.
+> “Complete” in this filename is not acceptance of burn/refill/clamp provenance.
+> Do not hook the old upkeep family from these claims. Current corrections and
+> remaining evidence requirements are in [the single cumulative handover](../VEHICLE_PANEL_FUEL_INVESTIGATION.md).
+
 **Target:** SOVIET64.exe v1.1.1.9 (PE 0x6A3EB6AD), base 0x140000000, ASLR ON. All addresses are RVAs.
 **Branch:** reverse-engineering-and-verified-transport-associa (commit 80a4404d8d3fa5161bcaaf8de8cfd0a7fc7a72b7)
 **Date:** 2026-10-24
