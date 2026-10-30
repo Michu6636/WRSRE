@@ -1,5 +1,28 @@
 # Private logistics — runtime observation work package
 
+> **Current source: 0.18.8-schedule-observations (2026-10-30).**
+> Added fingerprint-gated read-only observations of the selected road-DO truck’s
+> raw schedule rows/config/index, using the existing panel hook and queue.
+> This is NOT whole-job logging: job identity, buyer and completion reason remain
+> unverified. Billing/permissions/dispatch and the loaded-only core are unchanged.
+> Source/INI default `schedule_observer=1`; billing remains `0`.
+> 238 Python regressions and six optimized + ASan/UBSan host suites PASS.
+> No Windows DLL build or real-game run of 0.18.8 is claimed. Full findings,
+> complete final source and actual output are appended to the single
+> [`VEHICLE_PANEL_FUEL_INVESTIGATION.md`](VEHICLE_PANEL_FUEL_INVESTIGATION.md).
+
+> **Latest supplied game run, 2026-10-30: v0.18.7 diagnostics validated.**
+> All six new screenshot fuel values match the same DO-fleet truck. Zero
+> queue overflow was reported; 253 paused snapshots were explicitly coalesced.
+> Model/fallback labels are correct; billing stayed OFF and both deliveries ran.
+> Keep the working DO simple and unchanged. Future assigned-job costing is now
+> the user's preferred design direction, not a newly implemented native adapter.
+> Full review, policy distinctions, save/exit clarification, analysis source and
+> actual results are appended to the single
+> [`VEHICLE_PANEL_FUEL_INVESTIGATION.md`](VEHICLE_PANEL_FUEL_INVESTIGATION.md).
+> The following pre-test checkpoint is historical; its diagnostics were exercised
+> by this new user-supplied run. Exact native fuel/job accounting is still pending.
+>
 > **2026-10-30 implementation checkpoint:** working source is
 > **0.18.7-diagnostic-provenance**. Tariff/reader provenance and paused-queue
 > gap/coalescing fixes are implemented; 220 host regressions pass. No MSVC build
@@ -36,15 +59,37 @@
 
 ## Current goal
 
-Observe ONE road distribution-office truck over TWO consecutive simple journeys:
+**Latest user policy amendment (2026-10-30):** future accounting covers actual
+DO-task assignment → removal, **regardless of success/cancellation**. Internal
+stop changes stay within the interval; travel after task removal is excluded.
+Earlier success-only requirements and blanket return-travel proposals below
+are superseded by this rule. Native presence/removal/replacement and physical
+fuel accounting still require verification; current runtime billing stays OFF.
+The exact targeted Ghidra-agent prompt and changed-build diagnostic test guidance
+are appended to the single handover Markdown linked above.
 
-**confirmed cargo load → actual per-vehicle fuel deductions → complete cargo unload**.
+Preserve the working simple DO and billing OFF. The latest supplied v0.18.7 run
+supports two deliveries and validates diagnostic cleanup, not native accounting.
 
-Compute fuel-only cost = summed actual tonnes deducted during the loaded trip × settlement-time in-game fuel price per tonne. Exclude empty travel before pickup and after delivery. No new trip payments. No claim of in-game validation until an actual game run and captured logs exist.
+**Future preferred envelope (user proposal, 2026-10-30): actual per-vehicle
+assignment start → verified terminal outcome**, preserving the same job
+across its loading/unloading stop transitions. A stop advance or list clear is NOT
+a verified terminal outcome; success must be distinguished from cancel/replacement.
+Empty outbound travel can belong
+to this envelope; whether return to DO belongs must be explicit. This differs
+from the older loaded-only policy in the still-disconnected tracker core.
+
+Later fuel-only invoice = verified consumed tonnes × settlement-time in-game
+price per tonne, paid by the correctly identified buyer to the carrier once.
+Task identity/lifetime, cancellation, refills, physical unit conversion, coverage
+and buyer settlement remain unverified/unimplemented. Endpoint gauge changes
+can only be estimates under verified no-refuel/no-other-change assumptions.
+See the latest single-file review for the complete future contract. No payment
+or runtime policy was changed by this review.
 
 ## Status and provenance
 
-- Current Arena branch: `arena/0a144a79-wrsre`; working source is v0.18.7 (diagnostic-only checkpoint); last real-game observer test was v0.18.6. See the latest checkpoint and log review. Older agent reports below are historical.
+- Current Arena branch: `arena/8e9a4f62-wrsre`; source is v0.18.8 (read-only schedule checkpoint); last supplied real-game observer test was v0.18.7. See the latest single-file findings. Older agent/build reports below are historical.
 - Old Agent 1 report fetched at `80a4404d8d3fa5161bcaaf8de8cfd0a7fc7a72b7`, branch `reverse-engineering-and-verified-transport-associa`. Clean of conflict markers; not accepted as a verified road load/burn/unload implementation. Still contains task-stride/prototype inconsistencies.
 - Old Agent 2 model fetched at `94d304dfbd182aef6464ff35315de8d16ae1a694`, branch `executable-accounting-model-and-deterministic-test`. Independently ran 27 tests, all pass. Additional probes: CLOSED prevents a legitimate second trip; UNSUPPORTED can be reactivated by a repeated load. Not production-ready.
 - Review exports exist only in ignored `.cache/agent-review/` in this checkout. Remote reports/model have NOT been merged here. New agents must obtain the exact artifacts without blindly merging old branches.

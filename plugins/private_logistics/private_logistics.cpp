@@ -1,7 +1,7 @@
 // private_logistics - what a private company earns, and what it pays.
 //
 // ---------------------------------------------------------------------------
-// v0.18.7: diagnostic provenance and explicit sampled-stream gaps.
+// v0.18.8: fingerprint-gated read-only schedule observations; job lifecycle unverified.
 // Historical fuel claims below are superseded: sampled changes are NOT burn,
 // native fuel units/events remain unverified and the journey adapter is unwired.
 //
@@ -483,8 +483,9 @@ static char   gFuelResource[64] = "fuel";  // resolved through resource_pricing
 static double gBasketsPerTrip   = 0.80;    // CPI fallback, in daily survival baskets
 static double gBasketsPerTonne  = 0.02;
 
-#define PL_VERSION "0.18.7-diagnostic-provenance"
+#define PL_VERSION "0.18.8-schedule-observations"
 static int g_panelObserverEnabled = 1;
+static int g_scheduleObserverEnabled = 1;
 static void PanelObserverLoading(void);
 static float g_minPayment      = 0.01f;
 static double g_dailyPayCap    = 0.0;    // 0 = no cap
@@ -2790,6 +2791,7 @@ static void ReadSettings(void)
     g_enabled        = H->configInt(ini, "private_logistics", "enabled", 1);
     g_billing        = H->configInt(ini, "private_logistics", "billing", 0);
     g_panelObserverEnabled = H->configInt(ini, "private_logistics", "panel_fuel_observer", 1);
+    g_scheduleObserverEnabled = H->configInt(ini, "private_logistics", "schedule_observer", 1);
     g_dryRun         = H->configInt(ini, "private_logistics", "dry_run", 1);
     g_payFactory     = H->configInt(ini, "private_logistics", "pay_factory", 1);
     g_payCarrier     = H->configInt(ini, "private_logistics", "pay_carrier", 1);

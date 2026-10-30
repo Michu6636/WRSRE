@@ -3,7 +3,13 @@
 #ifndef PRIVATE_LOGISTICS_PANEL_FUEL_RUNTIME_H
 #define PRIVATE_LOGISTICS_PANEL_FUEL_RUNTIME_H
 #include "panel_fuel_observer.h"
+#include "schedule_observer.h"
 
+static bool g_scheduleReady = false;
+static volatile LONG g_scheduleFault = 0;
+static private_logistics_schedule::History g_scheduleHistory; // simulation tick only
+static LONG g_scheduleLastEpoch = 0;
+static unsigned g_scheduleLastCaptureDrops = 0;
 static CRITICAL_SECTION g_panelQueueLock;
 static volatile LONG g_panelEpoch = 1, g_panelStarted = 0, g_panelFault = 0, g_panelContention = 0;
 static LONG g_panelQueueEpoch = 0;
@@ -14,6 +20,7 @@ static ULONGLONG g_panelFirstDropMs = 0, g_panelLastDropMs = 0;
 static bool g_panelCapLogged = false, g_panelFaultLogged = false;
 struct PanelRecord {
     private_logistics_panel::Snapshot snapshot;
+    private_logistics_schedule::Snapshot schedule;
     LONG epoch;
     unsigned sequence;
     ULONGLONG milliseconds;
@@ -72,6 +79,24 @@ static void PanelCapture(void* context, void* window)
     } __except (EXCEPTION_EXECUTE_HANDLER) {
         InterlockedExchange(&g_panelFault, 1);
     }
+    private_logistics_schedule::Snapshot schedule{};
+    if (captured && g_scheduleReady) {
+        schedule.status = private_logistics_schedule::Status::Ineligible;
+        // Only the root itself, uniquely present in the verified road-DO fleet.
+        // Never walk home as buyer, follow linked vehicles, or read +650's pointee.
+        if (snapshot.count && snapshot.objects[0].pointer == snapshot.root &&
+            snapshot.objects[0].match == private_logistics_panel::Match::Found &&
+            snapshot.objects[0].occurrences == 1) {
+            if (!InterlockedCompareExchange(&g_scheduleFault, 0, 0)) {
+                __try {
+                    private_logistics_schedule::Capture({PanelRead, nullptr}, snapshot.root, schedule);
+                } __except (EXCEPTION_EXECUTE_HANDLER) {
+                    InterlockedExchange(&g_scheduleFault, 1);
+                    schedule.status = private_logistics_schedule::Status::GuardedFault;
+                }
+            } else schedule.status = private_logistics_schedule::Status::GuardedFault;
+        }
+    }
     if (captured && epoch == InterlockedCompareExchange(&g_panelEpoch, 0, 0)) {
         g_panelLastMs = now; // inactive windows do not consume the capture slot
         const bool coalesce = paused && snapshot.root && g_panelCount && g_panelQueue[tail].paused &&
@@ -80,6 +105,7 @@ static void PanelCapture(void* context, void* window)
         if (coalesce) {
             auto& record = g_panelQueue[tail];
             record.snapshot = snapshot;
+            record.schedule = schedule;
             record.milliseconds = now;
             record.queueFullAtCapture = g_panelDropped;
             if (record.coalesced < 0x7FFFFFFFu) ++record.coalesced;
@@ -90,6 +116,7 @@ static void PanelCapture(void* context, void* window)
         } else {
             auto& record = g_panelQueue[(g_panelHead + g_panelCount) % 16];
             record.snapshot = snapshot;
+            record.schedule = schedule;
             record.epoch = epoch;
             record.sequence = ++g_panelSamples;
             record.milliseconds = record.firstMilliseconds = now;
@@ -128,6 +155,47 @@ static const char* PanelMatch(private_logistics_panel::Match m)
     default: return "unavailable";
     }
 }
+static void ScheduleObserverLog(const PanelRecord& record, bool gap)
+{
+    if (!g_scheduleReady) return;
+    if (gap || record.coalesced ||
+        (g_scheduleLastEpoch == record.epoch &&
+         g_scheduleLastCaptureDrops != record.queueFullAtCapture)) g_scheduleHistory.Break();
+    g_scheduleLastEpoch = record.epoch;
+    g_scheduleLastCaptureDrops = record.queueFullAtCapture;
+    const auto& fuel = record.snapshot;
+    const auto& s = record.schedule;
+    const uintptr_t home = fuel.count ? fuel.objects[0].homeCandidate : 0;
+    const auto d = g_scheduleHistory.Observe(s, (unsigned long long)record.epoch, fuel.root, home);
+    if (!d.emit) return;
+    Logf("[PANEL SCHEDULE] epoch=%ld sample=%u ms=%llu root=%p candidate_home=%p "
+         "status=%s baseline=%s observed_fields_changed=%d storage_changed=%d "
+         "row_index_changed=%d opaque_context_changed=%d begin680=%p end688=%p configs638=%p "
+         "raw_row_count=%llu captured_rows=%u index698=%d flag5fd=%u "
+         "raw4a0=%p raw610=%p raw650=%p fuel_valid=%d fuel_root_raw=%.9g "
+         "aggregate_litres_candidate=%.2f visibility=panel_only phase=post_render "
+         "native_event_coverage=unverified native_job_id=unverified buyer=unverified "
+         "completion=unverified exact_burn=0 billing=off",
+         record.epoch, record.sequence, (unsigned long long)record.milliseconds,
+         (void*)fuel.root, (void*)home, private_logistics_schedule::StatusName(s.status),
+         private_logistics_schedule::BaselineName(d.baseline), d.fields ? 1 : 0,
+         d.storage ? 1 : 0, d.index ? 1 : 0, d.context ? 1 : 0,
+         (void*)s.begin, (void*)s.end, (void*)s.configs,
+         (unsigned long long)(s.end >= s.begin ? (s.end - s.begin) / 8 : 0),
+         s.status == private_logistics_schedule::Status::Complete ? s.count : 0,
+         (int)s.index698, (unsigned)s.flag5fd, (void*)s.raw4a0, (void*)s.raw610, (void*)s.raw650,
+         fuel.aggregateValid ? 1 : 0, fuel.count ? (double)fuel.objects[0].raw : 0.0,
+         (double)fuel.litresCandidate);
+    if (s.status != private_logistics_schedule::Status::Complete) return;
+    for (unsigned i = 0; i < s.count; ++i) {
+        const auto& r = s.rows[i];
+        Logf("[PANEL SCHEDULE ROW] epoch=%ld sample=%u row=%u target_raw=%p "
+             "config_fields_read=%d flag00=%u value04=%.9g flagc8=%u valuecc=%.9g "
+             "target_role=unverified buyer=unverified",
+             record.epoch, record.sequence, i, (void*)r.target, r.configRead ? 1 : 0,
+             (unsigned)r.flag00, (double)r.value04, (unsigned)r.flagC8, (double)r.valueCC);
+    }
+}
 static void PanelObserverTick(void*, float, float)
 {
     PanelRecord record{};
@@ -164,6 +232,7 @@ static void PanelObserverTick(void*, float, float)
              "sample_ids=accepted_records_only simulation_event_coverage=unverified exact_burn=0",
              epoch, newDrops, (unsigned long long)firstDropMs,
              (unsigned long long)lastDropMs, dropped);
+    if (g_scheduleReady && (fault || cap || contention || newDrops)) g_scheduleHistory.Break();
     if (!have || record.epoch != InterlockedCompareExchange(&g_panelEpoch, 0, 0)) return;
     if (record.coalesced)
         Logf("[PANEL GAP] epoch=%ld sample=%u reason=paused_snapshot_coalescing "
@@ -197,6 +266,7 @@ static void PanelObserverTick(void*, float, float)
              (void*)o.metadata, o.quantityRead ? 1 : 0, (double)o.raw, (double)o.capacity,
              (void*)o.homeCandidate, PanelMatch(o.match), o.fleetIndex, o.occurrences);
     }
+    ScheduleObserverLog(record, fault || cap || contention || newDrops);
 }
 static bool PanelTargetMatches(void)
 {
@@ -216,6 +286,32 @@ static bool PanelTargetMatches(void)
         memcmp(g_exeBase + 0x90B07C, scale, sizeof(scale)) == 0 &&
         memcmp(g_exeBase + 0x8F3E98, format, sizeof(format)) == 0;
 }
+// Additional read-only schedule gate. A mismatch disables ONLY schedule reads;
+// it never installs another hook or prevents the unchanged fuel observer.
+struct ScheduleFingerprint { uintptr_t rva; unsigned size; BYTE bytes[40]; };
+static const ScheduleFingerprint g_scheduleFingerprints[] = {
+        {0x7D5550, 7, {0x4C,0x8B,0xBA,0x40,0x02,0x00,0x00}},
+        {0x7E356E, 4, {0x4C,0x8B,0x7D,0x40}},
+        {0x7E6904, 25, {0x49,0x8B,0x8F,0x88,0x06,0x00,0x00,0x49,0x2B,0x8F,0x80,0x06,0x00,0x00,0x48,0xC1,0xF9,0x03,0x41,0x38,0xBF,0xFD,0x05,0x00,0x00}},
+        {0x7E693C, 7, {0x49,0x39,0xB7,0xA0,0x04,0x00,0x00}},
+        {0x7E6BDB, 8, {0x49,0x83,0xBF,0x50,0x06,0x00,0x00,0x00}},
+        {0x7E815D, 32, {0x49,0x8B,0x87,0x80,0x06,0x00,0x00,0x48,0x8B,0x4D,0x38,0x4C,0x8B,0x34,0xC8,0x48,0x69,0xF2,0x98,0x01,0x00,0x00,0x49,0x03,0xB7,0x38,0x06,0x00,0x00,0x4D,0x85,0xF6}},
+        {0x7E81B3, 19, {0x41,0x80,0xBF,0xFD,0x05,0x00,0x00,0x00,0x74,0x06,0x4C,0x8B,0xF1,0x48,0x8B,0xF1,0x40,0x32,0xFF}},
+        {0x7E8438, 7, {0x41,0x39,0x87,0x98,0x06,0x00,0x00}},
+        {0x7E8CC6, 7, {0x4D,0x3B,0xB7,0x10,0x06,0x00,0x00}},
+        {0x7E8EB9, 7, {0x0F,0xB6,0x86,0xC8,0x00,0x00,0x00}},
+        {0x7E8ED2, 3, {0x80,0x3E,0x00}},
+        {0x7E8F07, 8, {0xF3,0x0F,0x10,0x86,0xCC,0x00,0x00,0x00}},
+        {0x7E9273, 5, {0xF3,0x0F,0x10,0x46,0x04}},
+};
+static bool ScheduleTargetMatches(void)
+{
+    for (const auto& f : g_scheduleFingerprints)
+        if (f.rva > g_exeSize || f.size > g_exeSize - f.rva ||
+            !ReadablePtr(g_exeBase + f.rva, f.size) ||
+            memcmp(g_exeBase + f.rva, f.bytes, f.size)) return false;
+    return true;
+}
 static void PanelObserverStart(void)
 {
     if (!g_panelObserverEnabled) { Logf("[PANEL FUEL] disabled by INI"); return; }
@@ -230,6 +326,10 @@ static void PanelObserverStart(void)
         memcmp(g_exeBase + 0x7D5460, expect, sizeof(expect))) {
         Logf("[PANEL FUEL] renderer prologue mismatch; no hook installed"); return;
     }
+    g_scheduleReady = g_scheduleObserverEnabled && ScheduleTargetMatches();
+    Logf("[PANEL SCHEDULE] enabled=%d fingerprint=%s mode=read_only_selected_fields "
+         "max_rows=16 last_flag5fd_row_config=not_read job_lifecycle=unverified billing=off",
+         g_scheduleObserverEnabled ? 1 : 0, g_scheduleReady ? "matched" : "disabled_or_mismatch");
     InitializeCriticalSection(&g_panelQueueLock);
     if (!g_simClock->registerTick(PanelObserverTick, nullptr)) {
         Logf("[PANEL FUEL] tick registration failed; no hook installed"); return;
