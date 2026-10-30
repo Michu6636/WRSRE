@@ -21,8 +21,9 @@ static std::vector<BYTE> image(0x90B080);
 static BYTE* g_exeBase=image.data();
 static std::size_t g_exeSize=image.size();
 static bool throwOnRead=false;
+static uintptr_t throwAtRead=0;
 static bool ReadablePtr(const void* p,std::size_t n) {
-    if(throwOnRead) throw 1;
+    if(throwOnRead || (throwAtRead && (uintptr_t)p==throwAtRead)) throw 1;
     const auto a=(uintptr_t)p,b=(uintptr_t)g_exeBase;
     return a>=b && a-b<=image.size() && n<=image.size()-(a-b);
 }
@@ -41,7 +42,7 @@ static void Logf(const char*,...) __attribute__((format(printf,1,2)));
 static void Logf(const char* format,...) {
     char line[2048];va_list args;va_start(args,format);std::vsnprintf(line,sizeof(line),format,args);va_end(args);logs.emplace_back(line);
 }
-static int g_panelObserverEnabled=1,g_billing=0,g_persistenceHandle=1;
+static int g_panelObserverEnabled=1,g_scheduleObserverEnabled=0,g_billing=0,g_persistenceHandle=1;
 static unsigned installed=0,originalCalls=0;
 static void Original(void*,void*) { ++originalCalls; }
 static bool InstallInlineHook(void*,void*,void** trampoline,const BYTE*,std::size_t n,const char*) {
@@ -60,6 +61,7 @@ static ClockApi* g_simClock=&api;
 #define __except(x) catch(...)
 #include "panel_fuel_runtime.h"
 
+#ifndef PANEL_RUNTIME_TEST_NO_MAIN
 int main() {
     Fixture fixture;
     for(const auto& r:fixture.regions) std::memcpy(g_exeBase+r.address,r.data.data(),r.data.size());
@@ -76,6 +78,9 @@ int main() {
     std::memcpy(g_exeBase+0x7D5460,prologue,sizeof(prologue));
     const BYTE scale[]={0,0,0x7A,0x44},format[]={0x25,0,0x2e,0,0x32,0,0x66,0,0x6c,0,0,0};
     std::memcpy(g_exeBase+0x90B07C,scale,sizeof(scale));std::memcpy(g_exeBase+0x8F3E98,format,sizeof(format));
+    for(const auto& f:g_scheduleFingerprints) std::memcpy(g_exeBase+f.rva,f.bytes,f.size);
+    CHECK(ScheduleTargetMatches());
+    g_exeBase[0x7E8438]^=1;CHECK(!ScheduleTargetMatches());g_exeBase[0x7E8438]^=1;
     PanelObserverStart();CHECK(installed==1 && tick && g_panelStarted);
     std::puts("PASS runtime_install_fingerprint");
     void* context=(void*)ptr(fixture.context);void* window=(void*)ptr(fixture.window);
@@ -146,3 +151,5 @@ int main() {
     std::puts("PASS runtime_changed_data_refused");
     std::puts("8 host-shim scenarios PASS (not Windows ABI/SEH or a DLL)");return 0;
 }
+
+#endif
