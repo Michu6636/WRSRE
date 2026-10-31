@@ -40,7 +40,7 @@ class ScheduleObserverTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         result = subprocess.run([str(exe)], capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertIn('10 schedule runtime host-shim scenarios PASS', result.stdout)
+        self.assertIn('13 schedule runtime host-shim scenarios PASS', result.stdout)
 
     def test_native_fingerprints_match_existing_raw_bytes(self):
         raw = (ROOT / 'docs/private-logistics-runtime/RAW_EXPORTS_VEHICLE_DETAIL_RENDERER.md').read_bytes().decode('utf-16')
@@ -91,7 +91,7 @@ class ScheduleObserverTest(unittest.TestCase):
         history = header.split('class History {', 1)[1]
         self.assertNotIn('m.Get(', history)  # cached-value comparisons only
         self.assertEqual(header.count('m.Get('), 13)  # native read sites unchanged
-        self.assertIn('0.18.9-schedule-gap-endpoints', cpp)
+        self.assertIn('0.18.10-schedule-classification', cpp)
         self.assertIn('if (d.endpointCompared && d.endpointAcrossGap)', runtime)
         self.assertIn('compared_across_gap=1 continuity_valid=0', runtime)
         self.assertIn('native_event_time=unknown', runtime)

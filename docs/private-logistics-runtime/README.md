@@ -1,5 +1,22 @@
 # Private logistics — runtime observation work package
 
+> **v0.18.10 captured-value classification implemented (2026-10-31).**
+> Separate count/targets, availability, flags, exact scalars and active-index-only
+> observations; office-only/load-unload labels are patterns, not native jobs.
+> Test6 replay distinguishes replacement79 from scalar-only91; original gap
+> safeguards retained.33schedule/104suite tests PASS; sanitized28reader+13runtime
+> cases PASS. No native read/default/tracker/payment changes. Full final source,
+> actual output and Windows guide in cumulative. No repeated full refueling test
+> needed; new DLL build/smoke check pending. Earlier notices are historical.
+
+> **TEST6 PASSES: v0.18.9 sampled-list/pause reporting (2026-10-31).**
+> Actual game log confirms version/gates and correct gap clearing with prior
+> rows, unchanged pause comparisons, same-count replacement and final clearing.
+> Scalar-only adjustment at sample91 also raises the raw content flag: do not
+> treat every field change as a new trip. Full review/script/results/log archive
+> in cumulative. No unchanged-probe retest or native research needed this round;
+> next is change classification before accounting. No runtime edits; paymentsOFF.
+
 > **v0.18.9 changed diagnostic implemented (2026-10-31).** Last-valid
 > endpoint comparison now reports content differences across pause/drop gaps
 > with continuity_valid=0, preserving existing baseline safeguards. No native

@@ -115,6 +115,56 @@ struct Delta {
     unsigned previousSample=0;
     std::uint64_t previousMs=0;
 };
+// Pure classification of captured values. These labels are NOT native jobs,
+// resource identities, refuelling states or billable trip boundaries.
+enum class Pattern { Unavailable, Empty, OfficeOnly, LoadUnload, Other };
+inline const char* PatternName(Pattern p) {
+    switch(p) {
+        case Pattern::Empty:return "empty";
+        case Pattern::OfficeOnly:return "office_only_pattern";
+        case Pattern::LoadUnload:return "load_unload_pattern";
+        case Pattern::Other:return "other_pattern";
+        default:return "unavailable";
+    }
+}
+inline Pattern ClassifyPattern(const Snapshot& s,Address home) {
+    if(s.status!=Status::Complete || s.count>MaxRows) return Pattern::Unavailable;
+    if(!s.count) return Pattern::Empty;
+    if(!home) return Pattern::Other;
+    if(s.count==1 && s.rows[0].target==home && s.rows[0].configRead &&
+       !s.rows[0].flag00 && !s.rows[0].flagC8) return Pattern::OfficeOnly;
+    bool load=false,unload=false;
+    for(unsigned i=0;i<s.count;++i) {
+        const auto& r=s.rows[i];
+        if(!r.configRead || !r.target || r.target==home) continue;
+        load=load || (r.flag00==1 && r.flagC8==0);
+        unload=unload || (r.flag00==0 && r.flagC8==1);
+    }
+    return load && unload ? Pattern::LoadUnload : Pattern::Other;
+}
+struct FieldChanges {
+    bool comparable=false,count=false,targets=false,availability=false,flags=false,scalars=false;
+    bool Structure() const {return count || targets;}
+    bool SettingsOnly() const {return (flags || scalars) && !Structure() && !availability;}
+};
+inline FieldChanges ClassifyChanges(const Snapshot& a,const Snapshot& b) {
+    FieldChanges c;
+    if(a.status!=Status::Complete || b.status!=Status::Complete ||
+       a.count>MaxRows || b.count>MaxRows) return c;
+    c.comparable=true;c.count=a.count!=b.count;
+    const unsigned common=a.count<b.count?a.count:b.count;
+    for(unsigned i=0;i<common;++i) {
+        const auto& x=a.rows[i];const auto& y=b.rows[i];
+        c.targets=c.targets || x.target!=y.target;
+        c.availability=c.availability || x.configRead!=y.configRead;
+        // Missing/suppressed config fields are not observed zeros.
+        if(!x.configRead || !y.configRead) continue;
+        c.flags=c.flags || x.flag00!=y.flag00 || x.flagC8!=y.flagC8;
+        // Preserve exact captured scalars; no epsilon or rounding policy.
+        c.scalars=c.scalars || x.value04!=y.value04 || x.valueCC!=y.valueCC;
+    }
+    return c;
+}
 // One selected vehicle's previous *values*, never a retained native object
 // consumer. Windows are transient and are deliberately not identity keys.
 class History {

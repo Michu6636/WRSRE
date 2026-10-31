@@ -190,6 +190,29 @@ static void ScheduleObserverLog(const PanelRecord& record, bool gap)
          fuel.aggregateValid ? 1 : 0, fuel.count ? (double)fuel.objects[0].raw : 0.0,
          (double)fuel.litresCandidate);
     if (s.status != private_logistics_schedule::Status::Complete) return;
+    const auto changes = d.endpointCompared
+        ? private_logistics_schedule::ClassifyChanges(previous, s)
+        : private_logistics_schedule::FieldChanges{};
+    const auto currentPattern = private_logistics_schedule::ClassifyPattern(s, home);
+    const auto previousPattern = d.endpointCompared
+        ? private_logistics_schedule::ClassifyPattern(previous, home)
+        : private_logistics_schedule::Pattern::Unavailable;
+    const bool indexOnly = d.endpointCompared && d.endpointIndex && !d.endpointFields &&
+                           !d.endpointStorage && !d.endpointContext;
+    Logf("[PANEL SCHEDULE CLASSIFICATION] epoch=%ld sample=%u previous_sample=%u "
+         "root=%p comparison_available=%d compared_across_gap=%d "
+         "previous_pattern=%s current_pattern=%s row_count_changed=%d ordered_targets_changed=%d "
+         "structure_changed=%d config_availability_changed=%d task_flags_changed=%d "
+         "scalar_settings_changed=%d settings_only=%d active_index_only=%d "
+         "comparison_scope=captured_endpoints pattern_semantics=observed_flags_only "
+         "resource_identity=unverified native_job_boundary=unverified billing=off",
+         record.epoch, record.sequence, d.previousSample, (void*)fuel.root,
+         changes.comparable ? 1 : 0, d.endpointAcrossGap ? 1 : 0,
+         private_logistics_schedule::PatternName(previousPattern),
+         private_logistics_schedule::PatternName(currentPattern),
+         changes.count ? 1 : 0, changes.targets ? 1 : 0, changes.Structure() ? 1 : 0,
+         changes.availability ? 1 : 0, changes.flags ? 1 : 0, changes.scalars ? 1 : 0,
+         changes.SettingsOnly() ? 1 : 0, indexOnly ? 1 : 0);
     if (d.endpointCompared && d.endpointAcrossGap) {
         Logf("[PANEL SCHEDULE ENDPOINT] epoch=%ld sample=%u ms=%llu root=%p candidate_home=%p "
              "previous_sample=%u previous_ms=%llu previous_rows=%u current_rows=%u "
@@ -355,7 +378,7 @@ static void PanelObserverStart(void)
     g_scheduleReady = g_scheduleObserverEnabled && ScheduleTargetMatches();
     Logf("[PANEL SCHEDULE] enabled=%d fingerprint=%s mode=read_only_selected_fields "
          "max_rows=16 last_flag5fd_row_config=not_read gap_endpoints=enabled_cached_values_only "
-         "job_lifecycle=unverified billing=off",
+         "classification=enabled_captured_values job_lifecycle=unverified billing=off",
          g_scheduleObserverEnabled ? 1 : 0, g_scheduleReady ? "matched" : "disabled_or_mismatch");
     InitializeCriticalSection(&g_panelQueueLock);
     if (!g_simClock->registerTick(PanelObserverTick, nullptr)) {

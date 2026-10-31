@@ -1,6 +1,8 @@
 // private_logistics - what a private company earns, and what it pays.
 //
 // ---------------------------------------------------------------------------
+// v0.18.10 updates: captured target/flag/scalar change classification and
+// conservative office-only/load-unload patterns; logging only, no job/billing events.
 // v0.18.9 updates: descriptive task-list endpoint comparisons across diagnostic
 // gaps, using captured values only. Original continuity/billing guards unchanged.
 // v0.18.8: fingerprint-gated read-only schedule observations; job lifecycle unverified.
@@ -485,7 +487,7 @@ static char   gFuelResource[64] = "fuel";  // resolved through resource_pricing
 static double gBasketsPerTrip   = 0.80;    // CPI fallback, in daily survival baskets
 static double gBasketsPerTonne  = 0.02;
 
-#define PL_VERSION "0.18.9-schedule-gap-endpoints"
+#define PL_VERSION "0.18.10-schedule-classification"
 static int g_panelObserverEnabled = 1;
 static int g_scheduleObserverEnabled = 1;
 static void PanelObserverLoading(void);
