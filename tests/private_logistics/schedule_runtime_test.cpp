@@ -36,12 +36,12 @@ int main() {
     auto contains=[&](const char* text){for(const auto& l:logs)if(l.find(text)!=std::string::npos)return true;return false;};
     logs.clear();capture();CHECK(logs.empty());CHECK(g_panelCount==1);
     CHECK(g_panelQueue[g_panelHead].schedule.status==private_logistics_schedule::Status::Complete);
-    drain();CHECK(logs.size()==5 && contains("baseline=first_observation") && contains("target_raw=0xdead0000"));
+    drain();CHECK(logs.size()==6 && contains("baseline=first_observation") && contains("target_raw=0xdead0000"));
     CHECK(contains("native_job_id=unverified buyer=unverified completion=unverified"));
     std::puts("PASS schedule_runtime_same_post_render_record_deferred_rows_and_truthful_labels");
     logs.clear();capture();drain();CHECK(logs.size()==2); // unchanged: fuel/object only
     put32(fixture.root+0x698,1);logs.clear();capture();drain();
-    CHECK(logs.size()==5 && contains("observed_fields_changed=0 storage_changed=0 row_index_changed=1"));
+    CHECK(logs.size()==6 && contains("observed_fields_changed=0 storage_changed=0 row_index_changed=1"));
     std::puts("PASS schedule_runtime_unchanged_suppressed_and_row_index_not_job_end");
     paused=true;capture();putFloat(configs+4,0.25f);capture();
     CHECK(g_panelCount==1 && g_panelQueue[g_panelHead].schedule.rows[0].value04==0.25f);
@@ -72,10 +72,45 @@ int main() {
     put(fixture.root+0x688,ptr(targets+16));logs.clear();capture();drain();
     CHECK(contains("baseline=none observed_fields_changed=1") && !contains("[PANEL SCHEDULE ENDPOINT]"));
     std::puts("PASS schedule_runtime_clear_across_pause_old_rows_and_recovery");
+    // Classification is descriptive, using only the existing captured row fields.
+    g_exeBase[configs]=1;g_exeBase[configs+0xC8]=0;
+    g_exeBase[configs+0x198]=0;g_exeBase[configs+0x198+0xC8]=1;
+    logs.clear();capture();drain();CHECK(contains("current_pattern=load_unload_pattern"));
+    putFloat(configs+4,0.509832323f);logs.clear();capture();drain();
+    CHECK(contains("structure_changed=0 config_availability_changed=0 task_flags_changed=0 scalar_settings_changed=1 settings_only=1"));
+    CHECK(contains("native_job_boundary=unverified billing=off"));
+    put(targets+8,Address(0xABCF0000));logs.clear();capture();drain();
+    CHECK(contains("row_count_changed=0 ordered_targets_changed=1 structure_changed=1"));
+    CHECK(contains("settings_only=0"));
+    put32(fixture.root+0x698,0);logs.clear();capture();drain();
+    CHECK(contains("active_index_only=1") && contains("scalar_settings_changed=0 settings_only=0"));
+    g_exeBase[configs]=0;logs.clear();capture();drain();
+    CHECK(contains("structure_changed=0 config_availability_changed=0 task_flags_changed=1 scalar_settings_changed=0 settings_only=1"));
+    g_exeBase[configs]=1;logs.clear();capture();drain();
+    g_exeBase[fixture.root+0x5FD]=1;logs.clear();capture();drain();
+    CHECK(contains("structure_changed=0 config_availability_changed=1 task_flags_changed=0 scalar_settings_changed=0 settings_only=0"));
+    g_exeBase[fixture.root+0x5FD]=0;logs.clear();capture();drain();
+    CHECK(contains("config_availability_changed=1 task_flags_changed=0 scalar_settings_changed=0"));
+    std::puts("PASS schedule_runtime_classifies_scalar_target_and_index_changes");
+    put(fixture.root+0x688,ptr(targets+8));put(targets,ptr(fixture.home));
+    g_exeBase[configs]=0;g_exeBase[configs+0xC8]=0;
+    logs.clear();capture();drain();CHECK(contains("current_pattern=office_only_pattern"));
+    put(fixture.root+0x688,ptr(targets));logs.clear();capture();drain();
+    CHECK(contains("previous_pattern=office_only_pattern current_pattern=empty"));
+    put(fixture.root+0x688,ptr(targets+16));put(targets,Address(0xDEAD0000));g_exeBase[configs]=1;
+    logs.clear();capture();drain();CHECK(contains("current_pattern=load_unload_pattern"));
+    std::puts("PASS schedule_runtime_classifies_office_empty_and_load_unload_patterns");
+    paused=true;capture();putFloat(configs+4,0.51f);capture();logs.clear();paused=false;drain();
+    CHECK(contains("comparison_available=1 compared_across_gap=1"));
+    CHECK(contains("structure_changed=0 config_availability_changed=0 task_flags_changed=0 scalar_settings_changed=1 settings_only=1"));
+    CHECK(contains("compared_across_gap=1 continuity_valid=0"));
+    std::puts("PASS schedule_runtime_classification_preserves_gap_semantics");
     PanelObserverLoading();drain();logs.clear();capture();drain();CHECK(contains("baseline=load_epoch"));
     CHECK(!contains("[PANEL SCHEDULE ENDPOINT]"));
+    CHECK(contains("comparison_available=0") && contains("previous_pattern=unavailable"));
     put(fixture.fleet,Address(0));logs.clear();capture();drain();
     CHECK(contains("status=not_unique_road_fleet_root") && !contains("[PANEL SCHEDULE ROW]"));
+    CHECK(!contains("[PANEL SCHEDULE CLASSIFICATION]"));
     put(fixture.fleet,ptr(fixture.root));logs.clear();capture();drain();CHECK(contains("baseline=diagnostic_gap"));
     put(fixture.fleet+8,ptr(fixture.root));put(fixture.home+0xC78,ptr(fixture.fleet+16));
     logs.clear();capture();drain();CHECK(contains("status=not_unique_road_fleet_root"));
@@ -99,5 +134,5 @@ int main() {
     CHECK(g_scheduleFault && contains("guarded_schedule_fault_disabled") && contains("[PANEL FUEL]") && !g_panelFault);
     logs.clear();capture();drain();CHECK(contains("guarded_schedule_fault_disabled") && !g_panelFault);
     std::puts("PASS schedule_runtime_fault_latch_isolated_from_fuel_not_a_windows_seh_test");
-    std::puts("10 schedule runtime host-shim scenarios PASS (not Windows ABI/SEH or a DLL)");
+    std::puts("13 schedule runtime host-shim scenarios PASS (not Windows ABI/SEH or a DLL)");
 }

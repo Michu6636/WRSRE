@@ -228,6 +228,69 @@ TEST(schedule_endpoint_equal_endpoints_do_not_invent_hidden_aba) {
     CHECK(!d.endpointIndex && !d.endpointStorage && !d.endpointContext);
     CHECK(!d.fields && !d.index && d.baseline==sch::Baseline::Gap);
 }
+TEST(schedule_classification_scalar_only_preserves_exact_value) {
+    ScheduleFixture f;auto a=f.Now(),b=a;
+    a.rows[0].value04=0.509669125f;b.rows[0].value04=0.509832323f;
+    auto c=sch::ClassifyChanges(a,b);
+    CHECK(c.comparable && c.scalars && c.SettingsOnly() && !c.Structure() && !c.flags);
+    CHECK(!c.targets && !c.count && !c.availability);
+    b=a;b.rows[0].value04=std::nextafter(a.rows[0].value04,1.0f);
+    CHECK(sch::ClassifyChanges(a,b).scalars); // even one ULP is retained
+    b=a;CHECK(!sch::ClassifyChanges(a,b).SettingsOnly());
+    b.rows[0].valueCC=std::nextafter(a.rows[0].valueCC,1.0f);
+    CHECK(sch::ClassifyChanges(a,b).scalars);
+}
+TEST(schedule_classification_structure_not_storage_or_index) {
+    ScheduleFixture f;auto a=f.Now(),b=a;
+    b.rows[1].target=0xABCE0000;auto c=sch::ClassifyChanges(a,b);
+    CHECK(c.targets && c.Structure() && !c.count && !c.SettingsOnly());
+    b=a;b.begin+=0x100;b.end+=0x100;b.configs+=0x100;++b.index698;++b.raw610;
+    c=sch::ClassifyChanges(a,b);
+    CHECK(c.comparable && !c.Structure() && !c.SettingsOnly() && !c.availability);
+    b=a;b.count=0;c=sch::ClassifyChanges(a,b);
+    CHECK(c.count && c.Structure() && !c.targets && !c.flags && !c.scalars);
+    b=a;const auto first=b.rows[0];b.rows[0]=b.rows[1];b.rows[1]=first;
+    CHECK(sch::ClassifyChanges(a,b).targets); // order matters
+}
+TEST(schedule_classification_flags_and_availability_are_separate) {
+    ScheduleFixture f;auto a=f.Now(),b=a;b.rows[0].flag00=0;
+    auto c=sch::ClassifyChanges(a,b);CHECK(c.flags && !c.scalars && c.SettingsOnly());
+    b=a;b.rows[0].configRead=false;b.rows[0].flag00=0;b.rows[0].value04=0;
+    c=sch::ClassifyChanges(a,b);
+    CHECK(c.availability && !c.flags && !c.scalars && !c.SettingsOnly());
+    a=b;b.rows[0].value04=1;b.rows[0].flag00=1;c=sch::ClassifyChanges(a,b);
+    CHECK(!c.flags && !c.scalars); // unavailable values are not observed zeros
+    b.status=sch::Status::Unreadable;CHECK(!sch::ClassifyChanges(a,b).comparable);
+    b=a;b.count=sch::MaxRows+1;CHECK(!sch::ClassifyChanges(a,b).comparable);
+}
+TEST(schedule_pattern_load_unload_is_conservative) {
+    ScheduleFixture f;auto s=f.Now();
+    CHECK(sch::ClassifyPattern(s,f.home)==sch::Pattern::LoadUnload);
+    CHECK(sch::ClassifyPattern(s,0)==sch::Pattern::Other);
+    s.rows[0].target=f.home;CHECK(sch::ClassifyPattern(s,f.home)==sch::Pattern::Other);
+    s=f.Now();s.rows[0].configRead=false;CHECK(sch::ClassifyPattern(s,f.home)==sch::Pattern::Other);
+    s=f.Now();s.rows[0].flag00=2;CHECK(sch::ClassifyPattern(s,f.home)==sch::Pattern::Other);
+    s=f.Now();s.rows[0].flagC8=1;CHECK(sch::ClassifyPattern(s,f.home)==sch::Pattern::Other);
+    s=f.Now();s.rows[1].target=0;CHECK(sch::ClassifyPattern(s,f.home)==sch::Pattern::Other);
+}
+TEST(schedule_pattern_office_empty_and_invalid_do_not_invent_jobs) {
+    ScheduleFixture f;auto s=f.Now();s.count=1;s.rows[0].target=f.home;
+    s.rows[0].flag00=0;s.rows[0].flagC8=0;
+    CHECK(sch::ClassifyPattern(s,f.home)==sch::Pattern::OfficeOnly);
+    s.rows[0].configRead=false;CHECK(sch::ClassifyPattern(s,f.home)==sch::Pattern::Other);
+    s.count=0;CHECK(sch::ClassifyPattern(s,0)==sch::Pattern::Empty);
+    s.status=sch::Status::Unreadable;CHECK(sch::ClassifyPattern(s,f.home)==sch::Pattern::Unavailable);
+    s.status=sch::Status::Complete;s.count=sch::MaxRows+1;
+    CHECK(sch::ClassifyPattern(s,f.home)==sch::Pattern::Unavailable);
+}
+TEST(schedule_classification_gap_does_not_override_original_guard) {
+    ScheduleFixture f;auto s=f.Now();sch::History h;h.Observe(s,1,f.root,f.home);
+    const auto prior=h.LastValidValues();h.Break();s.rows[0].value04=0.509832323f;
+    auto d=h.Observe(s,1,f.root,f.home);
+    const auto c=sch::ClassifyChanges(prior,s);
+    CHECK(d.endpointAcrossGap && !d.fields && c.SettingsOnly() && !c.Structure());
+    CHECK(sch::ClassifyPattern(s,f.home)==sch::Pattern::LoadUnload);
+}
 int main(int argc,char** argv) {
     unsigned count=0;
 #define RUN(name) do {if(argc==1 || std::string(argv[1])==#name){name();++count;std::printf("PASS %s\n",#name);}} while(0)
@@ -253,5 +316,11 @@ int main(int argc,char** argv) {
     RUN(schedule_endpoint_invalid_is_not_an_empty_schedule);
     RUN(schedule_endpoint_invalid_identity_cannot_resurrect_cache);
     RUN(schedule_endpoint_equal_endpoints_do_not_invent_hidden_aba);
+    RUN(schedule_classification_scalar_only_preserves_exact_value);
+    RUN(schedule_classification_structure_not_storage_or_index);
+    RUN(schedule_classification_flags_and_availability_are_separate);
+    RUN(schedule_pattern_load_unload_is_conservative);
+    RUN(schedule_pattern_office_empty_and_invalid_do_not_invent_jobs);
+    RUN(schedule_classification_gap_does_not_override_original_guard);
     CHECK(count);std::printf("%u schedule host scenarios PASS (not native lifecycle validation)\n",count);
 }

@@ -2,6 +2,10 @@
 
 ## Status
 
+**v0.18.10 CLASSIFICATION IMPLEMENTED (2026-10-31):** `0.18.10-schedule-classification` separates captured count/ordered targets, config availability, flags and exact scalar changes from stop-index progression. Descriptive office-only/load-unload/empty patterns, NOT native job/refuel boundaries. Test6 replay distinguishes replacement79 from scalar-only91; original flags and pause guards preserved.33schedule/104suite tests PASS; ASan+UBSan28reader+13runtime cases PASS. Native reads/capture/queue/fingerprints and INI values unchanged; payments OFF. Complete source/results/replay/guide appended below. New Windows DLL build/game smoke check pending; no repeat full refueling run needed. Older statuses are historical.
+
+**LIVE TEST6 PASSES v0.18.9PROBE SCOPE (2026-10-31):** changed DLL/version/gate confirmed in actual game.16complete emitted schedule snapshots;7pause gaps/35discarded paused snapshots;6endpoint comparisons. Across-gap3->0 correctly reports difference and all3old rows;5unchanged gaps stay content-difference0. Same-count big-grocery->small-store replacement captured at79without relocation; final clearing at121captured normally;4index-only advances remain separate. Screenshots24/25/26match462.65/433.78/394.79L; duplicate26notindependent. NEW: sample91only captured difference is small value04update with stable targets/count/index; generic fields-changed must NOT automatically mean newtrip. Full source/results/raw evidence/lossless log archived below. No repeat unchanged-probe test/native query needed; next classification before accounting, paymentsOFF. No production changes this review. Older pending-build/test notices are historical.
+
 **v0.18.9 IMPLEMENTED — Windows build/game test pending (2026-10-31):** user authorized proceeding. Changed diagnostic0.18.9-schedule-gap-endpoints adds descriptive last-valid endpoint comparison after pauses/gaps and cached previous-row logs; original baseline guards remain. No new native reads/offsets/hooks, billing/default/permission/tracker changes.27schedule tests and98private-logistics suite testsPASS; ASan+UBSan22reader+10runtime scenariosPASS;13-emitted-endpoint test5 replay correctly marks replacement(sample53) and clearing(sample120) while preserving all original flags. Full final modified source/actual outputs/test guide appended. Next: publish/pull, Windowsbuild/deploy, verify0.18.9startup, then a short paused-checkpoint run. No native DLL built/game test performed here. Older statuses are historical.
 
 **LIVE TEST5 REVIEW (2026-10-31):** user screenshots19–23 and tesmioloader-5.log match empty->three food rows->same three rows during refill->three changed electronics rows->empty. Same-count replacement changes delivery target and load scalar while all list/config addresses stay fixed. Four index-only advances correctly remain non-content changes. However paused-coalescing rebaselines suppress delta flags for replacement(sample53) and clearing(sample120); raw rows show both.13complete emitted schedule snapshots,8pause gaps/109discarded snapshots. Next is separate descriptive last-valid endpoint comparison across gaps, preserving continuity/billing safeguards—not another native-ID investigation or mandatory vector extension. Full final script/actual results/raw evidence/lossless original log embedded below. No runtime changes; no new DLL/game test/PR; billingOFF. Older notices are historical.
@@ -98395,4 +98399,7076 @@ sample=93 rows=3 old_fields=0 endpoint_compared=1 across_gap=1 endpoint_fields_d
 sample=96 rows=3 old_fields=0 endpoint_compared=1 across_gap=0 endpoint_fields_differ=0 previous_sample=93
 sample=120 rows=0 old_fields=0 endpoint_compared=1 across_gap=1 endpoint_fields_differ=1 previous_sample=96
 PASS test5 endpoint replay: original flags preserved; replacement and clearing compared across gaps. No native/DLL validation.
+```
+
+
+---
+
+## Live test6 — v0.18.9 actual game validation and scalar-only change finding (2026-10-31)
+
+The user ran the changed0.18.9probe. Actual task replacement, normal clearing and gap clearing are captured correctly; raw scalar-only change is separately identified below. No production source changed in this analysis.
+
+### Game-test review and conclusion
+
+Artifact `.cache/tesmioloader6-review.md`; bytes=7335; SHA256=`db8a6b6b69b221e9a8cf4866baa9602cc752e2fbb84b57f01892f6d085c42fcb`.
+
+```markdown
+## Live test6 — v0.18.9 task-list/pause reporting PASSES its scoped game test (2026-10-31)
+
+Inputs: tesmioloader-6.log plus image-24.png,image-25.png,image-26.png. The final image was supplied twice under the same filename; treat it as one unique screenshot, not independent evidence of two transitions. Actual active branch arena/b078f92d-wrsre; production tree unchanged during this analysis.
+
+### Version and safety confirmation
+
+Log lines48/134/154 confirm the game loaded `0.18.9-schedule-gap-endpoints`, schedule enabled=1,fingerprint=matched,gap_endpoints=enabled_cached_values_only,billing=0,dry_run=1. This is real-game validation of the changed probe, not an unchanged0.18.8 replay. All16 emitted schedule snapshots are complete_selected_fields. One vehicle/root `000001AF711E3BA0` and home `000001AF97EAD4D0` throughout. No schedule guarded fault, fingerprint mismatch or capture-cap record found. This does not claim every native event was sampled.
+
+### Screenshot/log match
+
+| Screenshot | UI checkpoint | Matched emitted sample / line |
+| --- | --- | --- |
+| image24,462.65L | Warehouse load100% food; big grocery unload100%; office Nothing; first row active | sample35,line1370; same list first recorded after refill at sample34,462.79L |
+| image25,433.78L | Warehouse load50% electronics; small store unload100%; office Nothing; first row active | sample80,line3011; actual selected-field replacement already recorded at sample79,line2989,433.82L |
+| image26,394.79L | No task rows displayed; truck stopped | Empty state first recorded at sample121,line4039; later identical no-row screenshot is not a separate event |
+
+Matches use visible fuel readings, row order and names, not screenshot timestamps (none supplied). Log prefixes represent drain wall-clock times, not exact native mutation times. Name/resource labels come from the UI; the reader logs raw target references and selected scalar/flag fields, not decoded resource-vector IDs. The hovered send-back tooltip does not prove a button was clicked, cancellation or the cause of the initial clearing.
+
+### Behaviors validated in the new DLL
+
+1. **Change across a pause is now explicitly reported.** Earlier in the log, sample1 contains3food rows, then sample2 is empty. Line816 has previous_sample=1,previous_rows=3,current_rows=0,endpoint_fields_differ=1,compared_across_gap=1,continuity_valid=0. Lines817–819 contain all3cached previous rows matching sample1. Thus the exact defect from test5 is fixed for an actual paused change, while the legacy delta flags correctly remain zero on the gap baseline.
+2. **Unchanged pauses do not invent content changes.** Six ENDPOINT records total: sample2 differs, while samples6/18/22/35/80 all have endpoint_fields_differ=0. All6 explicitly have continuity_valid=0. Their previous_sample/previous_ms metadata matches the corresponding earlier accepted PANEL FUEL record, including previously quiet samples5/17/21.
+3. **Same-count replacement works without relocation.** At sample79 the count remains3 and begin/end/config addresses stay `000001AFA9DC77B0`/`000001AFA9DC77C8`/`000001AFAC244EA0`. Row0 stays warehouse `000001AF97EABFC0`; row1 changes big-grocery-correlated reference `000001AF97EA4160` -> small-store-correlated `000001AF97EA0230`; row2 stays home. Raw row0 value04 changes1 ->0.509669125. The log correctly says observed_fields_changed=1,storage_changed=0,row_index_changed=1. This was captured before the next paused screenshot; its later unchanged ENDPOINT is correct, not a missed replacement.
+4. **Stop progression stays independent.** Samples53/73/93/109 advance index with observed_fields_changed=0. These are not new task-list content events.
+5. **Final clearing is captured.** Sample121 has count0,baseline=none,observed_fields_changed=1,storage_changed=1. This clearing did not require the across-gap path. Raw index remains2 even though there are no rows, reaffirming that index alone is not active-task identity.
+
+There are7pause/coalescing gaps with35discarded paused snapshots,6descriptive endpoint comparisons,3cached previous-row records. Native-event continuity is explicitly not asserted. No request to repeat this unchanged build or avoid pausing is warranted.
+
+### Single-row/refueling observation
+
+Before the supplied image24, the logged list goes3 ->0 ->1 ->3. At sample11 the sole row references the same office/home pointer, with flag00=0/flagC8=0. The one-row state remains the last logged selected-field state as fuel changes83.31L(sample32) ->221.62L(sample33), then sample34 records3goods rows at462.79L. This is consistent with the user's earlier report of a one-row phase around refueling/default travel, but does not prove that this row is a fuel-station object, a distinct task kind or a native job boundary. Do not equate any nonempty list with a goods assignment. Test5 did not show a one-row phase; test6 does.
+
+### Important new finding: raw settings can change without changed targets
+
+Sample91,line3235, sets observed_fields_changed=1 while all captured targets, count,index,flags,other scalar fields,context and storage remain identical to sample80. The ONLY captured row-field difference is row0 value04:0.509669125 ->0.509832323. This is real captured selected-field change, not a bug in exact comparison. Both values would be consistent with a roughly50% UI setting, but the cause of the native adjustment is not determined here. Unobserved resource-vector changes also cannot be excluded by this probe.
+
+Consequently, a generic observed_fields_changed=1 cannot automatically start a trip or settle the preceding one. Separate captured structural differences(count/ordered targets) from flag/scalar-setting differences and active-row progression. Do not silently drop precision with an arbitrary epsilon or treat a raw scalar update as a proved replacement. Even stable captured targets do not prove an unchanged native assignment/generation.
+
+### Verdict and next step
+
+**PASS for the requested sampled task-list change detection and pause-gap reporting.** The location/content approach works for this truck/test. No explicit native start/end/jobID theorem was required to validate these observations. The previous 'Windows/game test pending' status for0.18.9 is superseded by this receipt; this test does not validate Windows SEH fault handling or all fleet/lifecycle coverage.
+
+No additional unchanged-probe test or Ghidra investigation is needed for this round. Next work, before using these logs for accounting, is classification of structural versus captured-setting-only changes and goods-pattern versus office/default-only states. Existing flags should remain raw facts; no billable-trip boundary, guaranteed identical-replacement detection, all-events coverage or exact fuel burn is approved by this result. Payments remain off. This review makes no production change or new build, and no commit/push/PR operation.
+
+Complete final analysis source, actual stdout, selected original lines, image provenance and a gzip/Base64 lossless original log archive follow in the same cumulative. Input607,317bytes,SHA256 dfe40c030ebc9b2c9deffa446d8353713d7cbe1aecb66f3140368f017894383d. Actual parser/consistency assertions pass; no additional host/plugin tests were run. Shutdown save-write errors in the log are not proof of a successful manual save/reload.
+```
+
+### Complete final read-only analysis source
+
+Artifact `.cache/analyze_tesmioloader6.py`; bytes=7346; SHA256=`fa5751b308df6b78ee142ac504c8c62c30fb2afd52cba2c4992ee9e9f72c9c3d`.
+
+```python
+"""Read-only analysis of user test6: emitted rows + endpoint records.
+Usage: python .cache/analyze_tesmioloader6.py PATH_TO_LOG
+Checks supplied log consistency, NOT exact native events, job IDs or billing.
+"""
+from pathlib import Path
+from collections import defaultdict,Counter
+import sys,re,hashlib
+raw=Path(sys.argv[1]).read_bytes();text=raw.decode('utf-8-sig');lines=text.splitlines()
+records=[];rows=defaultdict(list);prior_rows=defaultdict(list);endpoints=[];gaps=[];fuel={}
+for number,line in enumerate(lines,1):
+    d=dict(re.findall(r'\b([A-Za-z][A-Za-z_0-9]*)=([^ \r\n]+)',line))
+    if '[PANEL SCHEDULE PREVIOUS ROW]' in line:prior_rows[(d['epoch'],d['compared_to_sample'])].append((number,d,line))
+    elif '[PANEL SCHEDULE ROW]' in line:rows[(d['epoch'],d['sample'])].append((number,d,line))
+    elif '[PANEL SCHEDULE ENDPOINT]' in line:endpoints.append((number,d,line))
+    elif '[PANEL SCHEDULE]' in line and 'sample' in d:records.append((number,d,line))
+    elif '[PANEL GAP]' in line:gaps.append((number,d,line))
+    elif '[PANEL FUEL]' in line and 'sample' in d:fuel[(d['epoch'],d['sample'])]=d
+assert 'plugin   private_logistics 0.18.9-schedule-gap-endpoints' in text
+assert 'enabled=1 fingerprint=matched mode=read_only_selected_fields' in text
+assert 'gap_endpoints=enabled_cached_values_only' in text
+assert 'billing=0 dry_run=1' in text
+assert len(records)==16 and len(endpoints)==6 and len(gaps)==7
+assert len({(d['epoch'],d['root'],d['candidate_home']) for _,d,_ in records})==1
+by_sample={int(d['sample']):d for _,d,_ in records}
+rowkeys=['target_raw','config_fields_read','flag00','value04','flagc8','valuecc']
+def row_values(d):return [r for _,r,_ in rows[(d['epoch'],d['sample'])]]
+def content(d):return tuple(tuple(r[k] for k in rowkeys) for r in row_values(d))
+def targets(d):return tuple(r['target_raw'] for r in row_values(d))
+def allocation(d):return tuple(d[k] for k in ('begin680','end688','configs638'))
+for _,d,_ in records:
+    assert d['status']=='complete_selected_fields'
+    rr=row_values(d);assert len(rr)==int(d['captured_rows'])==int(d['raw_row_count'])
+    assert [int(r['row']) for r in rr]==list(range(len(rr)))
+    assert d['billing']=='off'
+for _,d,_ in endpoints:
+    current=by_sample[int(d['sample'])]
+    assert current['baseline']=='diagnostic_gap' and current['observed_fields_changed']=='0'
+    assert d['continuity_valid']=='0' and d['compared_across_gap']=='1'
+    assert d['native_event_time']=='unknown' and d['billing']=='off'
+    assert d['current_rows']==current['captured_rows']
+    assert d['root']==current['root'] and d['candidate_home']==current['candidate_home']
+    previous_fuel=fuel[(d['epoch'],d['previous_sample'])]
+    assert d['previous_ms']==previous_fuel['ms']
+    assert int(d['previous_ms'])<int(d['ms']) and int(d['previous_sample'])<int(d['sample'])
+changed=[d for _,d,_ in endpoints if d['endpoint_fields_differ']=='1']
+assert len(changed)==1 and changed[0]['sample']=='2'
+assert changed[0]['previous_sample']=='1' and changed[0]['previous_rows']=='3' and changed[0]['current_rows']=='0'
+old=prior_rows[('2','2')];assert len(old)==3
+assert [tuple(r[k] for k in rowkeys) for _,r,_ in old]==list(content(by_sample[1]))
+assert all(d['endpoint_fields_differ']=='0' for _,d,_ in endpoints if d['sample']!='2')
+a=by_sample[73];b=by_sample[79]
+assert len(targets(a))==len(targets(b))==3 and allocation(a)==allocation(b)
+assert targets(a)[0]==targets(b)[0] and targets(a)[1]!=targets(b)[1] and targets(a)[2]==targets(b)[2]
+assert b['observed_fields_changed']=='1' and b['storage_changed']=='0' and b['row_index_changed']=='1'
+assert row_values(a)[0]['value04']=='1' and row_values(b)[0]['value04']=='0.509669125'
+a=by_sample[80];b=by_sample[91]
+differences=[(i,k,old[k],new[k]) for i,(old,new) in enumerate(zip(row_values(a),row_values(b))) for k in rowkeys if old[k]!=new[k]]
+assert differences==[(0,'value04','0.509669125','0.509832323')]
+assert targets(a)==targets(b) and allocation(a)==allocation(b) and a['index698']==b['index698']
+assert b['observed_fields_changed']=='1' and b['row_index_changed']=='0'
+assert by_sample[121]['captured_rows']=='0' and by_sample[121]['observed_fields_changed']=='1'
+assert by_sample[121]['baseline']=='none' and by_sample[121]['index698']=='2'
+assert targets(by_sample[11])==(by_sample[11]['candidate_home'],)
+assert fuel[('2','32')]['litres_candidate']=='83.31' and fuel[('2','33')]['litres_candidate']=='221.62'
+for n,value in [(35,'462.65'),(80,'433.78'),(121,'394.79')]:assert by_sample[n]['aggregate_litres_candidate']==value
+for n in [53,73,93,109]:assert by_sample[n]['row_index_changed']=='1' and by_sample[n]['observed_fields_changed']=='0'
+print('INPUT_BYTES',len(raw),'SHA256',hashlib.sha256(raw).hexdigest())
+print('VERSION 0.18.9; fingerprints matched; endpoint diagnostics enabled; billing0/dryrun1')
+print('COUNTS schedules',len(records),'rows',sum(map(len,rows.values())),'endpoints',len(endpoints),'previous_rows',sum(map(len,prior_rows.values())))
+print('STATUS',dict(Counter(d['status'] for _,d,_ in records)))
+print('BASELINES',dict(Counter(d['baseline'] for _,d,_ in records)))
+print('GAPS',len(gaps),'discarded_paused_snapshots',sum(int(d['discarded_paused_snapshots']) for _,d,_ in gaps))
+print('FLAGS',{k:sum(int(d[k]) for _,d,_ in records) for k in ['observed_fields_changed','storage_changed','row_index_changed','opaque_context_changed']})
+print('\nSCHEDULE ENDPOINTS (log prefixes are drain time, not exact native event times)')
+for number,d,_ in records:
+    print('line',number,'sample',d['sample'],'rows',d['captured_rows'],'index',d['index698'],'fuel',d['aggregate_litres_candidate'],'baseline',d['baseline'],'F/S/I/C','/'.join(d[k] for k in ['observed_fields_changed','storage_changed','row_index_changed','opaque_context_changed']), 'targets',targets(d))
+print('\nGAP COMPARISONS: prior accepted sample metadata validated against fuel records')
+for number,d,_ in endpoints:
+    print('line',number,'sample',d['sample'],'previous',d['previous_sample'],'rows',d['previous_rows']+'->'+d['current_rows'],'content_differ',d['endpoint_fields_differ'],'continuity',d['continuity_valid'])
+print('\nSCREENSHOT MATCHES: image24=sample35/fuel462.65/food three rows; image25=sample80/fuel433.78/electronics three rows; image26=final empty state first recorded sample121/fuel394.79. Duplicate image26 is not a fourth independent checkpoint.')
+print('ONE_ROW: sample11 office-reference row only; fuel sample32=83.31, sample33=221.62; sample34=462.79 and three goods rows. Office-reference identity is not proof of a distinct refuel-task kind.')
+print('SCALAR_ONLY_CAPTURED_DIFFERENCE',differences)
+print('PASS: gap clearing with old rows, five unchanged gap comparisons, in-place replacement, four index-only advances, final normal clearing, scalar-only distinction.')
+print('VERDICT: test6 passes sampled-list and pause-gap reporting scope. A generic fields-changed flag is NOT automatically a new assignment/trip; structural versus scalar-only interpretation needs separation before accounting. No runtime changes made by this analysis.')
+selected=[f'{n}: {l}' for n,l in enumerate(lines,1) if any(k in l for k in ['[PANEL SCHEDULE','[PANEL GAP]','plugin   private_logistics 0.18.9','private_logistics  live v0.18.9'])]
+Path('.cache/tesmioloader6-selected-evidence.txt').write_text('\n'.join(selected)+'\n')
+```
+
+### Actual analysis stdout (exit0)
+
+Artifact `.cache/tesmioloader6-results.txt`; bytes=4089; SHA256=`d0228272c879cf274eff1cde5d91ce198e0db7ad0f884100f74abfb2883e18ad`.
+
+```text
+INPUT_BYTES 607317 SHA256 dfe40c030ebc9b2c9deffa446d8353713d7cbe1aecb66f3140368f017894383d
+VERSION 0.18.9; fingerprints matched; endpoint diagnostics enabled; billing0/dryrun1
+COUNTS schedules 16 rows 33 endpoints 6 previous_rows 3
+STATUS {'complete_selected_fields': 16}
+BASELINES {'diagnostic_gap': 7, 'none': 9}
+GAPS 7 discarded_paused_snapshots 35
+FLAGS {'observed_fields_changed': 5, 'storage_changed': 3, 'row_index_changed': 5, 'opaque_context_changed': 0}
+
+SCHEDULE ENDPOINTS (log prefixes are drain time, not exact native event times)
+line 802 sample 1 rows 3 index 0 fuel 91.91 baseline diagnostic_gap F/S/I/C 0/0/0/0 targets ('000001AF97EABFC0', '000001AF97EA4160', '000001AF97EAD4D0')
+line 815 sample 2 rows 0 index 0 fuel 91.91 baseline diagnostic_gap F/S/I/C 0/0/0/0 targets ()
+line 865 sample 6 rows 0 index 0 fuel 91.91 baseline diagnostic_gap F/S/I/C 0/0/0/0 targets ()
+line 946 sample 11 rows 1 index 0 fuel 91.91 baseline none F/S/I/C 1/1/0/0 targets ('000001AF97EAD4D0',)
+line 1083 sample 18 rows 1 index 0 fuel 88.90 baseline diagnostic_gap F/S/I/C 0/0/0/0 targets ('000001AF97EAD4D0',)
+line 1178 sample 22 rows 1 index 0 fuel 86.86 baseline diagnostic_gap F/S/I/C 0/0/0/0 targets ('000001AF97EAD4D0',)
+line 1359 sample 34 rows 3 index 0 fuel 462.79 baseline none F/S/I/C 1/1/0/0 targets ('000001AF97EABFC0', '000001AF97EA4160', '000001AF97EAD4D0')
+line 1370 sample 35 rows 3 index 0 fuel 462.65 baseline diagnostic_gap F/S/I/C 0/0/0/0 targets ('000001AF97EABFC0', '000001AF97EA4160', '000001AF97EAD4D0')
+line 1980 sample 53 rows 3 index 1 fuel 450.10 baseline none F/S/I/C 0/0/1/0 targets ('000001AF97EABFC0', '000001AF97EA4160', '000001AF97EAD4D0')
+line 2896 sample 73 rows 3 index 2 fuel 436.30 baseline none F/S/I/C 0/0/1/0 targets ('000001AF97EABFC0', '000001AF97EA4160', '000001AF97EAD4D0')
+line 2989 sample 79 rows 3 index 0 fuel 433.82 baseline none F/S/I/C 1/0/1/0 targets ('000001AF97EABFC0', '000001AF97EA0230', '000001AF97EAD4D0')
+line 3011 sample 80 rows 3 index 0 fuel 433.78 baseline diagnostic_gap F/S/I/C 0/0/0/0 targets ('000001AF97EABFC0', '000001AF97EA0230', '000001AF97EAD4D0')
+line 3235 sample 91 rows 3 index 0 fuel 423.86 baseline none F/S/I/C 1/0/0/0 targets ('000001AF97EABFC0', '000001AF97EA0230', '000001AF97EAD4D0')
+line 3385 sample 93 rows 3 index 1 fuel 422.61 baseline none F/S/I/C 0/0/1/0 targets ('000001AF97EABFC0', '000001AF97EA0230', '000001AF97EAD4D0')
+line 3836 sample 109 rows 3 index 2 fuel 407.06 baseline none F/S/I/C 0/0/1/0 targets ('000001AF97EABFC0', '000001AF97EA0230', '000001AF97EAD4D0')
+line 4039 sample 121 rows 0 index 2 fuel 394.79 baseline none F/S/I/C 1/1/0/0 targets ()
+
+GAP COMPARISONS: prior accepted sample metadata validated against fuel records
+line 816 sample 2 previous 1 rows 3->0 content_differ 1 continuity 0
+line 866 sample 6 previous 5 rows 0->0 content_differ 0 continuity 0
+line 1084 sample 18 previous 17 rows 1->1 content_differ 0 continuity 0
+line 1179 sample 22 previous 21 rows 1->1 content_differ 0 continuity 0
+line 1371 sample 35 previous 34 rows 3->3 content_differ 0 continuity 0
+line 3012 sample 80 previous 79 rows 3->3 content_differ 0 continuity 0
+
+SCREENSHOT MATCHES: image24=sample35/fuel462.65/food three rows; image25=sample80/fuel433.78/electronics three rows; image26=final empty state first recorded sample121/fuel394.79. Duplicate image26 is not a fourth independent checkpoint.
+ONE_ROW: sample11 office-reference row only; fuel sample32=83.31, sample33=221.62; sample34=462.79 and three goods rows. Office-reference identity is not proof of a distinct refuel-task kind.
+SCALAR_ONLY_CAPTURED_DIFFERENCE [(0, 'value04', '0.509669125', '0.509832323')]
+PASS: gap clearing with old rows, five unchanged gap comparisons, in-place replacement, four index-only advances, final normal clearing, scalar-only distinction.
+VERDICT: test6 passes sampled-list and pause-gap reporting scope. A generic fields-changed flag is NOT automatically a new assignment/trip; structural versus scalar-only interpretation needs separation before accounting. No runtime changes made by this analysis.
+```
+
+### Selected original log lines with line numbers
+
+Artifact `.cache/tesmioloader6-selected-evidence.txt`; bytes=23328; SHA256=`5f7666a870b0ea5b163e490c303daf8b522aa1f97f3f0720a4647ac288df3acc`.
+
+```text
+48: [18:15:14.860] plugin   private_logistics 0.18.9-schedule-gap-endpoints from private_logistics.dll
+134: [18:15:14.939] [PANEL SCHEDULE] enabled=1 fingerprint=matched mode=read_only_selected_fields max_rows=16 last_flag5fd_row_config=not_read gap_endpoints=enabled_cached_values_only job_lifecycle=unverified billing=off
+154: [18:15:14.942] private_logistics  live v0.18.9-schedule-gap-endpoints: billing=0 dry_run=1 factory=1 carrier=1, 16 sites, cap 5000/day, price = LEGACY FRAGMENT MODEL (fuel x margin + wear), NOT journey settlement, factory share 0.90
+799: [18:17:02.886] [PANEL GAP] epoch=2 sample=1 reason=paused_snapshot_coalescing discarded_paused_snapshots=4 first_ms=26567953 latest_ms=26571984 policy=keep_latest_same_window_root simulation_event_coverage=unverified exact_burn=0
+802: [18:17:02.887] [PANEL SCHEDULE] epoch=2 sample=1 ms=26571984 root=000001AF711E3BA0 candidate_home=000001AF97EAD4D0 status=complete_selected_fields baseline=diagnostic_gap observed_fields_changed=0 storage_changed=0 row_index_changed=0 opaque_context_changed=0 begin680=000001AFA9DC77B0 end688=000001AFA9DC77C8 configs638=000001AFAC244EA0 raw_row_count=3 captured_rows=3 index698=0 flag5fd=0 raw4a0=0000000000000000 raw610=0000000000000000 raw650=0000000000000000 fuel_valid=1 fuel_root_raw=0.0919097364 aggregate_litres_candidate=91.91 visibility=panel_only phase=post_render native_event_coverage=unverified native_job_id=unverified buyer=unverified completion=unverified exact_burn=0 billing=off
+803: [18:17:02.887] [PANEL SCHEDULE ROW] epoch=2 sample=1 row=0 target_raw=000001AF97EABFC0 config_fields_read=1 flag00=1 value04=1 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+804: [18:17:02.887] [PANEL SCHEDULE ROW] epoch=2 sample=1 row=1 target_raw=000001AF97EA4160 config_fields_read=1 flag00=0 value04=1 flagc8=1 valuecc=1 target_role=unverified buyer=unverified
+805: [18:17:02.887] [PANEL SCHEDULE ROW] epoch=2 sample=1 row=2 target_raw=000001AF97EAD4D0 config_fields_read=1 flag00=0 value04=1 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+812: [18:17:02.925] [PANEL GAP] epoch=2 sample=2 reason=paused_snapshot_coalescing discarded_paused_snapshots=2 first_ms=26576015 latest_ms=26578031 policy=keep_latest_same_window_root simulation_event_coverage=unverified exact_burn=0
+815: [18:17:02.925] [PANEL SCHEDULE] epoch=2 sample=2 ms=26578031 root=000001AF711E3BA0 candidate_home=000001AF97EAD4D0 status=complete_selected_fields baseline=diagnostic_gap observed_fields_changed=0 storage_changed=0 row_index_changed=0 opaque_context_changed=0 begin680=000001AFA9DC77B0 end688=000001AFA9DC77B0 configs638=000001AFAC244EA0 raw_row_count=0 captured_rows=0 index698=0 flag5fd=0 raw4a0=0000000000000000 raw610=0000000000000000 raw650=0000000000000000 fuel_valid=1 fuel_root_raw=0.0919097364 aggregate_litres_candidate=91.91 visibility=panel_only phase=post_render native_event_coverage=unverified native_job_id=unverified buyer=unverified completion=unverified exact_burn=0 billing=off
+816: [18:17:02.925] [PANEL SCHEDULE ENDPOINT] epoch=2 sample=2 ms=26578031 root=000001AF711E3BA0 candidate_home=000001AF97EAD4D0 previous_sample=1 previous_ms=26571984 previous_rows=3 current_rows=0 endpoint_fields_differ=1 endpoint_storage_differ=1 endpoint_index_differ=0 endpoint_context_differ=0 compared_across_gap=1 continuity_valid=0 comparison=last_valid_captured_values native_event_time=unknown native_event_coverage=unverified completion=unverified billing=off
+817: [18:17:02.925] [PANEL SCHEDULE PREVIOUS ROW] epoch=2 sample=1 compared_to_sample=2 row=0 target_raw=000001AF97EABFC0 config_fields_read=1 flag00=1 value04=1 flagc8=0 valuecc=1 values=cached_not_native_read billing=off
+818: [18:17:02.925] [PANEL SCHEDULE PREVIOUS ROW] epoch=2 sample=1 compared_to_sample=2 row=1 target_raw=000001AF97EA4160 config_fields_read=1 flag00=0 value04=1 flagc8=1 valuecc=1 values=cached_not_native_read billing=off
+819: [18:17:02.925] [PANEL SCHEDULE PREVIOUS ROW] epoch=2 sample=1 compared_to_sample=2 row=2 target_raw=000001AF97EAD4D0 config_fields_read=1 flag00=0 value04=1 flagc8=0 valuecc=1 values=cached_not_native_read billing=off
+862: [18:17:12.210] [PANEL GAP] epoch=2 sample=6 reason=paused_snapshot_coalescing discarded_paused_snapshots=2 first_ms=26582078 latest_ms=26588125 policy=keep_latest_same_window_root simulation_event_coverage=unverified exact_burn=0
+865: [18:17:12.210] [PANEL SCHEDULE] epoch=2 sample=6 ms=26588125 root=000001AF711E3BA0 candidate_home=000001AF97EAD4D0 status=complete_selected_fields baseline=diagnostic_gap observed_fields_changed=0 storage_changed=0 row_index_changed=0 opaque_context_changed=0 begin680=000001AFA9DC77B0 end688=000001AFA9DC77B0 configs638=000001AFAC244EA0 raw_row_count=0 captured_rows=0 index698=0 flag5fd=0 raw4a0=0000000000000000 raw610=0000000000000000 raw650=0000000000000000 fuel_valid=1 fuel_root_raw=0.0919097364 aggregate_litres_candidate=91.91 visibility=panel_only phase=post_render native_event_coverage=unverified native_job_id=unverified buyer=unverified completion=unverified exact_burn=0 billing=off
+866: [18:17:12.210] [PANEL SCHEDULE ENDPOINT] epoch=2 sample=6 ms=26588125 root=000001AF711E3BA0 candidate_home=000001AF97EAD4D0 previous_sample=5 previous_ms=26581078 previous_rows=0 current_rows=0 endpoint_fields_differ=0 endpoint_storage_differ=0 endpoint_index_differ=0 endpoint_context_differ=0 compared_across_gap=1 continuity_valid=0 comparison=last_valid_captured_values native_event_time=unknown native_event_coverage=unverified completion=unverified billing=off
+946: [18:17:17.039] [PANEL SCHEDULE] epoch=2 sample=11 ms=26593171 root=000001AF711E3BA0 candidate_home=000001AF97EAD4D0 status=complete_selected_fields baseline=none observed_fields_changed=1 storage_changed=1 row_index_changed=0 opaque_context_changed=0 begin680=000001AFA9DC77B0 end688=000001AFA9DC77B8 configs638=000001AFAC244EA0 raw_row_count=1 captured_rows=1 index698=0 flag5fd=0 raw4a0=0000000000000000 raw610=0000000000000000 raw650=0000000000000000 fuel_valid=1 fuel_root_raw=0.0919097364 aggregate_litres_candidate=91.91 visibility=panel_only phase=post_render native_event_coverage=unverified native_job_id=unverified buyer=unverified completion=unverified exact_burn=0 billing=off
+947: [18:17:17.039] [PANEL SCHEDULE ROW] epoch=2 sample=11 row=0 target_raw=000001AF97EAD4D0 config_fields_read=1 flag00=0 value04=1 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+1080: [18:17:26.914] [PANEL GAP] epoch=2 sample=18 reason=paused_snapshot_coalescing discarded_paused_snapshots=1 first_ms=26601781 latest_ms=26602781 policy=keep_latest_same_window_root simulation_event_coverage=unverified exact_burn=0
+1083: [18:17:26.914] [PANEL SCHEDULE] epoch=2 sample=18 ms=26602781 root=000001AF711E3BA0 candidate_home=000001AF97EAD4D0 status=complete_selected_fields baseline=diagnostic_gap observed_fields_changed=0 storage_changed=0 row_index_changed=0 opaque_context_changed=0 begin680=000001AFA9DC77B0 end688=000001AFA9DC77B8 configs638=000001AFAC244EA0 raw_row_count=1 captured_rows=1 index698=0 flag5fd=0 raw4a0=0000000000000000 raw610=0000000000000000 raw650=0000000000000000 fuel_valid=1 fuel_root_raw=0.0888992772 aggregate_litres_candidate=88.90 visibility=panel_only phase=post_render native_event_coverage=unverified native_job_id=unverified buyer=unverified completion=unverified exact_burn=0 billing=off
+1084: [18:17:26.914] [PANEL SCHEDULE ENDPOINT] epoch=2 sample=18 ms=26602781 root=000001AF711E3BA0 candidate_home=000001AF97EAD4D0 previous_sample=17 previous_ms=26600781 previous_rows=1 current_rows=1 endpoint_fields_differ=0 endpoint_storage_differ=0 endpoint_index_differ=0 endpoint_context_differ=0 compared_across_gap=1 continuity_valid=0 comparison=last_valid_captured_values native_event_time=unknown native_event_coverage=unverified completion=unverified billing=off
+1085: [18:17:26.914] [PANEL SCHEDULE ROW] epoch=2 sample=18 row=0 target_raw=000001AF97EAD4D0 config_fields_read=1 flag00=0 value04=1 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+1175: [18:17:43.842] [PANEL GAP] epoch=2 sample=22 reason=paused_snapshot_coalescing discarded_paused_snapshots=6 first_ms=26610609 latest_ms=26619000 policy=keep_latest_same_window_root simulation_event_coverage=unverified exact_burn=0
+1178: [18:17:43.842] [PANEL SCHEDULE] epoch=2 sample=22 ms=26619000 root=000001AF711E3BA0 candidate_home=000001AF97EAD4D0 status=complete_selected_fields baseline=diagnostic_gap observed_fields_changed=0 storage_changed=0 row_index_changed=0 opaque_context_changed=0 begin680=000001AFA9DC77B0 end688=000001AFA9DC77B8 configs638=000001AFAC244EA0 raw_row_count=1 captured_rows=1 index698=0 flag5fd=0 raw4a0=0000000000000000 raw610=0000000000000000 raw650=0000000000000000 fuel_valid=1 fuel_root_raw=0.0868612006 aggregate_litres_candidate=86.86 visibility=panel_only phase=post_render native_event_coverage=unverified native_job_id=unverified buyer=unverified completion=unverified exact_burn=0 billing=off
+1179: [18:17:43.842] [PANEL SCHEDULE ENDPOINT] epoch=2 sample=22 ms=26619000 root=000001AF711E3BA0 candidate_home=000001AF97EAD4D0 previous_sample=21 previous_ms=26608156 previous_rows=1 current_rows=1 endpoint_fields_differ=0 endpoint_storage_differ=0 endpoint_index_differ=0 endpoint_context_differ=0 compared_across_gap=1 continuity_valid=0 comparison=last_valid_captured_values native_event_time=unknown native_event_coverage=unverified completion=unverified billing=off
+1180: [18:17:43.842] [PANEL SCHEDULE ROW] epoch=2 sample=22 row=0 target_raw=000001AF97EAD4D0 config_fields_read=1 flag00=0 value04=1 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+1359: [18:17:54.965] [PANEL SCHEDULE] epoch=2 sample=34 ms=26631093 root=000001AF711E3BA0 candidate_home=000001AF97EAD4D0 status=complete_selected_fields baseline=none observed_fields_changed=1 storage_changed=1 row_index_changed=0 opaque_context_changed=0 begin680=000001AFA9DC77B0 end688=000001AFA9DC77C8 configs638=000001AFAC244EA0 raw_row_count=3 captured_rows=3 index698=0 flag5fd=0 raw4a0=0000000000000000 raw610=0000000000000000 raw650=0000000000000000 fuel_valid=1 fuel_root_raw=0.462785959 aggregate_litres_candidate=462.79 visibility=panel_only phase=post_render native_event_coverage=unverified native_job_id=unverified buyer=unverified completion=unverified exact_burn=0 billing=off
+1360: [18:17:54.965] [PANEL SCHEDULE ROW] epoch=2 sample=34 row=0 target_raw=000001AF97EABFC0 config_fields_read=1 flag00=1 value04=1 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+1361: [18:17:54.965] [PANEL SCHEDULE ROW] epoch=2 sample=34 row=1 target_raw=000001AF97EA4160 config_fields_read=1 flag00=0 value04=1 flagc8=1 valuecc=1 target_role=unverified buyer=unverified
+1362: [18:17:54.965] [PANEL SCHEDULE ROW] epoch=2 sample=34 row=2 target_raw=000001AF97EAD4D0 config_fields_read=1 flag00=0 value04=1 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+1367: [18:18:10.361] [PANEL GAP] epoch=2 sample=35 reason=paused_snapshot_coalescing discarded_paused_snapshots=12 first_ms=26632109 latest_ms=26646187 policy=keep_latest_same_window_root simulation_event_coverage=unverified exact_burn=0
+1370: [18:18:10.361] [PANEL SCHEDULE] epoch=2 sample=35 ms=26646187 root=000001AF711E3BA0 candidate_home=000001AF97EAD4D0 status=complete_selected_fields baseline=diagnostic_gap observed_fields_changed=0 storage_changed=0 row_index_changed=0 opaque_context_changed=0 begin680=000001AFA9DC77B0 end688=000001AFA9DC77C8 configs638=000001AFAC244EA0 raw_row_count=3 captured_rows=3 index698=0 flag5fd=0 raw4a0=0000000000000000 raw610=0000000000000000 raw650=0000000000000000 fuel_valid=1 fuel_root_raw=0.462653667 aggregate_litres_candidate=462.65 visibility=panel_only phase=post_render native_event_coverage=unverified native_job_id=unverified buyer=unverified completion=unverified exact_burn=0 billing=off
+1371: [18:18:10.361] [PANEL SCHEDULE ENDPOINT] epoch=2 sample=35 ms=26646187 root=000001AF711E3BA0 candidate_home=000001AF97EAD4D0 previous_sample=34 previous_ms=26631093 previous_rows=3 current_rows=3 endpoint_fields_differ=0 endpoint_storage_differ=0 endpoint_index_differ=0 endpoint_context_differ=0 compared_across_gap=1 continuity_valid=0 comparison=last_valid_captured_values native_event_time=unknown native_event_coverage=unverified completion=unverified billing=off
+1372: [18:18:10.361] [PANEL SCHEDULE ROW] epoch=2 sample=35 row=0 target_raw=000001AF97EABFC0 config_fields_read=1 flag00=1 value04=1 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+1373: [18:18:10.361] [PANEL SCHEDULE ROW] epoch=2 sample=35 row=1 target_raw=000001AF97EA4160 config_fields_read=1 flag00=0 value04=1 flagc8=1 valuecc=1 target_role=unverified buyer=unverified
+1374: [18:18:10.361] [PANEL SCHEDULE ROW] epoch=2 sample=35 row=2 target_raw=000001AF97EAD4D0 config_fields_read=1 flag00=0 value04=1 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+1980: [18:18:28.146] [PANEL SCHEDULE] epoch=2 sample=53 ms=26664281 root=000001AF711E3BA0 candidate_home=000001AF97EAD4D0 status=complete_selected_fields baseline=none observed_fields_changed=0 storage_changed=0 row_index_changed=1 opaque_context_changed=0 begin680=000001AFA9DC77B0 end688=000001AFA9DC77C8 configs638=000001AFAC244EA0 raw_row_count=3 captured_rows=3 index698=1 flag5fd=0 raw4a0=0000000000000000 raw610=0000000000000000 raw650=0000000000000000 fuel_valid=1 fuel_root_raw=0.450097501 aggregate_litres_candidate=450.10 visibility=panel_only phase=post_render native_event_coverage=unverified native_job_id=unverified buyer=unverified completion=unverified exact_burn=0 billing=off
+1981: [18:18:28.146] [PANEL SCHEDULE ROW] epoch=2 sample=53 row=0 target_raw=000001AF97EABFC0 config_fields_read=1 flag00=1 value04=1 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+1982: [18:18:28.146] [PANEL SCHEDULE ROW] epoch=2 sample=53 row=1 target_raw=000001AF97EA4160 config_fields_read=1 flag00=0 value04=1 flagc8=1 valuecc=1 target_role=unverified buyer=unverified
+1983: [18:18:28.146] [PANEL SCHEDULE ROW] epoch=2 sample=53 row=2 target_raw=000001AF97EAD4D0 config_fields_read=1 flag00=0 value04=1 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+2896: [18:18:48.230] [PANEL SCHEDULE] epoch=2 sample=73 ms=26684375 root=000001AF711E3BA0 candidate_home=000001AF97EAD4D0 status=complete_selected_fields baseline=none observed_fields_changed=0 storage_changed=0 row_index_changed=1 opaque_context_changed=0 begin680=000001AFA9DC77B0 end688=000001AFA9DC77C8 configs638=000001AFAC244EA0 raw_row_count=3 captured_rows=3 index698=2 flag5fd=0 raw4a0=0000000000000000 raw610=0000000000000000 raw650=0000000000000000 fuel_valid=1 fuel_root_raw=0.436303854 aggregate_litres_candidate=436.30 visibility=panel_only phase=post_render native_event_coverage=unverified native_job_id=unverified buyer=unverified completion=unverified exact_burn=0 billing=off
+2897: [18:18:48.230] [PANEL SCHEDULE ROW] epoch=2 sample=73 row=0 target_raw=000001AF97EABFC0 config_fields_read=1 flag00=1 value04=1 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+2898: [18:18:48.230] [PANEL SCHEDULE ROW] epoch=2 sample=73 row=1 target_raw=000001AF97EA4160 config_fields_read=1 flag00=0 value04=1 flagc8=1 valuecc=1 target_role=unverified buyer=unverified
+2899: [18:18:48.230] [PANEL SCHEDULE ROW] epoch=2 sample=73 row=2 target_raw=000001AF97EAD4D0 config_fields_read=1 flag00=0 value04=1 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+2989: [18:18:54.255] [PANEL SCHEDULE] epoch=2 sample=79 ms=26690390 root=000001AF711E3BA0 candidate_home=000001AF97EAD4D0 status=complete_selected_fields baseline=none observed_fields_changed=1 storage_changed=0 row_index_changed=1 opaque_context_changed=0 begin680=000001AFA9DC77B0 end688=000001AFA9DC77C8 configs638=000001AFAC244EA0 raw_row_count=3 captured_rows=3 index698=0 flag5fd=0 raw4a0=0000000000000000 raw610=0000000000000000 raw650=0000000000000000 fuel_valid=1 fuel_root_raw=0.43381539 aggregate_litres_candidate=433.82 visibility=panel_only phase=post_render native_event_coverage=unverified native_job_id=unverified buyer=unverified completion=unverified exact_burn=0 billing=off
+2990: [18:18:54.255] [PANEL SCHEDULE ROW] epoch=2 sample=79 row=0 target_raw=000001AF97EABFC0 config_fields_read=1 flag00=1 value04=0.509669125 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+2991: [18:18:54.255] [PANEL SCHEDULE ROW] epoch=2 sample=79 row=1 target_raw=000001AF97EA0230 config_fields_read=1 flag00=0 value04=1 flagc8=1 valuecc=1 target_role=unverified buyer=unverified
+2992: [18:18:54.255] [PANEL SCHEDULE ROW] epoch=2 sample=79 row=2 target_raw=000001AF97EAD4D0 config_fields_read=1 flag00=0 value04=1 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+3008: [18:19:05.577] [PANEL GAP] epoch=2 sample=80 reason=paused_snapshot_coalescing discarded_paused_snapshots=8 first_ms=26691406 latest_ms=26701375 policy=keep_latest_same_window_root simulation_event_coverage=unverified exact_burn=0
+3011: [18:19:05.578] [PANEL SCHEDULE] epoch=2 sample=80 ms=26701375 root=000001AF711E3BA0 candidate_home=000001AF97EAD4D0 status=complete_selected_fields baseline=diagnostic_gap observed_fields_changed=0 storage_changed=0 row_index_changed=0 opaque_context_changed=0 begin680=000001AFA9DC77B0 end688=000001AFA9DC77C8 configs638=000001AFAC244EA0 raw_row_count=3 captured_rows=3 index698=0 flag5fd=0 raw4a0=0000000000000000 raw610=0000000000000000 raw650=0000000000000000 fuel_valid=1 fuel_root_raw=0.433779329 aggregate_litres_candidate=433.78 visibility=panel_only phase=post_render native_event_coverage=unverified native_job_id=unverified buyer=unverified completion=unverified exact_burn=0 billing=off
+3012: [18:19:05.578] [PANEL SCHEDULE ENDPOINT] epoch=2 sample=80 ms=26701375 root=000001AF711E3BA0 candidate_home=000001AF97EAD4D0 previous_sample=79 previous_ms=26690390 previous_rows=3 current_rows=3 endpoint_fields_differ=0 endpoint_storage_differ=0 endpoint_index_differ=0 endpoint_context_differ=0 compared_across_gap=1 continuity_valid=0 comparison=last_valid_captured_values native_event_time=unknown native_event_coverage=unverified completion=unverified billing=off
+3013: [18:19:05.578] [PANEL SCHEDULE ROW] epoch=2 sample=80 row=0 target_raw=000001AF97EABFC0 config_fields_read=1 flag00=1 value04=0.509669125 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+3014: [18:19:05.578] [PANEL SCHEDULE ROW] epoch=2 sample=80 row=1 target_raw=000001AF97EA0230 config_fields_read=1 flag00=0 value04=1 flagc8=1 valuecc=1 target_role=unverified buyer=unverified
+3015: [18:19:05.578] [PANEL SCHEDULE ROW] epoch=2 sample=80 row=2 target_raw=000001AF97EAD4D0 config_fields_read=1 flag00=0 value04=1 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+3235: [18:19:17.408] [PANEL SCHEDULE] epoch=2 sample=91 ms=26713531 root=000001AF711E3BA0 candidate_home=000001AF97EAD4D0 status=complete_selected_fields baseline=none observed_fields_changed=1 storage_changed=0 row_index_changed=0 opaque_context_changed=0 begin680=000001AFA9DC77B0 end688=000001AFA9DC77C8 configs638=000001AFAC244EA0 raw_row_count=3 captured_rows=3 index698=0 flag5fd=0 raw4a0=0000000000000000 raw610=0000000000000000 raw650=0000000000000000 fuel_valid=1 fuel_root_raw=0.423857629 aggregate_litres_candidate=423.86 visibility=panel_only phase=post_render native_event_coverage=unverified native_job_id=unverified buyer=unverified completion=unverified exact_burn=0 billing=off
+3236: [18:19:17.408] [PANEL SCHEDULE ROW] epoch=2 sample=91 row=0 target_raw=000001AF97EABFC0 config_fields_read=1 flag00=1 value04=0.509832323 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+3237: [18:19:17.408] [PANEL SCHEDULE ROW] epoch=2 sample=91 row=1 target_raw=000001AF97EA0230 config_fields_read=1 flag00=0 value04=1 flagc8=1 valuecc=1 target_role=unverified buyer=unverified
+3238: [18:19:17.408] [PANEL SCHEDULE ROW] epoch=2 sample=91 row=2 target_raw=000001AF97EAD4D0 config_fields_read=1 flag00=0 value04=1 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+3385: [18:19:19.410] [PANEL SCHEDULE] epoch=2 sample=93 ms=26715546 root=000001AF711E3BA0 candidate_home=000001AF97EAD4D0 status=complete_selected_fields baseline=none observed_fields_changed=0 storage_changed=0 row_index_changed=1 opaque_context_changed=0 begin680=000001AFA9DC77B0 end688=000001AFA9DC77C8 configs638=000001AFAC244EA0 raw_row_count=3 captured_rows=3 index698=1 flag5fd=0 raw4a0=0000000000000000 raw610=0000000000000000 raw650=0000000000000000 fuel_valid=1 fuel_root_raw=0.422608286 aggregate_litres_candidate=422.61 visibility=panel_only phase=post_render native_event_coverage=unverified native_job_id=unverified buyer=unverified completion=unverified exact_burn=0 billing=off
+3386: [18:19:19.410] [PANEL SCHEDULE ROW] epoch=2 sample=93 row=0 target_raw=000001AF97EABFC0 config_fields_read=1 flag00=1 value04=0.509832323 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+3387: [18:19:19.410] [PANEL SCHEDULE ROW] epoch=2 sample=93 row=1 target_raw=000001AF97EA0230 config_fields_read=1 flag00=0 value04=1 flagc8=1 valuecc=1 target_role=unverified buyer=unverified
+3388: [18:19:19.410] [PANEL SCHEDULE ROW] epoch=2 sample=93 row=2 target_raw=000001AF97EAD4D0 config_fields_read=1 flag00=0 value04=1 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+3836: [18:19:36.565] [PANEL SCHEDULE] epoch=2 sample=109 ms=26732328 root=000001AF711E3BA0 candidate_home=000001AF97EAD4D0 status=complete_selected_fields baseline=none observed_fields_changed=0 storage_changed=0 row_index_changed=1 opaque_context_changed=0 begin680=000001AFA9DC77B0 end688=000001AFA9DC77C8 configs638=000001AFAC244EA0 raw_row_count=3 captured_rows=3 index698=2 flag5fd=0 raw4a0=0000000000000000 raw610=0000000000000000 raw650=0000000000000000 fuel_valid=1 fuel_root_raw=0.407060236 aggregate_litres_candidate=407.06 visibility=panel_only phase=post_render native_event_coverage=unverified native_job_id=unverified buyer=unverified completion=unverified exact_burn=0 billing=off
+3837: [18:19:36.565] [PANEL SCHEDULE ROW] epoch=2 sample=109 row=0 target_raw=000001AF97EABFC0 config_fields_read=1 flag00=1 value04=0.509832323 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+3838: [18:19:36.565] [PANEL SCHEDULE ROW] epoch=2 sample=109 row=1 target_raw=000001AF97EA0230 config_fields_read=1 flag00=0 value04=1 flagc8=1 valuecc=1 target_role=unverified buyer=unverified
+3839: [18:19:36.565] [PANEL SCHEDULE ROW] epoch=2 sample=109 row=2 target_raw=000001AF97EAD4D0 config_fields_read=1 flag00=0 value04=1 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+4039: [18:19:48.373] [PANEL SCHEDULE] epoch=2 sample=121 ms=26744515 root=000001AF711E3BA0 candidate_home=000001AF97EAD4D0 status=complete_selected_fields baseline=none observed_fields_changed=1 storage_changed=1 row_index_changed=0 opaque_context_changed=0 begin680=000001AFA9DC77B0 end688=000001AFA9DC77B0 configs638=000001AFAC244EA0 raw_row_count=0 captured_rows=0 index698=2 flag5fd=0 raw4a0=0000000000000000 raw610=0000000000000000 raw650=0000000000000000 fuel_valid=1 fuel_root_raw=0.394790143 aggregate_litres_candidate=394.79 visibility=panel_only phase=post_render native_event_coverage=unverified native_job_id=unverified buyer=unverified completion=unverified exact_burn=0 billing=off
+```
+
+### Unique screenshot provenance
+
+Artifact `.cache/tesmioloader6-image-provenance.txt`; bytes=327; SHA256=`7fe0e50ff130974a0b8421f6699b3ebf98a73442141024b55d0213edc89394eb`.
+
+```text
+image-24.png: 500x627; bytes=514673; SHA256=7079d10df5b059b7ac23131109681596630ccdfeb98c2e7d32392e954cf50c06
+image-25.png: 500x626; bytes=514888; SHA256=93663227578a654b1d3b6948aab907a02d7238553bdcd87dbf0ea1b35d83ee76
+image-26.png: 505x492; bytes=404556; SHA256=f26e5c2de54ca07587450a7f89d6e8525688047d3916984ed4beb57296546f15
+```
+
+### Lossless original tesmioloader-6.log archive (gzip then Base64)
+
+Artifact `.cache/tesmioloader6-original.gzip.b64`; bytes=81106; SHA256=`cc7a241d35df78152837fcb133d119350a814185dc408f52325c6b75ff3d92d3`.
+
+```text
+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
+dy3I/vd//T9+oYCGVUQJAA==
+```
+
+Archive recovery: Base64-decode the preceding archive block and gzip-decompress it to recover the exact607,317-byte original CRLF log. Verify the input SHA256, then pass that recovered file path to the complete analysis script above.
+
+
+## v0.18.10 captured schedule classification — implementation and validation
+
+2026-10-31. User said Proceed after the test6 result and proposed classification stage. Implemented on fixed branch arena/b078f92d-wrsre. Version: `0.18.10-schedule-classification`. Logging only; no money/tracker/assignment event consumer connected.
+
+### Classification contract
+
+A separate `[PANEL SCHEDULE CLASSIFICATION]` line accompanies each emitted Complete schedule snapshot. Quiet unchanged samples remain quiet. Invalid captures produce no classification line and never become an empty pattern. Runtime compares prior values only when existing History authorizes a same epoch/root/home endpoint comparison; identity/load changes have comparison_available=0 and previous_pattern=unavailable. Across-gap comparisons remain explicitly marked; original raw delta flags and ENDPOINT continuity_valid=0 semantics are unchanged.
+
+Captured field categories are independent:
+- row_count_changed: different captured counts.
+- ordered_targets_changed: different raw target references in shared ordinal positions, including reordering. Newly absent/present positions are represented by count changes, not fabricated setting values.
+- structure_changed: count OR ordered target difference. This is captured structure, not guaranteed native plan replacement.
+- config_availability_changed: core config fields read versus suppressed/unavailable for a shared row.
+- task_flags_changed: raw00/C8 difference only where BOTH configRead states are true.
+- scalar_settings_changed: exact04/CC float difference only where BOTH are read; no epsilon or rounding. Unavailable defaults are not observed zeros.
+- settings_only: flags/scalars differ but structure and config availability do not. Storage/index/context can still change independently; this label concerns captured field categories, not native job identity.
+- active_index_only: index differs and original selected fields/storage/context do not. This remains stop-index observation, not task completion.
+
+Patterns are deliberately conservative and descriptive:
+- empty: Complete,count0 (not unreadable).
+- office_only_pattern: exactly one target==known candidate home, configRead=true, flags00/C8 both0.
+- load_unload_pattern: among read rows with nonnull/nonhome targets, at least one raw(00=1,C8=0) and another raw(00=0,C8=1). These flag combinations correspond to the load/unload rows observed in the user's screenshots. Unknown flag values, suppressed config and null/home targets do not independently establish either side. This is presence of the observed pattern, not proof of goods kind or every row's role.
+- other_pattern: valid nonempty state that does not meet the above (including unknown home).
+- unavailable: invalid/incomplete snapshot or unsafe count.
+
+ClassifyChanges operates on captured values; it does not have identity metadata itself. Production logging gates it with History::endpointCompared. Raw reference relocation or stable pointers do not prove stable native resource/task identity. The missing resource vectors remain unobserved. Explicit log tags state pattern_semantics=observed_flags_only, resource_identity=unverified,native_job_boundary=unverified,billing=off. No automatic 'trip started/ended', default/refuel kind, success/cancellation or identical replacement inference is added.
+
+### Validation actually performed
+
+- Schedule suite:33tests PASS, including28reader/history/classification cases and13production runtime-shim scenarios plus source/default/fingerprint checks.
+- Entire private-logistics suite:104tests PASS in8.523s after final flag/config-availability runtime assertions.
+- ASan+UBSan:28reader/history and13runtime-shim scenarios PASS; full actual output below. Not Windows ABI/SEH/thread proof.
+- C++ replay of16EMITTED complete endpoints from user tesmioloader-6.log through production History and classifiers: all original four flags preserved; sample79 classified targets/structure change, sample91 classified scalar-only settings change; office-only, empty and load/unload patterns match the observed sequences. This does not recreate hidden/unlogged snapshots or native event times. Full fixture source and actual stdout below.
+- Native reader functions, render capture/queue and fingerprint definitions checked byte-for-byte unchanged from HEAD; parsed INI values identical. Only INI comments changed.
+- git diff --check:PASS before source archive/publication.
+- No Ghidra/native query, new offset/hook/read, resource-object traversal, pricing/default/permission change, automatic payment or tracker wiring. No Windows DLL build/deploy or fresh game run performed here.
+
+### Reading the new output
+
+The test6 big-grocery -> small-store change at79 should give structure_changed=1,ordered_targets_changed=1,scalar_settings_changed=1,settings_only=0. The later0.509669125 ->0.509832323 adjustment at91 should give structure_changed=0,task_flags_changed=0,scalar_settings_changed=1,settings_only=1. A one-row neutral home reference is office_only_pattern, not a refuel/job verdict. An active-row advance alone gives active_index_only=1 and structure_changed=0. Existing raw observed_fields_changed remains truthful for both structural and scalar-only differences; consumers must not interpret that raw flag as a new trip.
+
+### Next Windows check
+
+No repeated full refueling experiment is required to validate the replayed distinction. Once published/merged, pull DO-fuel-cost-calculatotr in VS Code and build with the game closed:
+
+```powershell
+cd 'C:\Users\EricM\Downloads\WRSRE'
+cmd /c build.bat private_logistics
+Get-Item '.\build\plugins\private_logistics.dll' | Select-Object FullName, LastWriteTime, Length
+```
+
+Require successful build, copy the DLL ONLY into the same installed plugin location used for test6; do not overwrite customized INI. Keep billing=0,dry_run=1,panel_fuel_observer=1,schedule_observer=1. Start a fresh process and verify0.18.10-schedule-classification plus enabled/matched schedule gate and classification=enabled_captured_values. Old0.18.9startup means the updated DLL is not running.
+
+A short smoke check of one truck's panel should emit `[PANEL SCHEDULE CLASSIFICATION] current_pattern=load_unload_pattern` for the observed two-sided goods list (other intervening fields can appear between prefix and pattern). Initial comparison_available=0 is expected. On a normal stop advance expect active_index_only=1 and structure_changed=0. Pause for screenshots if wanted, then resume at least2seconds to drain logs; across-gap comparisons remain descriptive. Send a fresh log if labels disagree with the UI. Existing1second/240accepted-record load budget is unchanged.
+
+Windows build and in-game behavior of the added classification LOG FORMAT are still pending. The previous0.18.9native reader/pause test remains passed; the replay is not a new native run. This stage supplies classification for a future accounting policy, not a connected assignment-cost tracker or proven trip lifecycle. Billing remains off.
+
+Complete final modified source, replay fixture source and actual outputs are archived below in this SAME cumulative document. Publication/merge results are reported separately after completion.
+
+### Complete final source v0.18.10 — `plugins/private_logistics/schedule_observer.h`
+
+Bytes: 10489; SHA256: `ce7a52a9c2a34ae92ee902b6ae8d7baafbb93c871629234b7315a25bcfce7988`.
+
+```cpp
+// Verified renderer schedule reads ONLY. Not a native job identity/completion API.
+#ifndef PRIVATE_LOGISTICS_SCHEDULE_OBSERVER_H
+#define PRIVATE_LOGISTICS_SCHEDULE_OBSERVER_H
+#include "panel_fuel_observer.h"
+
+namespace private_logistics_schedule {
+using private_logistics_panel::Address;
+using private_logistics_panel::Memory;
+static_assert(sizeof(Address)==8,"verified schedule layout is x64 only");
+constexpr unsigned MaxRows = 16;
+constexpr Address ConfigStride = 0x198;
+enum class Status { Disabled, Ineligible, Unreadable, BadBounds, TooManyRows,
+                    MissingConfigs, NonFinite, ChangedDuringRead, GuardedFault, Complete };
+struct Row {
+    Address target = 0;
+    bool configRead = false;
+    std::uint8_t flag00 = 0, flagC8 = 0;
+    float value04 = 0, valueCC = 0;
+};
+struct Snapshot {
+    Status status = Status::Disabled;
+    Address begin = 0, end = 0, configs = 0;
+    // Opaque renderer context fields: do NOT name these job IDs or buyers.
+    Address raw4a0 = 0, raw610 = 0, raw650 = 0;
+    std::int32_t index698 = -1;
+    std::uint8_t flag5fd = 0;
+    unsigned count = 0;
+    Row rows[MaxRows]{};
+};
+inline bool Header(const Memory& m, Address root, Snapshot& s) {
+    return m.Get(root,0x680,s.begin) && m.Get(root,0x688,s.end) &&
+        m.Get(root,0x638,s.configs) && m.Get(root,0x698,s.index698) &&
+        m.Get(root,0x5FD,s.flag5fd) && m.Get(root,0x4A0,s.raw4a0) &&
+        m.Get(root,0x610,s.raw610) && m.Get(root,0x650,s.raw650);
+}
+inline bool SameHeader(const Snapshot& a,const Snapshot& b) {
+    return a.begin==b.begin && a.end==b.end && a.configs==b.configs &&
+        a.index698==b.index698 && a.flag5fd==b.flag5fd &&
+        a.raw4a0==b.raw4a0 && a.raw610==b.raw610 && a.raw650==b.raw650;
+}
+inline bool SameRow(const Row& a,const Row& b) {
+    return a.target==b.target && a.configRead==b.configRead && a.flag00==b.flag00 && a.flagC8==b.flagC8 &&
+        a.value04==b.value04 && a.valueCC==b.valueCC;
+}
+inline bool ReadRow(const Memory& m,const Snapshot& s,unsigned i,Row& r) {
+    if(!m.Get(s.begin,Address(i)*8,r.target)) return false;
+    // At 7E81B3..7E81C0 the renderer sets RSI=0 for the last row
+    // when +5FD is nonzero. Do not invent/read a configuration for it.
+    if(s.flag5fd && i+1==s.count) return true;
+    const Address offset=Address(i)*ConfigStride;
+    r.configRead=m.Get(s.configs,offset,r.flag00) && m.Get(s.configs,offset+4,r.value04) &&
+        m.Get(s.configs,offset+0xC8,r.flagC8) && m.Get(s.configs,offset+0xCC,r.valueCC);
+    return r.configRead;
+}
+inline void Capture(const Memory& m,Address root,Snapshot& s) {
+    s=Snapshot{};s.status=Status::Unreadable;
+    if(!Header(m,root,s)) return;
+    if(s.end<s.begin || (s.end-s.begin)%8 || (!s.begin && s.end)) {
+        s.status=Status::BadBounds;return;
+    }
+    const Address count=(s.end-s.begin)/8;
+    if(count>MaxRows) {s.status=Status::TooManyRows;return;}
+    s.count=static_cast<unsigned>(count);
+    if(s.count>(s.flag5fd?1u:0u) && !s.configs) {s.status=Status::MissingConfigs;return;}
+    for(unsigned i=0;i<s.count;++i) {
+        if(!ReadRow(m,s,i,s.rows[i])) return;
+        if(!std::isfinite(s.rows[i].value04) || !std::isfinite(s.rows[i].valueCC)) {
+            s.status=Status::NonFinite;return;
+        }
+    }
+    // Recheck header AND selected row fields; reject observed mutation. This
+    // is still not an atomic game snapshot (ABA/other fields remain unknown).
+    Snapshot after{};
+    if(!Header(m,root,after)) return;
+    if(!SameHeader(s,after)) {s.status=Status::ChangedDuringRead;return;}
+    for(unsigned i=0;i<s.count;++i) {
+        Row again{};
+        if(!ReadRow(m,s,i,again)) return;
+        if(!SameRow(s.rows[i],again)) {s.status=Status::ChangedDuringRead;return;}
+    }
+    s.status=Status::Complete;
+}
+inline const char* StatusName(Status s) {
+    switch(s) {
+        case Status::Disabled:return "disabled";
+        case Status::Ineligible:return "not_unique_road_fleet_root";
+        case Status::BadBounds:return "bad_bounds";
+        case Status::TooManyRows:return "too_many_rows_no_partial_table";
+        case Status::MissingConfigs:return "missing_configs";
+        case Status::NonFinite:return "nonfinite_config";
+        case Status::ChangedDuringRead:return "changed_during_read";
+        case Status::GuardedFault:return "guarded_schedule_fault_disabled";
+        case Status::Complete:return "complete_selected_fields";
+        default:return "unreadable";
+    }
+}
+enum class Baseline { None, First, Epoch, Identity, Gap, Invalid };
+inline const char* BaselineName(Baseline b) {
+    switch(b) {
+        case Baseline::None:return "none";
+        case Baseline::Epoch:return "load_epoch";
+        case Baseline::Identity:return "vehicle_or_home_change";
+        case Baseline::Gap:return "diagnostic_gap";
+        case Baseline::Invalid:return "invalid_read";
+        default:return "first_observation";
+    }
+}
+struct Delta {
+    bool emit=false, fields=false, storage=false, index=false, context=false;
+    Baseline baseline=Baseline::None;
+    // Descriptive endpoint comparison, NEVER continuous native event coverage.
+    // The original delta flags above stay false when rebaselining.
+    bool endpointCompared=false, endpointAcrossGap=false;
+    bool endpointFields=false, endpointStorage=false, endpointIndex=false, endpointContext=false;
+    unsigned previousSample=0;
+    std::uint64_t previousMs=0;
+};
+// Pure classification of captured values. These labels are NOT native jobs,
+// resource identities, refuelling states or billable trip boundaries.
+enum class Pattern { Unavailable, Empty, OfficeOnly, LoadUnload, Other };
+inline const char* PatternName(Pattern p) {
+    switch(p) {
+        case Pattern::Empty:return "empty";
+        case Pattern::OfficeOnly:return "office_only_pattern";
+        case Pattern::LoadUnload:return "load_unload_pattern";
+        case Pattern::Other:return "other_pattern";
+        default:return "unavailable";
+    }
+}
+inline Pattern ClassifyPattern(const Snapshot& s,Address home) {
+    if(s.status!=Status::Complete || s.count>MaxRows) return Pattern::Unavailable;
+    if(!s.count) return Pattern::Empty;
+    if(!home) return Pattern::Other;
+    if(s.count==1 && s.rows[0].target==home && s.rows[0].configRead &&
+       !s.rows[0].flag00 && !s.rows[0].flagC8) return Pattern::OfficeOnly;
+    bool load=false,unload=false;
+    for(unsigned i=0;i<s.count;++i) {
+        const auto& r=s.rows[i];
+        if(!r.configRead || !r.target || r.target==home) continue;
+        load=load || (r.flag00==1 && r.flagC8==0);
+        unload=unload || (r.flag00==0 && r.flagC8==1);
+    }
+    return load && unload ? Pattern::LoadUnload : Pattern::Other;
+}
+struct FieldChanges {
+    bool comparable=false,count=false,targets=false,availability=false,flags=false,scalars=false;
+    bool Structure() const {return count || targets;}
+    bool SettingsOnly() const {return (flags || scalars) && !Structure() && !availability;}
+};
+inline FieldChanges ClassifyChanges(const Snapshot& a,const Snapshot& b) {
+    FieldChanges c;
+    if(a.status!=Status::Complete || b.status!=Status::Complete ||
+       a.count>MaxRows || b.count>MaxRows) return c;
+    c.comparable=true;c.count=a.count!=b.count;
+    const unsigned common=a.count<b.count?a.count:b.count;
+    for(unsigned i=0;i<common;++i) {
+        const auto& x=a.rows[i];const auto& y=b.rows[i];
+        c.targets=c.targets || x.target!=y.target;
+        c.availability=c.availability || x.configRead!=y.configRead;
+        // Missing/suppressed config fields are not observed zeros.
+        if(!x.configRead || !y.configRead) continue;
+        c.flags=c.flags || x.flag00!=y.flag00 || x.flagC8!=y.flagC8;
+        // Preserve exact captured scalars; no epsilon or rounding policy.
+        c.scalars=c.scalars || x.value04!=y.value04 || x.valueCC!=y.valueCC;
+    }
+    return c;
+}
+// One selected vehicle's previous *values*, never a retained native object
+// consumer. Windows are transient and are deliberately not identity keys.
+class History {
+    bool known_=false, gap_=false, endpointKnown_=false;
+    std::uint64_t epoch_=0,previousMs_=0;
+    unsigned previousSample_=0;
+    Address root_=0,home_=0;
+    Snapshot previous_{};
+public:
+    void Break() {gap_=true;}
+    // Copied values only. Caller must copy BEFORE Observe replaces them and
+    // use them only if the returned Delta says endpointCompared.
+    const Snapshot& LastValidValues() const {return previous_;}
+    Delta Observe(const Snapshot& s,std::uint64_t epoch,Address root,Address home,
+                  unsigned sample=0,std::uint64_t captureMs=0) {
+        Delta d;
+        // Even an invalid observation of a different identity/load invalidates
+        // the endpoint cache; switching away and back must not join vehicles.
+        if(epoch!=epoch_ || root!=root_ || home!=home_) endpointKnown_=false;
+        if(s.status!=Status::Complete) {
+            known_=false;gap_=true;d.emit=true;d.baseline=Baseline::Invalid;return d;
+        }
+        if(!known_) d.baseline=gap_?Baseline::Gap:Baseline::First;
+        else if(epoch!=epoch_) d.baseline=Baseline::Epoch;
+        else if(root!=root_ || home!=home_) d.baseline=Baseline::Identity;
+        else if(gap_) d.baseline=Baseline::Gap;
+        if(endpointKnown_) {
+            d.endpointCompared=true;
+            d.endpointAcrossGap=d.baseline==Baseline::Gap;
+            d.previousSample=previousSample_;d.previousMs=previousMs_;
+            d.endpointFields=s.count!=previous_.count;
+            if(!d.endpointFields) for(unsigned i=0;i<s.count;++i)
+                if(!SameRow(s.rows[i],previous_.rows[i])) {d.endpointFields=true;break;}
+            d.endpointStorage=s.begin!=previous_.begin || s.end!=previous_.end || s.configs!=previous_.configs;
+            d.endpointIndex=s.index698!=previous_.index698;
+            d.endpointContext=s.raw4a0!=previous_.raw4a0 || s.raw610!=previous_.raw610 ||
+                s.raw650!=previous_.raw650 || s.flag5fd!=previous_.flag5fd;
+            if(d.baseline==Baseline::None) {
+                d.fields=d.endpointFields;d.storage=d.endpointStorage;
+                d.index=d.endpointIndex;d.context=d.endpointContext;
+            }
+        }
+        d.emit=d.baseline!=Baseline::None || d.fields || d.storage || d.index || d.context;
+        epoch_=epoch;root_=root;home_=home;previous_=s;known_=endpointKnown_=true;gap_=false;
+        previousSample_=sample;previousMs_=captureMs;
+        return d;
+    }
+};
+} // namespace private_logistics_schedule
+#endif
+
+```
+
+### Complete final source v0.18.10 — `plugins/private_logistics/panel_fuel_runtime.h`
+
+Bytes: 22866; SHA256: `38640218656cd135f081360435aea18e1ad20ab858b8be8d6353cdcbde63a38e`.
+
+```cpp
+// Private to this plugin. Included after its services/globals are defined.
+// Process-lifetime hooks, like the plugin's existing transfer hooks.
+#ifndef PRIVATE_LOGISTICS_PANEL_FUEL_RUNTIME_H
+#define PRIVATE_LOGISTICS_PANEL_FUEL_RUNTIME_H
+#include "panel_fuel_observer.h"
+#include "schedule_observer.h"
+
+static bool g_scheduleReady = false;
+static volatile LONG g_scheduleFault = 0;
+static private_logistics_schedule::History g_scheduleHistory; // simulation tick only
+static LONG g_scheduleLastEpoch = 0;
+static unsigned g_scheduleLastCaptureDrops = 0;
+static CRITICAL_SECTION g_panelQueueLock;
+static volatile LONG g_panelEpoch = 1, g_panelStarted = 0, g_panelFault = 0, g_panelContention = 0;
+static LONG g_panelQueueEpoch = 0;
+static unsigned g_panelHead = 0, g_panelCount = 0, g_panelSamples = 0, g_panelDropped = 0;
+static ULONGLONG g_panelLastMs = 0;
+static unsigned g_panelDroppedReported = 0;
+static ULONGLONG g_panelFirstDropMs = 0, g_panelLastDropMs = 0;
+static bool g_panelCapLogged = false, g_panelFaultLogged = false;
+struct PanelRecord {
+    private_logistics_panel::Snapshot snapshot;
+    private_logistics_schedule::Snapshot schedule;
+    LONG epoch;
+    unsigned sequence;
+    ULONGLONG milliseconds;
+    ULONGLONG firstMilliseconds;
+    unsigned queueFullAtCapture, coalesced;
+    bool paused;
+};
+static PanelRecord g_panelQueue[16];
+using PanelRenderer = void (__fastcall*)(void*, void*);
+static void* g_panelTrampoline = nullptr;
+
+static void PanelObserverLoading(void)
+{
+    // File thread: no game reads, queue lock, retained identities or persistence.
+    InterlockedIncrement(&g_panelEpoch);
+}
+static bool PanelRead(uintptr_t address, void* out, size_t size, void*)
+{
+    if (address < 0x10000 || !ReadablePtr((const void*)address, size)) return false;
+    memcpy(out, (const void*)address, size);
+    return true;
+}
+static void PanelResetQueueLocked(LONG epoch)
+{
+    if (g_panelQueueEpoch == epoch) return;
+    g_panelQueueEpoch = epoch;
+    g_panelHead = g_panelCount = g_panelSamples = g_panelDropped = 0;
+    g_panelLastMs = 0;
+    g_panelDroppedReported = 0;
+    g_panelFirstDropMs = g_panelLastDropMs = 0;
+    g_panelCapLogged = false;
+    InterlockedExchange(&g_panelContention, 0);
+}
+static void PanelCapture(void* context, void* window)
+{
+    if (!InterlockedCompareExchange(&g_panelStarted, 0, 0) ||
+        InterlockedCompareExchange(&g_panelFault, 0, 0)) return;
+    if (!TryEnterCriticalSection(&g_panelQueueLock)) {
+        InterlockedExchange(&g_panelContention, 1); return;
+    }
+    const LONG epoch = InterlockedCompareExchange(&g_panelEpoch, 0, 0);
+    PanelResetQueueLocked(epoch);
+    const ULONGLONG now = GetTickCount64();
+    if (g_panelSamples >= 240 || (g_panelLastMs && now - g_panelLastMs < 1000)) {
+        LeaveCriticalSection(&g_panelQueueLock); return;
+    }
+    const bool paused = g_simClock && g_simClock->isPaused && g_simClock->isPaused() == 1;
+    const unsigned tail = (g_panelHead + g_panelCount + 15) % 16;
+    // Only replace a queued paused snapshot of the SAME window/root. Preserve
+    // other vehicles and unpaused samples; no extra storage or render-thread I/O.
+    private_logistics_panel::Snapshot snapshot{};
+    bool captured = false;
+    __try {
+        captured = private_logistics_panel::Capture({PanelRead, nullptr},
+            (uintptr_t)context, (uintptr_t)window, snapshot);
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        InterlockedExchange(&g_panelFault, 1);
+    }
+    private_logistics_schedule::Snapshot schedule{};
+    if (captured && g_scheduleReady) {
+        schedule.status = private_logistics_schedule::Status::Ineligible;
+        // Only the root itself, uniquely present in the verified road-DO fleet.
+        // Never walk home as buyer, follow linked vehicles, or read +650's pointee.
+        if (snapshot.count && snapshot.objects[0].pointer == snapshot.root &&
+            snapshot.objects[0].match == private_logistics_panel::Match::Found &&
+            snapshot.objects[0].occurrences == 1) {
+            if (!InterlockedCompareExchange(&g_scheduleFault, 0, 0)) {
+                __try {
+                    private_logistics_schedule::Capture({PanelRead, nullptr}, snapshot.root, schedule);
+                } __except (EXCEPTION_EXECUTE_HANDLER) {
+                    InterlockedExchange(&g_scheduleFault, 1);
+                    schedule.status = private_logistics_schedule::Status::GuardedFault;
+                }
+            } else schedule.status = private_logistics_schedule::Status::GuardedFault;
+        }
+    }
+    if (captured && epoch == InterlockedCompareExchange(&g_panelEpoch, 0, 0)) {
+        g_panelLastMs = now; // inactive windows do not consume the capture slot
+        const bool coalesce = paused && snapshot.root && g_panelCount && g_panelQueue[tail].paused &&
+            g_panelQueue[tail].snapshot.window == snapshot.window &&
+            g_panelQueue[tail].snapshot.root == snapshot.root;
+        if (coalesce) {
+            auto& record = g_panelQueue[tail];
+            record.snapshot = snapshot;
+            record.schedule = schedule;
+            record.milliseconds = now;
+            record.queueFullAtCapture = g_panelDropped;
+            if (record.coalesced < 0x7FFFFFFFu) ++record.coalesced;
+        } else if (g_panelCount == 16) {
+            if (!g_panelFirstDropMs) g_panelFirstDropMs = now;
+            g_panelLastDropMs = now;
+            if (g_panelDropped < 0x7FFFFFFFu) ++g_panelDropped;
+        } else {
+            auto& record = g_panelQueue[(g_panelHead + g_panelCount) % 16];
+            record.snapshot = snapshot;
+            record.schedule = schedule;
+            record.epoch = epoch;
+            record.sequence = ++g_panelSamples;
+            record.milliseconds = record.firstMilliseconds = now;
+            record.queueFullAtCapture = g_panelDropped;
+            record.coalesced = 0;
+            record.paused = paused;
+            ++g_panelCount;
+        }
+    }
+    LeaveCriticalSection(&g_panelQueueLock);
+}
+static void __fastcall PanelRendererDetour(void* context, void* window)
+{
+    ((PanelRenderer)g_panelTrampoline)(context, window);
+    PanelCapture(context, window); // POST render, not an atomic read at the format call
+}
+static const char* PanelStatus(private_logistics_panel::Status s)
+{
+    using private_logistics_panel::Status;
+    switch (s) {
+    case Status::Complete: return "complete";
+    case Status::TooManyLinks: return "too_many_links";
+    case Status::NonFinite: return "nonfinite";
+    case Status::Overflow: return "overflow";
+    default: return "unreadable";
+    }
+}
+static const char* PanelMatch(private_logistics_panel::Match m)
+{
+    using private_logistics_panel::Match;
+    switch (m) {
+    case Match::Found: return "exact_fleet_pointer";
+    case Match::Absent: return "absent_from_candidate_home";
+    case Match::NotRoadOffice: return "candidate_home_not_road_do";
+    case Match::InvalidFleet: return "invalid_candidate_fleet";
+    default: return "unavailable";
+    }
+}
+static void ScheduleObserverLog(const PanelRecord& record, bool gap)
+{
+    if (!g_scheduleReady) return;
+    if (gap || record.coalesced ||
+        (g_scheduleLastEpoch == record.epoch &&
+         g_scheduleLastCaptureDrops != record.queueFullAtCapture)) g_scheduleHistory.Break();
+    g_scheduleLastEpoch = record.epoch;
+    g_scheduleLastCaptureDrops = record.queueFullAtCapture;
+    const auto& fuel = record.snapshot;
+    const auto& s = record.schedule;
+    const uintptr_t home = fuel.count ? fuel.objects[0].homeCandidate : 0;
+    // Simulation-thread copy of previously captured VALUES, not native reads.
+    const auto previous = g_scheduleHistory.LastValidValues();
+    const auto d = g_scheduleHistory.Observe(s, (unsigned long long)record.epoch, fuel.root, home,
+                                           record.sequence, record.milliseconds);
+    if (!d.emit) return;
+    Logf("[PANEL SCHEDULE] epoch=%ld sample=%u ms=%llu root=%p candidate_home=%p "
+         "status=%s baseline=%s observed_fields_changed=%d storage_changed=%d "
+         "row_index_changed=%d opaque_context_changed=%d begin680=%p end688=%p configs638=%p "
+         "raw_row_count=%llu captured_rows=%u index698=%d flag5fd=%u "
+         "raw4a0=%p raw610=%p raw650=%p fuel_valid=%d fuel_root_raw=%.9g "
+         "aggregate_litres_candidate=%.2f visibility=panel_only phase=post_render "
+         "native_event_coverage=unverified native_job_id=unverified buyer=unverified "
+         "completion=unverified exact_burn=0 billing=off",
+         record.epoch, record.sequence, (unsigned long long)record.milliseconds,
+         (void*)fuel.root, (void*)home, private_logistics_schedule::StatusName(s.status),
+         private_logistics_schedule::BaselineName(d.baseline), d.fields ? 1 : 0,
+         d.storage ? 1 : 0, d.index ? 1 : 0, d.context ? 1 : 0,
+         (void*)s.begin, (void*)s.end, (void*)s.configs,
+         (unsigned long long)(s.end >= s.begin ? (s.end - s.begin) / 8 : 0),
+         s.status == private_logistics_schedule::Status::Complete ? s.count : 0,
+         (int)s.index698, (unsigned)s.flag5fd, (void*)s.raw4a0, (void*)s.raw610, (void*)s.raw650,
+         fuel.aggregateValid ? 1 : 0, fuel.count ? (double)fuel.objects[0].raw : 0.0,
+         (double)fuel.litresCandidate);
+    if (s.status != private_logistics_schedule::Status::Complete) return;
+    const auto changes = d.endpointCompared
+        ? private_logistics_schedule::ClassifyChanges(previous, s)
+        : private_logistics_schedule::FieldChanges{};
+    const auto currentPattern = private_logistics_schedule::ClassifyPattern(s, home);
+    const auto previousPattern = d.endpointCompared
+        ? private_logistics_schedule::ClassifyPattern(previous, home)
+        : private_logistics_schedule::Pattern::Unavailable;
+    const bool indexOnly = d.endpointCompared && d.endpointIndex && !d.endpointFields &&
+                           !d.endpointStorage && !d.endpointContext;
+    Logf("[PANEL SCHEDULE CLASSIFICATION] epoch=%ld sample=%u previous_sample=%u "
+         "root=%p comparison_available=%d compared_across_gap=%d "
+         "previous_pattern=%s current_pattern=%s row_count_changed=%d ordered_targets_changed=%d "
+         "structure_changed=%d config_availability_changed=%d task_flags_changed=%d "
+         "scalar_settings_changed=%d settings_only=%d active_index_only=%d "
+         "comparison_scope=captured_endpoints pattern_semantics=observed_flags_only "
+         "resource_identity=unverified native_job_boundary=unverified billing=off",
+         record.epoch, record.sequence, d.previousSample, (void*)fuel.root,
+         changes.comparable ? 1 : 0, d.endpointAcrossGap ? 1 : 0,
+         private_logistics_schedule::PatternName(previousPattern),
+         private_logistics_schedule::PatternName(currentPattern),
+         changes.count ? 1 : 0, changes.targets ? 1 : 0, changes.Structure() ? 1 : 0,
+         changes.availability ? 1 : 0, changes.flags ? 1 : 0, changes.scalars ? 1 : 0,
+         changes.SettingsOnly() ? 1 : 0, indexOnly ? 1 : 0);
+    if (d.endpointCompared && d.endpointAcrossGap) {
+        Logf("[PANEL SCHEDULE ENDPOINT] epoch=%ld sample=%u ms=%llu root=%p candidate_home=%p "
+             "previous_sample=%u previous_ms=%llu previous_rows=%u current_rows=%u "
+             "endpoint_fields_differ=%d endpoint_storage_differ=%d endpoint_index_differ=%d "
+             "endpoint_context_differ=%d compared_across_gap=1 continuity_valid=0 "
+             "comparison=last_valid_captured_values native_event_time=unknown "
+             "native_event_coverage=unverified completion=unverified billing=off",
+             record.epoch, record.sequence, (unsigned long long)record.milliseconds,
+             (void*)fuel.root, (void*)home, d.previousSample, (unsigned long long)d.previousMs,
+             previous.count, s.count, d.endpointFields ? 1 : 0, d.endpointStorage ? 1 : 0,
+             d.endpointIndex ? 1 : 0, d.endpointContext ? 1 : 0);
+        // The last valid sample may not have emitted rows (unchanged). Include
+        // its values when content differs so both endpoints are reconstructible.
+        if (d.endpointFields) for (unsigned i = 0; i < previous.count; ++i) {
+            const auto& r = previous.rows[i];
+            Logf("[PANEL SCHEDULE PREVIOUS ROW] epoch=%ld sample=%u compared_to_sample=%u "
+                 "row=%u target_raw=%p config_fields_read=%d flag00=%u value04=%.9g "
+                 "flagc8=%u valuecc=%.9g values=cached_not_native_read billing=off",
+                 record.epoch, d.previousSample, record.sequence, i, (void*)r.target,
+                 r.configRead ? 1 : 0, (unsigned)r.flag00, (double)r.value04,
+                 (unsigned)r.flagC8, (double)r.valueCC);
+        }
+    }
+    for (unsigned i = 0; i < s.count; ++i) {
+        const auto& r = s.rows[i];
+        Logf("[PANEL SCHEDULE ROW] epoch=%ld sample=%u row=%u target_raw=%p "
+             "config_fields_read=%d flag00=%u value04=%.9g flagc8=%u valuecc=%.9g "
+             "target_role=unverified buyer=unverified",
+             record.epoch, record.sequence, i, (void*)r.target, r.configRead ? 1 : 0,
+             (unsigned)r.flag00, (double)r.value04, (unsigned)r.flagC8, (double)r.valueCC);
+    }
+}
+static void PanelObserverTick(void*, float, float)
+{
+    PanelRecord record{};
+    bool have = false, cap = false, fault = false, contention = false;
+    unsigned dropped = 0, newDrops = 0;
+    ULONGLONG firstDropMs = 0, lastDropMs = 0;
+    if (!TryEnterCriticalSection(&g_panelQueueLock)) return;
+    const LONG epoch = InterlockedCompareExchange(&g_panelEpoch, 0, 0);
+    PanelResetQueueLocked(epoch);
+    if (g_panelCount) {
+        record = g_panelQueue[g_panelHead];
+        g_panelHead = (g_panelHead + 1) % 16; --g_panelCount; have = true;
+    }
+    contention = InterlockedExchange(&g_panelContention, 0) != 0;
+    dropped = g_panelDropped;
+    newDrops = dropped - g_panelDroppedReported;
+    g_panelDroppedReported = dropped;
+    firstDropMs = g_panelFirstDropMs; lastDropMs = g_panelLastDropMs;
+    g_panelFirstDropMs = g_panelLastDropMs = 0;
+    cap = g_panelSamples >= 240 && !g_panelCapLogged;
+    if (cap) g_panelCapLogged = true;
+    fault = InterlockedCompareExchange(&g_panelFault, 0, 0) && !g_panelFaultLogged;
+    if (fault) g_panelFaultLogged = true;
+    LeaveCriticalSection(&g_panelQueueLock);
+    if (epoch != InterlockedCompareExchange(&g_panelEpoch, 0, 0)) return;
+    if (fault) Logf("[PANEL GAP] epoch=%ld reason=guarded_read_fault observer=disabled exact_burn=0", epoch);
+    if (cap) Logf("[PANEL GAP] epoch=%ld reason=capture_cap cap=240 capture=stopped exact_burn=0", epoch);
+    if (contention)
+        Logf("[PANEL GAP] epoch=%ld reason=render_trylock_contention skipped_render_attempts=unknown "
+             "simulation_event_coverage=unverified exact_burn=0", epoch);
+    if (newDrops)
+        Logf("[PANEL GAP] epoch=%ld reason=queue_full skipped_snapshot_captures=%u "
+             "first_ms=%llu last_ms=%llu queue_full_total_at_drain=%u "
+             "sample_ids=accepted_records_only simulation_event_coverage=unverified exact_burn=0",
+             epoch, newDrops, (unsigned long long)firstDropMs,
+             (unsigned long long)lastDropMs, dropped);
+    if (g_scheduleReady && (fault || cap || contention || newDrops)) g_scheduleHistory.Break();
+    if (!have || record.epoch != InterlockedCompareExchange(&g_panelEpoch, 0, 0)) return;
+    if (record.coalesced)
+        Logf("[PANEL GAP] epoch=%ld sample=%u reason=paused_snapshot_coalescing "
+             "discarded_paused_snapshots=%u first_ms=%llu latest_ms=%llu "
+             "policy=keep_latest_same_window_root simulation_event_coverage=unverified exact_burn=0",
+             record.epoch, record.sequence, record.coalesced,
+             (unsigned long long)record.firstMilliseconds, (unsigned long long)record.milliseconds);
+    const auto& s = record.snapshot;
+    Logf("[PANEL FUEL] epoch=%ld sample=%u ms=%llu phase=post_render window=%p root=%p "
+         "status=%s aggregate_valid=%d current_raw=%.9g litres_candidate=%.2f "
+         "capacity_unadjusted=%.9g ratio_valid=%d ratio=%.9g links=%u "
+         "mode=%d metadata_kind=%d flags_read=%d flag8681=%u flag8682=%u "
+         "adjustment_read=%d adjustment_needed=%d presentation=%s "
+         "queue_full_total_at_capture=%u queue_full_total_at_drain=%u "
+         "captured_paused=%d coalesced_snapshots=%u sample_ids=accepted_records_only "
+         "physical_fuel=unverified exact_burn=0 billing=off",
+         record.epoch, record.sequence, (unsigned long long)record.milliseconds,
+         (void*)s.window, (void*)s.root, PanelStatus(s.status), s.aggregateValid ? 1 : 0,
+         (double)s.current, (double)s.litresCandidate, (double)s.unadjustedCapacity,
+         s.ratioValid ? 1 : 0, (double)s.ratio, s.links, s.contextMode, s.metadataKind,
+         s.flagsRead ? 1 : 0, (unsigned)s.flag8681, (unsigned)s.flag8682,
+         s.adjustmentRead ? 1 : 0, s.adjustmentNeeded ? 1 : 0,
+         s.flagsRead && (s.flag8681 || s.flag8682) ? "alternate_if_shown" : "unresolved_7c58",
+         record.queueFullAtCapture, dropped, record.paused ? 1 : 0, record.coalesced);
+    for (unsigned i = 0; i < s.count; ++i) {
+        const auto& o = s.objects[i];
+        Logf("[PANEL OBJECT] epoch=%ld sample=%u index=%u role=%s object=%p metadata=%p "
+             "quantity_read=%d raw5f0=%.9g capacity8684=%.9g candidate_home=%p "
+             "membership=%s fleet_index=%u occurrences=%u private_status=not_classified",
+             record.epoch, record.sequence, i, i ? "linked" : "root", (void*)o.pointer,
+             (void*)o.metadata, o.quantityRead ? 1 : 0, (double)o.raw, (double)o.capacity,
+             (void*)o.homeCandidate, PanelMatch(o.match), o.fleetIndex, o.occurrences);
+    }
+    ScheduleObserverLog(record, fault || cap || contention || newDrops);
+}
+static bool PanelTargetMatches(void)
+{
+    // Fingerprint, not a recomputed SHA-256. Operator must verify the file hash.
+    if (!g_exeBase || g_exeSize < 0x90B080 || !ReadablePtr(g_exeBase, sizeof(IMAGE_DOS_HEADER))) return false;
+    const auto* dos = (const IMAGE_DOS_HEADER*)g_exeBase;
+    if (dos->e_magic != IMAGE_DOS_SIGNATURE || dos->e_lfanew < 0 || dos->e_lfanew > 0x100000) return false;
+    const auto* nt = (const IMAGE_NT_HEADERS64*)(g_exeBase + dos->e_lfanew);
+    if (!ReadablePtr(nt, sizeof(*nt)) || nt->Signature != IMAGE_NT_SIGNATURE ||
+        nt->FileHeader.Machine != IMAGE_FILE_MACHINE_AMD64 ||
+        nt->FileHeader.TimeDateStamp != 0x6A3EB6ADu ||
+        nt->OptionalHeader.Magic != IMAGE_NT_OPTIONAL_HDR64_MAGIC) return false;
+    static const BYTE scale[] = {0x00, 0x00, 0x7A, 0x44};
+    static const BYTE format[] = {0x25,0,0x2E,0,0x32,0,0x66,0,0x6C,0,0,0};
+    return ReadablePtr(g_exeBase + 0x90B07C, sizeof(scale)) &&
+        ReadablePtr(g_exeBase + 0x8F3E98, sizeof(format)) &&
+        memcmp(g_exeBase + 0x90B07C, scale, sizeof(scale)) == 0 &&
+        memcmp(g_exeBase + 0x8F3E98, format, sizeof(format)) == 0;
+}
+// Additional read-only schedule gate. A mismatch disables ONLY schedule reads;
+// it never installs another hook or prevents the unchanged fuel observer.
+struct ScheduleFingerprint { uintptr_t rva; unsigned size; BYTE bytes[40]; };
+static const ScheduleFingerprint g_scheduleFingerprints[] = {
+        {0x7D5550, 7, {0x4C,0x8B,0xBA,0x40,0x02,0x00,0x00}},
+        {0x7E356E, 4, {0x4C,0x8B,0x7D,0x40}},
+        {0x7E6904, 25, {0x49,0x8B,0x8F,0x88,0x06,0x00,0x00,0x49,0x2B,0x8F,0x80,0x06,0x00,0x00,0x48,0xC1,0xF9,0x03,0x41,0x38,0xBF,0xFD,0x05,0x00,0x00}},
+        {0x7E693C, 7, {0x49,0x39,0xB7,0xA0,0x04,0x00,0x00}},
+        {0x7E6BDB, 8, {0x49,0x83,0xBF,0x50,0x06,0x00,0x00,0x00}},
+        {0x7E815D, 32, {0x49,0x8B,0x87,0x80,0x06,0x00,0x00,0x48,0x8B,0x4D,0x38,0x4C,0x8B,0x34,0xC8,0x48,0x69,0xF2,0x98,0x01,0x00,0x00,0x49,0x03,0xB7,0x38,0x06,0x00,0x00,0x4D,0x85,0xF6}},
+        {0x7E81B3, 19, {0x41,0x80,0xBF,0xFD,0x05,0x00,0x00,0x00,0x74,0x06,0x4C,0x8B,0xF1,0x48,0x8B,0xF1,0x40,0x32,0xFF}},
+        {0x7E8438, 7, {0x41,0x39,0x87,0x98,0x06,0x00,0x00}},
+        {0x7E8CC6, 7, {0x4D,0x3B,0xB7,0x10,0x06,0x00,0x00}},
+        {0x7E8EB9, 7, {0x0F,0xB6,0x86,0xC8,0x00,0x00,0x00}},
+        {0x7E8ED2, 3, {0x80,0x3E,0x00}},
+        {0x7E8F07, 8, {0xF3,0x0F,0x10,0x86,0xCC,0x00,0x00,0x00}},
+        {0x7E9273, 5, {0xF3,0x0F,0x10,0x46,0x04}},
+};
+static bool ScheduleTargetMatches(void)
+{
+    for (const auto& f : g_scheduleFingerprints)
+        if (f.rva > g_exeSize || f.size > g_exeSize - f.rva ||
+            !ReadablePtr(g_exeBase + f.rva, f.size) ||
+            memcmp(g_exeBase + f.rva, f.bytes, f.size)) return false;
+    return true;
+}
+static void PanelObserverStart(void)
+{
+    if (!g_panelObserverEnabled) { Logf("[PANEL FUEL] disabled by INI"); return; }
+    if (g_billing || !g_simClock || !g_simClock->registerTick || !g_persistenceHandle) {
+        Logf("[PANEL FUEL] unavailable: requires billing=0, sim_clock tick and registered load signal"); return;
+    }
+    if (!PanelTargetMatches()) { Logf("[PANEL FUEL] target/data fingerprint mismatch; no hook installed"); return; }
+    // 20 complete bytes through LEA RBP,[RSP-2EB0]; no RIP-relative operand.
+    static const BYTE expect[] = {0x40,0x55,0x56,0x57,0x41,0x54,0x41,0x55,
+        0x41,0x56,0x41,0x57,0x48,0x8D,0xAC,0x24,0x50,0xD1,0xFF,0xFF};
+    if (!ReadablePtr(g_exeBase + 0x7D5460, sizeof(expect)) ||
+        memcmp(g_exeBase + 0x7D5460, expect, sizeof(expect))) {
+        Logf("[PANEL FUEL] renderer prologue mismatch; no hook installed"); return;
+    }
+    g_scheduleReady = g_scheduleObserverEnabled && ScheduleTargetMatches();
+    Logf("[PANEL SCHEDULE] enabled=%d fingerprint=%s mode=read_only_selected_fields "
+         "max_rows=16 last_flag5fd_row_config=not_read gap_endpoints=enabled_cached_values_only "
+         "classification=enabled_captured_values job_lifecycle=unverified billing=off",
+         g_scheduleObserverEnabled ? 1 : 0, g_scheduleReady ? "matched" : "disabled_or_mismatch");
+    InitializeCriticalSection(&g_panelQueueLock);
+    if (!g_simClock->registerTick(PanelObserverTick, nullptr)) {
+        Logf("[PANEL FUEL] tick registration failed; no hook installed"); return;
+    }
+    if (!InstallInlineHook(g_exeBase + 0x7D5460, (void*)PanelRendererDetour,
+                          &g_panelTrampoline, expect, sizeof(expect), "private_logistics panel fuel observer")) {
+        Logf("[PANEL FUEL] renderer hook refused; capture unavailable"); return;
+    }
+    InterlockedExchange(&g_panelStarted, 1);
+    Logf("[PANEL FUEL] installed renderer=0x7D5460 stolen=20 scale=1000 format=%%.2fl "
+         "interval_ms=1000 cap=240 queue=16 paused_coalescing=%s; logs drain on unpaused ticks; "
+         "candidate_home fleet comparison only; accepted sample IDs do not prove coverage; "
+         "no exact burn, tracker or billing", g_simClock->isPaused ? "keep_latest_same_window_root" : "unavailable");
+}
+#endif
+
+```
+
+### Complete final source v0.18.10 — `plugins/private_logistics/private_logistics.cpp`
+
+Bytes: 166726; SHA256: `474fede02146de1488b533095785fd0da54cf9739bbc0e01c608bd72ec949c19`.
+
+```cpp
+// private_logistics - what a private company earns, and what it pays.
+//
+// ---------------------------------------------------------------------------
+// v0.18.10 updates: captured target/flag/scalar change classification and
+// conservative office-only/load-unload patterns; logging only, no job/billing events.
+// v0.18.9 updates: descriptive task-list endpoint comparisons across diagnostic
+// gaps, using captured values only. Original continuity/billing guards unchanged.
+// v0.18.8: fingerprint-gated read-only schedule observations; job lifecycle unverified.
+// Historical fuel claims below are superseded: sampled changes are NOT burn,
+// native fuel units/events remain unverified and the journey adapter is unwired.
+//
+// v0.18.6 updates: bounded, read-only panel-object/fleet observer.
+// Verified 7D5460 prologue, scale and format fingerprints; one sample/second,
+// at most 240 per load epoch. No exact burn/tracker/billing integration.
+//
+// v0.18-permissions: independent state-site directions; consumer sites never
+// supply goods; state default deny applies to existing/manual targets too.
+// Missing eligible connections are recreated by the company. No fuel/billing
+// policy changes in this version. Native direction semantics need game testing.
+//
+// Historical v0.17 updates (state-storage source opt-in):
+//   - Register a storage-panel checkbox through ui_panels' widget API; each
+//     public type-5 storage defaults OFF and its permission is persisted by a
+//     stable type/name/position key, never by retaining a Building pointer.
+//   - When opted in, append a native DO target with load enabled and unload
+//     enable/percentage cleared. Turning the checkbox off disables both task
+//     directions on that state-storage target; unrelated DO targets are untouched.
+//   - The storage builder is hooked by the verified dispatcher call site in
+//     ui_panels. Customs remains diagnostic-only; no inventory is manipulated.
+// ---------------------------------------------------------------------------
+// v0.16 updates (coordinate probe correction):
+//   - v0.15 logged a state storage position of (0,0) and customs distance 0.0m.
+//     The position helper had read bld+0x08/+0x10 instead of the C3D_NODE
+//     translation at bld+0x320+0x30/+0x38 (with placement-bbox fallback).
+//     Stable identity keys and nearest-customs diagnostics now use the actual
+//     position helper. No customs/state-storage target writes were added.
+//
+// v0.15 updates (state-storage/customs discovery probe; no public-target writes):
+//   - Walk the game-wide building vector to count state storage buildings and
+//     report each private road/rail DO's geometrically nearest customs house.
+//     This is diagnostic only; neither is appended as a target in this version.
+//   - Use game_world.h's canonical demolished flag rather than an unverified
+//     raw offset in private-building discovery.
+//
+// v0.14 updates (automatic private DO targets; staged and disabled by default):
+//   1. Once per in-game day, discover registered private DOs (road 43 / rail 52)
+//      and private buildings with native storage, using enterprise_base.
+//   2. Preserve existing native target entries. Missing eligible targets are
+//      reported in dry-run mode by default; optional write mode appends a
+//      TaskEntry and mirrors the native add-path TaskCfg defaults (wildcard,
+//      100% thresholds, active/validated flags). The owner reports separate
+//      load/unload checkboxes in the DO panel; their backing fields and dataflow
+//      still need verification before assigning state storage as load-only.
+//   3. Generated entries are enabled, deduplicated, and trigger the verified DO
+//      dirty flag. Existing entries/configs are never rewritten or removed.
+//   4. A session-local identity ledger tracks generated targets by stable
+//      keys. Missing eligible targets are recreated; manual removal is not a veto.
+//   5. This is a daily callback, not a per-frame hook. Save/load and manual-removal
+//      UI behavior remain runtime validation items; write mode ships off.
+// ---------------------------------------------------------------------------
+// Level 3. Consumes enterprise_base (v8), currency (v4) and sim_clock.
+// Optionally consumes resource_pricing for the unit price.
+//
+// ---------------------------------------------------------------------------
+// v0.10 - THE TANK WAS FOUND, AND THE TARIFF WAS FOUR TIMES TOO CHEAP.
+//
+// veh+0x5F0 is fuel in tonnes. v0.9's field scanner found it by watching which
+// words move, and the v0.9 run confirmed it five ways: it falls while the truck
+// works, it runs to zero and jumps at a refill, it tops out at 0.46 (the
+// player's own 456 LITRE tank at 1 kg/L), the refills reconcile to the diesel
+// the company paid for, and nothing else in the vehicle moves that way.
+//
+// With the tank readable, the burn stops being a guess:
+//
+//     2.05 t over 51 days, two active vehicles, 139 deliveries
+//     = 0.01475 t per delivery = 14.75 L at 1 kg/L
+//
+// v0.9 shipped 3.30 L/trip, derived from PURCHASES over trips. The company was
+// being paid 1.06 per delivery against a real fuel cost of 1.96 - it lost money
+// on every trip and the tariff, not the economy, was doing it.
+//
+// v0.10 reads every vehicle's tank at every close and reports
+//
+//     [TANK] day N   v=... fuel 0.4300 t | burned 0.0220 t | refills 0
+//     [TANK] run: burned 2.0500 t = 2050.0 L over 139 delivery(ies) = 14.75 L/trip
+//
+// Refills are counted, never subtracted from burn. This is the first figure in
+// the whole feature that is neither a purchase nor a model.
+//
+// ALSO: diesel_density 0.00084 -> 0.00100. The game stores 1 kg per litre; the
+// old constant was real-world diesel and made every litre 16 % too cheap.
+//
+// ---------------------------------------------------------------------------
+// v0.9 - FIND THE TANK.
+//
+// The player asked the right question: how do we know how much fuel a trip
+// burnt? We do not. Two runs measured it by dividing the company's diesel
+// PURCHASES by its trips and got 3.27 L/trip over 1,100 trips and 7.14 L/trip
+// over 214 trips - a factor of two, because fuel sits in tanks between
+// purchases. Purchases are not burn, and no amount of averaging makes them so.
+//
+// What is needed is the fuel going INTO a vehicle, or the level inside it. The
+// vehicle record is reachable (bld+0xC70, proven) and the transfer hook never
+// shows a fuel movement, so the tank is a FIELD inside the vehicle, not an
+// event we can already see.
+//
+// This build finds it empirically instead of guessing:
+//   - the first sighting of a vehicle is stored as a baseline and not logged;
+//   - every day after, the same 512 dwords at veh+0x000..0x800 are compared,
+//     and ONLY the words that changed are logged, as offset, old, new.
+//
+// A tank shows up as a word that falls while the truck drives and jumps when
+// it refuels. Position, speed and timers will show up too - the offsets tell
+// them apart. Nothing is priced from this; it is how the next tariff stops
+// being a fleet average.
+//
+// ALSO IN v0.9:
+//   - the [FUEL] run line now says PURCHASES and not burn, because that is
+//     what it measures.
+//   - the ini learned its section header back. v0.7's rewrite dropped
+//     [private_logistics], so the host read nothing and every key fell back to
+//     its compiled default - which is why the last two runs were dry runs.
+//
+// ---------------------------------------------------------------------------
+// v0.8 - SEE THE VEHICLES BEFORE PRICING THEM.
+//
+// v0.7's trip tariff charged every delivery the same litres. That is one
+// arbitrary vehicle imposed on a whole fleet, and it cannot survive: vehicles
+// differ in capacity, speed, price and consumption, and a tariff that ignores
+// it will overpay a scooter and bankrupt a heavy hauler. H41.
+//
+// The v0.7 run shows the transfer hook cannot supply the difference: 3,065
+// site lines resolve to exactly TWO vehicle-side pointers, one of them NULL.
+// The fleet has to be read where the game keeps it - bld+0xC70/+0xC78, proven
+// by three independent readers (Part 12) - and each vehicle's own record read
+// from there:
+//
+//     veh+0x4F8  Building*  home building                      proven
+//     veh+0x3B8  vec        cargo, stride 0x10 (Res*, float t)  proven
+//     veh+0x510  ?          candidate catalogue entry           UNPROVEN
+//
+// This build adds the census: once a day, every private enterprise's fleet is
+// walked, each vehicle is logged with what it carries and what it can carry at
+// peak, and the first sighting of each vehicle dumps 32 bytes at the pointer
+// the game gives for its catalogue entry. That is the lead for capacity,
+// speed, price and consumption - the four numbers the final model needs and
+// the four this build refuses to invent.
+//
+// The tariff is unchanged from v0.7. It stays a fallback until the census
+// says what the fleet actually is.
+//
+// ALSO IN v0.8:
+//   - litres_per_trip 5.00 -> 3.30. The v0.7 meter measured the DO's diesel
+//     bill against its own deliveries: 406.40 RUB over 1,100 trips =
+//     3.267 L/trip at ~128/RUB. Not a guess, and not 8.63 either - that
+//     figure counted tank fill, exactly as the player said it would.
+//   - the [FUEL] run line no longer claims "model and bill agree" when the
+//     bill is zero and there is nothing to compare.
+//
+// ---------------------------------------------------------------------------
+// v0.6 - THE TRIP IS PAID FOR BY THE TRIP, AND THE SHARE IS ONLY A SHARE.
+//
+// Session 7 ran v0.5 with fuel switched on and produced the number the whole
+// feature needed: the private DO's account reconciles exactly to
+//
+//     10,000.00 + 738.99 freight - 445.37 fuel - 0.02 = 10,293.60
+//
+// so the game DOES charge a private distribution office for diesel, and it
+// arrives as a cat=2 (FOREIGN) debit on its own company capital. H37 closed.
+// H33 closed too: 444 sampled payments, all moving the treasury to the kopeck.
+//
+// The same log indicted the payment model. Per delivery, against a measured
+// fuel cost of 0.34 RUB:
+//
+//     plants     282 deliveries   0.29 each   0.9x the fuel bill
+//     food       127 deliveries   2.13        6.3x
+//     meat        16 deliveries   2.37        7.0x
+//     fabric      19 deliveries   3.80       11.2x
+//     chemicals   45 deliveries   6.13       18.0x
+//
+// 58 % of the DO's work was selling at a LOSS and 9 % was paying for it. A
+// percentage of cargo value is not a tariff, it is a lottery. Real freight is
+// cost recovery plus a margin; only the handling of valuable cargo is priced
+// ad valorem, and it is a small part of the bill.
+//
+// v0.6 therefore models the tariff as what it has to be:
+//
+//     tariff = fuel_cost x (1 + margin) + tariff_share x cargo_value
+//
+// Cost recovery pays the trip, the share pays for the cargo being worth
+// carrying. litre counts come from session 7 (see litres_per_trip in the ini).
+//
+// Still probe only. Nothing here is charged. The 8 % share keeps running so
+// the two can be read side by side for one more session.
+//
+// Also fixed: the index and the treasury were read at plugin start, before the
+// world is loaded, so every log opened with "fuel NOT FOUND" and "treasury
+// opens at 0.00" that were both false a second later. Both are now re-read and
+// printed at every day close.
+//
+// ---------------------------------------------------------------------------
+// v0.5 - MEASURE THE COST BEFORE PRICING IT.
+//
+// v0.4 moved money and the money arrived (RE_DIGEST Part 19). What the same
+// session also showed is that the private DO has NO COST SIDE: its company
+// account took 646 credits over seven days and paid out nothing at all. Fuel,
+// upkeep and vehicles never touched its books. So the 8 % freight is not a
+// tariff, it is a subsidy, and "is 8 % enough to cover fuel" cannot be asked
+// until a cost exists to compare it against.
+//
+// This build therefore charges nothing new and measures two things:
+//
+//   1. THE TARIFF MODEL. A price built the way real freight is built - cost
+//      recovery plus a margin - and indexed to a live price, never to a
+//      rouble constant. A constant is exactly what inflation eats:
+//
+//          litres  = litres_per_trip + litres_per_tonne x tonnes
+//          cost    = litres x diesel_density x fuel_price      (live)
+//          tariff  = cost x (1 + margin)
+//
+//      If no fuel price resolves (fuel_resource unknown, resource_pricing
+//      absent), the same cost is expressed in daily survival baskets via the
+//      CPI tail, so the fallback is indexed too. If neither resolves the
+//      probe reports "unindexed" and prices nothing - it never guesses a
+//      figure in currency units.
+//
+//   2. THE MONEY PATH, both sides of it. [BAL] prints the treasury and every
+//      carrier's company capital at each day close. v0.4 proved the company
+//      side to the kopeck but never read the payer (H33); the delta between
+//      two closes is that proof, and the difference between a carrier's
+//      capital change and the freight it was paid is its fuel bill (H37).
+//
+// Nothing here charges the probe. `tariff_probe = 1` logs, it does not pay.
+// The 8 % share keeps running exactly as v0.4 left it, so a session produces
+// three numbers side by side: modelled tariff, freight actually paid, and the
+// vehicle's real fuel consumption as the game charged it.
+//
+// v0.4 also carried a stale banner - it opened every log with "v0.3" - which
+// cost the last reader a minute. Version now comes from PL_VERSION once.
+//
+// ---------------------------------------------------------------------------
+// v0.4 - FREIGHT IS A SHARE OF CARGO VALUE, AND THE MONEY MOVES.
+//
+// v0.3 paid a flat per-tonne rate (1.50 RUB/t). Measured against the live
+// session that is 0.31 % of what the cargo is worth - a private distribution
+// office could not cover a truck, and FreightRateFor() ignored the resource
+// anyway, so the liquid and goods rates were dead keys.
+//
+// v0.4 replaces the rate with freight_share, a fraction of the cargo's own
+// value:
+//
+//     freight = tons x unitPrice x freight_share          (default 0.08)
+//
+// A typical load is ~0.12 t of fabric worth ~58 RUB, so this pays ~4.70 RUB
+// instead of ~0.18. It scales with what is actually moved, it needs no
+// commodity-class table, and when Ship 2 makes the BUYER pay instead of the
+// state, the same formula becomes the wholesaler's margin with no rewrite.
+//
+// v0.4 also:
+//   - refuses a payment the treasury cannot afford (getTreasuryBalance),
+//     because moveTreasury takes a signed amount and will happily go negative;
+//   - splits `skipped` into the four things it was conflating;
+//   - labels the daily line with the day it actually covers (it was one
+//     behind - the callback fires at the START of the day).
+//
+// ---------------------------------------------------------------------------
+// v0.3 - THE FIRST MONEY.
+//
+// `dry_run = 1` by default: this build COMPUTES every payment and logs it as
+// "[PAY] would", but moves nothing. Set dry_run = 0 to actually pay.
+// Nothing else in the plugin changes when you flip it.
+//
+// The money model (PLAN_TECHNICAL.md sections 6 and 7):
+//
+//   H1 - A BUILDING IS PAID FOR GOODS THAT LEAVE IT
+//        at a mode-0 call with tons < 0, param_2 is the source Building.
+//        If that building is a private company, it is credited
+//        |tons| x price x factory_share, and the treasury pays.
+//
+//   H2 - A CARRIER IS PAID FREIGHT FOR A DELIVERY
+//        at a mode-0 call with tons > 0, param_2 is the destination Building
+//        and param_9 is the fleet owner. If the owner is a private company
+//        and is not the destination, it is credited
+//        tons x price x freight_share.
+//
+//   Nothing is billed at a mode-1 site: those are the vehicle side of the
+//   same movement and would double-charge it.
+//
+// ---------------------------------------------------------------------------
+// What the two live sessions established (RE_DIGEST Parts 10, 12 and 13)
+// ---------------------------------------------------------------------------
+//
+//   - THE COMMIT TEST IS `(unsigned char)r == 1`. The transfer returns a bool
+//     in AL; the upper 24 bits of EAX are register garbage. v0.1 tested the
+//     whole int and discarded exactly half the committed calls.
+//
+//   - `param_2` IS A Building* AT MODE 0 AND A Vehicle* AT MODE 1. That is
+//     the whole of attribution. At mode 0 the value also appears in
+//     enterprise_base's "[CAP] ... by=wholesale" lines, which only ever take
+//     a building; vehicle offsets read off it return garbage.
+//
+//   - `param_9` IS THE FLEET OWNER, not an endpoint: constant across two
+//     different destination buildings, and equal to the mode-1 vehicle's
+//     `home` field in every call.
+//
+//   - `(veh+0x4F0)` IS NOT AN ENDPOINT. It was NULL in all 342 calls v0.1
+//     measured and all 373 of v0.2's, because at mode 0 we were reading
+//     vehicle fields off a building. Nothing here uses it.
+//
+//   - A MOVEMENT IS TWO CALLS 30-70 ms APART, same resource, same tonnage:
+//       0x694F40  mode 0  -tons   the BUILDING the goods leave
+//       0x6953C4  mode 1  +tons   the VEHICLE they enter
+//       0x68F792  mode 0  +tons   the BUILDING they enter
+//       0x68F7F9  mode 1  -tons   the VEHICLE they leave
+//     The load leg's mode-0 call has param_9 == NULL, so its carrier is
+//     resolved from the paired mode-1 call through a short time ring.
+//
+// ---------------------------------------------------------------------------
+// The hook is a call-site patch, NOT an inline hook
+// ---------------------------------------------------------------------------
+//
+// FUN_140420350 has a five-byte prologue, so the loader's installInlineHook
+// (which requires >= 14 position-independent bytes) cannot take it. All
+// sixteen invocations are direct `call rel32` with no vtable, thunk or
+// indirect path, so retargeting the call sites sees every invocation.
+//
+//   site before:  E8 <rel32>          call FUN_140420350
+//   site after:   E8 <rel32>          call cave          <- SAME opcode
+//   cave:         FF 25 00 00 00 00   jmp qword ptr [rip+0]
+//                 <8-byte detour address>
+//
+// The opcode deliberately stays E8. A jmp does not push a return address, so
+// a detour entered that way both reads garbage from _ReturnAddress() and
+// executes `ret` into the enclosing function's caller. Verified on x86-64.
+//
+// Safety properties:
+//   - Nothing is written unless the site verifies: byte 0 must be E8 AND its
+//     rel32 must resolve to exeBase+0x420350.
+//   - Every game-memory read is behind ReadablePtr.
+//   - The ledger is a fixed ring; nothing allocates in the detour.
+//   - The lock covers counters and the rings only. Game-memory reads, calls
+//     into other plugins and logging all happen outside it.
+//   - A payment needs BOTH services. If enterprise_base or currency is
+//     missing, billing is skipped entirely and says so once.
+
+#include "../../src/tesmio_plugin.h"
+#include "../../src/game_world.h"
+#include "../../src/sim_clock_api.h"
+#include "../../src/enterprise_base_api.h"
+#include "../../src/currency_api.h"
+#include "../../src/resource_pricing_api.h"
+#include "../../src/persistence_api.h"
+#include "../../src/ui_panels_api.h"
+#include "site_permissions.h"
+#include "task_audit.h"
+// Compiled/tested core only. No runtime consumer until native vehicle, cargo
+// boundaries and actual fuel-deduction provenance/order have been validated.
+#include "journey_tracker.h"
+#include "fuel_diagnostics.h"
+
+#include <stdint.h>
+#include <math.h>
+#include <new>
+
+// ---------------------------------------------------------------------------
+// the transfer being instrumented
+// ---------------------------------------------------------------------------
+
+#define TSM_RVA_TRANSFER 0x420350
+
+typedef int (*tTransfer)(void* game, void* veh, unsigned mode, void* res,
+                         float tons, float* outMoved, float cap,
+                         unsigned char flag, void* bld);
+
+static tTransfer g_realTransfer = nullptr;
+
+// Vehicle fields. See PLAN_TECHNICAL.md section 3.1.
+#define TSM_VEH_HOME    0x4F8   // Building* - the owning depot (mode 1 only)
+
+// ---------------------------------------------------------------------------
+// settings
+// ---------------------------------------------------------------------------
+
+static int   g_enabled         = 1;
+static int   g_billing         = 0; // Permissions-test default: no freight payments.
+static int   g_dryRun          = 1;      // SAFE DEFAULT: compute, log, do not pay
+static int   g_payFactory      = 1;
+static int   g_payCarrier      = 1;
+static int   g_logCapPerDay    = 400;
+static int   g_ledgerCapacity  = 512;
+static int   g_siteLog         = 1;
+// v0.4: ONE number, a share of the cargo's value. The three per-tonne rates
+// are gone: the class table never existed (FreightRateFor ignored its
+// argument) and a player cannot reason about "RUB per tonne of coal".
+static float g_freightShareRetired = 0.0f; // set when the ini still carries it
+static float g_freightShare    = 0.08f;  // v0.7: RETIRED. Kept only so the
+                                         // ini key can be recognised and warned about.
+static float g_factoryShare    = 0.90f;  // w - what a buyer pays a factory
+
+// v0.7: THE TRIP TARIFF REPLACES THE VALUE SHARE.
+//
+// v0.6 measured the value share against the DO's real fuel bill and lost:
+// 14,038.20 RUB of freight against 511.92 of diesel over 82 days. The share
+// is 27x the cost it was supposed to cover, and it is value-blind - a truck
+// hauling plants was paid 1.46 for the trip, one hauling chemicals 71.12.
+//
+// v0.7 charges the model that was only probed in v0.6; v0.6's behaviour is
+// one key away (`trip_tariff = 0`), so both can be compared in one session.
+static int    g_tripTariff      = 1;
+static double gWearLitres       = 5.0;   // maintenance reserve, in litres of diesel
+static int    g_litresAuto      = 0;     // re-tune litres_per_trip from the fuel bill
+
+// v0.7: the measured fuel bill. This is the only figure in the plugin that
+// comes from the game instead of from arithmetic - the [TARIFF] model is an
+// assumption, the DO's monthly foreign-cost total is the bill.
+//
+// Fuel is bought in bulk and stored, so a day's purchases are NOT a day's
+// burn. Run averages also do not establish exact native journey burn.
+// v0.8: the vehicle census. A republic has tens of vehicles, not thousands;
+// 64 slots is four times the largest fleet seen so far and keeps the table in
+// static storage, as the render/tick rules require.
+#define VEH_MAX 64
+static void*    g_vehPtr[VEH_MAX];
+static double   g_vehPeakTons[VEH_MAX];
+static unsigned g_vehSamples[VEH_MAX];
+static int      g_vehCount   = 0;
+static int      g_censusLog  = 1;
+// v0.9: the field scanner. 512 dwords (0x800 bytes) per vehicle, compared once
+// a day; only changes are logged. Static storage, no allocation.
+#define VEH_SCAN_WORDS 512
+static unsigned g_vehSnap[VEH_MAX][VEH_SCAN_WORDS];
+static bool     g_vehSnapValid[VEH_MAX];
+// Legacy candidate sampling. Physical units, native deduction/refill writers
+// and activity gates are NOT verified for the selected road truck. Variable
+// names retain old units for compatibility; logs explicitly say raw/estimate.
+static double   g_vehFuel[VEH_MAX];          // last valid raw candidate
+static bool     g_vehFuelValid[VEH_MAX];
+static double   g_burnTonsRun   = 0.0;       // sum of candidate sample decreases
+static unsigned g_refillsRun    = 0;
+// Historical denominators retained for candidate diagnostics, not physics.
+static unsigned g_tankDaysRun    = 0;        // closes with at least one tank read
+static unsigned g_tankVehDaysRun = 0;        // (vehicle, close) pairs
+static int      g_cargoDump      = 1;        // [CARGO] - settle where fuel lives
+static int      g_tankCrossLog   = 40;       // v0.13: [TANK] slot-vs-mirror lines
+static private_logistics_fuel_diagnostics::Samples g_vehFuelSamples[VEH_MAX];
+static volatile LONG g_fuelDiagnosticEpoch = 1;
+static unsigned char g_vehCapValid[VEH_MAX];
+static double        g_vehCap[VEH_MAX];      // metadata capacity candidate, raw
+
+// Legacy state-word guesses only; never gate native events using these.
+static unsigned g_activeVehDaysRun = 0;
+static unsigned g_idleVehDaysRun   = 0;
+
+// Legacy fleet endpoint sampling. It cannot prove individual fuel events.
+static const int VEH_FUEL_OFF = 0x5F0;     // panel backing candidate; physical units unverified
+
+static void*    g_probeBld      = nullptr;
+static double   g_probeFuelTons = -1.0;
+static int      g_probeVehCount = -1;
+static double   g_probeBurnRun  = 0.0;
+static unsigned g_probeStepsRun = 0;
+static unsigned g_probeSkipRun  = 0;
+static double   FleetFuelTons(void* b, int* outCount);
+static void     BurnProbe(void* b);
+static int      g_vehScan          = 1;
+static int      g_vehScanLogPerDay = 40;
+static void     CensusFleets(int closedDay);   // v0.8, defined with the census
+static void     ScanVehicle(int slot, void* v, int closedDay);   // v0.9
+static void     ReadTank(int slot, void* v, int closedDay, double* burned, unsigned* refills);   // v0.10
+
+static double             g_fuelPaidRun  = 0.0;
+static double             g_fuelLitresRun = 0.0;
+static unsigned long long g_fuelTripsRun = 0;
+
+// Earlier slot/clamp/activity attribution is superseded by the real-game review.
+// v0.5: the cost side, in physical units. No rouble constant may appear here:
+// prices move, litres and ratios do not.
+static int    g_tariffProbe     = 1;       // compute + log the tariff, never charge
+static int    g_balanceLog      = 1;       // [BAL] treasury + carrier capital per day
+static int    g_tariffLogPerDay = 60;      // per-delivery [TARIFF] lines, then totals only
+static double gLitresPerTrip    = 14.75;   // historical model parameter, NOT verified journey burn
+// Retained legacy model knob; actual cargo-load dependence is unverified.
+static double gLitresPerTonne   = 0.0;     // legacy model default; not native physics
+static double gTariffMargin     = 0.35;    // dimensionless: 35 % over fuel cost
+static double gDieselDensity    = 0.00100; // legacy model t/L, NOT proof of native mass units
+static char   gFuelResource[64] = "fuel";  // resolved through resource_pricing
+static double gBasketsPerTrip   = 0.80;    // CPI fallback, in daily survival baskets
+static double gBasketsPerTonne  = 0.02;
+
+#define PL_VERSION "0.18.10-schedule-classification"
+static int g_panelObserverEnabled = 1;
+static int g_scheduleObserverEnabled = 1;
+static void PanelObserverLoading(void);
+static float g_minPayment      = 0.01f;
+static double g_dailyPayCap    = 0.0;    // 0 = no cap
+
+static const TsmEnterpriseBaseApi*  g_enterprise = nullptr;
+static const TsmSimClockApi*        g_simClock   = nullptr;
+static const TsmCurrencyApi*        g_currency   = nullptr;
+static const TsmResourcePricingApi* g_pricing    = nullptr;
+static const TsmPersistenceApi*     g_persistence = nullptr;
+static int                          g_persistenceHandle = 0;
+static const TsmUiPanelsApi*         g_uiPanels = nullptr;
+static int                           g_stateStorageWidgetHandle = 0;
+
+// Automatic DO-target generation. Fixed buffers only; discovery runs from the
+// once-per-day sim_clock callback, never from a per-frame/render hook.
+static int g_autoTargetsEnabled = 1;
+static int g_autoTargetsDryRun  = 0;
+static int g_autoSourcePercent = 10;
+static int g_autoDestinationPercent = 30;
+static int g_autoTargetLogLimit = 80;
+static volatile LONG g_autoResetActiveMemoAfterLoad = 0;
+#define AUTO_ENTITY_MAX 8704
+#define AUTO_MEMO_MAX   262144
+#define AUTO_MEMO_HASH_SIZE 524288
+#define AUTO_POINTER_HASH_SIZE 32768
+#define AUTO_OFFICE_HASH_SIZE 16384
+struct AutoEntity { void* building; uint64_t key; int type; int hasStorage; unsigned char isStateStorage; unsigned char statePermission; unsigned char targetPresent; };
+struct AutoMemo { uint64_t officeKey; uint64_t targetKey; unsigned nextOffice; unsigned char state; };
+struct AutoPointerSlot { void* building; unsigned entityIndex; };
+struct AutoOfficeMemoHead { uint64_t officeKey; unsigned headPlusOne; };
+static AutoEntity g_autoEntities[AUTO_ENTITY_MAX];
+static AutoMemo   g_autoMemo[AUTO_MEMO_MAX];
+static unsigned   g_autoMemoHash[AUTO_MEMO_HASH_SIZE]; // index + 1; zero means empty
+static AutoPointerSlot g_autoPointerHash[AUTO_POINTER_HASH_SIZE];
+static AutoOfficeMemoHead g_autoOfficeMemoHeads[AUTO_OFFICE_HASH_SIZE];
+static unsigned   g_autoMemoCount = 0;
+static unsigned   g_autoLogLines = 0;
+static int        g_autoLastDay = -1;
+static void AutoTargetsOnDay(int day, int closedDay);
+static void AutoPersistenceEvent(TsmSaveEvent event, const char* dir, void* userData);
+
+// ---------------------------------------------------------------------------
+// the sixteen call sites
+// ---------------------------------------------------------------------------
+//
+// `known` records what the RE rounds established. The instrument does not act
+// on the label - every site is logged the same way - but billing only ever
+// fires at a MODE 0 site, and `known` is what makes the log readable.
+//
+// After the first two sessions the FUN_14068B330 family is no longer
+// described as "sea/rail": it carries ordinary factory traffic.
+
+enum SiteClass {
+    SITE_UNKNOWN = 0,
+    SITE_REFUEL,
+    SITE_LOAD,          // draws goods out of a building
+    SITE_DELIVERY,      // puts goods into a building
+    SITE_TRANSSHIP      // intra-vehicle / return leg
+};
+
+struct SiteSpec {
+    unsigned    rva;
+    SiteClass   known;
+    const char* note;
+};
+
+#define MAX_SITES 16
+
+static SiteSpec g_sites[MAX_SITES] = {
+    { 0x00141F33, SITE_UNKNOWN,   "never observed" },
+    { 0x0016F831, SITE_REFUEL,    "refuel call - telemetry, never billed; never observed" },
+    { 0x001B2898, SITE_UNKNOWN,   "CONTESTED: r8-9 'road delivery', r10 'road refuel'; never observed" },
+    { 0x001B484B, SITE_UNKNOWN,   "never observed" },
+    { 0x001B5EC0, SITE_UNKNOWN,   "never observed" },
+    { 0x001B653B, SITE_UNKNOWN,   "never observed" },
+    { 0x001B6833, SITE_UNKNOWN,   "never observed" },
+    { 0x001B75ED, SITE_UNKNOWN,   "never observed" },
+    { 0x001B7981, SITE_UNKNOWN,   "never observed" },
+    { 0x001CB7FF, SITE_LOAD,      "loader: mode 0, +tons, then bld+0x970 storage-add; never observed" },
+    { 0x0068EECA, SITE_LOAD,      "family A: mode 0, +tons, cargo-add follows; never observed" },
+    { 0x0068F792, SITE_DELIVERY,  "family A DELIVERY: mode 0, +tons, param_2 = building, param_9 = fleet owner" },
+    { 0x0068F7F9, SITE_TRANSSHIP, "family A delivery, vehicle side: mode 1, -tons. NEVER BILLED" },
+    { 0x006945B3, SITE_TRANSSHIP, "family A: mode 0, -tons; never observed" },
+    { 0x00694F40, SITE_LOAD,      "family A LOAD: mode 0, -tons, param_2 = the building the goods leave" },
+    { 0x006953C4, SITE_TRANSSHIP, "family A load, vehicle side: mode 1, +tons. NEVER BILLED" }
+};
+
+static bool g_sitePatched[MAX_SITES] = { false };
+static bool g_siteWanted[MAX_SITES]  = { false };   // filled in by ReadSettings
+static bool g_siteFilterActive       = false;       // false = every site
+
+static int  g_siteCount = MAX_SITES;
+
+// ---------------------------------------------------------------------------
+// the ledger
+// ---------------------------------------------------------------------------
+
+enum ShipKind { SHIP_LOAD = 0, SHIP_DELIVERY, SHIP_FREIGHT, SHIP_FUEL, SHIP_PURCHASE };
+
+struct Shipment {
+    unsigned id;
+    unsigned seq;
+    void*    building;
+    void*    counterparty;
+    void*    vehicle;
+    void*    resource;
+    float    tons;
+    double   unitPrice;
+    double   value;
+    unsigned short site;
+    unsigned char  kind;
+    unsigned char  mode;
+    double   t;
+};
+
+#define LEDGER_MAX 2048
+static Shipment g_ledger[LEDGER_MAX];
+static int      g_ledgerHead  = 0;
+static unsigned g_ledgerSeq   = 0;
+static unsigned g_ledgerTotal = 0;
+
+// ---------------------------------------------------------------------------
+// the carrier ring
+// ---------------------------------------------------------------------------
+//
+// The load leg's mode-0 call does not carry the carrier: param_9 is NULL
+// there (91 of 91 calls). The vehicle is named 30-70 ms later by the paired
+// mode-1 call. This ring is how the two are joined.
+//
+// A match needs the same resource, the same tonnage within 0.5 %, and an age
+// under 2 s. If nothing matches, the payment is skipped and counted - never
+// guessed.
+
+#define CARRIER_RING 32
+
+struct CarrierNote {
+    void*  res;
+    float  tons;      // absolute
+    void*  home;      // the fleet owner
+    double t;
+};
+
+static CarrierNote g_carrier[CARRIER_RING];
+static int         g_carrierHead = 0;
+
+static double NowSeconds(void)
+{
+    // GetTickCount64 is monotonic and needs no CRT.
+    return (double)GetTickCount64() / 1000.0;
+}
+
+// ---------------------------------------------------------------------------
+// counters
+// ---------------------------------------------------------------------------
+
+static unsigned g_calls            = 0;
+static unsigned g_callsCommitted   = 0;
+static unsigned g_callsNoop        = 0;
+static unsigned g_unknownBuilding  = 0;
+static unsigned g_staging          = 0;
+static unsigned g_nonPrivate       = 0;
+static unsigned g_siteLoggedToday  = 0;
+static unsigned g_attrLoggedToday  = 0;
+static unsigned g_payLoggedToday   = 0;
+static unsigned g_siteSuppressed   = 0;
+static unsigned g_attrSuppressed   = 0;
+static unsigned g_paySuppressed    = 0;
+
+static unsigned g_payCount         = 0;
+// v0.4: `skipped` used to be one number covering four unrelated causes. In
+// the fourth session it read 159 in a day purely because the distribution
+// office was state-owned - alarming to read, and meaningless.
+static unsigned g_skipNoPayee      = 0;   // no private owner on the leg
+static unsigned g_skipNoPrice      = 0;   // resource_pricing gave no price
+static unsigned g_skipSmall        = 0;   // below min_payment
+static unsigned g_skipTreasury     = 0;   // the state could not afford it
+
+// v0.5: the tariff probe's own tallies, and which index it managed to use.
+// An unindexed delivery is NOT a delivery worth 0.00 - it is one this build
+// could not price, and the daily line says so rather than folding it in.
+static unsigned g_tariffCount      = 0;
+static unsigned g_tariffNoIndex    = 0;
+static unsigned g_tariffFuelIndex  = 0;
+static unsigned g_tariffCpiIndex   = 0;
+static double   g_tariffCostSum    = 0.0; // the fuel-recovery half
+static double   g_tariffShareSum   = 0.0; // the ad valorem half
+static unsigned g_tariffLoggedToday= 0;
+static double   g_tariffSum        = 0.0;
+
+// v0.5 (H33): the payer leg, sampled per payment. A daily treasury delta is
+// useless as proof - wages, taxes and store sales move the same balance all
+// day long. Sampling either side of OUR OWN move isolates it completely: the
+// difference must be exactly minus the amount, or the books do not close.
+// v0.5: the refuel site (0x16F831) has never fired in any session. If the
+// game is going to start charging for fuel, this is where we see it first.
+static unsigned g_fuelEvents       = 0;
+static unsigned g_treasuryChecked  = 0;
+static unsigned g_treasuryExact    = 0;
+static unsigned g_treasuryOff      = 0;
+static double   g_treasuryMaxGap   = 0.0;
+
+// v0.5: the money path, both ends. The treasury is sampled at each close; the
+// carriers we paid are remembered so their capital can be printed beside it.
+#define BAL_CARRIERS 4
+static double g_treasuryAtClose    = 0.0;
+static bool   g_treasuryHaveClose  = false;
+static void*  g_balCarrier[BAL_CARRIERS]     = { nullptr, nullptr, nullptr, nullptr };
+static double g_balCarrierPrev[BAL_CARRIERS] = { -1.0, -1.0, -1.0, -1.0 };
+static double g_balCarrierIn[BAL_CARRIERS]   = { 0.0, 0.0, 0.0, 0.0 };
+static double g_balCarrierFuel[BAL_CARRIERS] = { -1.0, -1.0, -1.0, -1.0 }; // v0.7 meter,
+                                                                    // -1 = no baseline yet
+static int    g_balCarrierCount    = 0;
+static void*  g_fuelRes            = nullptr;   // cached lookup, re-resolved daily
+
+// v0.4: which day the accumulated tallies belong to. OnDay fires at the START
+// of `day`, so the window it reports is the day that just ENDED.
+static int g_summaryDay            = -1;
+static unsigned g_payCapped        = 0;
+static double   g_paidFactory      = 0.0;
+static double   g_paidCarrier      = 0.0;
+static double   g_paidToday        = 0.0;
+
+static double   g_wouldPayFreight  = 0.0;
+static double   g_wouldPayFuel     = 0.0;
+
+static int      g_lastMonth        = -1;
+
+// Per-site tallies, so "never fired" is distinguishable from "never logged".
+struct SiteTally {
+    unsigned calls;
+    unsigned committed;
+    double   tonsIn;      // sum of +tons
+    double   tonsOut;     // sum of |−tons|
+    double   value;
+    unsigned sawBld;      // param_9 non-NULL
+    unsigned sawCur;      // *(veh+0x4F0) non-NULL
+    unsigned sawHome;     // *(veh+0x4F8) non-NULL
+};
+
+static SiteTally g_tally[MAX_SITES];
+
+static int SiteIndex(unsigned rva)
+{
+    for (int i = 0; i < g_siteCount; i++)
+        if (g_sites[i].rva == rva) return i;
+    return -1;
+}
+
+// ---------------------------------------------------------------------------
+// helpers
+// ---------------------------------------------------------------------------
+
+static bool IsPrivate(void* b)
+{
+    if (!b || !g_enterprise) return false;
+    if (!TsmIsValidGamePtr(b)) return false;
+    if (!ReadablePtr(b, TSM_BLD_MIN_READABLE)) return false;
+    return g_enterprise->isBuildingPrivate(b) != 0;
+}
+
+static const char* KindName(unsigned char k)
+{
+    switch (k) {
+        case SHIP_LOAD:     return "load";
+        case SHIP_DELIVERY: return "unload";
+        case SHIP_FREIGHT:  return "freight";
+        case SHIP_FUEL:     return "fuel";
+        case SHIP_PURCHASE: return "buy";
+        default:            return "?";
+    }
+}
+
+static const char* ClassName(SiteClass c)
+{
+    switch (c) {
+        case SITE_REFUEL:    return "refuel";
+        case SITE_LOAD:      return "load";
+        case SITE_DELIVERY:  return "delivery";
+        case SITE_TRANSSHIP: return "transship";
+        default:             return "unknown";
+    }
+}
+
+// The resource record's name lives at its head. A bad pointer yields "?".
+static void ResourceName(void* res, char* out, size_t n)
+{
+    out[0] = 0;
+    if (!res || !TsmIsValidGamePtr(res) || !ReadablePtr(res, 128)) {
+        _snprintf_s(out, n, _TRUNCATE, "?");
+        return;
+    }
+    const char* s = (const char*)res;
+    size_t i = 0;
+    for (; i + 1 < n; i++) {
+        const char c = s[i];
+        if (!c) break;
+        if ((unsigned char)c < 32 || (unsigned char)c > 126) {
+            _snprintf_s(out, n, _TRUNCATE, "?");
+            return;
+        }
+        out[i] = c;
+    }
+    out[i] = 0;
+    if (!out[0]) _snprintf_s(out, n, _TRUNCATE, "?");
+}
+
+// The building's type-descriptor name, so the log never again asks the reader
+// to guess which object a pointer is.
+static void BuildingName(void* b, char* out, size_t n)
+{
+    out[0] = 0;
+    if (!b || !g_enterprise || !TsmIsValidGamePtr(b)) {
+        _snprintf_s(out, n, _TRUNCATE, "-");
+        return;
+    }
+    const char* nm = nullptr;
+    __try { nm = g_enterprise->getBuildingObjectName(b); }
+    __except (EXCEPTION_EXECUTE_HANDLER) { nm = nullptr; }
+    if (!nm || !nm[0]) {
+        _snprintf_s(out, n, _TRUNCATE, "?");
+        return;
+    }
+    size_t i = 0;
+    for (; i + 1 < n && nm[i]; i++) {
+        const char c = nm[i];
+        out[i] = ((unsigned char)c < 32 || (unsigned char)c > 126) ? '?' : c;
+    }
+    out[i] = 0;
+}
+
+// The suite's single price function. Everything this plugin charges is
+// expressed against THIS number, and every pay line names it, so a change of
+// price source can never silently halve or double a payment.
+//
+// NOTE: resource_pricing itself may be returning its shipped fallbacks
+// (RE_DIGEST Part 12 section 3). That is fine and consistent - what must not
+// happen is this plugin mixing a raw Res+0x58 read with a priced figure.
+static double UnitPrice(void* res)
+{
+    if (!res || !TsmIsValidGamePtr(res)) return 0.0;
+
+    if (g_pricing) {
+        const int cur = g_currency ? TsmCurrencyActive(g_currency) : 0;
+        const float p = g_pricing->getPrice(res, cur);
+        if (p == p && p > 0.01f && p < 1e9f) return (double)p;
+    }
+
+    // Fallback: the raw record field, only if resource_pricing is absent.
+    if (!ReadablePtr((const BYTE*)res + TSM_RES_PRICE_RUB, 4)) return 0.0;
+    const float f = *(const float*)((const BYTE*)res + TSM_RES_PRICE_RUB);
+    if (!(f == f) || f < 0.0f || f > 1e9f) return 0.0;
+    return (double)f;
+}
+
+// v0.4: freight as a share of the cargo's value.
+//
+// `tons` is positive on this leg (the delivery). A zero or nonsense unit
+// price yields zero rather than a guess - the caller counts it as a skip.
+static double FreightFor(double tons, double unitPrice)
+{
+    const double value = tons * unitPrice;
+    if (!(value > 0.0)) return 0.0;
+    const double share = (double)g_freightShare;
+    if (!(share > 0.0)) return 0.0;
+    return value * share;
+}
+
+// One guard, used everywhere the treasury is read: an older currency host may
+// carry a shorter struct, and getTreasuryBalance is past the end of it.
+static bool TreasuryReadable(void)
+{
+    return g_currency && g_currency->getTreasuryBalance &&
+           g_currency->structSize >= offsetof(TsmCurrencyApi, getTreasuryBalance) +
+                                     sizeof(g_currency->getTreasuryBalance);
+}
+
+// v0.5: the fuel price, resolved by NAME through resource_pricing so the
+// index moves with the game's own economy. Cached for the day and dropped at
+// each close, because a save load can replace the resource table under us.
+static double FuelUnitPrice(void)
+{
+    if (!g_pricing || !g_pricing->getByName) return 0.0;
+    if (!g_fuelRes) {
+        g_fuelRes = g_pricing->getByName(gFuelResource);
+        if (g_fuelRes && !TsmIsValidGamePtr(g_fuelRes)) g_fuelRes = nullptr;
+    }
+    if (!g_fuelRes) return 0.0;
+
+    const int cur = g_currency ? TsmCurrencyActive(g_currency) : 0;
+    const float p = g_pricing->getPrice(g_fuelRes, cur);
+    if (!(p == p) || !(p > 0.0f) || !(p < 1e9f)) return 0.0;
+    return (double)p;
+}
+
+// v0.7: THE TARIFF. Fuel plus a maintenance reserve, both denominated in
+// litres and both priced at the live fuel price:
+//
+//   work    = litres_per_trip + litres_per_tonne x tonnes
+//   fuel    = work x diesel_density x fuel_price        <- the index
+//   wear    = wear_litres x diesel_density x fuel_price <- sinking fund
+//   tariff  = fuel x (1 + margin) + wear
+//
+// Two rules are enforced here, not in prose. Nothing is a rouble constant, so
+// inflation cannot eat it; and nothing depends on what the cargo is WORTH, so
+// a truck of plants pays for its trip the same as a truck of chemicals.
+// The wear term exists because fuel x 1.35 can never buy a truck: a carrier
+// has to recover vehicles over their life, and that is a per-trip cost.
+//
+// `*outIndex` is 1 for the fuel index, 2 for the CPI fallback, 0 for neither.
+// A 0 return means "this build cannot price this delivery", not "it is free".
+static double TariffFor(double tons, double* outFuel, double* outWear,
+                        int* outIndex)
+{
+    if (outFuel)  *outFuel  = 0.0;
+    if (outWear)  *outWear  = 0.0;
+    if (outIndex) *outIndex = 0;
+    if (!(tons > 0.0)) return 0.0;
+
+    double fuel = 0.0, wear = 0.0;
+    const double work = gLitresPerTrip + gLitresPerTonne * tons;
+    const double fp   = FuelUnitPrice();
+
+    if (fp > 0.0) {
+        fuel = work * gDieselDensity * fp;
+        wear = gWearLitres * gDieselDensity * fp;
+        if (outIndex) *outIndex = 1;
+    } else if (g_pricing) {
+        const float basket = TsmPricingCpiBasket(g_pricing, 0.0f);
+        if (basket == basket && basket > 0.0f && basket < 1e9f) {
+            fuel = (gBasketsPerTrip + gBasketsPerTonne * tons) * (double)basket;
+            // The reserve expressed in the fallback unit: the litres ratio is
+            // dimensionless, so it survives the switch unchanged.
+            const double ratio =
+                (gLitresPerTrip > 0.0) ? (gWearLitres / gLitresPerTrip) : 0.0;
+            wear = fuel * ratio;
+            if (outIndex) *outIndex = 2;
+        }
+    }
+
+    if (outFuel) *outFuel = fuel;
+    if (outWear) *outWear = wear;
+
+    const double total = fuel * (1.0 + gTariffMargin) + wear;
+    return (total > 0.0) ? total : 0.0;
+}
+
+// v0.5: remember who was paid, so the close can show their cash position.
+// Four slots: a republic has a handful of private logistics companies, not a
+// hundred, and the balance line is about seeing money arrive and leave.
+// v0.6: how much of the day's freight went to whom, so the close can say
+// "freight in X, spent Y" instead of making the reader subtract.
+static void NoteCarrierIncome(void* b, double amount)
+{
+    if (!b || !(amount > 0.0)) return;
+    EnterCriticalSection(&g_lock);
+    for (int i = 0; i < g_balCarrierCount; i++)
+        if (g_balCarrier[i] == b) { g_balCarrierIn[i] += amount; break; }
+    LeaveCriticalSection(&g_lock);
+}
+
+static void TrackCarrier(void* b)
+{
+    if (!b) return;
+    EnterCriticalSection(&g_lock);
+    bool known = false;
+    for (int i = 0; i < g_balCarrierCount; i++)
+        if (g_balCarrier[i] == b) { known = true; break; }
+    if (!known && g_balCarrierCount < BAL_CARRIERS) {
+        g_balCarrier[g_balCarrierCount]     = b;
+        g_balCarrierPrev[g_balCarrierCount] = -1.0;   // -1 = no baseline yet
+        g_balCarrierFuel[g_balCarrierCount] = -1.0;   // first read is a baseline
+        g_balCarrierCount++;
+    }
+    LeaveCriticalSection(&g_lock);
+}
+
+static void AppendShipment(const Shipment& s)
+{
+    int cap = g_ledgerCapacity;
+    if (cap < 1)          cap = 1;
+    if (cap > LEDGER_MAX) cap = LEDGER_MAX;
+
+    g_ledger[g_ledgerHead % cap] = s;
+    g_ledgerHead = (g_ledgerHead + 1) % cap;
+    g_ledgerTotal++;
+}
+
+// ---------------------------------------------------------------------------
+// paying
+// ---------------------------------------------------------------------------
+//
+// One place that moves money, so there is exactly one place to look when a
+// balance changes. dry_run decides whether the call lands.
+//
+//   payee  - the building whose company is credited
+//   amount - positive RUB
+//   cat    - what the movement is for (enterprise_base's own classification)
+//   label  - appears verbatim in currency's flow ledger
+
+static bool Pay(void* payee, double amount, TsmCapitalCategory cat,
+                const char* label, const char* kind, void* res, float tons)
+{
+    // v0.4: every refusal is counted HERE, where the reason is known, so the
+    // daily line can say which one it was instead of lumping them together.
+    if (!(amount >= (double)g_minPayment)) {
+        EnterCriticalSection(&g_lock); g_skipSmall++;    LeaveCriticalSection(&g_lock);
+        return false;
+    }
+    if (!g_enterprise || !g_currency) {
+        EnterCriticalSection(&g_lock); g_skipNoPayee++;  LeaveCriticalSection(&g_lock);
+        return false;
+    }
+
+    char bname[64], rname[64];
+    BuildingName(payee, bname, sizeof(bname));
+    ResourceName(res, rname, sizeof(rname));
+
+    if (g_dailyPayCap > 0.0 && g_paidToday + amount > g_dailyPayCap) {
+        EnterCriticalSection(&g_lock);
+        g_payCapped++;
+        LeaveCriticalSection(&g_lock);
+        return false;
+    }
+
+    // v0.4 AFFORDABILITY GATE.
+    //
+    // moveTreasury takes a signed amount and has no floor: crediting a
+    // private company and debiting the treasury by more than it holds would
+    // simply drive the balance negative. The state is the payer until Ship 2,
+    // so it has to be able to say no. Reads the ACTIVE currency's treasury
+    // (RUB by default), the same one moveTreasury writes.
+    {
+        double have = 0.0;
+        if (g_currency->getTreasuryBalance &&
+            g_currency->structSize >= offsetof(TsmCurrencyApi, getTreasuryBalance) +
+                                      sizeof(g_currency->getTreasuryBalance))
+            have = g_currency->getTreasuryBalance(TsmCurrencyActive(g_currency));
+        if (have < amount) {
+            EnterCriticalSection(&g_lock); g_skipTreasury++; LeaveCriticalSection(&g_lock);
+            return false;
+        }
+    }
+
+    if (g_dryRun) {
+        Logf("[PAY] would %s %s %+.2f (%s %.3ft) - dry_run",
+             kind, bname, amount, rname, (double)tons);
+    } else {
+        // v0.5 (H33): the treasury is read on both sides of the move. This is
+        // the only isolated proof of the payer leg that exists - it cannot be
+        // contaminated by wages or taxes, because nothing else runs between
+        // the two reads.
+        const int cur   = TsmCurrencyActive(g_currency);
+        const bool sample = TreasuryReadable();
+        double before = 0.0, after = 0.0;
+        if (sample) before = g_currency->getTreasuryBalance(cur);
+
+        g_enterprise->modifyCompanyCapital(payee, amount, cat);
+        g_currency->moveTreasury(-amount, label);
+
+        if (sample) {
+            after = g_currency->getTreasuryBalance(cur);
+            const double gap = (after - before) + amount;   // 0 = exact
+            const double mag = (gap < 0.0) ? -gap : gap;
+            EnterCriticalSection(&g_lock);
+            g_treasuryChecked++;
+            if (mag <= 0.005) {
+                g_treasuryExact++;
+            } else {
+                g_treasuryOff++;
+                if (mag > g_treasuryMaxGap) g_treasuryMaxGap = mag;
+            }
+            LeaveCriticalSection(&g_lock);
+        }
+
+        Logf("[PAY] %s %s %+.2f (%s %.3ft) paid by the state",
+             kind, bname, amount, rname, (double)tons);
+    }
+
+    EnterCriticalSection(&g_lock);
+    g_paidToday += amount;
+    g_payCount++;
+    if (cat == TSM_CAP_PRODUCTION) g_paidFactory += amount;
+    else                          g_paidCarrier += amount;
+    LeaveCriticalSection(&g_lock);
+    return true;
+}
+
+// ---------------------------------------------------------------------------
+// the detour
+// ---------------------------------------------------------------------------
+
+static int DetourTransfer(void* game, void* p2, unsigned mode, void* res,
+                          float tons, float* outMoved, float cap,
+                          unsigned char flag, void* p9)
+{
+    // ARGUMENT NAMES THAT MATTER:
+    //
+    //   p2 = param_2. At mode 0 this is the BUILDING; at mode 1 the VEHICLE.
+    //        Proven in two sessions (RE_DIGEST Part 13 §4).
+    //   p9 = param_9. The FLEET OWNER on the delivery family, NULL on the
+    //        load family. NOT an endpoint.
+    //
+    // Getting these two the wrong way round is the single easiest way to
+    // build a payment that pays nobody, so they are named for their
+    // parameter position and nothing else.
+
+    // Which site called us. The patched instruction is still a `call`, so the
+    // CPU pushed site+5 and that is what _ReturnAddress reads.
+    const BYTE* retAddr = (const BYTE*)_ReturnAddress();
+    unsigned    siteRva = 0;
+    SiteClass   known   = SITE_UNKNOWN;
+    int         siteIdx = -1;
+
+    if (retAddr && g_exeBase) {
+        const intptr_t off = (intptr_t)retAddr - (intptr_t)(g_exeBase + 5);
+        if (off > 0 && off < (intptr_t)g_exeSize) {
+            siteRva = (unsigned)off;
+            siteIdx = SiteIndex(siteRva);
+            if (siteIdx >= 0) known = g_sites[siteIdx].known;
+        }
+    }
+
+    // At mode 0 p2 is the building. At mode 1 it is the vehicle and its home
+    // depot is the fleet owner - read it BEFORE the call, because the callee
+    // clobbers registers and the vehicle can be re-homed later in the tick.
+    void* building = (mode == 0 && p2 && TsmIsValidGamePtr(p2) &&
+                      ReadablePtr(p2, TSM_BLD_MIN_READABLE)) ? p2 : nullptr;
+    void* owner    = p9;
+
+    void* vehicleHome = nullptr;
+    if (mode != 0 && p2 && TsmIsValidGamePtr(p2) &&
+        ReadablePtr((const BYTE*)p2 + TSM_VEH_HOME, 8)) {
+        vehicleHome = *(void**)((BYTE*)p2 + TSM_VEH_HOME);
+    }
+
+    EnterCriticalSection(&g_lock);
+    g_calls++;
+    LeaveCriticalSection(&g_lock);
+
+    // Forward. The transfer returns a bool, so only the low byte of the return
+    // carries the answer.
+    const int  r         = g_realTransfer
+                         ? g_realTransfer(game, p2, mode, res, tons,
+                                          outMoved, cap, flag, p9)
+                         : 0;
+    const bool committed = ((unsigned char)r == 1u);
+
+    // ---- classify, outside the lock --------------------------------------
+    const bool   isStaging = (mode != 0 && vehicleHome && vehicleHome == p9);
+    const double unitPrice = UnitPrice(res);
+
+    Shipment s;
+    memset(&s, 0, sizeof(s));
+    s.vehicle  = (mode != 0) ? p2 : nullptr;
+    s.resource = res;
+    s.tons     = tons;
+    s.site     = (unsigned short)(siteRva & 0xFFFF);
+    s.mode     = (unsigned char)mode;
+    s.building = building;
+
+    if (committed) {
+        if (isStaging) {
+            s.kind = SHIP_LOAD;
+        } else if (known == SITE_REFUEL) {
+            s.kind      = SHIP_FUEL;
+            s.unitPrice = unitPrice;
+            s.value     = fabs((double)tons) * unitPrice;
+        } else if (tons > 0.0f) {
+            s.kind      = SHIP_DELIVERY;
+            s.unitPrice = unitPrice;
+            s.value     = (double)tons * unitPrice;
+        } else {
+            s.kind      = SHIP_LOAD;
+            s.unitPrice = unitPrice;
+            s.value     = fabs((double)tons) * unitPrice;
+        }
+    }
+
+    // ---- carrier resolution (mode 1 only feeds the ring) -----------------
+    bool     emitSite   = false;
+    bool     emitAttrib = false;
+    unsigned shipId     = 0;
+    void*    carrier    = nullptr;
+    bool     carrierMatched = false;
+
+    EnterCriticalSection(&g_lock);
+
+    if (committed && mode != 0 && vehicleHome) {
+        CarrierNote& n = g_carrier[g_carrierHead % CARRIER_RING];
+        n.res  = res;
+        n.tons = fabsf(tons);
+        n.home = vehicleHome;
+        n.t  = NowSeconds();
+        g_carrierHead = (g_carrierHead + 1) % CARRIER_RING;
+    }
+
+    if (committed && mode == 0 && tons < 0.0f && !owner) {
+        // The load leg: param_9 is NULL, so find the vehicle that took these
+        // goods from the mode-1 call that follows within a few milliseconds.
+        const double now = NowSeconds();
+        for (int i = 1; i <= CARRIER_RING; i++) {
+            const int k = ((g_carrierHead - i) % CARRIER_RING + CARRIER_RING) % CARRIER_RING;
+            const CarrierNote& n = g_carrier[k];
+            if (!n.home || n.res != res) continue;
+            if (now - n.t > 2.0) continue;
+            const float tol = (fabsf(tons) > 0.01f) ? fabsf(tons) * 0.005f : 0.0005f;
+            if (fabsf(n.tons - fabsf(tons)) > tol) continue;
+            carrier = n.home;
+            carrierMatched = true;
+            break;
+        }
+    }
+
+    if (committed) g_callsCommitted++;
+    else           g_callsNoop++;
+
+    if (siteIdx >= 0) {
+        SiteTally& t = g_tally[siteIdx];
+        t.calls++;
+        if (committed) {
+            t.committed++;
+            if (tons >= 0.0f) t.tonsIn  += (double)tons;
+            else              t.tonsOut += fabs((double)tons);
+            t.value += s.value;
+        }
+        if (p9)           t.sawBld++;
+        if (vehicleHome)  t.sawHome++;
+    }
+
+    if (committed) {
+        if (mode == 0 && !building)                g_unknownBuilding++;
+        if (isStaging)                             g_staging++;
+        if (mode == 0 && !IsPrivate(building))     g_nonPrivate++;
+
+        if (s.kind == SHIP_FUEL)                    { g_wouldPayFuel    += s.value;
+                                                      g_fuelEvents++; }
+        if (s.kind == SHIP_DELIVERY && s.value > 0.0) g_wouldPayFreight += s.value;
+
+        s.id  = g_ledgerSeq++;
+        s.seq = g_ledgerTotal;
+        AppendShipment(s);
+        shipId = s.id;
+    }
+
+    // Separate budgets: a busy day can never hide a site behind its own
+    // attribution output, and payments get a third budget of their own.
+    if (g_siteLog) {
+        if (g_siteLoggedToday < (unsigned)g_logCapPerDay) {
+            g_siteLoggedToday++;
+            emitSite = true;
+        } else {
+            g_siteSuppressed++;
+        }
+    }
+    if (committed) {
+        if (g_attrLoggedToday < (unsigned)g_logCapPerDay) {
+            g_attrLoggedToday++;
+            emitAttrib = true;
+        } else {
+            g_attrSuppressed++;
+        }
+    }
+
+    LeaveCriticalSection(&g_lock);
+
+    // ---- logging, outside the lock ---------------------------------------
+    if (emitSite) {
+        char bname[64];
+        BuildingName(building, bname, sizeof(bname));
+        Logf("[B2B SITE] rva=0x%06X mode=%u sign=%c tons=%.3f commit=%d flag=%u "
+             "p2=%p \"%s\" priv=%d p9=%p vhome=%p class=%s",
+             siteRva, mode, (tons < 0.0f ? '-' : '+'), (double)tons,
+             committed ? 1 : 0, (unsigned)flag,
+             p2, bname, IsPrivate(building) ? 1 : 0, p9, vehicleHome,
+             ClassName(known));
+    }
+
+    // ---- billing ---------------------------------------------------------
+    //
+    // MODE 0 ONLY. A mode-1 call is the vehicle side of a movement a mode-0
+    // call has already described; billing both would charge it twice.
+    // v0.5: the probe runs even with billing off. It is a measurement, and
+    // measuring a cost must not depend on whether money is being moved.
+    if ((g_billing || g_tariffProbe || g_tripTariff) && committed && mode == 0 && building) {
+
+        char rname[64];
+        ResourceName(res, rname, sizeof(rname));
+
+        double freightPaid   = 0.0;
+        double probeTariff   = 0.0;
+        double probeCost     = 0.0;
+        double probeShare    = 0.0;
+        int    probeIndex    = 0;
+        bool   probeLine     = false;
+
+        if (tons > 0.0f) {
+
+            // ---- v0.7 THE TRIP TARIFF (this IS the money) -----------------
+            // v0.6 computed this and paid the value share anyway. v0.7 pays
+            // it. `trip_tariff = 0` puts the value share back untouched.
+            if (g_tariffProbe || g_tripTariff) {
+                probeTariff = TariffFor((double)tons, &probeCost, &probeShare,
+                                        &probeIndex);
+
+                EnterCriticalSection(&g_lock);
+                if (probeTariff > 0.0) {
+                    g_tariffCount++;
+                    g_tariffSum       += probeTariff;
+                    g_tariffCostSum   += probeCost * (1.0 + gTariffMargin);
+                    g_tariffShareSum  += probeShare;
+                    if (probeIndex == 1)      g_tariffFuelIndex++;
+                    else if (probeIndex == 2) g_tariffCpiIndex++;
+                    if (g_tariffLoggedToday < (unsigned)g_tariffLogPerDay) {
+                        g_tariffLoggedToday++;
+                        probeLine = true;
+                    }
+                } else {
+                    g_tariffNoIndex++;
+                }
+                LeaveCriticalSection(&g_lock);
+            }
+
+            if (g_billing && g_payCarrier) {
+                // H2 - freight on a delivery into `building`.
+                // The fleet owner is param_9 on this family; if the site does
+                // not carry one, fall back to the ring.
+                void* paid = nullptr;
+                if (owner && owner != building && IsPrivate(owner))      paid = owner;
+                else if (!owner && carrier && carrier != building &&
+                         IsPrivate(carrier))                             paid = carrier;
+
+                if (paid) {
+                    // v0.7: the trip price. The value share survives only for
+                    // the comparison path (trip_tariff = 0).
+                    const double freight = g_tripTariff
+                        ? probeTariff
+                        : FreightFor((double)tons, unitPrice);
+                    if (freight <= 0.0) {
+                        EnterCriticalSection(&g_lock); g_skipNoPrice++; LeaveCriticalSection(&g_lock);
+                    } else if (Pay(paid, freight, TSM_CAP_WHOLESALE,
+                                   "b2b_freight", "freight", res, tons)) {
+                        freightPaid = freight;
+                        TrackCarrier(paid);
+                        NoteCarrierIncome(paid, freight);
+                        BurnProbe(paid);              // v0.11: per-delivery tank sample
+                    }
+                } else {
+                    EnterCriticalSection(&g_lock); g_skipNoPayee++; LeaveCriticalSection(&g_lock);
+                }
+            }
+
+            // One line carries both numbers, so the calibration is a
+            // subtraction the reader can do in their head.
+            if (probeLine) {
+                char bname[64];
+                BuildingName(building, bname, sizeof(bname));
+                Logf("[TARIFF MODEL] %s %.3ft @%.2f = %.2f -> %s: %.2f = fuel %.2f x%.2f "
+                     "+ wear %.2f (index %s) | transfer_fragment=1 journey=0 "
+                     "| payment_returned=%.2f billing=%d dry_run=%d",
+                     rname, (double)tons, unitPrice, (double)tons * unitPrice, bname,
+                     probeTariff, probeCost, 1.0 + (double)gTariffMargin, probeShare,
+                     probeIndex == 1 ? "fuel" : (probeIndex == 2 ? "cpi" : "none"),
+                     freightPaid, g_billing, g_dryRun);
+            }
+        }
+
+        if (g_billing && tons < 0.0f && g_payFactory) {
+            // H1 - the private building the goods leave is paid for them.
+            if (IsPrivate(building)) {
+                if (unitPrice > 0.0) {
+                    const double value =
+                        fabs((double)tons) * unitPrice * (double)g_factoryShare;
+                    Pay(building, value, TSM_CAP_PRODUCTION,
+                        "b2b_factory", "factory", res, tons);
+                } else {
+                    // A private building shipping goods this build cannot
+                    // price. Count it and say so once per day-cap window:
+                    // silence here would look like "nothing happened".
+                    char bname[64];
+                    BuildingName(building, bname, sizeof(bname));
+                    EnterCriticalSection(&g_lock);
+                    g_skipNoPrice++;
+                    const bool say = (g_payLoggedToday < (unsigned)g_logCapPerDay);
+                    if (say) g_payLoggedToday++;
+                    LeaveCriticalSection(&g_lock);
+                    if (say)
+                        Logf("[PAY] skipped %s: no price for %s (unitPrice 0.00) - "
+                             "resource_pricing absent or unpriced", bname, rname);
+                }
+            }
+        }
+
+        (void)carrierMatched;
+    }
+
+    if (emitAttrib) {
+        char bname[64], rname[64];
+        BuildingName(building, bname, sizeof(bname));
+        ResourceName(res, rname, sizeof(rname));
+        Logf("[B2B] #%u %-6s bld=%p \"%s\" priv=%d res=%s %.2ft @%.2f = %.2f "
+             "(site 0x%06X, mode %u)",
+             shipId, KindName(s.kind), building, bname, IsPrivate(building) ? 1 : 0,
+             rname, (double)s.tons, s.unitPrice, s.value, siteRva, mode);
+    }
+
+    return r;
+}
+
+// ---------------------------------------------------------------------------
+// call-site patching
+// ---------------------------------------------------------------------------
+
+static bool PatchSite(int index)
+{
+    if (index < 0 || index >= g_siteCount) return false;
+    if (g_sitePatched[index]) return true;
+
+    const unsigned rva = g_sites[index].rva;
+
+    if (rva < 0x1000 || (size_t)rva + 5 > g_exeSize) {
+        Logf("private_logistics  site 0x%06X is outside the image (%llu bytes) - skipped",
+             rva, (unsigned long long)g_exeSize);
+        return false;
+    }
+
+    BYTE* site = g_exeBase + rva;
+    if (!ReadablePtr(site, 5)) {
+        Logf("private_logistics  site 0x%06X not readable - skipped", rva);
+        return false;
+    }
+
+    // Verify: a direct call, landing on the transfer.
+    if (site[0] != 0xE8) {
+        Logf("private_logistics  site 0x%06X is not a call (0x%02X) - skipped",
+             rva, site[0]);
+        return false;
+    }
+    const int32_t rel    = *(const int32_t*)(site + 1);
+    BYTE*         target = site + 5 + rel;
+    if (target != g_exeBase + TSM_RVA_TRANSFER) {
+        Logf("private_logistics  site 0x%06X calls %p, not the transfer - skipped",
+             rva, target);
+        return false;
+    }
+
+    // The cave: `jmp qword ptr [rip+0]` plus the absolute detour address.
+    BYTE* cave = AllocNear(site, 32);
+    if (!cave) {
+        Logf("private_logistics  no code cave near 0x%06X - skipped", rva);
+        return false;
+    }
+
+    static const BYTE kJmpAbs[6] = { 0xFF, 0x25, 0x00, 0x00, 0x00, 0x00 };
+    memcpy(cave, kJmpAbs, sizeof(kJmpAbs));
+    void* detour = (void*)&DetourTransfer;
+    memcpy(cave + 6, &detour, 8);
+    FlushInstructionCache(GetCurrentProcess(), cave, 14);
+
+    const int64_t toCave = (int64_t)(cave - (site + 5));
+    if (toCave > 0x7FFFFFFFLL || toCave < -0x80000000LL) {
+        Logf("private_logistics  cave out of rel32 range at 0x%06X - skipped", rva);
+        return false;
+    }
+
+    DWORD oldProtect = 0;
+    if (!VirtualProtect(site, 5, PAGE_EXECUTE_READWRITE, &oldProtect)) {
+        Logf("private_logistics  VirtualProtect failed at 0x%06X - nothing written", rva);
+        return false;
+    }
+
+    // Re-verify under the protection.
+    if (site[0] != 0xE8 || site + 5 + *(const int32_t*)(site + 1) != target) {
+        VirtualProtect(site, 5, oldProtect, &oldProtect);
+        Logf("private_logistics  site 0x%06X changed under us - nothing written", rva);
+        return false;
+    }
+
+    site[0] = 0xE8;                              // same opcode: still a call
+    *(int32_t*)(site + 1) = (int32_t)toCave;     // new destination
+    FlushInstructionCache(GetCurrentProcess(), site, 5);
+    VirtualProtect(site, 5, oldProtect, &oldProtect);
+
+    g_sitePatched[index] = true;
+    Logf("private_logistics  hook 0x%06X -> transfer ok (cave %p)", rva, (void*)cave);
+    return true;
+}
+
+static void PatchAllSites(void)
+{
+    if (!g_siteFilterActive)
+        for (int i = 0; i < g_siteCount; i++) g_siteWanted[i] = true;
+
+    int ok = 0, wanted = 0;
+    for (int i = 0; i < g_siteCount; i++) {
+        if (!g_siteWanted[i]) continue;
+        wanted++;
+        if (PatchSite(i)) ok++;
+    }
+
+    if (g_siteFilterActive)
+        Logf("private_logistics  site_list active: %d of %d sites selected",
+             wanted, g_siteCount);
+
+    Logf("private_logistics  patched %d of %d transfer call sites", ok, wanted);
+
+    if (ok == 0) {
+        Logf("private_logistics  ERROR  no sites patched. Either this is not "
+             "SOVIET64.exe v1.1.1.9, or the transfer is not at RVA 0x420350. "
+             "Nothing was written; the game is unaffected.");
+    } else if (ok < wanted) {
+        Logf("private_logistics  WARN  %d site(s) refused - see the lines above. "
+             "A refusal is safe: that call still reaches the engine normally.",
+             wanted - ok);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// the daily roll-up
+// ---------------------------------------------------------------------------
+
+static void OnDay(void*, int day, int month, int year)
+{
+    (void)year;
+
+    // Snapshot under the lock, clear everything, print outside it.
+    //
+    // v0.3 BUGFIX: v0.2 snapshotted these counters without zeroing them, so
+    // its "[B2B] day N" line was cumulative since load while the per-site
+    // table was genuinely per-day. Both are per-day now.
+    static SiteTally snap[MAX_SITES];
+    unsigned calls, committed, noop, unknown, stag, nonPriv;
+    unsigned siteSupp, attrSupp, paySupp, payCount, payCap, total;
+    unsigned skNoPayee, skNoPrice, skSmall, skTreasury;
+    unsigned tCount, tNoIndex, tFuelIdx, tCpiIdx;
+    unsigned trChecked, trExact, trOff, fuelEvents;
+    double   paidF, paidC, freight, fuel, tSum, tCostSum, tShareSum, trMaxGap;
+    static double cIn[BAL_CARRIERS];
+    static void*  cPt[BAL_CARRIERS];
+    int      cCount;
+    bool     newMonth;
+
+    EnterCriticalSection(&g_lock);
+    memcpy(snap, g_tally, sizeof(snap));
+    memset(g_tally, 0, sizeof(g_tally));
+
+    calls      = g_calls;
+    committed  = g_callsCommitted;
+    noop       = g_callsNoop;
+    unknown    = g_unknownBuilding;
+    stag       = g_staging;
+    nonPriv    = g_nonPrivate;
+    siteSupp   = g_siteSuppressed;
+    attrSupp   = g_attrSuppressed;
+    paySupp    = g_paySuppressed;
+    payCount   = g_payCount;
+    payCap     = g_payCapped;
+    skNoPayee  = g_skipNoPayee;
+    skNoPrice  = g_skipNoPrice;
+    skSmall    = g_skipSmall;
+    skTreasury = g_skipTreasury;
+    tCount     = g_tariffCount;
+    tNoIndex   = g_tariffNoIndex;
+    tFuelIdx   = g_tariffFuelIndex;
+    tCpiIdx    = g_tariffCpiIndex;
+    tSum       = g_tariffSum;
+    trChecked  = g_treasuryChecked;
+    trExact    = g_treasuryExact;
+    trOff      = g_treasuryOff;
+    trMaxGap   = g_treasuryMaxGap;
+    fuelEvents = g_fuelEvents;
+    tCostSum   = g_tariffCostSum;
+    tShareSum  = g_tariffShareSum;
+    cCount     = g_balCarrierCount;
+    for (int i = 0; i < BAL_CARRIERS; i++) {
+        cPt[i] = g_balCarrier[i];
+        cIn[i] = g_balCarrierIn[i];
+        g_balCarrierIn[i] = 0.0;      // this day's income, spent by the close
+    }
+    total      = g_ledgerTotal;
+    paidF      = g_paidFactory;
+    paidC      = g_paidCarrier;
+    freight    = g_wouldPayFreight;
+    fuel       = g_wouldPayFuel;
+
+    g_calls = g_callsCommitted = g_callsNoop = 0;
+    g_unknownBuilding = g_staging = g_nonPrivate = 0;
+    g_siteSuppressed = g_attrSuppressed = g_paySuppressed = 0;
+    g_payCount = g_payCapped = 0;
+    g_skipNoPayee = g_skipNoPrice = g_skipSmall = g_skipTreasury = 0;
+    g_tariffCount = g_tariffNoIndex = g_tariffFuelIndex = g_tariffCpiIndex = 0;
+    g_tariffCostSum = g_tariffShareSum = 0.0;
+    g_tariffSum = 0.0;
+    g_treasuryChecked = g_treasuryExact = g_treasuryOff = 0;
+    g_treasuryMaxGap = 0.0;
+    g_fuelEvents = 0;
+    g_fuelRes = nullptr;          // re-resolve the index next day
+    g_paidFactory = g_paidCarrier = 0.0;
+    g_wouldPayFreight = g_wouldPayFuel = 0.0;
+    g_paidToday = 0.0;
+
+    g_siteLoggedToday = 0;
+    g_attrLoggedToday = 0;
+    g_payLoggedToday  = 0;
+    g_tariffLoggedToday = 0;
+
+    newMonth = (month != g_lastMonth);
+    g_lastMonth = month;
+
+    // v0.4: this callback fires at the START of `day`, so everything above is
+    // the day that just ENDED. Report that day, not this one - the old label
+    // was one ahead of its own numbers.
+    // A loaded save can rewind the clock; do not report a day in the future.
+    if (g_summaryDay > day) g_summaryDay = -1;
+    const int closedDay = (g_summaryDay >= 0) ? g_summaryDay : (day - 1);
+    g_summaryDay = day;
+    LeaveCriticalSection(&g_lock);
+
+    Logf("[B2B] day %d closed: %u calls, %u committed, %u no-op | unknown %u, "
+         "staging %u, non-private %u | suppressed site %u attrib %u pay %u",
+         closedDay, calls, committed, noop, unknown, stag, nonPriv, siteSupp,
+         attrSupp, paySupp);
+
+    // Per-site table. A site that never fired is simply absent - absence is
+    // evidence rather than a logging artefact.
+    for (int i = 0; i < g_siteCount; i++) {
+        const SiteTally& t = snap[i];
+        if (t.calls == 0) continue;
+        Logf("[B2B SITE] day %d  0x%06X %-9s calls=%u commit=%u in=%.3f out=%.3f "
+             "value=%.2f | arg9!=0 %u home!=0 %u",
+             closedDay, g_sites[i].rva, ClassName(g_sites[i].known), t.calls,
+             t.committed, t.tonsIn, t.tonsOut, t.value, t.sawBld, t.sawHome);
+    }
+
+    if (g_billing) {
+        Logf("[PAY] day %d closed: %u payment(s), %u capped | skipped: no payee %u, "
+             "no price %u, too small %u, treasury %u | factory %.2f, carrier %.2f | %s",
+             closedDay, payCount, payCap, skNoPayee, skNoPrice, skSmall,
+             skTreasury, paidF, paidC,
+             g_dryRun ? "DRY RUN - nothing moved"
+                      : "PAID by the state treasury");
+    } else {
+        Logf("[PAY] day %d closed: billing off", closedDay);
+    }
+
+    // v0.5: the model's own total, beside the index it managed to use.
+    // `unindexed` is the honest failure: neither a fuel price nor a CPI
+    // basket resolved, so the probe refused to invent a figure.
+    if (g_tariffProbe || g_tripTariff) {
+        Logf("[TARIFF MODEL] day %d closed: %u priced_transfer_fragment(s), model %.2f = fuel %.2f x%.2f + "
+             "wear %.2f, mean %.2f | indexed by fuel %u, by cpi %u, unindexed %u "
+             "| NOT journeys or payment totals; billing=%d dry_run=%d",
+             closedDay, tCount,
+             tSum, tCostSum, 1.0 + (double)gTariffMargin, tShareSum,
+             tCount ? tSum / (double)tCount : 0.0,
+             tFuelIdx, tCpiIdx, tNoIndex, g_billing, g_dryRun);
+    }
+
+    // v0.5: THE MONEY PATH, BOTH ENDS (H33, H37).
+    //
+    // v0.4 proved the payee's account to the kopeck; it never read the payer.
+    // Here the treasury is sampled at every close, so consecutive closes give
+    // the movement, and `unexplained` is what the [PAY] lines cannot account
+    // for - zero when the books close, non-zero when something else touched
+    // the treasury in the same day.
+    //
+    // The carriers' capital is printed beside it. Income minus everything the
+    // company spent, fuel included: if the game charges a private DO for
+    // diesel, the difference between this delta and the freight it was paid
+    // IS that bill - the number Ship 2 has to price against.
+    if (g_balanceLog) {
+        const int cur = g_currency ? TsmCurrencyActive(g_currency) : 0;
+        double treas = 0.0;
+        bool   have  = false;
+        if (g_currency && g_currency->getTreasuryBalance &&
+            g_currency->structSize >= offsetof(TsmCurrencyApi, getTreasuryBalance) +
+                                      sizeof(g_currency->getTreasuryBalance)) {
+            treas = g_currency->getTreasuryBalance(cur);
+            have  = true;
+        }
+
+        const double paid = paidF + paidC;
+
+        if (!have) {
+            Logf("[BAL] day %d closed: treasury unavailable (no currency service)", closedDay);
+        } else if (!g_treasuryHaveClose) {
+            Logf("[BAL] day %d closed: treasury %.2f (baseline - the next close gives the "
+                 "movement) | paid %.2f", closedDay, treas, paid);
+        } else {
+            const double moved = treas - g_treasuryAtClose;
+            Logf("[BAL] day %d closed: treasury %.2f -> %.2f (%+.2f) | this plugin paid "
+                 "%.2f | the rest of the movement is the rest of the state's day%s",
+                 closedDay, g_treasuryAtClose, treas, moved, paid,
+                 g_dryRun ? " | DRY RUN: nothing should have moved" : "");
+        }
+        if (have) { g_treasuryAtClose = treas; g_treasuryHaveClose = true; }
+
+        // v0.5 (H33): the proof, per payment rather than per day.
+        if (trChecked > 0 || trOff > 0) {
+            Logf("[BAL] day %d treasury leg: %u payment(s) sampled either side, "
+                 "%u moved exactly the amount, %u off by any margin (largest %.2f)",
+                 closedDay, trChecked, trExact, trOff, trMaxGap);
+        }
+
+        // v0.6: the carrier's day in one line. `spent` is the arithmetic
+        // difference - freight in, minus the change in capital - and in this
+        // save it is the fuel bill, because fuel is the only thing a private
+        // DO buys (it arrives as a cat=2 FOREIGN debit on the same account).
+        for (int i = 0; i < cCount; i++) {
+            void* b = cPt[i];
+            if (!b || !g_enterprise || !g_enterprise->getCompanyCapital) continue;
+            const double cap = g_enterprise->getCompanyCapital(b);
+            char bname[64];
+            BuildingName(b, bname, sizeof(bname));
+            if (g_balCarrierPrev[i] < 0.0) {
+                Logf("[BAL] day %d   %s capital %.2f (baseline) | freight in %.2f",
+                     closedDay, bname, cap, cIn[i]);
+            } else {
+                const double delta = cap - g_balCarrierPrev[i];
+                Logf("[BAL] day %d   %s capital %.2f (%+.2f) | freight in %.2f | spent %.2f",
+                     closedDay, bname, cap, delta, cIn[i], cIn[i] - delta);
+            }
+
+            // v0.7: THE FUEL METER.
+            //
+            // monthWholesale is where enterprise_base books cat=2 FOREIGN
+            // debits, and diesel is the only foreign purchase a distribution
+            // office makes - so this is the carrier's real fuel bill for the
+            // calendar month, read back from the game rather than assumed.
+            //
+            // Fuel is bought in bulk and stored, so a day's purchases are not
+            // a day's burn. The run average is, because the tank delta washes
+            // out of a long run. That is the number the [TARIFF] model is
+            // scored against, and the number litres_per_trip should hold.
+            if (g_enterprise->describeEnterprise) {
+                TsmEnterpriseInfo info;
+                memset(&info, 0, sizeof(info));
+                info.structSize = sizeof(TsmEnterpriseInfo);
+                if (g_enterprise->describeEnterprise(b, &info) == 1) {
+                    const double bill = info.monthWholesale;
+                    double spent = 0.0;
+                    if (g_balCarrierFuel[i] < 0.0) {
+                        // First read after a load: monthWholesale already holds
+                        // whatever the save carried. Take it as the baseline and
+                        // say so - counting it would bill one day for a month.
+                        g_balCarrierFuel[i] = bill;
+                        Logf("[FUEL] day %d   %s meter baseline: month wholesale %.2f "
+                             "(not counted as this day's burn)", closedDay, bname, bill);
+                    } else {
+                        spent = (bill < g_balCarrierFuel[i])
+                              ? bill                      // month boundary: accumulators cleared
+                              : (bill - g_balCarrierFuel[i]);
+                        g_balCarrierFuel[i] = bill;
+                    }
+                    g_fuelPaidRun += (spent > 0.0) ? spent : 0.0;
+                    const double fprice = FuelUnitPrice();
+                    double litres = 0.0;
+                    if (fprice > 0.0 && gDieselDensity > 0.0)
+                        litres = ((spent > 0.0) ? spent : 0.0) / (gDieselDensity * fprice);
+                    g_fuelLitresRun += litres;
+                    Logf("[FUEL] day %d   %s diesel %.2f (measured, cat=2) = %.2f L at %.2f/%s",
+                         closedDay, bname, (spent > 0.0) ? spent : 0.0, litres, fprice,
+                         g_currency ? TsmCurrencySymbol(g_currency) : "RUB");
+                }
+            }
+            g_balCarrierPrev[i] = cap;
+        }
+
+        // v0.7: the run total, and the one number to copy into the ini.
+        g_fuelTripsRun += tCount;
+        if (g_fuelTripsRun > 0) {
+            const double perTrip = g_fuelLitresRun / (double)g_fuelTripsRun;
+            // v0.9: this counts PURCHASES, not burn. Fuel is bought in bulk
+            // and sits in tanks, so a short run and a long run give different
+            // answers from the same fleet - 3.27 L/trip over 1,100 trips,
+            // 7.14 over 214. Do not treat it as a measurement of the burn.
+            Logf("[FUEL PURCHASE MODEL] run: %.2f RUB = %.2f configured_litres_estimate over %llu transfer_fragment(s) = %.3f estimate_per_fragment "
+                 "| configured %.2f L | fuel sits in tanks: this is purchases, not burn",
+                 g_fuelPaidRun, g_fuelLitresRun, g_fuelTripsRun, perTrip, gLitresPerTrip);
+        }
+
+        // Legacy candidate differences: not native burn and not loaded journeys.
+        if (g_fuelTripsRun > 0 && g_burnTonsRun > 0.0 && gDieselDensity > 0.0) {
+            const double litres = g_burnTonsRun / gDieselDensity;
+            const double lpt    = litres / (double)g_fuelTripsRun;
+            // v0.11: L/DAY is printed beside L/trip because the physics is
+            // per-tick. L/trip moves whenever the shops order differently -
+            // the same fleet gave 3.27 and 7.14 L/trip in two runs - while
+            // L per fleet-day is the same quantity in both. Read this one.
+            const double lpd = g_tankDaysRun ? litres / (double)g_tankDaysRun : 0.0;
+            const double lvd = g_tankVehDaysRun ? litres / (double)g_tankVehDaysRun : 0.0;
+            const double lva = g_activeVehDaysRun ? litres / (double)g_activeVehDaysRun : 0.0;
+            Logf("[TANK SAMPLE] run: decrease_raw=%.4f configured_density_litres_estimate=%.1f "
+                 "| estimate_per_transfer_fragment=%.2f over %llu fragment(s) "
+                 "| estimate_per_fleet_day=%.2f over %u close(s) | estimate_per_vehicle_day=%.2f over %u "
+                 "| estimate_per_legacy_active_day=%.2f over %u legacy_active / %u legacy_idle "
+                 "| sample_increases=%u | configured_model_litres=%.2f "
+                 "units=unverified native_activity=unverified exact_burn=0 verified_refill=0",
+                 g_burnTonsRun, litres, lpt, g_fuelTripsRun, lpd, g_tankDaysRun, lvd,
+                 g_tankVehDaysRun, lva, g_activeVehDaysRun, g_idleVehDaysRun,
+                 g_refillsRun, gLitresPerTrip);
+            if (g_litresAuto)
+                Logf("[TANK SAMPLE] auto-tune NOT applied: sampled changes/units are unverified; "
+                     "configured litres_per_trip remains %.3f", gLitresPerTrip);
+        }
+    }
+
+    // Legacy inter-transfer endpoint samples are not deduction events.
+    if (g_probeStepsRun > 0 && gDieselDensity > 0.0) {
+        const double litres = g_probeBurnRun / gDieselDensity;
+        const double lpt    = litres / (double)g_probeStepsRun;
+        Logf("[FUEL SAMPLE] run: net_raw=%.4f configured_density_litres_estimate=%.1f "
+             "between %u transfer_fragment_pair(s) = %.2f estimate_per_pair "
+             "| %u interval(s) skipped (sample increase or candidate-count change) "
+             "| configured_model_litres=%.2f | %s",
+             g_probeBurnRun, litres, g_probeStepsRun, lpt, g_probeSkipRun,
+             gLitresPerTrip,
+             "units=unverified exact_burn=0 journey_count=unknown calibration_input=0");
+    }
+
+    // v0.8: who does this company actually own, and what can they carry?
+    CensusFleets(closedDay);
+
+    // v0.6: re-read the index at every close. At plugin start the world has
+    // not loaded, so v0.5's "fuel NOT FOUND" and "treasury opens at 0.00" were
+    // both true for about a second and then false forever. Printing them here
+    // is the honest place.
+    if (g_tariffProbe) {
+        const double fp = FuelUnitPrice();
+        float basket = 0.0f;
+        if (g_pricing) basket = TsmPricingCpiBasket(g_pricing, 0.0f);
+        Logf("[IDX] day %d closed: fuel '%s' = %.2f/%s (%s) | cpi basket %.2f/day | "
+             "margin %.0f%%, wear %.2f L",
+             closedDay, gFuelResource, fp,
+             g_currency ? TsmCurrencySymbol(g_currency) : "RUB",
+             fp > 0.0 ? "resolved" : "NOT RESOLVED",
+             (double)basket, gTariffMargin * 100.0, gWearLitres);
+    }
+
+    // v0.5: fuel telemetry. The refuel site has been silent in every session
+    // so far; a count of 0 here after fuel is switched on is itself a result.
+    Logf("[FUEL] day %d refuel sites: %u call(s), %.2f RUB of fuel moved through "
+         "the hooked sites", closedDay, fuelEvents, fuel);
+
+    if (newMonth) {
+        Logf("[B2B] month %d: %u shipments recorded, %.2f RUB would have moved "
+             "(freight %.2f, fuel %.2f)",
+             month, total, freight + fuel, freight, fuel);
+    }
+
+    AutoTargetsOnDay(day, closedDay);
+}
+
+// ---------------------------------------------------------------------------
+// automatic private DO targets and infrastructure discovery (v0.16)
+// ---------------------------------------------------------------------------
+
+#define AUTO_RVA_VECTOR_PUSH_BACK 0x08E050
+#define AUTO_RVA_TASKCFG_CTOR     0x1512A0
+#define AUTO_DO_TARGETS_BEGIN     0x0D38
+#define AUTO_DO_TARGETS_END       0x0D40
+#define AUTO_DO_DIRTY             0x0D50
+#define AUTO_DO_UI_TIMER          0x0FC0
+// Conservative plugin-side bound: native add-flow supports five selections,
+// but panel+0x310 per-target control-array capacity above five is unverified.
+// This limits new auto targets without deleting/purging any manual entries.
+#define AUTO_DO_SAFE_TARGET_COUNT 5
+#define AUTO_DO_ROAD_TYPE         43
+#define AUTO_DO_RAIL_TYPE         52
+#define AUTO_STORAGE_BUILDING_TYPE 5
+#define AUTO_CUSTOMS_TYPE         20
+#define AUTO_CUSTOMS_MAX          512
+#define AUTO_STATE_STORAGE_MAX    512
+#define AUTO_STATE_PERMISSION_MAX 512
+#define AUTO_STATE_PREF_FILE "private_logistics_state.bin"
+struct AutoCustomSite { void* building; float x; float z; char name[64]; };
+// permission bits: 1=load FROM site, 2=deliver INTO site; zero=deny both.
+struct AutoStateStorageSite { void* building; uint64_t key; float x; float z; char name[64]; unsigned char permission; };
+struct AutoStatePermission { uint64_t key; unsigned char mode; };
+static AutoCustomSite g_autoCustomSites[AUTO_CUSTOMS_MAX];
+static AutoStateStorageSite g_autoStateStorageSites[AUTO_STATE_STORAGE_MAX];
+static unsigned g_autoStateStorageCount = 0;
+static AutoStatePermission g_statePermissions[AUTO_STATE_PERMISSION_MAX];
+static unsigned g_statePermissionCount = 0;
+#define AUTO_TARGET_ENTRY_SIZE    0x18
+#define AUTO_TASKCFG_SIZE         0x198
+#define AUTO_STORAGE_STRIDE       0xE0
+#define AUTO_MAX_TARGETS_READ     65536
+
+static uint64_t AutoHashMix(uint64_t h, uint8_t byte)
+{
+    return (h ^ byte) * 1099511628211ull;
+}
+
+static bool AutoReadBuildingType(void* b, int* outType)
+{
+    if (!b || !TsmIsValidGamePtr(b) || !ReadablePtr(b, TSM_BLD_MIN_READABLE) ||
+        !ReadablePtr((BYTE*)b + TSM_BLD_TYPEDESC, sizeof(void*)))
+        return false;
+    void* td = *(void**)((BYTE*)b + TSM_BLD_TYPEDESC);
+    if (!td || !TsmIsValidGamePtr(td) || !ReadablePtr((BYTE*)td + TSM_TD_TYPE_NUM, sizeof(int)))
+        return false;
+    *outType = *(int*)((BYTE*)td + TSM_TD_TYPE_NUM);
+    return true;
+}
+
+static bool AutoBuildingPosition(void* b, float* outX, float* outZ)
+{
+    if (!b || !TsmIsValidGamePtr(b) || !ReadablePtr(b, 0x400)) return false;
+
+    // The building's position is the translation row of its embedded
+    // C3D_NODE, not bld+0x08/+0x10 (those yielded zeros in the v0.15 probe).
+    const BYTE* node = (const BYTE*)b + TSM_BLD_NODE;
+    if (ReadablePtr(node, 0x40)) {
+        const float x = *(const float*)(node + 0x30);
+        const float z = *(const float*)(node + 0x38);
+        if (x == x && z == z && (fabsf(x) > 1.5f || fabsf(z) > 1.5f) &&
+            fabsf(x) < 100000.0f && fabsf(z) < 100000.0f) {
+            if (outX) *outX = x;
+            if (outZ) *outZ = z;
+            return true;
+        }
+    }
+
+    // Some unfinished sites can lack a usable node transform; use the
+    // verified placement-bbox fallback used by enterprise_base.
+    if (ReadablePtr((const BYTE*)b + TSM_BLD_BBOX, sizeof(void*))) {
+        BYTE* bb = *(BYTE**)((BYTE*)b + TSM_BLD_BBOX);
+        if (bb && ReadablePtr(bb + 0x20, 16)) {
+            const float* mn = *(const float**)(bb + 0x20);
+            if (mn && ReadablePtr(mn, 16)) {
+                const float x = mn[1], z = mn[3];
+                if (x == x && z == z && fabsf(x) < 100000.0f && fabsf(z) < 100000.0f) {
+                    if (outX) *outX = x;
+                    if (outZ) *outZ = z;
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+// Stable session/save identity: native object name + type + quantized position.
+// No raw Building* is retained in the retry ledger.
+static bool AutoBuildingKey(void* b, uint64_t* outKey, int* outType)
+{
+    int type = -1;
+    float x = 0.0f, z = 0.0f;
+    if (!AutoReadBuildingType(b, &type) || !AutoBuildingPosition(b, &x, &z))
+        return false;
+
+    uint64_t h = 14695981039346656037ull;
+    const char* objectName = nullptr;
+    if (g_enterprise && g_enterprise->getBuildingObjectName) {
+        __try { objectName = g_enterprise->getBuildingObjectName(b); }
+        __except (EXCEPTION_EXECUTE_HANDLER) { objectName = nullptr; }
+    }
+    if (objectName) {
+        for (size_t i = 0; i < 128; ++i) {
+            if (!ReadablePtr(objectName + i, 1)) return false;
+            const uint8_t c = (uint8_t)objectName[i];
+            h = AutoHashMix(h, c);
+            if (c == 0) break;
+        }
+    }
+    const int32_t qx = (int32_t)(x * 10.0f + (x >= 0.0f ? 0.5f : -0.5f));
+    const int32_t qz = (int32_t)(z * 10.0f + (z >= 0.0f ? 0.5f : -0.5f));
+    const uint32_t values[3] = { (uint32_t)type, (uint32_t)qx, (uint32_t)qz };
+    const uint8_t* bytes = (const uint8_t*)values;
+    for (size_t i = 0; i < sizeof(values); ++i) h = AutoHashMix(h, bytes[i]);
+    // H1 FIX: mix raw float bits to break 0.1m quantized collisions (two clones within 10cm)
+    // keeps qx/qz for backward compat but adds sub-decimeter entropy; one-time permission reset for old saves
+    uint32_t fx = 0, fz = 0;
+    memcpy(&fx, &x, sizeof(fx));
+    memcpy(&fz, &z, sizeof(fz));
+    const uint8_t* fxB = (const uint8_t*)&fx; for (size_t i = 0; i < sizeof(fx); ++i) h = AutoHashMix(h, fxB[i]);
+    const uint8_t* fzB = (const uint8_t*)&fz; for (size_t i = 0; i < sizeof(fz); ++i) h = AutoHashMix(h, fzB[i]);
+    *outKey = h ? h : 1;
+    if (outType) *outType = type;
+    return true;
+}
+
+static void AutoBuildingName(void* b, char* out, size_t capacity)
+{
+    if (!out || capacity == 0) return;
+    out[0] = 0;
+    const char* name = nullptr;
+    if (g_enterprise && g_enterprise->getBuildingObjectName) {
+        __try { name = g_enterprise->getBuildingObjectName(b); }
+        __except (EXCEPTION_EXECUTE_HANDLER) { name = nullptr; }
+    }
+    if (name) {
+        size_t i = 0;
+        for (; i + 1 < capacity; ++i) {
+            if (!ReadablePtr(name + i, 1)) break;
+            out[i] = name[i];
+            if (out[i] == 0) return;
+        }
+        out[i] = 0;
+        if (i > 0) return;
+    }
+    const char fallback[] = "unknown";
+    size_t j = 0;
+    while (j + 1 < capacity && fallback[j]) { out[j] = fallback[j]; ++j; }
+    out[j] = 0;
+}
+
+static unsigned char AutoStatePermissionGet(uint64_t key)
+{
+    if (!key) return 0;
+    unsigned char mode = 0;
+    EnterCriticalSection(&g_lock);
+    for (unsigned i = 0; i < g_statePermissionCount; ++i) {
+        if (g_statePermissions[i].key == key) { mode = g_statePermissions[i].mode; break; }
+    }
+    LeaveCriticalSection(&g_lock);
+    return mode;
+}
+
+static bool AutoStatePermissionSet(uint64_t key, unsigned char mode)
+{
+    if (!key || mode > AUTO_ALLOW_BOTH) return false;
+    EnterCriticalSection(&g_lock);
+    unsigned found = g_statePermissionCount;
+    for (unsigned i = 0; i < g_statePermissionCount; ++i) {
+        if (g_statePermissions[i].key == key) { found = i; break; }
+    }
+    if (mode == 0) {
+        if (found < g_statePermissionCount) {
+            g_statePermissions[found] = g_statePermissions[g_statePermissionCount - 1];
+            --g_statePermissionCount;
+        }
+        LeaveCriticalSection(&g_lock);
+        return true;
+    }
+    if (found < g_statePermissionCount) {
+        g_statePermissions[found].mode = mode;
+        LeaveCriticalSection(&g_lock);
+        return true;
+    }
+    if (g_statePermissionCount >= AUTO_STATE_PERMISSION_MAX) {
+        LeaveCriticalSection(&g_lock);
+        return false;
+    }
+    g_statePermissions[g_statePermissionCount].key = key;
+    g_statePermissions[g_statePermissionCount].mode = mode;
+    ++g_statePermissionCount;
+    LeaveCriticalSection(&g_lock);
+    return true;
+}
+
+static bool AutoHasNativeStorage(void* b);
+
+static unsigned AutoBuildingCapabilities(void* building)
+{
+    int type = -1;
+    if (!AutoReadBuildingType(building, &type) || !AutoHasNativeStorage(building)) return 0;
+    char asset[128];
+    AutoBuildingName(building, asset, sizeof(asset));
+    return AutoSiteCapabilities(type, asset);
+}
+
+static void AutoDrawStatePermissions(uint64_t key, unsigned capabilities)
+{
+    const unsigned char oldMode = AutoStatePermissionGet(key);
+    unsigned char newMode = (unsigned char)(oldMode & capabilities);
+    if (capabilities & AUTO_ALLOW_LOAD) {
+        unsigned checked = AutoNativeCheckboxValue((newMode & AUTO_ALLOW_LOAD) != 0);
+        if (g_uiPanels->widgetCheckbox(&checked, L"Allow private DO loading (take goods)", 0))
+            newMode = AutoPermissionToggle(newMode, AUTO_ALLOW_LOAD, AutoNativeCheckboxChecked(checked), capabilities);
+    }
+    if (capabilities & AUTO_ALLOW_UNLOAD) {
+        unsigned checked = AutoNativeCheckboxValue((newMode & AUTO_ALLOW_UNLOAD) != 0);
+        if (g_uiPanels->widgetCheckbox(&checked, L"Allow private DO deliveries (receive goods)", 0))
+            newMode = AutoPermissionToggle(newMode, AUTO_ALLOW_UNLOAD, AutoNativeCheckboxChecked(checked), capabilities);
+    }
+    if (newMode != oldMode) {
+        if (!AutoStatePermissionSet(key, newMode)) {
+            Logf("[AUTO DO] state permission table full; change not retained");
+            return;
+        }
+        Logf("[AUTO DO] state permissions key=%016llX load=%u unload=%u",
+             (unsigned long long)key, (newMode & AUTO_ALLOW_LOAD) ? 1u : 0u,
+             (newMode & AUTO_ALLOW_UNLOAD) ? 1u : 0u);
+    }
+}
+
+static void StateStorageWidgetProvider(void* building, void*)
+{
+    if (!g_autoTargetsEnabled || !g_uiPanels || !TsmUiPanelsHasWidgets(g_uiPanels) ||
+        !building || !TsmIsValidGamePtr(building) ||
+        !ReadablePtr(building, TSM_BLD_MIN_READABLE) || !g_enterprise ||
+        !g_enterprise->isBuildingPrivate || g_enterprise->isBuildingPrivate(building)) return;
+    const unsigned capabilities = AutoBuildingCapabilities(building);
+    uint64_t key = 0;
+    if (!AutoBuildingKey(building, &key, nullptr)) return;
+    static uint64_t lastPanelKey = 0;
+    if (lastPanelKey != key) {
+        lastPanelKey = key;
+        int type = -1; AutoReadBuildingType(building, &type);
+        char asset[128]; AutoBuildingName(building, asset, sizeof(asset));
+        const unsigned effective = AutoStatePermissionGet(key) & capabilities;
+        Logf("[AUTO DO] state panel key=%016llX type=%d asset=%s capabilities=%u permissions=%u native_load=%u native_unload=%u (native 0=checked,1=unchecked)%s",
+             (unsigned long long)key, type, asset, capabilities, effective,
+             AutoNativeCheckboxValue((effective & AUTO_ALLOW_LOAD) != 0),
+             AutoNativeCheckboxValue((effective & AUTO_ALLOW_UNLOAD) != 0),
+             capabilities ? "" : " (unsupported role: controls hidden, automatic access denied)");
+    }
+    if (!capabilities) return; // unknown roles do not get a misleading loading control
+    AutoDrawStatePermissions(key, capabilities);
+}
+
+static bool AutoHasNativeStorage(void* b)
+{
+    if (!b || !TsmIsValidGamePtr(b) ||
+        !ReadablePtr((BYTE*)b + TSM_BLD_STORAGES_BEGIN, 16)) return false;
+    const uintptr_t begin = (uintptr_t)*(void**)((BYTE*)b + TSM_BLD_STORAGES_BEGIN);
+    const uintptr_t end = (uintptr_t)*(void**)((BYTE*)b + TSM_BLD_STORAGES_END);
+    if (!begin || end <= begin || ((end - begin) % AUTO_STORAGE_STRIDE) != 0) return false;
+    const uintptr_t count = (end - begin) / AUTO_STORAGE_STRIDE;
+    return count <= 4096 && ReadablePtr((const void*)begin, count * AUTO_STORAGE_STRIDE);
+}
+
+static bool AutoReadTargetVector(void* office, void*** outBegin, size_t* outCount)
+{
+    if (!office || !TsmIsValidGamePtr(office) ||
+        !ReadablePtr((BYTE*)office + AUTO_DO_TARGETS_BEGIN, 24)) return false;
+    const uintptr_t begin = (uintptr_t)*(void**)((BYTE*)office + AUTO_DO_TARGETS_BEGIN);
+    const uintptr_t end   = (uintptr_t)*(void**)((BYTE*)office + AUTO_DO_TARGETS_END);
+    const uintptr_t cap   = (uintptr_t)*(void**)((BYTE*)office + AUTO_DO_TARGETS_END + 8);
+    if (!begin && !end && !cap) { *outBegin = nullptr; *outCount = 0; return true; }
+    if (!begin || !end || !cap || end < begin || cap < end || ((end - begin) & 7) != 0)
+        return false;
+    const size_t count = (size_t)((end - begin) / sizeof(void*));
+    if (count > AUTO_MAX_TARGETS_READ ||
+        !ReadablePtr((const void*)begin, count * sizeof(void*))) return false;
+    *outBegin = (void**)begin; *outCount = count;
+    return true;
+}
+
+static unsigned AutoOfficeHash(uint64_t officeKey)
+{
+    officeKey ^= officeKey >> 33; officeKey *= 0xff51afd7ed558ccdull;
+    officeKey ^= officeKey >> 33; officeKey *= 0xc4ceb9fe1a85ec53ull;
+    officeKey ^= officeKey >> 33;
+    return (unsigned)officeKey & (AUTO_OFFICE_HASH_SIZE - 1);
+}
+
+static bool AutoBuildOfficeMemoIndex(void)
+{
+    memset(g_autoOfficeMemoHeads, 0, sizeof(g_autoOfficeMemoHeads));
+    for (unsigned i = 0; i < g_autoMemoCount; ++i) {
+        AutoMemo& memo = g_autoMemo[i];
+        unsigned slot = AutoOfficeHash(memo.officeKey);
+        bool inserted = false;
+        for (unsigned probe = 0; probe < AUTO_OFFICE_HASH_SIZE; ++probe) {
+            AutoOfficeMemoHead& head = g_autoOfficeMemoHeads[slot];
+            if (head.officeKey == 0 || head.officeKey == memo.officeKey) {
+                head.officeKey = memo.officeKey;
+                memo.nextOffice = head.headPlusOne ? head.headPlusOne - 1 : 0xFFFFFFFFu;
+                head.headPlusOne = i + 1;
+                inserted = true;
+                break;
+            }
+            slot = (slot + 1) & (AUTO_OFFICE_HASH_SIZE - 1);
+        }
+        if (!inserted) return false;
+    }
+    return true;
+}
+
+static int AutoOfficeMemoHeadIndex(uint64_t officeKey)
+{
+    unsigned slot = AutoOfficeHash(officeKey);
+    for (unsigned probe = 0; probe < AUTO_OFFICE_HASH_SIZE; ++probe) {
+        const AutoOfficeMemoHead& head = g_autoOfficeMemoHeads[slot];
+        if (head.officeKey == 0) return -1;
+        if (head.officeKey == officeKey)
+            return head.headPlusOne ? (int)(head.headPlusOne - 1) : -1;
+        slot = (slot + 1) & (AUTO_OFFICE_HASH_SIZE - 1);
+    }
+    return -1;
+}
+
+static unsigned AutoPairHash(uint64_t officeKey, uint64_t targetKey)
+{
+    uint64_t h = officeKey ^ (targetKey + 0x9E3779B97F4A7C15ull + (officeKey << 6) + (officeKey >> 2));
+    h ^= h >> 30; h *= 0xBF58476D1CE4E5B9ull;
+    h ^= h >> 27; h *= 0x94D049BB133111EBull;
+    h ^= h >> 31;
+    return (unsigned)h & (AUTO_MEMO_HASH_SIZE - 1);
+}
+
+static int AutoMemoFind(uint64_t officeKey, uint64_t targetKey)
+{
+    unsigned slot = AutoPairHash(officeKey, targetKey);
+    for (unsigned probe = 0; probe < AUTO_MEMO_HASH_SIZE; ++probe) {
+        const unsigned stored = g_autoMemoHash[slot];
+        if (stored == 0) return -1;
+        const unsigned index = stored - 1;
+        if (g_autoMemo[index].officeKey == officeKey &&
+            g_autoMemo[index].targetKey == targetKey) return (int)index;
+        slot = (slot + 1) & (AUTO_MEMO_HASH_SIZE - 1);
+    }
+    return -1;
+}
+
+static int AutoPointerIndex(void* building)
+{
+    if (!building) return -1;
+    uintptr_t h = (uintptr_t)building;
+    h >>= 4; h ^= h >> 17; h ^= h >> 9;
+    unsigned slot = (unsigned)h & (AUTO_POINTER_HASH_SIZE - 1);
+    for (unsigned probe = 0; probe < AUTO_POINTER_HASH_SIZE; ++probe) {
+        AutoPointerSlot& item = g_autoPointerHash[slot];
+        if (!item.building) return -1;
+        if (item.building == building) return (int)item.entityIndex;
+        slot = (slot + 1) & (AUTO_POINTER_HASH_SIZE - 1);
+    }
+    return -1;
+}
+
+static bool AutoBuildPointerIndex(unsigned entityCount)
+{
+    memset(g_autoPointerHash, 0, sizeof(g_autoPointerHash));
+    for (unsigned i = 0; i < entityCount; ++i) {
+        uintptr_t h = (uintptr_t)g_autoEntities[i].building;
+        h >>= 4; h ^= h >> 17; h ^= h >> 9;
+        unsigned slot = (unsigned)h & (AUTO_POINTER_HASH_SIZE - 1);
+        bool inserted = false;
+        for (unsigned probe = 0; probe < AUTO_POINTER_HASH_SIZE; ++probe) {
+            AutoPointerSlot& item = g_autoPointerHash[slot];
+            if (!item.building) {
+                item.building = g_autoEntities[i].building;
+                item.entityIndex = i;
+                inserted = true;
+                break;
+            }
+            if (item.building == g_autoEntities[i].building) { inserted = true; break; }
+            slot = (slot + 1) & (AUTO_POINTER_HASH_SIZE - 1);
+        }
+        if (!inserted) return false;
+    }
+    return true;
+}
+
+static int AutoMemoInsert(uint64_t officeKey, uint64_t targetKey)
+{
+    if (g_autoMemoCount >= AUTO_MEMO_MAX) return -1;
+    unsigned slot = AutoPairHash(officeKey, targetKey);
+    for (unsigned probe = 0; probe < AUTO_MEMO_HASH_SIZE; ++probe) {
+        if (g_autoMemoHash[slot] == 0) {
+            const unsigned index = g_autoMemoCount++;
+            g_autoMemo[index].officeKey = officeKey;
+            g_autoMemo[index].targetKey = targetKey;
+            g_autoMemo[index].nextOffice = 0xFFFFFFFFu;
+            g_autoMemo[index].state = 1;
+            g_autoMemoHash[slot] = index + 1;
+            return (int)index;
+        }
+        slot = (slot + 1) & (AUTO_MEMO_HASH_SIZE - 1);
+    }
+    return -1;
+}
+
+static bool AutoAppendNativeTarget(void* office, void* target, unsigned directions)
+{
+    if (!g_exeBase || g_exeSize <= AUTO_RVA_TASKCFG_CTOR + 1 ||
+        g_exeSize <= AUTO_RVA_VECTOR_PUSH_BACK + 1) return false;
+    void** oldBegin = nullptr; size_t oldCount = 0;
+    if (!AutoReadTargetVector(office, &oldBegin, &oldCount)) return false;
+    (void)oldBegin; (void)oldCount;
+
+    typedef void* (__fastcall *TTaskCfgCtor)(void*);
+    typedef void (__fastcall *TVectorPushBack)(void*, const void*);
+    TTaskCfgCtor ctor = (TTaskCfgCtor)(g_exeBase + AUTO_RVA_TASKCFG_CTOR);
+    TVectorPushBack pushBack = (TVectorPushBack)(g_exeBase + AUTO_RVA_VECTOR_PUSH_BACK);
+    if (!ReadablePtr((const void*)ctor, 1) || !ReadablePtr((const void*)pushBack, 1)) return false;
+
+    void* entry = ::operator new(AUTO_TARGET_ENTRY_SIZE, std::nothrow);
+    void* cfgMem = ::operator new(AUTO_TASKCFG_SIZE, std::nothrow);
+    if (!entry || !cfgMem) {
+        if (entry) ::operator delete(entry);
+        if (cfgMem) ::operator delete(cfgMem);
+        return false;
+    }
+    memset(entry, 0, AUTO_TARGET_ENTRY_SIZE);
+    memset(cfgMem, 0, AUTO_TASKCFG_SIZE);
+    void* cfg = nullptr;
+    try { cfg = ctor(cfgMem); } catch (...) { cfg = nullptr; }
+    if (!cfg) { ::operator delete(entry); ::operator delete(cfgMem); return false; }
+
+    // The native UI adds entries OFF, awaiting its activation checkbox. An
+    // autonomous company must request activation itself, not only add the row.
+    // Native dirty/upkeep/planner paths still validate route compatibility.
+    AutoApplyEntryActivation(entry, directions);
+    *(void**)((BYTE*)entry + 0x08) = target;
+    *(void**)((BYTE*)entry + 0x10) = cfg;
+    // Ghidra reports no resource-filter field in this 0x18-byte TaskEntry.
+    // The planner's target/connection index is rebuilt in its working area
+    // by reachability; do not invent or write a filter at entry+0x0C.
+    AutoApplyTaskDirections(cfg, directions & AUTO_ALLOW_BOTH, g_autoSourcePercent, g_autoDestinationPercent);
+    *((BYTE*)cfg + 0x28) = 1;                    // native active flag
+    *((BYTE*)cfg + 0xF0) = 1;                    // native validated flag
+
+    try {
+        // FUN_14008E050(vector, &entry) is the native vector<TaskEntry*>::push_back.
+        pushBack((BYTE*)office + AUTO_DO_TARGETS_BEGIN, &entry);
+    } catch (...) {
+        ::operator delete(entry); ::operator delete(cfgMem);
+        return false;
+    }
+    return true;
+}
+
+static void AutoPersistenceEvent(TsmSaveEvent event, const char* dir, void*)
+{
+    if (event == TSM_SAVE_LOADING) {
+        InterlockedIncrement(&g_fuelDiagnosticEpoch);
+        PanelObserverLoading();
+    }
+    // Persist permission keys only; never retain building pointers. Save/load
+    // callbacks run on the file thread, so no game-memory access is performed.
+    if (!g_persistence || !dir) return;
+    if (event == TSM_SAVE_WRITING) {
+        if (!g_persistence->writeAtomic) return;
+        BYTE data[12 + AUTO_STATE_PERMISSION_MAX * 9];
+        memcpy(data, "PLSTOR18", 8);
+        uint32_t count = 0;
+        EnterCriticalSection(&g_lock);
+        count = g_statePermissionCount;
+        memcpy(data + 8, &count, sizeof(count));
+        size_t at = 12;
+        for (unsigned i = 0; i < g_statePermissionCount; ++i) {
+            memcpy(data + at, &g_statePermissions[i].key, sizeof(uint64_t));
+            at += sizeof(uint64_t);
+            data[at++] = g_statePermissions[i].mode;
+        }
+        LeaveCriticalSection(&g_lock);
+        if (!g_persistence->writeAtomic(dir, AUTO_STATE_PREF_FILE, data, at))
+            Logf("[AUTO DO] state permissions were not saved");
+    } else if (event == TSM_SAVE_LOADING) {
+        if (g_persistence->readFile) {
+            size_t len = 0;
+            void* raw = g_persistence->readFile(dir, AUTO_STATE_PREF_FILE, &len);
+            AutoStatePermission loaded[AUTO_STATE_PERMISSION_MAX];
+            unsigned loadedCount = 0;
+            const bool legacy = raw && len >= 12 && memcmp(raw, "PLSTOR17", 8) == 0;
+            if (raw && len >= 12 && (legacy || memcmp(raw, "PLSTOR18", 8) == 0)) {
+                uint32_t count = 0;
+                memcpy(&count, (BYTE*)raw + 8, sizeof(count));
+                if (count <= AUTO_STATE_PERMISSION_MAX && len == 12 + (size_t)count * 9) {
+                    size_t at = 12;
+                    for (uint32_t i = 0; i < count; ++i) {
+                        uint64_t key = 0;
+                        memcpy(&key, (BYTE*)raw + at, sizeof(key));
+                        at += sizeof(key);
+                        const unsigned char mode = AutoMigratePermission(*((BYTE*)raw + at++), legacy);
+                        if (key && mode != 0) {
+                            loaded[loadedCount].key = key;
+                            loaded[loadedCount].mode = mode;
+                            ++loadedCount;
+                        }
+                    }
+                } else {
+                    Logf("[AUTO DO] state permission file has invalid length/count");
+                }
+            } else if (raw) {
+                Logf("[AUTO DO] state permission file header invalid");
+            }
+            if (raw) free(raw);
+            EnterCriticalSection(&g_lock);
+            memset(g_statePermissions, 0, sizeof(g_statePermissions));
+            if (loadedCount) memcpy(g_statePermissions, loaded,
+                                    loadedCount * sizeof(loaded[0]));
+            g_statePermissionCount = loadedCount;
+            LeaveCriticalSection(&g_lock);
+        }
+        InterlockedExchange(&g_autoResetActiveMemoAfterLoad, 1);
+    }
+}
+
+static void AutoProbeStateInfrastructure(int closedDay, unsigned entityCount)
+{
+    g_autoStateStorageCount = 0;
+    BYTE* game = g_exeBase ? TsmGameObject(g_exeBase) : nullptr;
+    TsmBuildingSpan span;
+    if (!game || !TsmGetBuildings(game, &span) ||
+        !span.begin || !ReadablePtr(span.begin, span.count * sizeof(void*))) {
+        Logf("[AUTO DO] day %d infra probe: world building vector unavailable", closedDay);
+        return;
+    }
+
+    unsigned stateStorages = 0, privateStorages = 0, customsCount = 0;
+    unsigned stateStoragesStored = 0, customsStored = 0;
+    for (size_t i = 0; i < span.count; ++i) {
+        void* b = span.begin[i];
+        if (!b || !TsmIsValidGamePtr(b) || !ReadablePtr(b, TSM_BLD_MIN_READABLE) ||
+            !ReadablePtr((BYTE*)b + TSM_BLD_DEMOLISHED, 1) || TsmIsDemolished(b)) continue;
+        int type = -1;
+        if (!AutoReadBuildingType(b, &type)) continue;
+        // Discover storage-bearing sites for enforcement; classification, not
+        // mere storage presence, determines allowed directions/visible widgets.
+        if (AutoHasNativeStorage(b) && type != AUTO_CUSTOMS_TYPE &&
+            type != AUTO_DO_ROAD_TYPE && type != AUTO_DO_RAIL_TYPE) {
+            const bool isPrivate = g_enterprise && g_enterprise->isBuildingPrivate &&
+                                   g_enterprise->isBuildingPrivate(b);
+            if (isPrivate) ++privateStorages;
+            else {
+                ++stateStorages;
+                if (stateStoragesStored < AUTO_STATE_STORAGE_MAX) {
+                    AutoStateStorageSite& site = g_autoStateStorageSites[stateStoragesStored++];
+                    site.building = b;
+                    site.key = 0;
+                    AutoBuildingKey(b, &site.key, nullptr);
+                    site.permission = site.key ? (unsigned char)(AutoStatePermissionGet(site.key) & AutoBuildingCapabilities(b)) : 0;
+                    site.x = 0.0f; site.z = 0.0f;
+                    AutoBuildingPosition(b, &site.x, &site.z);
+                    AutoBuildingName(b, site.name, sizeof(site.name));
+                }
+            }
+            continue;
+        }
+        if (type != AUTO_CUSTOMS_TYPE) continue;
+        ++customsCount;
+        float x = 0.0f, z = 0.0f;
+        if (!AutoBuildingPosition(b, &x, &z) || customsStored >= AUTO_CUSTOMS_MAX) continue;
+        AutoCustomSite& site = g_autoCustomSites[customsStored++];
+        site.building = b; site.x = x; site.z = z;
+        AutoBuildingName(b, site.name, sizeof(site.name));
+    }
+
+    g_autoStateStorageCount = stateStoragesStored;
+    Logf("[AUTO DO] day %d infra probe: world=%llu state_storage=%u private_storage=%u customs=%u customs_indexed=%u",
+         closedDay, (unsigned long long)span.count, stateStorages, privateStorages,
+         customsCount, customsStored);
+    static int previousStateStorages = -1;
+    static int previousCustoms = -1;
+    if ((int)stateStorages != previousStateStorages || (int)customsCount != previousCustoms) {
+        previousStateStorages = (int)stateStorages;
+        previousCustoms = (int)customsCount;
+        const unsigned show = (stateStoragesStored < 32) ? stateStoragesStored : 32;
+        for (unsigned i = 0; i < show; ++i)
+            Logf("[AUTO DO] state storage candidate name=%s key=%016llX pos=(%.1f,%.1f) permission=%s",
+                 g_autoStateStorageSites[i].name,
+                 (unsigned long long)g_autoStateStorageSites[i].key,
+                 g_autoStateStorageSites[i].x, g_autoStateStorageSites[i].z,
+                 g_autoStateStorageSites[i].permission == AUTO_ALLOW_BOTH ? "LOAD+UNLOAD" :
+                 (g_autoStateStorageSites[i].permission == AUTO_ALLOW_LOAD ? "LOAD" :
+                  (g_autoStateStorageSites[i].permission == AUTO_ALLOW_UNLOAD ? "UNLOAD" : "DENY")));
+        if (stateStoragesStored > show)
+            Logf("[AUTO DO] state storage list truncated: %u of %u shown",
+                 show, stateStorages);
+    }
+    for (unsigned i = 0; i < entityCount; ++i) {
+        AutoEntity& office = g_autoEntities[i];
+        if (office.type != AUTO_DO_ROAD_TYPE && office.type != AUTO_DO_RAIL_TYPE) continue;
+        float ox = 0.0f, oz = 0.0f;
+        if (!AutoBuildingPosition(office.building, &ox, &oz)) continue;
+        int nearest = -1;
+        double bestSq = 1.0e100;
+        for (unsigned c = 0; c < customsStored; ++c) {
+            const double dx = (double)g_autoCustomSites[c].x - ox;
+            const double dz = (double)g_autoCustomSites[c].z - oz;
+            const double d2 = dx * dx + dz * dz;
+            if (d2 < bestSq) { bestSq = d2; nearest = (int)c; }
+        }
+        if (nearest >= 0)
+            Logf("[AUTO DO] day %d nearest customs (geometric, not assigned) office=%016llX customs=%s dist=%.1fm",
+                 closedDay, (unsigned long long)office.key,
+                 g_autoCustomSites[nearest].name, sqrt(bestSq));
+        else
+            Logf("[AUTO DO] day %d nearest customs unavailable office=%016llX",
+                 closedDay, (unsigned long long)office.key);
+    }
+}
+
+static bool AutoTaskConfigValid(void* cfg)
+{
+    if (!cfg || !TsmIsValidGamePtr(cfg) || !ReadablePtr(cfg, AUTO_TASKCFG_SIZE)) return false;
+    for (unsigned side = 0; side < 2; ++side) {
+        const BYTE* p = (const BYTE*)cfg + (side ? 0xC8 : 0);
+        const uintptr_t begin = *(const uintptr_t*)(p + 8);
+        const uintptr_t end = *(const uintptr_t*)(p + 16);
+        if ((!begin && end) || end < begin || (end - begin) % 16 != 0 ||
+            (end - begin) / 16 > 4096) return false;
+        if (end != begin && (!TsmIsValidGamePtr((void*)begin) ||
+                            !ReadablePtr((void*)begin, end - begin))) return false;
+    }
+    return true;
+}
+
+static bool AutoSetTargetDirections(void* entry, unsigned directions)
+{
+    if (!entry || !ReadablePtr(entry, AUTO_TARGET_ENTRY_SIZE)) return false;
+    void* cfg = *(void**)((BYTE*)entry + 0x10);
+    if (!AutoTaskConfigValid(cfg)) {
+        Logf("[AUTO DO] invalid task config; cannot enforce direction mask=%u", directions);
+        return false;
+    }
+    const bool audit = g_autoLogLines < (unsigned)g_autoTargetLogLimit;
+    AutoTaskAudit before = {};
+    if (audit) before = AutoReadTaskAudit(entry, cfg);
+    const bool directionsChanged = AutoApplyTaskDirections(cfg, directions & AUTO_ALLOW_BOTH, g_autoSourcePercent, g_autoDestinationPercent);
+    const bool activationChanged = AutoApplyEntryActivation(entry, directions);
+    const bool changed = directionsChanged || activationChanged;
+    if (changed && g_autoLogLines < (unsigned)g_autoTargetLogLimit) {
+        Logf("[AUTO DO] task directions target=%p load=%u unload=%u entry_enabled=%u (native route validation still required)",
+             *(void**)((BYTE*)entry + 0x08), (directions & AUTO_ALLOW_LOAD) ? 1u : 0u,
+             (directions & AUTO_ALLOW_UNLOAD) ? 1u : 0u, (unsigned)*(BYTE*)entry);
+        ++g_autoLogLines;
+    }
+    if (changed && audit && g_autoLogLines < (unsigned)g_autoTargetLogLimit) {
+        const AutoTaskAudit after = AutoReadTaskAudit(entry, cfg);
+        Logf("[AUTO DO AUDIT] target=%p changed_fields=0x%02X enabled=%u->%u load_all=%u->%u unload_all=%u->%u load_pct=%.9g->%.9g unload_pct=%.9g->%.9g load_bits=%08X->%08X unload_bits=%08X->%08X",
+             *(void**)((BYTE*)entry + 8), AutoTaskAuditChanges(before, after),
+             (unsigned)before.enabled, (unsigned)after.enabled,
+             (unsigned)before.loadAll, (unsigned)after.loadAll,
+             (unsigned)before.unloadAll, (unsigned)after.unloadAll,
+             AutoAuditPercent(before.loadBits), AutoAuditPercent(after.loadBits),
+             AutoAuditPercent(before.unloadBits), AutoAuditPercent(after.unloadBits),
+             (unsigned)before.loadBits, (unsigned)after.loadBits,
+             (unsigned)before.unloadBits, (unsigned)after.unloadBits);
+        ++g_autoLogLines;
+    }
+    return changed;
+}
+
+static void AutoLogNativeTarget(void* entry, int type, unsigned requested, bool preserve)
+{
+    if (g_autoLogLines >= (unsigned)g_autoTargetLogLimit) return;
+    void* cfg = *(void**)((BYTE*)entry + 0x10);
+    if (!AutoTaskConfigValid(cfg)) return; // enforcement path reports invalid configs
+    const BYTE* p = (const BYTE*)cfg;
+    const uintptr_t lb = *(const uintptr_t*)(p + 8), le = *(const uintptr_t*)(p + 16);
+    const uintptr_t ub = *(const uintptr_t*)(p + 0xD0), ue = *(const uintptr_t*)(p + 0xD8);
+    Logf("[AUTO DO] native target=%p type=%d policy=%s requested_mask=%u enabled=%u load_all=%u load_pct=%.3f load_selectors=%llu unload_all=%u unload_pct=%.3f unload_selectors=%llu",
+         *(void**)((BYTE*)entry + 8), type, preserve ? "preserve-customs" : "managed",
+         requested, (unsigned)*(BYTE*)entry, (unsigned)p[0], (double)*(const float*)(p + 4),
+         (unsigned long long)((le - lb) / 16), (unsigned)p[0xC8], (double)*(const float*)(p + 0xCC),
+         (unsigned long long)((ue - ub) / 16));
+    ++g_autoLogLines;
+}
+
+
+// Called only from daily reconciliation; does not arm, clear or advance timers.
+static void AutoLogOfficePlanState(void* office, uint64_t key, int day,
+                                   const char* phase, bool notificationRequested)
+{
+    if (g_autoLogLines >= (unsigned)g_autoTargetLogLimit) return;
+    const BYTE* p = (const BYTE*)office;
+    const bool dirtyReadable = ReadablePtr(p + AUTO_DO_DIRTY, 1);
+    const bool timerReadable = ReadablePtr(p + AUTO_DO_UI_TIMER, sizeof(float));
+    float timer = 0.0f;
+    if (timerReadable) memcpy(&timer, p + AUTO_DO_UI_TIMER, sizeof(timer));
+    Logf("[AUTO DO AUDIT] day=%d office=%p key=%016llX phase=%s notification_requested=%u dirty=%d timer_readable=%u countdown=%.9g",
+         day, office, (unsigned long long)key, phase, notificationRequested ? 1u : 0u,
+         dirtyReadable ? (int)p[AUTO_DO_DIRTY] : -1, timerReadable ? 1u : 0u, (double)timer);
+    ++g_autoLogLines;
+}
+
+static void AutoTargetsOnDay(int day, int closedDay)
+{
+    if (!g_autoTargetsEnabled || !g_enterprise ||
+        !g_enterprise->getEnterpriseCount || !g_enterprise->getEnterpriseByIndex ||
+        !g_enterprise->isBuildingPrivate) return;
+
+    const bool afterLoad = (InterlockedExchange(&g_autoResetActiveMemoAfterLoad, 0) != 0) ||
+                           (g_autoLastDay >= 0 && day < g_autoLastDay);
+    if (afterLoad)
+        Logf("[AUTO DO] day %d save/load detected: native TaskEntry/TaskCfg were deserialized; reconciling generated targets after load", closedDay);
+    g_autoLastDay = day;
+
+    const size_t n = g_enterprise->getEnterpriseCount();
+    if (n > AUTO_ENTITY_MAX) {
+        Logf("[AUTO DO] day %d skipped: registered count %llu exceeds fixed discovery capacity %u",
+             closedDay, (unsigned long long)n, (unsigned)AUTO_ENTITY_MAX);
+        return;
+    }
+
+    unsigned entityCount = 0, officeCount = 0, candidateCount = 0;
+    for (size_t i = 0; i < n; ++i) {
+        void* b = g_enterprise->getEnterpriseByIndex(i);
+        if (!b || !TsmIsValidGamePtr(b) || !ReadablePtr(b, TSM_BLD_MIN_READABLE) ||
+            !ReadablePtr((BYTE*)b + TSM_BLD_DEMOLISHED, 1) || TsmIsDemolished(b) ||
+            !g_enterprise->isBuildingPrivate(b)) continue;
+        uint64_t key = 0; int type = -1;
+        if (!AutoBuildingKey(b, &key, &type)) continue;
+        const bool isOffice = (type == AUTO_DO_ROAD_TYPE || type == AUTO_DO_RAIL_TYPE);
+        const unsigned capabilities = isOffice ? 0 : AutoBuildingCapabilities(b);
+        const bool hasStorage = isOffice || capabilities != 0;
+        if (!hasStorage) continue;
+        g_autoEntities[entityCount].building = b;
+        g_autoEntities[entityCount].key = key;
+        g_autoEntities[entityCount].type = type;
+        g_autoEntities[entityCount].hasStorage = isOffice ? 0 : 1;
+        g_autoEntities[entityCount].isStateStorage = 0;
+        g_autoEntities[entityCount].statePermission = (unsigned char)capabilities;
+        g_autoEntities[entityCount].targetPresent = 0;
+        ++entityCount;
+        if (isOffice) ++officeCount; else ++candidateCount;
+    }
+
+    AutoProbeStateInfrastructure(closedDay, entityCount);
+
+    // Public access defaults deny. Keep denied sites indexed too: existing
+    // native/manual entries must obey the same state permissions as new ones.
+    for (unsigned si = 0; si < g_autoStateStorageCount && entityCount < AUTO_ENTITY_MAX; ++si) {
+        AutoStateStorageSite& site = g_autoStateStorageSites[si];
+        if (!site.building || !site.key) continue;
+        AutoEntity& e = g_autoEntities[entityCount++];
+        e.building = site.building; e.key = site.key; e.type = AUTO_STORAGE_BUILDING_TYPE;
+        e.hasStorage = site.permission != 0;
+        e.isStateStorage = 1; e.statePermission = site.permission; e.targetPresent = 0;
+        if (site.permission != 0) ++candidateCount;
+    }
+
+    if (officeCount == 0) return;
+    if (!AutoBuildPointerIndex(entityCount)) {
+        Logf("[AUTO DO] day %d: pointer index capacity exhausted; scan aborted", closedDay);
+        return;
+    }
+    if (!AutoBuildOfficeMemoIndex()) {
+        Logf("[AUTO DO] day %d: office memo index capacity exhausted; scan aborted", closedDay);
+        return;
+    }
+
+    unsigned planned = 0, added = 0, existing = 0, suppressed = 0, invalid = 0;
+    g_autoLogLines = 0;
+    for (unsigned oi = 0; oi < entityCount; ++oi) {
+        AutoEntity& office = g_autoEntities[oi];
+        if (office.type != AUTO_DO_ROAD_TYPE && office.type != AUTO_DO_RAIL_TYPE) continue;
+        void** entries = nullptr; size_t entryCount = 0;
+        if (!AutoReadTargetVector(office.building, &entries, &entryCount)) {
+            Logf("[AUTO DO] day %d invalid target vector; skipped office key=%016llX",
+                 closedDay, (unsigned long long)office.key);
+            ++invalid; continue;
+        }
+        AutoLogOfficePlanState(office.building, office.key, closedDay, "before-reconcile", false);
+        const size_t entryCountAtStart = entryCount;
+        for (unsigned ei = 0; ei < entityCount; ++ei) g_autoEntities[ei].targetPresent = 0;
+        bool doConfigChanged = false;
+        for (size_t ei = 0; ei < entryCount; ++ei) {
+            void* entry = entries[ei];
+            if (!entry || !TsmIsValidGamePtr(entry) || !ReadablePtr(entry, AUTO_TARGET_ENTRY_SIZE)) continue;
+            void* targetBuilding = *(void**)((BYTE*)entry + 0x08);
+            if (!targetBuilding || !TsmIsValidGamePtr(targetBuilding) ||
+                !ReadablePtr(targetBuilding, TSM_BLD_MIN_READABLE)) continue;
+            int targetType = -1;
+            if (AutoReadBuildingType(targetBuilding, &targetType) && AutoPreserveManualCustoms(targetType)) {
+                // Border trade is not a state-enterprise permission. Preserve
+                // the user's native customs task, including its resource lists
+                // and activation. Customs auto-selection is not implemented.
+                if (g_autoLogLines < (unsigned)g_autoTargetLogLimit) {
+                    Logf("[AUTO DO] preserving manual customs target=%p entry_enabled=%u",
+                         targetBuilding, (unsigned)*(BYTE*)entry);
+                    ++g_autoLogLines;
+                }
+                AutoLogNativeTarget(entry, targetType, 0, true);
+                continue;
+            }
+            const int targetIndex = AutoPointerIndex(targetBuilding);
+            if (targetIndex >= 0) g_autoEntities[targetIndex].targetPresent = 1;
+            // Enforce all targets of this PRIVATE office, including manually
+            // present public entries, unindexed/unknown roles and default OFF.
+            const unsigned capabilities = AutoBuildingCapabilities(targetBuilding);
+            const bool isPrivate = g_enterprise->isBuildingPrivate(targetBuilding) != 0;
+            unsigned permissions = 0;
+            if (!isPrivate) {
+                uint64_t key = 0;
+                permissions = AutoBuildingKey(targetBuilding, &key, nullptr) ?
+                    AutoStatePermissionGet(key) : 0;
+            }
+            const unsigned directions = AutoEffectiveDirections(isPrivate, permissions, capabilities);
+            if (!g_autoTargetsDryRun)
+                doConfigChanged |= AutoSetTargetDirections(entry, directions);
+            AutoLogNativeTarget(entry, targetType, directions, false);
+        }
+
+        // Native upkeep can disable an entry in place: keep deduplication for
+        // entries still present. Missing generated entries are eligible for
+        // recreation regardless of why they disappeared. A private company
+        // owns its target list; manual removal is not a persistent veto.
+        // State-building permissions remain a separate eligibility gate.
+        for (int mi = AutoOfficeMemoHeadIndex(office.key); mi >= 0;
+             mi = g_autoMemo[mi].nextOffice == 0xFFFFFFFFu ? -1 : (int)g_autoMemo[mi].nextOffice) {
+            AutoMemo& memo = g_autoMemo[mi];
+            if (memo.state != 1) continue;
+            bool found = false;
+            for (size_t ei = 0; ei < entryCount; ++ei) {
+                void* entry = entries[ei];
+                if (!entry || !TsmIsValidGamePtr(entry) || !ReadablePtr(entry, AUTO_TARGET_ENTRY_SIZE)) continue;
+                void* target = *(void**)((BYTE*)entry + 0x08);
+                const int targetIndex = AutoPointerIndex(target);
+                if (targetIndex >= 0 && g_autoEntities[targetIndex].key == memo.targetKey) {
+                    found = true; break;
+                }
+            }
+            if (!found) {
+                memo.state = 3; // preserve hash chain; allow normal eligibility/re-add
+                Logf("[AUTO DO] day %d target key=%016llX absent; eligible for automatic reconnection",
+                     closedDay, (unsigned long long)memo.targetKey);
+            }
+        }
+
+        unsigned doPlanned = 0, doAdded = 0, doExisting = 0, doSuppressed = 0;
+        size_t projectedAdds = 0;
+        // State storages were appended to g_autoEntities after private sites;
+        // walk backward so an explicit state-source opt-in gets first access
+        // to the five-entry conservative safe budget.
+        for (unsigned ti = entityCount; ti > 0; --ti) {
+            AutoEntity& target = g_autoEntities[ti - 1];
+            if (!target.hasStorage || target.building == office.building) continue;
+            if (target.targetPresent) {
+                ++existing; ++doExisting; continue;
+            }
+            const int memoIndex = AutoMemoFind(office.key, target.key);
+            if (entryCountAtStart + projectedAdds >= AUTO_DO_SAFE_TARGET_COUNT) {
+                ++suppressed; ++doSuppressed;
+                if (g_autoLogLines < (unsigned)g_autoTargetLogLimit) {
+                    Logf("[AUTO DO] day %d target=%016llX omitted: conservative target count %u reached (existing=%llu)",
+                         closedDay, (unsigned long long)target.key,
+                         (unsigned)AUTO_DO_SAFE_TARGET_COUNT,
+                         (unsigned long long)entryCountAtStart);
+                    ++g_autoLogLines;
+                }
+                continue;
+            }
+            ++planned; ++doPlanned;
+            if (g_autoTargetsDryRun) {
+                ++projectedAdds;
+                if (g_autoLogLines < (unsigned)g_autoTargetLogLimit) {
+                    Logf("[AUTO DO] day %d DRY RUN office=%016llX target=%016llX type=%d",
+                         closedDay, (unsigned long long)office.key,
+                         (unsigned long long)target.key, target.type);
+                    ++g_autoLogLines;
+                }
+                continue;
+            }
+            if (memoIndex < 0 && g_autoMemoCount >= AUTO_MEMO_MAX) {
+                ++invalid;
+                if (g_autoLogLines < (unsigned)g_autoTargetLogLimit) {
+                    Logf("[AUTO DO] day %d memo capacity %u reached; target omitted",
+                         closedDay, (unsigned)AUTO_MEMO_MAX);
+                    ++g_autoLogLines;
+                }
+                continue;
+            }
+            if (!AutoAppendNativeTarget(office.building, target.building, target.statePermission)) {
+                ++invalid;
+                if (g_autoLogLines < (unsigned)g_autoTargetLogLimit) {
+                    Logf("[AUTO DO] day %d append failed office=%016llX target=%016llX",
+                         closedDay, (unsigned long long)office.key, (unsigned long long)target.key);
+                    ++g_autoLogLines;
+                }
+                continue;
+            }
+            ++projectedAdds;
+            if (memoIndex < 0) {
+                if (AutoMemoInsert(office.key, target.key) < 0) {
+                    ++invalid;
+                    Logf("[AUTO DO] day %d memo hash insertion failed after native append", closedDay);
+                }
+            } else {
+                g_autoMemo[memoIndex].state = 1;
+            }
+            target.targetPresent = 1;
+            ++added; ++doAdded;
+            entries = nullptr; entryCount = 0;
+            if (!AutoReadTargetVector(office.building, &entries, &entryCount)) {
+                ++invalid; break;
+            }
+        }
+
+        AutoLogOfficePlanState(office.building, office.key, closedDay, "before-notify", doAdded > 0 || doConfigChanged);
+        if (doAdded > 0 || doConfigChanged) {
+            if (ReadablePtr((BYTE*)office.building + AUTO_DO_DIRTY, 1))
+                *((BYTE*)office.building + AUTO_DO_DIRTY) = 1;
+            if (ReadablePtr((BYTE*)office.building + AUTO_DO_UI_TIMER, sizeof(float)))
+                *(float*)((BYTE*)office.building + AUTO_DO_UI_TIMER) = 3.0f;
+        }
+        AutoLogOfficePlanState(office.building, office.key, closedDay, "after-notify", doAdded > 0 || doConfigChanged);
+        if (doPlanned || doExisting || doSuppressed || doAdded || doConfigChanged)
+            Logf("[AUTO DO] day %d office=%016llX type=%d existing=%u planned=%u added=%u config_changed=%u suppressed=%u",
+                 closedDay, (unsigned long long)office.key, office.type, doExisting,
+                 doPlanned, doAdded, doConfigChanged ? 1u : 0u, doSuppressed);
+    }
+
+    Logf("[AUTO DO] day %d summary: private offices=%u candidates=%u planned=%u added=%u existing=%u suppressed=%u invalid=%u mode=%s",
+         closedDay, officeCount, candidateCount, planned, added, existing, suppressed, invalid,
+         g_autoTargetsDryRun ? "DRY RUN" : "WRITE");
+}
+
+// ---------------------------------------------------------------------------
+// settings
+// ---------------------------------------------------------------------------
+
+static void ReadSettings(void)
+{
+    const char* ini = "plugins\\private_logistics.ini";
+    char v[256];
+
+    g_enabled        = H->configInt(ini, "private_logistics", "enabled", 1);
+    g_billing        = H->configInt(ini, "private_logistics", "billing", 0);
+    g_panelObserverEnabled = H->configInt(ini, "private_logistics", "panel_fuel_observer", 1);
+    g_scheduleObserverEnabled = H->configInt(ini, "private_logistics", "schedule_observer", 1);
+    g_dryRun         = H->configInt(ini, "private_logistics", "dry_run", 1);
+    g_payFactory     = H->configInt(ini, "private_logistics", "pay_factory", 1);
+    g_payCarrier     = H->configInt(ini, "private_logistics", "pay_carrier", 1);
+    g_logCapPerDay   = H->configInt(ini, "private_logistics", "log_cap_per_day", 400);
+    g_ledgerCapacity = H->configInt(ini, "private_logistics", "ledger_capacity", 512);
+    g_siteLog        = H->configInt(ini, "private_logistics", "site_log", 1);
+    g_autoTargetsEnabled = H->configInt(ini, "private_logistics", "auto_targets_enabled", 1);
+    g_autoTargetsDryRun  = H->configInt(ini, "private_logistics", "auto_targets_dry_run", 0);
+    g_autoTargetLogLimit = H->configInt(ini, "private_logistics", "auto_targets_log_limit", 80);
+    g_autoSourcePercent = AutoClampSourcePercent(H->configInt(ini, "private_logistics", "auto_source_percent", 10));
+    g_autoDestinationPercent = AutoClampDestinationPercent(H->configInt(ini, "private_logistics", "auto_destination_percent", 30));
+    Logf("[AUTO DO] company thresholds: load above %d%% / deliver below %d%% (managed tasks, reconciled daily)",
+         g_autoSourcePercent, g_autoDestinationPercent);
+    if (g_autoSourcePercent != 10)
+        Logf("[AUTO DO] source threshold override=%d%% (this test ships 10%%); an explicit deployed INI setting overrides the fallback", g_autoSourcePercent);
+    Logf("[AUTO DO] permission-test profile: billing=%d auto_targets=%d apply=%d (expected 0/1/1)",
+         g_billing, g_autoTargetsEnabled, !g_autoTargetsDryRun);
+    if (g_billing || !g_autoTargetsEnabled || g_autoTargetsDryRun)
+        Logf("[AUTO DO] WARNING deployed INI overrides the permission-test defaults; rebuild/deploy the shipped INI for this test");
+    if (H->configInt(ini, "private_logistics", "state_storage_always_on", 0))
+        Logf("[AUTO DO] state_storage_always_on is obsolete and ignored; per-building permissions are required");
+    if (g_autoTargetLogLimit < 0) g_autoTargetLogLimit = 0;
+    if (g_autoTargetLogLimit > 1000) g_autoTargetLogLimit = 1000;
+
+    if (g_logCapPerDay < 0)            g_logCapPerDay = 0;
+    if (g_logCapPerDay > 5000)         g_logCapPerDay = 5000;
+    if (g_ledgerCapacity < 1)          g_ledgerCapacity = 1;
+    if (g_ledgerCapacity > LEDGER_MAX) g_ledgerCapacity = LEDGER_MAX;
+
+    if (H->configString(ini, "private_logistics", "freight_share", v, sizeof(v), ""))
+        g_freightShare = (float)atof(v);
+    if (H->configString(ini, "private_logistics", "factory_share", v, sizeof(v), ""))
+        g_factoryShare = (float)atof(v);
+    if (H->configString(ini, "private_logistics", "min_payment", v, sizeof(v), ""))
+        g_minPayment = (float)atof(v);
+    if (H->configString(ini, "private_logistics", "daily_pay_cap", v, sizeof(v), ""))
+        g_dailyPayCap = atof(v);
+
+    // v0.5: the tariff model. Every number here is a physical quantity or a
+    // ratio - litres, tonnes per litre, a percentage. Not one of them is a
+    // price in currency units, which is what makes the model survive a
+    // currency event.
+    g_tariffProbe     = H->configInt(ini, "private_logistics", "tariff_probe", 1);
+    g_balanceLog      = H->configInt(ini, "private_logistics", "balance_log", 1);
+    g_tariffLogPerDay = H->configInt(ini, "private_logistics", "tariff_log_per_day", 60);
+
+    if (H->configString(ini, "private_logistics", "litres_per_trip", v, sizeof(v), ""))
+        gLitresPerTrip = atof(v);
+    if (H->configString(ini, "private_logistics", "litres_per_tonne", v, sizeof(v), ""))
+        gLitresPerTonne = atof(v);
+    if (H->configString(ini, "private_logistics", "tariff_margin", v, sizeof(v), ""))
+        gTariffMargin = atof(v);
+    if (H->configString(ini, "private_logistics", "diesel_density", v, sizeof(v), ""))
+        gDieselDensity = atof(v);
+    g_tripTariff = H->configInt(ini, "private_logistics", "trip_tariff", 1);
+    g_censusLog  = H->configInt(ini, "private_logistics", "census_log", 1);
+    g_vehScan    = H->configInt(ini, "private_logistics", "veh_scan", 1);
+    g_vehScanLogPerDay = H->configInt(ini, "private_logistics", "veh_scan_log_per_day", 40);
+    // v0.11: raw cargo-vector dump, up to three vehicles per close.
+    g_cargoDump  = H->configInt(ini, "private_logistics", "cargo_dump", 1);
+    if (g_vehScanLogPerDay < 0)   g_vehScanLogPerDay = 0;
+    if (g_vehScanLogPerDay > 512) g_vehScanLogPerDay = 512;
+    g_litresAuto = H->configInt(ini, "private_logistics", "litres_auto", 0);
+    if (H->configString(ini, "private_logistics", "wear_litres", v, sizeof(v), ""))
+        gWearLitres = atof(v);
+
+    // v0.7: freight_share is RETIRED. Honouring it silently would make every
+    // delivery look mispriced against a tariff that no longer reads it, so a
+    // key left in the ini is reported and zeroed rather than obeyed.
+    if (H->configString(ini, "private_logistics", "freight_share", v, sizeof(v), "") && v[0]) {
+        const float f = (float)atof(v);
+        g_freightShareRetired = (f > 0.0f) ? f : 0.0f;
+        g_freightShare = 0.0f;
+    }
+    if (H->configString(ini, "private_logistics", "baskets_per_trip", v, sizeof(v), ""))
+        gBasketsPerTrip = atof(v);
+    if (H->configString(ini, "private_logistics", "baskets_per_tonne", v, sizeof(v), ""))
+        gBasketsPerTonne = atof(v);
+    if (H->configString(ini, "private_logistics", "fuel_resource", v, sizeof(v), "") && v[0])
+        strncpy_s(gFuelResource, sizeof(gFuelResource), v, _TRUNCATE);
+
+    // v0.4: a share is a fraction of cargo value. 0 is legal (freight off);
+    // more than half would make haulage cost more than the goods.
+    if (g_freightShare < 0.0f)   g_freightShare = 0.0f;
+    if (g_freightShare > 0.50f)  g_freightShare = 0.50f;
+    if (g_tripTariff != 0)       g_tripTariff   = 1;
+    if (gWearLitres  < 0.0)      gWearLitres    = 0.0;
+    if (gWearLitres  > 500.0)    gWearLitres    = 500.0;
+    if (g_litresAuto != 1)       g_litresAuto   = 0;
+    if (g_factoryShare  < 0.0f) g_factoryShare  = 0.0f;
+    if (g_factoryShare  > 5.0f) g_factoryShare  = 5.0f;
+    if (g_minPayment    < 0.0f) g_minPayment    = 0.0f;
+    if (g_dailyPayCap   < 0.0)  g_dailyPayCap   = 0.0;
+
+    // v0.5 clamps. Density is the one hard range: a value outside it is a
+    // typo, and a typo here would misprice every delivery by orders of
+    // magnitude, so it falls back to diesel rather than being honoured.
+    if (g_tariffLogPerDay < 0)    g_tariffLogPerDay = 0;
+    if (g_tariffLogPerDay > 5000) g_tariffLogPerDay = 5000;
+    if (gLitresPerTrip  < 0.0)   gLitresPerTrip  = 0.0;
+    if (gLitresPerTonne < 0.0)   gLitresPerTonne = 0.0;
+    if (gLitresPerTrip  > 500.0) gLitresPerTrip  = 500.0;
+    if (gLitresPerTonne > 50.0)  gLitresPerTonne = 50.0;
+    if (gTariffMargin   < 0.0)   gTariffMargin   = 0.0;
+    if (gTariffMargin   > 5.0)   gTariffMargin   = 5.0;
+    if (!(gDieselDensity > 0.0001) || gDieselDensity > 0.01)
+        gDieselDensity = 0.00084;
+    if (gBasketsPerTrip  < 0.0)  gBasketsPerTrip  = 0.0;
+    if (gBasketsPerTonne < 0.0)  gBasketsPerTonne = 0.0;
+    if (gBasketsPerTrip  > 1000.0) gBasketsPerTrip = 1000.0;
+    if (gBasketsPerTonne > 100.0)  gBasketsPerTonne = 100.0;
+
+    // site_list, e.g. "0x1CB7FF" or "1CB7FF,68F792". Absent or empty = all.
+    if (H->configString(ini, "private_logistics", "site_list", v, sizeof(v), "") && v[0]) {
+        bool hit[MAX_SITES] = { false };
+        int  matched = 0;
+
+        for (char* p = v; *p; ) {
+            while (*p == ' ' || *p == '\t' || *p == ',') p++;
+            if (!*p) break;
+
+            char* end = p;
+            while (*end && *end != ',' && *end != ' ' && *end != '\t') end++;
+
+            const char save = *end;
+            *end = 0;
+            const unsigned want = (unsigned)strtoul(p, nullptr, 16);
+            *end = save;
+
+            for (int i = 0; i < g_siteCount; i++) {
+                if (g_sites[i].rva == want) { hit[i] = true; matched++; break; }
+            }
+            p = end;
+        }
+
+        if (matched > 0) {
+            for (int i = 0; i < g_siteCount; i++) g_siteWanted[i] = hit[i];
+            g_siteFilterActive = true;
+        } else {
+            Logf("private_logistics  WARN  site_list matched no known site - patching all");
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// v0.8: the vehicle census
+// ---------------------------------------------------------------------------
+//
+// Read-only, once a day, on the day callback. Every pointer is validated
+// before it is followed, every vector length is capped, and nothing here can
+// fail a delivery: a bad read reports "unreadable" and moves on.
+//
+// The numbers this produces are the ones the final model needs and no formula
+// can supply:
+//   - how many vehicles a company actually owns
+//   - what each one carries at its peak (its capacity, observed not assumed)
+//   - which catalogue entry the game attaches to it (+0x510, unproven)
+
+static int VehSlot(void* v)
+{
+    for (int i = 0; i < g_vehCount; i++)
+        if (g_vehPtr[i] == v) return i;
+    if (g_vehCount >= VEH_MAX) return -1;
+    g_vehPtr[g_vehCount]     = v;
+    g_vehPeakTons[g_vehCount] = 0.0;
+    g_vehSamples[g_vehCount]  = 0;
+    return g_vehCount++;
+}
+
+// veh+0x3B8 is a vector of cargo entries, stride 0x10: { Resource* , float tons }.
+// Returns the total carried and the number of non-empty slots.
+static double CargoTons(void* veh, int* slots)
+{
+    *slots = 0;
+    const BYTE* p = (const BYTE*)veh;
+    if (!ReadablePtr(p + 0x3B8, 16)) return 0.0;
+
+    const BYTE* beg = *(const BYTE* const*)(p + 0x3B8);
+    const BYTE* end = *(const BYTE* const*)(p + 0x3C0);
+    if (!beg || !end || end <= beg) return 0.0;
+
+    // v0.12: the cap was 8, and over 8 it returned 0 SILENTLY - which is how
+    // this census came to report "0 slot(s)" on trucks that demonstrably held
+    // fuel. A storage vector with a pre-allocated slot per resource type is
+    // perfectly plausible, and it would be longer than eight. Raise the cap and
+    // stop hiding the case.
+    size_t n = (size_t)(end - beg) / 16;
+    if (n == 0 || n > 64) return 0.0;
+    if (!ReadablePtr(beg, n * 16)) return 0.0;
+
+    double t = 0.0;
+    for (size_t i = 0; i < n; i++) {
+        const float tons = *(const float*)(beg + i * 16 + 8);
+        if (tons == tons && tons > 0.0f && tons < 1.0e6f) {
+            t += (double)tons;
+            (*slots)++;
+        }
+    }
+    return t;
+}
+
+// ---------------------------------------------------------------------------
+// Candidate resource-slot and display-field readers, NOT authoritative fuel.
+// The old building/upkeep report does not prove this road truck's burn or
+// refill writer, canonical store, native clamp, or physical mass conversion.
+// ---------------------------------------------------------------------------
+static void* FuelResourcePtr(void)
+{
+    if (!g_pricing || !g_pricing->getByName) return nullptr;
+    if (!g_fuelRes) {
+        g_fuelRes = g_pricing->getByName(gFuelResource);
+        if (g_fuelRes && !TsmIsValidGamePtr(g_fuelRes)) g_fuelRes = nullptr;
+    }
+    return g_fuelRes;
+}
+
+// Returns raw quantity from a matching resource slot. Units/classification are
+// unverified for this road truck. *found = 1 even if the quantity is invalid.
+// -1 when the vector cannot be read at all.
+static double FuelSlotTons(void* v, int* found)
+{
+    *found = 0;
+    const BYTE* p = (const BYTE*)v;
+    if (!ReadablePtr(p + 0x3B8, 16)) return -1.0;
+
+    const BYTE* beg = *(const BYTE* const*)(p + 0x3B8);
+    const BYTE* end = *(const BYTE* const*)(p + 0x3C0);
+    if (!beg || !end || end < beg) return -1.0;
+
+    const size_t n = (size_t)(end - beg) / 16;
+    if (n > 64) return -1.0;
+    if (n == 0) return 0.0;
+    if (!ReadablePtr(beg, n * 16)) return -1.0;
+
+    void* fuel = FuelResourcePtr();
+    if (!fuel) return -1.0;
+
+    for (size_t i = 0; i < n; i++) {
+        const BYTE* e = beg + i * 16;
+        if (*(const void* const*)e != fuel) continue;
+        float t = *(const float*)(e + 8);
+        // Preserve invalid/negative raw values: diagnostics must never invent
+        // an empty tank by applying an unverified native clamp.
+        *found = 1;
+        return (double)t;
+    }
+    return 0.0;
+}
+
+// The panel backing quantity (+0x5F0) and metadata capacity (+0x8684).
+// Display correlation alone does not establish native burn/refill semantics.
+static double MirrorTons(void* v)
+{
+    const BYTE* p = (const BYTE*)v;
+    if (!ReadablePtr(p + VEH_FUEL_OFF, 4)) return -1.0;
+    float f = *(const float*)(p + VEH_FUEL_OFF);
+    if (!(f == f) || f < -1000.0f || f > 1000.0f) return -1.0;
+    return (double)f;
+}
+
+static double TankCapacity(void* v)
+{
+    const BYTE* p = (const BYTE*)v;
+    if (!ReadablePtr(p + 0x1708, 8)) return -1.0;
+    const BYTE* meta = *(const BYTE* const*)(p + 0x1708);
+    if (!meta || !TsmIsValidGamePtr(meta)) return -1.0;
+    if (!ReadablePtr(meta + 0x8684, 4)) return -1.0;
+    const float c = *(const float*)(meta + 0x8684);
+    if (!(c == c) || c <= 0.0f || c > 1000.0f) return -1.0;
+    return (double)c;
+}
+
+// v0.11: sum of one building's fleet tanks, in tonnes. -1 = not readable.
+static double FleetFuelTons(void* b, int* outCount)
+{
+    *outCount = 0;
+    if (!b || !ReadablePtr((const BYTE*)b + 0xC70, 16)) return -1.0;
+
+    const BYTE* beg = *(const BYTE* const*)((const BYTE*)b + 0xC70);
+    const BYTE* end = *(const BYTE* const*)((const BYTE*)b + 0xC78);
+    if (!beg || !end || end < beg) return -1.0;
+
+    const size_t n = (size_t)(end - beg) / 8;
+    if (n == 0 || n > VEH_MAX) return -1.0;
+    if (!ReadablePtr(beg, n * 8)) return -1.0;
+
+    double t = 0.0;
+    int c = 0;
+    for (size_t i = 0; i < n; i++) {
+        void* v = *(void* const*)(beg + i * 8);
+        if (!v) continue;
+        int found = 0;
+        double lvl = FuelSlotTons(v, &found);
+        const auto reading = private_logistics_fuel_diagnostics::Select(
+            found != 0, lvl, MirrorTons(v));
+        if (!reading.valid) continue;
+        t += reading.value;
+        c++;
+    }
+    *outCount = c;
+    return (c > 0) ? t : -1.0;
+}
+
+// One sample per committed delivery. Cheap: one vector walk and a few floats.
+static void BurnProbe(void* b)
+{
+    int n = 0;
+    const double now = FleetFuelTons(b, &n);
+    if (now < 0.0) return;
+
+    if (g_probeBld != b || g_probeFuelTons < 0.0 || n != g_probeVehCount) {
+        g_probeBld      = b;                     // first sample, or a new fleet
+        g_probeFuelTons = now;
+        g_probeVehCount = n;
+        return;
+    }
+
+    const double d = g_probeFuelTons - now;      // positive = burned
+    if (d < -0.02 || d > 0.5) {
+        g_probeSkipRun++;                        // refill, or the fleet changed size
+    } else {
+        g_probeBurnRun  += d;
+        g_probeStepsRun++;
+    }
+    g_probeFuelTons = now;
+}
+
+// v0.12: RAW storage-vector dump. Two vectors, every slot, nothing filtered.
+//
+// Why this exists: the vehicle appears to keep its fuel in a
+// {Resource*, float tons} slot, the same shape the transfer function moves
+// goods with. If so, one of the vectors below holds diesel and the slot will
+// track the +0x5F0 reading day after day.
+//
+// Two things went wrong in v0.10 and are fixed here:
+//   - the census capped the vector at eight slots and returned "0 slot(s)"
+//     for anything longer, which is why a truck holding 0.29 t of fuel could
+//     report an empty hold. That was OUR bug, not evidence about the game.
+//   - only the 0x3B8 vector was read. The trailer vector at 0x3A0 was never
+//     looked at, and fuel may live there.
+//
+// A slot whose tonnage falls every day and jumps at a refill is the tank.
+static void DumpVector(void* v, int off, const char* label, int closedDay, int slotIdx)
+{
+    const BYTE* p = (const BYTE*)v;
+    if (!ReadablePtr(p + off, 16)) return;
+
+    const BYTE* beg = *(const BYTE* const*)(p + off);
+    const BYTE* end = *(const BYTE* const*)(p + off + 8);
+    if (!beg || !end || end < beg) {
+        Logf("[CARGO] day %d s=%d %s unreadable beg=%p end=%p",
+             closedDay, slotIdx, label, beg, end);
+        return;
+    }
+
+    const size_t n = (size_t)(end - beg) / 16;
+    if (n > 64) {
+        Logf("[CARGO] day %d s=%d %s n=%llu (implausible)",
+             closedDay, slotIdx, label, (unsigned long long)n);
+        return;
+    }
+    if (n == 0) {
+        Logf("[CARGO] day %d s=%d %s n=0", closedDay, slotIdx, label);
+        return;
+    }
+    if (!ReadablePtr(beg, n * 16)) return;
+
+    Logf("[CARGO] day %d s=%d %s n=%llu", closedDay, slotIdx, label,
+         (unsigned long long)n);
+    const size_t show = (n < 16) ? n : 16;
+    for (size_t i = 0; i < show; i++) {
+        const BYTE* e   = beg + i * 16;
+        const void* res = *(const void* const*)e;
+        const float t   = *(const float*)(e + 8);
+        if (!(t > 0.0f) && !(t < 0.0f)) continue;      // skip empty slots
+        Logf("[CARGO] day %d s=%d %s   %llu res=%p %.4f t", closedDay, slotIdx,
+             label, (unsigned long long)i, res, (double)t);
+    }
+}
+
+static void CargoDump(int slot, void* v, int closedDay)
+{
+    if (!g_cargoDump || slot < 0 || slot > 2) return;   // first three vehicles
+    DumpVector(v, 0x3A0, "trailer", closedDay, slot);
+    DumpVector(v, 0x3B8, "cargo",   closedDay, slot);
+}
+
+// ---------------------------------------------------------------------------
+// v0.9: the field scanner
+// ---------------------------------------------------------------------------
+//
+// Compare the vehicle's first 0x800 bytes against yesterday's copy and report
+// the words that moved. The baseline is taken silently on first sight so that
+// day one does not dump a whole struct.
+//
+// Known pointer/vector ranges are skipped: they are noise here and the values
+// would only ever read as "some address".
+//
+//   +0x3A0..0x3C8  trailer vector, cargo vector
+//   +0x4F0..0x520  current building, home building, the +0x510 integer
+//   +0x610..0x620  line stops
+static bool VehScanSkip(int off)
+{
+    return (off >= 0x3A0 && off < 0x3C8) ||
+           (off >= 0x4F0 && off < 0x520) ||
+           (off >= 0x610 && off < 0x620);
+}
+
+// ---------------------------------------------------------------------------
+// v0.10: read the tank
+// ---------------------------------------------------------------------------
+//
+// Legacy daily candidate sampling, NOT a native deduction/refill adapter.
+// Reading, provenance and baseline changes are explicit. A negative candidate
+// is invalid, not zero; changing source, invalid reads and load reset baselines.
+static void ReadTank(int slot, void* v, int closedDay, double* burned, unsigned* refills)
+{
+    if (slot < 0 || slot >= VEH_MAX) return;
+    using namespace private_logistics_fuel_diagnostics;
+    int found = 0;
+    const double slotRaw = FuelSlotTons(v, &found);
+    const double displayRaw = MirrorTons(v);
+    const Reading reading = Select(found != 0, slotRaw, displayRaw);
+    const Result result = g_vehFuelSamples[slot].Observe(reading,
+        (unsigned long long)InterlockedCompareExchange(&g_fuelDiagnosticEpoch, 0, 0));
+    g_vehFuelValid[slot] = reading.valid;
+    if (reading.valid) g_vehFuel[slot] = reading.value;
+    // Legacy accumulators are candidate sample changes ONLY. No tracker feed.
+    if (burned) *burned += result.decrease;
+    if (refills && result.change == Change::Increase) ++*refills;
+    if (g_tankCrossLog > 0) {
+        Logf("[TANK] day %d v=%p selected_source=%s source_valid=%d "
+             "slot_found=%d slot_candidate_raw=%.9g display_5f0_raw=%.9g "
+             "drift_valid=%d drift_raw=%+.9g change=%s decrease_raw=%.9g "
+             "units=unverified exact_burn=0 verified_refill=0 billing_input=0",
+             closedDay, v, SourceName(reading.source), reading.valid ? 1 : 0,
+             found, slotRaw, displayRaw, reading.comparable ? 1 : 0,
+             reading.drift, ChangeName(result.change), result.decrease);
+        --g_tankCrossLog;
+    }
+}
+
+static void ScanVehicle(int slot, void* v, int closedDay)
+{
+    if (!g_vehScan || slot < 0 || slot >= VEH_MAX) return;
+    if (!ReadablePtr((const BYTE*)v, VEH_SCAN_WORDS * 4)) return;
+
+    const unsigned* src = (const unsigned*)v;
+
+    if (!g_vehSnapValid[slot]) {
+        for (int i = 0; i < VEH_SCAN_WORDS; i++) g_vehSnap[slot][i] = src[i];
+        g_vehSnapValid[slot] = true;
+        return;                                   // baseline, not a delta
+    }
+
+    int logged = 0;
+    int changed = 0;
+    for (int i = 0; i < VEH_SCAN_WORDS; i++) {
+        const int off = i * 4;
+        if (g_vehSnap[slot][i] == src[i]) continue;
+        changed++;
+        if (VehScanSkip(off)) { g_vehSnap[slot][i] = src[i]; continue; }
+        if (logged < g_vehScanLogPerDay) {
+            const unsigned a = g_vehSnap[slot][i];
+            const unsigned b = src[i];
+            float fa, fb;
+            memcpy(&fa, &a, 4);
+            memcpy(&fb, &b, 4);
+            Logf("[VEH CHG] day %d v=%p +0x%03X %08X -> %08X (f %.4f -> %.4f)",
+                 closedDay, v, off, a, b, (double)fa, (double)fb);
+            logged++;
+        }
+        g_vehSnap[slot][i] = src[i];
+    }
+    if (changed > logged)
+        Logf("[VEH CHG] day %d v=%p %d more word(s) changed, not logged",
+             closedDay, v, changed - logged);
+}
+
+static void CensusFleets(int closedDay)
+{
+    if (!g_censusLog || !g_enterprise) return;
+    if (!g_enterprise->getEnterpriseCount || !g_enterprise->getEnterpriseByIndex) return;
+
+    size_t n = g_enterprise->getEnterpriseCount();
+    if (n == 0) return;
+    if (n > 32) n = 32;                          // a republic, not a spreadsheet
+
+    // v0.11: one close counted once, not once per building. L per fleet-day is
+    // the rate the physics has; it must not double-count a fleet seen from two
+    // enterprises.
+    const unsigned vehDaysBefore = g_tankVehDaysRun;
+
+    for (size_t i = 0; i < n; i++) {
+        void* b = g_enterprise->getEnterpriseByIndex(i);
+        if (!b || !TsmIsValidGamePtr(b)) continue;
+        if (!ReadablePtr((const BYTE*)b + 0xC70, 16)) continue;
+
+        const BYTE* beg = *(const BYTE* const*)((const BYTE*)b + 0xC70);
+        const BYTE* end = *(const BYTE* const*)((const BYTE*)b + 0xC78);
+        if (!beg || !end || end < beg) continue;
+
+        size_t cnt = (size_t)(end - beg) / sizeof(void*);
+        if (cnt > 64) cnt = 64;
+        if (!ReadablePtr(beg, cnt * sizeof(void*))) continue;
+
+        char bname[64];
+        BuildingName(b, bname, sizeof(bname));
+
+        if (cnt == 0) {
+            Logf("[VEH] day %d %s fleet: 0 vehicle(s)", closedDay, bname);
+            continue;
+        }
+        Logf("[VEH] day %d %s fleet: %u vehicle(s)", closedDay, bname, (unsigned)cnt);
+
+        for (size_t k = 0; k < cnt; k++) {
+            void* v = ((void* const*)beg)[k];
+            if (!v || !TsmIsValidGamePtr(v)) continue;
+
+            void* home = nullptr;
+            if (ReadablePtr((const BYTE*)v + 0x4F8, 8))
+                home = *(void* const*)((const BYTE*)v + 0x4F8);
+
+            void* cat = nullptr;
+            if (ReadablePtr((const BYTE*)v + 0x510, 8))
+                cat = *(void* const*)((const BYTE*)v + 0x510);
+
+            // v0.12: the Ghidra report says the vehicle KIND is an int at
+            // +0x50C, and that 0x42 marks a fuel consumer. +0x510, which this
+            // census has been printing as a pointer, is the next field along -
+            // which is why it kept printing nonsense like FFFFFFFF. If every
+            // truck reads 66 here, that claim is confirmed; if none does, the
+            // report has the wrong offset and we say so.
+            int kind = -1;
+            if (ReadablePtr((const BYTE*)v + 0x50C, 4))
+                kind = *(const int*)((const BYTE*)v + 0x50C);
+
+            int slots = 0;
+            const double tons = CargoTons(v, &slots);
+            CargoDump(VehSlot(v), v, closedDay);
+
+            const int s = VehSlot(v);
+            const bool first = (s >= 0 && g_vehSamples[s] == 0);
+            if (s >= 0) {
+                g_vehSamples[s]++;
+                if (tons > g_vehPeakTons[s]) g_vehPeakTons[s] = tons;
+            }
+
+            // Retained raw words and legacy guess; disproven as road-truck
+            // activity evidence in the supplied game test. Never gate on them.
+            int state = -1, mode = -1;
+            if (ReadablePtr((const BYTE*)v + 0x448, 4))
+                state = *(const int*)((const BYTE*)v + 0x448);
+            if (ReadablePtr((const BYTE*)v + 0x440, 4))
+                mode  = *(const int*)((const BYTE*)v + 0x440);
+            const bool active = (state == 1 || state == 2);
+            if (active) g_activeVehDaysRun++; else g_idleVehDaysRun++;
+
+            // Metadata capacity candidate used by the panel, NOT proof of a
+            // native refill clamp or physical tonnes.
+            const double cap = TankCapacity(v);
+            if (cap > 0.0 && s >= 0 && !g_vehCapValid[s]) {
+                g_vehCapValid[s] = 1;
+                g_vehCap[s] = cap;
+                Logf("[VEH] day %d v=%p capacity8684_raw=%.9g display_scale1000_estimate=%.2f "
+                     "physical_units=unverified refill_clamp=unverified",
+                     closedDay, v, cap, cap * 1000.0);
+            }
+
+            Logf("[VEH] day %d   v=%p home=%s cargo %.3ft in %d slot(s) legacy_kind50c=%d catalogue510_candidate=%p peak %.3ft "
+                 "legacy_state448=%d legacy_mode440=%d %s native_activity=unverified",
+                 closedDay, v, (home == b) ? "this" : "other",
+                 tons, slots, kind, cat, (s >= 0) ? g_vehPeakTons[s] : 0.0,
+                 state, mode, active ? "legacy_active_guess" : "legacy_idle_guess");
+
+            // One dump per vehicle, ever. +0x510 is the lead for capacity,
+            // speed, price and consumption; this tells us what it actually is
+            // before anything is built on it.
+            // v0.10: fuel on board, and what left the tank since yesterday.
+            double burned = 0.0;
+            unsigned refills = 0;
+            ReadTank(s, v, closedDay, &burned, &refills);
+            g_burnTonsRun += burned;
+            g_refillsRun  += refills;
+            if (g_vehFuelValid[s]) g_tankVehDaysRun++;
+            if (burned > 0.0 || refills > 0)
+                Logf("[TANK SAMPLE] day %d v=%p candidate_raw=%.4f | decrease_raw=%.4f "
+                     "| sample_increases=%u units=unverified exact_burn=0 verified_refill=0",
+                     closedDay, v, g_vehFuelValid[s] ? g_vehFuel[s] : 0.0,
+                     burned, refills);
+
+            ScanVehicle(s, v, closedDay);
+
+            if (first && cat && TsmIsValidGamePtr(cat) && ReadablePtr(cat, 32)) {
+                const unsigned* d = (const unsigned*)cat;
+                Logf("[VEH] day %d   cat[+0x00] %08X %08X %08X %08X | %08X %08X %08X %08X",
+                     closedDay, d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7]);
+            }
+        }
+    }
+
+    // v0.11: this close saw at least one tank -> it counts as a fleet-day.
+    if (g_tankVehDaysRun > vehDaysBefore) g_tankDaysRun++;
+}
+
+// ---------------------------------------------------------------------------
+// entry points
+// ---------------------------------------------------------------------------
+
+#include "panel_fuel_runtime.h"
+
+extern "C" __declspec(dllexport) unsigned TsmPluginApiVersion(void)
+{
+    return TSM_API_VERSION;
+}
+
+extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
+                                                   TsmPluginInfo* info)
+{
+    TsmBind(host);
+    info->name    = "private_logistics";
+    info->version = PL_VERSION;
+
+    ReadSettings();
+    if (!g_enabled) {
+        Logf("private_logistics  disabled in the ini");
+        return 1;
+    }
+
+    g_realTransfer = (tTransfer)(g_exeBase + TSM_RVA_TRANSFER);
+
+    Logf("private_logistics  v%s - billing %s",
+         PL_VERSION,
+         g_dryRun ? "ARMED IN DRY RUN (computes every payment, moves nothing)"
+                  : "LIVE (moves money)");
+    return 0;
+}
+
+extern "C" __declspec(dllexport) int TsmPluginStart(void)
+{
+    if (!g_enabled) return 1;
+
+    if (!g_exeBase || g_exeSize == 0) {
+        Logf("private_logistics  no executable base - refusing to start");
+        return 1;
+    }
+
+    g_simClock = (const TsmSimClockApi*)H->consume(TSM_SERVICE_SIM_CLOCK,
+                                                   TSM_SIM_CLOCK_VERSION);
+    if (!g_simClock)
+        Logf("private_logistics  WARN  sim_clock is not installed - "
+             "the daily summary will not be printed");
+
+    g_enterprise = (const TsmEnterpriseBaseApi*)H->consume(TSM_SERVICE_ENTERPRISE_BASE,
+                                                           TSM_ENTERPRISE_BASE_VERSION);
+    if (!g_enterprise)
+        Logf("private_logistics  WARN  enterprise_base is not installed - "
+             "no building can be identified as private and nothing will be paid");
+
+    if (g_autoTargetsEnabled) {
+        g_uiPanels = (const TsmUiPanelsApi*)H->consume(TSM_SERVICE_UI_PANELS,
+                                                       TSM_UI_PANELS_VERSION);
+        if (!g_uiPanels)
+            g_uiPanels = (const TsmUiPanelsApi*)H->consume(TSM_SERVICE_UI_PANELS,
+                                                           TSM_UI_PANELS_VERSION_V5);
+        if (!g_uiPanels)
+            g_uiPanels = (const TsmUiPanelsApi*)H->consume(TSM_SERVICE_UI_PANELS,
+                                                           TSM_UI_PANELS_VERSION_V4);
+        if (!g_uiPanels)
+            g_uiPanels = (const TsmUiPanelsApi*)H->consume(TSM_SERVICE_UI_PANELS,
+                                                           TSM_UI_PANELS_VERSION_V3);
+        if (!g_uiPanels)
+            g_uiPanels = (const TsmUiPanelsApi*)H->consume(TSM_SERVICE_UI_PANELS,
+                                                           TSM_UI_PANELS_VERSION_V2);
+        if (g_uiPanels && TsmUiPanelsHasWidgets(g_uiPanels) &&
+            g_uiPanels->registerWidgetProvider)
+            g_stateStorageWidgetHandle =
+                g_uiPanels->registerWidgetProvider(StateStorageWidgetProvider, nullptr);
+        if (!g_stateStorageWidgetHandle)
+            Logf("private_logistics  [AUTO DO] WARN state-storage checkbox unavailable; "
+                 "ui_panels v2 widgets are required");
+    }
+
+    g_currency = (const TsmCurrencyApi*)H->consume(TSM_SERVICE_CURRENCY,
+                                                   TSM_CURRENCY_VERSION);
+    if (!g_currency)
+        g_currency = (const TsmCurrencyApi*)H->consume(TSM_SERVICE_CURRENCY,
+                                                       TSM_CURRENCY_VERSION_V3);
+    if (!g_currency)
+        Logf("private_logistics  WARN  currency is not installed - "
+             "the treasury leg of every payment is unavailable");
+
+    g_pricing = (const TsmResourcePricingApi*)H->consume(TSM_SERVICE_RESOURCE_PRICING,
+                                                         TSM_RESOURCE_PRICING_VERSION);
+    if (!g_pricing)
+        g_pricing = (const TsmResourcePricingApi*)H->consume(TSM_SERVICE_RESOURCE_PRICING,
+                                                             TSM_RESOURCE_PRICING_VERSION_V1);
+    if (!g_pricing)
+        Logf("private_logistics  WARN  resource_pricing is not installed - "
+             "factory payments fall back to the raw Res+0x58 field, which read "
+             "0.00 for fabric and plants in two sessions");
+
+    if (g_billing && (!g_enterprise || !g_currency)) {
+        g_billing = 0;
+        Logf("private_logistics  billing DISABLED: it needs both enterprise_base "
+             "and currency. Instrumentation continues normally.");
+    }
+
+    if (g_autoTargetsEnabled &&
+        (!g_simClock || !g_enterprise || !g_enterprise->getEnterpriseCount ||
+         !g_enterprise->getEnterpriseByIndex || !g_enterprise->isBuildingPrivate)) {
+        g_autoTargetsEnabled = 0;
+        Logf("private_logistics  [AUTO DO] DISABLED: requires sim_clock and "
+             "enterprise_base discovery/private checks");
+    }
+
+    if (g_autoTargetsEnabled) {
+        g_persistence = (const TsmPersistenceApi*)H->consume(TSM_SERVICE_PERSISTENCE,
+                                                              TSM_PERSISTENCE_VERSION);
+        if (g_persistence &&
+            g_persistence->structSize >= offsetof(TsmPersistenceApi, registerHandler) +
+                                         sizeof(g_persistence->registerHandler) &&
+            g_persistence->registerHandler)
+            g_persistenceHandle = g_persistence->registerHandler("private_logistics",
+                                                                  AutoPersistenceEvent, nullptr);
+        if (!g_persistenceHandle)
+            Logf("private_logistics  [AUTO DO] WARN persistence load signal unavailable; "
+                 "reconciliation after load may wait for date rewind or restart");
+    }
+
+    PanelObserverStart();
+
+    PatchAllSites();
+
+    if (g_simClock) g_simClock->registerDay(OnDay, nullptr);
+
+    Logf("private_logistics  live v%s: billing=%d dry_run=%d factory=%d carrier=%d, "
+         "%d sites, cap %.0f/day, price = %s, factory share %.2f",
+         PL_VERSION, g_billing, g_dryRun, g_payFactory, g_payCarrier,
+         g_siteCount, (double)g_dailyPayCap,
+         g_tripTariff ? "LEGACY FRAGMENT MODEL (fuel x margin + wear), NOT journey settlement"
+                      : "value share (v0.6 path, for comparison)",
+         (double)g_factoryShare);
+
+    Logf("private_logistics  [AUTO DO] enabled=%d dry_run=%d cadence=once/day; "
+         "private endpoints -> private road/rail DOs; existing entries preserved",
+         g_autoTargetsEnabled, g_autoTargetsDryRun);
+
+    if (g_freightShareRetired > 0.0f)
+        Logf("private_logistics  WARN freight_share = %.3f is RETIRED in v0.7 and was "
+             "ignored - the legacy model prices transfer fragments, NOT journeys. Remove the key.",
+             (double)g_freightShareRetired);
+
+    // v0.5: name both indices before a single delivery is priced. A probe that
+    // silently cannot resolve a price is worse than no probe, so the log says
+    // which index is live and what it reads.
+    if (g_tariffProbe) {
+        const double fp = FuelUnitPrice();
+        float basket = 0.0f;
+        if (g_pricing) basket = TsmPricingCpiBasket(g_pricing, 0.0f);
+
+        Logf("private_logistics  v%s legacy fragment model: %.2f configured L/fragment + %.2f L/t, wear %.2f L, "
+             "margin %.0f%%, density %.5f t/L, index '%s', auto-tune %s",
+             PL_VERSION, gLitresPerTrip, gLitresPerTonne, gWearLitres,
+             gTariffMargin * 100.0, gDieselDensity, gFuelResource,
+             g_litresAuto ? "requested_but_blocked_unverified_samples" : "off");
+
+        // The world is not loaded yet at plugin start, so both of these read
+        // zero here and are re-read at every day close. Say that rather than
+        // printing a scary NOT FOUND that resolves itself a second later.
+        Logf("private_logistics  [IDX] at plugin start: fuel '%s' = %.2f, cpi basket %.2f - "
+             "the world is still loading; both are re-read at every day close",
+             gFuelResource, fp, (double)basket);
+
+        Logf("private_logistics  legacy tariff is a MODEL per transfer fragment, NOT per journey; "
+             "billing=%d dry_run=%d carrier_enabled=%d tariff_mode=%s. "
+             "Only [PAY] reports payments; native journey settlement OFF.",
+             g_billing, g_dryRun, g_payCarrier, g_tripTariff ? "model" : "value_share");
+    }
+
+    if (g_balanceLog) {
+        double treas = 0.0;
+        bool   have  = false;
+        if (g_currency && g_currency->getTreasuryBalance &&
+            g_currency->structSize >= offsetof(TsmCurrencyApi, getTreasuryBalance) +
+                                      sizeof(g_currency->getTreasuryBalance)) {
+            treas = g_currency->getTreasuryBalance(TsmCurrencyActive(g_currency));
+            have  = true;
+        }
+        if (have) {
+            g_treasuryAtClose   = treas;
+            g_treasuryHaveClose = false;   // first close prints a baseline
+            Logf("private_logistics  [BAL] treasury opens at %.2f", treas);
+        }
+    }
+
+    if (g_billing && g_dryRun)
+        Logf("private_logistics  DRY RUN: every [PAY] line says 'would'. "
+             "Set dry_run = 0 in the ini and restart to move the money.");
+    else if (g_billing)
+        Logf("private_logistics  LIVE MONEY: the state treasury pays. Every [PAY] "
+             "line reports the amount, the payee and the shortfall gate.");
+
+    Logf("private_logistics  send back every [PAY] line and the daily [PAY] totals");
+    return 0;
+}
+
+```
+
+### Complete final source v0.18.10 — `plugins/private_logistics/private_logistics.ini`
+
+Bytes: 10053; SHA256: `8a862d653be37cbc688f37ad627e87d2e06ac3a02cbc112e59dafaae7d91058a`.
+
+```ini
+; ---------------------------------------------------------------------------
+; private_logistics.ini - v0.18.10 read-only schedule classification
+;
+; Billing OFF. Dispatch and independent state permissions are unchanged.
+; Native loaded-journey settlement remains OFF; its adapter is not yet wired.
+; Existing tariff knobs describe a LEGACY MODEL PER TRANSFER FRAGMENT, not a
+; journey or measured fuel cost. [TARIFF MODEL] totals do not report payments.
+; Only [PAY] reports legacy payment outcomes if billing is explicitly enabled.
+; Model: work = litres_per_trip + litres_per_tonne x fragment tonnes;
+; fuel = work x diesel_density x fuel_price; wear = wear_litres x density x price;
+; tariff = fuel x (1 + tariff_margin) + wear. No parameter is verified physics.
+; Purchases, sampled decreases and increases cannot prove burn/refill events.
+; See docs/private-logistics-runtime/VEHICLE_PANEL_FUEL_INVESTIGATION.md.
+; ---------------------------------------------------------------------------
+
+[private_logistics]
+enabled             = 1
+
+; PERMISSIONS TEST DEFAULT: no legacy freight payments. Target management
+; remains active below. 1 explicitly opts into the old live billing algorithm.
+billing             = 0
+; 1 = count every payment and move nothing.
+dry_run             = 1
+
+; NEW NEXT-TEST DEFAULT: inspect the actual opened detail-panel object and
+; candidate-home road-DO fleet membership; read-only, NOT exact burn or billing.
+; Requires matching executable bytes, sim_clock and persistence load signal.
+; One snapshot/second, 240 accepted records/load epoch, 16 queued.
+; Paused captures keep the latest queued snapshot of the same window/root.
+; [PANEL GAP] explicitly reports omitted paused snapshots, queue overflow,
+; lock contention and capture stop/fault. Accepted sample IDs are NOT coverage.
+; Capture-time and drain-time queue-full counters are separate.
+panel_fuel_observer = 1
+
+; Read-only schedule observations on the SAME verified panel hook/queue above.
+; Additional native fingerprints and unique road-DO fleet membership required.
+; At most 16 raw rows; +5FD's special last row has no config-field reads.
+; Changes are sampled stop/config/context observations, NOT whole-job boundaries,
+; success/cancellation reasons, buyer identity or a billing input.
+; v0.18.9: ENDPOINT records compare last valid captured values across pause/drop
+; gaps (continuity_valid=0). Original delta flags still rebaseline; no extra reads.
+; v0.18.10: CLASSIFICATION separates targets, flags and raw scalars; patterns
+; are descriptive only, not native assignment/refuel/trip events. No extra reads.
+schedule_observer = 1
+
+; H1: the private building the goods LEAVE is paid = value x factory_share.
+; This leg only fires on a privately owned producer. If it reads 0.00 every
+; day, no building in the chain is private - check for a [PRIV CLICK] line.
+pay_factory         = 1
+factory_share       = 0.90
+
+; Legacy carrier model: one price per eligible transfer fragment, NOT journey.
+pay_carrier         = 1
+
+; 1 = use the legacy fragment tariff model above when billing is enabled.
+;       0 = charge 8 % of cargo value instead - the v0.6 path, kept only so
+;           the two can be compared inside one session.
+trip_tariff         = 1
+
+; ---------------------------------------------------------------------------
+; the tariff, in physical units
+; ---------------------------------------------------------------------------
+
+; Legacy model estimate retained unchanged for compatibility. It was derived
+; from sampled fleet endpoints, NOT verified clamped native deductions.
+; Do not calibrate it from [TANK SAMPLE], purchases, or a screenshot difference.
+litres_per_trip     = 14.75
+
+; Legacy model default only. Native cargo-load dependence is unverified.
+litres_per_tonne    = 0.0
+
+; v0.7: the vehicle sinking fund, denominated in litres of diesel so it
+; inflates WITH fuel instead of behind it. This is POLICY, not physics: it is
+; what you decide a trip should put aside towards the next truck.
+;
+; Set it from a truck, not from taste:
+;     wear_litres = truck_price / trips_per_life / (density x fuel_price)
+; A 6,000 RUB truck over 4,000 trips is 1.50 RUB/trip, about 13 L at 133/RUB.
+; 5.00 is deliberately conservative - raise it and the DO saves for vehicles.
+wear_litres         = 5.00
+
+; Auto-tune is blocked even if requested: candidate sample changes/units are
+; unverified and cannot calibrate physical fuel cost. Default remains OFF.
+litres_auto         = 0
+
+diesel_density      = 0.00100   ; legacy model t/L; NOT proof of native mass units.
+
+; The carrier's profit, as a fraction of fuel cost. Applies to fuel only;
+; the wear reserve is a cost and is passed through at cost.
+tariff_margin       = 0.35
+
+; The index. 'fuel' is resolved by NAME through resource_pricing every day,
+; so the tariff follows the game's own diesel price. If it cannot resolve,
+; the same work is priced in daily survival baskets instead, and if neither
+; resolves the delivery is reported UNINDEXED and priced at nothing -
+; this build never invents a figure in money.
+fuel_resource       = fuel
+baskets_per_trip    = 0.80
+baskets_per_tonne   = 0.02
+
+; Per-delivery [TARIFF] lines; the day total is always printed.
+tariff_log_per_day  = 60
+
+; v0.8: the vehicle census. Once a day every private enterprise's fleet is
+; walked (bld+0xC70/+0xC78, proven) and each vehicle is logged with what it
+; carries now and at its peak. The first sighting of a vehicle also dumps the
+; 8 dwords at the pointer the game gives for its catalogue entry (+0x510) -
+; that is where capacity, speed, price and consumption live.
+;
+; Nothing is priced from the census yet. One number cannot describe a fleet,
+; and this build refuses to pretend otherwise; the census is how the next one
+; stops needing to.
+census_log          = 1
+
+; v0.9: the field scanner. Each vehicle's first 0x800 bytes are copied on first
+; sight; every day after, only the words that CHANGED are logged:
+;
+;   [VEH CHG] day 12 v=0000... +0x6D4 000001C8 -> 0000019A (f 456.00 -> 410.00)
+;
+; A fuel tank is a word that falls while the truck drives and jumps when it
+; refuels. 456 above is the kind of value to look for - litres, not roubles.
+; Known pointer ranges are skipped, and at most veh_scan_log_per_day words are
+; printed per vehicle per day.
+veh_scan            = 1
+veh_scan_log_per_day = 40
+
+; v0.12: raw storage-vector dump for up to three vehicles per close. BOTH
+; vectors - the trailer vector at veh+0x3A0 and the cargo vector at veh+0x3B8 -
+; every slot, with the resource pointer and the tonnage. If diesel lives in a
+; slot, one slot will fall every day and jump at a refill, exactly like
+; [TANK]. Set to 0 once that is settled.
+cargo_dump          = 1
+
+; Candidate diagnostics only. Each [TANK] record explicitly states selected
+; source (slot_candidate / display_5f0_fallback / unavailable), validity, raw
+; candidates, independent drift validity and sampled change classification.
+; Fallback is NEVER compared to itself. Invalid/negative values are not zero;
+; source changes, invalid reads and load epochs break sample continuity.
+; No native clamp, actual burn/refill or physical mass unit is claimed.
+tank_cross_log      = 40
+
+; ---------------------------------------------------------------------------
+; instrument
+; ---------------------------------------------------------------------------
+
+; [BAL] treasury movement, the carriers' capital and the fuel meter, per day.
+; The meter lives here, so balance_log = 0 also disables the measured fuel.
+balance_log         = 1
+; one [B2B SITE] line per transfer call
+site_log            = 1
+; cap on [B2B]/[PAY]/[TARIFF] detail lines per day
+log_cap_per_day     = 400
+; shipment ring buffer
+ledger_capacity     = 512
+
+; Absolute payment cap per day, in the active currency. A runaway loop should
+; show up as a cap line, not as an emptied treasury.
+daily_pay_cap       = 5000.0
+; below this, a payment is skipped and counted, never rounded up.
+min_payment         = 0.01
+
+; Sites to hook. Empty = all 16. "0x68F792,68F7F9" for a subset.
+site_list           =
+
+; Autonomous private DO connections; state site access requires explicit
+; per-building direction permissions. State retail: deliveries only. State
+; factory/storage: independent loading and deliveries. Unknown roles deny.
+; Private endpoints follow their role without player access checkboxes.
+; Missing eligible targets are re-added at the daily scan (not instantly).
+auto_targets_enabled = 1
+; 1 = report plans only (no TaskCfg writes/appends); 0 = apply permissions.
+auto_targets_dry_run = 0
+; state_storage_always_on is obsolete: any old value is ignored and logged.
+; Maximum target-detail lines per daily scan; summary lines are always printed.
+auto_targets_log_limit = 80
+
+; ---------------------------------------------------------------------------
+; NOT IMPLEMENTED - declared so the intent is on record, not to work yet
+; ---------------------------------------------------------------------------
+; 0 = the DO pays for diesel through the game's own foreign purchase, which
+; is what happens today and what the v0.6 reconciliation measured.
+charge_fuel_at_pump      = 0
+charge_vehicle_purchase  = 1
+upkeep_per_vehicle_day   = 0.0     ; a private DO pays no upkeep: vehicles + fuel
+
+; who pays when the receiving building cannot be identified
+unknown_payer            = state
+
+; Company policy for automatic tasks, applied to both new and existing entries
+; at daily reconciliation. Native per-DO/per-task edits are overwritten for
+; managed targets. Manually assigned customs tasks remain untouched.
+; Source 10% matches the working manual setting reported in the latest test.
+; This is an empirical test policy, NOT a proven native ceiling or dispatch fix.
+; Load when source stock is ABOVE this percentage (policy range 0..90).
+auto_source_percent = 10
+; Deliver when destination stock is BELOW this percentage (policy range 10..100).
+; This is a dispatch trigger, NOT a spending limit or exact final-stock cap.
+auto_destination_percent = 30
+
+```
+
+### Complete final source v0.18.10 — `tests/private_logistics/schedule_observer_test.cpp`
+
+Bytes: 19615; SHA256: `6182776a1e12cae7e1dd26c476261035db05e43deeb09ec97edccc8a3a9e71df`.
+
+```cpp
+#define main ReaderHarnessMain
+#include "panel_fuel_observer_test.cpp"
+#undef main
+#include "schedule_observer.h"
+namespace sch=private_logistics_schedule;
+struct ScheduleFixture : Fixture {
+    Address targets=0xB0000,configs=0xC0000;
+    ScheduleFixture() {
+        Add(targets,sch::MaxRows*8);Add(configs,sch::MaxRows*sch::ConfigStride);
+        Set(root,0x680,targets);Set(root,0x688,targets+16);Set(root,0x638,configs);
+        Set(root,0x698,std::int32_t(1));Set(root,0x610,Address(0x123456));
+        Set(root,0x650,Address(0xFEDCBA));Set(root,0x4A0,Address(0xFA000));
+        Set(targets,0,Address(0xDEAD0000));Set(targets,8,Address(0xBEEF0000));
+        Set(configs,0,std::uint8_t(1));Set(configs,4,1.0f);
+        Set(configs,sch::ConfigStride+0xC8,std::uint8_t(1));
+        Set(configs,sch::ConfigStride+0xCC,0.5f);
+    }
+    sch::Snapshot Now() {sch::Snapshot s;sch::Capture(Mem(),root,s);return s;}
+};
+TEST(schedule_selected_fields_mapping_no_pointee_following) {
+    ScheduleFixture f;auto s=f.Now();CHECK(s.status==sch::Status::Complete && s.count==2);
+    CHECK(s.index698==1 && s.rows[0].target==0xDEAD0000 && s.rows[1].target==0xBEEF0000);
+    CHECK(s.rows[0].configRead && s.rows[0].flag00==1 && s.rows[0].value04==1.0f);
+    CHECK(s.rows[1].flagC8==1 && s.rows[1].valueCC==0.5f && s.raw650==0xFEDCBA);
+}
+TEST(schedule_special_last_row_does_not_read_config) {
+    ScheduleFixture f;f.Set(f.root,0x5FD,std::uint8_t(1));
+    f.denied.push_back({f.configs+sch::ConfigStride,sch::ConfigStride});
+    auto s=f.Now();CHECK(s.status==sch::Status::Complete && s.rows[0].configRead);
+    CHECK(!s.rows[1].configRead && s.rows[1].target==0xBEEF0000);
+    f.Set(f.root,0x688,f.targets+8);f.Set(f.root,0x638,Address(0));
+    s=f.Now();CHECK(s.status==sch::Status::Complete && s.count==1 && !s.rows[0].configRead);
+}
+TEST(schedule_empty_list_is_valid_not_completion) {
+    ScheduleFixture f;f.Set(f.root,0x680,Address(0));f.Set(f.root,0x688,Address(0));
+    f.Set(f.root,0x638,Address(0));auto s=f.Now();CHECK(s.status==sch::Status::Complete && s.count==0);
+    f.Set(f.root,0x680,f.targets);f.Set(f.root,0x688,f.targets);CHECK(f.Now().status==sch::Status::Complete);
+}
+TEST(schedule_null_target_and_unknown_index_preserved) {
+    ScheduleFixture f;f.Set(f.targets,0,Address(0));f.Set(f.root,0x698,std::int32_t(-7));
+    auto s=f.Now();CHECK(s.status==sch::Status::Complete && !s.rows[0].target && s.index698==-7);
+    f.Set(f.root,0x698,std::int32_t(999));CHECK(f.Now().index698==999);
+}
+TEST(schedule_missing_header_and_config_fail_closed) {
+    ScheduleFixture f;f.denied.push_back({f.root+0x698,4});CHECK(f.Now().status==sch::Status::Unreadable);
+    f.denied.clear();f.Set(f.root,0x638,Address(0));CHECK(f.Now().status==sch::Status::MissingConfigs);
+    f.Set(f.root,0x638,f.configs);f.denied.push_back({f.configs+4,4});CHECK(f.Now().status==sch::Status::Unreadable);
+}
+TEST(schedule_bad_bounds_and_oversize_do_not_walk) {
+    ScheduleFixture f;f.Set(f.root,0x688,f.targets-8);CHECK(f.Now().status==sch::Status::BadBounds);
+    f.Set(f.root,0x688,f.targets+7);CHECK(f.Now().status==sch::Status::BadBounds);
+    f.Set(f.root,0x680,Address(0));CHECK(f.Now().status==sch::Status::BadBounds);
+    f.Set(f.root,0x680,f.targets);f.Set(f.root,0x688,f.targets+17*8);f.reads=0;
+    CHECK(f.Now().status==sch::Status::TooManyRows && f.reads==8);
+}
+TEST(schedule_max_rows_and_checked_arithmetic) {
+    ScheduleFixture f;f.Set(f.root,0x688,f.targets+sch::MaxRows*8);
+    auto s=f.Now();CHECK(s.status==sch::Status::Complete && s.count==sch::MaxRows);
+    f.Set(f.root,0x638,UINTPTR_MAX-2);CHECK(f.Now().status==sch::Status::Unreadable);
+    sch::Capture(f.Mem(),UINTPTR_MAX-0x100,s);CHECK(s.status==sch::Status::Unreadable);
+}
+TEST(schedule_nonfinite_no_partial_table) {
+    ScheduleFixture f;f.Set(f.configs,sch::ConfigStride+0xCC,std::numeric_limits<float>::quiet_NaN());
+    CHECK(f.Now().status==sch::Status::NonFinite);
+    f.Set(f.configs,sch::ConfigStride+0xCC,std::numeric_limits<float>::infinity());
+    CHECK(f.Now().status==sch::Status::NonFinite);
+}
+struct Mutation {
+    ScheduleFixture f;
+    Address address=0;unsigned hits=0;
+    static bool Read(Address a,void* out,std::size_t n,void* user) {
+        auto& m=*static_cast<Mutation*>(user);
+        if(a==m.address && ++m.hits==2) {
+            if(a==m.f.root+0x698)m.f.Set(m.f.root,0x698,std::int32_t(2));
+            else m.f.Set(m.f.configs,4,0.3f);
+        }
+        return Fixture::Reader(a,out,n,&m.f);
+    }
+};
+TEST(schedule_header_and_row_mutation_rejected) {
+    Mutation m;sch::Snapshot s;m.address=m.f.root+0x698;
+    sch::Capture({Mutation::Read,&m},m.f.root,s);CHECK(s.status==sch::Status::ChangedDuringRead);
+    m.address=m.f.configs+4;m.hits=0;
+    sch::Capture({Mutation::Read,&m},m.f.root,s);CHECK(s.status==sch::Status::ChangedDuringRead);
+}
+TEST(schedule_history_first_unchanged_and_index_only) {
+    ScheduleFixture f;auto s=f.Now();sch::History h;
+    auto d=h.Observe(s,1,f.root,f.home);CHECK(d.emit && d.baseline==sch::Baseline::First && !d.fields);
+    CHECK(!h.Observe(s,1,f.root,f.home).emit);
+    s.index698=0;d=h.Observe(s,1,f.root,f.home);CHECK(d.emit && d.index && !d.fields && !d.storage);
+    CHECK(d.baseline==sch::Baseline::None); // row advance, NOT job completion
+}
+TEST(schedule_history_field_storage_and_context_changes_separate) {
+    ScheduleFixture f;auto s=f.Now();sch::History h;h.Observe(s,1,f.root,f.home);
+    s.rows[0].value04=0.2f;auto d=h.Observe(s,1,f.root,f.home);CHECK(d.fields && !d.index && !d.storage);
+    s.configs+=0x10000;d=h.Observe(s,1,f.root,f.home);CHECK(!d.fields && d.storage && !d.index);
+    s.raw650=1;d=h.Observe(s,1,f.root,f.home);CHECK(d.context && !d.fields && !d.index);
+}
+TEST(schedule_history_list_clear_replacement_are_observed_fields_only) {
+    ScheduleFixture f;auto s=f.Now();sch::History h;h.Observe(s,1,f.root,f.home);
+    s.rows[1].target=0xEEEE;CHECK(h.Observe(s,1,f.root,f.home).fields);
+    s.count=0;CHECK(h.Observe(s,1,f.root,f.home).fields);
+    // No success/cancel reason/job generation exists in this class.
+    CHECK(!h.Observe(s,1,f.root,f.home).emit);
+}
+TEST(schedule_history_three_one_three_rows_and_same_count_replacement) {
+    ScheduleFixture f;
+    const Address originalFirst=0xDEAD0000, singleTarget=0xABCD0000;
+    f.Set(f.root,0x688,f.targets+24);
+    f.Set(f.targets,16,Address(0xCAFE0000));
+    auto s=f.Now();CHECK(s.status==sch::Status::Complete && s.count==3);
+    sch::History h;h.Observe(s,1,f.root,f.home);
+    // Advancing within the same three rows is not a content replacement.
+    f.Set(f.root,0x698,std::int32_t(2));
+    s=f.Now();auto d=h.Observe(s,1,f.root,f.home);
+    CHECK(d.index && !d.fields && !d.storage);
+    // A one-row list is a content change, not proof of a refuelling task.
+    f.Set(f.root,0x688,f.targets+8);
+    f.Set(f.root,0x698,std::int32_t(0));
+    f.Set(f.targets,0,singleTarget);
+    s=f.Now();CHECK(s.status==sch::Status::Complete && s.count==1);
+    d=h.Observe(s,1,f.root,f.home);CHECK(d.fields && d.storage && d.index);
+    CHECK(!h.Observe(s,1,f.root,f.home).emit);
+    // Equal row count is not enough: a different target must be detected.
+    f.Set(f.targets,0,Address(0xABCE0000));
+    s=f.Now();d=h.Observe(s,1,f.root,f.home);
+    CHECK(d.fields && !d.storage && !d.index);
+    // Returning to three rows is another observed content change.
+    f.Set(f.targets,0,originalFirst);f.Set(f.root,0x688,f.targets+24);
+    s=f.Now();CHECK(s.status==sch::Status::Complete && s.count==3);
+    d=h.Observe(s,1,f.root,f.home);CHECK(d.fields && d.storage && !d.index);
+    CHECK(!h.Observe(s,1,f.root,f.home).emit);
+}
+TEST(schedule_history_epoch_identity_and_gaps_rebaseline_no_deltas) {
+    ScheduleFixture f;auto s=f.Now();sch::History h;h.Observe(s,1,f.root,f.home);
+    s.index698=0;auto d=h.Observe(s,2,f.root,f.home);CHECK(d.baseline==sch::Baseline::Epoch && !d.index);
+    d=h.Observe(s,2,f.root+1,f.home);CHECK(d.baseline==sch::Baseline::Identity);
+    d=h.Observe(s,2,f.root+1,f.home+1);CHECK(d.baseline==sch::Baseline::Identity);
+    h.Break();s.count=0;d=h.Observe(s,2,f.root+1,f.home+1);CHECK(d.baseline==sch::Baseline::Gap && !d.fields);
+    s.status=sch::Status::ChangedDuringRead;CHECK(h.Observe(s,2,f.root,f.home).baseline==sch::Baseline::Invalid);
+    s=f.Now();d=h.Observe(s,2,f.root,f.home);CHECK(d.baseline==sch::Baseline::Gap && !d.fields);
+}
+TEST(schedule_identical_visible_schedule_is_not_new_job) {
+    ScheduleFixture f;auto s=f.Now();sch::History h;h.Observe(s,1,f.root,f.home);
+    // Even if an unseen cancellation/reassignment happened, equal selected
+    // fields cannot reveal it. No synthesized generation counter or bill.
+    for(unsigned i=0;i<1000;++i) CHECK(!h.Observe(s,1,f.root,f.home).emit);
+}
+TEST(schedule_gap_changed_endpoint_keeps_original_delta_guards) {
+    ScheduleFixture f;auto s=f.Now();sch::History h;
+    auto d=h.Observe(s,2,f.root,f.home,51,24980906);
+    CHECK(!d.endpointCompared && d.baseline==sch::Baseline::First);
+    const auto old=h.LastValidValues();
+    h.Break();s.rows[1].target=0xABCE0000;s.rows[0].value04=0.50917542f;s.index698=0;
+    d=h.Observe(s,2,f.root,f.home,53,25004531);
+    CHECK(d.baseline==sch::Baseline::Gap && d.emit);
+    CHECK(!d.fields && !d.storage && !d.index && !d.context);
+    CHECK(d.endpointCompared && d.endpointAcrossGap && d.endpointFields && d.endpointIndex);
+    CHECK(!d.endpointStorage && !d.endpointContext);
+    CHECK(d.previousSample==51 && d.previousMs==24980906);
+    CHECK(old.rows[1].target==0xBEEF0000 && old.rows[0].value04==1.0f);
+    CHECK(!h.Observe(s,2,f.root,f.home,54,25005531).emit);
+    h.Break();d=h.Observe(s,2,f.root,f.home,55,25006531);
+    CHECK(d.previousSample==54 && d.previousMs==25005531); // last valid, not last emitted
+    CHECK(!d.endpointFields && d.endpointAcrossGap);
+}
+TEST(schedule_gap_empty_then_three_rows_are_endpoint_differences) {
+    ScheduleFixture f;auto s=f.Now();sch::History h;h.Observe(s,1,f.root,f.home,1,1000);
+    h.Break();s.count=0;s.end=s.begin;
+    auto d=h.Observe(s,1,f.root,f.home,2,2000);
+    CHECK(d.endpointFields && d.endpointStorage && d.endpointAcrossGap && !d.fields);
+    CHECK(h.LastValidValues().count==0);
+    f.Set(f.root,0x688,f.targets+24);f.Set(f.targets,16,Address(0xCAFE0000));s=f.Now();
+    h.Break();d=h.Observe(s,1,f.root,f.home,3,3000);
+    CHECK(d.endpointFields && d.endpointAcrossGap && d.previousSample==2 && !d.fields);
+    CHECK(h.LastValidValues().count==3);
+}
+TEST(schedule_gap_unchanged_storage_index_context_are_independent) {
+    ScheduleFixture f;auto s=f.Now();sch::History h;h.Observe(s,1,f.root,f.home);
+    h.Break();auto d=h.Observe(s,1,f.root,f.home);
+    CHECK(d.endpointCompared && d.endpointAcrossGap && !d.endpointFields);
+    CHECK(!d.endpointStorage && !d.endpointIndex && !d.endpointContext);
+    h.Break();s.begin+=0x100;s.end+=0x100;s.configs+=0x100;d=h.Observe(s,1,f.root,f.home);
+    CHECK(d.endpointStorage && !d.endpointFields && !d.endpointIndex && !d.endpointContext);
+    CHECK(!d.storage); // original flags still guarded on a gap
+    h.Break();++s.index698;d=h.Observe(s,1,f.root,f.home);
+    CHECK(d.endpointIndex && !d.endpointFields && !d.endpointStorage);
+    h.Break();++s.raw610;d=h.Observe(s,1,f.root,f.home);
+    CHECK(d.endpointContext && !d.endpointFields && !d.endpointStorage && !d.endpointIndex);
+}
+TEST(schedule_endpoint_vehicle_home_and_load_never_join) {
+    ScheduleFixture f;auto s=f.Now();sch::History h;h.Observe(s,1,f.root,f.home,1,1000);
+    auto d=h.Observe(s,1,f.root+1,f.home,2,2000);
+    CHECK(d.baseline==sch::Baseline::Identity && !d.endpointCompared);
+    d=h.Observe(s,1,f.root,f.home,3,3000);CHECK(!d.endpointCompared);
+    d=h.Observe(s,1,f.root,f.home+1,4,4000);CHECK(!d.endpointCompared);
+    d=h.Observe(s,2,f.root,f.home+1,5,5000);
+    CHECK(d.baseline==sch::Baseline::Epoch && !d.endpointCompared);
+}
+TEST(schedule_endpoint_invalid_is_not_an_empty_schedule) {
+    ScheduleFixture f;auto s=f.Now();sch::History h;h.Observe(s,1,f.root,f.home,10,1000);
+    auto bad=s;bad.status=sch::Status::Unreadable;bad.count=0;
+    auto d=h.Observe(bad,1,f.root,f.home,11,2000);
+    CHECK(d.baseline==sch::Baseline::Invalid && !d.endpointCompared);
+    CHECK(h.LastValidValues().count==2);
+    bad.status=sch::Status::TooManyRows;bad.count=sch::MaxRows+1;
+    CHECK(!h.Observe(bad,1,f.root,f.home,12,3000).endpointCompared);
+    h.Break();s.count=0;s.end=s.begin;d=h.Observe(s,1,f.root,f.home,13,4000);
+    CHECK(d.endpointCompared && d.endpointAcrossGap && d.endpointFields);
+    CHECK(d.previousSample==10 && d.previousMs==1000 && !d.fields);
+    CHECK(!h.Observe(s,1,f.root,f.home,14,5000).emit);
+}
+TEST(schedule_endpoint_invalid_identity_cannot_resurrect_cache) {
+    ScheduleFixture f;auto s=f.Now();auto bad=s;bad.status=sch::Status::Unreadable;sch::History h;
+    h.Observe(s,1,f.root,f.home);
+    h.Observe(bad,1,f.root+1,f.home);
+    CHECK(!h.Observe(s,1,f.root,f.home).endpointCompared);
+    h.Observe(bad,2,f.root,f.home);
+    CHECK(!h.Observe(s,1,f.root,f.home).endpointCompared);
+    h.Observe(bad,1,f.root,f.home+1);
+    CHECK(!h.Observe(s,1,f.root,f.home).endpointCompared);
+}
+TEST(schedule_endpoint_equal_endpoints_do_not_invent_hidden_aba) {
+    ScheduleFixture f;auto s=f.Now();sch::History h;h.Observe(s,1,f.root,f.home,1,1000);
+    // Any unseen A->B->A remains unknown; equality proves neither presence nor absence.
+    h.Break();h.Break();auto d=h.Observe(s,1,f.root,f.home,2,5000);
+    CHECK(d.endpointCompared && d.endpointAcrossGap && !d.endpointFields);
+    CHECK(!d.endpointIndex && !d.endpointStorage && !d.endpointContext);
+    CHECK(!d.fields && !d.index && d.baseline==sch::Baseline::Gap);
+}
+TEST(schedule_classification_scalar_only_preserves_exact_value) {
+    ScheduleFixture f;auto a=f.Now(),b=a;
+    a.rows[0].value04=0.509669125f;b.rows[0].value04=0.509832323f;
+    auto c=sch::ClassifyChanges(a,b);
+    CHECK(c.comparable && c.scalars && c.SettingsOnly() && !c.Structure() && !c.flags);
+    CHECK(!c.targets && !c.count && !c.availability);
+    b=a;b.rows[0].value04=std::nextafter(a.rows[0].value04,1.0f);
+    CHECK(sch::ClassifyChanges(a,b).scalars); // even one ULP is retained
+    b=a;CHECK(!sch::ClassifyChanges(a,b).SettingsOnly());
+    b.rows[0].valueCC=std::nextafter(a.rows[0].valueCC,1.0f);
+    CHECK(sch::ClassifyChanges(a,b).scalars);
+}
+TEST(schedule_classification_structure_not_storage_or_index) {
+    ScheduleFixture f;auto a=f.Now(),b=a;
+    b.rows[1].target=0xABCE0000;auto c=sch::ClassifyChanges(a,b);
+    CHECK(c.targets && c.Structure() && !c.count && !c.SettingsOnly());
+    b=a;b.begin+=0x100;b.end+=0x100;b.configs+=0x100;++b.index698;++b.raw610;
+    c=sch::ClassifyChanges(a,b);
+    CHECK(c.comparable && !c.Structure() && !c.SettingsOnly() && !c.availability);
+    b=a;b.count=0;c=sch::ClassifyChanges(a,b);
+    CHECK(c.count && c.Structure() && !c.targets && !c.flags && !c.scalars);
+    b=a;const auto first=b.rows[0];b.rows[0]=b.rows[1];b.rows[1]=first;
+    CHECK(sch::ClassifyChanges(a,b).targets); // order matters
+}
+TEST(schedule_classification_flags_and_availability_are_separate) {
+    ScheduleFixture f;auto a=f.Now(),b=a;b.rows[0].flag00=0;
+    auto c=sch::ClassifyChanges(a,b);CHECK(c.flags && !c.scalars && c.SettingsOnly());
+    b=a;b.rows[0].configRead=false;b.rows[0].flag00=0;b.rows[0].value04=0;
+    c=sch::ClassifyChanges(a,b);
+    CHECK(c.availability && !c.flags && !c.scalars && !c.SettingsOnly());
+    a=b;b.rows[0].value04=1;b.rows[0].flag00=1;c=sch::ClassifyChanges(a,b);
+    CHECK(!c.flags && !c.scalars); // unavailable values are not observed zeros
+    b.status=sch::Status::Unreadable;CHECK(!sch::ClassifyChanges(a,b).comparable);
+    b=a;b.count=sch::MaxRows+1;CHECK(!sch::ClassifyChanges(a,b).comparable);
+}
+TEST(schedule_pattern_load_unload_is_conservative) {
+    ScheduleFixture f;auto s=f.Now();
+    CHECK(sch::ClassifyPattern(s,f.home)==sch::Pattern::LoadUnload);
+    CHECK(sch::ClassifyPattern(s,0)==sch::Pattern::Other);
+    s.rows[0].target=f.home;CHECK(sch::ClassifyPattern(s,f.home)==sch::Pattern::Other);
+    s=f.Now();s.rows[0].configRead=false;CHECK(sch::ClassifyPattern(s,f.home)==sch::Pattern::Other);
+    s=f.Now();s.rows[0].flag00=2;CHECK(sch::ClassifyPattern(s,f.home)==sch::Pattern::Other);
+    s=f.Now();s.rows[0].flagC8=1;CHECK(sch::ClassifyPattern(s,f.home)==sch::Pattern::Other);
+    s=f.Now();s.rows[1].target=0;CHECK(sch::ClassifyPattern(s,f.home)==sch::Pattern::Other);
+}
+TEST(schedule_pattern_office_empty_and_invalid_do_not_invent_jobs) {
+    ScheduleFixture f;auto s=f.Now();s.count=1;s.rows[0].target=f.home;
+    s.rows[0].flag00=0;s.rows[0].flagC8=0;
+    CHECK(sch::ClassifyPattern(s,f.home)==sch::Pattern::OfficeOnly);
+    s.rows[0].configRead=false;CHECK(sch::ClassifyPattern(s,f.home)==sch::Pattern::Other);
+    s.count=0;CHECK(sch::ClassifyPattern(s,0)==sch::Pattern::Empty);
+    s.status=sch::Status::Unreadable;CHECK(sch::ClassifyPattern(s,f.home)==sch::Pattern::Unavailable);
+    s.status=sch::Status::Complete;s.count=sch::MaxRows+1;
+    CHECK(sch::ClassifyPattern(s,f.home)==sch::Pattern::Unavailable);
+}
+TEST(schedule_classification_gap_does_not_override_original_guard) {
+    ScheduleFixture f;auto s=f.Now();sch::History h;h.Observe(s,1,f.root,f.home);
+    const auto prior=h.LastValidValues();h.Break();s.rows[0].value04=0.509832323f;
+    auto d=h.Observe(s,1,f.root,f.home);
+    const auto c=sch::ClassifyChanges(prior,s);
+    CHECK(d.endpointAcrossGap && !d.fields && c.SettingsOnly() && !c.Structure());
+    CHECK(sch::ClassifyPattern(s,f.home)==sch::Pattern::LoadUnload);
+}
+int main(int argc,char** argv) {
+    unsigned count=0;
+#define RUN(name) do {if(argc==1 || std::string(argv[1])==#name){name();++count;std::printf("PASS %s\n",#name);}} while(0)
+    RUN(schedule_selected_fields_mapping_no_pointee_following);
+    RUN(schedule_special_last_row_does_not_read_config);
+    RUN(schedule_empty_list_is_valid_not_completion);
+    RUN(schedule_null_target_and_unknown_index_preserved);
+    RUN(schedule_missing_header_and_config_fail_closed);
+    RUN(schedule_bad_bounds_and_oversize_do_not_walk);
+    RUN(schedule_max_rows_and_checked_arithmetic);
+    RUN(schedule_nonfinite_no_partial_table);
+    RUN(schedule_header_and_row_mutation_rejected);
+    RUN(schedule_history_first_unchanged_and_index_only);
+    RUN(schedule_history_field_storage_and_context_changes_separate);
+    RUN(schedule_history_list_clear_replacement_are_observed_fields_only);
+    RUN(schedule_history_three_one_three_rows_and_same_count_replacement);
+    RUN(schedule_history_epoch_identity_and_gaps_rebaseline_no_deltas);
+    RUN(schedule_identical_visible_schedule_is_not_new_job);
+    RUN(schedule_gap_changed_endpoint_keeps_original_delta_guards);
+    RUN(schedule_gap_empty_then_three_rows_are_endpoint_differences);
+    RUN(schedule_gap_unchanged_storage_index_context_are_independent);
+    RUN(schedule_endpoint_vehicle_home_and_load_never_join);
+    RUN(schedule_endpoint_invalid_is_not_an_empty_schedule);
+    RUN(schedule_endpoint_invalid_identity_cannot_resurrect_cache);
+    RUN(schedule_endpoint_equal_endpoints_do_not_invent_hidden_aba);
+    RUN(schedule_classification_scalar_only_preserves_exact_value);
+    RUN(schedule_classification_structure_not_storage_or_index);
+    RUN(schedule_classification_flags_and_availability_are_separate);
+    RUN(schedule_pattern_load_unload_is_conservative);
+    RUN(schedule_pattern_office_empty_and_invalid_do_not_invent_jobs);
+    RUN(schedule_classification_gap_does_not_override_original_guard);
+    CHECK(count);std::printf("%u schedule host scenarios PASS (not native lifecycle validation)\n",count);
+}
+
+```
+
+### Complete final source v0.18.10 — `tests/private_logistics/schedule_runtime_test.cpp`
+
+Bytes: 11251; SHA256: `a28d2ba91d18886aa7817e0d53126d251e7fde85c699d55b84bddb0de04bce6f`.
+
+```cpp
+// Production runtime through the same portable shim. No DLL/SEH/thread proof.
+#define PANEL_RUNTIME_TEST_NO_MAIN
+#include "panel_fuel_runtime_test.cpp"
+
+int main() {
+    Fixture fixture;
+    for(const auto& r:fixture.regions) std::memcpy(g_exeBase+r.address,r.data.data(),r.data.size());
+    const auto ptr=[&](Address a){return (Address)(g_exeBase+a);};
+    const auto put=[&](Address a,Address v){std::memcpy(g_exeBase+a,&v,sizeof(v));};
+    const auto put32=[&](Address a,int v){std::memcpy(g_exeBase+a,&v,sizeof(v));};
+    const auto putFloat=[&](Address a,float v){std::memcpy(g_exeBase+a,&v,sizeof(v));};
+    put(fixture.window+0x240,ptr(fixture.root));put(fixture.root+0x1708,ptr(fixture.meta));
+    put(fixture.root+0x4F8,ptr(fixture.home));put(fixture.home+0x318,ptr(fixture.descriptor));
+    put(fixture.home+0xC70,ptr(fixture.fleet));put(fixture.home+0xC78,ptr(fixture.fleet+8));put(fixture.fleet,ptr(fixture.root));
+    auto* dos=(IMAGE_DOS_HEADER*)g_exeBase;dos->e_magic=IMAGE_DOS_SIGNATURE;dos->e_lfanew=0x80;
+    auto* nt=(IMAGE_NT_HEADERS64*)(g_exeBase+0x80);nt->Signature=IMAGE_NT_SIGNATURE;
+    nt->FileHeader.Machine=IMAGE_FILE_MACHINE_AMD64;nt->FileHeader.TimeDateStamp=0x6A3EB6AD;
+    nt->OptionalHeader.Magic=IMAGE_NT_OPTIONAL_HDR64_MAGIC;
+    const BYTE prologue[]={0x40,0x55,0x56,0x57,0x41,0x54,0x41,0x55,0x41,0x56,0x41,0x57,0x48,0x8D,0xAC,0x24,0x50,0xD1,0xFF,0xFF};
+    std::memcpy(g_exeBase+0x7D5460,prologue,sizeof(prologue));
+    const BYTE scale[]={0,0,0x7A,0x44},format[]={0x25,0,0x2e,0,0x32,0,0x66,0,0x6c,0,0,0};
+    std::memcpy(g_exeBase+0x90B07C,scale,sizeof(scale));std::memcpy(g_exeBase+0x8F3E98,format,sizeof(format));
+    for(const auto& f:g_scheduleFingerprints)std::memcpy(g_exeBase+f.rva,f.bytes,f.size);
+    g_scheduleObserverEnabled=1;
+    g_exeBase[0x7E8438]^=1;PanelObserverStart();CHECK(g_panelStarted && !g_scheduleReady && installed==1);
+    g_exeBase[0x7E8438]^=1; // no second hook/start; emulate fresh process gate result for remainder
+    g_scheduleReady=ScheduleTargetMatches();CHECK(g_scheduleReady);
+    std::puts("PASS schedule_runtime_mismatch_disables_schedule_not_fuel");
+    Address targets=0xD0000,configs=0xD1000;
+    put(fixture.root+0x680,ptr(targets));put(fixture.root+0x688,ptr(targets+16));put(fixture.root+0x638,ptr(configs));
+    put(targets,Address(0xDEAD0000));put(targets+8,Address(0xBEEF0000));
+    putFloat(configs+4,1.0f);putFloat(configs+0x198+0xCC,0.5f);
+    void* context=(void*)ptr(fixture.context);void* window=(void*)ptr(fixture.window);
+    auto capture=[&](){clockMs+=1000;PanelCapture(context,window);};
+    auto drain=[&](){tick(nullptr,1,1);};
+    auto contains=[&](const char* text){for(const auto& l:logs)if(l.find(text)!=std::string::npos)return true;return false;};
+    logs.clear();capture();CHECK(logs.empty());CHECK(g_panelCount==1);
+    CHECK(g_panelQueue[g_panelHead].schedule.status==private_logistics_schedule::Status::Complete);
+    drain();CHECK(logs.size()==6 && contains("baseline=first_observation") && contains("target_raw=0xdead0000"));
+    CHECK(contains("native_job_id=unverified buyer=unverified completion=unverified"));
+    std::puts("PASS schedule_runtime_same_post_render_record_deferred_rows_and_truthful_labels");
+    logs.clear();capture();drain();CHECK(logs.size()==2); // unchanged: fuel/object only
+    put32(fixture.root+0x698,1);logs.clear();capture();drain();
+    CHECK(logs.size()==6 && contains("observed_fields_changed=0 storage_changed=0 row_index_changed=1"));
+    std::puts("PASS schedule_runtime_unchanged_suppressed_and_row_index_not_job_end");
+    paused=true;capture();putFloat(configs+4,0.25f);capture();
+    CHECK(g_panelCount==1 && g_panelQueue[g_panelHead].schedule.rows[0].value04==0.25f);
+    logs.clear();paused=false;drain();CHECK(contains("baseline=diagnostic_gap") && contains("value04=0.25"));
+    CHECK(contains("[PANEL SCHEDULE ENDPOINT]") && contains("endpoint_fields_differ=1"));
+    CHECK(contains("compared_across_gap=1 continuity_valid=0"));
+    CHECK(contains("[PANEL SCHEDULE PREVIOUS ROW]") && contains("values=cached_not_native_read"));
+    std::puts("PASS schedule_runtime_paused_coalescing_carries_latest_schedule_and_rebaselines");
+    // User-test shape: three rows are replaced in place across paused captures.
+    put(fixture.root+0x688,ptr(targets+24));put(targets+16,ptr(fixture.home));
+    logs.clear();capture();drain();
+    const unsigned lastValidSample=g_panelSamples;
+    paused=true;capture();put(targets+8,Address(0xABCE0000));putFloat(configs+4,0.50917542f);
+    capture();logs.clear();paused=false;drain();
+    CHECK(contains("baseline=diagnostic_gap observed_fields_changed=0 storage_changed=0 row_index_changed=0"));
+    CHECK(contains("previous_rows=3 current_rows=3 endpoint_fields_differ=1 endpoint_storage_differ=0"));
+    CHECK(contains(("previous_sample="+std::to_string(lastValidSample)+" ").c_str()));
+    CHECK(contains("[PANEL SCHEDULE PREVIOUS ROW]") && contains("target_raw=0xbeef0000"));
+    CHECK(contains("[PANEL SCHEDULE ROW]") && contains("target_raw=0xabce0000"));
+    CHECK(contains("compared_across_gap=1 continuity_valid=0") && contains("native_event_time=unknown"));
+    std::puts("PASS schedule_runtime_in_place_three_row_replacement_across_pause");
+    paused=true;capture();put(fixture.root+0x688,ptr(targets));capture();
+    logs.clear();paused=false;drain();
+    CHECK(contains("previous_rows=3 current_rows=0 endpoint_fields_differ=1"));
+    CHECK(contains("[PANEL SCHEDULE PREVIOUS ROW]") && !contains("[PANEL SCHEDULE ROW]"));
+    CHECK(contains("baseline=diagnostic_gap observed_fields_changed=0"));
+    logs.clear();capture();drain();CHECK(!contains("[PANEL SCHEDULE")); // unchanged empty quiet
+    put(fixture.root+0x688,ptr(targets+16));logs.clear();capture();drain();
+    CHECK(contains("baseline=none observed_fields_changed=1") && !contains("[PANEL SCHEDULE ENDPOINT]"));
+    std::puts("PASS schedule_runtime_clear_across_pause_old_rows_and_recovery");
+    // Classification is descriptive, using only the existing captured row fields.
+    g_exeBase[configs]=1;g_exeBase[configs+0xC8]=0;
+    g_exeBase[configs+0x198]=0;g_exeBase[configs+0x198+0xC8]=1;
+    logs.clear();capture();drain();CHECK(contains("current_pattern=load_unload_pattern"));
+    putFloat(configs+4,0.509832323f);logs.clear();capture();drain();
+    CHECK(contains("structure_changed=0 config_availability_changed=0 task_flags_changed=0 scalar_settings_changed=1 settings_only=1"));
+    CHECK(contains("native_job_boundary=unverified billing=off"));
+    put(targets+8,Address(0xABCF0000));logs.clear();capture();drain();
+    CHECK(contains("row_count_changed=0 ordered_targets_changed=1 structure_changed=1"));
+    CHECK(contains("settings_only=0"));
+    put32(fixture.root+0x698,0);logs.clear();capture();drain();
+    CHECK(contains("active_index_only=1") && contains("scalar_settings_changed=0 settings_only=0"));
+    g_exeBase[configs]=0;logs.clear();capture();drain();
+    CHECK(contains("structure_changed=0 config_availability_changed=0 task_flags_changed=1 scalar_settings_changed=0 settings_only=1"));
+    g_exeBase[configs]=1;logs.clear();capture();drain();
+    g_exeBase[fixture.root+0x5FD]=1;logs.clear();capture();drain();
+    CHECK(contains("structure_changed=0 config_availability_changed=1 task_flags_changed=0 scalar_settings_changed=0 settings_only=0"));
+    g_exeBase[fixture.root+0x5FD]=0;logs.clear();capture();drain();
+    CHECK(contains("config_availability_changed=1 task_flags_changed=0 scalar_settings_changed=0"));
+    std::puts("PASS schedule_runtime_classifies_scalar_target_and_index_changes");
+    put(fixture.root+0x688,ptr(targets+8));put(targets,ptr(fixture.home));
+    g_exeBase[configs]=0;g_exeBase[configs+0xC8]=0;
+    logs.clear();capture();drain();CHECK(contains("current_pattern=office_only_pattern"));
+    put(fixture.root+0x688,ptr(targets));logs.clear();capture();drain();
+    CHECK(contains("previous_pattern=office_only_pattern current_pattern=empty"));
+    put(fixture.root+0x688,ptr(targets+16));put(targets,Address(0xDEAD0000));g_exeBase[configs]=1;
+    logs.clear();capture();drain();CHECK(contains("current_pattern=load_unload_pattern"));
+    std::puts("PASS schedule_runtime_classifies_office_empty_and_load_unload_patterns");
+    paused=true;capture();putFloat(configs+4,0.51f);capture();logs.clear();paused=false;drain();
+    CHECK(contains("comparison_available=1 compared_across_gap=1"));
+    CHECK(contains("structure_changed=0 config_availability_changed=0 task_flags_changed=0 scalar_settings_changed=1 settings_only=1"));
+    CHECK(contains("compared_across_gap=1 continuity_valid=0"));
+    std::puts("PASS schedule_runtime_classification_preserves_gap_semantics");
+    PanelObserverLoading();drain();logs.clear();capture();drain();CHECK(contains("baseline=load_epoch"));
+    CHECK(!contains("[PANEL SCHEDULE ENDPOINT]"));
+    CHECK(contains("comparison_available=0") && contains("previous_pattern=unavailable"));
+    put(fixture.fleet,Address(0));logs.clear();capture();drain();
+    CHECK(contains("status=not_unique_road_fleet_root") && !contains("[PANEL SCHEDULE ROW]"));
+    CHECK(!contains("[PANEL SCHEDULE CLASSIFICATION]"));
+    put(fixture.fleet,ptr(fixture.root));logs.clear();capture();drain();CHECK(contains("baseline=diagnostic_gap"));
+    put(fixture.fleet+8,ptr(fixture.root));put(fixture.home+0xC78,ptr(fixture.fleet+16));
+    logs.clear();capture();drain();CHECK(contains("status=not_unique_road_fleet_root"));
+    put(fixture.home+0xC78,ptr(fixture.fleet+8));
+    std::puts("PASS schedule_runtime_load_absent_and_duplicate_fleet_fail_closed");
+    // Explicitly cover delayed capture-drop counter advance after a drain-side report.
+    logs.clear();capture();drain();g_scheduleHistory.Break();capture();drain();
+    ++g_panelDropped;drain(); // report at drain BEFORE the next accepted capture
+    logs.clear();capture();drain();CHECK(contains("baseline=diagnostic_gap"));
+    std::puts("PASS schedule_runtime_capture_drop_counter_advance_rebaselines");
+    // Huge raw list is not a partial/empty schedule. Fuel continues unchanged.
+    put(fixture.root+0x688,ptr(targets+17*8));logs.clear();capture();drain();
+    CHECK(contains("status=too_many_rows_no_partial_table") && !contains("[PANEL SCHEDULE ROW]") && contains("[PANEL FUEL]"));
+    put(fixture.root+0x688,ptr(targets+16));put(fixture.root+0x638,Address(1));
+    logs.clear();capture();drain();CHECK(contains("status=unreadable") && !g_panelFault);
+    put(fixture.root+0x638,ptr(configs));
+    std::puts("PASS schedule_runtime_invalid_schedule_never_blocks_fuel_or_prints_partial_rows");
+    // Inject a C++ exception through the shim at a schedule-only address.
+    // This exercises the production isolated catch/latch, NOT Windows SEH.
+    throwAtRead=ptr(fixture.root+0x698);logs.clear();capture();throwAtRead=0;drain();
+    CHECK(g_scheduleFault && contains("guarded_schedule_fault_disabled") && contains("[PANEL FUEL]") && !g_panelFault);
+    logs.clear();capture();drain();CHECK(contains("guarded_schedule_fault_disabled") && !g_panelFault);
+    std::puts("PASS schedule_runtime_fault_latch_isolated_from_fuel_not_a_windows_seh_test");
+    std::puts("13 schedule runtime host-shim scenarios PASS (not Windows ABI/SEH or a DLL)");
+}
+
+```
+
+### Complete final source v0.18.10 — `tests/private_logistics/test_schedule_observer.py`
+
+Bytes: 6376; SHA256: `056f3818384c2e80625ec337b050082d5793482349264eb3e2831ad8702be05e`.
+
+```python
+"""Host/source tests for sampled schedule observations, NOT native job evidence."""
+from pathlib import Path
+import configparser
+import re
+import shutil
+import subprocess
+import tempfile
+import unittest
+
+ROOT = Path(__file__).resolve().parents[2]
+PLUGIN = ROOT / 'plugins/private_logistics'
+HARNESS = Path(__file__).with_name('schedule_observer_test.cpp')
+
+class ScheduleObserverTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.compiler = shutil.which('g++') or shutil.which('clang++')
+        if not cls.compiler:
+            raise unittest.SkipTest('C++ compiler required')
+        cls.directory = tempfile.TemporaryDirectory()
+        cls.addClassCleanup(cls.directory.cleanup)
+        cls.exe = Path(cls.directory.name) / 'schedule_test'
+        result = subprocess.run([cls.compiler, '-std=c++17', '-O2', '-Wall', '-Wextra',
+                                 '-Werror', '-pedantic', '-I', str(PLUGIN), str(HARNESS),
+                                 '-o', str(cls.exe)], capture_output=True, text=True)
+        if result.returncode:
+            raise AssertionError(result.stderr)
+
+    def run_case(self, name):
+        result = subprocess.run([str(self.exe), name], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('PASS ' + name, result.stdout)
+
+    def test_production_runtime_enabled(self):
+        exe = Path(self.directory.name) / 'runtime_test'
+        result = subprocess.run([self.compiler, '-std=c++17', '-O2', '-Wall', '-Wextra',
+                                 '-Werror', '-pedantic', '-I', str(PLUGIN),
+                                 str(HARNESS.with_name('schedule_runtime_test.cpp')),
+                                 '-o', str(exe)], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        result = subprocess.run([str(exe)], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('13 schedule runtime host-shim scenarios PASS', result.stdout)
+
+    def test_native_fingerprints_match_existing_raw_bytes(self):
+        raw = (ROOT / 'docs/private-logistics-runtime/RAW_EXPORTS_VEHICLE_DETAIL_RENDERER.md').read_bytes().decode('utf-16')
+        instructions = {}
+        for line in raw.splitlines():
+            m = re.match(r'^(140[0-9a-f]+):\s+((?:[0-9A-F]{2} )*[0-9A-F]{2})\s+', line)
+            if m:
+                instructions[int(m[1], 16)] = bytes.fromhex(m[2])
+        runtime = (PLUGIN / 'panel_fuel_runtime.h').read_text()
+        records = re.findall(r'\{(0x[0-9A-F]+), (\d+), \{([^}]+)\}\}', runtime)
+        self.assertEqual(len(records), 13)
+        for rva, size, values in records:
+            expected = bytes(int(x, 16) for x in re.findall(r'0x[0-9A-F]{2}', values))
+            address = int(rva, 16) + 0x140000000
+            end = address + int(size)
+            actual = b''
+            while address < end:
+                chunk = instructions[address]
+                actual += chunk
+                address += len(chunk)
+            self.assertEqual(address, end)  # whole instructions
+            self.assertEqual(len(expected), int(size))
+            self.assertEqual(actual, expected)
+
+    def test_defaults_and_read_only_separation(self):
+        config = configparser.ConfigParser()
+        config.read(PLUGIN / 'private_logistics.ini')
+        cpp = (PLUGIN / 'private_logistics.cpp').read_text()
+        runtime = (PLUGIN / 'panel_fuel_runtime.h').read_text()
+        header = (PLUGIN / 'schedule_observer.h').read_text()
+        self.assertEqual(config.getint('private_logistics', 'schedule_observer'), 1)
+        self.assertIn('static int g_scheduleObserverEnabled = 1;', cpp)
+        self.assertIn('H->configInt(ini, "private_logistics", "schedule_observer", 1)', cpp)
+        for forbidden in ('modifyCompanyCapital', 'private_logistics_journey::Tracker',
+                          'WriteProcessMemory', 'FuelSlotTons(', 'reinterpret_cast', 'new ',
+                          'std::vector', 'std::string'):
+            self.assertNotIn(forbidden, header)
+        self.assertIn('if (s.status != private_logistics_schedule::Status::Complete) return;', runtime)
+        self.assertIn('native_job_id=unverified buyer=unverified', runtime)
+        self.assertIn('completion=unverified exact_burn=0 billing=off', runtime)
+        self.assertIn('g_scheduleObserverEnabled && ScheduleTargetMatches()', runtime)
+        self.assertEqual(runtime.count('InstallInlineHook('), 1)  # same existing hook
+
+    def test_gap_endpoint_source_contract(self):
+        header = (PLUGIN / 'schedule_observer.h').read_text()
+        runtime = (PLUGIN / 'panel_fuel_runtime.h').read_text()
+        cpp = (PLUGIN / 'private_logistics.cpp').read_text()
+        history = header.split('class History {', 1)[1]
+        self.assertNotIn('m.Get(', history)  # cached-value comparisons only
+        self.assertEqual(header.count('m.Get('), 13)  # native read sites unchanged
+        self.assertIn('0.18.10-schedule-classification', cpp)
+        self.assertIn('if (d.endpointCompared && d.endpointAcrossGap)', runtime)
+        self.assertIn('compared_across_gap=1 continuity_valid=0', runtime)
+        self.assertIn('native_event_time=unknown', runtime)
+        self.assertIn('[PANEL SCHEDULE PREVIOUS ROW]', runtime)
+        self.assertIn('record.sequence, record.milliseconds', runtime)
+
+    def test_windows_min_max_macros(self):
+        path = Path(self.directory.name) / 'macros.cpp'
+        path.write_text('#include <cstddef>\n#include <cstdint>\n#include <cmath>\n'
+                        '#define max(a,b) ((a)>(b)?(a):(b))\n#define min(a,b) ((a)<(b)?(a):(b))\n'
+                        '#include "schedule_observer.h"\nint main(){return 0;}\n')
+        result = subprocess.run([self.compiler, '-std=c++17', '-Wall', '-Wextra', '-Werror',
+                                 '-I', str(PLUGIN), str(path), '-o', str(Path(self.directory.name) / 'macros')],
+                                capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+for name in re.findall(r'TEST\((\w+)\)', HARNESS.read_text()):
+    def run(self, case=name):
+        self.run_case(case)
+    setattr(ScheduleObserverTest, 'test_' + name, run)
+
+if __name__ == '__main__':
+    unittest.main()
+
+```
+
+### Complete v0.18.10 artifact — `.cache/test6_classification_replay.cpp`
+
+Bytes:21565;SHA256:`62bfd830c170eaad75e9c39892e998b9d37f4b637114cad00fc439dc59a382ea`. Actual source/output, not a paraphrase.
+
+```cpp
+// Replay the 16 EMITTED complete endpoints from user test6, not hidden events.
+#include "schedule_observer.h"
+#include <cstdio>
+#include <cstdlib>
+namespace sch=private_logistics_schedule;
+#define REQUIRE(x) do {if(!(x)){std::fprintf(stderr,"FAIL line %d: %s\n",__LINE__,#x);std::exit(1);}}while(0)
+int main() {
+    sch::History history; unsigned replaced=0,scalarOnly=0;
+    { sch::Snapshot s{};s.status=sch::Status::Complete;
+      s.begin=0x000001AFA9DC77B0ULL;
+      s.end=0x000001AFA9DC77C8ULL;
+      s.configs=0x000001AFAC244EA0ULL;
+      s.raw4a0=0x0000000000000000ULL;
+      s.raw610=0x0000000000000000ULL;
+      s.raw650=0x0000000000000000ULL;
+      s.count=3;s.index698=0;s.flag5fd=0;
+      s.rows[0]={0x000001AF97EABFC0ULL,true,1,0,float(1),float(1)};
+      s.rows[1]={0x000001AF97EA4160ULL,true,0,1,float(1),float(1)};
+      s.rows[2]={0x000001AF97EAD4D0ULL,true,0,0,float(1),float(1)};
+      const auto previous=history.LastValidValues();
+      history.Break();
+      const auto delta=history.Observe(s,2,0x000001AF711E3BA0ULL,0x000001AF97EAD4D0ULL,1,26571984ULL);
+      const auto change=delta.endpointCompared?sch::ClassifyChanges(previous,s):sch::FieldChanges{};
+      const auto pattern=sch::ClassifyPattern(s,0x000001AF97EAD4D0ULL);
+      REQUIRE(delta.fields==0);
+      REQUIRE(delta.storage==0);
+      REQUIRE(delta.index==0);
+      REQUIRE(delta.context==0);
+      REQUIRE(pattern==sch::Pattern::LoadUnload);
+      std::printf("sample=1 pattern=%s compared=%d across_gap=%d count=%d targets=%d flags=%d scalars=%d structure=%d settings_only=%d\n",sch::PatternName(pattern),change.comparable,delta.endpointAcrossGap,change.count,change.targets,change.flags,change.scalars,change.Structure(),change.SettingsOnly());
+    }
+    { sch::Snapshot s{};s.status=sch::Status::Complete;
+      s.begin=0x000001AFA9DC77B0ULL;
+      s.end=0x000001AFA9DC77B0ULL;
+      s.configs=0x000001AFAC244EA0ULL;
+      s.raw4a0=0x0000000000000000ULL;
+      s.raw610=0x0000000000000000ULL;
+      s.raw650=0x0000000000000000ULL;
+      s.count=0;s.index698=0;s.flag5fd=0;
+      const auto previous=history.LastValidValues();
+      history.Break();
+      const auto delta=history.Observe(s,2,0x000001AF711E3BA0ULL,0x000001AF97EAD4D0ULL,2,26578031ULL);
+      const auto change=delta.endpointCompared?sch::ClassifyChanges(previous,s):sch::FieldChanges{};
+      const auto pattern=sch::ClassifyPattern(s,0x000001AF97EAD4D0ULL);
+      REQUIRE(delta.fields==0);
+      REQUIRE(delta.storage==0);
+      REQUIRE(delta.index==0);
+      REQUIRE(delta.context==0);
+      REQUIRE(pattern==sch::Pattern::Empty);
+      std::printf("sample=2 pattern=%s compared=%d across_gap=%d count=%d targets=%d flags=%d scalars=%d structure=%d settings_only=%d\n",sch::PatternName(pattern),change.comparable,delta.endpointAcrossGap,change.count,change.targets,change.flags,change.scalars,change.Structure(),change.SettingsOnly());
+    }
+    { sch::Snapshot s{};s.status=sch::Status::Complete;
+      s.begin=0x000001AFA9DC77B0ULL;
+      s.end=0x000001AFA9DC77B0ULL;
+      s.configs=0x000001AFAC244EA0ULL;
+      s.raw4a0=0x0000000000000000ULL;
+      s.raw610=0x0000000000000000ULL;
+      s.raw650=0x0000000000000000ULL;
+      s.count=0;s.index698=0;s.flag5fd=0;
+      const auto previous=history.LastValidValues();
+      history.Break();
+      const auto delta=history.Observe(s,2,0x000001AF711E3BA0ULL,0x000001AF97EAD4D0ULL,6,26588125ULL);
+      const auto change=delta.endpointCompared?sch::ClassifyChanges(previous,s):sch::FieldChanges{};
+      const auto pattern=sch::ClassifyPattern(s,0x000001AF97EAD4D0ULL);
+      REQUIRE(delta.fields==0);
+      REQUIRE(delta.storage==0);
+      REQUIRE(delta.index==0);
+      REQUIRE(delta.context==0);
+      REQUIRE(pattern==sch::Pattern::Empty);
+      std::printf("sample=6 pattern=%s compared=%d across_gap=%d count=%d targets=%d flags=%d scalars=%d structure=%d settings_only=%d\n",sch::PatternName(pattern),change.comparable,delta.endpointAcrossGap,change.count,change.targets,change.flags,change.scalars,change.Structure(),change.SettingsOnly());
+    }
+    { sch::Snapshot s{};s.status=sch::Status::Complete;
+      s.begin=0x000001AFA9DC77B0ULL;
+      s.end=0x000001AFA9DC77B8ULL;
+      s.configs=0x000001AFAC244EA0ULL;
+      s.raw4a0=0x0000000000000000ULL;
+      s.raw610=0x0000000000000000ULL;
+      s.raw650=0x0000000000000000ULL;
+      s.count=1;s.index698=0;s.flag5fd=0;
+      s.rows[0]={0x000001AF97EAD4D0ULL,true,0,0,float(1),float(1)};
+      const auto previous=history.LastValidValues();
+      const auto delta=history.Observe(s,2,0x000001AF711E3BA0ULL,0x000001AF97EAD4D0ULL,11,26593171ULL);
+      const auto change=delta.endpointCompared?sch::ClassifyChanges(previous,s):sch::FieldChanges{};
+      const auto pattern=sch::ClassifyPattern(s,0x000001AF97EAD4D0ULL);
+      REQUIRE(delta.fields==1);
+      REQUIRE(delta.storage==1);
+      REQUIRE(delta.index==0);
+      REQUIRE(delta.context==0);
+      REQUIRE(pattern==sch::Pattern::OfficeOnly);
+      std::printf("sample=11 pattern=%s compared=%d across_gap=%d count=%d targets=%d flags=%d scalars=%d structure=%d settings_only=%d\n",sch::PatternName(pattern),change.comparable,delta.endpointAcrossGap,change.count,change.targets,change.flags,change.scalars,change.Structure(),change.SettingsOnly());
+    }
+    { sch::Snapshot s{};s.status=sch::Status::Complete;
+      s.begin=0x000001AFA9DC77B0ULL;
+      s.end=0x000001AFA9DC77B8ULL;
+      s.configs=0x000001AFAC244EA0ULL;
+      s.raw4a0=0x0000000000000000ULL;
+      s.raw610=0x0000000000000000ULL;
+      s.raw650=0x0000000000000000ULL;
+      s.count=1;s.index698=0;s.flag5fd=0;
+      s.rows[0]={0x000001AF97EAD4D0ULL,true,0,0,float(1),float(1)};
+      const auto previous=history.LastValidValues();
+      history.Break();
+      const auto delta=history.Observe(s,2,0x000001AF711E3BA0ULL,0x000001AF97EAD4D0ULL,18,26602781ULL);
+      const auto change=delta.endpointCompared?sch::ClassifyChanges(previous,s):sch::FieldChanges{};
+      const auto pattern=sch::ClassifyPattern(s,0x000001AF97EAD4D0ULL);
+      REQUIRE(delta.fields==0);
+      REQUIRE(delta.storage==0);
+      REQUIRE(delta.index==0);
+      REQUIRE(delta.context==0);
+      REQUIRE(pattern==sch::Pattern::OfficeOnly);
+      std::printf("sample=18 pattern=%s compared=%d across_gap=%d count=%d targets=%d flags=%d scalars=%d structure=%d settings_only=%d\n",sch::PatternName(pattern),change.comparable,delta.endpointAcrossGap,change.count,change.targets,change.flags,change.scalars,change.Structure(),change.SettingsOnly());
+    }
+    { sch::Snapshot s{};s.status=sch::Status::Complete;
+      s.begin=0x000001AFA9DC77B0ULL;
+      s.end=0x000001AFA9DC77B8ULL;
+      s.configs=0x000001AFAC244EA0ULL;
+      s.raw4a0=0x0000000000000000ULL;
+      s.raw610=0x0000000000000000ULL;
+      s.raw650=0x0000000000000000ULL;
+      s.count=1;s.index698=0;s.flag5fd=0;
+      s.rows[0]={0x000001AF97EAD4D0ULL,true,0,0,float(1),float(1)};
+      const auto previous=history.LastValidValues();
+      history.Break();
+      const auto delta=history.Observe(s,2,0x000001AF711E3BA0ULL,0x000001AF97EAD4D0ULL,22,26619000ULL);
+      const auto change=delta.endpointCompared?sch::ClassifyChanges(previous,s):sch::FieldChanges{};
+      const auto pattern=sch::ClassifyPattern(s,0x000001AF97EAD4D0ULL);
+      REQUIRE(delta.fields==0);
+      REQUIRE(delta.storage==0);
+      REQUIRE(delta.index==0);
+      REQUIRE(delta.context==0);
+      REQUIRE(pattern==sch::Pattern::OfficeOnly);
+      std::printf("sample=22 pattern=%s compared=%d across_gap=%d count=%d targets=%d flags=%d scalars=%d structure=%d settings_only=%d\n",sch::PatternName(pattern),change.comparable,delta.endpointAcrossGap,change.count,change.targets,change.flags,change.scalars,change.Structure(),change.SettingsOnly());
+    }
+    { sch::Snapshot s{};s.status=sch::Status::Complete;
+      s.begin=0x000001AFA9DC77B0ULL;
+      s.end=0x000001AFA9DC77C8ULL;
+      s.configs=0x000001AFAC244EA0ULL;
+      s.raw4a0=0x0000000000000000ULL;
+      s.raw610=0x0000000000000000ULL;
+      s.raw650=0x0000000000000000ULL;
+      s.count=3;s.index698=0;s.flag5fd=0;
+      s.rows[0]={0x000001AF97EABFC0ULL,true,1,0,float(1),float(1)};
+      s.rows[1]={0x000001AF97EA4160ULL,true,0,1,float(1),float(1)};
+      s.rows[2]={0x000001AF97EAD4D0ULL,true,0,0,float(1),float(1)};
+      const auto previous=history.LastValidValues();
+      const auto delta=history.Observe(s,2,0x000001AF711E3BA0ULL,0x000001AF97EAD4D0ULL,34,26631093ULL);
+      const auto change=delta.endpointCompared?sch::ClassifyChanges(previous,s):sch::FieldChanges{};
+      const auto pattern=sch::ClassifyPattern(s,0x000001AF97EAD4D0ULL);
+      REQUIRE(delta.fields==1);
+      REQUIRE(delta.storage==1);
+      REQUIRE(delta.index==0);
+      REQUIRE(delta.context==0);
+      REQUIRE(pattern==sch::Pattern::LoadUnload);
+      std::printf("sample=34 pattern=%s compared=%d across_gap=%d count=%d targets=%d flags=%d scalars=%d structure=%d settings_only=%d\n",sch::PatternName(pattern),change.comparable,delta.endpointAcrossGap,change.count,change.targets,change.flags,change.scalars,change.Structure(),change.SettingsOnly());
+    }
+    { sch::Snapshot s{};s.status=sch::Status::Complete;
+      s.begin=0x000001AFA9DC77B0ULL;
+      s.end=0x000001AFA9DC77C8ULL;
+      s.configs=0x000001AFAC244EA0ULL;
+      s.raw4a0=0x0000000000000000ULL;
+      s.raw610=0x0000000000000000ULL;
+      s.raw650=0x0000000000000000ULL;
+      s.count=3;s.index698=0;s.flag5fd=0;
+      s.rows[0]={0x000001AF97EABFC0ULL,true,1,0,float(1),float(1)};
+      s.rows[1]={0x000001AF97EA4160ULL,true,0,1,float(1),float(1)};
+      s.rows[2]={0x000001AF97EAD4D0ULL,true,0,0,float(1),float(1)};
+      const auto previous=history.LastValidValues();
+      history.Break();
+      const auto delta=history.Observe(s,2,0x000001AF711E3BA0ULL,0x000001AF97EAD4D0ULL,35,26646187ULL);
+      const auto change=delta.endpointCompared?sch::ClassifyChanges(previous,s):sch::FieldChanges{};
+      const auto pattern=sch::ClassifyPattern(s,0x000001AF97EAD4D0ULL);
+      REQUIRE(delta.fields==0);
+      REQUIRE(delta.storage==0);
+      REQUIRE(delta.index==0);
+      REQUIRE(delta.context==0);
+      REQUIRE(pattern==sch::Pattern::LoadUnload);
+      std::printf("sample=35 pattern=%s compared=%d across_gap=%d count=%d targets=%d flags=%d scalars=%d structure=%d settings_only=%d\n",sch::PatternName(pattern),change.comparable,delta.endpointAcrossGap,change.count,change.targets,change.flags,change.scalars,change.Structure(),change.SettingsOnly());
+    }
+    { sch::Snapshot s{};s.status=sch::Status::Complete;
+      s.begin=0x000001AFA9DC77B0ULL;
+      s.end=0x000001AFA9DC77C8ULL;
+      s.configs=0x000001AFAC244EA0ULL;
+      s.raw4a0=0x0000000000000000ULL;
+      s.raw610=0x0000000000000000ULL;
+      s.raw650=0x0000000000000000ULL;
+      s.count=3;s.index698=1;s.flag5fd=0;
+      s.rows[0]={0x000001AF97EABFC0ULL,true,1,0,float(1),float(1)};
+      s.rows[1]={0x000001AF97EA4160ULL,true,0,1,float(1),float(1)};
+      s.rows[2]={0x000001AF97EAD4D0ULL,true,0,0,float(1),float(1)};
+      const auto previous=history.LastValidValues();
+      const auto delta=history.Observe(s,2,0x000001AF711E3BA0ULL,0x000001AF97EAD4D0ULL,53,26664281ULL);
+      const auto change=delta.endpointCompared?sch::ClassifyChanges(previous,s):sch::FieldChanges{};
+      const auto pattern=sch::ClassifyPattern(s,0x000001AF97EAD4D0ULL);
+      REQUIRE(delta.fields==0);
+      REQUIRE(delta.storage==0);
+      REQUIRE(delta.index==1);
+      REQUIRE(delta.context==0);
+      REQUIRE(pattern==sch::Pattern::LoadUnload);
+      std::printf("sample=53 pattern=%s compared=%d across_gap=%d count=%d targets=%d flags=%d scalars=%d structure=%d settings_only=%d\n",sch::PatternName(pattern),change.comparable,delta.endpointAcrossGap,change.count,change.targets,change.flags,change.scalars,change.Structure(),change.SettingsOnly());
+    }
+    { sch::Snapshot s{};s.status=sch::Status::Complete;
+      s.begin=0x000001AFA9DC77B0ULL;
+      s.end=0x000001AFA9DC77C8ULL;
+      s.configs=0x000001AFAC244EA0ULL;
+      s.raw4a0=0x0000000000000000ULL;
+      s.raw610=0x0000000000000000ULL;
+      s.raw650=0x0000000000000000ULL;
+      s.count=3;s.index698=2;s.flag5fd=0;
+      s.rows[0]={0x000001AF97EABFC0ULL,true,1,0,float(1),float(1)};
+      s.rows[1]={0x000001AF97EA4160ULL,true,0,1,float(1),float(1)};
+      s.rows[2]={0x000001AF97EAD4D0ULL,true,0,0,float(1),float(1)};
+      const auto previous=history.LastValidValues();
+      const auto delta=history.Observe(s,2,0x000001AF711E3BA0ULL,0x000001AF97EAD4D0ULL,73,26684375ULL);
+      const auto change=delta.endpointCompared?sch::ClassifyChanges(previous,s):sch::FieldChanges{};
+      const auto pattern=sch::ClassifyPattern(s,0x000001AF97EAD4D0ULL);
+      REQUIRE(delta.fields==0);
+      REQUIRE(delta.storage==0);
+      REQUIRE(delta.index==1);
+      REQUIRE(delta.context==0);
+      REQUIRE(pattern==sch::Pattern::LoadUnload);
+      std::printf("sample=73 pattern=%s compared=%d across_gap=%d count=%d targets=%d flags=%d scalars=%d structure=%d settings_only=%d\n",sch::PatternName(pattern),change.comparable,delta.endpointAcrossGap,change.count,change.targets,change.flags,change.scalars,change.Structure(),change.SettingsOnly());
+    }
+    { sch::Snapshot s{};s.status=sch::Status::Complete;
+      s.begin=0x000001AFA9DC77B0ULL;
+      s.end=0x000001AFA9DC77C8ULL;
+      s.configs=0x000001AFAC244EA0ULL;
+      s.raw4a0=0x0000000000000000ULL;
+      s.raw610=0x0000000000000000ULL;
+      s.raw650=0x0000000000000000ULL;
+      s.count=3;s.index698=0;s.flag5fd=0;
+      s.rows[0]={0x000001AF97EABFC0ULL,true,1,0,float(0.509669125),float(1)};
+      s.rows[1]={0x000001AF97EA0230ULL,true,0,1,float(1),float(1)};
+      s.rows[2]={0x000001AF97EAD4D0ULL,true,0,0,float(1),float(1)};
+      const auto previous=history.LastValidValues();
+      const auto delta=history.Observe(s,2,0x000001AF711E3BA0ULL,0x000001AF97EAD4D0ULL,79,26690390ULL);
+      const auto change=delta.endpointCompared?sch::ClassifyChanges(previous,s):sch::FieldChanges{};
+      const auto pattern=sch::ClassifyPattern(s,0x000001AF97EAD4D0ULL);
+      REQUIRE(delta.fields==1);
+      REQUIRE(delta.storage==0);
+      REQUIRE(delta.index==1);
+      REQUIRE(delta.context==0);
+      REQUIRE(change.targets && !change.count && change.Structure() && change.scalars && !change.SettingsOnly());++replaced;
+      REQUIRE(pattern==sch::Pattern::LoadUnload);
+      std::printf("sample=79 pattern=%s compared=%d across_gap=%d count=%d targets=%d flags=%d scalars=%d structure=%d settings_only=%d\n",sch::PatternName(pattern),change.comparable,delta.endpointAcrossGap,change.count,change.targets,change.flags,change.scalars,change.Structure(),change.SettingsOnly());
+    }
+    { sch::Snapshot s{};s.status=sch::Status::Complete;
+      s.begin=0x000001AFA9DC77B0ULL;
+      s.end=0x000001AFA9DC77C8ULL;
+      s.configs=0x000001AFAC244EA0ULL;
+      s.raw4a0=0x0000000000000000ULL;
+      s.raw610=0x0000000000000000ULL;
+      s.raw650=0x0000000000000000ULL;
+      s.count=3;s.index698=0;s.flag5fd=0;
+      s.rows[0]={0x000001AF97EABFC0ULL,true,1,0,float(0.509669125),float(1)};
+      s.rows[1]={0x000001AF97EA0230ULL,true,0,1,float(1),float(1)};
+      s.rows[2]={0x000001AF97EAD4D0ULL,true,0,0,float(1),float(1)};
+      const auto previous=history.LastValidValues();
+      history.Break();
+      const auto delta=history.Observe(s,2,0x000001AF711E3BA0ULL,0x000001AF97EAD4D0ULL,80,26701375ULL);
+      const auto change=delta.endpointCompared?sch::ClassifyChanges(previous,s):sch::FieldChanges{};
+      const auto pattern=sch::ClassifyPattern(s,0x000001AF97EAD4D0ULL);
+      REQUIRE(delta.fields==0);
+      REQUIRE(delta.storage==0);
+      REQUIRE(delta.index==0);
+      REQUIRE(delta.context==0);
+      REQUIRE(pattern==sch::Pattern::LoadUnload);
+      std::printf("sample=80 pattern=%s compared=%d across_gap=%d count=%d targets=%d flags=%d scalars=%d structure=%d settings_only=%d\n",sch::PatternName(pattern),change.comparable,delta.endpointAcrossGap,change.count,change.targets,change.flags,change.scalars,change.Structure(),change.SettingsOnly());
+    }
+    { sch::Snapshot s{};s.status=sch::Status::Complete;
+      s.begin=0x000001AFA9DC77B0ULL;
+      s.end=0x000001AFA9DC77C8ULL;
+      s.configs=0x000001AFAC244EA0ULL;
+      s.raw4a0=0x0000000000000000ULL;
+      s.raw610=0x0000000000000000ULL;
+      s.raw650=0x0000000000000000ULL;
+      s.count=3;s.index698=0;s.flag5fd=0;
+      s.rows[0]={0x000001AF97EABFC0ULL,true,1,0,float(0.509832323),float(1)};
+      s.rows[1]={0x000001AF97EA0230ULL,true,0,1,float(1),float(1)};
+      s.rows[2]={0x000001AF97EAD4D0ULL,true,0,0,float(1),float(1)};
+      const auto previous=history.LastValidValues();
+      const auto delta=history.Observe(s,2,0x000001AF711E3BA0ULL,0x000001AF97EAD4D0ULL,91,26713531ULL);
+      const auto change=delta.endpointCompared?sch::ClassifyChanges(previous,s):sch::FieldChanges{};
+      const auto pattern=sch::ClassifyPattern(s,0x000001AF97EAD4D0ULL);
+      REQUIRE(delta.fields==1);
+      REQUIRE(delta.storage==0);
+      REQUIRE(delta.index==0);
+      REQUIRE(delta.context==0);
+      REQUIRE(!change.Structure() && change.scalars && !change.flags && change.SettingsOnly());++scalarOnly;
+      REQUIRE(pattern==sch::Pattern::LoadUnload);
+      std::printf("sample=91 pattern=%s compared=%d across_gap=%d count=%d targets=%d flags=%d scalars=%d structure=%d settings_only=%d\n",sch::PatternName(pattern),change.comparable,delta.endpointAcrossGap,change.count,change.targets,change.flags,change.scalars,change.Structure(),change.SettingsOnly());
+    }
+    { sch::Snapshot s{};s.status=sch::Status::Complete;
+      s.begin=0x000001AFA9DC77B0ULL;
+      s.end=0x000001AFA9DC77C8ULL;
+      s.configs=0x000001AFAC244EA0ULL;
+      s.raw4a0=0x0000000000000000ULL;
+      s.raw610=0x0000000000000000ULL;
+      s.raw650=0x0000000000000000ULL;
+      s.count=3;s.index698=1;s.flag5fd=0;
+      s.rows[0]={0x000001AF97EABFC0ULL,true,1,0,float(0.509832323),float(1)};
+      s.rows[1]={0x000001AF97EA0230ULL,true,0,1,float(1),float(1)};
+      s.rows[2]={0x000001AF97EAD4D0ULL,true,0,0,float(1),float(1)};
+      const auto previous=history.LastValidValues();
+      const auto delta=history.Observe(s,2,0x000001AF711E3BA0ULL,0x000001AF97EAD4D0ULL,93,26715546ULL);
+      const auto change=delta.endpointCompared?sch::ClassifyChanges(previous,s):sch::FieldChanges{};
+      const auto pattern=sch::ClassifyPattern(s,0x000001AF97EAD4D0ULL);
+      REQUIRE(delta.fields==0);
+      REQUIRE(delta.storage==0);
+      REQUIRE(delta.index==1);
+      REQUIRE(delta.context==0);
+      REQUIRE(pattern==sch::Pattern::LoadUnload);
+      std::printf("sample=93 pattern=%s compared=%d across_gap=%d count=%d targets=%d flags=%d scalars=%d structure=%d settings_only=%d\n",sch::PatternName(pattern),change.comparable,delta.endpointAcrossGap,change.count,change.targets,change.flags,change.scalars,change.Structure(),change.SettingsOnly());
+    }
+    { sch::Snapshot s{};s.status=sch::Status::Complete;
+      s.begin=0x000001AFA9DC77B0ULL;
+      s.end=0x000001AFA9DC77C8ULL;
+      s.configs=0x000001AFAC244EA0ULL;
+      s.raw4a0=0x0000000000000000ULL;
+      s.raw610=0x0000000000000000ULL;
+      s.raw650=0x0000000000000000ULL;
+      s.count=3;s.index698=2;s.flag5fd=0;
+      s.rows[0]={0x000001AF97EABFC0ULL,true,1,0,float(0.509832323),float(1)};
+      s.rows[1]={0x000001AF97EA0230ULL,true,0,1,float(1),float(1)};
+      s.rows[2]={0x000001AF97EAD4D0ULL,true,0,0,float(1),float(1)};
+      const auto previous=history.LastValidValues();
+      const auto delta=history.Observe(s,2,0x000001AF711E3BA0ULL,0x000001AF97EAD4D0ULL,109,26732328ULL);
+      const auto change=delta.endpointCompared?sch::ClassifyChanges(previous,s):sch::FieldChanges{};
+      const auto pattern=sch::ClassifyPattern(s,0x000001AF97EAD4D0ULL);
+      REQUIRE(delta.fields==0);
+      REQUIRE(delta.storage==0);
+      REQUIRE(delta.index==1);
+      REQUIRE(delta.context==0);
+      REQUIRE(pattern==sch::Pattern::LoadUnload);
+      std::printf("sample=109 pattern=%s compared=%d across_gap=%d count=%d targets=%d flags=%d scalars=%d structure=%d settings_only=%d\n",sch::PatternName(pattern),change.comparable,delta.endpointAcrossGap,change.count,change.targets,change.flags,change.scalars,change.Structure(),change.SettingsOnly());
+    }
+    { sch::Snapshot s{};s.status=sch::Status::Complete;
+      s.begin=0x000001AFA9DC77B0ULL;
+      s.end=0x000001AFA9DC77B0ULL;
+      s.configs=0x000001AFAC244EA0ULL;
+      s.raw4a0=0x0000000000000000ULL;
+      s.raw610=0x0000000000000000ULL;
+      s.raw650=0x0000000000000000ULL;
+      s.count=0;s.index698=2;s.flag5fd=0;
+      const auto previous=history.LastValidValues();
+      const auto delta=history.Observe(s,2,0x000001AF711E3BA0ULL,0x000001AF97EAD4D0ULL,121,26744515ULL);
+      const auto change=delta.endpointCompared?sch::ClassifyChanges(previous,s):sch::FieldChanges{};
+      const auto pattern=sch::ClassifyPattern(s,0x000001AF97EAD4D0ULL);
+      REQUIRE(delta.fields==1);
+      REQUIRE(delta.storage==1);
+      REQUIRE(delta.index==0);
+      REQUIRE(delta.context==0);
+      REQUIRE(pattern==sch::Pattern::Empty);
+      std::printf("sample=121 pattern=%s compared=%d across_gap=%d count=%d targets=%d flags=%d scalars=%d structure=%d settings_only=%d\n",sch::PatternName(pattern),change.comparable,delta.endpointAcrossGap,change.count,change.targets,change.flags,change.scalars,change.Structure(),change.SettingsOnly());
+    }
+    REQUIRE(replaced==1 && scalarOnly==1);std::puts("PASS: test6 target replacement79 and scalar-only update91 distinguished; patterns classified; original flags preserved. Host replay, not a new DLL/game test.");
+}
+
+```
+
+### Complete v0.18.10 artifact — `.cache/test6-classification-results.txt`
+
+Bytes:2131;SHA256:`f8b81703d39b56b4b9b989e8c8d71f2957e2243ce8b9120d712e1cf0cf3e9b8e`. Actual source/output, not a paraphrase.
+
+```text
+sample=1 pattern=load_unload_pattern compared=0 across_gap=0 count=0 targets=0 flags=0 scalars=0 structure=0 settings_only=0
+sample=2 pattern=empty compared=1 across_gap=1 count=1 targets=0 flags=0 scalars=0 structure=1 settings_only=0
+sample=6 pattern=empty compared=1 across_gap=1 count=0 targets=0 flags=0 scalars=0 structure=0 settings_only=0
+sample=11 pattern=office_only_pattern compared=1 across_gap=0 count=1 targets=0 flags=0 scalars=0 structure=1 settings_only=0
+sample=18 pattern=office_only_pattern compared=1 across_gap=1 count=0 targets=0 flags=0 scalars=0 structure=0 settings_only=0
+sample=22 pattern=office_only_pattern compared=1 across_gap=1 count=0 targets=0 flags=0 scalars=0 structure=0 settings_only=0
+sample=34 pattern=load_unload_pattern compared=1 across_gap=0 count=1 targets=1 flags=1 scalars=0 structure=1 settings_only=0
+sample=35 pattern=load_unload_pattern compared=1 across_gap=1 count=0 targets=0 flags=0 scalars=0 structure=0 settings_only=0
+sample=53 pattern=load_unload_pattern compared=1 across_gap=0 count=0 targets=0 flags=0 scalars=0 structure=0 settings_only=0
+sample=73 pattern=load_unload_pattern compared=1 across_gap=0 count=0 targets=0 flags=0 scalars=0 structure=0 settings_only=0
+sample=79 pattern=load_unload_pattern compared=1 across_gap=0 count=0 targets=1 flags=0 scalars=1 structure=1 settings_only=0
+sample=80 pattern=load_unload_pattern compared=1 across_gap=1 count=0 targets=0 flags=0 scalars=0 structure=0 settings_only=0
+sample=91 pattern=load_unload_pattern compared=1 across_gap=0 count=0 targets=0 flags=0 scalars=1 structure=0 settings_only=1
+sample=93 pattern=load_unload_pattern compared=1 across_gap=0 count=0 targets=0 flags=0 scalars=0 structure=0 settings_only=0
+sample=109 pattern=load_unload_pattern compared=1 across_gap=0 count=0 targets=0 flags=0 scalars=0 structure=0 settings_only=0
+sample=121 pattern=empty compared=1 across_gap=0 count=1 targets=0 flags=0 scalars=0 structure=1 settings_only=0
+PASS: test6 target replacement79 and scalar-only update91 distinguished; patterns classified; original flags preserved. Host replay, not a new DLL/game test.
+
+```
+
+### Complete v0.18.10 artifact — `.cache/schedule-01810-tests.txt`
+
+Bytes:5020;SHA256:`5266d3da47bff05b38d95111ba4d6a2149682c9e96abdd8107cc0a60a4485011`. Actual source/output, not a paraphrase.
+
+```text
+test_defaults_and_read_only_separation (__main__.ScheduleObserverTest.test_defaults_and_read_only_separation) ... ok
+test_gap_endpoint_source_contract (__main__.ScheduleObserverTest.test_gap_endpoint_source_contract) ... ok
+test_native_fingerprints_match_existing_raw_bytes (__main__.ScheduleObserverTest.test_native_fingerprints_match_existing_raw_bytes) ... ok
+test_production_runtime_enabled (__main__.ScheduleObserverTest.test_production_runtime_enabled) ... ok
+test_schedule_bad_bounds_and_oversize_do_not_walk (__main__.ScheduleObserverTest.test_schedule_bad_bounds_and_oversize_do_not_walk) ... ok
+test_schedule_classification_flags_and_availability_are_separate (__main__.ScheduleObserverTest.test_schedule_classification_flags_and_availability_are_separate) ... ok
+test_schedule_classification_gap_does_not_override_original_guard (__main__.ScheduleObserverTest.test_schedule_classification_gap_does_not_override_original_guard) ... ok
+test_schedule_classification_scalar_only_preserves_exact_value (__main__.ScheduleObserverTest.test_schedule_classification_scalar_only_preserves_exact_value) ... ok
+test_schedule_classification_structure_not_storage_or_index (__main__.ScheduleObserverTest.test_schedule_classification_structure_not_storage_or_index) ... ok
+test_schedule_empty_list_is_valid_not_completion (__main__.ScheduleObserverTest.test_schedule_empty_list_is_valid_not_completion) ... ok
+test_schedule_endpoint_equal_endpoints_do_not_invent_hidden_aba (__main__.ScheduleObserverTest.test_schedule_endpoint_equal_endpoints_do_not_invent_hidden_aba) ... ok
+test_schedule_endpoint_invalid_identity_cannot_resurrect_cache (__main__.ScheduleObserverTest.test_schedule_endpoint_invalid_identity_cannot_resurrect_cache) ... ok
+test_schedule_endpoint_invalid_is_not_an_empty_schedule (__main__.ScheduleObserverTest.test_schedule_endpoint_invalid_is_not_an_empty_schedule) ... ok
+test_schedule_endpoint_vehicle_home_and_load_never_join (__main__.ScheduleObserverTest.test_schedule_endpoint_vehicle_home_and_load_never_join) ... ok
+test_schedule_gap_changed_endpoint_keeps_original_delta_guards (__main__.ScheduleObserverTest.test_schedule_gap_changed_endpoint_keeps_original_delta_guards) ... ok
+test_schedule_gap_empty_then_three_rows_are_endpoint_differences (__main__.ScheduleObserverTest.test_schedule_gap_empty_then_three_rows_are_endpoint_differences) ... ok
+test_schedule_gap_unchanged_storage_index_context_are_independent (__main__.ScheduleObserverTest.test_schedule_gap_unchanged_storage_index_context_are_independent) ... ok
+test_schedule_header_and_row_mutation_rejected (__main__.ScheduleObserverTest.test_schedule_header_and_row_mutation_rejected) ... ok
+test_schedule_history_epoch_identity_and_gaps_rebaseline_no_deltas (__main__.ScheduleObserverTest.test_schedule_history_epoch_identity_and_gaps_rebaseline_no_deltas) ... ok
+test_schedule_history_field_storage_and_context_changes_separate (__main__.ScheduleObserverTest.test_schedule_history_field_storage_and_context_changes_separate) ... ok
+test_schedule_history_first_unchanged_and_index_only (__main__.ScheduleObserverTest.test_schedule_history_first_unchanged_and_index_only) ... ok
+test_schedule_history_list_clear_replacement_are_observed_fields_only (__main__.ScheduleObserverTest.test_schedule_history_list_clear_replacement_are_observed_fields_only) ... ok
+test_schedule_history_three_one_three_rows_and_same_count_replacement (__main__.ScheduleObserverTest.test_schedule_history_three_one_three_rows_and_same_count_replacement) ... ok
+test_schedule_identical_visible_schedule_is_not_new_job (__main__.ScheduleObserverTest.test_schedule_identical_visible_schedule_is_not_new_job) ... ok
+test_schedule_max_rows_and_checked_arithmetic (__main__.ScheduleObserverTest.test_schedule_max_rows_and_checked_arithmetic) ... ok
+test_schedule_missing_header_and_config_fail_closed (__main__.ScheduleObserverTest.test_schedule_missing_header_and_config_fail_closed) ... ok
+test_schedule_nonfinite_no_partial_table (__main__.ScheduleObserverTest.test_schedule_nonfinite_no_partial_table) ... ok
+test_schedule_null_target_and_unknown_index_preserved (__main__.ScheduleObserverTest.test_schedule_null_target_and_unknown_index_preserved) ... ok
+test_schedule_pattern_load_unload_is_conservative (__main__.ScheduleObserverTest.test_schedule_pattern_load_unload_is_conservative) ... ok
+test_schedule_pattern_office_empty_and_invalid_do_not_invent_jobs (__main__.ScheduleObserverTest.test_schedule_pattern_office_empty_and_invalid_do_not_invent_jobs) ... ok
+test_schedule_selected_fields_mapping_no_pointee_following (__main__.ScheduleObserverTest.test_schedule_selected_fields_mapping_no_pointee_following) ... ok
+test_schedule_special_last_row_does_not_read_config (__main__.ScheduleObserverTest.test_schedule_special_last_row_does_not_read_config) ... ok
+test_windows_min_max_macros (__main__.ScheduleObserverTest.test_windows_min_max_macros) ... ok
+
+----------------------------------------------------------------------
+Ran 33 tests in 3.653s
+
+OK
+
+```
+
+### Complete v0.18.10 artifact — `.cache/private-logistics-01810-suite.txt`
+
+Bytes:14258;SHA256:`8b968e35fcb85dec037485b874837d109835f15f5d29256ff20b342c3c0e6dbd`. Actual source/output, not a paraphrase.
+
+```text
+test_existing_targets_are_still_deduplicated (test_automatic_reconnection.AutomaticReconnectionTest.test_existing_targets_are_still_deduplicated) ... ok
+test_missing_generated_target_is_not_a_permanent_veto (test_automatic_reconnection.AutomaticReconnectionTest.test_missing_generated_target_is_not_a_permanent_veto) ... ok
+test_state_opt_in_and_native_capacity_guards_are_not_removed (test_automatic_reconnection.AutomaticReconnectionTest.test_state_opt_in_and_native_capacity_guards_are_not_removed) ... ok
+test_actual_readtank_and_slot_reader_with_host_memory (test_fuel_diagnostics.FuelDiagnosticsTest.test_actual_readtank_and_slot_reader_with_host_memory) ... ok
+test_candidate_provenance_core (test_fuel_diagnostics.FuelDiagnosticsTest.test_candidate_provenance_core) ... ok
+test_no_sampled_burn_calibration_or_tracker_feed (test_fuel_diagnostics.FuelDiagnosticsTest.test_no_sampled_burn_calibration_or_tracker_feed) ... ok
+test_tariff_logs_are_model_fragments_not_charged_totals (test_fuel_diagnostics.FuelDiagnosticsTest.test_tariff_logs_are_model_fragments_not_charged_totals) ... ok
+test_boundaries (test_journey_tracker.JourneyTrackerTest.test_boundaries) ... ok
+test_conflicting_duplicate (test_journey_tracker.JourneyTrackerTest.test_conflicting_duplicate) ... ok
+test_coverage_default_is_unverified (test_journey_tracker.JourneyTrackerTest.test_coverage_default_is_unverified) ... ok
+test_duplicate_burn_and_equal_values (test_journey_tracker.JourneyTrackerTest.test_duplicate_burn_and_equal_values) ... ok
+test_duplicate_completion (test_journey_tracker.JourneyTrackerTest.test_duplicate_completion) ... ok
+test_explicit_gap (test_journey_tracker.JourneyTrackerTest.test_explicit_gap) ... ok
+test_format_incomplete (test_journey_tracker.JourneyTrackerTest.test_format_incomplete) ... ok
+test_formatted_output (test_journey_tracker.JourneyTrackerTest.test_formatted_output) ... ok
+test_fuel_excluded (test_journey_tracker.JourneyTrackerTest.test_fuel_excluded) ... ok
+test_gap_empty_payload_not_baseline (test_journey_tracker.JourneyTrackerTest.test_gap_empty_payload_not_baseline) ... ok
+test_identity_changes (test_journey_tracker.JourneyTrackerTest.test_identity_changes) ... ok
+test_initially_loaded (test_journey_tracker.JourneyTrackerTest.test_initially_loaded) ... ok
+test_interleaved_vehicles (test_journey_tracker.JourneyTrackerTest.test_interleaved_vehicles) ... ok
+test_invalid_cargo (test_journey_tracker.JourneyTrackerTest.test_invalid_cargo) ... ok
+test_invalid_enums (test_journey_tracker.JourneyTrackerTest.test_invalid_enums) ... ok
+test_invalid_fuel (test_journey_tracker.JourneyTrackerTest.test_invalid_fuel) ... ok
+test_mismatched_cargo (test_journey_tracker.JourneyTrackerTest.test_mismatched_cargo) ... ok
+test_overflow (test_journey_tracker.JourneyTrackerTest.test_overflow) ... ok
+test_partial_snapshots_and_residue (test_journey_tracker.JourneyTrackerTest.test_partial_snapshots_and_residue) ... ok
+test_randomized_journeys (test_journey_tracker.JourneyTrackerTest.test_randomized_journeys) ... ok
+test_refill_does_not_cancel_burn (test_journey_tracker.JourneyTrackerTest.test_refill_does_not_cancel_burn) ... ok
+test_reload_reset (test_journey_tracker.JourneyTrackerTest.test_reload_reset) ... ok
+test_runtime_wiring_remains_deferred (test_journey_tracker.JourneyTrackerTest.test_runtime_wiring_remains_deferred) ... ok
+test_sequence_exhaustion (test_journey_tracker.JourneyTrackerTest.test_sequence_exhaustion) ... ok
+test_sequence_gap (test_journey_tracker.JourneyTrackerTest.test_sequence_gap) ... ok
+test_sequence_order (test_journey_tracker.JourneyTrackerTest.test_sequence_order) ... ok
+test_snapshots_not_transfers (test_journey_tracker.JourneyTrackerTest.test_snapshots_not_transfers) ... ok
+test_transfer_before_is_baseline (test_journey_tracker.JourneyTrackerTest.test_transfer_before_is_baseline) ... ok
+test_two_journeys (test_journey_tracker.JourneyTrackerTest.test_two_journeys) ... ok
+test_uncertain_evidence (test_journey_tracker.JourneyTrackerTest.test_uncertain_evidence) ... ok
+test_windows_min_max_macro_compatibility (test_journey_tracker.JourneyTrackerTest.test_windows_min_max_macro_compatibility) ... ok
+test_zero_deductions (test_journey_tracker.JourneyTrackerTest.test_zero_deductions) ... ok
+test_address_overflow_does_not_call_reader (test_panel_fuel_observer.PanelFuelObserverTest.test_address_overflow_does_not_call_reader) ... ok
+test_arithmetic_overflow_is_unavailable (test_panel_fuel_observer.PanelFuelObserverTest.test_arithmetic_overflow_is_unavailable) ... ok
+test_capture_is_read_only_and_bounded (test_panel_fuel_observer.PanelFuelObserverTest.test_capture_is_read_only_and_bounded) ... ok
+test_flags_are_evidence_not_literal_mode_proof (test_panel_fuel_observer.PanelFuelObserverTest.test_flags_are_evidence_not_literal_mode_proof) ... ok
+test_fleet_bounds_and_duplicate_membership (test_panel_fuel_observer.PanelFuelObserverTest.test_fleet_bounds_and_duplicate_membership) ... ok
+test_home_pointer_alone_is_not_membership (test_panel_fuel_observer.PanelFuelObserverTest.test_home_pointer_alone_is_not_membership) ... ok
+test_hook_fingerprint_and_full_instruction_boundary (test_panel_fuel_observer.PanelFuelObserverTest.test_hook_fingerprint_and_full_instruction_boundary) ... ok
+test_invalid_links_never_produce_partial_total (test_panel_fuel_observer.PanelFuelObserverTest.test_invalid_links_never_produce_partial_total) ... ok
+test_literal_litres_and_identity (test_panel_fuel_observer.PanelFuelObserverTest.test_literal_litres_and_identity) ... ok
+test_matching_test_defaults_and_no_tracker_wiring (test_panel_fuel_observer.PanelFuelObserverTest.test_matching_test_defaults_and_no_tracker_wiring) ... ok
+test_negative_raw_is_preserved_not_burn (test_panel_fuel_observer.PanelFuelObserverTest.test_negative_raw_is_preserved_not_burn) ... ok
+test_nonfinite_is_unavailable (test_panel_fuel_observer.PanelFuelObserverTest.test_nonfinite_is_unavailable) ... ok
+test_nonpositive_capacity_excludes_current (test_panel_fuel_observer.PanelFuelObserverTest.test_nonpositive_capacity_excludes_current) ... ok
+test_optional_capacity_adjustment_is_not_guessed (test_panel_fuel_observer.PanelFuelObserverTest.test_optional_capacity_adjustment_is_not_guessed) ... ok
+test_production_runtime_with_host_shim (test_panel_fuel_observer.PanelFuelObserverTest.test_production_runtime_with_host_shim) ... ok
+test_reader_has_no_native_calls_or_settlements (test_panel_fuel_observer.PanelFuelObserverTest.test_reader_has_no_native_calls_or_settlements) ... ok
+test_render_path_is_bounded_nonblocking_no_io (test_panel_fuel_observer.PanelFuelObserverTest.test_render_path_is_bounded_nonblocking_no_io) ... ok
+test_root_plus_child (test_panel_fuel_observer.PanelFuelObserverTest.test_root_plus_child) ... ok
+test_snapshot_reuse_clears_old_pointer_and_quantity (test_panel_fuel_observer.PanelFuelObserverTest.test_snapshot_reuse_clears_old_pointer_and_quantity) ... ok
+test_unreadable_current_keeps_identity_but_not_total (test_panel_fuel_observer.PanelFuelObserverTest.test_unreadable_current_keeps_identity_but_not_total) ... ok
+test_window_gates_and_4f8_not_required (test_panel_fuel_observer.PanelFuelObserverTest.test_window_gates_and_4f8_not_required) ... ok
+test_windows_min_max_macros (test_panel_fuel_observer.PanelFuelObserverTest.test_windows_min_max_macros) ... ok
+test_ini_and_fallback_match_permissions_test (test_permission_test_defaults.PermissionTestDefaults.test_ini_and_fallback_match_permissions_test) ... ok
+test_manually_added_customs_is_not_rewritten_as_unsupported (test_permission_test_defaults.PermissionTestDefaults.test_manually_added_customs_is_not_rewritten_as_unsupported) ... ok
+test_new_and_present_targets_request_activation (test_permission_test_defaults.PermissionTestDefaults.test_new_and_present_targets_request_activation) ... ok
+test_probe_defaults_match_required_capture_budget (test_permission_test_defaults.PermissionTestDefaults.test_probe_defaults_match_required_capture_budget) ... ok
+test_defaults_and_read_only_separation (test_schedule_observer.ScheduleObserverTest.test_defaults_and_read_only_separation) ... ok
+test_gap_endpoint_source_contract (test_schedule_observer.ScheduleObserverTest.test_gap_endpoint_source_contract) ... ok
+test_native_fingerprints_match_existing_raw_bytes (test_schedule_observer.ScheduleObserverTest.test_native_fingerprints_match_existing_raw_bytes) ... ok
+test_production_runtime_enabled (test_schedule_observer.ScheduleObserverTest.test_production_runtime_enabled) ... ok
+test_schedule_bad_bounds_and_oversize_do_not_walk (test_schedule_observer.ScheduleObserverTest.test_schedule_bad_bounds_and_oversize_do_not_walk) ... ok
+test_schedule_classification_flags_and_availability_are_separate (test_schedule_observer.ScheduleObserverTest.test_schedule_classification_flags_and_availability_are_separate) ... ok
+test_schedule_classification_gap_does_not_override_original_guard (test_schedule_observer.ScheduleObserverTest.test_schedule_classification_gap_does_not_override_original_guard) ... ok
+test_schedule_classification_scalar_only_preserves_exact_value (test_schedule_observer.ScheduleObserverTest.test_schedule_classification_scalar_only_preserves_exact_value) ... ok
+test_schedule_classification_structure_not_storage_or_index (test_schedule_observer.ScheduleObserverTest.test_schedule_classification_structure_not_storage_or_index) ... ok
+test_schedule_empty_list_is_valid_not_completion (test_schedule_observer.ScheduleObserverTest.test_schedule_empty_list_is_valid_not_completion) ... ok
+test_schedule_endpoint_equal_endpoints_do_not_invent_hidden_aba (test_schedule_observer.ScheduleObserverTest.test_schedule_endpoint_equal_endpoints_do_not_invent_hidden_aba) ... ok
+test_schedule_endpoint_invalid_identity_cannot_resurrect_cache (test_schedule_observer.ScheduleObserverTest.test_schedule_endpoint_invalid_identity_cannot_resurrect_cache) ... ok
+test_schedule_endpoint_invalid_is_not_an_empty_schedule (test_schedule_observer.ScheduleObserverTest.test_schedule_endpoint_invalid_is_not_an_empty_schedule) ... ok
+test_schedule_endpoint_vehicle_home_and_load_never_join (test_schedule_observer.ScheduleObserverTest.test_schedule_endpoint_vehicle_home_and_load_never_join) ... ok
+test_schedule_gap_changed_endpoint_keeps_original_delta_guards (test_schedule_observer.ScheduleObserverTest.test_schedule_gap_changed_endpoint_keeps_original_delta_guards) ... ok
+test_schedule_gap_empty_then_three_rows_are_endpoint_differences (test_schedule_observer.ScheduleObserverTest.test_schedule_gap_empty_then_three_rows_are_endpoint_differences) ... ok
+test_schedule_gap_unchanged_storage_index_context_are_independent (test_schedule_observer.ScheduleObserverTest.test_schedule_gap_unchanged_storage_index_context_are_independent) ... ok
+test_schedule_header_and_row_mutation_rejected (test_schedule_observer.ScheduleObserverTest.test_schedule_header_and_row_mutation_rejected) ... ok
+test_schedule_history_epoch_identity_and_gaps_rebaseline_no_deltas (test_schedule_observer.ScheduleObserverTest.test_schedule_history_epoch_identity_and_gaps_rebaseline_no_deltas) ... ok
+test_schedule_history_field_storage_and_context_changes_separate (test_schedule_observer.ScheduleObserverTest.test_schedule_history_field_storage_and_context_changes_separate) ... ok
+test_schedule_history_first_unchanged_and_index_only (test_schedule_observer.ScheduleObserverTest.test_schedule_history_first_unchanged_and_index_only) ... ok
+test_schedule_history_list_clear_replacement_are_observed_fields_only (test_schedule_observer.ScheduleObserverTest.test_schedule_history_list_clear_replacement_are_observed_fields_only) ... ok
+test_schedule_history_three_one_three_rows_and_same_count_replacement (test_schedule_observer.ScheduleObserverTest.test_schedule_history_three_one_three_rows_and_same_count_replacement) ... ok
+test_schedule_identical_visible_schedule_is_not_new_job (test_schedule_observer.ScheduleObserverTest.test_schedule_identical_visible_schedule_is_not_new_job) ... ok
+test_schedule_max_rows_and_checked_arithmetic (test_schedule_observer.ScheduleObserverTest.test_schedule_max_rows_and_checked_arithmetic) ... ok
+test_schedule_missing_header_and_config_fail_closed (test_schedule_observer.ScheduleObserverTest.test_schedule_missing_header_and_config_fail_closed) ... ok
+test_schedule_nonfinite_no_partial_table (test_schedule_observer.ScheduleObserverTest.test_schedule_nonfinite_no_partial_table) ... ok
+test_schedule_null_target_and_unknown_index_preserved (test_schedule_observer.ScheduleObserverTest.test_schedule_null_target_and_unknown_index_preserved) ... ok
+test_schedule_pattern_load_unload_is_conservative (test_schedule_observer.ScheduleObserverTest.test_schedule_pattern_load_unload_is_conservative) ... ok
+test_schedule_pattern_office_empty_and_invalid_do_not_invent_jobs (test_schedule_observer.ScheduleObserverTest.test_schedule_pattern_office_empty_and_invalid_do_not_invent_jobs) ... ok
+test_schedule_selected_fields_mapping_no_pointee_following (test_schedule_observer.ScheduleObserverTest.test_schedule_selected_fields_mapping_no_pointee_following) ... ok
+test_schedule_special_last_row_does_not_read_config (test_schedule_observer.ScheduleObserverTest.test_schedule_special_last_row_does_not_read_config) ... ok
+test_windows_min_max_macros (test_schedule_observer.ScheduleObserverTest.test_windows_min_max_macros) ... ok
+test_native_policy_and_taskcfg (test_site_permissions.SitePermissionsTest.test_native_policy_and_taskcfg) ... ok
+test_production_integration_guards (test_site_permissions.SitePermissionsTest.test_production_integration_guards) ... ok
+test_private_and_unknown_buildings_do_not_show_widgets (test_storage_checkbox.StorageCheckboxTest.test_private_and_unknown_buildings_do_not_show_widgets) ... ok
+test_production_handler (test_storage_checkbox.StorageCheckboxTest.test_production_handler) ... ok
+test_office_observations_surround_existing_notification (test_task_audit.TaskAuditTest.test_office_observations_surround_existing_notification) ... ok
+test_production_logging_is_bounded_and_transparent (test_task_audit.TaskAuditTest.test_production_logging_is_bounded_and_transparent) ... ok
+
+----------------------------------------------------------------------
+Ran 104 tests in 8.523s
+
+OK
+
+```
+
+### Complete v0.18.10 artifact — `.cache/01810-sanitizers.txt`
+
+Bytes:2674;SHA256:`52d631da96acb011dccbd131d065a149c095c52572b48982b2f5cd35cae7bc34`. Actual source/output, not a paraphrase.
+
+```text
+PASS schedule_selected_fields_mapping_no_pointee_following
+PASS schedule_special_last_row_does_not_read_config
+PASS schedule_empty_list_is_valid_not_completion
+PASS schedule_null_target_and_unknown_index_preserved
+PASS schedule_missing_header_and_config_fail_closed
+PASS schedule_bad_bounds_and_oversize_do_not_walk
+PASS schedule_max_rows_and_checked_arithmetic
+PASS schedule_nonfinite_no_partial_table
+PASS schedule_header_and_row_mutation_rejected
+PASS schedule_history_first_unchanged_and_index_only
+PASS schedule_history_field_storage_and_context_changes_separate
+PASS schedule_history_list_clear_replacement_are_observed_fields_only
+PASS schedule_history_three_one_three_rows_and_same_count_replacement
+PASS schedule_history_epoch_identity_and_gaps_rebaseline_no_deltas
+PASS schedule_identical_visible_schedule_is_not_new_job
+PASS schedule_gap_changed_endpoint_keeps_original_delta_guards
+PASS schedule_gap_empty_then_three_rows_are_endpoint_differences
+PASS schedule_gap_unchanged_storage_index_context_are_independent
+PASS schedule_endpoint_vehicle_home_and_load_never_join
+PASS schedule_endpoint_invalid_is_not_an_empty_schedule
+PASS schedule_endpoint_invalid_identity_cannot_resurrect_cache
+PASS schedule_endpoint_equal_endpoints_do_not_invent_hidden_aba
+PASS schedule_classification_scalar_only_preserves_exact_value
+PASS schedule_classification_structure_not_storage_or_index
+PASS schedule_classification_flags_and_availability_are_separate
+PASS schedule_pattern_load_unload_is_conservative
+PASS schedule_pattern_office_empty_and_invalid_do_not_invent_jobs
+PASS schedule_classification_gap_does_not_override_original_guard
+28 schedule host scenarios PASS (not native lifecycle validation)
+PASS schedule_runtime_mismatch_disables_schedule_not_fuel
+PASS schedule_runtime_same_post_render_record_deferred_rows_and_truthful_labels
+PASS schedule_runtime_unchanged_suppressed_and_row_index_not_job_end
+PASS schedule_runtime_paused_coalescing_carries_latest_schedule_and_rebaselines
+PASS schedule_runtime_in_place_three_row_replacement_across_pause
+PASS schedule_runtime_clear_across_pause_old_rows_and_recovery
+PASS schedule_runtime_classifies_scalar_target_and_index_changes
+PASS schedule_runtime_classifies_office_empty_and_load_unload_patterns
+PASS schedule_runtime_classification_preserves_gap_semantics
+PASS schedule_runtime_load_absent_and_duplicate_fleet_fail_closed
+PASS schedule_runtime_capture_drop_counter_advance_rebaselines
+PASS schedule_runtime_invalid_schedule_never_blocks_fuel_or_prints_partial_rows
+PASS schedule_runtime_fault_latch_isolated_from_fuel_not_a_windows_seh_test
+13 schedule runtime host-shim scenarios PASS (not Windows ABI/SEH or a DLL)
+
+```
+
+### Complete v0.18.10 artifact — `.cache/01810-scope-check.txt`
+
+Bytes:138;SHA256:`1ede231304825db6e1b70b34500465f880fcb00245961acd44a471d0b2b9d9f6`. Actual source/output, not a paraphrase.
+
+```text
+PASS: reader functions, capture/queue, fingerprints byte-for-byte unchanged.
+PASS: parsed INI values identical; all changes are comments.
+
 ```
