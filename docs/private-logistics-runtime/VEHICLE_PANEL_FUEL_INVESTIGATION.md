@@ -84006,3 +84006,10 @@ relax permissions or change settings automatically; a client timeout increase
 cannot override a gateway/provider that has already returned HTTP504.
 
 ````
+
+---
+
+## Final Reconciled Assignment Interval Matrix
+
+| Case | Exact Event / Native Mutation | Preconditions (Verified Guards) | Mutations (Address / Field) | Successor / Next Observable | Evidence Source | Confidence | Counterexample / Unresolved |
+|------|------------------------------|--------------------------------|----------------------------|----------------------------|----------------|------------|----------------------------|
