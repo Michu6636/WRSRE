@@ -84057,3 +84057,149 @@ All addresses verified against SOVIET64.exe v1.1.1.9 (SHA-256: 296644A9F207D6090
 ### No changes made
 
 No hooks, runtime config, dispatch, permissions, billing, build, save, or game replay changes. Payments remain OFF. No native executable modification.
+
+---
+
+## Chat-Only Corrections Receipt (2026-10-31)
+
+The following corrections/findings from the 2026-10-31 static round closure were **only supplied in chat** and were **not saved to any file**:
+
+| Item | Saved? | Location |
+|------|--------|----------|
+| 7×8 matrix (rows 1–7) | ✅ Yes | `VEHICLE_PANEL_FUEL_INVESTIGATION.md` lines 84014–84046 |
+| ghidra-index entries (27 functions + README) | ✅ Yes | `docs/ghidra-index/*.md` |
+| 31-row canonical call table (6B9DA0..6BAC86) | ✅ Yes | `VEHICLE_PANEL_FUEL_INVESTIGATION.md` export lines 26072–26854, 30761–31543 |
+| Correction: 0x140252650 = 6 call sites (was 5) | ❌ No | Chat only |
+| Correction: 6635E0 at 0x1406B8FFD = post-inner-guard PRE-store callee | ❌ No | Chat only |
+| Qualified unresolved: D39 at helper return on store-executing path | ❌ No | Chat only — **UNTRACED** |
+| Qualified unresolved: Feasible post-store cleanup (3FBDC0/6BC5A0) | ❌ No | Chat only — **UNTRACED** |
+| Qualified unresolved: Persistent failed-gate association (C80 survives AL=0) | ❌ No | Chat only — **UNTRACED** |
+
+No commit/push attempted. No runtime/billing/build/game changes.
+
+---
+
+## Task-Row Content Mapping & Observer Coverage Analysis
+
+### 1. Visible Task-Row Content → Native Memory Layout
+
+The individual vehicle panel displays a **task/connection list** whose rows correspond 1:1 to route targets installed in the truck's route vector at `truck+0x680`/`truck+0x688`. Each row shows:
+
+| Panel Row Field | Native Source | Observer Coverage |
+|-----------------|---------------|-------------------|
+| Target building pointer | `*(truck+0x680 + row*8)` | ✅ `schedule_observer.h` `ReadRow` → `Row.target` |
+| Config flag00 (enabled/type) | `*(configs + row*0x198 + 0x0)` | ✅ `Row.flag00` |
+| Config value04 (float, cargo/fuel amount) | `*(configs + row*0x198 + 0x4)` | ✅ `Row.value04` |
+| Config flagC8 (sub-type) | `*(configs + row*0x198 + 0xC8)` | ✅ `Row.flagC8` |
+| Config valueCC (float, secondary amount) | `*(configs + row*0x198 + 0xCC)` | ✅ `Row.valueCC` |
+| Active row index | `truck+0x698` | ✅ `Snapshot.index698` |
+| Special last-row flag | `truck+0x5FD` | ✅ `Snapshot.flag5fd` (skips config read for last row when nonzero) |
+| Route vector bounds | `truck+0x680` (begin), `truck+0x688` (end) | ✅ `Snapshot.begin`/`end` |
+| Config vector pointer | `truck+0x638` | ✅ `Snapshot.configs` |
+| Opaque renderer context | `truck+0x4A0`, `+0x610`, `+0x650` | ✅ `Snapshot.raw4a0/610/650` |
+
+**Row count** = `(end - begin) / 8` (max 16 per `MaxRows`).
+
+**Special last row**: when `flag5fd != 0`, the last row (`count-1`) has `configRead = false` — no config fields read (renderer sets RSI=0 at 7E81B3..7E81C0).
+
+### 2. Observer Coverage Gaps — Missing Resource/Filter-Only Changes
+
+| Change Type | Native Mutation | Currently Detected? | Gap |
+|-------------|-----------------|---------------------|-----|
+| **Whole-plan replacement** | `truck+0x688 = truck+0x680` (clear route), `configs` destroy/reinit, then multiple `67D5D0` inserts | Partially: `storage_changed` (begin/end/configs change) + `fields_changed` (row count/contents) | **No distinction** between replacement vs. cancellation+new assignment — both show same storage+fields delta |
+| **Index progression** (internal stop advance) | `truck+0x698` increment at `0x14069D0F0` | ✅ `index_changed` (`d.index`) | **Indistinguishable** from route refresh/rebuild — both change `index698` |
+| **Row edit** (cargo/fuel amount update at stop) | Builder tails `FUN_140429A80`/`FUN_14042A0D0` mutate `route_target+0x9D0`/`+0x9B8` | ❌ **NOT READ** — observer only reads config stride fields at `+0x198`, not `route_target` sub-vectors | Cargo/fuel amount changes at stops invisible |
+| **Storage relocation** (vector reallocation) | `begin`/`end`/`configs` pointers change | ✅ `storage_changed` (`d.storage`) | Cannot distinguish reallocation from replacement |
+| **Resource filter change** (cargo type filter) | Office config vectors `+0xD38/+0xD40` (task list) filter which rows get installed | ❌ **NOT READ** — observer only sees installed result, not source filter | Which resource types are eligible per row unknown |
+| **Filter-only toggle** (percentage/percentage wakeup) | Private logistics percentage gating at `truck+0xD3A`/config | ❌ **NOT READ** — `D3A` set by `67D5D0` but never observed | Percentage gating effect on row visibility unobserved |
+| **Opaque context change** | `raw4a0/610/650` change | ✅ `context_changed` (`d.context`) | Meaning of these fields unverified — correlation to task identity unknown |
+
+### 3. Connected List-Install/Replace/Reset Writer Chain
+
+**Single connected writer chain** for the task/connection list (route targets):
+
+```
+FUN_1401E5350 (Stage 2 Acceptance, 0x1E5350)
+    │
+    ├─► Load path (cargo==0): FUN_1401E5480 (0x1E5480)
+    │       ├─► FUN_14067D5D0(truck, pickup_target, -1, 0)     ← inserts pickup row
+    │       ├─► FUN_14067D5D0(truck, delivery_target, -1, 0)   ← inserts delivery row
+    │       └─► FUN_14067D5D0(truck, office_return_target, -1, 0) ← inserts return row
+    │
+    └─► Delivery path (cargo>0): FUN_1401E5BA0 (0x1E5BA0)
+            ├─► FUN_14067D5D0(truck, delivery_target, -1, 0)   ← inserts delivery row
+            └─► FUN_14067D5D0(truck, office_return_target, -1, 0) ← inserts return row
+
+FUN_14067D5D0 (Route Insert, 0x67D5D0)
+    ├─► Appends to route vector (`begin`/`end`), grows config vector (`configs` stride 0x198)
+    ├─► Sets `truck+0xD3A = 1` (route dirty flag)
+    ├─► Recomputes `truck+0x698` (active route index) by matching target pointer
+    └─► Returns char: 1=success, 0=skip (each insert independent)
+
+FUN_140699420 (Route Processing, 0x699420)
+    └─► Home-target path → FUN_14067CB30(truck, 0, 1) at 0x14069B8D9
+            ├─► Resets route vector: `end = begin`
+            ├─► Resets config vector: `configs` destroyed/reinit via `FUN_1401FF7A0`
+            ├─► Clears `truck+0x528`, `truck+0x538` (bound target / cargo pointer)
+            └─► **Does NOT clear `truck+0xC80`** (office association retained)
+
+FUN_1406BC5A0 (Route Termination, 0x6BC5A0)
+    └─► Clears `truck+0xC80 = 0` at 0x1406BC88A (office association)
+    └─► Conditionally clears `office+0xBB0 = 0` at 0x1406BC883 (backlink equality)
+    └─► Route/config reset optional via `FUN_14067CB30` at 0x14069B8D9 (separate call)
+```
+
+**Key distinction**: `67CB30` (home-target reset) ≠ `6BC5A0` (termination). Home-target reset is **internal continuation** (retains C80); termination is **close** (clears C80).
+
+### 4. Minimal Change Record Specification
+
+For each observed change to the task/connection list, log a **minimal change record**:
+
+```c
+struct TaskListChange {
+    uint64_t truck;           // Same truck base address
+    uint64_t epoch;           // Simulation epoch (panel epoch)
+    uint64_t timestamp_ms;    // GetTickCount64 at capture
+    uint32_t old_count;       // Previous row count
+    uint32_t new_count;       // Current row count
+    uint32_t changed_rows;    // Bitmask of rows with field changes (max 16)
+    int32_t  old_index698;    // Previous active index
+    int32_t  new_index698;    // Current active index
+    bool     storage_relocated; // begin/end/configs pointers changed
+    bool     whole_plan_replaced; // count changed AND all rows differ (heuristic)
+    bool     index_progressed_only; // count==old_count, only index698 changed
+    // Per-row old/new for changed rows (bounded to changed_rows):
+    struct { uint8_t row; Row old_row; Row new_row; } rows[16];
+};
+```
+
+**Classification rules** (applied at observation time, no native jobID required):
+
+| Classification | Condition |
+|----------------|-----------|
+| `whole_plan_replaced` | `storage_relocated || (new_count != old_count && all rows differ)` |
+| `index_progressed_only` | `new_count == old_count && new_index698 != old_index698 && !storage_relocated && changed_rows == 0` |
+| `row_edits` | `changed_rows != 0 && !whole_plan_replaced` |
+| `storage_relocation_only` | `storage_relocated && new_count == old_count && changed_rows == 0 && new_index698 == old_index698` |
+
+**Timestamps & Gaps**: Each record carries `timestamp_ms` and `epoch`. Observer queue coalescing (paused snapshots) and drops are logged separately via `PANEL GAP` entries — correlate by `epoch` and `sample` ID. A `Baseline::Gap` in `History::Observe` marks diagnostic gaps (fault, cap, contention, drops).
+
+**Equal snapshots caveat**: Identical consecutive snapshots **cannot distinguish** identical replacement (remove+reinstall same rows) from no change. This is a fundamental limitation of sampled observation — marked `Baseline::Gap` if preceding gap detected.
+
+---
+
+## Simulation-Side Coverage Point (Panel-Closed / Fleet-Wide)
+
+**Current observer**: Sampled, panel-only, post-render hook at `0x7D5460`. Only observes when vehicle panel is open and rendered.
+
+**Candidate simulation-side point for fleet-wide, panel-closed coverage**:
+
+| Candidate | RVA | Role | Pros | Cons |
+|-----------|-----|------|------|------|
+| `FUN_14066D530` dispatcher | `0x66D530` | Per-frame DO truck update loop | Processes all road-DO trucks (ctx+0x294==7) every tick; calls `FUN_1406C07E0` per truck | No direct panel context; would need to correlate truck→panel if opened |
+| `FUN_1406C07E0` per-truck update | `0x6C07E0` | Per-truck route processing | Called for each truck in dispatcher; has truck pointer; calls `FUN_140699420` | Same as above |
+| `FUN_140699420` route processor | `0x699420` | Route stop processing, index advance, home-target reset | Directly mutates `+0x698`, calls `67CB30`, `6BC5A0` | Only runs for trucks with active routes |
+
+**Recommended**: `FUN_14066D530` (dispatcher entry) — fleet-wide, runs every sim tick regardless of panel state. A lightweight read-only probe here could capture `truck+0x680/0x688/0x638/0x698/0x5FD/0xC80` for all road-DO trucks per tick, enabling panel-closed correlation.
+
+**Not installing instrumentation** — this identifies the point only. Any future probe would require verified fingerprint + read-only Memory adapter + serialized Ghidra verification per `INSTRUCTIONS.md`.
