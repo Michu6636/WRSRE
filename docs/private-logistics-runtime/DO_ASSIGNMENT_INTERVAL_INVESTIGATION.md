@@ -6,7 +6,7 @@
 
 The type-43 (`0x2B`) dispatcher passes an object whose metadata type is `0x2B` into `FUN_1401C6050`. That updater traverses that same object's `+0xC70/+0xC78` fleet and calls `FUN_1406B8EB0` on a guarded truck from it. The helper can write `truck+0xC80 = office` and `office+0xBB0 = truck+0x390`. This proves a type-43 office/truck association path, but not a whole-task installation, task-presence signal, final removal, cancellation, or replacement boundary. `truck+0x390` is used as a pointer-like internal object/container value; it is not a proven job ID or payer. Whether this association persists across internal pickup/unload stops is unresolved.
 
-The latest follow-up traces the type-43 updater's candidate-truck buffer into `FUN_1401E5350` and its same-truck route/configuration rebuilders. A positive DO-row predicate can clear and rebuild that truck's `+0x680/+0x688` route list and `+0x638/+0x640` configuration vector in one helper call. This establishes a native candidate-route installation path, but not a reliable accounting interval: the DO-row commit semantics, persistence through stop progression, and paired cancellation/removal path remain unproved.
+The latest follow-up traces the type-43 updater's candidate-truck buffer into `FUN_1401E5350` and its same-truck route/configuration rebuilders. `FUN_1401E2380` regenerates the office's `+0xD58/+0xD60` candidate rows; a positive row predicate can then rebuild the truck's `+0x680/+0x688` route list and `+0x638/+0x640` configuration vector. A connected simulation path in `FUN_140699420` can write the generic `truck+0xC80` association to its current `+0x528` target and conditionally write that target's `+0xBB0` backlink. The possible old-target null write is not fully proven: the raw instruction stores `R14`, whose zero provenance is absent from the bounded predecessor export, although the decompiler renders it as zero. The same simulation path can call `FUN_14067CB30` on a type-43 home-target branch to clear route/configuration vectors. These operations do not prove assignment commitment, stop-only transitions, cancellation, or task removal; the associated target is not a stable DO-task identity. The exact route-progress block increments `truck+0x700`, not the separately established route index `+0x698`, so the prior decompiler-based interpretation is withdrawn. No reliable accounting interval is established.
 
 The existing `FUN_1406BF1D0` renderer investigation remains below for continuity and is not repeated or used as an assignment signal here. This correction instead records the exact type-43 receiver path, `+0x390` provenance, contiguous direct bytes, and remaining lifecycle gaps.
 
@@ -4285,7 +4285,7 @@ The following are complete contiguous direct decodes from the identity-verified 
 This follow-up supersedes any reading of the earlier `FUN_1403FBDC0` call as evidence that the type-43 updater removes an active assignment:
 
 - Newly established: `FUN_1401C6050` only enters its per-truck processing for a truck with `truck+0xC80 == 0`. Its same-office fleet receiver is still established by `office+0xC70/+0xC78`, `truck+0x4F8 == office`, and the type-`0x2B` dispatcher path.
-- Newly established: at the outer updater call-site, the `FUN_1406B8EB0` association candidate and the `FUN_1403FBDC0` configuration/reset call are mutually exclusive based on the truck's entry `+0xD39` branch. The former path skips the latter; the latter path does not call the association candidate. This does not imply that `FUN_1406B8EB0` reaches its later association stores.
+- Corrected: the entry `+0xD39` branch chooses whether the updater invokes `FUN_1406B8EB0`, but does not prove that the helper call and the later `FUN_1403FBDC0` call are mutually exclusive for the entire iteration. The nested `FUN_140680A20` can change the same truck's `+0xD39`; the caller tests that post-call value again before the reset block. The helper's association stores remain separately guarded.
 - Newly established: `FUN_1406BD6B0`, called after the reset path, is a read-only boolean predicate over route/home/metadata-related fields and scalar helper results. It is not a task setter or remover.
 - Narrowed/withdrawn: the `FUN_1403FBDC0` call is not a demonstrated removal of a live type-43 association. The updater's earlier `+0xC80 == 0` guard makes that interpretation unsupported; its generic clear body alone is not evidence of a task boundary.
 - Still unknown at the time of this prior pass: which same-truck type-43 operation installs the actual dispatched work represented by a route, preserves it over internal stops, and removes/replaces it on cancellation or completion. The candidate-route installation path is traced in the later follow-up below; its task-boundary semantics remain unknown.
@@ -4317,18 +4317,21 @@ FUN_140139A70
      require truck+0x4F8 == RDI
      require truck+0xC80 == 0                       ; 1401C61E6 (RVA 1C61E6)
      |
-     +-- truck+0xD39 == 0
+     +-- entry truck+0xD39 == 0
      |   + additional guards, including index +0x698 == 0 and nonempty +0x680/+0x688
      |   -> FUN_1406B8EB0(RCX=RSI truck, RDX=R8=R9=0)
-     |      possible guarded stores: office+0xBB0 = truck+0x390;
-     |                                 truck+0xC80 = office
-     |      helper writes truck+0xD39 = 0 at 1406B8F7D (RVA 6B8F7D)
-     |   -> caller tests +0xD39 at 1401C6498; zero branches to 1401C68DF
-     |      and skips FUN_1403FBDC0 at 1401C68BD
+     |      clears WORD [truck+0xD39] at 1406B8F7D, then calls
+     |      FUN_140680A20(RCX=same truck, RDX=0, R8=-1, stack bytes 0,0)
+     |      tests post-call byte +0xD39 at 1406B8FF1
+     |      nonzero -> early return before helper association stores
+     |      zero -> may continue through additional guards and stores
+     |   -> caller tests +0xD39 again at 1401C6498
+     |      zero branches to 1401C68DF and skips FUN_1403FBDC0
+     |      nonzero enters the configuration/reset path, including its call
      |
-     +-- truck+0xD39 != 0
+     +-- entry truck+0xD39 != 0
          -> bypass FUN_1406B8EB0 at 1401C646E
-         -> configuration/route-metadata path; stores +0xD39 = 0 at 1401C64CF
+         -> enters configuration/reset path; byte +0xD39 cleared at 1401C64CF
          -> FUN_1403FBDC0(RCX=[RBP+0x290], RDX=RSI truck,
                           R8=0, R9B=1, stack flags 1 and 1)
          -> FUN_1406BD6B0(RCX=RSI truck, DL=1), a predicate
@@ -4336,7 +4339,7 @@ FUN_140139A70
 
 The route-list guards at `0x1401C6429..0x1401C6461` are evaluated on a truck whose `+0x680/+0x688` list is already nonempty and whose `+0x698` index is zero. Neither the type-43 updater nor the displayed `FUN_1406B8EB0` body installs that route-target vector. Therefore those guards and the subsequent office association stores cannot distinguish a persistent/default route from newly dispatched work.
 
-The branch order also rules out a same-invocation association write followed by this `FUN_1403FBDC0` call through the shown paths: when `+0xD39` is zero, the helper's `+0xD39` store is zero and the caller branches over `FUN_1403FBDC0`; when `+0xD39` is nonzero, the caller bypasses `FUN_1406B8EB0` and clears `+0xD39` in the configuration path before the reset call. This is only a fact about these two candidate operations in this updater, not proof that other native code cannot replace work in one update.
+The branch order alone does not establish call-site exclusivity. At entry, a zero byte can lead to `FUN_1406B8EB0`; inside that helper the nested call can set or later clear the byte, and the updater's `0x1401C6498` test uses the resulting state. A nonzero post-helper byte flows into the configuration/reset block, while zero skips it. The entry-nonzero path reaches the same reset block without invoking `FUN_1406B8EB0`. The exact nested flag paths and their limits are recorded below. This updater still does not establish that `FUN_1403FBDC0` removes active work.
 
 The exact caller setup at `0x1401C68A0..0x1401C68E9` is:
 
@@ -4665,7 +4668,8 @@ The listed exact ranges end at the last instruction boundary and each exported b
 
 - Newly traced: a fleet truck collected by `FUN_1401C6050` is stored in a temporary candidate buffer and passed, with the same type-43 office, to `FUN_1401E5350` at `0x1401C6CC9`.
 - Newly established: `FUN_1401E5350` selects `FUN_1401E5480` or `FUN_1401E5BA0` using the result of `FUN_1406BDC30` on that same truck. Both selected branches can reset the truck's existing route/configuration vectors and rebuild them from records in that same office's `+0xD58/+0xD60` vector. The route-row mutator is `FUN_14067D5D0`.
-- Qualified: the type-43 updater's `+0xD39` test makes its `FUN_1406B8EB0` call and `FUN_1403FBDC0` call mutually exclusive at the updater's branch/call-site level. It does not imply that calling `FUN_1406B8EB0` reaches association stores. That helper calls `FUN_140680A20`, then branches on the resulting `truck+0xD39`; nonzero returns before its later association logic.
+- Newly established: when the office `+0xD50` refresh byte is nonzero, the updater calls `FUN_1401E2380` on that same office; the function clears the byte and resets `+0xD60` to `+0xD58` before regenerating candidate rows from `+0xD38/+0xD40` configuration entries. These planner rows are not themselves a committed per-truck job identity.
+- Corrected: the updater's entry `+0xD39` test selects the initial branch, but does not prove that `FUN_1406B8EB0` and `FUN_1403FBDC0` are mutually exclusive across the entire iteration. The nested `FUN_140680A20` changes the same truck's byte and the caller tests it again after return.
 - Not established: an accepted `+0xD58` record is a committed job rather than a candidate/rebuild input; route persistence through internal stops; actual removal/cancellation; or whether identical consecutive work has a distinct event.
 
 ### Identity and address convention
@@ -4766,49 +4770,360 @@ Selected raw blocks from the two rebuilders:
 
 `FUN_1401DE2B0` is an 864-byte boolean row predicate. It receives `(context, row, truck, office)`, reads the row's configuration indexes through the same office `+0xD38`, checks route/resource/threshold conditions, and can inspect the candidate truck's `+0x3B8` vector. Its type check special-cases office type `0x2D`; the actual type-43 receiver does not take that special case. A true return means the row passes this predicate, not independently that a new task has been committed.
 
-### `FUN_140680A20` qualifies the updater's mutually-exclusive calls
+### `FUN_140680A20` invalidates the outer-call exclusivity claim
 
-At `0x1401C6050`, the outer `truck+0xD39` branch still chooses between the `FUN_1406B8EB0` call and the `FUN_1403FBDC0` call; those call sites are mutually exclusive for that updater iteration. But this is only an entry-state fact. `FUN_1406B8EB0` clears the byte at entry, calls `FUN_140680A20`, and reads the byte again before reaching later association logic:
+The entry test at `0x1401C6420` determines whether `FUN_1406B8EB0` is initially called. It is not sufficient to conclude that the helper call and `FUN_1403FBDC0` cannot both occur in one updater iteration: after the helper returns, `0x1401C6498` tests the same truck byte again, and the zero case alone skips the reset block.
+
+The nested type-43 call is receiver-preserving. `FUN_1406B8EB0` saves its incoming truck in `RDI`; `R14D` is zeroed at `0x1406B8F15`; it clears a 16-bit field beginning at `truck+0xD39`, then calls `FUN_140680A20` with the same truck in `RCX`, `RDX=0`, `R8=-1`, and both explicit stack flag bytes zero:
 
 ```asm
-1406b8fdc: 44 88 74 24 28           MOV byte ptr [RSP + 0x28],R14B
-1406b8fe1: 44 88 74 24 20           MOV byte ptr [RSP + 0x20],R14B
-1406b8fe6: 41 83 C8 FF              OR R8D,0xffffffff
-1406b8fea: 33 D2                    XOR EDX,EDX
-1406b8fec: E8 2F 7A FC FF           CALL 0x140680a20
-1406b8ff1: 44 38 B7 39 0D 00 00     CMP byte ptr [RDI + 0xd39],R14B
-1406b8ff8: 75 7B                    JNE 0x1406b9075
+1406b8f15: 45 33 F6                    XOR R14D,R14D
+1406b8f7d: 66 44 89 B7 39 0D 00 00    MOV word ptr [RDI + 0xd39],R14W
+1406b8f94: 45 84 C0                    TEST R8B,R8B
+1406b8f97: 75 58                       JNE 0x1406b8ff1
+1406b8f99: 48 8B 87 08 17 00 00        MOV RAX,qword ptr [RDI + 0x1708]
+1406b8fa0: 8B 88 94 02 00 00           MOV ECX,dword ptr [RAX + 0x294]
+1406b8fa6: 83 F9 06                    CMP ECX,0x6
+1406b8fa9: 75 0D                       JNE 0x1406b8fb8
+1406b8fb8: 83 F9 08                    CMP ECX,0x8
+1406b8fbb: 75 10                       JNE 0x1406b8fcd
+1406b8fcd: 83 F9 0A                    CMP ECX,0xa
+1406b8fd0: 48 8B CF                    MOV RCX,RDI
+1406b8fd3: 75 07                       JNE 0x1406b8fdc
+1406b8fdc: 44 88 74 24 28              MOV byte ptr [RSP + 0x28],R14B
+1406b8fe1: 44 88 74 24 20              MOV byte ptr [RSP + 0x20],R14B
+1406b8fe6: 41 83 C8 FF                 OR R8D,0xffffffff
+1406b8fea: 33 D2                       XOR EDX,EDX
+1406b8fec: E8 2F 7A FC FF              CALL 0x140680a20
+1406b8ff1: 44 38 B7 39 0D 00 00        CMP byte ptr [RDI + 0xd39],R14B
+1406b8ff8: 75 7B                       JNE 0x1406b9075
 ```
 
-For the type-43 call, `RCX` is still the candidate truck, `RDX=0`, `R8=-1`, and the two stack flag bytes are explicitly zero. The outer caller passes `R9=0` to `FUN_1406B8EB0`, but `R9` is not reloaded at the nested `FUN_140680A20` call; this pass does not assume its value survives the intervening helper calls. `FUN_140680A20` writes `truck+0xD39 = 1` at `0x140680AF2` before its selection work. With a nonnull `truck+0x1708` whose metadata-kind `+0x294` is not 4 (including the reported kind 1), it takes the `FUN_14067E8F0` branch at `0x140680B4D..0x140680B6E`, not the kind-4 `FUN_14067FA20` branch. Its later flag branches can clear `+0xD39` and rebuild internal vectors `+0x6A0/+0x6B8/+0x6E8`; for example, `0x140681683` clears it when the two local flags tested at `0x140681670..0x14068167D` are both 1, while `0x14068182F` writes zero when the tested local flag is zero. Other paths leave it nonzero, including a conditional `0x100` store. Thus the association stores after `0x1406B8FF1` are conditional on the helper's post-call state and subsequent guards; merely calling `FUN_1406B8EB0` does not prove that `truck+0xC80` or `office+0xBB0` is written.
+The `WORD` store clears both byte `+0xD39` and adjacent byte `+0xD3A`; it is not a one-byte task-state write. At the nested call, the first two stack flags are definitely zero because `R14B=0`. The incoming `R9` is not used as an input by the relevant `FUN_140680A20` path; the function overwrites `R9D` before passing it to its downstream helper.
 
-This value remains a byte/field used by control flow, not a proven job-state enum. `truck+0x1708 -> metadata+0x294` remains metadata-kind provenance only.
+For the reported road-truck metadata kind 1, `FUN_140680A20` takes its non-kind-4 path through `FUN_14067E8F0`. The saved first stack flag is `R12B=0`. The following raw blocks show that `+0xD39` is set and can subsequently be cleared:
+
+```asm
+140680af2: C6 83 39 0D 00 00 01        MOV byte ptr [RBX + 0xd39],0x1
+140680b00: 44 0F B6 65 77              MOVZX R12D,byte ptr [RBP + 0x77]
+140680b0a: 83 B8 94 02 00 00 04        CMP dword ptr [RAX + 0x294],0x4
+140680b11: 75 3A                       JNZ 0x140680b4d
+140680b4d: C6 44 24 30 00              MOV byte ptr [RSP + 0x30],0x0
+140680b5f: 44 0F B6 CE                 MOVZX R9D,SIL
+140680b6e: E8 7D DD FF FF              CALL 0x14067e8f0
+140680d96: C6 83 39 0D 00 00 01        MOV byte ptr [RBX + 0xd39],0x1
+140681325: 0F 85 C3 05 00 00           JNZ 0x1406818ee
+14068132b: C7 83 39 0D 00 00 00 01 00 00 MOV dword ptr [RBX + 0xd39],0x100
+140681335: E9 B4 05 00 00              JMP 0x1406818ee
+140681670: 41 80 FB 01                 CMP R11B,0x1
+140681674: 0F 85 AC 01 00 00           JNZ 0x140681826
+14068167a: 45 3A E3                    CMP R12B,R11B
+14068167d: 0F 85 A3 01 00 00           JNZ 0x140681826
+140681683: C6 83 39 0D 00 00 00        MOV byte ptr [RBX + 0xd39],0x0
+140681826: 45 84 E4                    TEST R12B,R12B
+140681829: 0F 85 BB 00 00 00           JNZ 0x1406818ea
+14068182f: 44 88 A3 39 0D 00 00        MOV byte ptr [RBX + 0xd39],R12B
+```
+
+With the actual nested first stack flag `R12B=0`, the paired-ones condition at `0x140681670..0x14068167D` cannot reach the `0x140681683` clear: if `R11B==1`, the second comparison branches to `0x140681826`; otherwise the first does. If control reaches `0x140681826`, its `TEST R12B` falls through and `0x14068182F` writes zero. Separately, `0x14068132B` is a **DWORD** store of `0x100`: its low byte makes `+0xD39 == 0`, and the next byte makes `+0xD3A == 1`. That store is conditional on the `0x1401311C0` result being `AL==1`; the caller-visible state is therefore not inferable from the call alone. Other return paths can retain the earlier nonzero write.
+
+Consequently, the entry-branch argument does not prove mutual exclusion. If the nested helper returns with `+0xD39 != 0`, its own `0x1406B8FF1` branch exits before its later association logic, while the updater's post-call test at `0x1401C6498` falls through toward the configuration/reset block and its guarded `FUN_1403FBDC0` call. If the byte is zero at that outer test, the updater skips that call. Static evidence here does **not** establish which result occurs for the live truck, nor that both call sites actually execute on a particular iteration. It does establish that the earlier claim of unconditional call-site mutual exclusion was unsupported. The reset call remains no proof of active-task removal because its updater entry guard is `truck+0xC80 == 0`.
+
+`truck+0x1708 -> metadata+0x294` is metadata-kind provenance only, not a vehicle state enum. Metadata `+0x8600`, used by `FUN_1406BDC30`, is a separate field; kind `+0x294 == 1` does not select or exclude its `+0x8600 == 0x11` branch. Both `FUN_1406BDC30` paths remain in scope unless separately proved.
+
+### Candidate rows and the bounded simulation consumer
+
+#### Planner rows are regenerated candidates
+
+The type-43 updater's call at `0x1401C6BA1` is conditional on office `+0xD50 != 0`; it passes `RCX=R12` context and `RDX=RDI` office to `FUN_1401E2380`. The existing planner decompilation is consistent with the following directly exported instructions. `FUN_1401E2380` preserves the receiver in `R12`, returns on a null `RDX`, clears the office refresh byte, and resets its row end to its row begin before iterating configuration entries at `+0xD38/+0xD40`:
+
+```asm
+1401e2380: 48 8B C4                 MOV RAX,RSP
+1401e2383: 48 89 50 10              MOV qword ptr [RAX + 0x10],RDX
+1401e2387: 48 89 48 08              MOV qword ptr [RAX + 0x8],RCX
+1401e23b8: 4C 8B E2                 MOV R12,RDX
+1401e23bb: 4C 8B E9                 MOV R13,RCX
+1401e2428: 48 85 D2                 TEST RDX,RDX
+1401e242b: 0F 84 A8 16 00 00        JZ 0x1401e3ad9
+1401e2431: 44 88 82 50 0D 00 00     MOV byte ptr [RDX + 0xd50],R8B
+1401e2438: 48 8B 82 58 0D 00 00     MOV RAX,qword ptr [RDX + 0xd58]
+1401e243f: 48 89 82 60 0D 00 00     MOV qword ptr [RDX + 0xd60],RAX
+1401e2449: 48 8B 82 40 0D 00 00     MOV RAX,qword ptr [RDX + 0xd40]
+1401e2450: 48 2B 82 38 0D 00 00     SUB RAX,qword ptr [RDX + 0xd38]
+1401e2457: 48 C1 F8 03              SAR RAX,0x3
+1401e2461: 0F 84 D5 01 00 00        JZ 0x1401e263c
+1401e2470: 49 8B 84 24 38 0D 00 00 MOV RAX,qword ptr [R12 + 0xd38]
+1401e2478: 48 8B 3C C8              MOV RDI,qword ptr [RAX + RCX*0x8]
+```
+
+`R8B` is zeroed earlier in the prologue. The later loop consumes office configuration entries and generates rows in the reset `+0xD58/+0xD60` range. This proves that the vector is a refreshable planner-candidate range, not a persistent per-truck job identity. A positive row predicate and the subsequent truck route rebuild remain real operations, but neither establishes that a row is an assignment commitment.
+
+The candidate-truck buffer operation at `0x1401C6CB2` receives begin/end/count/comparator arguments and sorts the pointer range in place; it does not receive a vector object whose length it could update. Its complete small raw body is included below to preserve the buffer identity/order distinction:
+
+```asm
+1400fa370: 48 89 5C 24 08           MOV qword ptr [RSP + 0x8],RBX
+1400fa375: 48 89 6C 24 10           MOV qword ptr [RSP + 0x10],RBP
+1400fa37a: 48 89 74 24 18           MOV qword ptr [RSP + 0x18],RSI
+1400fa37f: 57                       PUSH RDI
+1400fa380: 48 83 EC 30              SUB RSP,0x30
+1400fa384: 48 8B C2                 MOV RAX,RDX
+1400fa387: 49 8B E9                 MOV RBP,R9
+1400fa38a: 48 2B C1                 SUB RAX,RCX
+1400fa38d: 49 8B F0                 MOV RSI,R8
+1400fa390: 48 C1 F8 03              SAR RAX,0x3
+1400fa394: 48 8B DA                 MOV RBX,RDX
+1400fa397: 48 8B F9                 MOV RDI,RCX
+1400fa39a: 48 83 F8 20              CMP RAX,0x20
+1400fa39e: 0F 8E 91 00 00 00        JLE 0x1400fa435
+1400fa3a4: 48 85 F6                 TEST RSI,RSI
+1400fa3a7: 0F 8E B1 00 00 00        JLE 0x1400fa45e
+1400fa3ad: 4C 8B CD                 MOV R9,RBP
+1400fa3b0: 48 8D 4C 24 20           LEA RCX,[RSP + 0x20]
+1400fa3b5: 4C 8B C3                 MOV R8,RBX
+1400fa3b8: 48 8B D7                 MOV RDX,RDI
+1400fa3bb: E8 80 17 00 00           CALL 0x1400fbb40
+1400fa3c0: 4C 8B 54 24 28           MOV R10,qword ptr [RSP + 0x28]
+1400fa3c5: 48 8B C6                 MOV RAX,RSI
+1400fa3c8: 48 99                    CQO
+1400fa3ca: 48 8B CB                 MOV RCX,RBX
+1400fa3cd: 48 2B C2                 SUB RAX,RDX
+1400fa3d0: 49 2B CA                 SUB RCX,R10
+1400fa3d3: 48 D1 F8                 SAR RAX,0x1
+1400fa3d6: 48 83 E1 F8              AND RCX,-0x8
+1400fa3da: 48 8B F0                 MOV RSI,RAX
+1400fa3dd: 4C 8B CD                 MOV R9,RBP
+1400fa3e0: 48 99                    CQO
+1400fa3e2: 48 2B C2                 SUB RAX,RDX
+1400fa3e5: 48 8B 54 24 20           MOV RDX,qword ptr [RSP + 0x20]
+1400fa3ea: 48 D1 F8                 SAR RAX,0x1
+1400fa3ed: 48 03 F0                 ADD RSI,RAX
+1400fa3f0: 48 8B C2                 MOV RAX,RDX
+1400fa3f3: 48 2B C7                 SUB RAX,RDI
+1400fa3f6: 4C 8B C6                 MOV R8,RSI
+1400fa3f9: 48 83 E0 F8              AND RAX,-0x8
+1400fa3fd: 48 3B C1                 CMP RAX,RCX
+1400fa400: 7D 0F                    JGE 0x1400fa411
+1400fa402: 48 8B CF                 MOV RCX,RDI
+1400fa405: E8 66 FF FF FF           CALL 0x1400fa370
+1400fa40a: 48 8B 7C 24 28           MOV RDI,qword ptr [RSP + 0x28]
+1400fa40f: EB 10                    JMP 0x1400fa421
+1400fa411: 48 8B D3                 MOV RDX,RBX
+1400fa414: 49 8B CA                 MOV RCX,R10
+1400fa417: E8 54 FF FF FF           CALL 0x1400fa370
+1400fa41c: 48 8B 5C 24 20           MOV RBX,qword ptr [RSP + 0x20]
+1400fa421: 48 8B C3                 MOV RAX,RBX
+1400fa424: 48 2B C7                 SUB RAX,RDI
+1400fa427: 48 C1 F8 03              SAR RAX,0x3
+1400fa42b: 48 83 F8 20              CMP RAX,0x20
+1400fa42f: 0F 8F 6F FF FF FF        JG 0x1400fa3a4
+1400fa435: 48 83 F8 02              CMP RAX,0x2
+1400fa439: 7C 0E                    JL 0x1400fa449
+1400fa43b: 4C 8B C5                 MOV R8,RBP
+1400fa43e: 48 8B D3                 MOV RDX,RBX
+1400fa441: 48 8B CF                 MOV RCX,RDI
+1400fa444: E8 17 1A 00 00           CALL 0x1400fbe60
+1400fa449: 48 8B 5C 24 40           MOV RBX,qword ptr [RSP + 0x40]
+1400fa44e: 48 8B 6C 24 48           MOV RBP,qword ptr [RSP + 0x48]
+1400fa453: 48 8B 74 24 50           MOV RSI,qword ptr [RSP + 0x50]
+1400fa458: 48 83 C4 30              ADD RSP,0x30
+1400fa45c: 5F                       POP RDI
+1400fa45d: C3                       RET
+1400fa45e: 48 83 F8 20              CMP RAX,0x20
+1400fa462: 7E D1                    JLE 0x1400fa435
+1400fa464: 4C 8B C5                 MOV R8,RBP
+1400fa467: 48 8B D3                 MOV RDX,RBX
+1400fa46a: 48 8B CF                 MOV RCX,RDI
+1400fa46d: E8 CE 18 00 00           CALL 0x1400fbd40
+1400fa472: 4C 8B C5                 MOV R8,RBP
+1400fa475: 48 8B D3                 MOV RDX,RBX
+1400fa478: 48 8B CF                 MOV RCX,RDI
+1400fa47b: E8 40 19 00 00           CALL 0x1400fbdc0
+1400fa480: EB C7                    JMP 0x1400fa449
+```
+
+#### Simulation dispatch is a conditional, not yet same-office, edge
+
+The manager update at `0x140010E20` calls `FUN_14066D530` on a direct object pointer and then on each pointer in its `+0x3A0` array. The latter call setup is `RCX=[RBX+0x398]+RSI`, followed by `CALL 0x14066D530` at `0x140010E87`. In `FUN_14066D530`, `RBX` retains that receiver. Its route-consumer branch is reachable when `+0x4A0 == 0` and metadata-kind `+0x294` is 1 or 2; the reported road-truck kind 1 satisfies the metadata test, but the `+0x4A0` value and the office-fleet-to-manager-array membership are not established. The exact predecessor references to the call are conditional jumps at `0x14066E8A3` and `0x14066E8B0`.
+
+```asm
+140010e80: 48 8B 0A                 MOV RCX,qword ptr [RDX]
+140010e83: 48 8B 0C 31              MOV RCX,qword ptr [RCX + RSI]
+140010e87: E8 A4 C6 65 00           CALL 0x14066d530
+14066e880: 48 8B 8B A0 04 00 00     MOV RCX,qword ptr [RBX + 0x4a0]
+14066e887: 48 85 C9                 TEST RCX,RCX
+14066e88a: 0F 85 E3 01 00 00        JNZ 0x14066ea73
+14066e890: 48 8B 83 08 17 00 00     MOV RAX,qword ptr [RBX + 0x1708]
+14066e897: 8B 88 94 02 00 00        MOV ECX,dword ptr [RAX + 0x294]
+14066e89d: 8D 41 FF                 LEA EAX,[RCX - 0x1]
+14066e8a0: 83 F8 01                 CMP EAX,0x1
+14066e8a3: 0F 86 BD 01 00 00        JBE 0x14066ea66
+14066e8a9: 44 38 BB 7D 06 00 00     CMP byte ptr [RBX + 0x67d],R15B
+14066e8b0: 0F 85 B0 01 00 00        JNZ 0x14066ea66
+14066ea66: 48 8B CB                 MOV RCX,RBX
+14066ea69: E8 B2 A9 02 00           CALL 0x140699420
+1406994a9: 4C 8B F9                 MOV R15,RCX
+```
+
+The first call into `FUN_140699420` is proven to receive the same `RBX` object as `FUN_14066D530`. This is not yet a proof that the candidate `RSI` truck from the type-43 `+0xC70/+0xC78` fleet is present in the manager array or that it satisfies `+0x4A0 == 0`; that identity edge remains open.
+
+#### Route/current-target handling is not a proven stop or removal event
+
+On the bounded route-index path in `FUN_140699420`, the receiver is `R15`. One selected branch tests a candidate slot in the receiver's `+0x6B8/+0x6C0` vector; when the slot is null it sets `+0xD3A`, calls `FUN_1406BBDF0(RCX=R15)`, then sets `+0x698` to the last route row if `+0x680/+0x688` is nonempty. If the route is empty, it writes the computed empty-route index. A separate bounded branch validates the current `+0x698` entry against `R10` and may call the same detach helper. These are route/list normalization paths; neither is shown to be caused by task completion or cancellation.
+
+```asm
+14069bb9c: 49 8B 87 C0 06 00 00     MOV RAX,qword ptr [R15 + 0x6c0]
+14069bba3: 49 2B 87 B8 06 00 00     SUB RAX,qword ptr [R15 + 0x6b8]
+14069bbae: 44 3B C0                 CMP R8D,EAX
+14069bbb1: 7D 76                    JGE 0x14069bc29
+14069bbb3: 49 8B 87 B8 06 00 00     MOV RAX,qword ptr [R15 + 0x6b8]
+14069bbba: 4A 83 3C C0 00           CMP qword ptr [RAX + R8*8],0
+14069bbbf: 75 68                    JNZ 0x14069bc29
+14069bbc1: 40 32 F6                 XOR SIL,SIL
+14069bbcb: 41 C6 87 3A 0D 00 00 01 MOV byte ptr [R15 + 0xd3a],0x1
+14069bbd3: 49 8B CF                 MOV RCX,R15
+14069bbd6: E8 15 02 02 00           CALL 0x1406bbdf0
+14069bbdb: 49 8B 87 88 06 00 00     MOV RAX,qword ptr [R15 + 0x688]
+14069bbe2: 49 2B 87 80 06 00 00     SUB RAX,qword ptr [R15 + 0x680]
+14069bbe9: 48 C1 F8 03              SAR RAX,0x3
+14069bbed: 48 85 C0                 TEST RAX,RAX
+14069bbf7: 74 19                    JZ 0x14069bc12
+14069bc04: FF C8                    DEC EAX
+14069bc06: 41 89 87 98 06 00 00     MOV dword ptr [R15 + 0x698],EAX
+14069bc12: 49 2B 87 80 06 00 00     SUB RAX,qword ptr [R15 + 0x680]
+14069bc19: 48 C1 F8 03              SAR RAX,0x3
+14069bc1d: 41 89 87 98 06 00 00     MOV dword ptr [R15 + 0x698],EAX
+14069bc29: 83 3D 04 A1 33 00 03     CMP dword ptr [0x1409d5d34],0x3
+14069bc30: 0F 84 C8 00 00 00        JZ 0x14069bcfe
+14069bc36: 81 3D 60 98 33 00 45 01 00 00 CMP dword ptr [0x1409d54a0],0x145
+14069bc40: 0F 8D B8 00 00 00        JGE 0x14069bcfe
+14069bc50: 41 83 F8 01              CMP R8D,0x1
+14069bc54: 0F 8E 4D 04 00 00        JLE 0x14069c0a7
+14069bc5a: 49 63 8F 98 06 00 00     MOVSXD RCX,dword ptr [R15 + 0x698]
+14069bc61: 85 C9                    TEST ECX,ECX
+14069bc63: 0F 88 3E 04 00 00        JS 0x14069c0a7
+14069bc69: 49 8B 87 88 06 00 00     MOV RAX,qword ptr [R15 + 0x688]
+14069bc70: 49 2B 87 80 06 00 00     SUB RAX,qword ptr [R15 + 0x680]
+14069bc77: 48 C1 F8 03              SAR RAX,0x3
+14069bc7b: 48 3B C8                 CMP RCX,RAX
+14069bc7e: 0F 83 23 04 00 00        JNC 0x14069c0a7
+14069bc84: 49 8B 87 80 06 00 00     MOV RAX,qword ptr [R15 + 0x680]
+14069bc8b: 4C 39 14 C8              CMP qword ptr [RAX + RCX*8],R10
+14069bc8f: 0F 84 12 04 00 00        JZ 0x14069c0a7
+14069bc95: 41 C6 87 3A 0D 00 00 01 MOV byte ptr [R15 + 0xd3a],0x1
+14069bc9d: 49 8B CF                 MOV RCX,R15
+14069bca0: E8 4B 01 02 00           CALL 0x1406bbdf0
+```
+
+The complete 107-byte `FUN_1406BBDF0` body shows only a linked-object detach/truncate operation: it clears an element's `+0x100` only when that pointer equals the receiver, then sets the receiver's `+0xD50` end to `+0xD48` begin. It does not write `+0xC80`, `+0xBB0`, or the route list:
+
+```asm
+1406bbdf0: 48 8B 81 50 0D 00 00     MOV RAX,qword ptr [RCX + 0xd50]
+1406bbdf7: 45 33 D2                 XOR R10D,R10D
+1406bbdfa: 48 2B 81 48 0D 00 00     SUB RAX,qword ptr [RCX + 0xd48]
+1406bbe01: 45 8B CA                 MOV R9D,R10D
+1406bbe04: 48 C1 F8 03              SAR RAX,0x3
+1406bbe08: 48 85 C0                 TEST RAX,RAX
+1406bbe0b: 74 3F                    JZ 0x1406bbe4c
+1406bbe0d: 45 8B C2                 MOV R8D,R10D
+1406bbe10: 48 8B 81 48 0D 00 00     MOV RAX,qword ptr [RCX + 0xd48]
+1406bbe17: 49 8B 14 00              MOV RDX,qword ptr [R8 + RAX]
+1406bbe1b: 48 39 8A 00 01 00 00     CMP qword ptr [RDX + 0x100],RCX
+1406bbe22: 75 07                    JNZ 0x1406bbe2b
+1406bbe24: 4C 89 92 00 01 00 00     MOV qword ptr [RDX + 0x100],R10
+1406bbe2b: 48 8B 91 50 0D 00 00     MOV RDX,qword ptr [RCX + 0xd50]
+1406bbe32: 41 FF C1                 INC R9D
+1406bbe35: 48 2B 91 48 0D 00 00     SUB RDX,qword ptr [RCX + 0xd48]
+1406bbe3c: 49 83 C0 08              ADD R8,0x8
+1406bbe40: 48 C1 FA 03              SAR RDX,0x3
+1406bbe44: 49 63 C1                 MOVSXD RAX,R9D
+1406bbe47: 48 3B C2                 CMP RAX,RDX
+1406bbe4a: 72 C4                    JC 0x1406bbe10
+1406bbe4c: 48 8B 81 48 0D 00 00     MOV RAX,qword ptr [RCX + 0xd48]
+1406bbe53: 48 89 81 50 0D 00 00     MOV qword ptr [RCX + 0xd50],RAX
+1406bbe5a: C3                       RET
+```
+
+The other bounded route block at `0x14069DC61..0x14069DD70` calls `FUN_1406C2A00` and possibly `FUN_1406C27E0` on the same `R15` receiver, validates `+0x698` against `+0x680/+0x688`, and on an invalid index can call `FUN_14067D5D0(RCX=R15, RDX=[R15+0x4F8], R8=-1, R9=0)` to rebuild a home route. When `+0x528` is null and the index is usable, it loads `[+0x680 + +0x698*8]` into `+0x528` at `0x14069DCF6`, then resets movement fields:
+
+```asm
+14069dc61: 49 8B CF                 MOV RCX,R15
+14069dc64: E8 97 4D 02 00           CALL 0x1406c2a00
+14069dc69: 84 C0                    TEST AL,AL
+14069dc6b: 74 0F                    JZ 0x14069dc7c
+14069dc6d: 49 8B CF                 MOV RCX,R15
+14069dc70: E8 6B 4B 02 00           CALL 0x1406c27e0
+14069dc75: 49 89 87 28 05 00 00     MOV qword ptr [R15 + 0x528],RAX
+14069dc7c: 49 63 87 98 06 00 00     MOVSXD RAX,dword ptr [R15 + 0x698]
+14069dc83: 85 C0                    TEST EAX,EAX
+14069dc85: 78 17                    JS 0x14069dc9e
+14069dc87: 49 8B 8F 88 06 00 00     MOV RCX,qword ptr [R15 + 0x688]
+14069dc8e: 49 2B 8F 80 06 00 00     SUB RCX,qword ptr [R15 + 0x680]
+14069dc95: 48 C1 F9 03              SAR RCX,0x3
+14069dc99: 48 3B C1                 CMP RAX,RCX
+14069dc9c: 72 3C                    JC 0x14069dcda
+14069dc9e: 49 83 BF F8 04 00 00 00  CMP qword ptr [R15 + 0x4f8],0
+14069dca6: 74 32                    JZ 0x14069dcda
+14069dca8: 45 33 C9                 XOR R9D,R9D
+14069dcab: 41 83 C8 FF              OR R8D,0xffffffff
+14069dcaf: 49 8B 97 F8 04 00 00     MOV RDX,qword ptr [R15 + 0x4f8]
+14069dcb6: 49 8B CF                 MOV RCX,R15
+14069dcb9: E8 12 F9 FD FF           CALL 0x14067d5d0
+14069dcbe: 84 C0                    TEST AL,AL
+14069dcc0: 74 18                    JZ 0x14069dcda
+14069dcc2: 49 8B 87 38 06 00 00     MOV RAX,qword ptr [R15 + 0x638]
+14069dcc9: C6 00 00                 MOV byte ptr [RAX],0
+14069dccc: 49 8B 87 38 06 00 00     MOV RAX,qword ptr [R15 + 0x638]
+14069dcd3: C6 80 C8 00 00 00 00     MOV byte ptr [RAX + 0xc8],0
+14069dcda: 49 83 BF 28 05 00 00 00  CMP qword ptr [R15 + 0x528],0
+14069dce2: 75 19                    JNZ 0x14069dcfd
+14069dce4: 49 63 8F 98 06 00 00     MOVSXD RCX,dword ptr [R15 + 0x698]
+14069dceb: 49 8B 87 80 06 00 00     MOV RAX,qword ptr [R15 + 0x680]
+14069dcf2: 48 8B 0C C8              MOV RCX,qword ptr [RAX + RCX*8]
+14069dcf6: 49 89 8F 28 05 00 00     MOV qword ptr [R15 + 0x528],RCX
+14069dcfd: 41 C7 87 6C 05 00 00 FF FF FF FF MOV dword ptr [R15 + 0x56c],0xffffffff
+14069dd08: 49 8B 87 40 05 00 00     MOV RAX,qword ptr [R15 + 0x540]
+14069dd0f: 49 89 87 48 05 00 00     MOV qword ptr [R15 + 0x548],RAX
+14069dd16: 49 C7 87 58 05 00 00 00 00 00 00 MOV qword ptr [R15 + 0x558],0
+14069dd21: 49 C7 87 94 05 00 00 00 00 00 00 MOV qword ptr [R15 + 0x594],0
+14069dd2c: 41 C7 87 68 05 00 00 00 00 80 3F MOV dword ptr [R15 + 0x568],0x3f800000
+14069dd37: 45 89 AF 9C 17 00 00     MOV dword ptr [R15 + 0x179c],R13D
+14069dd3e: 49 C7 87 60 05 00 00 00 00 00 00 MOV qword ptr [R15 + 0x560],0
+14069dd49: 45 89 AF 10 13 00 00     MOV dword ptr [R15 + 0x1310],R13D
+14069dd50: 41 C6 87 9C 05 00 00 00 MOV byte ptr [R15 + 0x59c],0
+14069dd58: 49 8B CF                 MOV RCX,R15
+14069dd5b: E8 E0 24 01 00           CALL 0x1406b0240
+```
+
+These are route/current-target operations. They do not prove a stop-only advance, task completion, cancellation, or that a home-route rebuild follows removal; no `+0xC80`/`+0xBB0` removal appears in these bounded blocks.
+
+The `+0x698` writes reproduced above assign the last route index or the computed empty-route index; they do not establish an increment for internal pickup/unload stops. The route consumer therefore supplies a useful candidate path for later observation, but not a proven interval event.
 
 ### Lifecycle matrix and current integration decision
 
 | Case | Static evidence in this trace | Status |
 |---|---|---|
-| Idle/default route at DO | Candidate selection requires `truck+0xC80 == 0`; a positive `+0xD58` row predicate rebuilds a route. Existing route contents can be cleared and recreated. | Cannot classify a retained/default/return route as work from list occupancy. |
-| Assigned but not loaded | The type-43 updater can materialize a route from a same-office row before any identified resource-transfer call on this path. `truck+0x528` is an unexplained guard. | Candidate route construction is proved; task commitment and assigned-before-load semantics are not. |
-| Internal pickup/unload stops | `FUN_14067D5D0` updates route rows/index, but this pass did not follow simulation stop advancement on the same truck. The updater skips trucks with nonzero `+0xC80`. | Persistence across stops remains unproved. |
-| Final removal/cancellation | `FUN_1403FBDC0` is called from the updater only on its entry path with `truck+0xC80 == 0`; its generic clear is not evidence of closing active work. No paired same-truck cancellation/removal edge was identified. | No close boundary established; success is not required, but the removal operation is missing. |
-| Replacement in one update | Both route rebuilders first set route end to begin and config end to begin, then may repopulate them synchronously. | An internal empty interval can be hidden from polling, but the clear/rebuild is not proven to mean task replacement rather than route refresh. |
-| Identical consecutive work | The selector uses a row pointer/value and route targets, not a verified stable job ID. Old and new work may produce identical final route/configuration values. | Cannot distinguish with final snapshots; no event semantics proved. |
-| Empty return after removal | The route builder can set index `+0x698` to zero; no same-truck post-removal return transition was traced. | Not established; exclude-travel-after-removal cannot yet be enforced. |
+| Idle/default route at DO | `FUN_14067CB30` can clear route/configuration vectors on the conditional home-target path; candidate rows and route lists can be refreshed. | Neither an empty nor nonempty list classifies active DO work. |
+| Assigned but not loaded | The type-43 updater can build a route from an office row before any identified resource transfer, but no committed-work event is established. | Assigned-before-load start remains unproved. |
+| Internal pickup/unload stops | `FUN_140699420` can write the current `+0x528` target's `+0xBB0` from `truck+0x390` and write that target to `truck+0xC80`; its old-target qword write stores `R14` (decompiler says zero, but zero provenance is not in the bounded raw slice). A separate raw block increments `truck+0x700`, not the established `+0x698` route index. | The target link is not a proven task marker; neither the old-link clear nor these paths' relation to pickup/unload is established. |
+| Final removal/cancellation | The type-43 home-target branch calls `FUN_14067CB30`, whose direct stores clear route/configuration vectors but not `+0xC80/+0xBB0`; it also calls manager-detach helpers with some transitive effects not classified. No cancellation/removal cause is connected to the call. | No close boundary established; cancellation remains untraced. |
+| Replacement in one update | The same `FUN_140699420` branch may overwrite `+0xC80` with the current target and may write its `+0xBB0`; the old-target `R14` store is not proven zero. Route rebuilders also clear/repopulate their vectors synchronously. | These are observable target-association/route writes, not proof of whole-task replacement; no mandatory task boundary is established. |
+| Identical consecutive work | No stable job ID or semantically validated commit event is identified. Same office, row, route and target values can recur. | Cannot distinguish identical consecutive tasks from refresh using final snapshots. |
+| Empty return after removal | `truck+0x528 == +0x4F8 == +0x4F0` with descriptor type `0x2B` or `0x2D` reaches a route/config reset, but the caller does not prove that the task was removed before this path. | The home-target reset is not a proven removal boundary; post-removal travel cannot yet be excluded. |
 | Reload | Not traced in this pass. | Explicitly unsupported. |
 
-**Integration decision:** do not implement a polling interval from `+0x680/+0x688`, `+0x698`, `+0xC80`, `+0xBB0`, `+0xD39`, or `+0x390`. The trace now identifies a concrete same-truck route-install/rebuild path, but not a sufficient assignment start/end pair. The narrow static gaps are: (1) whether the type-43 office `+0xD58/+0xD60` row consumed by the route builder is a committed assignment or a regenerated candidate; and (2) which same-truck simulation path removes/cancels that work and whether it preserves association over internal stops. The precise next bounded targets are the `FUN_1401E2380` path that the updater calls before this candidate pass and the actual same-truck writer/clear path for the active route/association; neither is classified as a boundary here.
+**Integration decision:** do not implement a polling interval from `+0x680/+0x688`, `+0x698`, `+0x700`, `+0xC80`, `+0xBB0`, `+0xD39`, or `+0x390`. Route installation is proved, but not task commitment. The type-43 fleet-to-simulation-manager membership and `+0x4A0` applicability guard are still open; even on `FUN_140699420`'s receiver, `+0xC80/+0xBB0` follow a current target and may be rebound, while the home-target reset does not prove final removal. The cancellation/replacement edge and the meaning of the `+0x700` progression field remain untraced. These are bounded missing edges, not evidence that static proof is impossible.
 
 No destination-payer conclusion follows from this route path. Do not equate the selected row, `truck+0x390`, or the candidate home office with the payer.
 
 ### Logging-only observation proposal (not performed)
 
-If a later changed logging-only capture is approved, use the already identified same-office call at `0x1401C6CC9` as the narrow entry/return observation site:
+If a later changed logging-only capture is approved, the smallest useful paired capture is the existing same-office call at `0x1401C6CC9` plus the connected simulation association/reset path:
 
 - Receiver/arguments: `RCX=R12` context, `RDX=[RBX]` candidate truck from this office's fleet, `R8=RDI` same type-43 office.
-- Before and after: `truck+0x528`, `+0x4F8`, `+0xC80`, `+0xD39`, `+0x680/+0x688` row contents, `+0x638/+0x640` config bounds/contents, `+0x698`, and the selected office `+0xD58` row fields. Record whether the callee chose `FUN_1401E5480` or `FUN_1401E5BA0`, and whether the nested `FUN_1406B8EB0` post-`FUN_140680A20` test at `0x1406B8FF1` passes.
-- Expected contrast: an accepted row shows a route/config clear-and-rebuild in one call; a rejected row returns without that rebuild. This can determine whether repeated same-row rebuilds occur and whether the `+0xC80` association persists during observed stop changes.
-- Limitation: this cannot by itself label a rebuild as a new assignment versus planner refresh, identify a removal that occurs outside these calls, or distinguish identical consecutive jobs with identical row/route values. Those semantics still require the bounded static edges above; no unchanged game replay is requested.
+- At `0x14069B7D0`, receiver `R15` (copied from `FUN_140699420`'s `RCX`) and entry byte `+0xD39` govern the association block. Capture before/after `+0x528`, `+0x4F8`, `+0x4F0`, `+0xC80`, `+0x390`, `R14`, and the old/current target's `+0xBB0`. At `0x14069B8D9`, record the same truck and the call arguments `RDX=0`, `R8B=1`; record route/config bounds and `+0x528/+0x538` before and after the call through `0x14069B923`.
+- Also record `+0x698` and `+0x700` separately; do not merge them. Restrict conclusions to a truck whose type-43 fleet membership and simulation-manager membership are independently established.
+- Expected contrast: a current-target handoff would show the exact `R14` value written to the old target and current-target `+0xBB0`/truck `+0xC80` updated, without proving task replacement; the type-43 home-target call can clear route/config vectors while its direct body leaves the association fields untouched. A repeated identical route-builder result remains ambiguous between refresh and a new task, and no cancellation writer is covered by these sites.
+- This is a logging-only proposal, not performed validation; it does not request a game run or install instrumentation.
 
 ### Complete raw bodies: small connected functions
 
@@ -5412,3 +5727,443 @@ Actual `ListFuncs.java` results:
 ```
 
 Earlier bounded output in this investigation records `FUN_1401E5350` size 293, `FUN_1401E5480` size 1812, `FUN_1401E5BA0` size 1343, and `FUN_1406BDC30` size 145. `FUN_1401DE2B0` ends at its `RET` at `0x1401DE60F`; the requested disassembly range also printed the next function's entry at `0x1401DE610`, which is not included in its body above. `FUN_14067D5D0` ends at `0x14067D90D` with `RET`; no undecoded tail was used. All listed Ghidra commands completed successfully. A lookup for `Tesmio Mods\docs\03-reverse-engineering.md` found no matching file in this checkout; the repository-root `INSTRUCTIONS.md` and the existing report methodology were used. No new script output or tracked file was created beyond this Markdown report.
+
+## Simulation association and home-target reset follow-up
+
+### Delta and same-receiver path
+
+- **Newly established:** `FUN_140699420` receives its object in `RCX` (`R15=RCX` at `0x1406994A9`). When its `+0xD39` byte is zero, the block at `0x14069B7D0` may write the previous `truck+0xC80` object's `+0xBB0` if it differs from current `truck+0x528` and the backlink equals `truck+0x390`; the raw source is `R14`, whose zero provenance is not established by this bounded export. The block can then bind the current `truck+0x528` target by storing `target+0xBB0 = truck+0x390` and `truck+0xC80 = target`. This is a target association update, not proof of a whole-task boundary.
+- **Newly established:** when `truck+0x528 == truck+0x4F8 == truck+0x4F0` and the target descriptor type is `0x2B` or `0x2D`, the same path calls `FUN_14067CB30(RCX=truck, RDX=0, R8B=1)`. Its direct body clears route/configuration and other vectors, and the caller then clears `+0x528/+0x538`. It does not directly clear `+0xC80/+0xBB0`; its `FUN_140497950` manager-detach call has separate, bounded effects described below. Neither helper establishes cancellation or a task-close cause.
+- **Corrected:** the raw stop-adjacent block at `0x14069D226` increments dword `[R15+0x700]` and indexes an array through `[RBX]`. This is not the separately established route index `+0x698`. The prior decompiler-based interpretation that this block advances `+0x698` is withdrawn; the field at `+0x700` remains semantically unidentified.
+- **Still unresolved:** the conditional `FUN_14066D530 -> FUN_140699420` edge has not been joined to the exact candidate pointer traversed from the type-43 office's `+0xC70/+0xC78` fleet, and its `+0x4A0` guard has not been validated for that truck. The target association/reset path therefore cannot be promoted to an interval rule even if it runs for a road truck.
+
+```text
+type-43 office +0xC70/+0xC78 fleet
+  -> FUN_1401C6050 candidate buffer -> FUN_1401E5350 / route builder
+     [route/config rebuild; commitment vs refresh not proved]
+  -> simulation manager array -> FUN_14066D530
+     [metadata kind 1/2 and +0x4A0==0 guards;
+      membership of this exact office-fleet truck not proved]
+  -> FUN_140699420(RCX=truck; R15=RCX)
+     -> if truck+0xD39==0:
+        old truck+0xC80 target may have target+0xBB0 cleared
+        current truck+0x528 target may receive target+0xBB0=truck+0x390
+        truck+0xC80 may be rebound to truck+0x528
+     -> if +0x528==+0x4F8==+0x4F0 and descriptor type is 0x2B/0x2D:
+        FUN_14067CB30(truck, 0, 1)
+        [route/config reset; not a proved task-removal/cancellation event]
+        caller clears truck+0x528/+0x538
+```
+
+### Exact association and return/reset instructions
+
+The receiver is `R15`, established from the function argument at `0x1406994A9`. The following bytes show the D39 guard, conditional old-target qword write, and current-target association stores. The raw instruction writes `R14`; its zero provenance is not established in this bounded predecessor slice. The existing decompilation renders the value as zero, but the report does not treat that as raw register proof.
+
+```asm
+14069b7d0:  41 80 BF 39 0D 00 00 00  CMP byte ptr [R15 + 0xd39],0x0
+14069b7d8:  0F 85 D5 01 00 00        JNZ 0x14069b9b3
+14069b7de:  49 8B 87 80 0C 00 00     MOV RAX,qword ptr [R15 + 0xc80]
+14069b7e5:  48 85 C0                 TEST RAX,RAX
+14069b7e8:  74 23                    JZ 0x14069b80d
+14069b7ea:  49 3B 87 28 05 00 00     CMP RAX,qword ptr [R15 + 0x528]
+14069b7f1:  74 1A                    JZ 0x14069b80d
+14069b7f3:  48 8B C8                 MOV RCX,RAX
+14069b7f6:  49 8B 87 90 03 00 00     MOV RAX,qword ptr [R15 + 0x390]
+14069b7fd:  48 39 81 B0 0B 00 00     CMP qword ptr [RCX + 0xbb0],RAX
+14069b804:  75 07                    JNZ 0x14069b80d
+14069b806:  4C 89 B1 B0 0B 00 00     MOV qword ptr [RCX + 0xbb0],R14
+14069b80d:  49 8B 8F 28 05 00 00     MOV RCX,qword ptr [R15 + 0x528]
+14069b814:  48 8B 81 18 03 00 00     MOV RAX,qword ptr [RCX + 0x318]
+14069b81b:  48 85 C0                 TEST RAX,RAX
+14069b81e:  74 09                    JZ 0x14069b829
+14069b820:  80 B8 79 09 00 00 00     CMP byte ptr [RAX + 0x979],0x0
+14069b827:  75 40                    JNZ 0x14069b869
+14069b829:  41 8B 87 6C 05 00 00     MOV EAX,dword ptr [R15 + 0x56c]
+14069b830:  85 C0                    TEST EAX,EAX
+14069b832:  79 19                    JNS 0x14069b84d
+14069b834:  83 F8 F6                 CMP EAX,-0xa
+14069b837:  7F 30                    JG 0x14069b869
+14069b839:  48 83 B9 D0 05 00 00 00  CMP qword ptr [RCX + 0x5d0],0x0
+14069b841:  74 26                    JZ 0x14069b869
+14069b843:  48 83 B9 B0 0B 00 00 00  CMP qword ptr [RCX + 0xbb0],0x0
+14069b84b:  75 1C                    JNZ 0x14069b869
+14069b84d:  49 8B 87 90 03 00 00     MOV RAX,qword ptr [R15 + 0x390]
+14069b854:  48 89 81 B0 0B 00 00     MOV qword ptr [RCX + 0xbb0],RAX
+14069b85b:  49 8B 87 28 05 00 00     MOV RAX,qword ptr [R15 + 0x528]
+14069b862:  49 89 87 80 0C 00 00     MOV qword ptr [R15 + 0xc80],RAX
+```
+
+The old-target write is reached only when `+0xD39 == 0`, old `+0xC80` is non-null and differs from current `+0x528`, and old-target `+0xBB0 == truck+0x390`; whether it is a null clear requires proving `R14==0`. The new-target store is separately guarded by its descriptor flag and either nonnegative `+0x56C`, or `+0x56C < -9` with target `+0x5D0 != 0` and target `+0xBB0 == 0`. Therefore target reassociation can occur in one updater block without an empty `+0xC80` snapshot. This proves an association write, not replacement of assigned work.
+
+The bounded adjacent export contains these additional `R14` stores, but it does not supply a reaching definition that dominates `0x14069B806`; they are not used to assert the old backlink is cleared:
+
+```asm
+14069b511:  49 8B 87 28 05 00 00     MOV RAX,qword ptr [R15 + 0x528]
+14069b518:  49 89 87 F0 04 00 00     MOV qword ptr [R15 + 0x4f0],RAX
+14069b529:  4D 89 B7 E8 05 00 00     MOV qword ptr [R15 + 0x5e8],R14
+14069b533:  49 83 BF 80 0C 00 00 00  CMP qword ptr [R15 + 0xc80],0x0
+14069b53d:  49 8B 87 80 0C 00 00     MOV RAX,qword ptr [R15 + 0xc80]
+14069b544:  4C 39 B8 B0 0B 00 00     CMP qword ptr [RAX + 0xbb0],R15
+14069b54d:  4C 89 B0 B0 0B 00 00     MOV qword ptr [RAX + 0xbb0],R14
+14069b554:  4D 89 B7 80 0C 00 00     MOV qword ptr [R15 + 0xc80],R14
+14069b5c3:  45 89 B7 34 0D 00 00     MOV dword ptr [R15 + 0xd34],R14D
+14069b5ca:  4D 89 B7 98 07 00 00     MOV qword ptr [R15 + 0x798],R14
+14069b668:  41 C6 87 39 0D 00 00 00  MOV byte ptr [R15 + 0xd39],0x0
+```
+
+The home-target predicate and call arguments are exact. `TEST EAX,0xfffffffd` accepts descriptor type `0x2B` or `0x2D` after subtracting `0x2B`; it is not a generic assertion that every road-DO target reaches this branch.
+
+```asm
+14069b89c:  49 8B 87 F8 04 00 00     MOV RAX,qword ptr [R15 + 0x4f8]
+14069b8a3:  49 39 87 28 05 00 00     CMP qword ptr [R15 + 0x528],RAX
+14069b8aa:  75 74                    JNZ 0x14069b920
+14069b8ac:  49 3B 87 F0 04 00 00     CMP RAX,qword ptr [R15 + 0x4f0]
+14069b8b3:  75 6B                    JNZ 0x14069b920
+14069b8b5:  48 8B 88 18 03 00 00     MOV RCX,qword ptr [RAX + 0x318]
+14069b8bc:  48 85 C9                 TEST RCX,RCX
+14069b8bf:  74 1D                    JZ 0x14069b8de
+14069b8c1:  8B 81 60 03 00 00        MOV EAX,dword ptr [RCX + 0x360]
+14069b8c7:  83 E8 2B                 SUB EAX,0x2b
+14069b8ca:  A9 FD FF FF FF           TEST EAX,0xfffffffd
+14069b8cf:  75 0D                    JNZ 0x14069b8de
+14069b8d1:  41 B0 01                 MOV R8B,0x1
+14069b8d4:  33 D2                    XOR EDX,EDX
+14069b8d6:  49 8B CF                 MOV RCX,R15
+14069b8d9:  E8 52 12 FE FF           CALL 0x14067cb30
+14069b8de:  49 8B 87 28 05 00 00     MOV RAX,qword ptr [R15 + 0x528]
+14069b8e5:  48 8B 88 18 03 00 00     MOV RCX,qword ptr [RAX + 0x318]
+14069b8ec:  48 85 C9                 TEST RCX,RCX
+14069b8ef:  74 16                    JZ 0x14069b907
+14069b8f1:  80 B9 79 09 00 00 00     CMP byte ptr [RCX + 0x979],0x0
+14069b8f8:  75 0D                    JNZ 0x14069b907
+14069b8fa:  45 84 ED                 TEST R13B,R13B
+14069b8fd:  75 08                    JNZ 0x14069b907
+14069b8ff:  49 8B CF                 MOV RCX,R15
+14069b902:  E8 79 1E 01 00           CALL 0x1406ad780
+14069b907:  41 B1 01                 MOV R9B,0x1
+14069b90a:  4D 8B 87 28 05 00 00     MOV R8,qword ptr [R15 + 0x528]
+14069b911:  41 8B 97 10 05 00 00     MOV EDX,dword ptr [R15 + 0x510]
+14069b918:  49 8B CF                 MOV RCX,R15
+14069b91b:  E8 C0 B7 FC FF           CALL 0x1406670e0
+14069b920:  45 33 ED                 XOR R13D,R13D
+14069b923:  4D 89 AF 28 05 00 00     MOV qword ptr [R15 + 0x528],R13
+14069b92a:  4D 89 AF 38 05 00 00     MOV qword ptr [R15 + 0x538],R13
+```
+
+### Complete small connected helper bodies
+
+`FUN_14067CB30` is 264 bytes (`0x14067CB30..0x14067CC37`, `RET`). With this call's `RDX=0`, its `DL` branch is skipped and `R8B=1` enables its `FUN_140497950` call and direct route/configuration reset. Its direct instructions clear route-list end to begin at `+0x688/+0x680`, clear auxiliary vectors and `+0xD34`, and conditionally call `FUN_140681970`; they do not directly store to `+0xC80` or any target `+0xBB0`. Transitive side effects of `FUN_140681970` and vector helpers are not classified here.
+
+```asm
+14067cb30:  48 89 5C 24 08           MOV qword ptr [RSP + 0x8],RBX
+14067cb35:  57                       PUSH RDI
+14067cb36:  48 83 EC 20              SUB RSP,0x20
+14067cb3a:  41 0F B6 F8              MOVZX EDI,R8B
+14067cb3e:  48 8B D9                 MOV RBX,RCX
+14067cb41:  84 D2                    TEST DL,DL
+14067cb43:  74 38                    JZ 0x14067cb7d
+14067cb45:  48 83 B9 80 0C 00 00 00  CMP qword ptr [RCX + 0xc80],0x0
+14067cb4d:  75 0A                    JNZ 0x14067cb59
+14067cb4f:  48 83 B9 F0 04 00 00 00  CMP qword ptr [RCX + 0x4f0],0x0
+14067cb57:  75 24                    JNZ 0x14067cb7d
+14067cb59:  48 8B 81 80 06 00 00     MOV RAX,qword ptr [RCX + 0x680]
+14067cb60:  48 89 81 88 06 00 00     MOV qword ptr [RCX + 0x688],RAX
+14067cb67:  48 81 C1 38 06 00 00     ADD RCX,0x638
+14067cb6e:  48 8B 5C 24 30           MOV RBX,qword ptr [RSP + 0x30]
+14067cb73:  48 83 C4 20              ADD RSP,0x20
+14067cb77:  5F                       POP RDI
+14067cb78:  E9 23 2C B8 FF           JMP 0x1401ff7a0
+14067cb7d:  48 8B 81 08 17 00 00     MOV RAX,qword ptr [RCX + 0x1708]
+14067cb84:  48 85 C0                 TEST RAX,RAX
+14067cb87:  74 10                    JZ 0x14067cb99
+14067cb89:  83 B8 94 02 00 00 04     CMP dword ptr [RAX + 0x294],0x4
+14067cb90:  75 07                    JNZ 0x14067cb99
+14067cb92:  B2 01                    MOV DL,0x1
+14067cb94:  E8 87 9B 02 00           CALL 0x1406a6720
+14067cb99:  40 84 FF                 TEST DIL,DIL
+14067cb9c:  74 29                    JZ 0x14067cbc7
+14067cb9e:  48 8B 0D 6B AB 36 00     MOV RCX,qword ptr [0x1409e7710]
+14067cba5:  48 8B D3                 MOV RDX,RBX
+14067cba8:  E8 A3 AD E1 FF           CALL 0x140497950
+14067cbad:  48 8D 8B 38 06 00 00     LEA RCX,[RBX + 0x638]
+14067cbb4:  E8 E7 2B B8 FF           CALL 0x1401ff7a0
+14067cbb9:  48 8B 83 80 06 00 00     MOV RAX,qword ptr [RBX + 0x680]
+14067cbc0:  48 89 83 88 06 00 00     MOV qword ptr [RBX + 0x688],RAX
+14067cbc7:  48 8B 83 A0 06 00 00     MOV RAX,qword ptr [RBX + 0x6a0]
+14067cbce:  33 FF                    XOR EDI,EDI
+14067cbd0:  48 89 83 A8 06 00 00     MOV qword ptr [RBX + 0x6a8],RAX
+14067cbd7:  48 8B 83 B8 06 00 00     MOV RAX,qword ptr [RBX + 0x6b8]
+14067cbde:  48 89 83 C0 06 00 00     MOV qword ptr [RBX + 0x6c0],RAX
+14067cbe5:  48 8B 83 38 07 00 00     MOV RAX,qword ptr [RBX + 0x738]
+14067cbec:  48 89 83 40 07 00 00     MOV qword ptr [RBX + 0x740],RAX
+14067cbf3:  48 8B 83 50 07 00 00     MOV RAX,qword ptr [RBX + 0x750]
+14067cbfa:  48 89 83 58 07 00 00     MOV qword ptr [RBX + 0x758],RAX
+14067cc01:  48 89 BB 98 07 00 00     MOV qword ptr [RBX + 0x798],RDI
+14067cc08:  48 8B 83 C0 07 00 00     MOV RAX,qword ptr [RBX + 0x7c0]
+14067cc0f:  48 2B 83 B8 07 00 00     SUB RAX,qword ptr [RBX + 0x7b8]
+14067cc16:  48 C1 F8 03              SAR RAX,0x3
+14067cc1a:  48 85 C0                 TEST RAX,RAX
+14067cc1d:  74 08                    JZ 0x14067cc27
+14067cc1f:  48 8B CB                 MOV RCX,RBX
+14067cc22:  E8 49 4D 00 00           CALL 0x140681970
+14067cc27:  89 BB 34 0D 00 00        MOV dword ptr [RBX + 0xd34],EDI
+14067cc2d:  48 8B 5C 24 30           MOV RBX,qword ptr [RSP + 0x30]
+14067cc32:  48 83 C4 20              ADD RSP,0x20
+14067cc36:  5F                       POP RDI
+14067cc37:  C3                       RET
+```
+
+`FUN_140497950` (439 bytes) is the connected manager-detach helper called with `RCX=[0x1409E7710]`, `RDX=truck`. It removes that truck from the vector owned by `truck+0x650`, zeros truck `+0x650/+0x658`, and searches manager vectors for backlinks to detach. It does not directly write route, `+0xC80`, or target `+0xBB0`. It calls `FUN_1404962C0` on the manager object; that helper iterates manager-owned vectors and invokes other generic cleanup functions, so the transitive effects are not used to claim a task boundary.
+
+```asm
+140497950:  48 85 D2                 TEST RDX,RDX
+140497953:  0F 84 AD 01 00 00        JZ 0x140497b06
+140497959:  56                       PUSH RSI
+14049795a:  41 57                    PUSH R15
+14049795c:  48 83 EC 28              SUB RSP,0x28
+140497960:  48 89 6C 24 48           MOV qword ptr [RSP + 0x48],RBP
+140497965:  48 8B F2                 MOV RSI,RDX
+140497968:  48 8B AA 50 06 00 00     MOV RBP,qword ptr [RDX + 0x650]
+14049796f:  4C 8B F9                 MOV R15,RCX
+140497972:  48 85 ED                 TEST RBP,RBP
+140497975:  0F 84 7F 01 00 00        JZ 0x140497afa
+14049797b:  48 8B 95 48 02 00 00     MOV RDX,qword ptr [RBP + 0x248]
+140497982:  48 89 5C 24 40           MOV qword ptr [RSP + 0x40],RBX
+140497987:  48 89 7C 24 50           MOV qword ptr [RSP + 0x50],RDI
+14049798c:  48 8B BD 40 02 00 00     MOV RDI,qword ptr [RBP + 0x240]
+140497993:  4C 89 64 24 58           MOV qword ptr [RSP + 0x58],R12
+140497998:  48 3B FA                 CMP RDI,RDX
+14049799b:  74 11                    JZ 0x1404979ae
+14049799d:  0F 1F 00                 NOP dword ptr [RAX]
+1404979a0:  48 39 37                 CMP qword ptr [RDI],RSI
+1404979a3:  74 09                    JZ 0x1404979ae
+1404979a5:  48 83 C7 08              ADD RDI,0x8
+1404979a9:  48 3B FA                 CMP RDI,RDX
+1404979ac:  75 F2                    JNZ 0x1404979a0
+1404979ae:  45 33 E4                 XOR R12D,R12D
+1404979b1:  48 3B FA                 CMP RDI,RDX
+1404979b4:  74 3C                    JZ 0x1404979f2
+1404979b6:  48 8D 47 08              LEA RAX,[RDI + 0x8]
+1404979ba:  4C 8B CA                 MOV R9,RDX
+1404979bd:  4C 2B C8                 SUB R9,RAX
+1404979c0:  41 8B CC                 MOV ECX,R12D
+1404979c3:  49 83 C1 07              ADD R9,0x7
+1404979c7:  49 C1 E9 03              SHR R9,0x3
+1404979cb:  48 3B C2                 CMP RAX,RDX
+1404979ce:  4D 0F 47 CC              CMOVA R9,R12
+1404979d2:  4D 85 C9                 TEST R9,R9
+1404979d5:  74 1B                    JZ 0x1404979f2
+1404979d7:  4C 8B 00                 MOV R8,qword ptr [RAX]
+1404979da:  4C 3B C6                 CMP R8,RSI
+1404979dd:  74 07                    JZ 0x1404979e6
+1404979df:  4C 89 07                 MOV qword ptr [RDI],R8
+1404979e2:  48 83 C7 08              ADD RDI,0x8
+1404979e6:  48 83 C0 08              ADD RAX,0x8
+1404979ea:  48 FF C1                 INC RCX
+1404979ed:  49 3B C9                 CMP RCX,R9
+1404979f0:  75 E5                    JNZ 0x1404979d7
+1404979f2:  48 8B 85 40 02 00 00     MOV RAX,qword ptr [RBP + 0x240]
+1404979f9:  48 3B F8                 CMP RDI,RAX
+1404979fc:  75 09                    JNZ 0x140497a07
+1404979fe:  48 3B 95 48 02 00 00     CMP RDX,qword ptr [RBP + 0x248]
+140497a05:  74 1F                    JZ 0x140497a26
+140497a07:  48 3B FA                 CMP RDI,RDX
+140497a0a:  74 21                    JZ 0x140497a2d
+140497a0c:  48 8B 9D 48 02 00 00     MOV RBX,qword ptr [RBP + 0x248]
+140497a13:  48 8B CF                 MOV RCX,RDI
+140497a16:  48 2B DA                 SUB RBX,RDX
+140497a19:  4C 8B C3                 MOV R8,RBX
+140497a1c:  FF 15 26 62 3D 00        CALL qword ptr [0x14086dc48]
+140497a22:  48 8D 04 3B              LEA RAX,[RBX + RDI*0x1]
+140497a26:  48 89 85 48 02 00 00     MOV qword ptr [RBP + 0x248],RAX
+140497a2d:  4C 89 A6 50 06 00 00     MOV qword ptr [RSI + 0x650],R12
+140497a34:  44 89 A6 58 06 00 00     MOV dword ptr [RSI + 0x658],R12D
+140497a3b:  48 8B 1D 96 9F 54 00     MOV RBX,qword ptr [0x1409e19d8]
+140497a42:  48 8B 0D 87 9F 54 00     MOV RCX,qword ptr [0x1409e19d0]
+140497a49:  48 2B D9                 SUB RBX,RCX
+140497a4c:  48 C1 FB 03              SAR RBX,0x3
+140497a50:  85 DB                    TEST EBX,EBX
+140497a52:  0F 84 89 00 00 00        JZ 0x140497ae1
+140497a58:  4C 89 74 24 20           MOV qword ptr [RSP + 0x20],R14
+140497a5d:  44 8B F3                 MOV R14D,EBX
+140497a60:  49 C1 E6 03              SHL R14,0x3
+140497a64:  49 8B 7C 0E F8           MOV RDI,qword ptr [R14 + RCX*0x1 + -0x8]
+140497a69:  4D 8D 76 F8              LEA R14,[R14 + -0x8]
+140497a6d:  FF CB                    DEC EBX
+140497a6f:  83 BF 48 02 00 00 08     CMP dword ptr [RDI + 0x248],0x8
+140497a76:  75 60                    JNZ 0x140497ad8
+140497a78:  48 8B BF 70 02 00 00     MOV RDI,qword ptr [RDI + 0x270]
+140497a7f:  48 85 FF                 TEST RDI,RDI
+140497a82:  74 54                    JZ 0x140497ad8
+140497a84:  48 8B 87 48 02 00 00     MOV RAX,qword ptr [RDI + 0x248]
+140497a8b:  48 8B 97 40 02 00 00     MOV RDX,qword ptr [RDI + 0x240]
+140497a92:  48 3B D0                 CMP RDX,RAX
+140497a95:  74 41                    JZ 0x140497ad8
+140497a97:  48 39 32                 CMP qword ptr [RDX],RSI
+140497a9a:  74 09                    JZ 0x140497aa5
+140497a9c:  48 83 C2 08              ADD RDX,0x8
+140497aa0:  48 3B D0                 CMP RDX,RAX
+140497aa3:  75 F2                    JNZ 0x140497a97
+140497aa5:  48 3B D0                 CMP RDX,RAX
+140497aa8:  74 2E                    JZ 0x140497ad8
+140497aaa:  48 8B CF                 MOV RCX,RDI
+140497aad:  E8 1E AF FF FF           CALL 0x1404929d0
+140497ab2:  BA 90 02 00 00           MOV EDX,0x290
+140497ab7:  48 8B CF                 MOV RCX,RDI
+140497aba:  E8 21 65 3B 00           CALL 0x14084dfe0
+140497abf:  48 8B 05 0A 9F 54 00     MOV RAX,qword ptr [0x1409e19d0]
+140497ac6:  49 8B 0C 06              MOV RCX,qword ptr [R14 + RAX*0x1]
+140497aca:  4C 89 A1 70 02 00 00     MOV qword ptr [RCX + 0x270],R12
+140497ad1:  48 8B 0D F8 9E 54 00     MOV RCX,qword ptr [0x1409e19d0]
+140497ad8:  85 DB                    TEST EBX,EBX
+140497ada:  75 88                    JNZ 0x140497a64
+140497adc:  4C 8B 74 24 20           MOV R14,qword ptr [RSP + 0x20]
+140497ae1:  33 D2                    XOR EDX,EDX
+140497ae3:  49 8B CF                 MOV RCX,R15
+140497ae6:  E8 D5 E7 FF FF           CALL 0x1404962c0
+140497aeb:  4C 8B 64 24 58           MOV R12,qword ptr [RSP + 0x58]
+140497af0:  48 8B 7C 24 50           MOV RDI,qword ptr [RSP + 0x50]
+140497af5:  48 8B 5C 24 40           MOV RBX,qword ptr [RSP + 0x40]
+140497afa:  48 8B 6C 24 48           MOV RBP,qword ptr [RSP + 0x48]
+140497aff:  48 83 C4 28              ADD RSP,0x28
+140497b03:  41 5F                    POP R15
+140497b05:  5E                       POP RSI
+140497b06:  C3                       RET
+```
+
+`FUN_1404962C0` is 272 bytes; its complete body confirms it iterates manager-owned vectors and calls `FUN_1404956E0` or `FUN_1404942E0` on the manager receiver when nested object vectors are short. Those callees were not followed because this is manager maintenance, not a proved task setter/remover; their indirect effects remain a limitation.
+
+```asm
+1404962c0:  48 89 5C 24 10           MOV qword ptr [RSP + 0x10],RBX
+1404962c5:  48 89 74 24 18           MOV qword ptr [RSP + 0x18],RSI
+1404962ca:  57                       PUSH RDI
+1404962cb:  48 83 EC 20              SUB RSP,0x20
+1404962cf:  48 8B D9                 MOV RBX,RCX
+1404962d2:  84 D2                    TEST DL,DL
+1404962d4:  74 05                    JZ 0x1404962db
+1404962d6:  E8 C5 D3 FF FF           CALL 0x1404936a0
+1404962db:  48 8B 43 08              MOV RAX,qword ptr [RBX + 0x8]
+1404962df:  33 FF                    XOR EDI,EDI
+1404962e1:  48 2B 03                 SUB RAX,qword ptr [RBX]
+1404962e4:  8B F7                    MOV ESI,EDI
+1404962e6:  48 C1 F8 03              SAR RAX,0x3
+1404962ea:  48 85 C0                 TEST RAX,RAX
+1404962ed:  74 59                    JZ 0x140496348
+1404962ef:  4C 89 74 24 30           MOV qword ptr [RSP + 0x30],R14
+1404962f4:  44 8B F7                 MOV R14D,EDI
+1404962f7:  66 0F 1F 84 00 00 00 00 00 NOP word ptr [RAX + RAX*0x1]
+140496300:  48 8B 03                 MOV RAX,qword ptr [RBX]
+140496303:  49 8B 14 06              MOV RDX,qword ptr [R14 + RAX*0x1]
+140496307:  48 8B 82 48 02 00 00     MOV RAX,qword ptr [RDX + 0x248]
+14049630e:  48 2B 82 40 02 00 00     SUB RAX,qword ptr [RDX + 0x240]
+140496315:  48 C1 F8 03              SAR RAX,0x3
+140496319:  48 83 F8 01              CMP RAX,0x1
+14049631d:  73 0B                    JNC 0x14049632a
+14049631f:  41 B8 12 00 00 00        MOV R8D,0x12
+140496325:  E8 B6 F3 FF FF           CALL 0x1404956e0
+14049632a:  48 8B 4B 08              MOV RCX,qword ptr [RBX + 0x8]
+14049632e:  FF C6                    INC ESI
+140496330:  48 2B 0B                 SUB RCX,qword ptr [RBX]
+140496333:  49 83 C6 08              ADD R14,0x8
+140496337:  48 C1 F9 03              SAR RCX,0x3
+14049633b:  48 63 C6                 MOVSXD RAX,ESI
+14049633e:  48 3B C1                 CMP RAX,RCX
+140496341:  72 BD                    JC 0x140496300
+140496343:  4C 8B 74 24 30           MOV R14,qword ptr [RSP + 0x30]
+140496348:  48 8B 43 20              MOV RAX,qword ptr [RBX + 0x20]
+14049634c:  48 2B 43 18              SUB RAX,qword ptr [RBX + 0x18]
+140496350:  48 C1 F8 03              SAR RAX,0x3
+140496354:  48 85 C0                 TEST RAX,RAX
+140496357:  74 67                    JZ 0x1404963c0
+140496359:  48 8B F7                 MOV RSI,RDI
+14049635c:  0F 1F 40 00              NOP dword ptr [RAX]
+140496360:  48 8B 43 18              MOV RAX,qword ptr [RBX + 0x18]
+140496364:  48 8B 14 06              MOV RDX,qword ptr [RSI + RAX*0x1]
+140496368:  48 8B 82 48 02 00 00     MOV RAX,qword ptr [RDX + 0x248]
+14049636f:  48 2B 82 40 02 00 00     SUB RAX,qword ptr [RDX + 0x240]
+140496376:  48 C1 F8 03              SAR RAX,0x3
+14049637a:  48 83 F8 01              CMP RAX,0x1
+14049637e:  72 18                    JC 0x140496398
+140496380:  48 8B 82 18 02 00 00     MOV RAX,qword ptr [RDX + 0x218]
+140496387:  48 2B 82 10 02 00 00     SUB RAX,qword ptr [RDX + 0x210]
+14049638e:  48 C1 F8 03              SAR RAX,0x3
+140496392:  48 83 F8 02              CMP RAX,0x2
+140496396:  73 0E                    JNC 0x1404963a6
+140496398:  48 8B CB                 MOV RCX,RBX
+14049639b:  E8 40 DF FF FF           CALL 0x1404942e0
+1404963a0:  FF CF                    DEC EDI
+1404963a2:  48 83 EE 08              SUB RSI,0x8
+1404963a6:  48 8B 4B 20              MOV RCX,qword ptr [RBX + 0x20]
+1404963aa:  FF C7                    INC EDI
+1404963ac:  48 2B 4B 18              SUB RCX,qword ptr [RBX + 0x18]
+1404963b0:  48 83 C6 08              ADD RSI,0x8
+1404963b4:  48 C1 F9 03              SAR RCX,0x3
+1404963b8:  48 63 C7                 MOVSXD RAX,EDI
+1404963bb:  48 3B C1                 CMP RAX,RCX
+1404963be:  72 A0                    JC 0x140496360
+1404963c0:  48 8B 5C 24 38           MOV RBX,qword ptr [RSP + 0x38]
+1404963c5:  48 8B 74 24 40           MOV RSI,qword ptr [RSP + 0x40]
+1404963ca:  48 83 C4 20              ADD RSP,0x20
+1404963ce:  5F                       POP RDI
+1404963cf:  C3                       RET
+```
+
+The raw instruction at `0x14069D226` independently resolves the decompiler/offset conflict:
+
+```asm
+14069d226:  41 8B 87 00 07 00 00     MOV EAX,dword ptr [R15 + 0x700]
+14069d22d:  FF C0                    INC EAX
+14069d22f:  4C 63 C0                 MOVSXD R8,EAX
+14069d232:  48 8B 13                 MOV RDX,qword ptr [RBX]
+14069d235:  49 63 8F 00 07 00 00     MOVSXD RCX,dword ptr [R15 + 0x700]
+14069d23c:  48 8B C2                 MOV RAX,RDX
+14069d23f:  4E 8B 0C C2              MOV R9,qword ptr [RDX + R8*0x8]
+14069d243:  48 8B 14 CA              MOV RDX,qword ptr [RDX + RCX*0x8]
+14069d247:  48 85 D2                 TEST RDX,RDX
+14069d24a:  0F 84 D9 00 00 00        JZ 0x14069d329
+```
+
+This proves an integer field at `+0x700` is incremented and used to index the array pointed to by `[RBX]` on this branch. It does not prove that `+0x700` is the schedule route index, an assignment state, or an internal-stop counter. The separate `+0x698` route-index reads/writes elsewhere in `FUN_140699420` remain distinct.
+
+### Bounded caller/callee conclusion
+
+The dispatcher evidence already in this report shows `FUN_14066D530` calls `FUN_140699420` with its same `RBX` receiver when the metadata-kind and `+0x4A0` guards pass. Inside `FUN_140699420`, the prologue saves the incoming `RCX` in `R15`. The type-43 updater's fleet pointer has not been proven to be the object passed through the simulation manager array, so this is not yet a receiver-preserving path from the type-43 office all the way through execution/reset.
+
+The type-43 home-target path is bounded as follows: D39 must be zero; `+0x528` must equal both `+0x4F8` and `+0x4F0`; the object at that pointer must have a non-null descriptor at `+0x318` whose dword `+0x360` is `0x2B` or `0x2D`; then the call at `0x14069B8D9` passes `(RCX=truck, RDX=0, R8B=1)` to `FUN_14067CB30`. After the helper/adjacent guarded path, the caller clears `+0x528/+0x538` at `0x14069B923/0x14069B92A`. This is a home-target route/reset sequence, not a proved close event: the code does not establish whether it represents successful return, idle refresh, cancellation cleanup, or another reset condition.
+
+### Commands, identity, output and validation for this follow-up
+
+The executable hash was rechecked immediately before these exports: `C:\Workers Resources Soviet Republic\SOVIET64.exe` SHA-256 remained `296644A9F207D609031FC2AE73FED2DCB34619A1D55A35D1C7B51965CE6841B8`. The existing wrapper opened project `C:\Users\EricM\Downloads\TesmioLoader-master\TesmioLoader-master\ghidra\proj\soviet`, program `/SOVIET64.exe`, for each successful query. These are file VAs; the corresponding RVAs equal the VA minus image base `0x140000000`.
+
+Commands run serially through the existing wrapper:
+
+```text
+scratch\ghidra_run.bat DisasmMany.java C:\WRSRE\scratch\agent1_func_140699420_route_advance_blocks.asm 0x14069D160:0x14069D2A0 0x14069B7D0:0x14069B8A0
+scratch\ghidra_run.bat DisasmMany.java C:\WRSRE\scratch\agent1_func_140699420_provenance.asm 0x140699420:0x1406994D0 0x14069D1F0:0x14069D25A 0x14069B7D0:0x14069B869
+scratch\ghidra_run.bat DisasmMany.java C:\WRSRE\scratch\agent1_func_140699420_type43_home_call.asm 0x14069B869:0x14069B930
+scratch\ghidra_run.bat ListFuncs.java C:\WRSRE\scratch\agent1_func_14067cb30.txt 0x14067CB30 0x14067CB30
+scratch\ghidra_run.bat DisasmMany.java C:\WRSRE\scratch\agent1_func_14067cb30.asm 0x14067CB30:0x14067CC38
+scratch\ghidra_run.bat ListFuncs.java C:\WRSRE\scratch\agent1_func_140497950.txt 0x140497950 0x140497950
+scratch\ghidra_run.bat DisasmMany.java C:\WRSRE\scratch\agent1_func_140497950.asm 0x140497950:0x140497B07
+scratch\ghidra_run.bat ListFuncs.java C:\WRSRE\scratch\agent1_func_1404962c0.txt 0x1404962C0 0x1404962C0
+scratch\ghidra_run.bat DisasmMany.java C:\WRSRE\scratch\agent1_func_1404962c0.asm 0x1404962C0:0x1404963D0
+scratch\ghidra_run.bat DisasmMany.java C:\WRSRE\scratch\agent1_func_140699420_assoc_predecessor.asm 0x14069B680:0x14069B7E5
+scratch\ghidra_run.bat DisasmMany.java C:\WRSRE\scratch\agent1_func_140699420_assoc_r14_provenance.asm 0x14069B500:0x14069B690
+scratch\ghidra_run.bat DisasmMany.java C:\WRSRE\scratch\agent1_func_140699420_assoc_r14_entry.asm 0x14069B300:0x14069B520
+```
+
+Actual bounds output:
+
+```text
+0x14067CB30  size 264  FUN_14067cb30
+0x140497950  size 439  FUN_140497950
+0x1404962C0  size 272  FUN_1404962c0
+```
+
+The exported bodies end at `0x14067CC37`, `0x140497B06`, and `0x1404963CF`, respectively, each with `RET`. The `FUN_1404962C0` query range also printed the next function's entry at `0x1404963D0`; that instruction is outside the 272-byte body and is excluded above. All Ghidra exports completed successfully. The bounded `0x14069B300..0x14069B690` and `0x14069B500..0x14069B690` exports show repeated uses of `R14` for zero-like writes, but no reaching zero-definition for the `0x14069B806` store; the bounded evidence therefore leaves `R14==0` unproved. Three `rg` searches using unescaped `+0x700`/`+0x698` patterns failed with `regex parse error: repetition operator missing expression`; they yielded no evidence and did not change files. A subsequent escaped search succeeded. The offset conclusion above comes from direct Ghidra instruction bytes, not those failed searches.
+
+No analysis script was created or modified, so there is no new script source to reproduce. The raw native evidence is included above rather than left only in scratch. The analysis is static; no game run, hook, observer, dispatch, permission, save, or billing change was performed. At this continuation's start, HEAD was `c9bb065b749d30221967df81391c1108a1a25330` and the pre-existing report was the only tracked modification. Its local pre-follow-up version was 411,183 bytes with SHA-256 `E136E29BCBB2B07524E0E1A2F70E8CCC8D61EA6631DE7CB335C55D13F2702496`, differing from the supplied remote baseline of 405,769 bytes / `2912dd2765ff8dd68e1907485c5f8f9171a5aeaaca096d011c91c212ba28ff97`; it was preserved and updated in place.
+
+The first embedded-body comparison found one transcription error in `FUN_1404962C0` (`0x14049637A`, `CMP RAX,0x2` instead of the native `CMP RAX,0x1`); the report was corrected. The rerun matched all 56, 113, and 72 instructions for `FUN_14067CB30`, `FUN_140497950`, and `FUN_1404962C0`. A second bounded comparison verified that all 327 addressed instruction lines in this new section exactly match the native exports. The Markdown fence check passed with all code fences closed and no headings inside code blocks.
+
+Final workspace validation: branch `DO-fuel-cost-calculatotr`, HEAD `c9bb065b749d30221967df81391c1108a1a25330`; `git diff --check` passed, and `git diff --name-only` / `git status --short` showed only this report modified. The first path assertion treated Git's single output string as a character array and failed; rerunning with an explicit PowerShell array (`@(git diff --name-only)`) passed. Git emitted only its existing CRLF-to-LF normalization warning; no other tracked path changed.
