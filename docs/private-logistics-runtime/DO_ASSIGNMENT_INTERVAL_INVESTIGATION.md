@@ -6,7 +6,7 @@
 
 The type-43 (`0x2B`) dispatcher passes an object whose metadata type is `0x2B` into `FUN_1401C6050`. That updater traverses that same object's `+0xC70/+0xC78` fleet and calls `FUN_1406B8EB0` on a guarded truck from it. The helper can write `truck+0xC80 = office` and `office+0xBB0 = truck+0x390`. This proves a type-43 office/truck association path, but not a whole-task installation, task-presence signal, final removal, cancellation, or replacement boundary. `truck+0x390` is used as a pointer-like internal object/container value; it is not a proven job ID or payer. Whether this association persists across internal pickup/unload stops is unresolved.
 
-The latest follow-up traces the type-43 updater's candidate-truck buffer into `FUN_1401E5350` and its same-truck route/configuration rebuilders. `FUN_1401E2380` regenerates the office's `+0xD58/+0xD60` candidate rows; a positive row predicate can then rebuild the truck's `+0x680/+0x688` route list and `+0x638/+0x640` configuration vector. A connected simulation path in `FUN_140699420` can write the generic `truck+0xC80` association to its current `+0x528` target and conditionally write that target's `+0xBB0` backlink. The possible old-target null write is not fully proven: the raw instruction stores `R14`, whose zero provenance is absent from the bounded predecessor export, although the decompiler renders it as zero. The same simulation path can call `FUN_14067CB30` on a type-43 home-target branch to clear route/configuration vectors. These operations do not prove assignment commitment, stop-only transitions, cancellation, or task removal; the associated target is not a stable DO-task identity. **Correction from the downstream raw-instruction pass:** `0x14069D22D` increments only the register copy of truck `+0x700`; the block reads that field again at `0x14069D235` and does not store it. A distinct guarded instruction at `0x14069D0F0` increments dword truck `+0x698`, but it is conditional on `FUN_1406BC5A0` returning false after its route-vector rebuild/association-cleanup attempt. Neither write is yet a validated task-stop or interval boundary. No reliable accounting interval is established.
+The latest follow-up traces the type-43 updater's candidate-truck buffer into `FUN_1401E5350` and its same-truck route/configuration rebuilders. `FUN_1401E2380` regenerates the office's `+0xD58/+0xD60` candidate rows; a positive row predicate can then rebuild the truck's `+0x680/+0x688` route list and `+0x638/+0x640` configuration vector. A connected simulation path in `FUN_140699420` can write the generic `truck+0xC80` association to its current `+0x528` target and conditionally write that target's `+0xBB0` backlink. The possible old-target write at `0x14069B806` stores `R14`; its zero provenance remains unproved. The same simulation path can call `FUN_14067CB30` on a type-43 home-target branch to clear route/configuration vectors. **Corrected downstream evidence:** `0x14069D22D` increments only the register copy of truck `+0x700`; `0x14069D235` reloads the original field. The actual guarded increment is dword truck `+0x698` at `0x14069D0F0`, after `FUN_1406BC5A0(RCX=truck)` returns zero. The complete predicate shows that a nonempty generated vector returns true and may clear truck `+0xC80`; its `+0xBB0` store is guarded by backlink equality, while the truck `+0xC80` store is not. These are route/association changes, not proved task boundaries. The exact type-43-fleet-to-simulation-manager membership edge, actual work commitment, and task removal/cancellation/replacement remain unproved. No reliable accounting interval is established.
 
 The existing `FUN_1406BF1D0` renderer investigation remains below for continuity and is not repeated or used as an assignment signal here. This correction instead records the exact type-43 receiver path, `+0x390` provenance, contiguous direct bytes, and remaining lifecycle gaps.
 
@@ -4947,7 +4947,7 @@ The manager update at `0x140010E20` calls `FUN_14066D530` on a direct object poi
 
 ```asm
 140010e80: 48 8B 0A                 MOV RCX,qword ptr [RDX]
-140010e83: 48 8B 0C 31              MOV RCX,qword ptr [RCX + RSI]
+140010e83: 48 8B 0C 31              MOV RCX,qword ptr [RCX + RSI*0x1]
 140010e87: E8 A4 C6 65 00           CALL 0x14066d530
 14066e880: 48 8B 8B A0 04 00 00     MOV RCX,qword ptr [RBX + 0x4a0]
 14066e887: 48 85 C9                 TEST RCX,RCX
@@ -5104,7 +5104,7 @@ The `+0x698` writes reproduced above assign the last route index or the computed
 |---|---|---|
 | Idle/default route at DO | `FUN_14067CB30` can clear route/configuration vectors on the conditional home-target path; candidate rows and route lists can be refreshed. | Neither an empty nor nonempty list classifies active DO work. |
 | Assigned but not loaded | The type-43 updater can build a route from an office row before any identified resource transfer, but no committed-work event is established. | Assigned-before-load start remains unproved. |
-| Internal pickup/unload stops | `FUN_140699420` can write the current `+0x528` target's `+0xBB0` from `truck+0x390` and write that target to `truck+0xC80`; its old-target qword write stores `R14` (decompiler says zero, but zero provenance is not in the bounded raw slice). `0x14069D0F0` conditionally increments `+0x698` only when `FUN_1406BC5A0` returns zero. The `0x14069D226` block increments only a register copy of `+0x700` for look-ahead indexing. | Neither the target link nor the conditional route-index increment is proven to represent internal pickup/unload; the old-link clear and stop semantics remain unresolved. |
+| Internal pickup/unload stops | `FUN_140699420` can write the current `+0x528` target's `+0xBB0` from `truck+0x390` and write that target to `truck+0xC80`; its old-target qword write stores `R14` (decompiler says zero, but zero provenance is not in the bounded raw slice). `0x14069D0F0` conditionally increments `+0x698` only when `FUN_1406BC5A0` returns zero. The `0x14069D226` block increments only an `EAX` copy of `+0x700` for look-ahead indexing. | Neither the target link nor the conditional route-index increment is proven to represent internal pickup/unload; the old-link clear and stop semantics remain unresolved. |
 | Final removal/cancellation | The type-43 home-target branch calls `FUN_14067CB30`, whose direct stores clear route/configuration vectors but not `+0xC80/+0xBB0`; it also calls manager-detach helpers with some transitive effects not classified. No cancellation/removal cause is connected to the call. | No close boundary established; cancellation remains untraced. |
 | Replacement in one update | The same `FUN_140699420` branch may overwrite `+0xC80` with the current target and may write its `+0xBB0`; the old-target `R14` store is not proven zero. Route rebuilders also clear/repopulate their vectors synchronously. | These are observable target-association/route writes, not proof of whole-task replacement; no mandatory task boundary is established. |
 | Identical consecutive work | No stable job ID or semantically validated commit event is identified. Same office, row, route and target values can recur. | Cannot distinguish identical consecutive tasks from refresh using final snapshots. |
@@ -6174,7 +6174,7 @@ Final workspace validation: branch `DO-fuel-cost-calculatotr`, HEAD `c9bb065b749
 
 - **Corrected:** the `0x14069D226..0x14069D24A` block does not increment stored `truck+0x700`. `INC EAX` at `0x14069D22D` forms a look-ahead index; `0x14069D235` reloads the original dword. It reads two adjacent elements from the vector based at `[RBX]`.
 - **New native fact:** the actual dword increment is `INC dword ptr [R15+0x698]` at `0x14069D0F0`. The branch reaches it only when the signed `+0x700` index is at least the last index of the `[RBX]` vector, and `FUN_1406BC5A0(RCX=R15)` returns zero. A nonzero return skips the increment.
-- **Newly bounded callee effect:** `FUN_1406BC5A0` uses the same receiver as its caller (`R14=RCX`), validates `truck+0x700` against the pointer vector at `truck+0x6A0/+0x6A8`, and calls `FUN_140120380` with the selected and preceding vector values plus `truck+0x4F8`. When that call produces a nonempty result, it rebuilds `+0x6A0/+0x6A8` and `+0x6B8/+0x6C0`, reattaches result objects to the same truck's `+0xD48` list, may fill a null current `+0x698` route slot's configuration value, returns 1, and conditionally clears the `+0xC80` association/backlink. This is route/vector reconstruction plus association cleanup, not proved task removal.
+- **Newly bounded callee effect:** `FUN_1406BC5A0` uses the same receiver as its caller (`R14=RCX`), validates `truck+0x700` against the pointer vector at `truck+0x6A0/+0x6A8`, and calls `FUN_140120380` with the selected and preceding vector values plus `truck+0x4F8`. When that call produces a nonempty result, it rebuilds `+0x6A0/+0x6A8` and `+0x6B8/+0x6C0`, reattaches result objects to the same truck's `+0xD48` list, may fill a null current `+0x698` route slot's configuration value, and returns 1. If `truck+0xC80` is non-null, it always stores zero there; it stores zero to that target's `+0xBB0` only when the backlink equals this truck. This is route/vector reconstruction plus association cleanup, not proved task removal.
 - **Still unresolved:** neither the caller nor predicate gives the `+0x698` increment a proved pickup/unload or task-end meaning. The exact type-43 office fleet pointer is still not joined to the `FUN_14066D530` enumeration receiver. Cancellation/replacement causes are not connected to this path.
 
 ### Same-receiver path and exact caller branch
@@ -6192,7 +6192,7 @@ Type-43 office +0xC70/+0xC78 fleet
               rebuild same truck's +0x6A0/+0x6B8 vectors
               reattach result objects through same truck's +0xD48
               optionally fill current +0x698 configuration
-              conditionally clear +0xC80 / associated +0xBB0
+              clear +0xC80 if non-null; clear target +0xBB0 only if it equals this truck
               return 1; skip +0x698 increment
          -> else return 0; increment dword +0x698 at 0x14069D0F0
   -> read truck+0x700 again and continue current/next [RBX] element processing
@@ -6278,9 +6278,10 @@ For a nonempty generated result, the loop appends generated entries into the sam
 1406bc7eb:  E8 10 D2 A3 FF           CALL 0x1400f9a00
 ```
 
-After rebuilding, if the existing truck route `+0x680/+0x688` has a valid `+0x698` row and that row is null, the helper writes the last generated `+0x6A0` value into that row's configuration slot at `+0x638 + index*0x198 + 0x190`. It returns true and conditionally clears `truck+0xC80` and the associated target's `+0xBB0` only when that backlink equals this truck:
+After rebuilding, if the existing truck route `+0x680/+0x688` has a valid `+0x698` row and that row is null, the helper writes the last generated `+0x6A0` value into that row's configuration slot at `+0x638 + index*0x198 + 0x190`. It then sets its return flag to true. Before the association cleanup, `XOR ESI,ESI` at `0x1406BC80D` establishes zero after RSI's earlier temporary uses. At `0x1406BC881`, a backlink mismatch branches to `0x1406BC88A`, skipping only the target `+0xBB0` store; when `truck+0xC80` is non-null, the `+0xC80` zero store at `0x1406BC88A` is unconditional:
 
 ```asm
+1406bc80d:  33 F6                    XOR ESI,ESI
 1406bc80f:  49 63 8e 98 06 00 00     MOVSXD RCX,dword ptr [R14 + 0x698]
 1406bc818:  78 51                    JS 0x1406bc86b
 1406bc81a:  49 8B 86 88 06 00 00     MOV RAX,qword ptr [R14 + 0x688]
@@ -6309,12 +6310,12 @@ After rebuilding, if the existing truck route `+0x680/+0x688` has a valid `+0x69
 1406bc883:  48 89 B0 B0 0B 00 00     MOV qword ptr [RAX + 0xbb0],RSI
 1406bc88a:  49 89 B6 80 0C 00 00     MOV qword ptr [R14 + 0xc80],RSI
 1406bc8e3:  40 0F B6 C7              MOVZX EAX,DIL
-1406bc8e7:  48 8B 9C 24 D8 00 00 00 MOV RBX,qword ptr [RSP + 0xd8]
+1406bc8e7:  48 8B 9C 24 D8 00 00 00  MOV RBX,qword ptr [RSP + 0xd8]
 1406bc8ef:  48 81 C4 80 00 00 00     ADD RSP,0x80
 1406bc901:  C3                       RET
 ```
 
-This conditional `+0xC80/+0xBB0` clear is an important counterexample to treating those fields as a persistent job identity. It happens inside a helper called while the larger simulation consumer is processing a `+0x700`-indexed vector; the evidence does not establish that it ends work. It also does not prove that the helper runs for the exact truck from the type-43 office fleet.
+This association cleanup is an important counterexample to treating `+0xC80/+0xBB0` as a persistent job identity. `+0xBB0` is cleared only if the stored backlink equals this truck; `+0xC80` is cleared for any non-null current association on this nonempty-result path, regardless of backlink equality. The callee's return value is true on this route-vector-rebuild path. It happens inside a helper called while the larger simulation consumer is processing its `+0x700`-indexed path vector; the evidence does not establish that it ends work. It also does not prove that the helper runs for the exact truck from the type-43 office fleet.
 
 ### Correct `+0x700` look-ahead block
 
@@ -6375,3 +6376,263 @@ Disassembly written to C:\WRSRE\scratch\agent1_func_1406bc5a0.asm
 ```
 
 The complete 866-byte helper was decompiled and disassembled; the report embeds the raw instructions needed to verify each new claim rather than duplicating unrelated vector-growth instructions. No investigation script was created or modified, so there is no new script source. An initial attempt to read `scratch\DisasmMany.java` failed because the configured script is external to this repository; its actual source was then read from the wrapper's configured Ghidra script directory. A broad `rg` expression containing unescaped `+` also failed to parse and was not used as evidence. The first Markdown check caught a missing closing fence in the new caller excerpt, which was fixed; the rerun passed with 132 fences and no headings inside code blocks. The first raw-line comparison searched the `0x14069C0A0..0x14069D165` export for `0x14069D226`; it correctly found no such line, and the check passed after using the separate `route_advance_blocks` export. A final path assertion also needed `/` normalization because Git emits slash-separated paths. Final `git diff --check` passed and the only tracked modification is this report. The shared worktree also contains the independent agent's untracked `DO_ASSIGNMENT_INTERVAL_INDEPENDENT_REVIEW.md`; it was left untouched. All native claims above use file VA instruction exports. Static analysis only: no game replay, hooks, plugin/runtime changes, billing, dispatch, permissions, defaults, save, or build changes.
+
+## Downstream bridge and association-store correction
+
+### New evidence and corrected conclusions
+
+- The manager path is now bounded through its collection consumer: `FUN_140010D30` calls `FUN_140010E20`; that function obtains a receiver from `[object+0x78]+0x60`, then calls `FUN_14066D530` on a direct `+0x398` pointer and on each pointer in the manager-owned `+0x3A0/+0x3A8` vector. In `FUN_14066D530`, `RBX` retains the passed object and the route-consumer branch calls `FUN_140699420(RCX=RBX)`. This proves the simulation call preserves each manager-enumerated object.
+- **Still unproved:** no bounded native path joins the candidate `RSI` truck from the type-43 office's `+0xC70/+0xC78` fleet to any pointer in the distinct manager `+0x3A0/+0x3A8` vector. The manager enumeration proves its own inputs and receiver continuity only. Metadata-kind 1 and the `+0x4A0==0` guard do not establish pointer identity or fleet membership.
+- `FUN_1406BC5A0` is now supported by entry, invalid/empty-result branches, the generator-call setup, the post-rebuild branch, and its association stores. The complete scratch export is 866 bytes, but the report's raw excerpts below are bounded to the branches needed for the caller return, the reaching zero, and the `+0xC80/+0xBB0` distinction; the excerpts are not mislabeled as the complete body.
+- **Corrected association semantics:** `XOR ESI,ESI` at `0x1406BC80D` is the reaching zero-definition for both later store sources. After a nonempty route-generator result, `0x1406BC881` compares target `+0xBB0` with this truck; a mismatch jumps to `0x1406BC88A`, skipping only the `+0xBB0` store. The `truck+0xC80=0` store at `0x1406BC88A` still executes for every non-null `+0xC80` value. The predicate returns true on that generated-result path, so its caller at `0x14069D0E7` skips the `+0x698` increment. Neither return nor association clearing proves the work was removed.
+- **No task boundary was proved.** The positive `FUN_1401E5350` return at `0x1401C6CC9` is consumed into an office-updater aggregate flag. On the truck it rebuilds route/configuration vectors, but no distinct persistent active-work commitment is established. The route consumer's conditional `+0x698` increment, route-vector rebuild, association cleanup, and type-43 home-target reset remain route/association behavior absent evidence connecting them to actual work acceptance or termination.
+
+The policy comparison was reread from the latest amendment in [VEHICLE_PANEL_FUEL_INVESTIGATION.md](VEHICLE_PANEL_FUEL_INVESTIGATION.md): intervals close on task removal, cancellation, or replacement regardless of success; internal stops remain inside; post-removal travel is excluded; payer, stable native job ID, and reload continuity are not prerequisites.
+
+### Manager collection path and exact same-object scope
+
+The outer dispatcher only enters `FUN_140010E20` when its `+0x5B` byte is nonzero and `+0x78` is non-null. The manager enumeration then consumes its own pointer vector:
+
+```asm
+140010d36:  80 79 5B 00              CMP byte ptr [RCX + 0x5b],0x0
+140010d3a:  48 8B D9                 MOV RBX,RCX
+140010d3d:  0F 84 C8 00 00 00        JZ 0x140010e0b
+140010d43:  48 83 79 78 00           CMP qword ptr [RCX + 0x78],0x0
+140010d48:  74 07                    JZ 0x140010d51
+140010d4a:  E8 D1 00 00 00           CALL 0x140010e20
+```
+
+In the called function, `RBX` is the enumeration owner, `RBX+0x3A0/+0x3A8` are the vector bounds, and each loaded vector element is passed as `RCX` to `FUN_14066D530`. The first separate `+0x398` pointer is also passed directly:
+
+```asm
+140010e2f:  48 8B 41 78              MOV RAX,qword ptr [RCX + 0x78]
+140010e33:  48 8B E9                 MOV RBP,RCX
+140010e36:  48 8B 58 60              MOV RBX,qword ptr [RAX + 0x60]
+140010e3a:  48 85 DB                 TEST RBX,RBX
+140010e3d:  0F 84 7F 00 00 00        JZ 0x140010ec2
+140010e43:  48 8B 8B 98 03 00 00     MOV RCX,qword ptr [RBX + 0x398]
+140010e4a:  48 85 C9                 TEST RCX,RCX
+140010e4d:  74 6B                    JZ 0x140010eba
+140010e4f:  E8 DC C6 65 00           CALL 0x14066d530
+140010e54:  48 8B 93 98 03 00 00     MOV RDX,qword ptr [RBX + 0x398]
+140010e5b:  33 FF                    XOR EDI,EDI
+140010e5d:  48 81 C2 A0 03 00 00     ADD RDX,0x3a0
+140010e64:  48 8B 42 08              MOV RAX,qword ptr [RDX + 0x8]
+140010e68:  48 2B 02                 SUB RAX,qword ptr [RDX]
+140010e6b:  48 C1 F8 03              SAR RAX,0x3
+140010e6f:  48 85 C0                 TEST RAX,RAX
+140010e72:  74 4E                    JZ 0x140010ec2
+140010e80:  48 8B 0A                 MOV RCX,qword ptr [RDX]
+140010e83:  48 8B 0C 31              MOV RCX,qword ptr [RCX + RSI*0x1]
+140010e87:  E8 A4 C6 65 00           CALL 0x14066d530
+140010e8c:  48 8B 93 98 03 00 00     MOV RDX,qword ptr [RBX + 0x398]
+140010e93:  48 8D 76 08              LEA RSI,[RSI + 0x8]
+140010e97:  48 81 C2 A0 03 00 00     ADD RDX,0x3a0
+140010e9e:  FF C7                    INC EDI
+140010ea0:  48 63 C7                 MOVSXD RAX,EDI
+140010ea3:  48 8B 4A 08              MOV RCX,qword ptr [RDX + 0x8]
+140010ea7:  48 2B 0A                 SUB RCX,qword ptr [RDX]
+140010eaa:  48 C1 F9 03              SAR RCX,0x3
+140010eae:  48 3B C1                 CMP RAX,RCX
+140010eb1:  72 CD                    JC 0x140010e80
+```
+
+The downstream dispatch preserves that exact receiver: `FUN_14066D530` saves its entry `RCX` in `RBX` (`0x14066D54E`); on the route-consumer branch it reloads that same `RBX` to `RCX` and calls `FUN_140699420` at `0x14066EA69`. Its route path remains guarded by metadata-kind 1/2 and the `+0x4A0` test documented above. This establishes **manager element → simulation receiver** identity, not **office fleet element → manager element** identity.
+
+No instruction in this bounded collection-consumer path reads the type-43 office's `+0xC70/+0xC78` vector or compares its truck pointer with the manager vector element. Conversely, the proved type-43 updater loads a fleet truck into `RSI` and sends it through its own candidate buffer to `FUN_1401E5350`; the report contains no proven append of that same pointer into the manager vector. The exact unresolved edge is therefore the pointer registration/alias operation that would place this particular fleet truck into `[manager+0x3A0, manager+0x3A8)`, plus the applicability of `truck+0x4A0==0` on that same object. Same-looking layouts, metadata kind 1, and a common home-office pointer are insufficient.
+
+### Predicate reaching definitions and branch-complete association result
+
+The executable-identified Ghidra function bounds are `FUN_1406BC5A0`, `0x1406BC5A0..0x1406BC901` inclusive, 866 bytes. At entry, `R14` receives the caller's `RCX` truck and `DIL` is cleared for a false return. The helper rejects negative or out-of-range `truck+0x700` against the pointer vector `truck+0x6A0/+0x6A8`; for an in-range index, it calls `FUN_140120380` with the current vector element, the preceding element (or zero at index 0), and `truck+0x4F8`:
+
+```asm
+1406bc5c1:  4C 8B F1                 MOV R14,RCX
+1406bc5c4:  40 32 FF                 XOR DIL,DIL
+1406bc5cf:  33 F6                    XOR ESI,ESI
+1406bc5de:  48 63 89 00 07 00 00     MOVSXD RCX,dword ptr [RCX + 0x700]
+1406bc5e5:  85 C9                    TEST ECX,ECX
+1406bc5e7:  0F 88 AD 02 00 00        JS 0x1406bc89a
+1406bc5ed:  49 8D 9E A0 06 00 00     LEA RBX,[R14 + 0x6a0]
+1406bc5f4:  48 8B 43 08              MOV RAX,qword ptr [RBX + 0x8]
+1406bc5f8:  48 2B 03                 SUB RAX,qword ptr [RBX]
+1406bc5fb:  48 C1 F8 03              SAR RAX,0x3
+1406bc5ff:  48 3B C8                 CMP RCX,RAX
+1406bc602:  0F 83 92 02 00 00        JNC 0x1406bc89a
+1406bc608:  4C 8B 03                 MOV R8,qword ptr [RBX]
+1406bc60b:  49 8B 14 C8              MOV RDX,qword ptr [R8 + RCX*0x8]
+1406bc60f:  44 8B D6                 MOV R10D,ESI
+1406bc612:  85 C9                    TEST ECX,ECX
+1406bc614:  7E 0A                    JLE 0x1406bc620
+1406bc616:  8D 41 FF                 LEA EAX,[RCX + -0x1]
+1406bc619:  48 63 C8                 MOVSXD RCX,EAX
+1406bc61c:  4D 8B 14 C8              MOV R10,qword ptr [R8 + RCX*0x8]
+1406bc620:  48 89 74 24 30           MOV qword ptr [RSP + 0x30],RSI
+1406bc625:  49 8B 86 F8 04 00 00     MOV RAX,qword ptr [R14 + 0x4f8]
+1406bc62c:  48 89 44 24 28           MOV qword ptr [RSP + 0x28],RAX
+1406bc631:  48 8D 44 24 60           LEA RAX,[RSP + 0x60]
+1406bc636:  48 89 44 24 20           MOV qword ptr [RSP + 0x20],RAX
+1406bc63b:  4C 8D 4C 24 48           LEA R9,[RSP + 0x48]
+1406bc640:  4D 8B C2                 MOV R8,R10
+1406bc643:  48 8D 0D C6 88 31 00     LEA RCX,[0x1409d4f10]
+1406bc64a:  E8 31 3D A6 FF           CALL 0x140120380
+1406bc64f:  4C 8B 5C 24 50           MOV R11,qword ptr [RSP + 0x50]
+1406bc654:  4C 8B 64 24 48           MOV R12,qword ptr [RSP + 0x48]
+1406bc659:  4D 2B DC                 SUB R11,R12
+1406bc65c:  49 C1 FB 03              SAR R11,0x3
+1406bc660:  4C 89 9C 24 D0 00 00 00  MOV qword ptr [RSP + 0xd0],R11
+1406bc668:  4D 85 DB                 TEST R11,R11
+1406bc66b:  0F 84 22 02 00 00        JZ 0x1406bc893
+```
+
+If the generated range is empty, the branch to `0x1406BC893` reaches the return path without setting `DIL`, so the helper returns false. Invalid index paths branch to `0x1406BC89A`, also leaving `DIL` false. A nonempty generated range enters the rebuild path; before association cleanup, RSI is explicitly zeroed again at `0x1406BC80D`. This is the reaching definition relevant to the stores—RSI had been used as a temporary earlier, so the entry `XOR ESI,ESI` alone would not prove the later stored value.
+
+```asm
+1406bc80d:  33 F6                    XOR ESI,ESI
+1406bc86b:  40 B7 01                 MOV DIL,0x1
+1406bc86e:  49 8B 86 80 0C 00 00     MOV RAX,qword ptr [R14 + 0xc80]
+1406bc875:  48 85 C0                 TEST RAX,RAX
+1406bc878:  74 25                    JZ 0x1406bc89f
+1406bc87a:  4C 39 B0 B0 0B 00 00     CMP qword ptr [RAX + 0xbb0],R14
+1406bc881:  75 07                    JNZ 0x1406bc88a
+1406bc883:  48 89 B0 B0 0B 00 00     MOV qword ptr [RAX + 0xbb0],RSI
+1406bc88a:  49 89 B6 80 0C 00 00     MOV qword ptr [R14 + 0xc80],RSI
+1406bc891:  EB 0C                    JMP 0x1406bc89f
+1406bc893:  4C 8B 6C 24 60           MOV R13,qword ptr [RSP + 0x60]
+1406bc898:  EB 0A                    JMP 0x1406bc8a4
+1406bc89a:  4C 8B 6C 24 60           MOV R13,qword ptr [RSP + 0x60]
+1406bc89f:  4C 8B 64 24 48           MOV R12,qword ptr [RSP + 0x48]
+1406bc8a4:  4D 85 ED                 TEST R13,R13
+1406bc8a7:  74 1B                    JZ 0x1406bc8c4
+1406bc8c4:  4D 85 E4                 TEST R12,R12
+1406bc8c7:  74 1A                    JZ 0x1406bc8e3
+1406bc8e3:  40 0F B6 C7              MOVZX EAX,DIL
+1406bc8e7:  48 8B 9C 24 D8 00 00 00  MOV RBX,qword ptr [RSP + 0xd8]
+1406bc8ef:  48 81 C4 80 00 00 00     ADD RSP,0x80
+1406bc8f6:  41 5F                    POP R15
+1406bc8f8:  41 5E                    POP R14
+1406bc8fa:  41 5D                    POP R13
+1406bc8fc:  41 5C                    POP R12
+1406bc8fe:  5F                       POP RDI
+1406bc8ff:  5E                       POP RSI
+1406bc900:  5D                       POP RBP
+1406bc901:  C3                       RET
+```
+
+The caller's conditional is exact: it calls the predicate only when the signed `truck+0x700` index is not less than the last index of the `[RBX]` vector. If the predicate returns nonzero, `JNZ 0x14069D0F7` skips the `+0x698` increment at `0x14069D0F0`; if it returns zero, the increment executes. The true-result association cleanup is therefore on the branch that skips route-index increment. It is not evidence that the increment or cleanup is the task's stop/removal boundary.
+
+### Seven-case interval decision
+
+| Case | Exact receiver and proposed event/path | Native evidence in this pass | Status |
+|---|---|---|---|
+| Assigned-not-loaded | Type-43 updater call `0x1401C6CC9`: `RCX=R12` context, `RDX=[RBX]` candidate truck from the same office fleet, `R8=RDI` office; candidate receiver in `FUN_1401E5350` is the same truck | Positive builder return is accumulated by the office updater; route/configuration rebuild occurs on that truck. No distinct active-work setter or commitment marker is shown. | **Untraced.** The route builder can be a candidate refresh; assigned-before-load start is not proved. |
+| Internal pickup/unload | Simulation receiver `R15=RCX` in `FUN_140699420`; `FUN_1406BC5A0(RCX=R15)` is reached only at the end-index guard | On a nonempty generated vector it rebuilds route/path vectors and may clear `+0xC80`; this returns true and skips the `+0x698` increment. On a false return the caller increments `+0x698`. | **Untraced.** Neither path labels its work as an internal stop of an active type-43 task. |
+| Final removal | Same truck's task-specific operation would discard active work after delivery | Predicate association cleanup is route-result-driven, not a proved task close. The type-43 home-target path to `FUN_14067CB30` clears route/config data but has no proved removal predecessor. | **Untraced.** No final-work removal event is identified. |
+| Cancellation | A cancellation/removal path for that same active truck, regardless of success | No cancellation cause reaches the predicate cleanup, type-43 updater, or home-target reset in the bounded paths. | **Untraced.** No cancellation boundary is identified. |
+| Identical replacement | A new accepted task while prior office/row/route/target values may be identical | The route builder can rebuild synchronously; association fields can be cleared/rebound. No distinct event sequence or task token is proved. | **Untraced.** Equal before/after snapshots cannot distinguish refresh from replacement. |
+| Post-removal return | Truck travel after actual task removal toward home/default route | Home-target condition is `+0x528 == +0x4F8 == +0x4F0` with descriptor type `0x2B/0x2D`; it calls `FUN_14067CB30`, but removal is not a predecessor. | **Untraced.** The path does not prove that travel after removal is excluded. |
+| Reload | Persistence of any proposed task state across save/load | Not examined in these bounded callers. | **Unsupported.** |
+
+### Exact remaining edge and smallest discriminator
+
+The exact exhausted receiver edge for Priority A is the insertion/registration of the office-fleet candidate pointer into the separate manager vector `[manager+0x3A0, manager+0x3A8)`. The consumer path from that vector through `FUN_14066D530` to `FUN_140699420` is proven, and the office path from `+0xC70/+0xC78` through the candidate buffer to `FUN_1401E5350` is proven; the pointer-identity join between those two paths is not. The smallest sufficient static artifact is the specific constructor/registration block that appends the same truck pointer from the type-43 fleet to that manager vector, together with the same-object `+0x4A0` guard reaching the simulation call. No broader object inventory is warranted.
+
+For Priority B, the bounded path is: positive type-43 route-builder result at `0x1401C6CC9` → same truck's route/config rebuild → manager simulation consumer's `+0x700` vector path → conditional `FUN_1406BC5A0` route rebuild/association cleanup and `+0x698` increment → the existing home-target reset. The competing meanings are (1) route refresh/normalization that can run without active work, and (2) internal progression/cleanup during active work. No operation on this bounded path proves which work ceases belonging to the office. The smallest missing native discriminator is a task-level state writer/remover, on the same proven truck receiver, whose accepted-work predecessor is the positive office-row path and whose removal/replacement cause is distinct from route refresh and home/default routing. This is not a request for a game replay; no observation or instrumentation was installed.
+
+### Identity, commands, actual query output, and limitations
+
+At the start of the Ghidra pass documented here, the report was the committed `faadf2846aa2e42afd83506a7c3588c92b0d5a55` version on branch `DO-fuel-cost-calculatotr`, and the tracked worktree was clean. Before final report validation, the branch advanced to `37bcb65697e27f330ea1f71015c85c66e59b09af`; that commit changes only the independent investigator's report, which was left untouched. The executable rechecked before the Ghidra queries was `C:\Workers Resources Soviet Republic\SOVIET64.exe`, SHA-256 `296644A9F207D609031FC2AE73FED2DCB34619A1D55A35D1C7B51965CE6841B8`. The verified PE timestamp is `0x6A3EB6AD`, image base `0x140000000`; all queried addresses below are file VAs, not RVAs or file offsets. Ghidra opened the configured existing project and `/SOVIET64.exe`.
+
+Commands run through the repository's existing wrapper, serially:
+
+```text
+scratch\ghidra_run.bat Xrefs.java C:\WRSRE\scratch\agent1_manager_enumerator_callers_xrefs.txt 0x140010E20 0x1403FAB10 0x1402593D0 0x1401C6050
+scratch\ghidra_run.bat ListFuncs.java C:\WRSRE\scratch\agent1_manager_enumerator_caller_bounds.txt 0x140010D30 0x140010D30 0x14030C790 0x14030C790 0x1402592A0 0x1402592A0
+scratch\ghidra_run.bat DisasmMany.java C:\WRSRE\scratch\agent1_manager_enumerator_outer.asm 0x140010D30:0x140010E10
+scratch\ghidra_run.bat Xrefs.java C:\WRSRE\scratch\agent1_func_1406bc5a0_xrefs.txt 0x1406BC5A0
+```
+
+The bounds script accepts one start/end pair only. The second command therefore returned only its first function entry; its extra address pairs were ignored. This is reported as a command-usage limitation, not used to infer missing bounds. The actual result was:
+
+```text
+; functions from 0x140010D30 to 0x140010D30 (file-based addresses)
+0x140010D30  size    225  FUN_140010d30
+```
+
+Actual direct-reference output from the targeted caller query:
+
+```text
+XREFs to 0x140010E20:
+  [DATA] from 140a5793c in NON_FUNCTION
+  [DATA] from 14091df94 in NON_FUNCTION
+  [DATA] from 14091dfa4 in NON_FUNCTION
+  [UNCONDITIONAL_CALL] from 140010d4a in FUN_140010d30
+
+XREFs to 0x1403FAB10:
+  [DATA] from 140a687a8 in NON_FUNCTION
+  [DATA] from 1409507b0 in NON_FUNCTION
+  [DATA] from 1409507c0 in NON_FUNCTION
+  [UNCONDITIONAL_CALL] from 14030cb68 in FUN_14030c790
+
+XREFs to 0x1402593D0:
+  [DATA] from 140a64eb4 in NON_FUNCTION
+  [UNCONDITIONAL_CALL] from 1402592a4 in FUN_1402592a0
+
+XREFs to 0x1401C6050:
+  [DATA] from 140a60f0c in NON_FUNCTION
+  [DATA] from 140938a88 in NON_FUNCTION
+  [UNCONDITIONAL_CALL] from 14013e2c9 in FUN_140139a70
+```
+
+Actual direct-reference output for the predicate:
+
+```text
+XREFs to 0x1406BC5A0:
+  [DATA] from 140a77afc in NON_FUNCTION
+  [DATA] from 140975a08 in NON_FUNCTION
+  [UNCONDITIONAL_CALL] from 14069d0e7 in FUN_140699420
+```
+
+The relevant Ghidra script stdout for the bounded disassembly was:
+
+```text
+INFO REPORT: Processing project file: /SOVIET64.exe
+INFO REPORT: Execute script: DisasmMany.java 'C:\WRSRE\scratch\agent1_manager_enumerator_outer.asm' '0x140010D30:0x140010E10'
+INFO SCRIPT: C:\Users\EricM\Downloads\TesmioLoader-master\TesmioLoader-master\tools\ghidra\DisasmMany.java
+INFO DisasmMany.java> Disassembly written to C:\WRSRE\scratch\agent1_manager_enumerator_outer.asm
+INFO REPORT: Save succeeded for processed file: /SOVIET64.exe
+```
+
+The relevant script stdout for both xref runs was:
+
+```text
+INFO REPORT: Processing project file: /SOVIET64.exe
+INFO Xrefs.java> XREFs written to C:\WRSRE\scratch\agent1_manager_enumerator_callers_xrefs.txt
+INFO REPORT: Save succeeded for processed file: /SOVIET64.exe
+INFO REPORT: Processing project file: /SOVIET64.exe
+INFO Xrefs.java> XREFs written to C:\WRSRE\scratch\agent1_func_1406bc5a0_xrefs.txt
+INFO REPORT: Save succeeded for processed file: /SOVIET64.exe
+```
+
+No investigation script was added or modified; the existing `Xrefs.java`, `ListFuncs.java`, `DisasmMany.java`, and `scratch\ghidra_run.bat` were reused. The relevant existing Ghidra script bodies were not edited. Two searches failed because literal `+` characters were supplied to regex search without escaping; one PowerShell `Select-String` attempt reported `The string +0xC80 is not a valid regular expression: parsing "+0xC80" - Quantifier {x,y} following nothing.` A separate `rg` attempt reported `regex parse error: repetition operator missing expression`. These failures returned no evidence and were replaced with literal string checks. A Git-show-to-`Get-FileHash` pipeline was also incorrectly attempted; `Get-FileHash` rejected its pipeline input, so it did not verify a report hash. No query was run concurrently. No hooks, runtime/configuration changes, build, save edit, payment, dispatch, permission change, or game replay occurred.
+
+Final report-only validation ran on branch `DO-fuel-cost-calculatotr` at HEAD `37bcb65697e27f330ea1f71015c85c66e59b09af`. Commands:
+
+```text
+git rev-parse HEAD
+git branch --show-current
+git status --short --untracked-files=all
+git diff --check -- docs/private-logistics-runtime/DO_ASSIGNMENT_INTERVAL_INVESTIGATION.md
+```
+
+The final status output was ` M docs/private-logistics-runtime/DO_ASSIGNMENT_INTERVAL_INVESTIGATION.md`; no other worktree path was modified. `git diff --check` passed. A fence scan found 156 balanced fences and no headings inside code blocks. An exact report-to-export comparison covered 101 addressed instructions in the new section and passed against the bounded scratch exports. It caught and corrected two transcription variants: `MOV RCX,[RCX+RSI]` is rendered by the source as `[RCX+RSI*0x1]`, and the `0x140010EB1` conditional mnemonic is `JC`, not `JB`; one later comparison also corrected spacing at `0x1406BC8E7`. An intermediate validator iteration used a faulty prefix map for `0x1406BC...` addresses and reported missing mappings; the map was corrected and the final full comparison passed. These were report-validation issues only, not Ghidra or executable-query failures. The `0x140010E83` and `0x1406BC8E7` copies in the earlier report excerpts were corrected consistently. No Ghidra query was run during final validation; the shared Ghidra slot remains released.
+
+Relevant final validation stdout:
+
+```text
+Fences: 156 even; no headings inside fences.
+New-section addressed instructions exactly match bounded exports: 101.
+Scoped git diff --check passed.
+HEAD 37bcb65697e27f330ea1f71015c85c66e59b09af
+Branch DO-fuel-cost-calculatotr
+ M docs/private-logistics-runtime/DO_ASSIGNMENT_INTERVAL_INVESTIGATION.md
+```
