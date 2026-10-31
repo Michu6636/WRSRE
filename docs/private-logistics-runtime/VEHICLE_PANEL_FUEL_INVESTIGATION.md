@@ -84013,3 +84013,70 @@ cannot override a gateway/provider that has already returned HTTP504.
 
 | Case | Exact Event / Native Mutation | Preconditions (Verified Guards) | Mutations (Address / Field) | Successor / Next Observable | Evidence Source | Confidence | Counterexample / Unresolved |
 |------|------------------------------|--------------------------------|----------------------------|----------------------------|----------------|------------|----------------------------|
+| Initial assignment before loading | Stage 2 acceptance: FUN_1401E5350 accepts truck (truck+0x528==0), calls FUN_1406BDC30(truck,0.0)==0 → load path FUN_1401E5480 → FUN_1401DE2B0 predicate true for pickup row → FUN_14067D5D0(truck, row+0x10, -1, 0) installs pickup target | 1. Type-0x2B office (metadata+0x360==0x2B) at 0x14013E2BA
+2. Truck in office fleet [office+0xC70/+0xC78]
+3. Stage 1: truck+0xC80==0, office+0xBB0==0, truck+0x508<=0, truck+0xD39==0, truck+0x698==0, nonempty route [+0x680/+0x688], truck+0x528==0, truck+0x4F0==truck+0x4F8==office
+4. Stage 1 write: FUN_1406B8EB0 writes truck+0xC80=office, office+0xBB0=truck+0x390
+5. Gate: FUN_1406BD6B0 passes (requires FUN_1406BD660==1 since office+0xBB0 now nonzero)
+6. Stage 2: truck+0x528==0 at FUN_1401E535F; FUN_1406BDC30 returns 0 (no cargo) | 1. FUN_14067D5D0: truck+0x688=truck+0x680 (clear route), destroy/reinit config +0x638/+0x640, inserts pickup target at +0x680/+0x688, sets truck+0xD3A=1, recomputes truck+0x698=0
+2. truck+0x508 = 0.5f (0x3F000000)
+3. truck+0x528 transitions 0→nonzero (bound target)
+4. Conditional re-call FUN_1406B8EB0 skipped (truck+0x4F0!=0)
+5. Builder tail FUN_140429A80/FUN_14042A0D0 mutates route_target+0x9D0 | Stage 2 load path: FUN_1401E5480 installs delivery target (row+0x48) and office return target (office), then FUN_1401E5350 returns 1 | 1. Dispatcher 0x14013E2BA→0x14013E2C9 (type-0x2B)
+2. FUN_1401C6050 guards 0x1401C6408–0x1401C6461, call 0x1401C646E
+3. FUN_1406B8EB0 writes 0x1406B9D8B/0x1406B9D99
+4. FUN_1406BD6B0 gate 0x1401C68E4
+5. FUN_1401E5350 entry 0x1401E535F, load path 0x1401E53FD
+6. FUN_1401E5480/FUN_1401E5BA0 acceptance side effects
+7. FUN_14067D5D0 insert at 0x1401E55CB/0x1401E5D4B | HIGH — all bytes cross-verified by Agent 2 independent PE decode; 16/16 checks PASS | Stage 1 association write (truck+0xC80=office) can occur WITHOUT gate pass: FUN_1406BD6B0 fails when FUN_1406BD660!=1 and office+0xBB0!=0 (written by Stage 1). Association ≠ commitment. Gate's first disjunct (FUN_1406BD660) writer unknown; second disjunct requires office+0xBB0==0 which Stage 1 breaks. No rollback of Stage 1 write on gate failure established. |
+| First goods-load ordering | Load path FUN_1401E5480 installs route targets: pickup (row+0x10), delivery (row+0x48), office return; builder tail FUN_140429A80/FUN_14042A0D0 initializes cargo/fuel amounts at route_target+0x9D0 | truck+0x528==0 (Stage 2 entry), FUN_1406BDC30==0 (no cargo → load path), FUN_1401DE2B0 predicate true for pickup row, FUN_14067D5D0 insert returns 1 for each target | 1. FUN_14067D5D0 inserts pickup target at route_target+0x9D0 (cargo/fuel amount), delivery target, office return target
+2. FUN_140429A80/FUN_14042A0D0: reads cargo/fuel from config vector config+0xD0/+0xD8, matches truck cargo vector +0x3B8/+0x3C0, writes route_target+0x9D0 (flag=0) or +0x9B8 (flag!=0); *config_entry==0 adds fVar13, !=0 subtracts fVar13
+3. truck+0x508 remains 0.5f; truck+0x528 remains nonzero | Route execution begins: FUN_14066D530 → FUN_1406C07E0 per-truck update; FUN_140699420 route processing advances +0x698 at each stop; truck+0xC80 retained | 1. FUN_1401E5480/FUN_1401E5BA0 rebuild block (0x1401E55CB region)
+2. FUN_140429A80/FUN_14042A0D0 decompilations
+3. FUN_140699420 route advance (0x14069D0F0 INC [R15+0x698]) | PARTIAL — route install and cargo init verified; actual physical goods loading (tonnage transfer into truck cargo slot +0x3B8) occurs during route execution at transfer sites (0x694F40 mode 0 pickup, 0x6953C4 mode 1 vehicle add), not in Stage 2 builder tail; no verified boundary showing when cargo >0 first appears in truck | Cargo loaded during route execution is separate from route install; builder tail only initializes route_target sub-vectors, not vehicle cargo vector; transfer sites outside Stage 2 |
+| Internal pickup/unload/travel | FUN_14066D530 per-truck update → FUN_1406C07E0 → FUN_140699420 route processing: +0x698 route index advanced at each internal stop; cargo/fuel transferred at pickup (0x694F40 mode 0 -tons) and delivery (0x1B2898 mode 1 +tons); builder tails update route_target+0x9D0 cargo amounts | truck+0xC80==office retained; truck+0x700 < route_count-1 (not exhausted); metadata kind ∈ {1,2} or truck+0x67D!=0; truck+0x4A0==0 (list-membership guard); state ∈ {1,2} and mode==9 for burn eligibility | 1. truck+0x698 incremented at 0x14069D0F0 when FUN_1406BC5A0 returns false (route not exhausted)
+2. Transfer at 0x694F40 (pickup: building loses goods, mode 0, -tons); paired vehicle add at 0x6953C4 (mode 1, +tons)
+3. Delivery transfer at 0x1B2898 (mode 1, +tons, building=NULL)
+4. Builder tail FUN_140429A80/FUN_14042A0D0 mutates route_target+0x9D0 per stop | Route continues to next stop (+0x698 advance); if route exhausted (+0x700 >= count-1): FUN_1406BC5A0 termination → normal removal | UNTRACED — association persistence through internal stops not statically established; whether truck+0xC80 survives every stop is unknown; whether +0x698 increment corresponds to internal stop vs route refresh not distinguishable; transfer sites (0x694F40, 0x6953C4, 0x1B2898) partially verified but no verified per-stop cargo >0 boundary | Route refresh (FUN_14067CB30 at 0x14069B8D9) clears route/config vectors +0x680/+0x688, +0x638/+0x640 without writing +0xC80 — internal continuation, not close; no verified writer linking stop transition to cargo completion |
+| Normal removal | FUN_1406BC5A0 terminates route: clears truck+0xC80=0 at 0x1406BC88A; conditionally clears office+0xBB0=0 at 0x1406BC883 only if [office+0xBB0]==truck pointer (backlink equality) | truck+0x4A0==0 (list-membership); metadata kind ∈ {1,2} or truck+0x67D!=0; route exhausted (+0x700 >= route_count-1); nonempty BC5A0 result; truck+0xC80!=0 | 1. FUN_1406BC5A0: truck+0xC80=0 (0x1406BC88A); office+0xBB0=0 only if [office+0xBB0]==truck (0x1406BC883)
+2. FUN_14066D530: +0x5E8=0, +0x528=0 (0x14066E99E–0x14066E9A5)
+3. Route/config reset optional via FUN_14067CB30 at 0x14069B8D9 (does NOT clear +0xC80) | Post-removal/default/home travel excluded by policy | PROPOSED for close mutation — close bytes verified by Agent 2 (19/19 termination bytes); backlink equality check at 0x1406BC883 verified | Cannot distinguish normal removal from cancellation statically — same C80 clear path; no distinct cancellation cause identified; no verified final-removal boundary tying C80 clear to task end vs internal-stop update |
+| Cancellation | Same C80 clear path as normal removal: FUN_1406BC5A0 clears truck+0xC80=0 at 0x1406BC88A; office+0xBB0 conditional clear at 0x1406BC883 | Same as normal removal (truck+0x4A0==0, route exhausted, truck+0xC80!=0) plus no distinct cancellation flag identified | Same mutations as normal removal (truck+0xC80=0, office+0xBB0=0 conditional, +0x5E8=0, +0x528=0) | Post-removal travel excluded by policy | UNTRACED — no distinct cancellation cause identified statically; BC5A0 fires only on route exhaustion which reads as completion, not cancellation; no cancel-flag discriminator found in Chain 2 | Same C80 clear at 0x1406BC88A serves both normal removal and cancellation; no proof every cancellation reaches a distinct clear; clear/rewrite within one helper invocation not shown to mean cancellation vs internal transition |
+| Identical replacement | Re-association requires truck+0xC80==0 first (cleared by BC5A0); FUN_1406B8EB0 entry bails if truck+0xC80!=0 (0x1406B8EED: JNE 0x1406bac66); office+0xBB0 = truck+0x390 (opaque token, not job ID) | Same as normal removal prerequisites (C80==0 after BC5A0 clear); Stage 1 guards re-checked | truck+0xC80=office (re-written), office+0xBB0=truck+0x390 (re-written, same opaque token) | New assignment interval begins after clear; indistinguishable from normal removal followed by fresh assignment | UNTRACED — office+0xBB0 holds opaque truck+0x390 token, not proven task identity; identical consecutive tasks indistinguishable from snapshots; no task-ID correlation exists | Cannot distinguish identical replacement from removal+new assignment; no verified task identity field; no distinct replacement boundary |
+| Post-removal/default/home travel | Excluded from interval by policy; FUN_14067CB30 route/config reset at 0x14069B8D9 (home-target path, RDX=0, R8B=1) clears +0x528/+0x538, does NOT clear +0xC80 | truck+0xC80==0 (after normal removal); route/config cleared by FUN_14067CB30 | FUN_14067CB30 clears +0x528, +0x538 at 0x14069B923/0x14069B92a; does NOT clear +0xC80 | Outside interval — travel after removal not tracked | UNTRACED — whether C80 clear precedes all post-removal return travel unresolved; predecessor of FUN_14067CB30 not proved to be task removal; return-to-office may retain +0xC80 association | Policy excludes post-removal travel but native evidence does not prove close precedes all return movement; +0xC80 may persist through home-target reset |
+
+## Cross-Row Consistency Review
+
+### Completed documentation
+
+All seven required interval cases are present in the matrix with exact addresses, verified guards, mutations, evidence sources, confidence levels, and unresolved counterexamples. The matrix distinguishes:
+
+- **Stage 1 association** (`FUN_1406B8EB0` write at 0x1406B9D8B/0x1406B9D99: truck+0xC80=office, office+0xBB0=truck+0x390) from **Stage 2 acceptance** (route install via `FUN_14067D5D0` + truck+0x508=0.5f + truck+0x528 transition) — association alone is not commitment.
+- **Internal stops** (+0x698 advance at 0x14069D0F0, transfer sites 0x694F40/0x6953C4/0x1B2898) from **close** (FUN_1406BC5A0 C80 clear at 0x1406BC88A, backlink check at 0x1406BC883) — internal continuation is not close.
+- **Normal removal** from **cancellation** — same C80 clear path, no distinct cancellation cause statically identified.
+- **Identical replacement** from **removal+new assignment** — no task identity (office+0xBB0 = opaque truck+0x390 token).
+
+### Cross-row policy alignment
+
+All seven rows comply with the user's 2026-10-30 policy amendment:
+- Assignment through removal/cancellation/replacement **regardless of success** (no success prerequisite).
+- Internal stop changes **stay inside** the interval (rows 1–3).
+- Post-removal/default/home travel **stays outside** (row 7).
+- No native jobID, payer, persistent-object, success, or reload prerequisite required.
+
+### Remaining unresolved native proof
+
+1. **Gate commitment edge:** Whether FUN_1406B8EB0's Stage 1 write is rolled back on gate failure — no rollback established; write is unconditional at call site 0x1401C646E.
+2. **FUN_1406BD660 writer:** What sets the gate's first disjunct (home office == route[+0x698]) — unknown.
+3. **Chain 1 → Chain 2 identity:** No static dataflow join between Chain 1's office-fleet truck (FUN_1401E5350 plan builder) and Chain 2's simulation consumer (FUN_14066D530/FUN_140699420). Unresolved alias edge.
+4. **Cancellation vs removal:** No distinct cancellation cause; same C80 clear path serves both.
+5. **Identical replacement:** No task identity; office+0xBB0 holds opaque token, not job ID.
+6. **Post-removal return:** Whether C80 clear precedes all post-removal return travel unresolved.
+
+### Evidence provenance
+
+All addresses verified against SOVIET64.exe v1.1.1.9 (SHA-256: 296644A9F207D609031FC2AE73FED2DCB34619A1D55A35D1C7B51965CE6841B8, PE timestamp 0x6A3EB6AD, image base 0x140000000). Ghidra queries ran serially via scratch/ghidra_run.bat; results cached in scratch/out/. Index entries in docs/ghidra-index/ record each function's RVA, signature, purpose, callers, data refs, artifact path, notes, and status.
+
+### No changes made
+
+No hooks, runtime config, dispatch, permissions, billing, build, save, or game replay changes. Payments remain OFF. No native executable modification.
