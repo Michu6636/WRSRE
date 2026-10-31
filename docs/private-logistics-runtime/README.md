@@ -1,5 +1,26 @@
 # Private logistics — runtime observation work package
 
+> **v0.18.11 dry-run assignment ledger implemented (2026-10-31).**
+> Selected-panel candidates open on observed appearance, close/reopen on target
+> replacement, and close on removal without requiring empty cargo. Scalar edits
+> and stop advances keep the same ID. Existing jobs are adopted with unknown
+> start; invalid reads and identity/load changes never pretend to be completion.
+> No costing/payment/tracker activation or new native read/default changes.
+> 129tests PASS; ASan+UBSan28reader/23ledger/16runtime cases PASS. Test7replay
+> opens57, replaces79, keeps91, closes111. Full source/results/guide in cumulative.
+> New Windows0.18.11DLL build/smoke check pending; billing remains OFF.
+
+> **TEST7 PASSES: v0.18.10 actual classification path (2026-10-31).**
+> Deployed version/gates confirmed;15classification lines independently checked.
+> Target replacement79 is structural; scalar edit91 coincides with index0->1
+> but is NOT structural. Three index-only advances remain separate. Final
+> clearing111 is correctly reported across a pause, while screenshot30 still
+> shows0.30t electronics: empty schedule does not mean empty truck/success.
+> Complete review/parser/actual output/evidence/lossless log in cumulative.
+> No runtime changes, accounting activation or unchanged-probe rerun requested;
+> next stage is bounded dry-run assignment accounting. Payments remain OFF.
+> Earlier pending Windows smoke-check notices are historical for this path.
+
 > **v0.18.10 captured-value classification implemented (2026-10-31).**
 > Separate count/targets, availability, flags, exact scalars and active-index-only
 > observations; office-only/load-unload labels are patterns, not native jobs.
