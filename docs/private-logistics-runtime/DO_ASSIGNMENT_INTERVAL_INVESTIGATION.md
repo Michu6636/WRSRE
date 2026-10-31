@@ -6912,3 +6912,224 @@ Final validation output:
 - `.../DO_ASSIGNMENT_INTERVAL_INVESTIGATION.md | 288 ++++++++++++++++++++ -`
 
 No other path is modified in the worktree.
+
+## Replacement-agent continuation: start/work-scope resolution
+
+### Executive answer
+
+**Proposed start event.** For a same-office type-43 (`0x2B`) road distribution-office truck, the start of assigned work is the first successful route-plan installation performed by the type-43 office updater `FUN_1401C6050` on a fleet truck whose `truck+0x528 == 0`. The event is a successful `FUN_14067D5D0` target insertion inside `FUN_1401E5480` (zero-selector branch) or `FUN_1401E5BA0` (nonzero-selector branch), reached via the single call site `FUN_1401E5350` at `0x1401C6CC9` in `FUN_1401C6050`. The receiver is the candidate truck pointer passed in `RDX` at that call (`0x1401C6CC9`, `RCX=context`, `RDX=truck`, `R8=office`).
+
+**Proposed work scope.** From that installation until the work is removed, cancelled, or replaced, regardless of success. Internal pickup, unload, and intermediate travel remain inside the same assigned work because the same truck consumes its installed `+0x680` target list through the `+0x698` index. Post-removal return/home travel is excluded. Reload/save continuity is unsupported and not a prerequisite.
+
+**Exact unresolved semantic edge.** Static evidence cannot distinguish initial task acceptance from a candidate-plan refresh/replan at the builder: `FUN_1401E5350` can run on any frame where a fleet truck has `+0x528 == 0`, and its boolean return is `FUN_1406B8EB0`'s result (when `+0x4F0 == 0`) or `1` (when `+0x4F0 != 0`) — not a distinct task-accepted bit. Additionally, the alias between the office-fleet candidate pointer and the manager receiver `P=[RBX+0x398]` consumed by `FUN_14066D530`→`FUN_140699420` is unproved. A runtime/logging observation is required to confirm the start boundary; no hook is proposed without separate approval.
+
+### Connected receiver/control-flow chain
+
+```
+FUN_140139A70 (dispatcher) @0x140139A70
+  -> call FUN_1401C6050 @0x14013E2C9   (RCX=context, RDX=office)
+    FUN_1401C6050 (type-43 office updater, upkeep_1c6050.c)
+      iterates office fleet +0xC70/+0xC78
+      per truck guard: truck+0xC80 == 0 && truck+0x4F8 == office   (0x1401C647F region)
+      builds candidate list local_338 via FUN_1406bd6b0(truck)
+      after fleet loop, for each candidate *plVar20:
+        -> call FUN_1401E5350 @0x1401C6CC9  (RCX=context, RDX=truck=*plVar20, R8=office=param_2)
+          Xrefs: ONE direct caller — 0x1401C6CC9 in FUN_1401C6050 (takeover1_1e5350_xrefs.txt)
+          return (char) accumulated into bVar7 only — no task-accepted bit written
+      FUN_1401E5350 (candidate filter, 0x1401E5350..0x1401E5474, decomp_1e5350.c)
+        guard: if (truck+0x528 != 0) return 0
+        selector = FUN_1406BDC30(truck, 0.0)
+        selector == 0  -> FUN_1401E5480(context, truck, office)     [zero-selector builder]
+        selector != 0  -> FUN_1401E5BA0(context, truck, office, selector) [already-carrying branch]
+        return builder's boolean
+      FUN_1401E5480 (zero-selector builder, 0x1401E5480..0x1401E5B93, takeover1_builder_decomp.c)
+        iterates office rows +0xD58/+0xD60, stride 0x80
+        per row: FUN_1401DE2B0(context, row, truck, office)  [eligibility gates only: row+0x60>0, threshold compares]
+        first passing row:
+          reset truck+0x688 = truck+0x680            [route list reset]
+          destroy/rebuild truck+0x638/+0x640 config vector (stride 0x198)
+          call FUN_14067D5D0(truck, row+0x10, -1, 0) @0x1401E55E5   [insert target #1]
+          call FUN_14067D5D0(truck, row+0x48, -1, 0) @0x1401E583A   [insert target #2]
+          call FUN_14067D5D0(truck, office, -1, 0) @0x1401E59D2     [insert office target]
+          truck+0x698 = 0                             @0x1401e5a7c  [RESOLVED: literal 0, not row ordinal]
+          tail: if (+0x4F0==0){ bVar13=FUN_1406B8EB0(truck,0,0,0); ... } else { bVar13=1; }
+          truck+0x508 = 1.0f; return bVar13
+          return 0 iff (+0x4F0==0 && FUN_1406B8EB0==0 && route nonempty) [then +0x518=0, +0x520=route[0]]
+      FUN_1401E5BA0 (nonzero-selector builder, 0x1401E5BA0..0x1401E60DE, takeover1_builder_decomp.c)
+        matches row where row+0x0 == selector (cargo already carried)
+        call FUN_14067D5D0(truck, row+0x48, -1, 0) @0x1401E5D59   [insert target]
+        call FUN_14067D5D0(truck, office, -1, 0) @0x1401E5F34     [insert office target]
+        truck+0x698 = 0                             @0x1401e5fc5  [RESOLVED: literal 0]
+        same tail; returns bVar11
+        already-carrying/delivery-style: positive result NOT universally before loading
+    Consumer (scope/handoff): FUN_140699420(truck=RCX)
+      reads +0x698 to bind +0x528 from truck[+0x680 + 8*+0x698] when +0x528 null (0x14069DCF6)
+      route exhausted (+0x700 >= count-1) -> call FUN_1406BC5A0(truck) @0x14069D0E7
+```
+
+**Resolved dataflow (replacing prior open questions):**
+- `+0x698` is written literal `0` in BOTH builder branches (`FUN_1401E5480` decomp line 219 / asm `0x1401e5a7c`; `FUN_1401E5BA0` decomp line 419 / asm `0x1401e5fc5`). It is NOT a planner-row ordinal or work index. The report's open EDI/R12D reaching-definition question is closed: both stores write `0`.
+- `FUN_1401E5350` has exactly one direct caller (`0x1401C6CC9` in `FUN_1401C6050`), so the builder is the exclusive type-43 plan-installation path. One data xref (`140a61b30`, NON_FUNCTION) exists but no additional direct call site.
+- The builder's boolean return is not a commitment bit: it equals `FUN_1406B8EB0`'s result when `+0x4F0 == 0`, else `1`. `+0x508` (`=1.0f`) is a timer/config write, not a commitment marker.
+- `+0x528` rebinding in `FUN_140699420` can repopulate the current target from an already-installed route list, so `+0x528` zero→nonzero is not a start event.
+
+### Seven-case work-scope distinction
+
+| Case | Exact proposed event/state and receiver | Why not merely eligibility/refresh | Counterexample examined | Falsification condition |
+|---|---|---|---|---|
+| First assignment (assigned-not-loaded) | First successful `FUN_14067D5D0` insertion in `FUN_1401E5480` zero-selector branch; receiver = candidate truck `RDX` at `0x1401C6CC9`; pre-state `+0x528==0`, `FUN_1406BDC30==0`, `+0xC80==0`, `+0x4F8==office`. | It installs a concrete route-target + aligned config entry on the truck (`+0x680/+0x688`, `+0x638/+0x640`, `+0x698=0`) — a state mutation, not a predicate pass. | A row that passes `FUN_1401DE2B0` but whose `FUN_14067D5D0` insert fails installs nothing — eligibility without scope. | A receiver-preserving trace showing the first successful insertion runs while the truck already carries an active task, OR a successful insertion that does not precede the goods load. |
+| Internal pickup / unload | Subsequent consumption of the same installed `+0x680` target list via `+0x698` index in `FUN_140699420`; same truck only if the unproved alias holds. | `+0x698` is reset to `0` by the builder, so index advance (`INC [truck+0x698]` at `0x14069d0f0`) reflects progression within one installed plan, not a new assignment. | Route-target/path changes that do not alter `+0xC80` association. | A `+0x698` advance or `FUN_1406BC5A0` empty-result path that clears `+0xC80` (that would be removal, not internal continuation). |
+| Route / path refresh | Builder re-run (`FUN_1401E5480`/`FUN_1401E5BA0`) clearing and reconstructing `+0x680/+0x688` and `+0x638/+0x640` on the same truck. | Same receivers and identical target values can be rewritten; no sequence token or task identity distinguishes refresh from replacement. | `FUN_1401E5480` called on a truck that already has a complete installed plan (`+0x528 != 0` is rejected by `FUN_1401E5350`, but `+0x528==0` with an existing stale route can be rebuilt). | A trace showing identical pre/post `+0x680`/`+0x638` contents across two consecutive successful builds on the same active truck. |
+| Already-carrying delivery | `FUN_1401E5BA0` nonzero-selector branch: row matched against `FUN_1406BDC30` selector = cargo object already on the truck. | The selector comes from cargo the truck already carries, so a positive builder result is not universally before loading. | `FUN_1401E5BA0` triggered when `selector != 0` — truck is already carrying goods. | A trace showing `FUN_1401E5BA0` building a plan for a truck with `+0x528 != 0` (rejected by `FUN_1401E5350`'s guard, so this path is only reachable via `selector != 0` branch internally). |
+| Final removal | Termination investigator's path: `FUN_1406BC5A0` @`0x1406bc88a` `truck+0xC80 = 0`, reached via `FUN_14066D530`@`0x14066ea69` → `FUN_140699420`@`0x14069d0e7` → BC5A0, when `+0x4A0==0` ∧ road truck ∧ `+0x700 >= count-1` ∧ BC5A0 nonempty. | Start-side builder has no removal/close writer; removal is a separate consumer-side mutation. | C80 clear on the nonempty path is unconditional for `+0xC80 != 0` but is route-result-driven, not a proved task close. | A C80 clear that occurs without route exhaustion, or a route exhaustion without C80 clear (empty-result path returns false, retains C80). |
+| Cancellation | Same C80-clear path as final removal; no distinct cancellation cause identified statically. | No separate cancellation branch reaches the builder, predicate, or home-target reset in bounded paths. | `FUN_1406B8EB0` bails if `+0xC80 != 0` (`0x1406b8eed: JNE`), so re-association requires C80==0 first. | A distinct cancellation cause connected to the C80-clear path that is separable from normal removal. |
+| Identical replacement | Second successful build that may rebuild identical `+0x680`/`+0x638` values on the same truck. | Builder clears and reconstructs vectors; no task token/commit event distinguishes refresh from identical replacement. | Equal before/after snapshots cannot distinguish refresh from replacement (per prior review). | An event counter or unique task identity on the same truck receiver showing two distinct accepted works. |
+| Post-removal return | Office-target insertion/consumption is not assumed post-removal return; home-target `FUN_14067CB30` @`0x14069b8d9` resets route/config but does NOT clear C80 directly. | Office appended to an itinerary can be the final entry of the installed plan before any verified removal. | Home-target condition `+0x528==+0x4F8==+0x4F0` ∧ descriptor type `0x2B`/`0x2D` calls `FUN_14067CB30`, but removal is not a predecessor. | A trace showing `+0xC80` cleared, then a new office-target build, on the same tick. |
+| Reload | Not examined; no persistence of proposed task state across save/load proven. | N/A — not a start-scope result. | N/A | N/A (unsupported). |
+
+### Per-boundary justification summary
+
+**Why the builder insertion is not merely eligibility:** `FUN_1401DE2B0` is the row-eligibility predicate; the builder insertion (`FUN_14067D5D0`) is the state mutation that installs targets into `+0x680/+0x688` and config into `+0x638/+0x640`. Eligibility can pass repeatedly without installation; installation is the concrete scope-establishing write.
+
+**Why `+0x528` zero→nonzero is not the start:** `FUN_140699420` binds `+0x528` from `truck[+0x680 + 8*+0x698]` while consuming an already-installed plan (`0x14069DCF6`), so `+0x528` can become nonzero without any new assignment.
+
+**Why `+0xC80` association is not the start:** `FUN_1406B8EB0` writes `truck+0xC80 = office` / `office+0xBB0 = truck+0x390`, but this is an association path, not proof of whole-task installation or acceptance (per earlier executive result withdrawal).
+
+**Why `+0x698` is not a work index:** Both builder branches write literal `0` to `+0x698`; it is reset on every build, not advanced as a task-progression counter.
+
+### Compact termination-agent handoff
+
+- **Installed plan:** `truck+0x680/+0x688` route-target vector + `truck+0x638/+0x640` aligned configuration vector (stride `0x198`); `+0x698` reset to `0` by the builder at install time.
+- **Executor identity:** `FUN_140699420(truck=RCX)` is the simulation route consumer; reached via `FUN_140010E20` → `FUN_14066D530(truck=RCX=RBX)` → `FUN_140699420` at `0x14066ea69` (`RCX` reloaded from `RBX` at `0x14066ea66`). `FUN_1406BC5A0(truck)` called at `0x14069d0e7` on route exhaustion (`+0x700 >= count-1`).
+- **Candidate final-work transition:** `truck+0xC80` transitions `office → 0` at `FUN_1406BC5A0` `0x1406bc88a` (R14=truck), conditional backlink `old office+0xBB0 → 0` at `0x1406bc883` only when `[C80+0xBB0]==truck`. Reached when `+0x4A0==0` ∧ road-truck kind ∧ `+0x700 >= count-1` ∧ BC5A0 nonempty result. `+0x698` is NOT incremented on this path (BC5A0 true skips the `0x14069d0f0` increment).
+- **Reconciliation against an internal transition:** `+0x698` increment at `0x14069d0f0` (BC5A0 false / empty result) retains `+0xC80` and advances to the next route entry — compatible with an internal stop, not a close. Contrast: route-exhausted + BC5A0 nonempty → C80 clear → close candidate.
+- **Reconciliation against the final office/home entry:** The office target inserted by the builder (`FUN_14067D5D0(truck, office, ...)`) can be the final entry of the installed plan; home-target reset `FUN_14067CB30` @`0x14069b8d9` clears route/config but does not clear C80 and has no proved removal predecessor. Do not classify the office entry as either assigned work or post-removal return without the termination investigator's classified close.
+
+### Exact binary identity (re-verified directly)
+
+The file at `C:\Workers Resources Soviet Republic\SOVIET64.exe` was read directly.
+
+| Property | Verified value |
+|---|---|
+| File size | 10,308,608 bytes |
+| SHA-256 | `296644A9F207D609031FC2AE73FED2DCB34619A1D55A35D1C7B51965CE6841B8` |
+| PE signature | `0x00004550` |
+| PE timestamp | `0x6A3EB6AD` |
+| Machine / optional-header magic | AMD64 (`0x8664`) / PE32+ (`0x020B`) |
+| Image base | `0x140000000` |
+
+All values match the expected target (SOVIET64.exe v1.1.1.9). All queried addresses in this section are file VAs; runtime instrumentation (if ever separately approved) must use RVAs/ASLR-safe resolution.
+
+### Commands, actual query output, and limitations
+
+Ghidra slot acquired and released explicitly; one headless process at a time; no locks removed or processes terminated. Commands run through the existing wrapper, serially:
+
+```text
+scratch\ghidra_run.bat DecompAt.java takeover1_builder_decomp.c 0x1401E5480 0x1401E5BA0
+scratch\ghidra_run.bat Xrefs.java takeover1_1e5350_xrefs.txt 0x1401E5350
+```
+
+Actual output (first command) — decompilation written to `takeover1_builder_decomp.c` (workspace root), complete bodies for `FUN_1401E5480` (size 1812, `0x1401E5480..0x1401E5B93`) and `FUN_1401E5BA0` (size 1343, `0x1401E5BA0..0x1401E60DE`), including the `truck+0x698 = 0` stores at decomp lines 219 and 419.
+
+Actual output (second command) — `takeover1_1e5350_xrefs.txt`:
+
+```
+XREFs to 0x1401E5350:
+  [DATA] from 140a61b30 in NON_FUNCTION
+  [UNCONDITIONAL_CALL] from 1401c6cc9 in FUN_1401c6050
+```
+
+This confirms exactly one direct caller of `FUN_1401E5350` (`0x1401C6CC9` in `FUN_1401C6050`).
+
+Reused existing exports (not regenerated): `decomp_1e5350.c` (`FUN_1401E5350`), `upkeep_1c6050.c` (`FUN_1401C6050`), `decomp_1e5480.c` (prior `FUN_1401E5480` decompilation), `agent1_func_14067d5d0.asm` (`FUN_14067D5D0`), `agent1_func_1406bc5a0.asm/.c` (`FUN_1406BC5A0`), `agent1_func_140699420_*` (`FUN_140699420`), `disasm_010e20.asm` (manager loop).
+
+Limitations:
+- All conclusions are static deductions or explicit unknowns; no live-game validation of assignment, removal, replacement, cancellation, or return travel was performed or requested.
+- The office-fleet-candidate ↔ manager-receiver alias is unproved; static analysis cannot confirm that the truck built by `FUN_1401E5350` is the same pointer consumed by `FUN_140699420`.
+- Initial acceptance vs. refresh/replan cannot be distinguished statically; a runtime/logging observation is required.
+- Reload/save continuity unsupported.
+- No hooks, runtime/configuration changes, build, save edit, payment, dispatch, permission change, or game replay occurred. The shared Ghidra slot remains released.
+
+### Proposed logging-only start-side discriminator (not implemented, for approval)
+
+If a guarded native observation is later authorized, log only at these exact sites with proven live registers. One point at a CALL cannot observe its return without a separate mechanism (callee-return logging requires a return-site probe or epilogue hook).
+
+- **Site S1 (builder entry):** `FUN_1401E5350` at `0x1401C6CC9`. Log `truck=RDX`, `context=RCX`, `office=R8`, pre-call `truck+0x528`, `truck+0xC80`, `truck+0x4F8`, `truck+0x698`, `truck+0x680`/`+0x688` counts, `FUN_1406BDC30` selector result, and callee return `AL`. Distinguishes zero-selector vs nonzero-selector branch and whether the truck was already bound (`+0x528 != 0` → rejected).
+- **Site S2 (target insertions):** `FUN_14067D5D0` at `0x1401E55E5`, `0x1401E583A`, `0x1401E59D2` (1E5480 branch) and `0x1401E5D59`, `0x1401E5F34` (1E5BA0 branch). Log `receiver=RCX`(=truck), `target=RDX`, helper return `AL`, and route-list count `([+0x688]-[+0x680])>>3` before/after. Proves route-target installation vs. failure.
+- **Site S3 (698 store):** `0x1401e5a7c` (1E5480) and `0x1401e5fc5` (1E5BA0). Log `truck=RSI`, `+0x698` before/after (expected `0` both branches). Confirms `+0x698` reset, not ordinal assignment.
+- **Site S4 (builder return):** `FUN_1401E5350` return at `0x1401C6CC9`. Log return `AL`/`char` and branch taken (1E5480 vs 1E5BA0). Confirms `FUN_1406B8EB0`-dependent boolean, not a task bit.
+
+Contrasting sequences must include: first assignment before load, internal endpoint advance, builder refresh during active work (if it occurs), matched nonzero-selector delivery, and identical consecutive work. This discriminates plan construction from continuity; it does not itself authorize accounting or establish payer.
+
+### Inline validator (source-backed check)
+
+The Python validator below rejects executable identity mismatch and returns nonzero on failure. Fence/diff checks are hygiene, not lifecycle proof.
+
+```python
+from pathlib import Path
+import hashlib, re, sys
+
+EXE = Path(r'C:\Workers Resources Soviet Republic\SOVIET64.exe')
+EXPECTED_SHA256 = '296644a9f207d609031fc2ae73fed2dcb34619a1d55a35d1c7b51965ce6841b8'
+REPORT = Path(r'C:\WRSRE\docs/private-logistics-runtime/DO_ASSIGNMENT_INTERVAL_INVESTIGATION.md')
+
+# Function bounds from ListFuncs exports / decompilation metadata (file VAs)
+FUNC_BOUNDS = {
+    0x1401E5350: (0x1401E5350, 0x1401E5474),   # decomp_1e5350.c
+    0x1401E5480: (0x1401E5480, 0x1401E5B93),   # agent1_func_1401e5480.txt size 1812
+    0x1401E5BA0: (0x1401E5BA0, 0x1401E60DE),   # agent1_func_1401e5ba0.txt size 1343
+    0x1401C6050: None,                          # upkeep_1c6050.c (caller context)
+}
+
+def fail(msg):
+    print('VALIDATOR FAIL:', msg)
+    sys.exit(1)
+
+# 1. Executable identity
+if not EXE.exists():
+    fail('EXE missing: ' + str(EXE))
+digest = hashlib.sha256(EXE.read_bytes()).hexdigest()
+if digest.lower() != EXPECTED_SHA256:
+    fail('EXE identity mismatch: got %s, expected %s' % (digest, EXPECTED_SHA256))
+print('EXE identity OK: %s (%d bytes)' % (digest, EXE.stat().st_size))
+
+# 2. Fence balance in the replacement continuation section
+text = REPORT.read_text(encoding='utf-8')
+marker = '## Replacement-agent continuation: start/work-scope resolution'
+if marker not in text:
+    fail('Replacement-agent continuation section not found in report')
+section = text[text.index(marker):]
+inside = False
+fences = 0
+for line in section.splitlines():
+    if line.startswith('```'):
+        inside = not inside
+        fences += 1
+if inside or fences % 2:
+    fail('Unbalanced Markdown fences in continuation: %d' % fences)
+print('Fences: %d even.' % fences)
+
+# 3. Cited instruction addresses: format validation (advisory; bounds table incomplete)
+#    All cited addresses must be well-formed file VAs (0x140 + 6-8 hex digits).
+cited = sorted({int(m, 16) for m in re.findall(r'\b(0x140[0-9a-fA-F]{6,8})\b', section)})
+malformed = [m for m in re.findall(r'\b0x140[0-9a-fA-F]+\b', section) if not re.fullmatch(r'0x140[0-9a-fA-F]{6,8}', m)]
+if malformed:
+    fail('Malformed cited addresses: ' + ', '.join(sorted(set(malformed))))
+print('Cited addresses validated: %d well-formed file VAs.' % len(cited))
+
+print('ALL_CHECKS PASS')
+```
+
+Expected validator output:
+```
+EXE identity OK: 296644a9f207d609031fc2ae73fed2dcb34619a1d55a35d1c7b51965ce6841b8 (10308608 bytes)
+Fences: 10 even.
+Cited addresses validated: 28 well-formed file VAs.
+ALL_CHECKS PASS
+```
+
+The validator returns nonzero (`sys.exit(1)`) on any identity mismatch or fence imbalance. Source-backed checks: EXE hash, fence balance, address format. Report-backed fixtures: prior report excerpts (lines 6672-6769) and existing decompilations. Actual PE reads: the SHA-256 above was computed directly from `C:\Workers Resources Soviet Republic\SOVIET64.exe`. No Ghidra query was run during validation; the shared slot remains released.
+
+### Git state at completion
+
+Branch `DO-fuel-cost-calculatotr`, HEAD `1ae50c3` (Agent1 start/work-scope follow-up, committed). Only `docs/private-logistics-runtime/DO_ASSIGNMENT_INTERVAL_INVESTIGATION.md` modified by this continuation. No commit/push/PR performed. No runtime, hook, config, default, dispatch, permission, billing, build, save, or game change made.
