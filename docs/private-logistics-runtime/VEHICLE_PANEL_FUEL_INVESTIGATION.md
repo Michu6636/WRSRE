@@ -84260,3 +84260,227 @@ If a resource/filter byte exists in the config entry, the only evidenced writer 
 3. **Missing edge**: Find the renderer code path that displays resource/filter per task row (not in 7D5460 loop). May be in a separate UI builder function.
 
 **No new Ghidra queries required** — all evidence from cached `disasm_7d5460_full.txt` and `newA_decomp_67d5d0.c`.
+
+---
+
+## df23d12 Supersession: Renderer Reads of C8/04/CC
+
+**Retraction**: The prior claim "renderer never reads C8/04/CC for task list" is **false**. Verified reads in `FUN_1407D5460`:
+
+| Field | Read Site | Instruction | Purpose |
+|-------|-----------|-------------|---------|
+| `config+0xC8` (flagC8) | `0x1407E8EB9` | `MOVZX EAX, byte ptr [RSI + 0xc8]` | Branch on sub-type; non-zero → formatted text path via `0x140005290` at `0x1407E8F4C` |
+| `config+0x00` (flag00) | `0x1407E8ED2` | `CMP byte ptr [RSI], 0x0` | Enable gate; zero → alternate string ID path |
+| `config+0xCC` (valueCC) | `0x1407E8F07` | `MOVSS XMM0, dword ptr [RSI + 0xcc]` | Scale × `0x14090AB70` → `CVTTSS2SI` → integer → formatted via `0x140005290` |
+| `config+0x04` (value04) | `0x1407E9273` | `MOVSS XMM0, dword ptr [RSI + 0x4]` | Same scale/format chain → `0x140005290` at `0x1407E92B5` |
+
+**Formatter**: `0x140005290` (string format/render helper) called with scaled integer and string ID from `.rdata` (e.g., `0x1408F4318`, `0x1408F4340`).
+
+**Exact units/labels remain unverified** — the formatter consumes pre-scaled integers; native unit conversion (tonnes/litres/items) not traced.
+
+---
+
+## Helper 02ECD0 Indexed-Record Contract (Verified)
+
+**Function**: `FUN_14002ECD0` at `0x14002ECD0`  
+**Signature**: `longlong FUN_14002ecd0(longlong *vector_base, longlong index)`  
+**Body**: `return index * 0x10 + *vector_base;` (16-byte stride)
+
+**Renderer usage** (two independent vectors):
+
+| Vector | Base Saved | Count Calculation | Helper Call | Record Access |
+|--------|------------|-------------------|-------------|---------------|
+| `config+0xD0` | `R14` at `0x1407E9602` (`LEA R14, [RSI+0xD0]`) | `end-begin >> 4` at `0x1407E9733–73A` | `0x1407E980B` | `[RAX]` at `0x1407E9810` → `object+0x48` at `0x1407E9813` |
+| `config+0x08` | `R14` at `0x1407E9899` (`LEA R14, [RSI+0x08]`) | `end-begin >> 4` at `0x1407E99A4–9AB` | `0x1407E9A7B` | `[RAX]` at `0x1407E9A80` → `object+0x48` at `0x1407E9A83` |
+
+**Record layout (16 bytes / 0x10 stride)**:
+- `+0x00`: `object*` (8 bytes) — dereferenced for `object+0x48`
+- `+0x08`: **unknown** (8 bytes) — **NOT proven quantity/filter**
+
+**Critical**: A 16-byte stride does **not** prove the second qword is a quantity or filter. The renderer only consumes `record[0]` (object pointer) and then `object+0x48`. The `+0x08` field is never read in this code path.
+
+**Calls after record access**:
+- Config+D0 path: indirect call `[RDI+0x70]` at `0x1407E982F`, drawing call `[0x14086C860]` at `0x1407E9858`
+- Config+08 path: same pattern at `0x1407E9A9F` / `0x1407E9AC8`
+
+**RSI reuse**: Loop counter reused at `0x1407E9779` / `0x1407E99E9`; vectors remain in `R14`.
+
+---
+
+## Installer/Copy Site for Vehicle-Row Vectors & Conditional +190 (from 67D5D0)
+
+**Function**: `FUN_14067D5D0` (Route Insert/Overwrite, `0x67D5D0`)  
+**Callers**: `0x1401E55CB` (pickup), `0x1401E583F` (delivery), `0x1401E59D7` (office return), `0x1401E5D5E`, `0x1401E5F39`
+
+### Config Vector Population (stride 0x198)
+
+At insert (append, `param_3 == -1`):
+1. `FUN_14001E140` — insert into route vector (`truck+0x680`)
+2. `FUN_1402030F0` — insert into config vector (`truck+0x638`) at `row * 0x198`
+3. `FUN_14067CD20` — post-insert fixup
+
+### Conditional +190 (Fallback Target) — Exact Source
+
+**Writer**: `67D5D0` at `0x14067D85B` area (line 84 in decomp):
+```c
+lVar8 = *(longlong *)((longlong)iVar6 * 0x198 + 400 + *(longlong *)(param_1 + 0x638));
+```
+- `iVar6` = current `truck+0x698` (route index) at function entry
+- `400` = `0x190`
+- Reads `config_entry + 0x190` **from the currently active row's config entry**
+- Stores in `lVar8` for later `698` recompute match
+
+**Condition**: Only executed when `(-1 < iVar6 < route_count) && target_at_698 == 0` (line 82-83) — i.e., when the current active route index points to a **null target**.
+
+**Renderer read**: `0x1407E818D` — `MOV RBX, [RCX + RAX*1 + 0x190]` — reads `config_entry + 0x190` **when route target is null** (`TEST R14,R14` at `0x1407E817A` is zero).
+
+**Not equivalent to 5FD suppression**: Conditional `+190` read at `0x1407E818D` occurs **before** the separate `5FD` last-row check at `0x1407E81B3–1C0`. Different conditions, different purposes.
+
+### Config Flag Writes (Not D3A)
+
+| Site | Instruction | Writes | Not |
+|------|-------------|--------|-----|
+| `0x1407D9A37` / `0x1407D9A7C` | `MOV [config_entry+0], 0` / `MOV [config_entry+0], DIL` | `config+0x00` (flag00) | `truck+0xD3A` |
+| `0x1407D9A3B` | `MOV RCX, R9` (setup) | — | — |
+| `0x1407D9A50` / `0x1407D9A95` | `MOV [config_entry+0xC8], 0/1` | `config+0xC8` (flagC8) | — |
+
+**D3A** (`truck+0xD3A`) is set at `0x14067D85B` line 102: `*(undefined1 *)(param_1 + 0xd3a) = 1` — route dirty flag, **not** config entry flag.
+
+---
+
+## Minimal schedule_observer.h Extension Proposal
+
+### New Fields in `Row` Struct
+
+```cpp
+struct Row {
+    Address target = 0;              // truck+0x680 + row*8 (existing)
+    bool configRead = false;
+    std::uint8_t flag00 = 0;         // config+0x00 (existing)
+    float value04 = 0;               // config+0x04 (existing)
+    std::uint8_t flagC8 = 0;         // config+0xC8 (existing)
+    float valueCC = 0;               // config+0xCC (existing)
+    
+    // NEW — verified omitted raw content:
+    Address configEntry = 0;         // truck+0x638 + row*0x198 (base of config entry)
+    Address fallbackTarget = 0;      // configEntry + 0x190 (conditional, valid when target==0)
+    bool fallbackValid = false;      // true iff fallbackTarget != 0 and read succeeded
+};
+```
+
+### New Fields in `Snapshot` Struct
+
+```cpp
+struct Snapshot {
+    // ... existing fields ...
+    unsigned count = 0;
+    Row rows[MaxRows]{};
+    
+    // NEW — bounds/overflow/partial-capture rules:
+    bool configVectorRead = false;   // true iff truck+0x638 read succeeded
+    Address configsBegin = 0;        // truck+0x638 (base)
+    Address configsEnd = 0;          // truck+0x638 + count*0x198 (computed)
+    bool configBoundsOk = false;     // configsEnd >= configsBegin, no overflow
+};
+```
+
+### Read Contract (in `ReadRow`)
+
+```cpp
+inline bool ReadRow(const Memory& m, const Snapshot& s, unsigned i, Row& r) {
+    if (!m.Get(s.begin, Address(i) * 8, r.target)) return false;
+    
+    // Special last-row skip (5FD) — existing logic
+    if (s.flag5fd && i + 1 == s.count) return true;
+    
+    const Address configEntry = s.configsBegin + Address(i) * 0x198;
+    r.configEntry = configEntry;
+    r.configRead = m.Get(configEntry, 0x0, r.flag00) &&
+                   m.Get(configEntry, 0x4, r.value04) &&
+                   m.Get(configEntry, 0xC8, r.flagC8) &&
+                   m.Get(configEntry, 0xCC, r.valueCC);
+    
+    // NEW: conditional fallback target (+0x190)
+    r.fallbackValid = false;
+    if (r.target == 0) {  // only when route target is null
+        r.fallbackValid = m.Get(configEntry, 0x190, r.fallbackTarget);
+    }
+    return r.configRead;
+}
+```
+
+### Delta Comparison (in `History::Observe`)
+
+```cpp
+// Content comparison — ordered element content, separate from allocation
+d.fields = s.count != previous_.count;
+if (!d.fields) {
+    for (unsigned i = 0; i < s.count; ++i) {
+        if (!SameRow(s.rows[i], previous_.rows[i])) { d.fields = true; break; }
+    }
+}
+
+// NEW: fallback target comparison (only when both valid)
+if (!d.fields) {
+    for (unsigned i = 0; i < s.count; ++i) {
+        if (s.rows[i].fallbackValid && previous_.rows[i].fallbackValid &&
+            s.rows[i].fallbackTarget != previous_.rows[i].fallbackTarget) {
+            d.fields = true; break;
+        }
+    }
+}
+
+// Storage relocation — allocation addresses only
+d.storage = s.begin != previous_.begin || s.end != previous_.end || 
+            s.configsBegin != previous_.configsBegin;
+
+// Index progression
+d.index = s.index698 != previous_.index698;
+
+// Context (opaque renderer fields)
+d.context = s.raw4a0 != previous_.raw4a0 || s.raw610 != previous_.raw610 ||
+            s.raw650 != previous_.raw650 || s.flag5fd != previous_.flag5fd;
+```
+
+### Bounds / Overflow / Readability Rules
+
+| Condition | Status | Action |
+|-----------|--------|--------|
+| `configsBegin == 0 && count > 0` | `MissingConfigs` | Abort capture |
+| `configsEnd` wraps (`configsBegin + count*0x198` overflows) | `BadBounds` | Abort capture |
+| Any `ReadRow` fails | `Unreadable` | Abort capture, `gap_=true` |
+| `flag5fd && count > 0` but last row `target != 0` | `NonFinite` | Abort (inconsistent) |
+| Partial capture (exception mid-loop) | `GuardedFault` | `gap_=true`, disable schedule reads |
+
+### Old/New Sample Correspondence & Gap Handling
+
+- **Correspondence**: By `truck` base address + `epoch` + `home` (existing `History` logic). Row index `i` maps 1:1 between snapshots when `count` unchanged and `!storage`.
+- **Identical replacement**: If `storage && count==old_count && all rows SameRow`, classified as `whole_plan_replaced` (not `storage_relocation_only`). **Sampling cannot distinguish** identical reinstall from no-change — marked `Baseline::Gap` if preceding gap.
+- **ABA on fallbackTarget**: If `fallbackTarget` changes A→B→A between samples, `d.fields` catches it. If ABA occurs within one sample (mid-read mutation), `ChangedDuringRead` status (existing double-read check).
+- **Gap propagation**: Any `status != Complete` or `Baseline != None` → `History::Break()` → next capture gets `Baseline::Gap`.
+
+---
+
+## Missing Contract (Precise Blockers)
+
+| Missing | Why Blocked | Required Evidence |
+|---------|-------------|-------------------|
+| **Meaning of config+0x08** (second qword in 0x10-stride vector) | Renderer only reads `record[0]` → `object+0x48`; `+0x08` never accessed | Trace writer of config+D0/+08 vectors (office dispatch? `67D5D0`?) |
+| **Resource type/filter per task row** | Renderer reads `flagC8`/`valueCC`/`value04` but these are **display formatting inputs**, not proven resource IDs. No evidenced renderer read of a resource/filter byte. | Find UI builder that emits resource icon/label per row (not in 7D5460 loop) |
+| **Task-row quantity display source** | Not `value04`/`valueCC` (those are cargo/fuel for route execution). Source untraced. | Search panel string builder for quantity format calls |
+
+**No new Ghidra queries issued** — all above from cached exports. `02ECD0` decompilation added to `scratch/out/02ecd0_decomp.c`.
+
+---
+
+## Approval Scope
+
+**Proposed implementation** (requires approval before any code change):
+1. Extend `schedule_observer.h` `Row` with `configEntry`, `fallbackTarget`, `fallbackValid`
+2. Extend `Snapshot` with `configVectorRead`, `configsBegin`, `configsEnd`, `configBoundsOk`
+3. Update `ReadRow` to read `configEntry` base and conditional `+0x190`
+4. Update `History::Observe` to compare `fallbackTarget` when both valid
+5. Add bounds/overflow checks for config vector
+6. **No runtime hooks, no DLL build, no game changes** — read contract only
+
+**Excluded**: config_entry as semantic identity, unverified resource-object traversal, unverified record payload interpretation.
