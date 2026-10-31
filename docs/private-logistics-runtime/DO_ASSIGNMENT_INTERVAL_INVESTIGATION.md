@@ -6,7 +6,9 @@
 
 The type-43 (`0x2B`) dispatcher passes an object whose metadata type is `0x2B` into `FUN_1401C6050`. That updater traverses that same object's `+0xC70/+0xC78` fleet and calls `FUN_1406B8EB0` on a guarded truck from it. The helper can write `truck+0xC80 = office` and `office+0xBB0 = truck+0x390`. This proves a type-43 office/truck association path, but not a whole-task installation, task-presence signal, final removal, cancellation, or replacement boundary. `truck+0x390` is used as a pointer-like internal object/container value; it is not a proven job ID or payer. Whether this association persists across internal pickup/unload stops is unresolved.
 
-The latest follow-up traces the type-43 updater's candidate-truck buffer into `FUN_1401E5350` and its same-truck route/configuration rebuilders. `FUN_1401E2380` regenerates the office's `+0xD58/+0xD60` candidate rows; a positive row predicate can then rebuild the truck's `+0x680/+0x688` route list and `+0x638/+0x640` configuration vector. A connected simulation path in `FUN_140699420` can write the generic `truck+0xC80` association to its current `+0x528` target and conditionally write that target's `+0xBB0` backlink. The possible old-target write at `0x14069B806` stores `R14`; its zero provenance remains unproved. The same simulation path can call `FUN_14067CB30` on a type-43 home-target branch to clear route/configuration vectors. **Corrected downstream evidence:** `0x14069D22D` increments only the register copy of truck `+0x700`; `0x14069D235` reloads the original field. The actual guarded increment is dword truck `+0x698` at `0x14069D0F0`, after `FUN_1406BC5A0(RCX=truck)` returns zero. The complete predicate shows that a nonempty generated vector returns true and may clear truck `+0xC80`; its `+0xBB0` store is guarded by backlink equality, while the truck `+0xC80` store is not. These are route/association changes, not proved task boundaries. The exact type-43-fleet-to-simulation-manager membership edge, actual work commitment, and task removal/cancellation/replacement remain unproved. No reliable accounting interval is established.
+The type-43 updater passes a candidate truck from that same office fleet to `FUN_1401E5350`. The new start/work-scope trace establishes what the positive planner branches build: `FUN_1401E5480` attempts up to two row-target insertions plus the office target; `FUN_1401E5BA0` attempts one matched row target plus the office target. Successful `FUN_14067D5D0` calls mutate that truck's route-target list and aligned configuration vector. This is a concrete route-plan installation, not proof that the truck has newly accepted a task. `FUN_1401E5BA0` is the already-carrying/delivery-style selector branch, so neither its positive builder result nor a generic route insertion can be a universal pre-load start marker. No unique initial-acceptance event is established.
+
+A connected simulation path in `FUN_140699420` can write the generic `truck+0xC80` association to its current `+0x528` target and conditionally write that target's `+0xBB0` backlink. The possible old-target write at `0x14069B806` stores `R14`; its zero provenance remains unproved. The same simulation path can call `FUN_14067CB30` on a type-43 home-target branch to clear route/configuration vectors. **Corrected downstream evidence:** `0x14069D22D` increments only the register copy of truck `+0x700`; `0x14069D235` reloads the original field. The actual guarded increment is dword truck `+0x698` at `0x14069D0F0`, after `FUN_1406BC5A0(RCX=truck)` returns zero. The complete predicate shows that a nonempty generated vector returns true and may clear truck `+0xC80`; its `+0xBB0` store is guarded by backlink equality, while the truck `+0xC80` store is not. These are route/association changes, not proved task boundaries. The exact type-43-fleet-to-simulation-manager membership edge, initial work commitment, and task removal/cancellation/replacement remain unproved. No reliable accounting interval is established.
 
 The existing `FUN_1406BF1D0` renderer investigation remains below for continuity and is not repeated or used as an assignment signal here. This correction instead records the exact type-43 receiver path, `+0x390` provenance, contiguous direct bytes, and remaining lifecycle gaps.
 
@@ -4943,7 +4945,7 @@ The candidate-truck buffer operation at `0x1401C6CB2` receives begin/end/count/c
 
 #### Simulation dispatch is a conditional, not yet same-office, edge
 
-The manager update at `0x140010E20` calls `FUN_14066D530` on a direct object pointer and then on each pointer in its `+0x3A0` array. The latter call setup is `RCX=[RBX+0x398]+RSI`, followed by `CALL 0x14066D530` at `0x140010E87`. In `FUN_14066D530`, `RBX` retains that receiver. Its route-consumer branch is reachable when `+0x4A0 == 0` and metadata-kind `+0x294` is 1 or 2; the reported road-truck kind 1 satisfies the metadata test, but the `+0x4A0` value and the office-fleet-to-manager-array membership are not established. The exact predecessor references to the call are conditional jumps at `0x14066E8A3` and `0x14066E8B0`.
+The manager update at `0x140010E20` calls `FUN_14066D530` on a direct object pointer `P=[RBX+0x398]`, then on each pointer in `[P+0x3A0,P+0x3A8)`. The vector-element call setup is `RCX=[P+0x3A0]+RSI`, followed by `CALL 0x14066D530` at `0x140010E87`. In `FUN_14066D530`, `RBX` retains that receiver. Its route-consumer branch is reachable when `+0x4A0 == 0` and metadata-kind `+0x294` is 1 or 2; the reported road-truck kind 1 satisfies the metadata test, but the `+0x4A0` value and the office-fleet-to-manager-array membership are not established. `P` itself is also passed directly to `FUN_14066D530`; vector insertion is not the only possible identity bridge. The exact predecessor references to the call are conditional jumps at `0x14066E8A3` and `0x14066E8B0`.
 
 ```asm
 140010e80: 48 8B 0A                 MOV RCX,qword ptr [RDX]
@@ -6381,8 +6383,8 @@ The complete 866-byte helper was decompiled and disassembled; the report embeds 
 
 ### New evidence and corrected conclusions
 
-- The manager path is now bounded through its collection consumer: `FUN_140010D30` calls `FUN_140010E20`; that function obtains a receiver from `[object+0x78]+0x60`, then calls `FUN_14066D530` on a direct `+0x398` pointer and on each pointer in the manager-owned `+0x3A0/+0x3A8` vector. In `FUN_14066D530`, `RBX` retains the passed object and the route-consumer branch calls `FUN_140699420(RCX=RBX)`. This proves the simulation call preserves each manager-enumerated object.
-- **Still unproved:** no bounded native path joins the candidate `RSI` truck from the type-43 office's `+0xC70/+0xC78` fleet to any pointer in the distinct manager `+0x3A0/+0x3A8` vector. The manager enumeration proves its own inputs and receiver continuity only. Metadata-kind 1 and the `+0x4A0==0` guard do not establish pointer identity or fleet membership.
+- The manager path is now bounded through its collection consumer: `FUN_140010D30` calls `FUN_140010E20`; that function obtains `P=[RBX+0x398]`, passes `P` directly to `FUN_14066D530`, then enumerates `[P+0x3A0,P+0x3A8)`. In `FUN_14066D530`, `RBX` retains the passed object and the route-consumer branch calls `FUN_140699420(RCX=RBX)`. This proves the simulation call preserves each direct or manager-vector receiver.
+- **Still unproved:** no bounded native path joins the candidate `RSI` truck from the type-43 office's `+0xC70/+0xC78` fleet to the direct `P=[RBX+0x398]` receiver or any element in `[P+0x3A0,P+0x3A8)`. The manager enumeration proves its own inputs and receiver continuity only. Metadata-kind 1 and the `+0x4A0==0` guard do not establish pointer identity or fleet membership.
 - `FUN_1406BC5A0` is now supported by entry, invalid/empty-result branches, the generator-call setup, the post-rebuild branch, and its association stores. The complete scratch export is 866 bytes, but the report's raw excerpts below are bounded to the branches needed for the caller return, the reaching zero, and the `+0xC80/+0xBB0` distinction; the excerpts are not mislabeled as the complete body.
 - **Corrected association semantics:** `XOR ESI,ESI` at `0x1406BC80D` is the reaching zero-definition for both later store sources. After a nonempty route-generator result, `0x1406BC881` compares target `+0xBB0` with this truck; a mismatch jumps to `0x1406BC88A`, skipping only the `+0xBB0` store. The `truck+0xC80=0` store at `0x1406BC88A` still executes for every non-null `+0xC80` value. The predicate returns true on that generated-result path, so its caller at `0x14069D0E7` skips the `+0x698` increment. Neither return nor association clearing proves the work was removed.
 - **No task boundary was proved.** The positive `FUN_1401E5350` return at `0x1401C6CC9` is consumed into an office-updater aggregate flag. On the truck it rebuilds route/configuration vectors, but no distinct persistent active-work commitment is established. The route consumer's conditional `+0x698` increment, route-vector rebuild, association cleanup, and type-43 home-target reset remain route/association behavior absent evidence connecting them to actual work acceptance or termination.
@@ -6402,7 +6404,7 @@ The outer dispatcher only enters `FUN_140010E20` when its `+0x5B` byte is nonzer
 140010d4a:  E8 D1 00 00 00           CALL 0x140010e20
 ```
 
-In the called function, `RBX` is the enumeration owner, `RBX+0x3A0/+0x3A8` are the vector bounds, and each loaded vector element is passed as `RCX` to `FUN_14066D530`. The first separate `+0x398` pointer is also passed directly:
+In the called function, `RBX` is the outer object and `P=[RBX+0x398]` is the pointer used for both the direct call and collection. The vector bounds are `[P+0x3A0,P+0x3A8)`, and each loaded vector element is passed as `RCX` to `FUN_14066D530`. `P` itself is also passed directly:
 
 ```asm
 140010e2f:  48 8B 41 78              MOV RAX,qword ptr [RCX + 0x78]
@@ -6439,7 +6441,7 @@ In the called function, `RBX` is the enumeration owner, `RBX+0x3A0/+0x3A8` are t
 
 The downstream dispatch preserves that exact receiver: `FUN_14066D530` saves its entry `RCX` in `RBX` (`0x14066D54E`); on the route-consumer branch it reloads that same `RBX` to `RCX` and calls `FUN_140699420` at `0x14066EA69`. Its route path remains guarded by metadata-kind 1/2 and the `+0x4A0` test documented above. This establishes **manager element → simulation receiver** identity, not **office fleet element → manager element** identity.
 
-No instruction in this bounded collection-consumer path reads the type-43 office's `+0xC70/+0xC78` vector or compares its truck pointer with the manager vector element. Conversely, the proved type-43 updater loads a fleet truck into `RSI` and sends it through its own candidate buffer to `FUN_1401E5350`; the report contains no proven append of that same pointer into the manager vector. The exact unresolved edge is therefore the pointer registration/alias operation that would place this particular fleet truck into `[manager+0x3A0, manager+0x3A8)`, plus the applicability of `truck+0x4A0==0` on that same object. Same-looking layouts, metadata kind 1, and a common home-office pointer are insufficient.
+No instruction in this bounded collection-consumer path reads the type-43 office's `+0xC70/+0xC78` vector or compares its truck pointer with `P` or an element in `[P+0x3A0,P+0x3A8)`. Conversely, the proved type-43 updater loads a fleet truck into `RSI` and sends it through its own candidate buffer to `FUN_1401E5350`; the report contains no proven alias of that same pointer with `P` or a manager-vector element. The exact unresolved edge is therefore the pointer registration/alias operation that would connect this particular fleet truck to the direct `P` receiver or a member of `[P+0x3A0,P+0x3A8)`, plus the applicability of `truck+0x4A0==0` on that same object. Same-looking layouts, metadata kind 1, and a common home-office pointer are insufficient.
 
 ### Predicate reaching definitions and branch-complete association result
 
@@ -6534,7 +6536,7 @@ The caller's conditional is exact: it calls the predicate only when the signed `
 
 ### Exact remaining edge and smallest discriminator
 
-The exact exhausted receiver edge for Priority A is the insertion/registration of the office-fleet candidate pointer into the separate manager vector `[manager+0x3A0, manager+0x3A8)`. The consumer path from that vector through `FUN_14066D530` to `FUN_140699420` is proven, and the office path from `+0xC70/+0xC78` through the candidate buffer to `FUN_1401E5350` is proven; the pointer-identity join between those two paths is not. The smallest sufficient static artifact is the specific constructor/registration block that appends the same truck pointer from the type-43 fleet to that manager vector, together with the same-object `+0x4A0` guard reaching the simulation call. No broader object inventory is warranted.
+The exact exhausted receiver edge for Priority A is the alias connecting the office-fleet candidate pointer to either the direct `P=[RBX+0x398]` simulation receiver or an element in `[P+0x3A0,P+0x3A8)`. The manager path from either input to `FUN_14066D530` and then `FUN_140699420` is proven; the office path from `+0xC70/+0xC78` through the candidate buffer to `FUN_1401E5350` is proven; the pointer-identity join is not. The smallest sufficient static artifact is the specific constructor/registration or assignment block that establishes this same-pointer alias, together with the same-object `+0x4A0` guard reaching simulation. No broader object inventory is warranted.
 
 For Priority B, the bounded path is: positive type-43 route-builder result at `0x1401C6CC9` → same truck's route/config rebuild → manager simulation consumer's `+0x700` vector path → conditional `FUN_1406BC5A0` route rebuild/association cleanup and `+0x698` increment → the existing home-target reset. The competing meanings are (1) route refresh/normalization that can run without active work, and (2) internal progression/cleanup during active work. No operation on this bounded path proves which work ceases belonging to the office. The smallest missing native discriminator is a task-level state writer/remover, on the same proven truck receiver, whose accepted-work predecessor is the positive office-row path and whose removal/replacement cause is distinct from route refresh and home/default routing. This is not a request for a game replay; no observation or instrumentation was installed.
 
@@ -6636,3 +6638,277 @@ HEAD 37bcb65697e27f330ea1f71015c85c66e59b09af
 Branch DO-fuel-cost-calculatotr
  M docs/private-logistics-runtime/DO_ASSIGNMENT_INTERVAL_INVESTIGATION.md
 ```
+
+## Start and work-scope follow-up
+
+### Proposed start contract: none is yet justified
+
+The strongest candidate is the first successful `FUN_14067D5D0` target insertion in `FUN_1401E5480`, after a positive `FUN_1401DE2B0` result for a row from the same type-43 office. It is an exact route-plan mutation on the fleet-truck receiver, but current evidence does **not** show that it is initial task acceptance rather than candidate-plan refresh or continuation. Do not start an accounting interval on this site, a positive `FUN_1401E5350` return, a `+0x528` change, `+0x508`, or `+0xC80` association alone.
+
+The exact known guards and dataflow are:
+
+1. The type-43 office updater selects the truck from that office's `+0xC70/+0xC78` fleet, requires `truck+0x4F8 == office` and `truck+0xC80 == 0`, and places that same pointer into its local candidate buffer. At `0x1401C6CC9`, the caller sets `RCX=context`, `RDX=candidate truck`, `R8=same office` and calls `FUN_1401E5350`.
+2. `FUN_1401E5350` rejects nonzero `truck+0x528`. Otherwise it calls `FUN_1406BDC30(truck,0.0)`. A zero result selects `FUN_1401E5480`; a nonzero result selects `FUN_1401E5BA0` and is passed as its fourth argument.
+3. `FUN_1401E5480` selects a row only after `FUN_1401DE2B0(context,row,truck,office)` returns nonzero. Its row pointer is `office+0xD58 + 0x80*EDI`. The predicate's initial gates require `row+0x60 > 0`, `row+0x28` greater than the float reached through `office[+0xD38][row+0x18]+0x10+4`, and `row+0x60` at least the global threshold minus the float reached through `office[+0xD38][row+0x50]+0x10+0xCC`. A context descriptor of type `0x2D` bypasses one additional `row+0x28` global-threshold test. Further resource/object/metadata checks follow. These are row-eligibility tests, not acceptance.
+4. After the builder has reset the truck's route/configuration vectors, `FUN_14067D5D0(truck,target,-1,0,...)` can successfully insert a target. The caller tests `AL`; only a nonzero result proceeds through the associated configuration-row copy. This proves route-target installation. It does not write a distinct task-accepted bit or identity.
+
+### What a positive builder installs
+
+The two office-row endpoints below are field-derived pointers. Their semantic names as pickup and delivery are not independently established by this trace.
+
+| Branch | Candidate-row acceptance condition | Target attempts on the same truck | Resulting route/configuration state |
+|---|---|---|---|
+| `FUN_1401E5480` | A row passes `FUN_1401DE2B0(context,row,truck,office)`; the row loop uses `+0x80` stride. | `[row+0x10]`, then `[row+0x48]`, then the office target. Each `FUN_14067D5D0` result is tested, so individual insertions can fail. | Before insertion, `+0x688` is reset to `+0x680`; existing `+0x638/+0x640` entries are destroyed and the end is reset to the base. Successful target insertion is paired with an aligned `0x198`-stride configuration entry. Maximum attempted list is two row targets plus the office target. At `0x1401E5A7C`, `+0x698` is written with the selected planner-row ordinal `EDI`. |
+| `FUN_1401E5BA0` | A row's first qword equals the nonzero `FUN_1406BDC30` result; it also passes the row/configuration threshold. If that row object is one of `context+0xC3C8/+0xC3D0/+0xC3D8/+0xC3E0` and the truck metadata pointer is present, additional selector checks apply; a nonmatching row does not fail solely for not being in that context list. | `[row+0x48]`, then the office target. These insertions are also conditional on `FUN_14067D5D0` returning nonzero. | It similarly clears the prior target/configuration list before building. Maximum attempted list is one matched row target plus the office target. At `0x1401E5FC5`, it writes zero to `+0x698`. |
+
+This is therefore a multi-target itinerary builder, not a one-target job marker. For the zero-selector branch, the candidate plan is built before its target list is consumed by the simulation route path. The nonzero-selector branch is the already-carrying/delivery-style case: its row match is against the selected nonzero object from `FUN_1406BDC30`, so a positive builder call is not universally before loading.
+
+Do not overstate the zero-selector case as proof that the truck is empty. In the ordinary metadata-selector path, `FUN_1406BDC30` searches the truck's `+0x3B8/+0x3C0` entries and returns a qualifying item; zero means no qualifying item was selected under that check. The separate `+0x8600 == 0x11` case delegates to another helper and is not classified here. The `truck+0x1708 -> metadata+0x294` chain remains metadata-kind provenance only; `+0x8600` is a distinct selector, not another spelling of that kind.
+
+### Addressed instruction evidence
+
+These are bounded excerpts from the complete disassemblies in `scratch\agent1_start_workscope_positive_bodies.asm` and `scratch\agent1_start_workscope_stage2_bodies.asm`; they are not represented as full function bodies.
+
+```asm
+; FUN_1401E5480: row predicate selects a candidate before rebuilding.
+1401e5517:  48 03 03                 ADD RAX,qword ptr [RBX]
+1401e551a:  4C 8B C6                 MOV R8,RSI
+1401e551d:  48 8B D0                 MOV RDX,RAX
+1401e5520:  49 8B CD                 MOV RCX,R13
+1401e5523:  E8 88 8D FF FF           CALL 0x1401de2b0
+1401e5528:  84 C0                    TEST AL,AL
+1401e552a:  75 1B                    JNZ 0x1401e5547
+1401e552c:  48 8B 4B 08              MOV RCX,qword ptr [RBX + 0x8]
+1401e5530:  FF C7                    INC EDI
+1401e5532:  48 2B 0B                 SUB RCX,qword ptr [RBX]
+1401e5535:  48 C1 F9 07              SAR RCX,0x7
+1401e5539:  8B C7                    MOV EAX,EDI
+1401e553b:  48 3B C1                 CMP RAX,RCX
+1401e553e:  72 D0                    JC 0x1401e5510
+1401e5540:  32 C0                    XOR AL,AL
+1401e5542:  E9 3C 06 00 00           JMP 0x1401e5b83
+1401e5547:  85 FF                    TEST EDI,EDI
+1401e5549:  78 F5                    JS 0x1401e5540
+1401e554b:  48 8B 86 80 06 00 00     MOV RAX,qword ptr [RSI + 0x680]
+1401e5564:  48 89 86 88 06 00 00     MOV qword ptr [RSI + 0x688],RAX
+1401e5572:  48 8B 9E 38 06 00 00     MOV RBX,qword ptr [RSI + 0x638]
+1401e5590:  48 8D 8B C8 00 00 00     LEA RCX,[RBX + 0xc8]
+1401e5597:  E8 54 BE F6 FF           CALL 0x1401513f0
+1401e559c:  48 8B CB                 MOV RCX,RBX
+1401e559f:  E8 4C BE F6 FF           CALL 0x1401513f0
+1401e55b0:  48 8B 86 38 06 00 00     MOV RAX,qword ptr [RSI + 0x638]
+1401e55ba:  48 89 86 40 06 00 00     MOV qword ptr [RSI + 0x640],RAX
+1401e55c1:  41 83 C8 FF              OR R8D,0xffffffff
+1401e55c5:  49 8B 06                 MOV RAX,qword ptr [R14]
+1401e55c8:  48 8B CE                 MOV RCX,RSI
+1401e55cb:  49 8B 56 10              MOV RDX,qword ptr [R14 + 0x10]
+1401e55cf:  48 89 44 24 30           MOV qword ptr [RSP + 0x30],RAX
+1401e55dc:  48 C7 44 24 38 00 00 00 00 MOV qword ptr [RSP + 0x38],0x0
+1401e55e5:  E8 E6 7F 49 00           CALL 0x14067d5d0
+1401e55ea:  F3 0F 10 35 66 49 72 00  MOVSS XMM6,dword ptr [0x140909f58]
+1401e5601:  84 C0                    TEST AL,AL
+1401e5603:  0F 84 53 03 00 00        JZ 0x1401e595c
+1401e582c:  49 8B 56 48              MOV RDX,qword ptr [R14 + 0x48]
+1401e5830:  45 33 C9                 XOR R9D,R9D
+1401e5833:  41 83 C8 FF              OR R8D,0xffffffff
+1401e5837:  48 8B CE                 MOV RCX,RSI
+1401e583a:  E8 91 7D 49 00           CALL 0x14067d5d0
+1401e583f:  84 C0                    TEST AL,AL
+1401e5841:  0F 84 7E 01 00 00        JZ 0x1401e59c5
+1401e59c5:  45 33 C9                 XOR R9D,R9D
+1401e59c8:  41 83 C8 FF              OR R8D,0xffffffff
+1401e59cc:  48 8B D5                 MOV RDX,RBP
+1401e59cf:  48 8B CE                 MOV RCX,RSI
+1401e59d2:  E8 F9 7B 49 00           CALL 0x14067d5d0
+1401e5a7c:  89 BE 98 06 00 00        MOV dword ptr [RSI + 0x698],EDI
+
+; FUN_1401E5BA0: nonzero selector matches an existing row object, then builds
+; the delivery-style target and office target on the same truck RSI.
+1401e5c07:  4C 8B 02                 MOV R8,qword ptr [RDX]
+1401e5c0a:  4C 3B C3                 CMP R8,RBX
+1401e5c0d:  0F 85 79 02 00 00        JNZ 0x1401e5e8c
+1401e5c1d:  48 63 4A 50              MOVSXD RCX,dword ptr [RDX + 0x50]
+1401e5c21:  48 8B 0C C8              MOV RCX,qword ptr [RAX + RCX*0x8]
+1401e5c25:  48 8B 41 10              MOV RAX,qword ptr [RCX + 0x10]
+1401e5c29:  F3 0F 10 80 CC 00 00 00  MOVSS XMM0,dword ptr [RAX + 0xcc]
+1401e5c34:  F2 0F 5C C8              SUBSD XMM1,XMM0
+1401e5c38:  F2 0F 10 42 60           MOVSD XMM0,qword ptr [RDX + 0x60]
+1401e5c3d:  66 0F 2F C1              COMISD XMM0,XMM1
+1401e5c41:  0F 86 45 02 00 00        JBE 0x1401e5e8c
+1401e5c70:  4C 8B 86 08 17 00 00     MOV R8,qword ptr [RSI + 0x1708]
+1401e5c77:  4D 85 C0                 TEST R8,R8
+1401e5c7c:  48 63 42 54              MOVSXD RAX,dword ptr [RDX + 0x54]
+1401e5c80:  4C 8B 4A 48              MOV R9,qword ptr [RDX + 0x48]
+1401e5c84:  85 C0                    TEST EAX,EAX
+1401e5c86:  0F 88 ED 01 00 00        JS 0x1401e5e79
+1401e5c8c:  44 39 62 58              CMP dword ptr [RDX + 0x58],R12D
+1401e5c90:  0F 8C E3 01 00 00        JL 0x1401e5e79
+1401e5c96:  48 69 C8 E0 00 00 00     IMUL RCX,RAX,0xe0
+1401e5ca4:  8B 94 01 90 00 00 00     MOV EDX,dword ptr [RCX + RAX*0x1 + 0x90]
+1401e5cab:  41 8B 80 00 86 00 00     MOV EAX,dword ptr [R8 + 0x8600]
+1401e5cb2:  3B D0                    CMP EDX,EAX
+1401e5cb9:  0F 84 C5 01 00 00        JZ 0x1401e5e84
+1401e5cc8:  45 85 D2                 TEST R10D,R10D
+1401e5cd1:  48 8B 86 80 06 00 00     MOV RAX,qword ptr [RSI + 0x680]
+1401e5cdd:  48 89 86 88 06 00 00     MOV qword ptr [RSI + 0x688],RAX
+1401e5d30:  48 8B 86 38 06 00 00     MOV RAX,qword ptr [RSI + 0x638]
+1401e5d3a:  48 89 86 40 06 00 00     MOV qword ptr [RSI + 0x640],RAX
+1401e5d41:  41 83 C8 FF              OR R8D,0xffffffff
+1401e5d45:  49 8B 07                 MOV RAX,qword ptr [R15]
+1401e5d4b:  49 8B 57 48              MOV RDX,qword ptr [R15 + 0x48]
+1401e5d4f:  48 89 44 24 30           MOV qword ptr [RSP + 0x30],RAX
+1401e5d59:  E8 72 78 49 00           CALL 0x14067d5d0
+1401e5d68:  84 C0                    TEST AL,AL
+1401e5d6a:  0F 84 B7 01 00 00        JZ 0x1401e5f27
+1401e5f27:  45 33 C9                 XOR R9D,R9D
+1401e5f2a:  41 83 C8 FF              OR R8D,0xffffffff
+1401e5f2e:  49 8B D6                 MOV RDX,R14
+1401e5f31:  48 8B CE                 MOV RCX,RSI
+1401e5f34:  E8 97 76 49 00           CALL 0x14067d5d0
+1401e5fc5:  44 89 A6 98 06 00 00     MOV dword ptr [RSI + 0x698],R12D
+```
+
+The `1E5BA0` excerpt is a bounded slice; it is not the complete body. Its ABI provenance is `RCX=context`, `RDX=truck`, `R8=office`, `R9=nonzero selector`; the prologue retains the selector in `RBX`, truck in `RSI`, office in `R14`, and context in `RBP`. The row's `+0x50` and `+0x54/+0x58` fields index configuration/metadata data; the excerpt does not redefine the metadata fields as task state.
+
+### Route consumption is not the missing acceptance event
+
+The connected simulation evidence already in this report distinguishes the route target list from movement-path storage:
+
+- Truck `+0x680/+0x688` is the route-target vector; the builder's paired `+0x638/+0x640` vector stores aligned configuration entries of stride `0x198`.
+- The simulation consumer uses `+0x698` to select a route target. When its current `+0x528` target is null, it can bind `+0x528` from `truck[+0x680 + 8*truck[+0x698]]` (bounded consumer excerpt at `0x14069DCF6`). The same route index can advance at `0x14069D0F0` after `FUN_1406BC5A0(RCX=truck)` returns zero.
+- `+0x6A0/+0x6A8` and `+0x6B8/+0x6C0` are separate path/segment vectors used by simulation; `+0x700` is not the office-row index or the `+0x680` target index. Its examined `INC EAX` at `0x14069D22D` changes only a register copy; `0x14069D235` reloads the original `+0x700`.
+
+This is the next actual consumer of the installed plan, but it does not prove that the manager-enumerated receiver is the same pointer as the type-43 office-fleet truck. That alias remains the exact receiver-provenance gap above. It also supplies a concrete counterexample to treating `+0x528` rebinding as a start event: the simulation can repopulate the current target from an already-installed route list as it consumes that list.
+
+The positive route insert at `0x1401E55E5` is therefore the event that changes a candidate plan into an installed route target/configuration, not an event proven to change eligible work into an accepted DO task. The builder's tail can return true because `truck+0x4F0` was already nonzero or because `FUN_1406B8EB0` returned nonzero; these conditions do not identify a newly accepted task. `+0x508` is a timer/configuration write, not a commitment marker. There is no load/transfer operation in either positive builder body. The exact timing relative to the actual goods-transfer call is untraced; the only supported statement is that the zero-selector route-plan construction precedes consumption of that plan, while the nonzero-selector branch can already be in the delivery-style path.
+
+### Start-scope decisions and handoff
+
+| Case | Exact proposed event/state and receiver | New native evidence | Status |
+|---|---|---|---|
+| Assigned-not-loaded | First successful `FUN_14067D5D0` insertion from the zero-selector `FUN_1401E5480` branch, receiver `RSI` (same candidate truck passed in `RDX` at `0x1401C6CC9`). | Requires `+0x528==0`, `FUN_1406BDC30==0`, positive row predicate, and helper success; installs a target/configuration entry. No unique work-acceptance mutation follows. | **Untraced.** The installed-plan event is proved; initial acceptance and before-load meaning are not. |
+| Internal pickup/unload | Subsequent consumption/advance of the same installed `+0x680` target list; candidate receiver is the same truck only if the unproved manager alias holds. | `+0x698` indexes and can advance across route targets; path vectors are separate. Target labels and active-task continuity are not proved. | **Untraced.** Do not split intervals on route-target/path changes. |
+| Final removal | No new start-side event; termination investigator owns this path. | The positive builder evidence has no success/removal classifier or task-close writer. | **Untraced here.** |
+| Cancellation | No new start-side event; termination investigator owns this path. | No cancellation cause is present in the positive builder paths. | **Untraced here.** |
+| Identical replacement | A second work acceptance that might rebuild the same route values on the same truck. | Builder clears and reconstructs vectors; no sequence token or commit event distinguishes refresh from an identical replacement. | **Untraced.** Equal snapshots do not establish or disprove replacement. |
+| Post-removal return | Office-target insertion/consumption is not assumed to be post-removal return. | The office target can be the final entry of the installed route plan before any verified task removal. | **Untraced.** |
+| Reload | Not a start-scope result. | No reload path was examined in this continuation. | **Unsupported.** |
+
+**Compact handoff to the termination investigator:** the zero-selector builder resets the truck's `+0x680/+0x688` target list and `+0x638/+0x640` aligned configuration vector, then attempts `[row+0x10]`, `[row+0x48]`, and the office target. The matched nonzero-selector builder attempts `[row+0x48]` and the office target. `+0x698` is written to the selected planner-row ordinal in `FUN_1401E5480` and zero in `FUN_1401E5BA0`; do not assume those values alone mean initial work index. Simulation later reads `+0x698` to bind a current `+0x528` target from the installed list and separately builds/advances path vectors through `+0x6A0/+0x6A8`, `+0x6B8/+0x6C0`, and `+0x700`. The exact type-43-fleet-to-simulation receiver alias is still unproved.
+
+### Falsifier and bounded future discriminator
+
+This conservative conclusion would be falsified by a receiver-preserving native trace showing that the first successful route insertion is the only work-acceptance commit, cannot run as a refresh or during an active assignment, and necessarily precedes the goods load. Conversely, a call to the same builder while the truck still carries an active task would prove that builder success is not a unique start boundary. No such dynamic run is requested or performed.
+
+If later authorized, a logging-only discriminator should record, for one proven fleet truck: (1) `FUN_1401E5350` entry `(RCX=ctx,RDX=truck,R8=office)`, pre-call `+0x528`, `+0x680/+0x688`, `+0x638/+0x640`, `+0x698`, and the returned `FUN_1406BDC30` selector/branch; (2) at `0x1401E5523`, row pointer and `FUN_1401DE2B0` result; (3) at `0x1401E55E5`, `0x1401E583A`, `0x1401E59D2`, `0x1401E5D59`, and `0x1401E5F34`, receiver, target argument, helper return, and list/configuration counts before/after; and (4) at the verified same-object simulation consumer, `+0x528`, `+0x698`, and the route entry being consumed. Contrasting sequences must include first assignment before load, internal endpoint advance, builder refresh during active work if it occurs, matched nonzero-selector delivery, and identical consecutive work. This would discriminate plan construction from continuity; it would not itself authorize accounting or establish payer.
+
+### Identity, command record, and limits for this continuation
+
+The requested executable was rechecked directly at `C:\Workers Resources Soviet Republic\SOVIET64.exe`. The exact PowerShell 5.1 check was:
+
+```powershell
+$exe = 'C:\Workers Resources Soviet Republic\SOVIET64.exe'
+if (-not (Test-Path -LiteralPath $exe -PathType Leaf)) { Write-Output "MISSING=$exe"; exit 2 }
+$bytes = [System.IO.File]::ReadAllBytes($exe)
+$pe = [BitConverter]::ToInt32($bytes, 0x3c)
+$timestamp = [BitConverter]::ToUInt32($bytes, $pe + 8)
+$imageBase = [BitConverter]::ToUInt64($bytes, $pe + 24 + 24)
+$hash = (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash
+Write-Output "Path=$exe"
+Write-Output "Length=$($bytes.Length)"
+Write-Output "SHA256=$hash"
+Write-Output ('PEtimestamp=0x{0:X8}' -f $timestamp)
+Write-Output ('ImageBase=0x{0:X}' -f $imageBase)
+```
+
+Actual output:
+
+```text
+Path=C:\Workers Resources Soviet Republic\SOVIET64.exe
+Length=10308608
+SHA256=296644A9F207D609031FC2AE73FED2DCB34619A1D55A35D1C7B51965CE6841B8
+PEtimestamp=0x6A3EB6AD
+ImageBase=0x140000000
+```
+
+The one authorized Ghidra batch was serial and is released. Its relevant captured outputs are `scratch\agent1_start_workscope_positive_bodies.asm` (complete bounded disassembly bodies for `FUN_1401E5480` and `FUN_1401E5BA0`), `scratch\agent1_start_workscope_stage2_bodies.asm` (additional bounded branch context), `scratch\agent1_start_workscope_positive.c` (decompilations), and `scratch\agent1_start_workscope_builder_xrefs.txt` (targeted cross-references). The raw excerpts above are transcribed from those outputs; all addresses are file VAs, not RVAs or file offsets. The per-invocation wrapper command transcript and console stdout were not persisted in the available continuation record, so they are not reconstructed by guesswork. No second Ghidra invocation was made to recreate them, and no Ghidra error is recorded in the supplied batch summary. No investigation script was created or modified.
+
+Checkout at resumption: `C:\WRSRE`, branch `DO-fuel-cost-calculatotr`, HEAD `e9c5d8e486c7033a691ed3606f80fa40ce87f57e`. The initial status showed only the independent investigator's modified report; it was not edited. This continuation changed only `docs/private-logistics-runtime/DO_ASSIGNMENT_INTERVAL_INVESTIGATION.md`. No runtime, hook, config, default, dispatch, permission, billing, build, save, or game change was made. No game replay was performed or requested.
+
+### Final report validation
+
+The exact inline validator source used for the Markdown-fence and addressed-instruction checks is:
+
+```powershell
+@'
+from pathlib import Path
+import re
+report_path = Path(r'C:\WRSRE\docs\private-logistics-runtime\DO_ASSIGNMENT_INTERVAL_INVESTIGATION.md')
+source_paths = [
+    Path(r'C:\WRSRE\scratch\agent1_start_workscope_positive_bodies.asm'),
+    Path(r'C:\WRSRE\scratch\agent1_start_workscope_stage2_bodies.asm'),
+]
+text = report_path.read_text(encoding='utf-8')
+raw = '\n'.join(path.read_text(encoding='utf-8', errors='replace') for path in source_paths)
+inside_fence = False
+fence_count = 0
+bad_headings = []
+for number, line in enumerate(text.splitlines(), 1):
+    if line.startswith('```'):
+        inside_fence = not inside_fence
+        fence_count += 1
+    elif inside_fence is False and re.match(r'^#{1,6}\s', line) is None:
+        continue
+    elif inside_fence and re.match(r'^#{1,6}\s', line):
+        bad_headings.append(number)
+if inside_fence or fence_count % 2:
+    raise SystemExit(f'Unbalanced Markdown fences: {fence_count}')
+if bad_headings:
+    raise SystemExit(f'Headings inside fences at lines: {bad_headings}')
+start = text.index('### Addressed instruction evidence')
+end = text.index('The `1E5BA0` excerpt is a bounded slice;', start)
+section = text[start:end]
+in_asm = False
+checked = 0
+mismatches = []
+for line in section.splitlines():
+    if line.startswith('```asm'):
+        in_asm = True
+        continue
+    if line.startswith('```') and in_asm:
+        in_asm = False
+        continue
+    if in_asm and re.match(r'^140[0-9a-f]+: ', line):
+        checked += 1
+        if line not in raw:
+            mismatches.append(line)
+if mismatches:
+    raise SystemExit('Export mismatches:\n' + '\n'.join(mismatches))
+print(f'Fences: {fence_count} even; no headings inside fences.')
+print(f'New start/work-scope addressed instructions exactly match bounded exports: {checked}.')
+'@ | python -
+```
+
+Final stdout and scoped Git checks are recorded after the final run below. The branch remained `DO-fuel-cost-calculatotr`; HEAD advanced after resumption to `ee2faf563853ac5c663a5e2574a59de09cb6a708`. `git show --stat HEAD` confirms that commit adds only the independent investigator's report. No commit, merge, or branch operation was performed here.
+
+Final validation commands:
+
+```text
+git -C C:\WRSRE diff --check -- docs/private-logistics-runtime/DO_ASSIGNMENT_INTERVAL_INVESTIGATION.md
+git -C C:\WRSRE status --short --untracked-files=all
+git -C C:\WRSRE rev-parse HEAD
+git -C C:\WRSRE branch --show-current
+git -C C:\WRSRE diff --stat -- docs/private-logistics-runtime/DO_ASSIGNMENT_INTERVAL_INVESTIGATION.md
+```
+
+Final validation output:
+
+- `Fences: 166 even; no headings inside fences.`
+- `New start/work-scope addressed instructions exactly match bounded exports: 92.`
+- `git diff --check` passed with no whitespace errors. Git emitted only its line-ending warning that this working copy's CRLF will be replaced by LF the next time Git touches the report.
+- ` M docs/private-logistics-runtime/DO_ASSIGNMENT_INTERVAL_INVESTIGATION.md`
+- `ee2faf563853ac5c663a5e2574a59de09cb6a708`
+- `DO-fuel-cost-calculatotr`
+- `.../DO_ASSIGNMENT_INTERVAL_INVESTIGATION.md | 288 ++++++++++++++++++++ -`
+
+No other path is modified in the worktree.
