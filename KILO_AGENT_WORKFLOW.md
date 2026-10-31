@@ -93,6 +93,42 @@ completion notifications. For follow-up work, start a bounded task with the upda
 packet, or resume an interrupted child using a genuinely exposed resumable
 `task_id`. A completed child's board mailbox is not an automatic continuation.
 
+## Reliable writes without reducing output quality
+
+The user reports that the following instruction resolved their larger-write
+failures in Kilo7.8.18 through Kilo Gateway. Use this lightweight default; it is a
+successful workflow mitigation, not a diagnosis of the upstream service defect.
+
+```text
+Preserve existing files. Do not rewrite large documents in full.
+
+For existing files, use narrowly targeted edits.
+For the cumulative handover, append only the new section.
+Do not load or reproduce the entire historical handover.
+
+Perform large additions in bounded sections and verify the result after each.
+If a request times out, inspect the file and diff before retrying.
+Only the parent writes shared reports; research children return findings.
+```
+
+**Change the delivery granularity, not the analytical standard.** Keep the global
+plan, evidence, counterexamples, cross-references and full required source/results
+intact. Choose coherent section boundaries; do not impose arbitrary byte limits,
+truncate evidence, skip relevant historical sections or reset context after every
+write. The parent reviews the assembled result for completeness and consistency.
+
+No report-assembly script is required. Scripts remain optional for justified
+mechanical copying or validation of existing artifacts; they do not replace
+analysis, interpretation, writing or final review. Do not introduce them merely
+because a report is large when targeted edits and bounded appends already work.
+The requirement for one final handover does not require one huge write operation.
+
+If a timeout recurs, inspect actual disk state before repeating the operation so
+an already completed write is not duplicated. If bounded writes also fail, isolate
+with a fresh small task and a user-selected model/provider comparison. Do not
+relax permissions or change settings automatically; a client timeout increase
+cannot override a gateway/provider that has already returned HTTP504.
+
 ## WRSRE native investigation: serialize Ghidra, parallelize exported analysis
 
 Default ownership for a single-parent investigation:
@@ -188,6 +224,13 @@ and delegate only affected follow-ups. Do not require the user to relay messages
 Reconcile actual evidence, preserve counterexamples and state remaining limits.
 Stop on completion or an exact blocker; do not repeat unchanged queries.
 
+Preserve existing files and use narrowly targeted edits. Append only new sections
+to the cumulative handover; do not load or reproduce its entire history. Perform
+large additions in coherent bounded sections and verify each. After a timeout,
+inspect the file and diff before retrying. Only the parent writes shared reports.
+Preserve analytical depth, complete evidence and cross-section consistency; no
+assembly script or arbitrary byte limit is required.
+
 Deliver one integrated result at the designated output, actual checks performed,
 changed files and any minimal approval request. Do not claim unperformed native
 validation or expand into implementation without authorization.
@@ -206,6 +249,7 @@ this guide rather than accumulating conflicting copies.
 - [Built-in/custom subagents](https://kilo.ai/docs/customize/custom-subagents)
 - [Agent permissions](https://kilo.ai/docs/customize/agent-permissions)
 - [Model selection](https://kilo.ai/docs/code-with-ai/agents/model-selection)
+- [Provider timeout settings](https://kilo.ai/docs/code-with-ai/agents/custom-models)
 - [Project instruction configuration](https://kilo.ai/docs/customize/custom-rules)
 - [AGENTS.md loading](https://kilo.ai/docs/customize/agents-md)
 - [Settings and Swarm](https://kilo.ai/docs/getting-started/settings)

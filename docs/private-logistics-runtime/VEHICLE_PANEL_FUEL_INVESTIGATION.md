@@ -83862,3 +83862,147 @@ between independent sessions. Shared Ghidra queries remain serialized. The root
 `AGENTS.md` is the discovery entry point; workflow guidance does not expand the
 user's task authorization.
 ```
+
+
+# 2026-10-31 Kilo large-write timeout follow-up
+
+User reports Kilo7.8.18, Kilo Gateway, parent agent/normal chats: the tiny write
+smoke test succeeded while larger writes tend to return APIError504 upstream idle
+timeout. The exact model, payload sizes and stream/tool execution stage are not
+yet known. This narrows the working diagnosis to a size-sensitive model/API path;
+it does not isolate gateway versus upstream provider, prove a formal size limit,
+or demonstrate a filesystem-permission failure. No native/game evidence changes.
+
+Updated the maintained KILO_AGENT_WORKFLOW.md and its reusable prompt skeleton
+with bounded patches/additions, mechanical local assembly of existing exports,
+post-error disk-state checks, duplicate-append prevention and provider-route
+isolation. A few KiB (2-4KiB) is explicitly an empirical starting point, not a
+published Kilo limit. Replacing a huge write with an equally huge shell/script
+literal is not a payload reduction. One complete final handover does not require
+one enormous generated write. No client timeout setting can force a gateway
+that already returned504 to keep the failed response alive.
+
+The guide links the previously read official provider-timeout documentation:
+https://kilo.ai/docs/code-with-ai/agents/custom-models . No arbitrary timeout value,
+permissions relaxation or automatic model/config change is prescribed. Guide
+UTF-8/newline/whitespace/fence/local-link and recovery-guidance checks pass;
+`git diff --check` passes. This follow-up is local documentation only: no commit,
+push, Kilo configuration change, native execution or runtime validation claimed.
+The successful smoke test is user-reported, not executed by this coordinator.
+
+## Complete new workflow recovery section (historical snapshot)
+
+````markdown
+## Large writes and upstream timeout recovery
+
+If a tiny write works but larger generated writes fail with
+`504 Upstream idle timeout exceeded`, treat that as a size-sensitive model/API failure to investigate,
+not evidence that file permissions need relaxing. This pattern does not identify
+which gateway/provider/model layer stalled or establish a published payload limit.
+
+- **Edit, do not regenerate:** use narrow patches for existing files. Do not send
+  an entire large document back through `write` to add one section.
+- **Bound generated additions:** start with a few kilobytes of new text per tool
+  call (roughly 2-4 KiB as a conservative trial, not a Kilo limit). Verify before
+  continuing. Reduce further if needed; do not blindly replay a failing large call.
+- **Assemble existing evidence locally:** when embedding exports/logs/source that
+  already exist on disk, use a small local assembly script that reads those files,
+  adds headings/fences and integrates them into the designated report. Return only
+  paths, sizes, hashes and checks to the model, not all the assembled content.
+  This preserves complete evidence without making the model regenerate it.
+- **Do not disguise the same oversized payload:** a giant PowerShell here-string,
+  Python string or Base64 literal still has to be generated through the model/API.
+  A script helps when it reads existing files or computes repetitive content.
+- **Recover from actual disk state:** inspect the target and diff after a timeout.
+  A tool may have completed before a subsequent model request failed. Use section
+  guards and completeness/hash checks before retrying; never duplicate an append
+  or assume a partially present section is complete. Keep one shared-file writer.
+- **Isolate the route:** if small bounded writes still fail, compare the same
+  minimal task in a fresh parent Code session and, with user choice, another
+  model/provider route. Record Kilo version, model, provider, approximate generated
+  write size and whether the tool started/completed. Do not request API keys.
+- **Do not invent a timeout fix:** increasing a client wait cannot override a
+  gateway/provider that has already returned HTTP504. Provider request timeouts,
+  streaming-gap timeouts and MCP/tool timeouts are different. Check documented
+  settings and the actual failing layer before proposing a config change; never
+  disable safeguards or change model/permissions automatically.
+
+The single cumulative handover requirement means **one final document**, not one
+huge model response or whole-file write. Keep it complete through incremental edits
+and local assembly. Smaller contexts and bounded writes are mitigations, not a
+verified cure for an upstream service defect.
+
+````
+
+Reusable parent-prompt addition:
+
+```text
+Use narrow patches and small verified additions instead of whole-file rewrites.
+Assemble existing exports/logs locally from their paths rather than regenerate
+large tool arguments. After a timeout, inspect disk state before retrying so an
+already completed write is not duplicated.
+```
+
+
+# 2026-10-31 User-confirmed lightweight write mitigation — simpler default
+
+The user reports that narrowly targeted edits, new-section-only handover appends,
+bounded additions with verification, post-timeout file/diff checks and parent-only
+shared-report writing worked. They are concerned that report-assembly scripts could
+reduce output quality. This is a user-reported successful mitigation, not coordinator
+reproduction or proof of the upstream root cause.
+
+The maintained KILO_AGENT_WORKFLOW.md now adopts that exact lightweight instruction
+as the default and revises its reusable parent-prompt skeleton accordingly. Earlier
+2-4KiB trial targets and assembly-first recommendations in this historical handover
+are superseded: no arbitrary byte cap or assembly script is required. Scripts are
+optional for justified mechanical copying/validation, never a replacement for
+reasoning or review. Bounded writes must preserve coherent analysis, full evidence,
+source/results, relevant historical context and cross-section consistency. Parent
+reviews the finished result, rather than treating successful writes as proof of
+analytical quality. No additional runtime/Kilo configuration changes are proposed.
+
+Guide UTF-8/newline/whitespace/fence and policy assertions pass. `git diff --check`
+passes. Documentation changes remain local; no commit/push, agent session operation,
+DLL build or native game validation performed.
+
+## Complete revised workflow section (historical snapshot)
+
+````markdown
+## Reliable writes without reducing output quality
+
+The user reports that the following instruction resolved their larger-write
+failures in Kilo7.8.18 through Kilo Gateway. Use this lightweight default; it is a
+successful workflow mitigation, not a diagnosis of the upstream service defect.
+
+```text
+Preserve existing files. Do not rewrite large documents in full.
+
+For existing files, use narrowly targeted edits.
+For the cumulative handover, append only the new section.
+Do not load or reproduce the entire historical handover.
+
+Perform large additions in bounded sections and verify the result after each.
+If a request times out, inspect the file and diff before retrying.
+Only the parent writes shared reports; research children return findings.
+```
+
+**Change the delivery granularity, not the analytical standard.** Keep the global
+plan, evidence, counterexamples, cross-references and full required source/results
+intact. Choose coherent section boundaries; do not impose arbitrary byte limits,
+truncate evidence, skip relevant historical sections or reset context after every
+write. The parent reviews the assembled result for completeness and consistency.
+
+No report-assembly script is required. Scripts remain optional for justified
+mechanical copying or validation of existing artifacts; they do not replace
+analysis, interpretation, writing or final review. Do not introduce them merely
+because a report is large when targeted edits and bounded appends already work.
+The requirement for one final handover does not require one huge write operation.
+
+If a timeout recurs, inspect actual disk state before repeating the operation so
+an already completed write is not duplicated. If bounded writes also fail, isolate
+with a fresh small task and a user-selected model/provider comparison. Do not
+relax permissions or change settings automatically; a client timeout increase
+cannot override a gateway/provider that has already returned HTTP504.
+
+````
