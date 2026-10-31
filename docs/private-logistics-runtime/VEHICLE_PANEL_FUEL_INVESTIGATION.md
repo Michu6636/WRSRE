@@ -84034,6 +84034,587 @@ cannot override a gateway/provider that has already returned HTTP504.
 ````
 
 
+---
+
+## Published fuel-branch research history integrated for this PR
+
+The following original external-agent additions are preserved from fuel-branch commit 911b5f1. Later coordinator reviews below qualify and supersede their disputed claims; these historical proposals are not runtime implementations.
+
+---
+
+## Final Reconciled Assignment Interval Matrix
+
+| Case | Exact Event / Native Mutation | Preconditions (Verified Guards) | Mutations (Address / Field) | Successor / Next Observable | Evidence Source | Confidence | Counterexample / Unresolved |
+|------|------------------------------|--------------------------------|----------------------------|----------------------------|----------------|------------|----------------------------|
+| Initial assignment before loading | Stage 2 acceptance: FUN_1401E5350 accepts truck (truck+0x528==0), calls FUN_1406BDC30(truck,0.0)==0 → load path FUN_1401E5480 → FUN_1401DE2B0 predicate true for pickup row → FUN_14067D5D0(truck, row+0x10, -1, 0) installs pickup target | Type-0x2B office (metadata+0x360==0x2B) at 0x14013E2BA; truck in office fleet [+0xC70/+0xC78]; Stage 1: truck+0xC80==0, office+0xBB0==0, truck+0x508<=0, truck+0xD39==0, truck+0x698==0, nonempty route [+0x680/+0x688], truck+0x528==0, truck+0x4F0==truck+0x4F8==office; Stage 1 write: FUN_1406B8EB0 writes truck+0xC80=office, office+0xBB0=truck+0x390; Gate: FUN_1406BD6B0 passes (requires FUN_1406BD660==1 since office+0xBB0 now nonzero); Stage 2: truck+0x528==0 at 0x1401E535F, FUN_1406BDC30 returns 0 | FUN_14067D5D0: truck+0x688=truck+0x680, destroy/reinit config +0x638/+0x640, inserts pickup target, sets +0xD3A=1, recomputes +0x698=0; truck+0x508=0.5f; truck+0x528 0→nonzero (bound target); conditional FUN_1406B8EB0 re-call skipped; builder tail FUN_140429A80/42A0D0 mutates route_target+0x9D0 | Stage 2 load path: FUN_1401E5480 installs delivery target (row+0x48) and office return target, FUN_1401E5350 returns 1 | Dispatcher 0x14013E2BA→0x14013E2C9; FUN_1401C6050 guards 0x1401C6408–0x1401C6461, call 0x1401C646E; FUN_1406B8EB0 writes 0x1406B9D8B/0x1406B9D99; FUN_1406BD6B0 gate 0x1401C68E4; FUN_1401E5350 entry 0x1401E535F, load path 0x1401E53FD; FUN_1401E5480/1E5BA0 side effects; FUN_14067D5D0 insert 0x1401E55CB/0x1401E5D4B | Byte confidence: HIGH (16/16 Agent 2 PE decode checks PASS); Lifecycle confidence: UNPROVED — Stage 1 association ≠ commitment | Stage 1 write unconditional at 0x1401C646E; Gate FUN_1406BD6B0 at 0x1401C68E4 tests FUN_1406BD660 or (office+0xBB0==0 ∧ truck+0x4F0==office); AL==0 at 0x1401C68EB JE skips queue insertion (0x1401C69AC); No rollback of Stage 1 write on gate failure established; Gate first disjunct (FUN_1406BD660) writer unknown; Second disjunct requires office+0xBB0==0 which Stage 1 breaks |
+| First goods-load ordering | Load path FUN_1401E5480 installs route targets: pickup (row+0x10), delivery (row+0x48), office return; builder tail FUN_140429A80/FUN_14042A0D0 initializes cargo/fuel amounts at route_target+0x9D0 | truck+0x528==0 (Stage 2 entry); FUN_1406BDC30==0 (no cargo → load path); FUN_1401DE2B0 predicate true for pickup row; FUN_14067D5D0 insert returns 1 for each target | FUN_14067D5D0 inserts pickup target at route_target+0x9D0, delivery target, office return target; builder tails read cargo/fuel from config+0xD0/+0xD8, match truck cargo vector +0x3B8/+0x3C0, write route_target+0x9D0 (flag=0) or +0x9B8 (flag!=0); *config_entry==0 adds fVar13, !=0 subtracts fVar13; truck+0x508 remains 0.5f; truck+0x528 remains nonzero | Route execution begins: FUN_14066D530 → FUN_1406C07E0 per-truck update; FUN_140699420 advances +0x698 at each stop; truck+0xC80 retained | FUN_1401E5480/FUN_1401E5BA0 rebuild block 0x1401E55CB; FUN_140429A80/FUN_14042A0D0 decompilations; FUN_140699420 route advance 0x14069D0F0 INC [R15+0x698] | Byte confidence: PARTIAL (route install/cargo init verified); Lifecycle confidence: UNTRACED — physical goods loading (tonnage transfer into truck cargo slot +0x3B8) occurs during route execution at transfer sites 0x694F40/0x6953C4/0x1B2898, not Stage 2 builder tail; no verified boundary showing when cargo >0 first appears in truck; +0x528 writer/order UNTRACED | Builder tail only initializes route_target sub-vectors, not vehicle cargo vector; transfer sites outside Stage 2; +0x528 transition writer and first-load ordering unproved |
+| Internal pickup/unload/travel | FUN_14066D530 per-truck update → FUN_1406C07E0 → FUN_140699420 route processing: +0x698 route index advanced at each internal stop; cargo/fuel transferred at pickup (0x694F40 mode 0 -tons) and delivery (0x1B2898 mode 1 +tons); builder tails update route_target+0x9D0 cargo amounts | truck+0xC80==office retained (UNTRACED); truck+0x700 < route_count-1 (not exhausted); metadata kind ∈ {1,2} or truck+0x67D!=0; truck+0x4A0==0 (list-membership guard); state ∈ {1,2} and mode==9 for burn eligibility | truck+0x698 incremented at 0x14069D0F0 when FUN_1406BC5A0 returns false; transfer at 0x694F40 (pickup: building loses goods, mode 0, -tons); paired vehicle add at 0x6953C4 (mode 1, +tons); delivery transfer at 0x1B2898 (mode 1, +tons, building=NULL); builder tail FUN_140429A80/FUN_14042A0D0 mutates route_target+0x9D0 per stop | Route continues to next stop (+0x698 advance); if route exhausted (+0x700 >= count-1): FUN_1406BC5A0 termination → normal removal | FUN_14066D530/6C07E0/699420 disasm; 0x14069D0F0 INC; 0x694F40/0x6953C4/0x1B2898 transfer sites; 0x14069B8D9 FUN_14067CB30; 0x66E99E/0x66E9A5 on kind-3/4/5 branch | Byte confidence: PARTIAL (route advance/transfer sites verified); Lifecycle confidence: UNTRACED — association persistence through internal stops unproved; whether truck+0xC80 survives every stop unknown; whether +0x698 increment = internal stop vs route refresh indistinguishable; per-stop cargo >0 boundary unverified; +0x528 writer/order UNTRACED; C80 retention NOT asserted | Route refresh (FUN_14067CB30 at 0x14069B8D9) clears route/config +0x680/+0x688, +0x638/+0x640 without writing +0xC80 — internal continuation, not close; no verified writer linking stop transition to cargo completion; 66D530 +0x5E8/+0x528 clears at 0x66E99E/0x66E9A5 are on kind-3/4/5 branch, NOT reachable for road trucks (kind 1/2) after CALL 66EA69 → JMP 66EB02; 66D530→6C07E0→699420 road chain NOT supported by disasm |
+| Normal removal | FUN_1406BC5A0 terminates route: clears truck+0xC80=0 at 0x1406BC88A; conditionally clears office+0xBB0=0 at 0x1406BC883 only if [office+0xBB0]==truck pointer (backlink equality) | truck+0x4A0==0 (list-membership); metadata kind ∈ {1,2} or truck+0x67D!=0; route exhausted (+0x700 >= route_count-1); nonempty BC5A0 result; truck+0xC80!=0 | FUN_1406BC5A0: truck+0xC80=0 (0x1406BC88A); office+0xBB0=0 only if [office+0xBB0]==truck (0x1406BC883); FUN_14066D530 on road branch: CALL 66EA69 → JMP 66EB02; 66D530 +0x5E8/+0x528 clears at 0x66E99E/0x66E9A5 are on kind-3/4/5 branch, NOT reachable for road trucks after BC5A0; route/config reset optional via FUN_14067CB30 at 0x14069B8D9 (does NOT clear +0xC80) | Post-removal/default/home travel excluded by policy | FUN_1406BC5A0 disasm 0x1406BC88A/0x1406BC883; 0x14066EA69 CALL 66EA69 → JMP 66EB02; 0x14066E99E/0x14066E9A5 kind-3/4/5 branch; 0x14069B8D9 FUN_14067CB30 | Byte confidence: PROPOSED (close bytes verified: 19/19 Agent 2 termination bytes PASS; backlink equality 0x1406BC883 verified); Lifecycle confidence: UNPROVED — C80 clear candidate mutation, NOT proved task-end coverage; cannot distinguish normal removal from cancellation statically — same C80 clear path; no distinct cancellation cause identified; no verified final-removal boundary tying C80 clear to task end vs internal-stop update | C80 clear at 0x1406BC88A serves both normal removal and cancellation; no proof every cancellation reaches a distinct clear; clear/rewrite within one helper invocation not shown to mean cancellation vs internal transition; 66D530 +0x5E8/+0x528 clears on different kind branch |
+| Cancellation | Same C80 clear path as normal removal: FUN_1406BC5A0 clears truck+0xC80=0 at 0x1406BC88A; office+0xBB0 conditional clear at 0x1406BC883 | Same as normal removal (truck+0x4A0==0, route exhausted, truck+0xC80!=0) plus no distinct cancellation flag identified | Same mutations as normal removal (truck+0xC80=0, office+0xBB0=0 conditional); 66D530 +0x5E8/+0x528 clears at 0x66E99E/0x66E9A5 are on kind-3/4/5 branch, NOT reachable for road trucks | Post-removal travel excluded by policy | FUN_1406BC5A0 disasm 0x1406BC88A/0x1406BC883; 0x14066E99E/0x14066E9A5 kind-3/4/5 branch; Chain 2 disasm 0x66D530/0x699420 | Byte confidence: NONE (no distinct cancellation bytes); Lifecycle confidence: UNTRACED — no distinct cancellation cause identified statically; BC5A0 fires only on route exhaustion which reads as completion, not cancellation; no cancel-flag discriminator found in Chain 2 | Same C80 clear at 0x1406BC88A serves both normal removal and cancellation; no proof every cancellation reaches a distinct clear; clear/rewrite within one helper invocation not shown to mean cancellation vs internal transition |
+| Identical replacement | Re-association requires truck+0xC80==0 first (cleared by BC5A0); FUN_1406B8EB0 entry bails if truck+0xC80!=0 (0x1406B8EED: JNE 0x1406bac66); office+0xBB0 = truck+0x390 (opaque token, not job ID) | Same as normal removal prerequisites (C80==0 after BC5A0 clear); Stage 1 guards re-checked | truck+0xC80=office (re-written), office+0xBB0=truck+0x390 (re-written, same opaque token) | New assignment interval begins after clear; indistinguishable from normal removal followed by fresh assignment | FUN_1406B8EB0 entry 0x1406B8EED; FUN_1406BC5A0 disasm 0x1406BC88A; office+0xBB0 = truck+0x390 token | Byte confidence: PARTIAL (re-association guard verified); Lifecycle confidence: UNTRACED — office+0xBB0 holds opaque truck+0x390 token, not proven task identity; identical consecutive tasks indistinguishable from snapshots; no task-ID correlation exists | Cannot distinguish identical replacement from removal+new assignment; no verified task identity field; no distinct replacement boundary |
+| Post-removal/default/home travel | Excluded from interval by policy; FUN_14067CB30 route/config reset at 0x14069B8D9 (home-target path, RDX=0, R8B=1) clears +0x528/+0x538, does NOT clear +0xC80 | truck+0xC80==0 (after normal removal); route/config cleared by FUN_14067CB30 | FUN_14067CB30 clears +0x528, +0x538 at 0x14069B923/0x14069B92a; does NOT clear +0xC80 | Outside interval — travel after removal not tracked | FUN_14067CB30 disasm 0x14069B8D9/0x14069B923/0x14069B92A; policy directive | Byte confidence: PARTIAL (reset bytes verified); Lifecycle confidence: UNTRACED — whether C80 clear precedes all post-removal return travel unresolved; predecessor of FUN_14067CB30 not proved to be task removal; return-to-office may retain +0xC80 association | Policy excludes post-removal travel but native evidence does not prove close precedes all return movement; +0xC80 may persist through home-target reset |
+
+## Cross-Row Consistency Review
+
+### Completed documentation
+
+All seven required interval cases are present in the matrix with exact addresses, verified guards, mutations, evidence sources, confidence levels, and unresolved counterexamples. The matrix distinguishes:
+
+- **Stage 1 association** (`FUN_1406B8EB0` write at 0x1406B9D8B/0x1406B9D99: truck+0xC80=office, office+0xBB0=truck+0x390) from **Stage 2 acceptance** (route install via `FUN_14067D5D0` + truck+0x508=0.5f + truck+0x528 transition) — association alone is not commitment.
+- **Internal stops** (+0x698 advance at 0x14069D0F0, transfer sites 0x694F40/0x6953C4/0x1B2898) from **close** (FUN_1406BC5A0 C80 clear at 0x1406BC88A, backlink check at 0x1406BC883) — internal continuation is not close.
+- **Normal removal** from **cancellation** — same C80 clear path, no distinct cancellation cause statically identified.
+- **Identical replacement** from **removal+new assignment** — no task identity (office+0xBB0 = opaque truck+0x390 token).
+
+### Cross-row policy alignment
+
+All seven rows comply with the user's 2026-10-30 policy amendment:
+- Assignment through removal/cancellation/replacement **regardless of success** (no success prerequisite).
+- Internal stop changes **stay inside** the interval (rows 1–3).
+- Post-removal/default/home travel **stays outside** (row 7).
+- No native jobID, payer, persistent-object, success, or reload prerequisite required.
+
+### Remaining unresolved native proof
+
+1. **Gate commitment edge:** Stage 1 association write (truck+0xC80=office, office+0xBB0=truck+0x390) at 0x1406B9D8B/0x1406B9D99 is unconditional at 0x1401C646E. Gate FUN_1406BD6B0 at 0x1401C68E4 tests FUN_1406BD660 or (office+0xBB0==0 ∧ truck+0x4F0==office). When AL==0, 0x1401C68EB JE skips queue insertion. No rollback of Stage 1 write on gate failure established. Association ≠ commitment; gate first disjunct (FUN_1406BD660) writer unknown; second disjunct requires office+0xBB0==0 which Stage 1 breaks. Stage 1 may precede gate failure.
+2. **FUN_1406BD660 writer:** What sets the gate's first disjunct (home office == route[+0x698]) — unknown.
+3. **Chain 1 → Chain 2 identity:** No static dataflow join between Chain 1's office-fleet truck (FUN_1401E5350 plan builder) and Chain 2's simulation consumer (FUN_14066D530/FUN_140699420). Unresolved alias edge.
+4. **Cancellation vs removal:** No distinct cancellation cause; same C80 clear path serves both.
+5. **Identical replacement:** No task identity; office+0xBB0 holds opaque token, not job ID.
+6. **Post-removal return:** Whether C80 clear precedes all post-removal return travel unresolved.
+7. **3FBDC0 after association:** FUN_1403FBDC0 at 0x1401C68BD precedes gate 0x1401C68E4 and consumer 0x1401C6CC9. At 0x1401C649F, D39==0 jumps to 0x1401C68DF skipping 3FBDC0; D39 nonzero (set by 6B8EB0→680A20) flows into 3FBDC0. Does 680A20's D39 write allow 3FBDC0 to clear an active association? Unproved. An unconditional helper call does not establish unconditional stores. Entry C80==0 check is not an invariant after helper writes C80. Retain only supported uncertainty: rollback/lifetime on the relevant failing path is unproved.
+
+### Evidence provenance
+
+All addresses verified against SOVIET64.exe v1.1.1.9 (SHA-256: 296644A9F207D609031FC2AE73FED2DCB34619A1D55A35D1C7B51965CE6841B8, PE timestamp 0x6A3EB6AD, image base 0x140000000). Ghidra queries ran serially via scratch/ghidra_run.bat; results cached in scratch/out/. Index entries in docs/ghidra-index/ record each function's RVA, signature, purpose, callers, data refs, artifact path, notes, and status.
+
+### No changes made
+
+No hooks, runtime config, dispatch, permissions, billing, build, save, or game replay changes. Payments remain OFF. No native executable modification.
+
+---
+
+## Chat-Only Corrections Receipt (2026-10-31)
+
+The following corrections/findings from the 2026-10-31 static round closure were **only supplied in chat** and were **not saved to any file**:
+
+| Item | Saved? | Location |
+|------|--------|----------|
+| 7×8 matrix (rows 1–7) | ✅ Yes | `VEHICLE_PANEL_FUEL_INVESTIGATION.md` lines 84014–84046 |
+| ghidra-index entries (27 functions + README) | ✅ Yes | `docs/ghidra-index/*.md` |
+| 31-row canonical call table (6B9DA0..6BAC86) | ✅ Yes | `VEHICLE_PANEL_FUEL_INVESTIGATION.md` export lines 26072–26854, 30761–31543 |
+| Correction: 0x140252650 = 6 call sites (was 5) | ❌ No | Chat only |
+| Correction: 6635E0 at 0x1406B8FFD = post-inner-guard PRE-store callee | ❌ No | Chat only |
+| Qualified unresolved: D39 at helper return on store-executing path | ❌ No | Chat only — **UNTRACED** |
+| Qualified unresolved: Feasible post-store cleanup (3FBDC0/6BC5A0) | ❌ No | Chat only — **UNTRACED** |
+| Qualified unresolved: Persistent failed-gate association (C80 survives AL=0) | ❌ No | Chat only — **UNTRACED** |
+
+No commit/push attempted. No runtime/billing/build/game changes.
+
+---
+
+## Task-Row Content Mapping & Observer Coverage Analysis
+
+### 1. Visible Task-Row Content → Native Memory Layout
+
+The individual vehicle panel displays a **task/connection list** whose rows correspond 1:1 to route targets installed in the truck's route vector at `truck+0x680`/`truck+0x688`. Each row shows:
+
+| Panel Row Field | Native Source | Observer Coverage |
+|-----------------|---------------|-------------------|
+| Target building pointer | `*(truck+0x680 + row*8)` | ✅ `schedule_observer.h` `ReadRow` → `Row.target` |
+| Config flag00 (enabled/type) | `*(configs + row*0x198 + 0x0)` | ✅ `Row.flag00` |
+| Config value04 (float, cargo/fuel amount) | `*(configs + row*0x198 + 0x4)` | ✅ `Row.value04` |
+| Config flagC8 (sub-type) | `*(configs + row*0x198 + 0xC8)` | ✅ `Row.flagC8` |
+| Config valueCC (float, secondary amount) | `*(configs + row*0x198 + 0xCC)` | ✅ `Row.valueCC` |
+| Active row index | `truck+0x698` | ✅ `Snapshot.index698` |
+| Special last-row flag | `truck+0x5FD` | ✅ `Snapshot.flag5fd` (skips config read for last row when nonzero) |
+| Route vector bounds | `truck+0x680` (begin), `truck+0x688` (end) | ✅ `Snapshot.begin`/`end` |
+| Config vector pointer | `truck+0x638` | ✅ `Snapshot.configs` |
+| Opaque renderer context | `truck+0x4A0`, `+0x610`, `+0x650` | ✅ `Snapshot.raw4a0/610/650` |
+
+**Row count** = `(end - begin) / 8` (max 16 per `MaxRows`).
+
+**Special last row**: when `flag5fd != 0`, the last row (`count-1`) has `configRead = false` — no config fields read (renderer sets RSI=0 at 7E81B3..7E81C0).
+
+### 2. Observer Coverage Gaps — Missing Resource/Filter-Only Changes
+
+| Change Type | Native Mutation | Currently Detected? | Gap |
+|-------------|-----------------|---------------------|-----|
+| **Whole-plan replacement** | `truck+0x688 = truck+0x680` (clear route), `configs` destroy/reinit, then multiple `67D5D0` inserts | Partially: `storage_changed` (begin/end/configs change) + `fields_changed` (row count/contents) | **No distinction** between replacement vs. cancellation+new assignment — both show same storage+fields delta |
+| **Index progression** (internal stop advance) | `truck+0x698` increment at `0x14069D0F0` | ✅ `index_changed` (`d.index`) | **Indistinguishable** from route refresh/rebuild — both change `index698` |
+| **Row edit** (cargo/fuel amount update at stop) | Builder tails `FUN_140429A80`/`FUN_14042A0D0` mutate `route_target+0x9D0`/`+0x9B8` | ❌ **NOT READ** — observer only reads config stride fields at `+0x198`, not `route_target` sub-vectors | Cargo/fuel amount changes at stops invisible |
+| **Storage relocation** (vector reallocation) | `begin`/`end`/`configs` pointers change | ✅ `storage_changed` (`d.storage`) | Cannot distinguish reallocation from replacement |
+| **Resource filter change** (cargo type filter) | Office config vectors `+0xD38/+0xD40` (task list) filter which rows get installed | ❌ **NOT READ** — observer only sees installed result, not source filter | Which resource types are eligible per row unknown |
+| **Filter-only toggle** (percentage/percentage wakeup) | Private logistics percentage gating at `truck+0xD3A`/config | ❌ **NOT READ** — `D3A` set by `67D5D0` but never observed | Percentage gating effect on row visibility unobserved |
+| **Opaque context change** | `raw4a0/610/650` change | ✅ `context_changed` (`d.context`) | Meaning of these fields unverified — correlation to task identity unknown |
+
+### 3. Connected List-Install/Replace/Reset Writer Chain
+
+**Single connected writer chain** for the task/connection list (route targets):
+
+```
+FUN_1401E5350 (Stage 2 Acceptance, 0x1E5350)
+    │
+    ├─► Load path (cargo==0): FUN_1401E5480 (0x1E5480)
+    │       ├─► FUN_14067D5D0(truck, pickup_target, -1, 0)     ← inserts pickup row
+    │       ├─► FUN_14067D5D0(truck, delivery_target, -1, 0)   ← inserts delivery row
+    │       └─► FUN_14067D5D0(truck, office_return_target, -1, 0) ← inserts return row
+    │
+    └─► Delivery path (cargo>0): FUN_1401E5BA0 (0x1E5BA0)
+            ├─► FUN_14067D5D0(truck, delivery_target, -1, 0)   ← inserts delivery row
+            └─► FUN_14067D5D0(truck, office_return_target, -1, 0) ← inserts return row
+
+FUN_14067D5D0 (Route Insert, 0x67D5D0)
+    ├─► Appends to route vector (`begin`/`end`), grows config vector (`configs` stride 0x198)
+    ├─► Sets `truck+0xD3A = 1` (route dirty flag)
+    ├─► Recomputes `truck+0x698` (active route index) by matching target pointer
+    └─► Returns char: 1=success, 0=skip (each insert independent)
+
+FUN_140699420 (Route Processing, 0x699420)
+    └─► Home-target path → FUN_14067CB30(truck, 0, 1) at 0x14069B8D9
+            ├─► Resets route vector: `end = begin`
+            ├─► Resets config vector: `configs` destroyed/reinit via `FUN_1401FF7A0`
+            ├─► Clears `truck+0x528`, `truck+0x538` (bound target / cargo pointer)
+            └─► **Does NOT clear `truck+0xC80`** (office association retained)
+
+FUN_1406BC5A0 (Route Termination, 0x6BC5A0)
+    └─► Clears `truck+0xC80 = 0` at 0x1406BC88A (office association)
+    └─► Conditionally clears `office+0xBB0 = 0` at 0x1406BC883 (backlink equality)
+    └─► Route/config reset optional via `FUN_14067CB30` at 0x14069B8D9 (separate call)
+```
+
+**Key distinction**: `67CB30` (home-target reset) ≠ `6BC5A0` (termination). Home-target reset is **internal continuation** (retains C80); termination is **close** (clears C80).
+
+### 4. Minimal Change Record Specification
+
+For each observed change to the task/connection list, log a **minimal change record**:
+
+```c
+struct TaskListChange {
+    uint64_t truck;           // Same truck base address
+    uint64_t epoch;           // Simulation epoch (panel epoch)
+    uint64_t timestamp_ms;    // GetTickCount64 at capture
+    uint32_t old_count;       // Previous row count
+    uint32_t new_count;       // Current row count
+    uint32_t changed_rows;    // Bitmask of rows with field changes (max 16)
+    int32_t  old_index698;    // Previous active index
+    int32_t  new_index698;    // Current active index
+    bool     storage_relocated; // begin/end/configs pointers changed
+    bool     whole_plan_replaced; // count changed AND all rows differ (heuristic)
+    bool     index_progressed_only; // count==old_count, only index698 changed
+    // Per-row old/new for changed rows (bounded to changed_rows):
+    struct { uint8_t row; Row old_row; Row new_row; } rows[16];
+};
+```
+
+**Classification rules** (applied at observation time, no native jobID required):
+
+| Classification | Condition |
+|----------------|-----------|
+| `whole_plan_replaced` | `storage_relocated || (new_count != old_count && all rows differ)` |
+| `index_progressed_only` | `new_count == old_count && new_index698 != old_index698 && !storage_relocated && changed_rows == 0` |
+| `row_edits` | `changed_rows != 0 && !whole_plan_replaced` |
+| `storage_relocation_only` | `storage_relocated && new_count == old_count && changed_rows == 0 && new_index698 == old_index698` |
+
+**Timestamps & Gaps**: Each record carries `timestamp_ms` and `epoch`. Observer queue coalescing (paused snapshots) and drops are logged separately via `PANEL GAP` entries — correlate by `epoch` and `sample` ID. A `Baseline::Gap` in `History::Observe` marks diagnostic gaps (fault, cap, contention, drops).
+
+**Equal snapshots caveat**: Identical consecutive snapshots **cannot distinguish** identical replacement (remove+reinstall same rows) from no change. This is a fundamental limitation of sampled observation — marked `Baseline::Gap` if preceding gap detected.
+
+---
+
+## Simulation-Side Coverage Point (Panel-Closed / Fleet-Wide)
+
+**Current observer**: Sampled, panel-only, post-render hook at `0x7D5460`. Only observes when vehicle panel is open and rendered.
+
+**Candidate simulation-side point for fleet-wide, panel-closed coverage**:
+
+| Candidate | RVA | Role | Pros | Cons |
+|-----------|-----|------|------|------|
+| `FUN_14066D530` dispatcher | `0x66D530` | Per-frame DO truck update loop | Processes all road-DO trucks (ctx+0x294==7) every tick; calls `FUN_1406C07E0` per truck | No direct panel context; would need to correlate truck→panel if opened |
+| `FUN_1406C07E0` per-truck update | `0x6C07E0` | Per-truck route processing | Called for each truck in dispatcher; has truck pointer; calls `FUN_140699420` | Same as above |
+| `FUN_140699420` route processor | `0x699420` | Route stop processing, index advance, home-target reset | Directly mutates `+0x698`, calls `67CB30`, `6BC5A0` | Only runs for trucks with active routes |
+
+**Recommended**: `FUN_14066D530` (dispatcher entry) — fleet-wide, runs every sim tick regardless of panel state. A lightweight read-only probe here could capture `truck+0x680/0x688/0x638/0x698/0x5FD/0xC80` for all road-DO trucks per tick, enabling panel-closed correlation.
+
+**Not installing instrumentation** — this identifies the point only. Any future probe would require verified fingerprint + read-only Memory adapter + serialized Ghidra verification per `INSTRUCTIONS.md`.
+
+---
+
+## Per-Truck-Row Resource/Filter Mapping (Renderer-Evidenced)
+
+### Bounded Corrections Applied
+- Reused independent captured_content/storage/index/context change flags from `schedule_observer.h` (`Delta` struct).
+- Removed `storage ⇒ whole_plan_replaced` heuristic — contradicts `storage_relocation_only` classification.
+- Target lookup: `begin = *(truck+0x680)`, `target = *(begin + 8*row)` — evidenced at renderer `0x1407E815D–0x1407E8168`.
+- Kind 7 selects `6C07E0`; road kind 1/2 branch calls `699420` at `0x14066EA69` — `66D530` is per-receiver candidate, not proved all-fleet/every-tick loop.
+- C80 retention/clear is not a proved continuation/close verdict.
+- D3A is not a verified percentage threshold — renderer writes it (`0x1407D9A37`, `0x1407D9A7C`), observer never reads it.
+
+### Renderer-Evidenced Row-Config Reads (FUN_1407D5460, loop at 0x1407E8143)
+
+| Visible Field | Native Read (Instruction Site) | Base/Indirection | Bounds/Stride | Currently Captured? | Minimum Needed Extension |
+|---------------|--------------------------------|------------------|---------------|---------------------|--------------------------|
+| **Target building pointer** | `0x1407E815D–0x1407E8168`<br>`MOV RAX, [R15+0x680]`<br>`MOV R14, [RAX+RCX*8]` | `truck+0x680` (route begin)<br>Index from `RBP-0x70` (loop var) | Count = `(end-begin)/8`<br>Max 16 per observer | ✅ `schedule_observer.h`<br>`Row.target` | None |
+| **Config entry base** | `0x1407E816C–0x1407E8173`<br>`IMUL RSI, RDX, 0x198`<br>`ADD RSI, [R15+0x638]` | `truck+0x638` (config vector)<br>Stride 0x198 per row | `config_vector + row*0x198` | ❌ Observer reads `flag00/value04/flagC8/valueCC` at `+0/+4/+C8/+CC` but **not** the raw config_entry pointer | Add `config_entry` field to `Row` struct |
+| **Fallback target pointer** (when route target is null) | `0x1407E817F–0x1407E818D`<br>`IMUL RCX, RCX, 0x198`<br>`MOV RAX, [R15+0x638]`<br>`MOV RBX, [RCX+RAX+0x190]` | `truck+0x638 + row*0x198 + 0x190`<br>8-byte pointer from target+0x400 | Only when `target == 0`<br>`flag5fd` governs last-row skip | ❌ Observer **does not read** `config_entry+0x190` | Add `fallback_target` field to `Row`; read at `config_entry+0x190` |
+| **Resource type / filter byte** (primary) | **NOT FOUND in renderer loop** — renderer does not read a resource/filter byte from config_entry for display. Writer (`67D5D0`) populates `config_entry+0xC8` (flagC8) from target+0x200, but renderer never reads it back for the task list. | — | — | ❌ Observer reads `flagC8` at `config_entry+0xC8` but **meaning unverified** (writer sources from office task vector, not direct resource type) | **Missing edge**: No evidenced renderer read of resource/filter per row. Need to trace `67D5D0`→`config_entry+0xC8` source to confirm if it encodes resource type. |
+| **Resource amount / quantity** (primary) | **NOT FOUND in renderer loop** — renderer does not read `value04`/`valueCC` for task list display. Writer populates `config_entry+0x4`/`+0xCC` from builder tails (`429A80`/`42A0D0`), but renderer uses separate quantity reads (`+0x5F0`, `+0x8684`) for fuel panel. | — | — | ❌ Observer reads `value04`/`valueCC` but **not connected** to visible task-row quantity | **Missing edge**: Task-row quantity display source unknown. Not `config_entry+0x4`/`0xCC`. |
+| **Config flag00** (enable/type) | `0x1407D9A37`, `0x1407D9A7C` (WRITES)<br>`MOV [config_entry+0], DIL` | `truck+0x638 + row*0x198 + 0` | Byte | ✅ Observer reads `flag00` at `config_entry+0` | None |
+| **Config flagC8** (sub-type) | `0x1407D9A3B`, `0x1407D9A95` (WRITES)<br>`MOV [config_entry+0xC8], 0/1` | `truck+0x638 + row*0x198 + 0xC8` | Byte | ✅ Observer reads `flagC8` at `config_entry+0xC8` | **Meaning unverified** — writer sets from DIL (context-dependent), not proven resource filter |
+
+### Key Missing Edges (Exactly Identified)
+
+1. **No renderer read of resource/filter per task row** — The renderer loop (0x1407E8143…) reads target pointer and fallback pointer, but **never reads a resource type or filter byte** from the config entry for display. The `flagC8` at `+0xC8` is written by the renderer (0x1407D9A3B) based on context (DIL), not read for display.
+
+2. **Task-row quantity source unknown** — Visible quantity in task list is **not** `config_entry+0x4` (value04) or `+0xCC` (valueCC). Those are builder-tail cargo/fuel amounts for route execution. The panel's task-row quantity display source is **untraced**.
+
+3. **Config_entry+0x190 fallback meaning** — Holds `target+0x400` (8-byte pointer) per `67D5D0` writer. Renderer reads it only when route target pointer is null (last row when `flag5fd != 0`). Not a resource/filter field.
+
+4. **Office+0xD38/+0xD40 ≠ per-row mapping** — Confirmed: `67D5D0` uses office task vector to populate config entry, but the vehicle panel task list shows **installed route targets** (truck+0x680/0x688), not the office dispatch vector. The per-row config entry is a **copy** of office task config at install time, not a live link.
+
+### Observer Coverage Summary
+
+| Change Type | schedule_observer.h Detection | Gap |
+|-------------|-------------------------------|-----|
+| Target pointer change | ✅ `Row.target` | None |
+| Config_entry pointer change | ❌ Not captured | Add `config_entry` to `Row` |
+| Fallback target change | ❌ Not captured | Add `fallback_target` to `Row` (read at `+0x190`) |
+| flag00 change | ✅ `Row.flag00` | None |
+| flagC8 change | ✅ `Row.flagC8` | Meaning unverified |
+| value04/valueCC change | ✅ `Row.value04`/`valueCC` | Not task-row quantity |
+| index698 change | ✅ `Snapshot.index698` | None |
+| flag5fd change | ✅ `Snapshot.flag5fd` | None |
+| Resource/filter change | ❌ **No native read evidenced** | **Blocked** — no renderer read to hook |
+
+### Minimum Extension to Capture Task-Row Resource/Filter
+
+If a resource/filter byte exists in the config entry, the only evidenced writer is `67D5D0` at `config_entry+0xC8` (flagC8). To observe it:
+1. Extend `schedule_observer.h::Row` with `fallback_target` (read at `config_entry+0x190`).
+2. **Do not assume** `flagC8`/`value04`/`valueCC` are resource/filter — they are not read by renderer for task list.
+3. **Missing edge**: Find the renderer code path that displays resource/filter per task row (not in 7D5460 loop). May be in a separate UI builder function.
+
+**No new Ghidra queries required** — all evidence from cached `disasm_7d5460_full.txt` and `newA_decomp_67d5d0.c`.
+
+---
+
+## df23d12 Supersession: Renderer Reads of C8/04/CC
+
+**Retraction**: The prior claim "renderer never reads C8/04/CC for task list" is **false**. Verified reads in `FUN_1407D5460`:
+
+| Field | Read Site | Instruction | Purpose |
+|-------|-----------|-------------|---------|
+| `config+0xC8` (flagC8) | `0x1407E8EB9` | `MOVZX EAX, byte ptr [RSI + 0xc8]` | Branch on sub-type; non-zero → formatted text path via `0x140005290` at `0x1407E8F4C` |
+| `config+0x00` (flag00) | `0x1407E8ED2` | `CMP byte ptr [RSI], 0x0` | Enable gate; zero → alternate string ID path |
+| `config+0xCC` (valueCC) | `0x1407E8F07` | `MOVSS XMM0, dword ptr [RSI + 0xcc]` | Scale × `0x14090AB70` → `CVTTSS2SI` → integer → formatted via `0x140005290` |
+| `config+0x04` (value04) | `0x1407E9273` | `MOVSS XMM0, dword ptr [RSI + 0x4]` | Same scale/format chain → `0x140005290` at `0x1407E92B5` |
+
+**Formatter**: `0x140005290` (string format/render helper) called with scaled integer and string ID from `.rdata` (e.g., `0x1408F4318`, `0x1408F4340`).
+
+**Exact units/labels remain unverified** — the formatter consumes pre-scaled integers; native unit conversion (tonnes/litres/items) not traced.
+
+---
+
+## Helper 02ECD0 Indexed-Record Contract (Verified)
+
+**Function**: `FUN_14002ECD0` at `0x14002ECD0`  
+**Signature**: `longlong FUN_14002ecd0(longlong *vector_base, longlong index)`  
+**Body**: `return index * 0x10 + *vector_base;` (16-byte stride)
+
+**Renderer usage** (two independent vectors):
+
+| Vector | Base Saved | Count Calculation | Helper Call | Record Access |
+|--------|------------|-------------------|-------------|---------------|
+| `config+0xD0` | `R14` at `0x1407E9602` (`LEA R14, [RSI+0xD0]`) | `end-begin >> 4` at `0x1407E9733–73A` | `0x1407E980B` | `[RAX]` at `0x1407E9810` → `object+0x48` at `0x1407E9813` |
+| `config+0x08` | `R14` at `0x1407E9899` (`LEA R14, [RSI+0x08]`) | `end-begin >> 4` at `0x1407E99A4–9AB` | `0x1407E9A7B` | `[RAX]` at `0x1407E9A80` → `object+0x48` at `0x1407E9A83` |
+
+**Record layout (16 bytes / 0x10 stride)**:
+- `+0x00`: `object*` (8 bytes) — dereferenced for `object+0x48`
+- `+0x08`: **unknown** (8 bytes) — **NOT proven quantity/filter**
+
+**Critical**: A 16-byte stride does **not** prove the second qword is a quantity or filter. The renderer only consumes `record[0]` (object pointer) and then `object+0x48`. The `+0x08` field is never read in this code path.
+
+**Calls after record access**:
+- Config+D0 path: indirect call `[RDI+0x70]` at `0x1407E982F`, drawing call `[0x14086C860]` at `0x1407E9858`
+- Config+08 path: same pattern at `0x1407E9A9F` / `0x1407E9AC8`
+
+**RSI reuse**: Loop counter reused at `0x1407E9779` / `0x1407E99E9`; vectors remain in `R14`.
+
+---
+
+## Installer/Copy Site for Vehicle-Row Vectors & Conditional +190 (from 67D5D0)
+
+**Function**: `FUN_14067D5D0` (Route Insert/Overwrite, `0x67D5D0`)  
+**Callers**: `0x1401E55CB` (pickup), `0x1401E583F` (delivery), `0x1401E59D7` (office return), `0x1401E5D5E`, `0x1401E5F39`
+
+### Config Vector Population (stride 0x198)
+
+At insert (append, `param_3 == -1`):
+1. `FUN_14001E140` — insert into route vector (`truck+0x680`)
+2. `FUN_1402030F0` — insert into config vector (`truck+0x638`) at `row * 0x198`
+3. `FUN_14067CD20` — post-insert fixup
+
+### Conditional +190 (Fallback Target) — Exact Source
+
+**Writer**: `67D5D0` at `0x14067D85B` area (line 84 in decomp):
+```c
+lVar8 = *(longlong *)((longlong)iVar6 * 0x198 + 400 + *(longlong *)(param_1 + 0x638));
+```
+- `iVar6` = current `truck+0x698` (route index) at function entry
+- `400` = `0x190`
+- Reads `config_entry + 0x190` **from the currently active row's config entry**
+- Stores in `lVar8` for later `698` recompute match
+
+**Condition**: Only executed when `(-1 < iVar6 < route_count) && target_at_698 == 0` (line 82-83) — i.e., when the current active route index points to a **null target**.
+
+**Renderer read**: `0x1407E818D` — `MOV RBX, [RCX + RAX*1 + 0x190]` — reads `config_entry + 0x190` **when route target is null** (`TEST R14,R14` at `0x1407E817A` is zero).
+
+**Not equivalent to 5FD suppression**: Conditional `+190` read at `0x1407E818D` occurs **before** the separate `5FD` last-row check at `0x1407E81B3–1C0`. Different conditions, different purposes.
+
+### Config Flag Writes (Not D3A)
+
+| Site | Instruction | Writes | Not |
+|------|-------------|--------|-----|
+| `0x1407D9A37` / `0x1407D9A7C` | `MOV [config_entry+0], 0` / `MOV [config_entry+0], DIL` | `config+0x00` (flag00) | `truck+0xD3A` |
+| `0x1407D9A3B` | `MOV RCX, R9` (setup) | — | — |
+| `0x1407D9A50` / `0x1407D9A95` | `MOV [config_entry+0xC8], 0/1` | `config+0xC8` (flagC8) | — |
+
+**D3A** (`truck+0xD3A`) is set at `0x14067D85B` line 102: `*(undefined1 *)(param_1 + 0xd3a) = 1` — route dirty flag, **not** config entry flag.
+
+---
+
+## Minimal schedule_observer.h Extension Proposal (Corrected per Coordinator)
+
+### New Fields in `Row` Struct
+
+```cpp
+struct Row {
+    Address target = 0;              // truck+0x680 + row*8 (existing)
+    bool configRead = false;
+    std::uint8_t flag00 = 0;         // config+0x00 (existing)
+    float value04 = 0;               // config+0x04 (existing)
+    std::uint8_t flagC8 = 0;         // config+0xC8 (existing)
+    float valueCC = 0;               // config+0xCC (existing)
+    
+    // NEW — verified omitted raw content:
+    Address configEntry = 0;         // truck+0x638 + row*0x198 (base of config entry)
+    Address fallbackTarget = 0;      // configEntry + 0x190 (conditional: read when target==0, BEFORE 5FD)
+    bool fallbackValid = false;      // true iff read succeeded (zero is valid); false on read failure
+};
+```
+
+### New Fields in `Snapshot` Struct
+
+```cpp
+struct Snapshot {
+    // ... existing fields ...
+    unsigned count = 0;
+    Row rows[MaxRows]{};
+    
+    // NEW — config vector base/end (allocation addresses only)
+    bool configVectorRead = false;   // true iff truck+0x638 read succeeded
+    Address configsBegin = 0;        // truck+0x638 (base)
+    Address configsEnd = 0;          // truck+0x638 + count*0x198 (computed span, NOT allocation metadata)
+    
+    // NEW — config+0xD0 / config+0x08 vector snapshots (verified renderer vectors)
+    struct VectorSnap {
+        Address base = 0;            // config+0xD0 or config+0x08
+        unsigned count = 0;          // (end-begin) >> 4 (16-byte stride)
+        Address records[16];         // record[0] = object* (up to MaxRows, truncated)
+    };
+    VectorSnap vecD0{};              // config+0xD0 vector
+    VectorSnap vec08{};              // config+0x08 vector
+};
+```
+
+### Read Contract (in `ReadRow`) — Order Fixed
+
+```cpp
+inline bool ReadRow(const Memory& m, const Snapshot& s, unsigned i, Row& r) {
+    if (!m.Get(s.begin, Address(i) * 8, r.target)) return false;
+    
+    const Address configEntry = s.configsBegin + Address(i) * 0x198;
+    r.configEntry = configEntry;
+    
+    // 1. Core config fields
+    r.configRead = m.Get(configEntry, 0x0, r.flag00) &&
+                   m.Get(configEntry, 0x4, r.value04) &&
+                   m.Get(configEntry, 0xC8, r.flagC8) &&
+                   m.Get(configEntry, 0xCC, r.valueCC);
+    if (!r.configRead) return false;
+    
+    // 2. Conditional fallback target (+0x190) — READ BEFORE 5FD suppression
+    // Condition: route target is null (renderer: TEST R14,R14 at 0x1407E817A)
+    r.fallbackValid = false;
+    if (r.target == 0) {
+        r.fallbackValid = m.Get(configEntry, 0x190, r.fallbackTarget);
+        // Zero is VALID; read failure (false return) -> capture fails, not Complete
+        if (!r.fallbackValid) return false;
+    }
+    
+    // 3. Special last-row skip (5FD) — AFTER raw190
+    if (s.flag5fd && i + 1 == s.count) return true;
+    
+    return true;
+}
+```
+
+### Vector Snapshot Capture (config+0xD0 / config+0x08)
+
+```cpp
+// Called once per capture after Header, before row loop
+inline bool CaptureVectors(const Memory& m, const Snapshot& s) {
+    // config+0xD0
+    if (!m.Get(s.root, 0xD0, s.vecD0.base)) return false;
+    Address endD0 = 0;
+    if (!m.Get(s.root, 0xD8, endD0)) return false;
+    if (endD0 >= s.vecD0.base) {
+        s.vecD0.count = static_cast<unsigned>((endD0 - s.vecD0.base) >> 4);  // 16-byte stride
+        if (s.vecD0.count > 16) s.vecD0.count = 16;
+        for (unsigned i = 0; i < s.vecD0.count; ++i) {
+            if (!m.Get(s.vecD0.base, Address(i) * 0x10, s.vecD0.records[i])) return false;
+        }
+    }
+    
+    // config+0x08
+    if (!m.Get(s.root, 0x08, s.vec08.base)) return false;
+    Address end08 = 0;
+    if (!m.Get(s.root, 0x10, end08)) return false;
+    if (end08 >= s.vec08.base) {
+        s.vec08.count = static_cast<unsigned>((end08 - s.vec08.base) >> 4);
+        if (s.vec08.count > 16) s.vec08.count = 16;
+        for (unsigned i = 0; i < s.vec08.count; ++i) {
+            if (!m.Get(s.vec08.base, Address(i) * 0x10, s.vec08.records[i])) return false;
+        }
+    }
+    return true;
+}
+```
+
+### Delta Comparison (in `History::Observe`) — Corrected
+
+```cpp
+// Content comparison — ordered element content, separate from allocation
+d.fields = s.count != previous_.count;
+if (!d.fields) {
+    for (unsigned i = 0; i < s.count; ++i) {
+        if (!SameRow(s.rows[i], previous_.rows[i])) { d.fields = true; break; }
+    }
+}
+
+// NEW: fallback target comparison (only when both valid)
+if (!d.fields) {
+    for (unsigned i = 0; i < s.count; ++i) {
+        if (s.rows[i].fallbackValid && previous_.rows[i].fallbackValid &&
+            s.rows[i].fallbackTarget != previous_.rows[i].fallbackTarget) {
+            d.fields = true; break;
+        }
+    }
+}
+
+// NEW: vector record[0] comparison (ordered, separate from allocation)
+if (!d.fields) {
+    // config+0xD0
+    if (s.vecD0.count == previous_.vecD0.count) {
+        for (unsigned i = 0; i < s.vecD0.count; ++i) {
+            if (s.vecD0.records[i] != previous_.vecD0.records[i]) { d.fields = true; break; }
+        }
+    } else { d.fields = true; }
+    
+    // config+0x08
+    if (!d.fields && s.vec08.count == previous_.vec08.count) {
+        for (unsigned i = 0; i < s.vec08.count; ++i) {
+            if (s.vec08.records[i] != previous_.vec08.records[i]) { d.fields = true; break; }
+        }
+    } else if (!d.fields) { d.fields = true; }
+}
+
+// Storage relocation — allocation addresses ONLY (no whole_plan_replaced verdict)
+d.storage = s.begin != previous_.begin || s.end != previous_.end || 
+            s.configsBegin != previous_.configsBegin ||
+            s.vecD0.base != previous_.vecD0.base || s.vecD0.count != previous_.vecD0.count ||
+            s.vec08.base != previous_.vec08.base || s.vec08.count != previous_.vec08.count;
+
+// Index progression
+d.index = s.index698 != previous_.index698;
+
+// Context (opaque renderer fields)
+d.context = s.raw4a0 != previous_.raw4a0 || s.raw610 != previous_.raw610 ||
+            s.raw650 != previous_.raw650 || s.flag5fd != previous_.flag5fd;
+
+// NO whole_plan_replaced flag — relocation does not imply semantic replacement
+// Sampling cannot guarantee identical replacement or detect every ABA change
+```
+
+### Bounds / Overflow / Readability Rules (Corrected)
+
+| Condition | Status | Action |
+|-----------|--------|--------|
+| `configsBegin == 0 && count > 0` | `MissingConfigs` | Abort capture |
+| `configsBegin + count*0x198` wraps (overflow) | `BadBounds` | Abort capture |
+| Core config read fails | `Unreadable` | Abort capture, `gap_=true` |
+| `target==0` AND raw190 read fails | `Unreadable` | Abort capture, `gap_=true` (zero is valid; failure is not) |
+| Partial capture (exception mid-loop) | `GuardedFault` | `gap_=true`, disable schedule reads |
+| **REMOVED**: `flag5fd && count > 0` but last row `target != 0` → `NonFinite` | — | Computed span end is NOT allocation metadata; do not invent consistency rules |
+
+### Old/New Sample Correspondence & Gap Handling (Corrected)
+
+- **Correspondence**: By `truck` base + `epoch` + `home` (existing `History`). Row index `i` maps 1:1 when `count` unchanged and `!d.storage`.
+- **Identical replacement**: Sampling CANNOT distinguish identical reinstall from no-change. If `d.storage && count==old_count && all rows SameRow && vecD0/vec08 Same`, classified as `storage` change only — **no `whole_plan_replaced` verdict**.
+- **ABA on fallbackTarget / vec records**: Caught by `d.fields` between samples. Mid-read mutation caught by existing `ChangedDuringRead` double-read.
+- **Gap propagation**: Any `status != Complete` or `d.baseline != None` → `History::Break()` → next capture gets `Baseline::Gap`. **Do not Break for successful baselines**.
+
+---
+
+## Native Corrections (from 67D5D0 decompilation)
+
+| Address | Instruction | Correction |
+|---------|-------------|------------|
+| `0x14067D774` | `lVar8 = *(longlong *)(iVar6 * 0x198 + 400 + *(longlong *)(param_1 + 0x638))` | **raw190 read** — reads `config_entry+0x190` from currently active row (`iVar6 = truck+0x698` at entry). Producer of this value not proved by consumer. |
+| `0x14067D854` | `*(undefined1 *)(param_1 + 0xd3a) = 1` | **D3A store** — route dirty flag on truck, NOT config entry flag. |
+| `0x14067D85B` | `*(undefined4 *)(param_1 + 0x698) = 0xffffffff` | **698 reset** — invalidates route index before recompute loop. |
+
+**Raw190 consumer (renderer `0x1407E818D`) does not prove its producer** — the value at `config_entry+0x190` comes from the active row at insert time, not necessarily `target+0x400`.
+
+---
+
+## Cached 02ECD0 Decompilation (Verbatim from `scratch/out/02ecd0_decomp.c`)
+
+```c
+// ============================================================
+// Function: FUN_14002ecd0 at 14002ecd0
+// Target address checked: 0x14002ECD0
+// ============================================================
+
+longlong FUN_14002ecd0(longlong *param_1,longlong param_2)
+{
+  return param_2 * 0x10 + *param_1;
+}
+```
+
+**Contract**: `record = base + index * 0x10`. Renderer calls with `R14` = `config+0xD0` base (saved at `0x1407E9602`) and `config+0x08` base (saved at `0x1407E9899`). Only `record[0]` (object pointer) consumed → `object+0x48`. `record[1]` (`+0x08`) never read.
+
+---
+
+## Approval Request: Bounded Logging-Only Patch
+
+**Scope** (logging only, no runtime hooks, no build/deploy, no game changes):
+
+1. **Row logging**: conditional `raw190` (fallbackTarget), validity flag, configEntry base
+2. **Vector snapshots**: `vecD0`/`vec08` — count + ordered `record[0]` (object*) up to 16, allocation base
+3. **Validity/overflow/cap/consistency**: config vector bounds, raw190 read failure = Unreadable, vector count truncation at 16
+3. **Independent flags**: content (row fields + fallbackTarget + vec record[0]), storage (all bases/counts), index (698), context (raw4a0/610/650/5FD) — no cross-contamination
+
+**Test coverage required**:
+- `raw190` zero value / read failure (→ Unreadable, not Complete)
+- Special last row (5FD) with/without `target==0` — raw190 read order verified
+- Vector-only changes (vecD0/vec08 record[0] change without row config change)
+- Pure relocation (all bases change, content identical — storage flag only)
+- Nested mutation (mid-capture exception → GuardedFault → gap)
+- Cap at 16 rows / 16 vector records (truncation behavior)
+- Gap recovery (3→1→3 row count with Baseline::Gap marking)
+
+**Decision required**: Explicit approval to implement this logging-only patch in `schedule_observer.h` / `panel_fuel_runtime.h`. Without approval, stop at this request.
+
+
 # 2026-10-31 Recurring final-matrix append timeout — explicit checkpoints
 
 User reports another API504 after the parent announced it would create the final
