@@ -84203,3 +84203,60 @@ struct TaskListChange {
 **Recommended**: `FUN_14066D530` (dispatcher entry) — fleet-wide, runs every sim tick regardless of panel state. A lightweight read-only probe here could capture `truck+0x680/0x688/0x638/0x698/0x5FD/0xC80` for all road-DO trucks per tick, enabling panel-closed correlation.
 
 **Not installing instrumentation** — this identifies the point only. Any future probe would require verified fingerprint + read-only Memory adapter + serialized Ghidra verification per `INSTRUCTIONS.md`.
+
+---
+
+## Per-Truck-Row Resource/Filter Mapping (Renderer-Evidenced)
+
+### Bounded Corrections Applied
+- Reused independent captured_content/storage/index/context change flags from `schedule_observer.h` (`Delta` struct).
+- Removed `storage ⇒ whole_plan_replaced` heuristic — contradicts `storage_relocation_only` classification.
+- Target lookup: `begin = *(truck+0x680)`, `target = *(begin + 8*row)` — evidenced at renderer `0x1407E815D–0x1407E8168`.
+- Kind 7 selects `6C07E0`; road kind 1/2 branch calls `699420` at `0x14066EA69` — `66D530` is per-receiver candidate, not proved all-fleet/every-tick loop.
+- C80 retention/clear is not a proved continuation/close verdict.
+- D3A is not a verified percentage threshold — renderer writes it (`0x1407D9A37`, `0x1407D9A7C`), observer never reads it.
+
+### Renderer-Evidenced Row-Config Reads (FUN_1407D5460, loop at 0x1407E8143)
+
+| Visible Field | Native Read (Instruction Site) | Base/Indirection | Bounds/Stride | Currently Captured? | Minimum Needed Extension |
+|---------------|--------------------------------|------------------|---------------|---------------------|--------------------------|
+| **Target building pointer** | `0x1407E815D–0x1407E8168`<br>`MOV RAX, [R15+0x680]`<br>`MOV R14, [RAX+RCX*8]` | `truck+0x680` (route begin)<br>Index from `RBP-0x70` (loop var) | Count = `(end-begin)/8`<br>Max 16 per observer | ✅ `schedule_observer.h`<br>`Row.target` | None |
+| **Config entry base** | `0x1407E816C–0x1407E8173`<br>`IMUL RSI, RDX, 0x198`<br>`ADD RSI, [R15+0x638]` | `truck+0x638` (config vector)<br>Stride 0x198 per row | `config_vector + row*0x198` | ❌ Observer reads `flag00/value04/flagC8/valueCC` at `+0/+4/+C8/+CC` but **not** the raw config_entry pointer | Add `config_entry` field to `Row` struct |
+| **Fallback target pointer** (when route target is null) | `0x1407E817F–0x1407E818D`<br>`IMUL RCX, RCX, 0x198`<br>`MOV RAX, [R15+0x638]`<br>`MOV RBX, [RCX+RAX+0x190]` | `truck+0x638 + row*0x198 + 0x190`<br>8-byte pointer from target+0x400 | Only when `target == 0`<br>`flag5fd` governs last-row skip | ❌ Observer **does not read** `config_entry+0x190` | Add `fallback_target` field to `Row`; read at `config_entry+0x190` |
+| **Resource type / filter byte** (primary) | **NOT FOUND in renderer loop** — renderer does not read a resource/filter byte from config_entry for display. Writer (`67D5D0`) populates `config_entry+0xC8` (flagC8) from target+0x200, but renderer never reads it back for the task list. | — | — | ❌ Observer reads `flagC8` at `config_entry+0xC8` but **meaning unverified** (writer sources from office task vector, not direct resource type) | **Missing edge**: No evidenced renderer read of resource/filter per row. Need to trace `67D5D0`→`config_entry+0xC8` source to confirm if it encodes resource type. |
+| **Resource amount / quantity** (primary) | **NOT FOUND in renderer loop** — renderer does not read `value04`/`valueCC` for task list display. Writer populates `config_entry+0x4`/`+0xCC` from builder tails (`429A80`/`42A0D0`), but renderer uses separate quantity reads (`+0x5F0`, `+0x8684`) for fuel panel. | — | — | ❌ Observer reads `value04`/`valueCC` but **not connected** to visible task-row quantity | **Missing edge**: Task-row quantity display source unknown. Not `config_entry+0x4`/`0xCC`. |
+| **Config flag00** (enable/type) | `0x1407D9A37`, `0x1407D9A7C` (WRITES)<br>`MOV [config_entry+0], DIL` | `truck+0x638 + row*0x198 + 0` | Byte | ✅ Observer reads `flag00` at `config_entry+0` | None |
+| **Config flagC8** (sub-type) | `0x1407D9A3B`, `0x1407D9A95` (WRITES)<br>`MOV [config_entry+0xC8], 0/1` | `truck+0x638 + row*0x198 + 0xC8` | Byte | ✅ Observer reads `flagC8` at `config_entry+0xC8` | **Meaning unverified** — writer sets from DIL (context-dependent), not proven resource filter |
+
+### Key Missing Edges (Exactly Identified)
+
+1. **No renderer read of resource/filter per task row** — The renderer loop (0x1407E8143…) reads target pointer and fallback pointer, but **never reads a resource type or filter byte** from the config entry for display. The `flagC8` at `+0xC8` is written by the renderer (0x1407D9A3B) based on context (DIL), not read for display.
+
+2. **Task-row quantity source unknown** — Visible quantity in task list is **not** `config_entry+0x4` (value04) or `+0xCC` (valueCC). Those are builder-tail cargo/fuel amounts for route execution. The panel's task-row quantity display source is **untraced**.
+
+3. **Config_entry+0x190 fallback meaning** — Holds `target+0x400` (8-byte pointer) per `67D5D0` writer. Renderer reads it only when route target pointer is null (last row when `flag5fd != 0`). Not a resource/filter field.
+
+4. **Office+0xD38/+0xD40 ≠ per-row mapping** — Confirmed: `67D5D0` uses office task vector to populate config entry, but the vehicle panel task list shows **installed route targets** (truck+0x680/0x688), not the office dispatch vector. The per-row config entry is a **copy** of office task config at install time, not a live link.
+
+### Observer Coverage Summary
+
+| Change Type | schedule_observer.h Detection | Gap |
+|-------------|-------------------------------|-----|
+| Target pointer change | ✅ `Row.target` | None |
+| Config_entry pointer change | ❌ Not captured | Add `config_entry` to `Row` |
+| Fallback target change | ❌ Not captured | Add `fallback_target` to `Row` (read at `+0x190`) |
+| flag00 change | ✅ `Row.flag00` | None |
+| flagC8 change | ✅ `Row.flagC8` | Meaning unverified |
+| value04/valueCC change | ✅ `Row.value04`/`valueCC` | Not task-row quantity |
+| index698 change | ✅ `Snapshot.index698` | None |
+| flag5fd change | ✅ `Snapshot.flag5fd` | None |
+| Resource/filter change | ❌ **No native read evidenced** | **Blocked** — no renderer read to hook |
+
+### Minimum Extension to Capture Task-Row Resource/Filter
+
+If a resource/filter byte exists in the config entry, the only evidenced writer is `67D5D0` at `config_entry+0xC8` (flagC8). To observe it:
+1. Extend `schedule_observer.h::Row` with `fallback_target` (read at `config_entry+0x190`).
+2. **Do not assume** `flagC8`/`value04`/`valueCC` are resource/filter — they are not read by renderer for task list.
+3. **Missing edge**: Find the renderer code path that displays resource/filter per task row (not in 7D5460 loop). May be in a separate UI builder function.
+
+**No new Ghidra queries required** — all evidence from cached `disasm_7d5460_full.txt` and `newA_decomp_67d5d0.c`.
