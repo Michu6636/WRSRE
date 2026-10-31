@@ -1,5 +1,157 @@
 # Private logistics — runtime observation work package
 
+> **Reusable team workflow guide added (2026-10-31):**
+> [KILO_AGENT_WORKFLOW.md](../../KILO_AGENT_WORKFLOW.md) is the maintained guide
+> for future Kilo task prompts, resource ownership and automated coordination.
+> Root AGENTS.md and INSTRUCTIONS.md direct future AI sessions to it. The guide
+> includes a reusable parent-prompt skeleton without current investigation offsets.
+> No Kilo settings/permissions or runtime behavior changed.
+
+> **Kilo workflow revised (2026-10-31):** official docs confirm normal Code
+> supports task subagents; dedicated Orchestrator is deprecated. Use ONE Code
+> parent: sole Ghidra operator/shared writer, with read-only task children for
+> independent causal-end and receiver-identity analysis. Parent collects results,
+> queries missing edges serially and delegates follow-ups; no manual user relay.
+> Swarm is optional communication, not a scheduler. This supersedes separately
+> managed A/B/C prompts. Full research/source URLs and unified parent prompt are
+> at the end of VEHICLE_PANEL_FUEL_INVESTIGATION.md. No Kilo configuration,
+> sessions, native evidence or runtime behavior changed by this workflow review.
+
+> **Published1252253 reviewed (2026-10-31):** A/B reports, five B disassembly
+> exports and updated INSTRUCTIONS are received. The prior publication gap was
+> expected under no-commit instructions, not an agent failure. Export audit:
+> 5635unique instructions/26956bytes; zero decode-size/target/conflict/overlap
+> errors;299shared prior-report instructions match. False road cleanup chain
+> retracted; complete contract and replacement zero-target close rule unproved.
+> Missing A exports/verifier source, causal removal and receiver join remain open.
+> Full review/artifacts/audit source+actual output/instructions and updated A/B/C
+> prompts are appended to VEHICLE_PANEL_FUEL_INVESTIGATION.md (single handover).
+> Historical separate-agent plan superseded by the single-parent Kilo workflow
+> above. No sessions started/stopped or runtime/hooks/billing/build/game changes.
+
+> **Fresh-team prompts prepared (2026-10-31):** three non-overlapping roles:
+> A acceptance/work scope + integration; B causal termination/cancel/replacement;
+> C fleet-to-executor identity. Full self-contained prompts in the cumulative
+> handover end. Replaces prior two-role continuation plan; no agents launched.
+> Historical C→A→B query plan superseded: one designated Ghidra orchestrator only.
+> No runtime/hooks/billing/game changes authorized.
+
+> **Replacement return8b7d5eb reviewed (2026-10-31):** committed decompilation
+> supports both698resetsto0; initial acceptance versus refresh still unproved.
+> No classified trip close yet. Correct post-call observation/correlation before
+> proposing probes;429A80/42A0D0 tail callees are unclassified next-ordering leads.
+> Full review/audit/source/results/report/decomp/xrefs at the single handover end.
+> No hooks, runtime, build, save or game changes.
+
+> **Replacement Agent1 handoff prepared (2026-10-31):** latest actual reports
+> are1ae50c3/ee2faf5. Complete self-contained takeover prompt and unchanged reports
+> at the cumulative handover end. Start/work scope remains open; termination-clear
+> semantics remain proposed. Raw start-workscope scratch exports are not tracked.
+> No runtime changes, hooks, billing, builds or game replay authorized.
+
+> **Latest e9c5d8e/37bcb65 reviewed (2026-10-31):** source/byte-check repairs
+> partly accepted; no assignment-to-removal interval proved. Agent1's collection
+> base is P=[RBX+398], not RBX; P is also a direct simulation receiver. Independent
+> gate listing still has three byte/address conflicts and wrong branch polarity;
+> universal before-loading acceptance is unsupported. Complete review, seven-case
+> matrix, final audit/source/stdout and both unchanged reports at the handover end.
+> No runtime changes, hooks, billing, build or game replay. Earlier notices historical.
+
+> **Both faadf28 returns reviewed (2026-10-31):** agent1 adds a conditional
+> stored698 increment, not a700 increment. No assignment/removal rule yet.
+> Fresh independent report's commitment claim is not accepted; missing source,
+> inconsistent PASS output, wrong jump address and wrong logging-site receiver
+> must be corrected. Full comparison/seven-case matrix/audit/source/stdout and
+> both unchanged reports are embedded at the single handover end. No hooks,
+> billing, runtime changes or game replay. Older sole-agent1 notices are historical.
+
+> **Two-investigator continuation requested (2026-10-31):** the handover ends
+> with full prompts for agent1 (execution/removal) and a fresh independent agent
+> (commitment), using the same acceptance matrix. This supersedes sole-agent1
+> guidance; older agents2/3 remain retired. Separate output files, explicit
+> serial Ghidra handoff; no runtime changes or game replay authorized.
+
+> **Agent1 4170a55 reviewed (2026-10-31):** conditional association/home reset
+> evidenced, no assignment/removal rule. The700 block increments a register
+> copy, not the stored field; D39 proof corrected. Existing test4 raw4a0=0
+> snapshots need not be replayed; fleet→simulation identity is still missing.
+> Full review/audit/results/unchanged report are at the single handover end.
+
+> **Next sole-agent1 prompt prepared:** the final handover section contains the
+> complete execution/removal-focused continuation after c9bb065. Reuse known
+> route builders; trace internal stops versus actual removal/replacement and
+> resolve post-callD39 effects. No runtime changes or game test requested.
+
+> **Agent1 c9bb065 reviewed:** concrete candidate-route/config rebuild path now
+> identified; assignment/removal boundaries still unproved. New complete-body
+> byte checks and Markdown fence tracking pass. The call-exclusivity claim still
+> needs post-callD39 proof and680A20 raw blocks. Review/audit/results/unchanged
+> report are appended to the single handover. No hooks, billing or game replay.
+
+> **Agent1 follow-up31e6e41 reviewed:** useful negative evidence, lifecycle still
+> incomplete. The D39-exclusive-path claim skips callee effects; existing bytes
+> name680A20 and candidate-buffer→1E5350 as bounded next edges. Full review,
+> independent audit/results and unchanged report are at the handover end.
+> Continue only agent1; no hooks, billing or unchanged game replay.
+
+> **Sole-agent1 follow-up prepared:** the final section of the single handover
+> contains the complete next prompt. Continue only agent1, using its already
+> delivered complete bodies to resolve actual lifecycle boundaries; do not
+> repeat the same exports or continue agents2/3. External sessions must be
+> stopped/left idle by their operator; none was stopped from this checkout.
+
+> **Agent1 updated return b730880 reviewed (2026-10-30):** complete updater/helper
+> bodies are now delivered and pass independent byte-structure checks. This closes
+> the missing-body gap; assignment/removal semantics remain unresolved. Full
+> review, audit source/stdout and unchanged report are appended to the single
+> handover. Do not request these same bodies again or enable billing/hooks.
+> Earlier notices saying agent1 is still pending describe the prior state.
+
+> **Agent3 summary review (2026-10-30):** the proposed one-frame interval is
+> planning cadence, not proved assignment lifetime. Transfer-function and receiver
+> labels need correction; timer units/constants are not independently verified.
+> Full review, correction prompt and supplied summary are appended to the same
+> handover. Agent3 native exports were not delivered in the fetched branch.
+
+> **Agent2 comparison (2026-10-30):** its added function names are investigation
+> leads, not new task-boundary proof. Its delivered raw instruction evidence is
+> entirely shared with the corrected agent1 report, and its field table contains
+> route/fleet and home/target mislabels. Full comparison/audit and the unchanged
+> agent2 report are appended to the single handover below. Agent1's ongoing
+> latest-prompt work remains pending. No runtime or test change is requested.
+
+> **Next-agent prompt prepared:** the end of the single handover Markdown now
+> contains an instructions-first, wrapper-aware continuation prompt. It requires
+> complete byte-checked type43 caller/helper evidence before lifecycle claims;
+> no new runtime code or unchanged-build test is requested.
+
+> **Corrected report reviewed (2026-10-30), actual remote commita068d19.** The
+> byte/address correction passes independent checks and the opaque BB0 value is
+> no longer mistaken for a truck pointer. This is association evidence, not a
+> proved task interval. Full new helper/caller CFG evidence is not embedded in
+> the supplied report. The second review, complete audit/results and preserved
+> updated report are appended to the single handover Markdown below. No runtime
+> changes, billing or unchanged-build game test are requested. The preceding
+> report's review below is historical.
+
+> **Returned native report independently reviewed (2026-10-30).** Fetched the
+> actual remote commit7154fda. Complete helper listings are useful, but the
+> proposed association install has unresolved type43 road-DO provenance and an
+> inconsistent addressed instruction excerpt. No new hooks or billing are
+> enabled. The full review, original report, audit output and targeted correction
+> prompt are appended to the single handover Markdown below.
+
+> **Latest supplied game test: v0.18.8 (2026-10-30).** The new schedule observer
+> ran in the user's Windows game: 197 paired fuel/object records, 21 valid schedule
+> snapshots and all six screenshot values correlate. The run exposed a three-row
+> destination/config change without an observed empty intermediate table, negative
+> raw values at zero display, and refill-like upward steps. These are not yet
+> native assignment or exact-burn/settlement proof. Billing stayed OFF. No further
+> unchanged-build or empty-tank test is needed while awaiting the investigation.
+> Full review, audit source, actual results and future test guidance are appended
+> to the single [`VEHICLE_PANEL_FUEL_INVESTIGATION.md`](VEHICLE_PANEL_FUEL_INVESTIGATION.md).
+> The following implementation checkpoint predates this supplied game run.
+
 > **Current source: 0.18.8-schedule-observations (2026-10-30).**
 > Added fingerprint-gated read-only observations of the selected road-DO truck’s
 > raw schedule rows/config/index, using the existing panel hook and queue.
@@ -89,7 +241,7 @@ or runtime policy was changed by this review.
 
 ## Status and provenance
 
-- Current Arena branch: `arena/8e9a4f62-wrsre`; source is v0.18.8 (read-only schedule checkpoint); last supplied real-game observer test was v0.18.7. See the latest single-file findings. Older agent/build reports below are historical.
+- Current Arena branch: `arena/99cc5008-wrsre`; source is merged v0.18.8 (read-only schedule observations); latest supplied real-game observer test is v0.18.8. See the latest single-file review. Older agent/build reports below are historical.
 - Old Agent 1 report fetched at `80a4404d8d3fa5161bcaaf8de8cfd0a7fc7a72b7`, branch `reverse-engineering-and-verified-transport-associa`. Clean of conflict markers; not accepted as a verified road load/burn/unload implementation. Still contains task-stride/prototype inconsistencies.
 - Old Agent 2 model fetched at `94d304dfbd182aef6464ff35315de8d16ae1a694`, branch `executable-accounting-model-and-deterministic-test`. Independently ran 27 tests, all pass. Additional probes: CLOSED prevents a legitimate second trip; UNSUPPORTED can be reactivated by a repeated load. Not production-ready.
 - Review exports exist only in ignored `.cache/agent-review/` in this checkout. Remote reports/model have NOT been merged here. New agents must obtain the exact artifacts without blindly merging old branches.
