@@ -2,11 +2,11 @@
 
 ## Executive result
 
-**The earlier road-DO conclusion was too broad.** The direct `[DO+0xBB0]=truck` / `[truck+0xC80]=DO` installation cited below belongs to type `0x5C` and type `7` paths, not the actual road distribution-office type `0x2B`.
+**The earlier road-DO assignment conclusion is withdrawn.** The direct `[DO+0xBB0]=truck` / `[truck+0xC80]=DO` installation cited below belongs to type `0x5C` and type `7` paths, not the actual road distribution-office type `0x2B`.
 
-The type-`0x2B` updater does process a truck from that same office's `+0xC70/+0xC78` fleet and calls `FUN_1406B8EB0` on that truck. The helper can write `truck+0xC80 = office` and `office+0xBB0 = truck+0x390`. The latter is an opaque truck field value, not a proven truck pointer or job ID. This is a verified road-DO association path, but the available static evidence does not establish that it is an assignment-interval boundary or that it remains stable across stops, cancellation, and replacement.
+The type-43 (`0x2B`) dispatcher passes an object whose metadata type is `0x2B` into `FUN_1401C6050`. That updater traverses that same object's `+0xC70/+0xC78` fleet and calls `FUN_1406B8EB0` on a guarded truck from it. The helper can write `truck+0xC80 = office` and `office+0xBB0 = truck+0x390`. This proves a type-43 office/truck association path, but not a whole-task installation, task-presence signal, final removal, cancellation, or replacement boundary. `truck+0x390` is used as a pointer-like internal object/container value; it is not a proven job ID or payer. Whether this association persists across internal pickup/unload stops is unresolved.
 
-The requested `FUN_1406BF1D0` renderer investigation remains documented below for continuity; it is not repeated or used as an assignment signal here. The exact type-`0x2B` receiver path, opaque `+0x390` provenance, corrected direct bytes, and remaining lifecycle gaps follow.
+The existing `FUN_1406BF1D0` renderer investigation remains below for continuity and is not repeated or used as an assignment signal here. This correction instead records the exact type-43 receiver path, `+0x390` provenance, contiguous direct bytes, and remaining lifecycle gaps.
 
 No plugin, dispatch, permission, default, or billing behavior was changed. No hooks were installed and no live-game run was performed or requested.
 
@@ -29,11 +29,11 @@ All requested identity values match. The existing `RAW_PE_DATA_READ.md` document
 
 Read the latest interval-policy and helper sections of [VEHICLE_PANEL_FUEL_INVESTIGATION.md](VEHICLE_PANEL_FUEL_INVESTIGATION.md), the relevant renderer call/store evidence in [RAW_EXPORTS_VEHICLE_DETAIL_RENDERER.md](RAW_EXPORTS_VEHICLE_DETAIL_RENDERER.md), [ghidra-do-storage-findings.md](../ghidra-do-storage-findings.md), and the current [schedule_observer.h](../../plugins/private_logistics/schedule_observer.h).
 
-The workspace has existing Ghidra decompilation/function-listing exports in `scratch`, but no discoverable Ghidra command or project file. The Ghidra function metadata and signature below are from those exports. To avoid relying on the truncated existing `disasm_bf1d0_full.txt`, the full function bytes were independently decoded with Capstone 5.0.7 directly from the identity-verified executable. The decoder consumed the entire Ghidra-reported 3,760-byte function body and ended at its `RET`.
+The configured [Ghidra wrapper](../../scratch/ghidra_run.bat) opens `SOVIET64.exe` in the existing `soviet` project using Ghidra 12.1.4. The following existing scripts were run serially against that project: `ListFuncs.java`, `DisasmMany.java`, `Xrefs.java`, and `DecompAt.java`. Outputs were written to session-local files and summarized or reproduced below. No project lock was removed and no running Ghidra process was terminated. The type-43 bodies and dispatcher blocks were also decoded from the identity-verified executable with Capstone 5.0.7; the full raw bodies below include bytes omitted from Ghidra's instruction listing.
 
 All lifecycle conclusions below are **static deductions or explicit unknowns**. There is no live-game validation of assignment presence, removal, replacement, cancellation, reload survival, or return travel in this investigation.
 
-Throughout this report, a read at `vehicle+0x1708` followed by a comparison at `object+0x294` establishes only that metadata-kind dword's numeric value. No vehicle-state enum meaning is inferred for values `4`, `8`, or `10`.
+Throughout this report, a read at `vehicle+0x1708` followed by a comparison at `object+0x294` establishes only a metadata-kind dword's numeric value. In particular, `+0x294 == 10` is a metadata-kind comparison, not a proven vehicle state called “state 10.” No vehicle-state enum meaning is inferred for values `4`, `8`, or `10`.
 
 ## `FUN_1406BF1D0`: identity, bounds, signature, and behavior
 
@@ -172,13 +172,26 @@ In the Windows x64 calling convention, `RSI` is `param_2` (the type-`0x5C` recei
 
 ## Actual road-DO type `0x2B`: receiver and association dataflow
 
-The dispatch guard is direct: at `0x14013E2BA` the dispatcher compares metadata `+0x360` with `0x2B`; on equality it passes the office in `RDX` to `FUN_1401C6050` at `0x14013E2C9`. In `FUN_1401C6050`, `RDI` is that office and the `+0xC70/+0xC78` vector is iterated. The loop loads each element into `RSI`, checks `truck+0xC80 == 0` at `0x1401C61E6`, and checks `truck+0x4F8 == office` at `0x1401C61F4`. This proves that the following call is reached from a candidate in this same type-`0x2B` office's fleet; it is not receiver inference from matching offsets.
+The dispatching function is `FUN_140139A70`. Its prologue copies the `RCX` argument to `R13`. It counts the object-pointer table at `[R13+0x11B08]..[R13+0x11B10]`, loads each candidate pointer from that table, and saves the current candidate at `[RSP+0x40]`. The only store to that stack slot in this function is at `0x140139BFB`. In the later type-dispatch block, `R8` is reloaded from that same slot; `[R8+0x318]` supplies the candidate's metadata object, and the dword at metadata `+0x360` is compared with `0x2B`. On equality, the code passes that same candidate as `RDX=R8`, passes the current `RSI` in `RCX`, and calls `FUN_1401C6050` at `0x14013E2C9`. Ghidra's reference export records this as the only direct call reference to `FUN_1401C6050`; it also records two data references, which are not calls.
+
+In `FUN_1401C6050`, the prologue copies `RDX` to `RDI` and `RCX` to `R12`. Thus `RDI` is the same type-`0x2B` office candidate passed by the dispatcher. The updater traverses that office's `+0xC70/+0xC78` vector, loads each truck into `RSI`, checks `truck+0xC80 == 0` at `0x1401C61E6`, and checks `truck+0x4F8 == office` at `0x1401C61F4`. This proves that the candidate truck is from this same type-43 office's fleet; the receiver is established by dataflow, not inferred from matching offsets.
 
 At `0x1401C646E`, `FUN_1401C6050` calls `FUN_1406B8EB0` with `RCX=RSI` (the same fleet truck), with `RDX`, `R8`, and `R9` zero. Before the call, the path requires `office+0xBB0 == 0`, `truck+0xD39 == 0`, `truck+0x698 == 0`, a nonempty `truck+0x680/+0x688` list, `truck+0x528 == 0`, and `truck+0x4F0 == truck+0x4F8`. The loop already established `truck+0x4F8 == office`, so the helper's `truck+0x4F0` receiver is the same office.
 
 ```asm
-; dispatch on metadata type 0x2B; R8 is the office argument
-14013e2ba: 83 B8 60 03 00 00 2B       CMP [RAX+0x360],0x2b
+; FUN_140139A70 prologue and candidate object table
+140139af1: 4C 8B E9                    MOV R13,RCX
+140139bbf: 49 8B 85 10 1B 01 00        MOV RAX,[R13+0x11b10]
+140139bc6: 49 2B 85 08 1B 01 00        SUB RAX,[R13+0x11b08]
+140139bcd: 48 C1 F8 03                 SAR RAX,3
+140139bf0: 49 8B 85 08 1B 01 00        MOV RAX,[R13+0x11b08]
+140139bf7: 48 8B 14 F8                 MOV RDX,[RAX+RDI*8]
+140139bfb: 48 89 54 24 40              MOV [RSP+0x40],RDX
+
+; reload the same candidate, check its metadata type, then dispatch it
+14013e24e: 4C 8B 44 24 40              MOV R8,[RSP+0x40]
+14013e253: 49 8B 80 18 03 00 00        MOV RAX,[R8+0x318]
+14013e2ba: 83 B8 60 03 00 00 2B        CMP dword ptr [RAX+0x360],0x2b
 14013e2c1: 75 10                       JNE 0x14013e2d3
 14013e2c3: 49 8B D0                    MOV RDX,R8
 14013e2c6: 48 8B CE                    MOV RCX,RSI
@@ -220,7 +233,9 @@ In the callee, `RDI=RCX` is still that truck. The complete raw body is 7,687 byt
 
 Thus `truck+0xC80 = office` is a direct, read-only snapshot candidate for an office association on this type-`0x2B` path. `office+0xBB0` receives the value loaded from `truck+0x390`; no evidence here proves that this value equals the truck pointer, is stable across tasks, or identifies a job. Do not call these writes a reciprocal truck-pointer pair or a task start without further lifecycle proof.
 
-The helper's nearby clear logic compares the metadata-kind value at `truck+0x1708+0x294` with `8`, `10`, and `6`. For value `10`, it conditionally clears the current office token and truck association only when the token equals `truck+0x390`; later control can reach the write at `0x1406B9D99`. This is not proof of task removal or replacement. The known type-`0x2B` caller enters with `truck+0xC80 == 0`, and the meaning of these metadata-kind values is unknown.
+The helper also uses `truck+0x390` as a pointer-like internal structure: at `0x1406B91F6` it loads the field and stores that value at `[RCX+0x60]`; at `0x1406B9217/0x1406B921E` it loads the same field and adds `0x4A8`, then treats the result as a vector-like begin/end/capacity structure. This rules out interpreting the copied value as a proven scalar job ID, but does not identify its object type or task semantics.
+
+The helper's nearby clear logic reads the metadata-kind dword through `truck+0x1708`, then compares the pointed object's `+0x294` with `8`, `10`, and `6`. The `== 10` branch conditionally clears the current office token and truck association only when the token equals `truck+0x390`; later control can still reach the write at `0x1406B9D99`. This is not proof of task removal or replacement. The known type-`0x2B` caller enters with `truck+0xC80 == 0`, and the meanings of these metadata-kind values are unknown.
 
 ```asm
 1406b9be8: 48 8B 87 08 17 00 00       MOV RAX,[RDI+0x1708]
@@ -473,10 +488,10 @@ When the object at `vehicle+0x1708` has dword `+0x294 == 10`, the call at `0x140
 ### Why the type-0x2B association is not yet a complete interval signal
 
 - The type-`0x2B` helper writes `truck+0xC80 = office`, but `office+0xBB0 = truck+0x390` is an opaque token, not a proven stable task identity. Two assignments to the same office cannot be distinguished from snapshots if the association remains continuously present.
-- `FUN_1406B8EB0` itself compares the metadata-kind dword at `truck+0x1708+0x294` with `8`, `10`, and `6`. The value meanings are unknown. Its value-`8` path can clear `office+0xBB0` only when it equals `truck+0x390`; its value-`10` path can clear that value and `truck+0xC80` under the same token comparison. These paths can continue to later association writes in the same helper. They do not prove which events are internal stops versus task removal/replacement.
+- `FUN_1406B8EB0` itself reads the metadata-kind dword via `truck+0x1708` and compares the pointed object's `+0x294` with `8`, `10`, and `6`. The value meanings are unknown; this is not a proven vehicle-state field. Its metadata-kind-`8` path can clear `office+0xBB0` only when it equals `truck+0x390`; its metadata-kind-`10` path can clear that value and `truck+0xC80` under the same token comparison. These paths can continue to later association writes in the same helper. They do not prove which events are internal stops versus task removal/replacement.
 - The type-`0x2B` caller's empty-association and route-list guards establish an association-creation candidate, not an unconditional task-start event. It does not prove that every assigned-but-not-loaded task reaches this path.
 - `FUN_1403FBDC0` and `FUN_1406DCF20` are reused cleanup helpers. The type-`0x2B` updater calls `FUN_1403FBDC0` on a fleet vehicle during configuration/update processing; a call alone is not final task removal. The metadata-kind-10 path in `FUN_1406DCF20` compares the DO token with the truck pointer, unlike the observed type-`0x2B` token source `truck+0x390`. No success/cancellation meaning is established.
-- `FUN_14067CB30` resets schedule/list state without writing `truck+0xC80`; this does not prove that the type-`0x2B` association survives every internal stop. Its complete 264-byte body shows the reset paths explicitly:
+- The separately cited type-7 path calls `FUN_14067CB30`, which resets schedule/list state without writing `truck+0xC80`. That helper is not shown on the type-`0x2B` updater's direct call path, so its body does not prove that the type-43 association survives any or all internal stops. Its complete 264-byte body shows the reset paths explicitly:
 
 ```asm
 14067cb30:  48 89 5C 24 08           MOV qword ptr [RSP + 0x8],RBX
@@ -545,8 +560,8 @@ This proves only that this helper's reset does not clear `truck+0xC80`; it does 
 | Required state or transition | What static evidence proves | Interval conclusion |
 |---|---|---|
 | Idle at a DO | The type-`0x2B` candidate path requires `truck+0xC80 == 0`, `office+0xBB0 == 0`, a nonempty route list, and additional truck guards. | These are eligibility guards, not a complete idle definition; retained default/return rows remain unresolved. |
-| Assigned but not yet loaded | The type-`0x2B` helper can write `truck+0xC80 = office` and `office+0xBB0 = truck+0x390`. No load-state mapping is established. | Association-install candidate only; assignment-before-loading is unproved. |
-| Internal pickup/unload stop advancement | `FUN_14067CB30` resets list state without writing `truck+0xC80`, but there is no complete type-`0x2B` stop-transition trace. `FUN_1406B8EB0` also has conditional clear/rewrite paths. | Whether the association survives every internal stop is unresolved. |
+| Assigned but not yet loaded | The type-`0x2B` helper can write `truck+0xC80 = office` and `office+0xBB0 = truck+0x390`. No load-state mapping is established. | Association-write path only; assignment-before-loading is unproved. |
+| Internal pickup/unload stop advancement | The cited `FUN_14067CB30` reset belongs to a separately dispatched type-7 path, not the type-43 updater's direct call path. `FUN_1406B8EB0` also has conditional clear/rewrite paths. | Whether the association survives any or all type-43 internal stops is unresolved. |
 | Final task removal | Generic helpers can clear `truck+0xC80`; the type-`0x2B` helper also conditionally clears `office+0xBB0` when it matches `truck+0x390`. The lifecycle reason for those writes is not proved. | No verified final-removal boundary. |
 | Cancellation or replacement | No proof shows that every cancellation/replacement reaches a distinct clear, or that a clear/rewrite within one helper invocation means replacement rather than an internal transition. | Cannot guarantee a close on cancellation/replacement from snapshots or these candidate stores yet. |
 | Empty return | No mapping ties the type-`0x2B` association clear to the beginning of a return route. | Whether the candidate close precedes all post-removal return travel is unresolved. |
@@ -559,13 +574,13 @@ The requested policy remains: begin on actual assignment to a vehicle working fo
 
 The current schedule observer's bounded fields are useful diagnostics but **insufficient for interval accounting**. A list clear/change, nonempty list, row index, config/storage relocation, opaque UI context, invalid read, or panel closure is not a verified assignment event. For this road-DO path, a read-only snapshot of `truck+0xC80` can indicate the observed office association; `office+0xBB0` is only a comparison token sourced from `truck+0x390`, not a proven reciprocal truck pointer. Snapshots can miss a same-update clear/rewrite and cannot distinguish uninterrupted identical tasks.
 
-If a later guarded native observation is pursued, the type-`0x2B` install candidate is the call `FUN_1401C6050 -> FUN_1406B8EB0` at `0x1401C646E`, with same-truck stores at `0x1406B9D8B` (`office+0xBB0 = truck+0x390`) and `0x1406B9D99` (`truck+0xC80 = office`). Candidate clear sites include `0x1406B9C96/0x1406B9C9D` on the metadata-kind-10 branch and the generic cleanup stores; neither is proven to mean task removal. The exact receiver and token must be guarded, and a same-call clear/rewrite must not be collapsed into a polling snapshot. These are investigation candidates, not a recommended interval hook. No hook is installed. No plugin, dispatch, permissions, defaults, or billing behavior changed.
+If a later guarded native observation is pursued, the type-`0x2B` association-write candidate is the call `FUN_1401C6050 -> FUN_1406B8EB0` at `0x1401C646E`, with same-truck stores at `0x1406B9D8B` (`office+0xBB0 = truck+0x390`) and `0x1406B9D99` (`truck+0xC80 = office`). Candidate clear sites include `0x1406B9C96/0x1406B9C9D` on the metadata-kind-`10` branch and generic cleanup stores; none is proven to mean task removal. The exact receiver and token must be guarded, and a same-call clear/rewrite must not be collapsed into a polling snapshot. These are investigation candidates, not a recommended interval hook. No hook is installed. No plugin, dispatch, permissions, defaults, or billing behavior changed.
 
 Adjacent route evidence on the type-`0x5C` path reads point data from receiver `+0xE90` and feeds it to `FUN_140689290`/a vehicle route-point vector. This establishes route construction only, not a type-`0x2B` payer. No destination-to-payer mapping is verified; cancelled work must not be charged to a guessed party.
 
 ## Smallest missing artifact
 
-No executable input is missing: the identity-matched binary and full `FUN_1406B8EB0` bytes are available. The smallest unresolved artifact is a **receiver-preserving type-`0x2B` lifecycle trace/CFG on one office-fleet truck**, spanning the helper install, internal pickup/unload advancement, replacement/cancellation, and final removal. It must establish what `truck+0x390` represents and prove whether every replacement emits an observable boundary distinct from internal-stop changes, including identical consecutive tasks. A save/load trace is additionally required before claiming interval continuity across reload.
+No executable input is missing: the identity-matched binary and full `FUN_1406B8EB0` bytes are available. The smallest unresolved artifact is a **receiver-preserving type-`0x2B` lifecycle trace/CFG on one office-fleet truck**, spanning the helper association-write path, internal pickup/unload advancement, replacement/cancellation, and final removal. It must establish what `truck+0x390` represents and prove whether every replacement emits an observable boundary distinct from internal-stop changes, including identical consecutive tasks. A save/load trace is additionally required before claiming interval continuity across reload.
 
 Static evidence cannot by itself validate whether idle/default/return entries are retained, whether identical tasks replace without an empty state, or whether the association survives reload. These remain unvalidated. No live-game validation was performed, and no unchanged game replay is requested.
 
@@ -1617,4 +1632,2646 @@ The complete function body follows; addresses are VAs, and each line includes th
 01406C007D: 5B                            POP      rbx
 01406C007E: 5D                            POP      rbp
 01406C007F: C3                            RET
+```
+
+## Type-43 receiver correction and complete raw exports
+
+### Ghidra function metadata and reference output
+
+The configured wrapper was run against the existing `soviet` project. The Ghidra `ListFuncs.java` output for the two relevant entries was:
+
+```text
+0x1406B8EB0  size   7687  FUN_1406b8eb0
+0x1406BACC0  size    746  FUN_1406bacc0
+0x1401C6050  size   3450  FUN_1401c6050
+0x1401C6DD0  size   4038  FUN_1401c6dd0
+```
+
+The bounded wrapper invocations were:
+
+```text
+scratch\ghidra_run.bat ListFuncs.java <out> 0x1401C6050 0x1401C6DD0
+scratch\ghidra_run.bat ListFuncs.java <out> 0x1406B8EB0 0x1406BAD00
+scratch\ghidra_run.bat DisasmMany.java <out> 0x1406B8EB0:0x1406BACB7
+scratch\ghidra_run.bat DisasmMany.java <out> 0x1401C6050:0x1401C6DCF
+scratch\ghidra_run.bat DisasmMany.java <out> 0x140139BBF:0x140139C20 0x14013E249:0x14013E2CE
+scratch\ghidra_run.bat Xrefs.java <out> 0x1406B8EB0 0x1401C6050 0x1403FBDC0 0x1406DCF20
+scratch\ghidra_run.bat DecompAt.java <out> 0x1406B8EB0
+```
+
+`<out>` was a session-local output path, not a repository file. The wrapper was invoked from `C:\WRSRE`; it resolves the configured Ghidra installation, project, executable, and script paths.
+
+`DecompAt.java` reports the helper signature as:
+
+```c
+undefined8 FUN_1406b8eb0(longlong param_1, char param_2,
+                         char param_3, undefined8 param_4)
+```
+
+At the type-43 caller, `RCX=truck` and `RDX=R8=R9=0`. The helper is shared: Ghidra's `Xrefs.java` output contains 68 direct call references and two data references to `FUN_1406B8EB0`; the type-43 call is `0x1401C646E` in `FUN_1401C6050`. For `FUN_1401C6050`, Ghidra reports one direct call reference, from `0x14013E2C9` in `FUN_140139A70`, plus two data references. The other helper callers do not inherit type-43 receiver provenance merely because they call the same address.
+
+The Ghidra `DisasmMany.java` export of `FUN_1406B8EB0` covers 1,710 instructions and 7,687 bytes through `RET` at `0x1406BACB6`. Its instruction-byte stream is byte-for-byte identical to the direct executable decode (SHA-256 of concatenated instruction bytes: `5B1D991A86B7DA19466A5F85851B9D4B291868960840D36685EC1D80474165CA`).
+
+For `FUN_1401C6050`, the PE exception-directory range is `0x1401C6050..0x1401C6DCF` (end exclusive, 3,455 bytes). Direct decoding covers 743 instructions including the five-byte `NOP` at `0x1401C61CB`. Ghidra's function body is 3,450 bytes and its instruction listing omits only that NOP; the next instruction resumes at `0x1401C61D0`. The last instruction in both exports is `RET` at `0x1401C6DCE`. The omitted alignment bytes are restored in the complete direct listing below.
+
+The type-43 dispatcher export is bounded to the candidate-table setup and the relevant type-dispatch block, rather than dumping the entire 20,964-byte dispatcher. The Ghidra listing at `0x14013E2BA` confirms the bytes `83 B8 60 03 00 00 2B`; at `0x14013E2C9` the call bytes are `E8 82 7D 08 00`, targeting `0x1401C6050`. `FUN_140139A70` begins earlier at `0x140139A70`. An earlier `ListFuncs.java` query starting at `0x14013E000` returned no functions because that script iterates function entries at or after the requested start and does not include an enclosing function whose entry is earlier; the direct caller reference and bounded disassembly establish the correct containing function.
+
+### Corrected contiguous route-call bytes
+
+The direct re-export of `0x1401B2580..0x1401B26E0` was made from the identity-verified executable, not inferred from a decompilation:
+
+```text
+sha256=296644A9F207D609031FC2AE73FED2DCB34619A1D55A35D1C7B51965CE6841B8
+00000001401B26C0: CF E8 CA 6B 4D 00 48 8B 96 90 0E 00 00 48 03 D3
+00000001401B26C1: E8 CA 6B 4D 00              CALL 0x140689290
+00000001401B26C4: 4D 00 48 8B 96             ; these are bytes, not an instruction start
+00000001401B26C6: 48 8B 96 90 0E 00 00       MOV RDX,[RSI+0xE90]
+```
+
+Thus the supplied `E8` at `0x1401B26C4` does not match the verified file: the actual `E8` is at `0x1401B26C1`. The five-byte relative call ends at `0x1401B26C6`, exactly where the `MOV` begins; there is no overlap. The existing contiguous 352-byte dump above is the complete requested `0x1401B2580..0x1401B26E0` window.
+
+### Reproduction script and actual summary output
+
+This script verifies the executable identity, resolves the two code ranges from the PE exception directory, decodes all bytes directly, and reprints the aligned route-call window. It writes no files.
+
+```python
+from pathlib import Path
+import hashlib
+import struct
+from capstone import Cs, CS_ARCH_X86, CS_MODE_64
+
+exe = Path(r"C:\Workers Resources Soviet Republic\SOVIET64.exe")
+expected_sha256 = "296644A9F207D609031FC2AE73FED2DCB34619A1D55A35D1C7B51965CE6841B8"
+expected_timestamp = 0x6A3EB6AD
+expected_base = 0x140000000
+data = exe.read_bytes()
+sha256 = hashlib.sha256(data).hexdigest().upper()
+pe = struct.unpack_from("<I", data, 0x3C)[0]
+timestamp = struct.unpack_from("<I", data, pe + 8)[0]
+section_count = struct.unpack_from("<H", data, pe + 6)[0]
+optional_size = struct.unpack_from("<H", data, pe + 20)[0]
+optional = pe + 24
+image_base = struct.unpack_from("<Q", data, optional + 24)[0]
+if (sha256, timestamp, image_base) != (
+    expected_sha256, expected_timestamp, expected_base
+):
+    raise ValueError("Executable identity mismatch")
+
+section_table = optional + optional_size
+sections = []
+for index in range(section_count):
+    offset = section_table + index * 40
+    virtual_size, rva, raw_size, raw_offset = struct.unpack_from(
+        "<IIII", data, offset + 8
+    )
+    sections.append((rva, raw_size, raw_offset))
+
+def read_va(va, size):
+    rva = va - image_base
+    for section_rva, raw_size, raw_offset in sections:
+        if section_rva <= rva and rva + size <= section_rva + raw_size:
+            offset = raw_offset + rva - section_rva
+            return data[offset:offset + size]
+    raise ValueError(f"VA outside a raw PE section: {va:#x}")
+
+exception_rva, exception_size = struct.unpack_from(
+    "<II", data, optional + 112 + 3 * 8
+)
+exception_table = read_va(image_base + exception_rva, exception_size)
+runtime_functions = [
+    struct.unpack_from("<III", exception_table, offset)
+    for offset in range(0, len(exception_table), 12)
+]
+
+def function_bounds(entry_va):
+    entry_rva = entry_va - image_base
+    matches = [
+        (begin, end)
+        for begin, end, unwind in runtime_functions
+        if begin <= entry_rva < end
+    ]
+    if len(matches) != 1:
+        raise ValueError(f"Expected one runtime-function range at {entry_va:#x}")
+    begin, end = matches[0]
+    return image_base + begin, image_base + end
+
+decoder = Cs(CS_ARCH_X86, CS_MODE_64)
+print("SHA256", sha256, "TIMESTAMP", hex(timestamp), "IMAGE_BASE", hex(image_base))
+for entry in (0x1406B8EB0, 0x1401C6050):
+    start, end = function_bounds(entry)
+    body = read_va(start, end - start)
+    instructions = list(decoder.disasm(body, start))
+    decoded_size = sum(instruction.size for instruction in instructions)
+    if decoded_size != end - start or instructions[-1].address + instructions[-1].size != end:
+        raise ValueError(f"Incomplete decode for {start:#x}..{end:#x}")
+    if instructions[-1].mnemonic != "ret":
+        raise ValueError(f"Unexpected function tail at {instructions[-1].address:#x}")
+    print(
+        f"FUNCTION {start:#x}..{end:#x} bytes={len(body)} "
+        f"instructions={len(instructions)} end={instructions[-1].address:#x} RET"
+    )
+    for instruction in instructions:
+        raw = instruction.bytes.hex(" ").upper()
+        print(
+            f"{instruction.address:016X}: {raw:<40} "
+            f"{instruction.mnemonic.upper():<8} {instruction.op_str}"
+        )
+
+window_start, window_end = 0x1401B2580, 0x1401B26E0
+window = read_va(window_start, window_end - window_start)
+print(f"WINDOW {window_start:#x}..{window_end:#x} bytes={len(window)}")
+for offset in range(0, len(window), 16):
+    print(f"{window_start + offset:016X}: {window[offset:offset + 16].hex(' ').upper()}")
+print("ALIGNED ROUTE-CALL DECODE")
+for instruction in decoder.disasm(read_va(0x1401B258C, window_end - 0x1401B258C),
+                                  0x1401B258C):
+    if instruction.address >= 0x1401B26BE:
+        raw = instruction.bytes.hex(" ").upper()
+        print(f"{instruction.address:016X}: {raw:<27} {instruction.mnemonic.upper():<8} {instruction.op_str}")
+```
+
+Actual direct-decode summary:
+
+```text
+SHA256 296644A9F207D609031FC2AE73FED2DCB34619A1D55A35D1C7B51965CE6841B8 TIMESTAMP 0x6a3eb6ad IMAGE_BASE 0x140000000
+FUNCTION 0x1406b8eb0..0x1406bacb7 bytes=7687 instructions=1710 end=0x1406bacb6 RET
+FUNCTION 0x1401c6050..0x1401c6dcf bytes=3455 instructions=743 end=0x1401c6dce RET
+WINDOW 0x1401b2580..0x1401b26e0 bytes=352
+00000001401B26C0: CF E8 CA 6B 4D 00 48 8B 96 90 0E 00 00 48 03 D3
+ALIGNED ROUTE-CALL DECODE
+00000001401B26BE: 48 8B CF                    MOV      RCX,RDI
+00000001401B26C1: E8 CA 6B 4D 00              CALL     0x140689290
+00000001401B26C6: 48 8B 96 90 0E 00 00        MOV      RDX,[RSI+0xE90]
+00000001401B26CD: 48 03 D3                    ADD      RDX,RBX
+00000001401B26D0: 49 8B CC                    MOV      RCX,R12
+00000001401B26D3: E8 18 CC E7 FF              CALL     0x14002F2F0
+00000001401B26D0: 49 8B CC                    MOV      RCX,R12
+00000001401B26D3: E8 18 CC E7 FF              CALL     0x14002F2F0
+```
+
+### Complete direct raw bodies
+
+The following are complete contiguous direct decodes from the identity-verified executable. The `FUN_1401C6050` body includes the five-byte alignment NOP omitted from Ghidra's listing. The complete `FUN_1406B8EB0` body is included once; its Ghidra byte-stream comparison is recorded above.
+
+#### `FUN_1401C6050` — type-43 office updater
+
+```asm
+00000001401C6050: 48 8B C4                                 MOV      rax, rsp
+00000001401C6053: 48 89 48 08                              MOV      qword ptr [rax + 8], rcx
+00000001401C6057: 55                                       PUSH     rbp
+00000001401C6058: 53                                       PUSH     rbx
+00000001401C6059: 56                                       PUSH     rsi
+00000001401C605A: 57                                       PUSH     rdi
+00000001401C605B: 41 54                                    PUSH     r12
+00000001401C605D: 41 55                                    PUSH     r13
+00000001401C605F: 41 56                                    PUSH     r14
+00000001401C6061: 41 57                                    PUSH     r15
+00000001401C6063: 48 8D A8 78 FD FF FF                     LEA      rbp, [rax - 0x288]
+00000001401C606A: 48 81 EC 48 03 00 00                     SUB      rsp, 0x348
+00000001401C6071: 48 C7 45 88 FE FF FF FF                  MOV      qword ptr [rbp - 0x78], 0xfffffffffffffffe
+00000001401C6079: 0F 29 70 A8                              MOVAPS   xmmword ptr [rax - 0x58], xmm6
+00000001401C607D: 0F 29 78 98                              MOVAPS   xmmword ptr [rax - 0x68], xmm7
+00000001401C6081: 44 0F 29 40 88                           MOVAPS   xmmword ptr [rax - 0x78], xmm8
+00000001401C6086: 44 0F 29 88 78 FF FF FF                  MOVAPS   xmmword ptr [rax - 0x88], xmm9
+00000001401C608E: 44 0F 29 90 68 FF FF FF                  MOVAPS   xmmword ptr [rax - 0x98], xmm10
+00000001401C6096: 44 0F 29 98 58 FF FF FF                  MOVAPS   xmmword ptr [rax - 0xa8], xmm11
+00000001401C609E: 44 0F 29 A0 48 FF FF FF                  MOVAPS   xmmword ptr [rax - 0xb8], xmm12
+00000001401C60A6: 44 0F 29 A8 38 FF FF FF                  MOVAPS   xmmword ptr [rax - 0xc8], xmm13
+00000001401C60AE: 44 0F 29 B0 28 FF FF FF                  MOVAPS   xmmword ptr [rax - 0xd8], xmm14
+00000001401C60B6: 44 0F 29 B8 18 FF FF FF                  MOVAPS   xmmword ptr [rax - 0xe8], xmm15
+00000001401C60BE: 48 8B FA                                 MOV      rdi, rdx
+00000001401C60C1: 4C 8B E1                                 MOV      r12, rcx
+00000001401C60C4: 0F 57 C0                                 XORPS    xmm0, xmm0
+00000001401C60C7: F3 0F 7F 44 24 50                        MOVDQU   xmmword ptr [rsp + 0x50], xmm0
+00000001401C60CD: 45 33 ED                                 XOR      r13d, r13d
+00000001401C60D0: 41 8B C5                                 MOV      eax, r13d
+00000001401C60D3: 48 89 85 A0 02 00 00                     MOV      qword ptr [rbp + 0x2a0], rax
+00000001401C60DA: 48 89 44 24 60                           MOV      qword ptr [rsp + 0x60], rax
+00000001401C60DF: F3 0F 10 B2 C0 0F 00 00                  MOVSS    xmm6, dword ptr [rdx + 0xfc0]
+00000001401C60E7: 45 0F 57 C0                              XORPS    xmm8, xmm8
+00000001401C60EB: F3 0F 10 3D 09 3A 74 00                  MOVSS    xmm7, dword ptr [rip + 0x743a09]
+00000001401C60F3: 41 0F 2F F0                              COMISS   xmm6, xmm8
+00000001401C60F7: 76 22                                    JBE      0x1401c611b
+00000001401C60F9: 45 33 C9                                 XOR      r9d, r9d
+00000001401C60FC: 45 33 C0                                 XOR      r8d, r8d
+00000001401C60FF: 0F 28 CF                                 MOVAPS   xmm1, xmm7
+00000001401C6102: 48 8D 0D D7 ED 80 00                     LEA      rcx, [rip + 0x80edd7]
+00000001401C6109: FF 15 19 5F 6A 00                        CALL     qword ptr [rip + 0x6a5f19]
+00000001401C610F: F3 0F 5C F0                              SUBSS    xmm6, xmm0
+00000001401C6113: F3 0F 11 B7 C0 0F 00 00                  MOVSS    dword ptr [rdi + 0xfc0], xmm6
+00000001401C611B: F3 0F 10 B7 28 10 00 00                  MOVSS    xmm6, dword ptr [rdi + 0x1028]
+00000001401C6123: 41 0F 2F F0                              COMISS   xmm6, xmm8
+00000001401C6127: 76 22                                    JBE      0x1401c614b
+00000001401C6129: 45 33 C9                                 XOR      r9d, r9d
+00000001401C612C: 45 33 C0                                 XOR      r8d, r8d
+00000001401C612F: 0F 28 CF                                 MOVAPS   xmm1, xmm7
+00000001401C6132: 48 8D 0D A7 ED 80 00                     LEA      rcx, [rip + 0x80eda7]
+00000001401C6139: FF 15 E9 5E 6A 00                        CALL     qword ptr [rip + 0x6a5ee9]
+00000001401C613F: F3 0F 5C F0                              SUBSS    xmm6, xmm0
+00000001401C6143: F3 0F 11 B7 28 10 00 00                  MOVSS    dword ptr [rdi + 0x1028], xmm6
+00000001401C614B: 41 8B DD                                 MOV      ebx, r13d
+00000001401C614E: 89 9D 98 02 00 00                        MOV      dword ptr [rbp + 0x298], ebx
+00000001401C6154: 4C 8D BF 70 0C 00 00                     LEA      r15, [rdi + 0xc70]
+00000001401C615B: 49 8B 47 08                              MOV      rax, qword ptr [r15 + 8]
+00000001401C615F: 49 2B 07                                 SUB      rax, qword ptr [r15]
+00000001401C6162: 48 C1 F8 03                              SAR      rax, 3
+00000001401C6166: F3 44 0F 10 15 F9 47 74 00               MOVSS    xmm10, dword ptr [rip + 0x7447f9]
+00000001401C616F: F3 44 0F 10 1D 08 41 74 00               MOVSS    xmm11, dword ptr [rip + 0x744108]
+00000001401C6178: F3 44 0F 10 25 7B 49 74 00               MOVSS    xmm12, dword ptr [rip + 0x74497b]
+00000001401C6181: F3 44 0F 10 2D 8E 44 74 00               MOVSS    xmm13, dword ptr [rip + 0x74448e]
+00000001401C618A: F3 44 0F 10 35 C5 3D 74 00               MOVSS    xmm14, dword ptr [rip + 0x743dc5]
+00000001401C6193: 48 85 C0                                 TEST     rax, rax
+00000001401C6196: 0F 84 56 08 00 00                        JE       0x1401c69f2
+00000001401C619C: 4D 8B F5                                 MOV      r14, r13
+00000001401C619F: 4C 89 6D 80                              MOV      qword ptr [rbp - 0x80], r13
+00000001401C61A3: 49 B8 AB AA AA AA AA AA AA 2A            MOVABS   r8, 0x2aaaaaaaaaaaaaab
+00000001401C61AD: 49 BB 25 49 92 24 49 92 24 49            MOVABS   r11, 0x4924924924924925
+00000001401C61B7: F3 44 0F 10 3D D0 39 74 00               MOVSS    xmm15, dword ptr [rip + 0x7439d0]
+00000001401C61C0: F3 44 0F 10 0D 37 51 74 00               MOVSS    xmm9, dword ptr [rip + 0x745137]
+00000001401C61C9: EB 0D                                    JMP      0x1401c61d8
+00000001401C61CB: 0F 1F 44 00 00                           NOP      dword ptr [rax + rax]
+00000001401C61D0: F3 0F 10 3D 24 39 74 00                  MOVSS    xmm7, dword ptr [rip + 0x743924]
+00000001401C61D8: 49 8B 07                                 MOV      rax, qword ptr [r15]
+00000001401C61DB: 4A 8B 34 F0                              MOV      rsi, qword ptr [rax + r14*8]
+00000001401C61DF: 48 89 B5 A8 02 00 00                     MOV      qword ptr [rbp + 0x2a8], rsi
+00000001401C61E6: 48 83 BE 80 0C 00 00 00                  CMP      qword ptr [rsi + 0xc80], 0
+00000001401C61EE: 0F 85 C4 07 00 00                        JNE      0x1401c69b8
+00000001401C61F4: 48 39 BE F8 04 00 00                     CMP      qword ptr [rsi + 0x4f8], rdi
+00000001401C61FB: 0F 85 B7 07 00 00                        JNE      0x1401c69b8
+00000001401C6201: 48 83 BE 00 06 00 00 00                  CMP      qword ptr [rsi + 0x600], 0
+00000001401C6209: 74 37                                    JE       0x1401c6242
+00000001401C620B: 48 83 BE 28 05 00 00 00                  CMP      qword ptr [rsi + 0x528], 0
+00000001401C6213: 75 2D                                    JNE      0x1401c6242
+00000001401C6215: 48 8B D6                                 MOV      rdx, rsi
+00000001401C6218: 49 8B CC                                 MOV      rcx, r12
+00000001401C621B: E8 80 6B 23 00                           CALL     0x1403fcda0
+00000001401C6220: 84 C0                                    TEST     al, al
+00000001401C6222: 74 0A                                    JE       0x1401c622e
+00000001401C6224: FF CB                                    DEC      ebx
+00000001401C6226: 49 FF CE                                 DEC      r14
+00000001401C6229: E9 8A 07 00 00                           JMP      0x1401c69b8
+00000001401C622E: 49 B8 AB AA AA AA AA AA AA 2A            MOVABS   r8, 0x2aaaaaaaaaaaaaab
+00000001401C6238: 49 BB 25 49 92 24 49 92 24 49            MOVABS   r11, 0x4924924924924925
+00000001401C6242: 41 83 BC 24 B0 05 00 00 02               CMP      dword ptr [r12 + 0x5b0], 2
+00000001401C624B: 0F 85 87 01 00 00                        JNE      0x1401c63d8
+00000001401C6251: 44 0F 2F 86 F0 05 00 00                  COMISS   xmm8, dword ptr [rsi + 0x5f0]
+00000001401C6259: 0F 82 79 01 00 00                        JB       0x1401c63d8
+00000001401C625F: 48 8B 86 F8 04 00 00                     MOV      rax, qword ptr [rsi + 0x4f8]
+00000001401C6266: 48 39 86 F0 04 00 00                     CMP      qword ptr [rsi + 0x4f0], rax
+00000001401C626D: 0F 85 45 07 00 00                        JNE      0x1401c69b8
+00000001401C6273: 48 83 BE 28 05 00 00 00                  CMP      qword ptr [rsi + 0x528], 0
+00000001401C627B: 0F 85 37 07 00 00                        JNE      0x1401c69b8
+00000001401C6281: 48 8B 8E 40 07 00 00                     MOV      rcx, qword ptr [rsi + 0x740]
+00000001401C6288: 48 2B 8E 38 07 00 00                     SUB      rcx, qword ptr [rsi + 0x738]
+00000001401C628F: 49 8B C0                                 MOV      rax, r8
+00000001401C6292: 48 F7 E9                                 IMUL     rcx
+00000001401C6295: 48 D1 FA                                 SAR      rdx, 1
+00000001401C6298: 48 8B C2                                 MOV      rax, rdx
+00000001401C629B: 48 C1 E8 3F                              SHR      rax, 0x3f
+00000001401C629F: 48 03 D0                                 ADD      rdx, rax
+00000001401C62A2: 74 31                                    JE       0x1401c62d5
+00000001401C62A4: 48 8B 8E 40 07 00 00                     MOV      rcx, qword ptr [rsi + 0x740]
+00000001401C62AB: 48 2B 8E 38 07 00 00                     SUB      rcx, qword ptr [rsi + 0x738]
+00000001401C62B2: 49 8B C0                                 MOV      rax, r8
+00000001401C62B5: 48 F7 E9                                 IMUL     rcx
+00000001401C62B8: 48 D1 FA                                 SAR      rdx, 1
+00000001401C62BB: 48 8B C2                                 MOV      rax, rdx
+00000001401C62BE: 48 C1 E8 3F                              SHR      rax, 0x3f
+00000001401C62C2: 48 03 D0                                 ADD      rdx, rax
+00000001401C62C5: 48 63 86 68 07 00 00                     MOVSXD   rax, dword ptr [rsi + 0x768]
+00000001401C62CC: 48 3B C2                                 CMP      rax, rdx
+00000001401C62CF: 0F 82 E3 06 00 00                        JB       0x1401c69b8
+00000001401C62D5: C6 86 FC 05 00 00 01                     MOV      byte ptr [rsi + 0x5fc], 1
+00000001401C62DC: 4C 8B 96 F8 04 00 00                     MOV      r10, qword ptr [rsi + 0x4f8]
+00000001401C62E3: 49 8B D2                                 MOV      rdx, r10
+00000001401C62E6: 49 8B CC                                 MOV      rcx, r12
+00000001401C62E9: E8 F2 5C FF FF                           CALL     0x1401bbfe0
+00000001401C62EE: 84 C0                                    TEST     al, al
+00000001401C62F0: 0F 85 C2 06 00 00                        JNE      0x1401c69b8
+00000001401C62F6: 49 8B 8A 78 09 00 00                     MOV      rcx, qword ptr [r10 + 0x978]
+00000001401C62FD: 49 2B 8A 70 09 00 00                     SUB      rcx, qword ptr [r10 + 0x970]
+00000001401C6304: 49 8B C3                                 MOV      rax, r11
+00000001401C6307: 48 F7 E9                                 IMUL     rcx
+00000001401C630A: 48 C1 FA 06                              SAR      rdx, 6
+00000001401C630E: 4C 8B CA                                 MOV      r9, rdx
+00000001401C6311: 49 C1 E9 3F                              SHR      r9, 0x3f
+00000001401C6315: 4C 03 CA                                 ADD      r9, rdx
+00000001401C6318: 41 83 E9 01                              SUB      r9d, 1
+00000001401C631C: 0F 88 96 06 00 00                        JS       0x1401c69b8
+00000001401C6322: 4D 63 C1                                 MOVSXD   r8, r9d
+00000001401C6325: 49 69 D0 E0 00 00 00                     IMUL     rdx, r8, 0xe0
+00000001401C632C: 0F 1F 40 00                              NOP      dword ptr [rax]
+00000001401C6330: 49 8B 82 70 09 00 00                     MOV      rax, qword ptr [r10 + 0x970]
+00000001401C6337: 48 8B 4C 02 08                           MOV      rcx, qword ptr [rdx + rax + 8]
+00000001401C633C: 48 2B 0C 02                              SUB      rcx, qword ptr [rdx + rax]
+00000001401C6340: 48 C1 F9 04                              SAR      rcx, 4
+00000001401C6344: 48 85 C9                                 TEST     rcx, rcx
+00000001401C6347: 74 11                                    JE       0x1401c635a
+00000001401C6349: 48 8B 0C 02                              MOV      rcx, qword ptr [rdx + rax]
+00000001401C634D: 49 8B 84 24 E0 C2 00 00                  MOV      rax, qword ptr [r12 + 0xc2e0]
+00000001401C6355: 48 39 01                                 CMP      qword ptr [rcx], rax
+00000001401C6358: 74 16                                    JE       0x1401c6370
+00000001401C635A: 41 FF C9                                 DEC      r9d
+00000001401C635D: 48 81 EA E0 00 00 00                     SUB      rdx, 0xe0
+00000001401C6364: 49 83 E8 01                              SUB      r8, 1
+00000001401C6368: 0F 88 4A 06 00 00                        JS       0x1401c69b8
+00000001401C636E: EB C0                                    JMP      0x1401c6330
+00000001401C6370: 49 63 C1                                 MOVSXD   rax, r9d
+00000001401C6373: 48 69 C0 E0 00 00 00                     IMUL     rax, rax, 0xe0
+00000001401C637A: 49 03 82 70 09 00 00                     ADD      rax, qword ptr [r10 + 0x970]
+00000001401C6381: 48 8B 00                                 MOV      rax, qword ptr [rax]
+00000001401C6384: F3 0F 10 40 08                           MOVSS    xmm0, dword ptr [rax + 8]
+00000001401C6389: F3 41 0F 58 C0                           ADDSS    xmm0, xmm8
+00000001401C638E: 41 0F 2F C7                              COMISS   xmm0, xmm15
+00000001401C6392: 0F 86 20 06 00 00                        JBE      0x1401c69b8
+00000001401C6398: C6 86 FC 05 00 00 00                     MOV      byte ptr [rsi + 0x5fc], 0
+00000001401C639F: 4C 89 96 28 05 00 00                     MOV      qword ptr [rsi + 0x528], r10
+00000001401C63A6: 4C 89 96 E8 05 00 00                     MOV      qword ptr [rsi + 0x5e8], r10
+00000001401C63AD: 4C 89 AE 5C 05 00 00                     MOV      qword ptr [rsi + 0x55c], r13
+00000001401C63B4: 4C 89 AE 94 05 00 00                     MOV      qword ptr [rsi + 0x594], r13
+00000001401C63BB: C7 86 68 05 00 00 00 00 80 3F            MOV      dword ptr [rsi + 0x568], 0x3f800000
+00000001401C63C5: 44 89 AE 9C 17 00 00                     MOV      dword ptr [rsi + 0x179c], r13d
+00000001401C63CC: 44 89 AE 64 05 00 00                     MOV      dword ptr [rsi + 0x564], r13d
+00000001401C63D3: E9 E0 05 00 00                           JMP      0x1401c69b8
+00000001401C63D8: F3 0F 10 B6 08 05 00 00                  MOVSS    xmm6, dword ptr [rsi + 0x508]
+00000001401C63E0: 41 0F 2F F0                              COMISS   xmm6, xmm8
+00000001401C63E4: 76 22                                    JBE      0x1401c6408
+00000001401C63E6: 45 33 C9                                 XOR      r9d, r9d
+00000001401C63E9: 45 33 C0                                 XOR      r8d, r8d
+00000001401C63EC: 0F 28 CF                                 MOVAPS   xmm1, xmm7
+00000001401C63EF: 48 8D 0D EA EA 80 00                     LEA      rcx, [rip + 0x80eaea]
+00000001401C63F6: FF 15 2C 5C 6A 00                        CALL     qword ptr [rip + 0x6a5c2c]
+00000001401C63FC: F3 0F 5C F0                              SUBSS    xmm6, xmm0
+00000001401C6400: F3 0F 11 B6 08 05 00 00                  MOVSS    dword ptr [rsi + 0x508], xmm6
+00000001401C6408: 48 83 BF B0 0B 00 00 00                  CMP      qword ptr [rdi + 0xbb0], 0
+00000001401C6410: 0F 85 82 00 00 00                        JNE      0x1401c6498
+00000001401C6416: 44 0F 2F 86 08 05 00 00                  COMISS   xmm8, dword ptr [rsi + 0x508]
+00000001401C641E: 72 78                                    JB       0x1401c6498
+00000001401C6420: 80 BE 39 0D 00 00 00                     CMP      byte ptr [rsi + 0xd39], 0
+00000001401C6427: 75 7C                                    JNE      0x1401c64a5
+00000001401C6429: 83 BE 98 06 00 00 00                     CMP      dword ptr [rsi + 0x698], 0
+00000001401C6430: 75 66                                    JNE      0x1401c6498
+00000001401C6432: 48 8B 86 88 06 00 00                     MOV      rax, qword ptr [rsi + 0x688]
+00000001401C6439: 48 2B 86 80 06 00 00                     SUB      rax, qword ptr [rsi + 0x680]
+00000001401C6440: 48 C1 F8 03                              SAR      rax, 3
+00000001401C6444: 48 85 C0                                 TEST     rax, rax
+00000001401C6447: 74 4F                                    JE       0x1401c6498
+00000001401C6449: 48 83 BE 28 05 00 00 00                  CMP      qword ptr [rsi + 0x528], 0
+00000001401C6451: 75 45                                    JNE      0x1401c6498
+00000001401C6453: 48 8B 86 F8 04 00 00                     MOV      rax, qword ptr [rsi + 0x4f8]
+00000001401C645A: 48 39 86 F0 04 00 00                     CMP      qword ptr [rsi + 0x4f0], rax
+00000001401C6461: 75 35                                    JNE      0x1401c6498
+00000001401C6463: 45 33 C9                                 XOR      r9d, r9d
+00000001401C6466: 45 33 C0                                 XOR      r8d, r8d
+00000001401C6469: 33 D2                                    XOR      edx, edx
+00000001401C646B: 48 8B CE                                 MOV      rcx, rsi
+00000001401C646E: E8 3D 2A 4F 00                           CALL     0x1406b8eb0
+00000001401C6473: 4C 89 AE 18 05 00 00                     MOV      qword ptr [rsi + 0x518], r13
+00000001401C647A: 84 C0                                    TEST     al, al
+00000001401C647C: 74 09                                    JE       0x1401c6487
+00000001401C647E: 4C 89 AE 20 05 00 00                     MOV      qword ptr [rsi + 0x520], r13
+00000001401C6485: EB 11                                    JMP      0x1401c6498
+00000001401C6487: 48 8B 86 80 06 00 00                     MOV      rax, qword ptr [rsi + 0x680]
+00000001401C648E: 48 8B 08                                 MOV      rcx, qword ptr [rax]
+00000001401C6491: 48 89 8E 20 05 00 00                     MOV      qword ptr [rsi + 0x520], rcx
+00000001401C6498: 80 BE 39 0D 00 00 00                     CMP      byte ptr [rsi + 0xd39], 0
+00000001401C649F: 0F 84 3A 04 00 00                        JE       0x1401c68df
+00000001401C64A5: 66 C7 44 24 40 00 00                     MOV      word ptr [rsp + 0x40], 0
+00000001401C64AC: 44 89 6C 24 44                           MOV      dword ptr [rsp + 0x44], r13d
+00000001401C64B1: 41 0F 28 F0                              MOVAPS   xmm6, xmm8
+00000001401C64B5: F3 0F 11 74 24 48                        MOVSS    dword ptr [rsp + 0x48], xmm6
+00000001401C64BB: 41 0F 28 F8                              MOVAPS   xmm7, xmm8
+00000001401C64BF: F3 0F 11 7C 24 4C                        MOVSS    dword ptr [rsp + 0x4c], xmm7
+00000001401C64C5: 48 8D 4D 90                              LEA      rcx, [rbp - 0x70]
+00000001401C64C9: E8 82 72 F2 FF                           CALL     0x1400ed750
+00000001401C64CE: 90                                       NOP
+00000001401C64CF: C6 86 39 0D 00 00 00                     MOV      byte ptr [rsi + 0xd39], 0
+00000001401C64D6: 48 C7 45 40 01 00 00 00                  MOV      qword ptr [rbp + 0x40], 1
+00000001401C64DE: 49 8B 47 08                              MOV      rax, qword ptr [r15 + 8]
+00000001401C64E2: 49 2B 07                                 SUB      rax, qword ptr [r15]
+00000001401C64E5: 48 C1 F8 03                              SAR      rax, 3
+00000001401C64E9: 48 83 F8 01                              CMP      rax, 1
+00000001401C64ED: 72 1B                                    JB       0x1401c650a
+00000001401C64EF: 49 8B D7                                 MOV      rdx, r15
+00000001401C64F2: 48 8D 4C 24 40                           LEA      rcx, [rsp + 0x40]
+00000001401C64F7: E8 E4 D4 27 00                           CALL     0x1404439e0
+00000001401C64FC: F3 0F 10 7C 24 4C                        MOVSS    xmm7, dword ptr [rsp + 0x4c]
+00000001401C6502: F3 0F 10 74 24 48                        MOVSS    xmm6, dword ptr [rsp + 0x48]
+00000001401C6508: EB 3E                                    JMP      0x1401c6548
+00000001401C650A: 66 C7 44 24 40 01 00                     MOV      word ptr [rsp + 0x40], 1
+00000001401C6511: 48 8B 87 18 03 00 00                     MOV      rax, qword ptr [rdi + 0x318]
+00000001401C6518: 48 85 C0                                 TEST     rax, rax
+00000001401C651B: 74 1B                                    JE       0x1401c6538
+00000001401C651D: 83 B8 60 03 00 00 09                     CMP      dword ptr [rax + 0x360], 9
+00000001401C6524: 75 22                                    JNE      0x1401c6548
+00000001401C6526: C7 44 24 44 00 01 00 00                  MOV      dword ptr [rsp + 0x44], 0x100
+00000001401C652E: 41 0F 28 F2                              MOVAPS   xmm6, xmm10
+00000001401C6532: 41 0F 28 FB                              MOVAPS   xmm7, xmm11
+00000001401C6536: EB 10                                    JMP      0x1401c6548
+00000001401C6538: C7 44 24 44 00 10 00 00                  MOV      dword ptr [rsp + 0x44], 0x1000
+00000001401C6540: 41 0F 28 F4                              MOVAPS   xmm6, xmm12
+00000001401C6544: 41 0F 28 FD                              MOVAPS   xmm7, xmm13
+00000001401C6548: F3 0F 10 44 24 40                        MOVSS    xmm0, dword ptr [rsp + 0x40]
+00000001401C654E: F3 0F 11 44 24 70                        MOVSS    dword ptr [rsp + 0x70], xmm0
+00000001401C6554: F3 0F 10 4C 24 44                        MOVSS    xmm1, dword ptr [rsp + 0x44]
+00000001401C655A: F3 0F 11 4C 24 74                        MOVSS    dword ptr [rsp + 0x74], xmm1
+00000001401C6560: 0F B6 44 24 70                           MOVZX    eax, byte ptr [rsp + 0x70]
+00000001401C6565: 88 45 9C                                 MOV      byte ptr [rbp - 0x64], al
+00000001401C6568: 8B 44 24 74                              MOV      eax, dword ptr [rsp + 0x74]
+00000001401C656C: 89 45 B0                                 MOV      dword ptr [rbp - 0x50], eax
+00000001401C656F: 0F B6 44 24 71                           MOVZX    eax, byte ptr [rsp + 0x71]
+00000001401C6574: 88 45 A5                                 MOV      byte ptr [rbp - 0x5b], al
+00000001401C6577: 41 0F 2F F6                              COMISS   xmm6, xmm14
+00000001401C657B: 76 1B                                    JBE      0x1401c6598
+00000001401C657D: F3 0F 11 75 BC                           MOVSS    dword ptr [rbp - 0x44], xmm6
+00000001401C6582: F3 0F 10 05 72 35 74 00                  MOVSS    xmm0, dword ptr [rip + 0x743572]
+00000001401C658A: 0F 2F C6                                 COMISS   xmm0, xmm6
+00000001401C658D: 76 10                                    JBE      0x1401c659f
+00000001401C658F: C7 45 BC 6F 12 83 3A                     MOV      dword ptr [rbp - 0x44], 0x3a83126f
+00000001401C6596: EB 07                                    JMP      0x1401c659f
+00000001401C6598: C7 45 BC 00 00 80 3F                     MOV      dword ptr [rbp - 0x44], 0x3f800000
+00000001401C659F: 41 0F 2F F6                              COMISS   xmm6, xmm14
+00000001401C65A3: 76 07                                    JBE      0x1401c65ac
+00000001401C65A5: F3 0F 11 7D C4                           MOVSS    dword ptr [rbp - 0x3c], xmm7
+00000001401C65AA: EB 07                                    JMP      0x1401c65b3
+00000001401C65AC: C7 45 C4 00 00 00 00                     MOV      dword ptr [rbp - 0x3c], 0
+00000001401C65B3: 45 8B F5                                 MOV      r14d, r13d
+00000001401C65B6: 48 8B 8F 18 0A 00 00                     MOV      rcx, qword ptr [rdi + 0xa18]
+00000001401C65BD: 48 2B 8F 10 0A 00 00                     SUB      rcx, qword ptr [rdi + 0xa10]
+00000001401C65C4: 49 B9 AB AA AA AA AA AA AA 2A            MOVABS   r9, 0x2aaaaaaaaaaaaaab
+00000001401C65CE: 49 8B C1                                 MOV      rax, r9
+00000001401C65D1: 48 F7 E9                                 IMUL     rcx
+00000001401C65D4: 48 C1 FA 04                              SAR      rdx, 4
+00000001401C65D8: 48 8B C2                                 MOV      rax, rdx
+00000001401C65DB: 48 C1 E8 3F                              SHR      rax, 0x3f
+00000001401C65DF: 48 03 D0                                 ADD      rdx, rax
+00000001401C65E2: 74 7C                                    JE       0x1401c6660
+00000001401C65E4: 49 8B DD                                 MOV      rbx, r13
+00000001401C65E7: 66 0F 1F 84 00 00 00 00 00               NOP      word ptr [rax + rax]
+00000001401C65F0: 48 8B 87 10 0A 00 00                     MOV      rax, qword ptr [rdi + 0xa10]
+00000001401C65F7: 83 3C 03 00                              CMP      dword ptr [rbx + rax], 0
+00000001401C65FB: 75 32                                    JNE      0x1401c662f
+00000001401C65FD: 48 8B 54 03 30                           MOV      rdx, qword ptr [rbx + rax + 0x30]
+00000001401C6602: 48 85 D2                                 TEST     rdx, rdx
+00000001401C6605: 74 28                                    JE       0x1401c662f
+00000001401C6607: 80 7C 03 05 00                           CMP      byte ptr [rbx + rax + 5], 0
+00000001401C660C: 74 21                                    JE       0x1401c662f
+00000001401C660E: F3 44 0F 11 4C 24 20                     MOVSS    dword ptr [rsp + 0x20], xmm9
+00000001401C6615: 45 33 C9                                 XOR      r9d, r9d
+00000001401C6618: 41 0F 28 D0                              MOVAPS   xmm2, xmm8
+00000001401C661C: 48 8D 4D 90                              LEA      rcx, [rbp - 0x70]
+00000001401C6620: E8 FB D4 3B 00                           CALL     0x140583b20
+00000001401C6625: 49 B9 AB AA AA AA AA AA AA 2A            MOVABS   r9, 0x2aaaaaaaaaaaaaab
+00000001401C662F: 41 FF C6                                 INC      r14d
+00000001401C6632: 48 83 C3 60                              ADD      rbx, 0x60
+00000001401C6636: 48 8B 8F 18 0A 00 00                     MOV      rcx, qword ptr [rdi + 0xa18]
+00000001401C663D: 48 2B 8F 10 0A 00 00                     SUB      rcx, qword ptr [rdi + 0xa10]
+00000001401C6644: 49 8B C1                                 MOV      rax, r9
+00000001401C6647: 48 F7 E9                                 IMUL     rcx
+00000001401C664A: 48 C1 FA 04                              SAR      rdx, 4
+00000001401C664E: 48 8B C2                                 MOV      rax, rdx
+00000001401C6651: 48 C1 E8 3F                              SHR      rax, 0x3f
+00000001401C6655: 48 03 D0                                 ADD      rdx, rax
+00000001401C6658: 49 63 C6                                 MOVSXD   rax, r14d
+00000001401C665B: 48 3B C2                                 CMP      rax, rdx
+00000001401C665E: 72 90                                    JB       0x1401c65f0
+00000001401C6660: 45 8B E5                                 MOV      r12d, r13d
+00000001401C6663: 48 8B 87 40 0D 00 00                     MOV      rax, qword ptr [rdi + 0xd40]
+00000001401C666A: 48 2B 87 38 0D 00 00                     SUB      rax, qword ptr [rdi + 0xd38]
+00000001401C6671: 48 C1 F8 03                              SAR      rax, 3
+00000001401C6675: 48 85 C0                                 TEST     rax, rax
+00000001401C6678: 0F 84 F4 00 00 00                        JE       0x1401c6772
+00000001401C667E: 4D 8B FD                                 MOV      r15, r13
+00000001401C6681: 45 8B F5                                 MOV      r14d, r13d
+00000001401C6684: 48 8B 87 38 0D 00 00                     MOV      rax, qword ptr [rdi + 0xd38]
+00000001401C668B: 49 8B 0C 07                              MOV      rcx, qword ptr [r15 + rax]
+00000001401C668F: 4C 8B 41 08                              MOV      r8, qword ptr [rcx + 8]
+00000001401C6693: 49 81 C0 10 0A 00 00                     ADD      r8, 0xa10
+00000001401C669A: 49 8B 48 08                              MOV      rcx, qword ptr [r8 + 8]
+00000001401C669E: 49 2B 08                                 SUB      rcx, qword ptr [r8]
+00000001401C66A1: 49 8B C1                                 MOV      rax, r9
+00000001401C66A4: 48 F7 E9                                 IMUL     rcx
+00000001401C66A7: 48 C1 FA 04                              SAR      rdx, 4
+00000001401C66AB: 48 8B C2                                 MOV      rax, rdx
+00000001401C66AE: 48 C1 E8 3F                              SHR      rax, 0x3f
+00000001401C66B2: 48 03 D0                                 ADD      rdx, rax
+00000001401C66B5: 0F 84 8B 00 00 00                        JE       0x1401c6746
+00000001401C66BB: 49 8B DD                                 MOV      rbx, r13
+00000001401C66BE: 66 90                                    NOP
+00000001401C66C0: 49 8B 00                                 MOV      rax, qword ptr [r8]
+00000001401C66C3: 83 3C 03 00                              CMP      dword ptr [rbx + rax], 0
+00000001401C66C7: 75 39                                    JNE      0x1401c6702
+00000001401C66C9: 48 83 7C 18 30 00                        CMP      qword ptr [rax + rbx + 0x30], 0
+00000001401C66CF: 74 31                                    JE       0x1401c6702
+00000001401C66D1: 80 7C 18 04 00                           CMP      byte ptr [rax + rbx + 4], 0
+00000001401C66D6: 74 2A                                    JE       0x1401c6702
+00000001401C66D8: 48 8B 4C 18 30                           MOV      rcx, qword ptr [rax + rbx + 0x30]
+00000001401C66DD: 48 89 4C 24 30                           MOV      qword ptr [rsp + 0x30], rcx
+00000001401C66E2: 48 85 C9                                 TEST     rcx, rcx
+00000001401C66E5: 74 1B                                    JE       0x1401c6702
+00000001401C66E7: 48 8D 54 24 30                           LEA      rdx, [rsp + 0x30]
+00000001401C66EC: 48 8D 8D 88 00 00 00                     LEA      rcx, [rbp + 0x88]
+00000001401C66F3: E8 98 A7 EE FF                           CALL     0x1400b0e90
+00000001401C66F8: 49 B9 AB AA AA AA AA AA AA 2A            MOVABS   r9, 0x2aaaaaaaaaaaaaab
+00000001401C6702: 41 FF C6                                 INC      r14d
+00000001401C6705: 48 83 C3 60                              ADD      rbx, 0x60
+00000001401C6709: 48 8B 87 38 0D 00 00                     MOV      rax, qword ptr [rdi + 0xd38]
+00000001401C6710: 49 8B 0C 07                              MOV      rcx, qword ptr [r15 + rax]
+00000001401C6714: 4C 8B 41 08                              MOV      r8, qword ptr [rcx + 8]
+00000001401C6718: 49 81 C0 10 0A 00 00                     ADD      r8, 0xa10
+00000001401C671F: 49 8B 48 08                              MOV      rcx, qword ptr [r8 + 8]
+00000001401C6723: 49 2B 08                                 SUB      rcx, qword ptr [r8]
+00000001401C6726: 49 8B C1                                 MOV      rax, r9
+00000001401C6729: 48 F7 E9                                 IMUL     rcx
+00000001401C672C: 48 C1 FA 04                              SAR      rdx, 4
+00000001401C6730: 48 8B C2                                 MOV      rax, rdx
+00000001401C6733: 48 C1 E8 3F                              SHR      rax, 0x3f
+00000001401C6737: 48 03 D0                                 ADD      rdx, rax
+00000001401C673A: 49 63 C6                                 MOVSXD   rax, r14d
+00000001401C673D: 48 3B C2                                 CMP      rax, rdx
+00000001401C6740: 0F 82 7A FF FF FF                        JB       0x1401c66c0
+00000001401C6746: 41 FF C4                                 INC      r12d
+00000001401C6749: 49 83 C7 08                              ADD      r15, 8
+00000001401C674D: 48 8B 8F 40 0D 00 00                     MOV      rcx, qword ptr [rdi + 0xd40]
+00000001401C6754: 48 2B 8F 38 0D 00 00                     SUB      rcx, qword ptr [rdi + 0xd38]
+00000001401C675B: 48 C1 F9 03                              SAR      rcx, 3
+00000001401C675F: 49 63 C4                                 MOVSXD   rax, r12d
+00000001401C6762: 48 3B C1                                 CMP      rax, rcx
+00000001401C6765: 0F 82 16 FF FF FF                        JB       0x1401c6681
+00000001401C676B: 4C 8D BF 70 0C 00 00                     LEA      r15, [rdi + 0xc70]
+00000001401C6772: 48 8D 4D 90                              LEA      rcx, [rbp - 0x70]
+00000001401C6776: E8 85 BC 3B 00                           CALL     0x140582400
+00000001401C677B: 45 8B F5                                 MOV      r14d, r13d
+00000001401C677E: 48 8B 87 40 0D 00 00                     MOV      rax, qword ptr [rdi + 0xd40]
+00000001401C6785: 48 2B 87 38 0D 00 00                     SUB      rax, qword ptr [rdi + 0xd38]
+00000001401C678C: 48 C1 F8 03                              SAR      rax, 3
+00000001401C6790: 48 85 C0                                 TEST     rax, rax
+00000001401C6793: 0F 84 91 00 00 00                        JE       0x1401c682a
+00000001401C6799: 4D 8B DD                                 MOV      r11, r13
+00000001401C679C: 0F 1F 40 00                              NOP      dword ptr [rax]
+00000001401C67A0: 32 DB                                    XOR      bl, bl
+00000001401C67A2: 45 8B C5                                 MOV      r8d, r13d
+00000001401C67A5: 4C 8B 8D 48 01 00 00                     MOV      r9, qword ptr [rbp + 0x148]
+00000001401C67AC: 48 8B 95 40 01 00 00                     MOV      rdx, qword ptr [rbp + 0x140]
+00000001401C67B3: 4C 2B CA                                 SUB      r9, rdx
+00000001401C67B6: 49 C1 F9 03                              SAR      r9, 3
+00000001401C67BA: 45 85 C9                                 TEST     r9d, r9d
+00000001401C67BD: 7E 2A                                    JLE      0x1401c67e9
+00000001401C67BF: 48 8B 87 38 0D 00 00                     MOV      rax, qword ptr [rdi + 0xd38]
+00000001401C67C6: 49 8B 0C 03                              MOV      rcx, qword ptr [r11 + rax]
+00000001401C67CA: 4C 8B 51 08                              MOV      r10, qword ptr [rcx + 8]
+00000001401C67CE: 66 90                                    NOP
+00000001401C67D0: 48 8B 02                                 MOV      rax, qword ptr [rdx]
+00000001401C67D3: 4C 39 50 40                              CMP      qword ptr [rax + 0x40], r10
+00000001401C67D7: 74 0E                                    JE       0x1401c67e7
+00000001401C67D9: 41 FF C0                                 INC      r8d
+00000001401C67DC: 48 83 C2 08                              ADD      rdx, 8
+00000001401C67E0: 45 3B C1                                 CMP      r8d, r9d
+00000001401C67E3: 7C EB                                    JL       0x1401c67d0
+00000001401C67E5: EB 02                                    JMP      0x1401c67e9
+00000001401C67E7: B3 01                                    MOV      bl, 1
+00000001401C67E9: 48 8B 87 38 0D 00 00                     MOV      rax, qword ptr [rdi + 0xd38]
+00000001401C67F0: 49 8B 0C 03                              MOV      rcx, qword ptr [r11 + rax]
+00000001401C67F4: 38 19                                    CMP      byte ptr [rcx], bl
+00000001401C67F6: 74 07                                    JE       0x1401c67ff
+00000001401C67F8: C6 87 50 0D 00 00 01                     MOV      byte ptr [rdi + 0xd50], 1
+00000001401C67FF: 49 8B 0C 03                              MOV      rcx, qword ptr [r11 + rax]
+00000001401C6803: 88 19                                    MOV      byte ptr [rcx], bl
+00000001401C6805: 41 FF C6                                 INC      r14d
+00000001401C6808: 49 83 C3 08                              ADD      r11, 8
+00000001401C680C: 48 8B 8F 40 0D 00 00                     MOV      rcx, qword ptr [rdi + 0xd40]
+00000001401C6813: 48 2B 8F 38 0D 00 00                     SUB      rcx, qword ptr [rdi + 0xd38]
+00000001401C681A: 48 C1 F9 03                              SAR      rcx, 3
+00000001401C681E: 49 63 C6                                 MOVSXD   rax, r14d
+00000001401C6821: 48 3B C1                                 CMP      rax, rcx
+00000001401C6824: 0F 82 76 FF FF FF                        JB       0x1401c67a0
+00000001401C682A: 48 8B 86 88 06 00 00                     MOV      rax, qword ptr [rsi + 0x688]
+00000001401C6831: 48 2B 86 80 06 00 00                     SUB      rax, qword ptr [rsi + 0x680]
+00000001401C6838: 48 C1 F8 03                              SAR      rax, 3
+00000001401C683C: 48 83 F8 02                              CMP      rax, 2
+00000001401C6840: 76 25                                    JBE      0x1401c6867
+00000001401C6842: 48 8B 86 80 06 00 00                     MOV      rax, qword ptr [rsi + 0x680]
+00000001401C6849: 48 8B 08                                 MOV      rcx, qword ptr [rax]
+00000001401C684C: 48 89 8E 18 05 00 00                     MOV      qword ptr [rsi + 0x518], rcx
+00000001401C6853: 48 8B 86 80 06 00 00                     MOV      rax, qword ptr [rsi + 0x680]
+00000001401C685A: 48 8B 48 08                              MOV      rcx, qword ptr [rax + 8]
+00000001401C685E: 48 89 8E 20 05 00 00                     MOV      qword ptr [rsi + 0x520], rcx
+00000001401C6865: EB 39                                    JMP      0x1401c68a0
+00000001401C6867: 48 8B 86 88 06 00 00                     MOV      rax, qword ptr [rsi + 0x688]
+00000001401C686E: 48 2B 86 80 06 00 00                     SUB      rax, qword ptr [rsi + 0x680]
+00000001401C6875: 48 C1 F8 03                              SAR      rax, 3
+00000001401C6879: 4C 89 AE 18 05 00 00                     MOV      qword ptr [rsi + 0x518], r13
+00000001401C6880: 48 83 F8 01                              CMP      rax, 1
+00000001401C6884: 76 13                                    JBE      0x1401c6899
+00000001401C6886: 48 8B 86 80 06 00 00                     MOV      rax, qword ptr [rsi + 0x680]
+00000001401C688D: 48 8B 08                                 MOV      rcx, qword ptr [rax]
+00000001401C6890: 48 89 8E 20 05 00 00                     MOV      qword ptr [rsi + 0x520], rcx
+00000001401C6897: EB 07                                    JMP      0x1401c68a0
+00000001401C6899: 4C 89 AE 20 05 00 00                     MOV      qword ptr [rsi + 0x520], r13
+00000001401C68A0: C6 44 24 28 01                           MOV      byte ptr [rsp + 0x28], 1
+00000001401C68A5: C6 44 24 20 01                           MOV      byte ptr [rsp + 0x20], 1
+00000001401C68AA: 41 B1 01                                 MOV      r9b, 1
+00000001401C68AD: 45 33 C0                                 XOR      r8d, r8d
+00000001401C68B0: 48 8B D6                                 MOV      rdx, rsi
+00000001401C68B3: 4C 8B A5 90 02 00 00                     MOV      r12, qword ptr [rbp + 0x290]
+00000001401C68BA: 49 8B CC                                 MOV      rcx, r12
+00000001401C68BD: E8 FE 54 23 00                           CALL     0x1403fbdc0
+00000001401C68C2: C7 86 08 05 00 00 00 00 20 41            MOV      dword ptr [rsi + 0x508], 0x41200000
+00000001401C68CC: 48 8D 4D 90                              LEA      rcx, [rbp - 0x70]
+00000001401C68D0: E8 BB 6F F2 FF                           CALL     0x1400ed890
+00000001401C68D5: 4C 8B 75 80                              MOV      r14, qword ptr [rbp - 0x80]
+00000001401C68D9: 8B 9D 98 02 00 00                        MOV      ebx, dword ptr [rbp + 0x298]
+00000001401C68DF: B2 01                                    MOV      dl, 1
+00000001401C68E1: 48 8B CE                                 MOV      rcx, rsi
+00000001401C68E4: E8 C7 6D 4F 00                           CALL     0x1406bd6b0
+00000001401C68E9: 84 C0                                    TEST     al, al
+00000001401C68EB: 0F 84 C7 00 00 00                        JE       0x1401c69b8
+00000001401C68F1: 44 0F 2F 86 08 05 00 00                  COMISS   xmm8, dword ptr [rsi + 0x508]
+00000001401C68F9: 0F 82 B9 00 00 00                        JB       0x1401c69b8
+00000001401C68FF: 80 BE 39 0D 00 00 00                     CMP      byte ptr [rsi + 0xd39], 0
+00000001401C6906: 0F 85 AC 00 00 00                        JNE      0x1401c69b8
+00000001401C690C: 48 8D 85 A8 02 00 00                     LEA      rax, [rbp + 0x2a8]
+00000001401C6913: 48 8B 4C 24 58                           MOV      rcx, qword ptr [rsp + 0x58]
+00000001401C6918: 48 3B C1                                 CMP      rax, rcx
+00000001401C691B: 73 61                                    JAE      0x1401c697e
+00000001401C691D: 48 8D 95 A8 02 00 00                     LEA      rdx, [rbp + 0x2a8]
+00000001401C6924: 48 8B 44 24 50                           MOV      rax, qword ptr [rsp + 0x50]
+00000001401C6929: 48 3B C2                                 CMP      rax, rdx
+00000001401C692C: 77 50                                    JA       0x1401c697e
+00000001401C692E: 48 8D 9D A8 02 00 00                     LEA      rbx, [rbp + 0x2a8]
+00000001401C6935: 48 2B D8                                 SUB      rbx, rax
+00000001401C6938: 48 C1 FB 03                              SAR      rbx, 3
+00000001401C693C: 48 3B 8D A0 02 00 00                     CMP      rcx, qword ptr [rbp + 0x2a0]
+00000001401C6943: 75 25                                    JNE      0x1401c696a
+00000001401C6945: BA 01 00 00 00                           MOV      edx, 1
+00000001401C694A: 48 8D 4C 24 50                           LEA      rcx, [rsp + 0x50]
+00000001401C694F: E8 AC AD EE FF                           CALL     0x1400b1700
+00000001401C6954: 48 8B 44 24 60                           MOV      rax, qword ptr [rsp + 0x60]
+00000001401C6959: 48 89 85 A0 02 00 00                     MOV      qword ptr [rbp + 0x2a0], rax
+00000001401C6960: 48 8B 4C 24 58                           MOV      rcx, qword ptr [rsp + 0x58]
+00000001401C6965: 48 8B 44 24 50                           MOV      rax, qword ptr [rsp + 0x50]
+00000001401C696A: 48 85 C9                                 TEST     rcx, rcx
+00000001401C696D: 74 07                                    JE       0x1401c6976
+00000001401C696F: 48 8B 04 D8                              MOV      rax, qword ptr [rax + rbx*8]
+00000001401C6973: 48 89 01                                 MOV      qword ptr [rcx], rax
+00000001401C6976: 8B 9D 98 02 00 00                        MOV      ebx, dword ptr [rbp + 0x298]
+00000001401C697C: EB 31                                    JMP      0x1401c69af
+00000001401C697E: 48 3B 8D A0 02 00 00                     CMP      rcx, qword ptr [rbp + 0x2a0]
+00000001401C6985: 75 20                                    JNE      0x1401c69a7
+00000001401C6987: BA 01 00 00 00                           MOV      edx, 1
+00000001401C698C: 48 8D 4C 24 50                           LEA      rcx, [rsp + 0x50]
+00000001401C6991: E8 6A AD EE FF                           CALL     0x1400b1700
+00000001401C6996: 48 8B 44 24 60                           MOV      rax, qword ptr [rsp + 0x60]
+00000001401C699B: 48 89 85 A0 02 00 00                     MOV      qword ptr [rbp + 0x2a0], rax
+00000001401C69A2: 48 8B 4C 24 58                           MOV      rcx, qword ptr [rsp + 0x58]
+00000001401C69A7: 48 85 C9                                 TEST     rcx, rcx
+00000001401C69AA: 74 03                                    JE       0x1401c69af
+00000001401C69AC: 48 89 31                                 MOV      qword ptr [rcx], rsi
+00000001401C69AF: 48 83 C1 08                              ADD      rcx, 8
+00000001401C69B3: 48 89 4C 24 58                           MOV      qword ptr [rsp + 0x58], rcx
+00000001401C69B8: FF C3                                    INC      ebx
+00000001401C69BA: 89 9D 98 02 00 00                        MOV      dword ptr [rbp + 0x298], ebx
+00000001401C69C0: 49 FF C6                                 INC      r14
+00000001401C69C3: 4C 89 75 80                              MOV      qword ptr [rbp - 0x80], r14
+00000001401C69C7: 49 8B 4F 08                              MOV      rcx, qword ptr [r15 + 8]
+00000001401C69CB: 49 2B 0F                                 SUB      rcx, qword ptr [r15]
+00000001401C69CE: 48 C1 F9 03                              SAR      rcx, 3
+00000001401C69D2: 48 63 C3                                 MOVSXD   rax, ebx
+00000001401C69D5: 48 3B C1                                 CMP      rax, rcx
+00000001401C69D8: 49 B8 AB AA AA AA AA AA AA 2A            MOVABS   r8, 0x2aaaaaaaaaaaaaab
+00000001401C69E2: 49 BB 25 49 92 24 49 92 24 49            MOVABS   r11, 0x4924924924924925
+00000001401C69EC: 0F 82 DE F7 FF FF                        JB       0x1401c61d0
+00000001401C69F2: 44 0F 2F 87 28 10 00 00                  COMISS   xmm8, dword ptr [rdi + 0x1028]
+00000001401C69FA: 0F 86 3D 01 00 00                        JBE      0x1401c6b3d
+00000001401C6A00: 66 C7 44 24 30 00 00                     MOV      word ptr [rsp + 0x30], 0
+00000001401C6A07: 4C 89 6C 24 34                           MOV      qword ptr [rsp + 0x34], r13
+00000001401C6A0C: C7 44 24 3C 00 00 00 00                  MOV      dword ptr [rsp + 0x3c], 0
+00000001401C6A14: 45 32 F6                                 XOR      r14b, r14b
+00000001401C6A17: 49 8B 47 08                              MOV      rax, qword ptr [r15 + 8]
+00000001401C6A1B: 49 2B 07                                 SUB      rax, qword ptr [r15]
+00000001401C6A1E: 48 C1 F8 03                              SAR      rax, 3
+00000001401C6A22: 48 83 F8 01                              CMP      rax, 1
+00000001401C6A26: 72 0F                                    JB       0x1401c6a37
+00000001401C6A28: 49 8B D7                                 MOV      rdx, r15
+00000001401C6A2B: 48 8D 4C 24 30                           LEA      rcx, [rsp + 0x30]
+00000001401C6A30: E8 AB CF 27 00                           CALL     0x1404439e0
+00000001401C6A35: EB 4E                                    JMP      0x1401c6a85
+00000001401C6A37: 66 C7 44 24 30 01 00                     MOV      word ptr [rsp + 0x30], 1
+00000001401C6A3E: 48 8B 87 18 03 00 00                     MOV      rax, qword ptr [rdi + 0x318]
+00000001401C6A45: 48 85 C0                                 TEST     rax, rax
+00000001401C6A48: 74 23                                    JE       0x1401c6a6d
+00000001401C6A4A: 83 B8 60 03 00 00 09                     CMP      dword ptr [rax + 0x360], 9
+00000001401C6A51: 75 32                                    JNE      0x1401c6a85
+00000001401C6A53: C7 44 24 34 00 01 00 00                  MOV      dword ptr [rsp + 0x34], 0x100
+00000001401C6A5B: C7 44 24 38 00 00 C8 41                  MOV      dword ptr [rsp + 0x38], 0x41c80000
+00000001401C6A63: C7 44 24 3C 00 00 00 40                  MOV      dword ptr [rsp + 0x3c], 0x40000000
+00000001401C6A6B: EB 18                                    JMP      0x1401c6a85
+00000001401C6A6D: C7 44 24 34 00 10 00 00                  MOV      dword ptr [rsp + 0x34], 0x1000
+00000001401C6A75: C7 44 24 38 00 00 A0 42                  MOV      dword ptr [rsp + 0x38], 0x42a00000
+00000001401C6A7D: C7 44 24 3C 00 00 80 40                  MOV      dword ptr [rsp + 0x3c], 0x40800000
+00000001401C6A85: 41 8B F5                                 MOV      esi, r13d
+00000001401C6A88: 48 8B 87 40 0D 00 00                     MOV      rax, qword ptr [rdi + 0xd40]
+00000001401C6A8F: 48 2B 87 38 0D 00 00                     SUB      rax, qword ptr [rdi + 0xd38]
+00000001401C6A96: 48 C1 F8 03                              SAR      rax, 3
+00000001401C6A9A: 48 85 C0                                 TEST     rax, rax
+00000001401C6A9D: 0F 84 90 00 00 00                        JE       0x1401c6b33
+00000001401C6AA3: 49 8B DD                                 MOV      rbx, r13
+00000001401C6AA6: 0F 28 74 24 30                           MOVAPS   xmm6, xmmword ptr [rsp + 0x30]
+00000001401C6AAB: 0F 1F 44 00 00                           NOP      dword ptr [rax + rax]
+00000001401C6AB0: 4C 8B 87 38 0D 00 00                     MOV      r8, qword ptr [rdi + 0xd38]
+00000001401C6AB7: 4A 8B 04 03                              MOV      rax, qword ptr [rbx + r8]
+00000001401C6ABB: 80 38 00                                 CMP      byte ptr [rax], 0
+00000001401C6ABE: 75 42                                    JNE      0x1401c6b02
+00000001401C6AC0: 66 0F 7F 74 24 70                        MOVDQA   xmmword ptr [rsp + 0x70], xmm6
+00000001401C6AC6: 4C 8B 40 08                              MOV      r8, qword ptr [rax + 8]
+00000001401C6ACA: 48 8D 44 24 70                           LEA      rax, [rsp + 0x70]
+00000001401C6ACF: 48 89 44 24 28                           MOV      qword ptr [rsp + 0x28], rax
+00000001401C6AD4: C6 44 24 20 00                           MOV      byte ptr [rsp + 0x20], 0
+00000001401C6AD9: 45 33 C9                                 XOR      r9d, r9d
+00000001401C6ADC: 48 8B D7                                 MOV      rdx, rdi
+00000001401C6ADF: E8 6C 9B F6 FF                           CALL     0x140130650
+00000001401C6AE4: 84 C0                                    TEST     al, al
+00000001401C6AE6: 74 17                                    JE       0x1401c6aff
+00000001401C6AE8: 48 8B 87 38 0D 00 00                     MOV      rax, qword ptr [rdi + 0xd38]
+00000001401C6AEF: 48 8B 0C 03                              MOV      rcx, qword ptr [rbx + rax]
+00000001401C6AF3: C6 01 01                                 MOV      byte ptr [rcx], 1
+00000001401C6AF6: C6 87 50 0D 00 00 01                     MOV      byte ptr [rdi + 0xd50], 1
+00000001401C6AFD: EB 03                                    JMP      0x1401c6b02
+00000001401C6AFF: 41 B6 01                                 MOV      r14b, 1
+00000001401C6B02: FF C6                                    INC      esi
+00000001401C6B04: 48 83 C3 08                              ADD      rbx, 8
+00000001401C6B08: 48 8B 8F 40 0D 00 00                     MOV      rcx, qword ptr [rdi + 0xd40]
+00000001401C6B0F: 48 2B 8F 38 0D 00 00                     SUB      rcx, qword ptr [rdi + 0xd38]
+00000001401C6B16: 48 C1 F9 03                              SAR      rcx, 3
+00000001401C6B1A: 48 63 C6                                 MOVSXD   rax, esi
+00000001401C6B1D: 48 3B C1                                 CMP      rax, rcx
+00000001401C6B20: 72 8E                                    JB       0x1401c6ab0
+00000001401C6B22: 45 84 F6                                 TEST     r14b, r14b
+00000001401C6B25: 74 0C                                    JE       0x1401c6b33
+00000001401C6B27: C7 87 28 10 00 00 00 00 A0 41            MOV      dword ptr [rdi + 0x1028], 0x41a00000
+00000001401C6B31: EB 0A                                    JMP      0x1401c6b3d
+00000001401C6B33: C7 87 28 10 00 00 00 00 20 41            MOV      dword ptr [rdi + 0x1028], 0x41200000
+00000001401C6B3D: 41 83 BC 24 A4 05 00 00 00               CMP      dword ptr [r12 + 0x5a4], 0
+00000001401C6B46: 0F 8E 0A 02 00 00                        JLE      0x1401c6d56
+00000001401C6B4C: 44 0F 2F 87 C0 0F 00 00                  COMISS   xmm8, dword ptr [rdi + 0xfc0]
+00000001401C6B54: 0F 82 FC 01 00 00                        JB       0x1401c6d56
+00000001401C6B5A: 48 8B 87 40 0D 00 00                     MOV      rax, qword ptr [rdi + 0xd40]
+00000001401C6B61: 48 2B 87 38 0D 00 00                     SUB      rax, qword ptr [rdi + 0xd38]
+00000001401C6B68: 48 C1 F8 03                              SAR      rax, 3
+00000001401C6B6C: 48 85 C0                                 TEST     rax, rax
+00000001401C6B6F: 0F 84 E1 01 00 00                        JE       0x1401c6d56
+00000001401C6B75: 4C 8B 7C 24 58                           MOV      r15, qword ptr [rsp + 0x58]
+00000001401C6B7A: 49 8B F7                                 MOV      rsi, r15
+00000001401C6B7D: 48 2B 74 24 50                           SUB      rsi, qword ptr [rsp + 0x50]
+00000001401C6B82: 48 C1 FE 03                              SAR      rsi, 3
+00000001401C6B86: 48 85 F6                                 TEST     rsi, rsi
+00000001401C6B89: 0F 84 C7 01 00 00                        JE       0x1401c6d56
+00000001401C6B8F: 45 32 F6                                 XOR      r14b, r14b
+00000001401C6B92: 44 38 B7 50 0D 00 00                     CMP      byte ptr [rdi + 0xd50], r14b
+00000001401C6B99: 74 0B                                    JE       0x1401c6ba6
+00000001401C6B9B: 48 8B D7                                 MOV      rdx, rdi
+00000001401C6B9E: 49 8B CC                                 MOV      rcx, r12
+00000001401C6BA1: E8 DA B7 01 00                           CALL     0x1401e2380
+00000001401C6BA6: 48 8B 87 60 0D 00 00                     MOV      rax, qword ptr [rdi + 0xd60]
+00000001401C6BAD: 48 2B 87 58 0D 00 00                     SUB      rax, qword ptr [rdi + 0xd58]
+00000001401C6BB4: 48 C1 F8 07                              SAR      rax, 7
+00000001401C6BB8: 48 85 C0                                 TEST     rax, rax
+00000001401C6BBB: 0F 84 2B 01 00 00                        JE       0x1401c6cec
+00000001401C6BC1: 41 8B DD                                 MOV      ebx, r13d
+00000001401C6BC4: 48 8B 87 60 0D 00 00                     MOV      rax, qword ptr [rdi + 0xd60]
+00000001401C6BCB: 48 2B 87 58 0D 00 00                     SUB      rax, qword ptr [rdi + 0xd58]
+00000001401C6BD2: 48 C1 F8 07                              SAR      rax, 7
+00000001401C6BD6: 85 C0                                    TEST     eax, eax
+00000001401C6BD8: 7E 34                                    JLE      0x1401c6c0e
+00000001401C6BDA: 66 0F 1F 44 00 00                        NOP      word ptr [rax + rax]
+00000001401C6BE0: 48 63 D3                                 MOVSXD   rdx, ebx
+00000001401C6BE3: 48 C1 E2 07                              SHL      rdx, 7
+00000001401C6BE7: 48 03 97 58 0D 00 00                     ADD      rdx, qword ptr [rdi + 0xd58]
+00000001401C6BEE: 49 8B CC                                 MOV      rcx, r12
+00000001401C6BF1: E8 DA CF 01 00                           CALL     0x1401e3bd0
+00000001401C6BF6: FF C3                                    INC      ebx
+00000001401C6BF8: 48 8B 87 60 0D 00 00                     MOV      rax, qword ptr [rdi + 0xd60]
+00000001401C6BFF: 48 2B 87 58 0D 00 00                     SUB      rax, qword ptr [rdi + 0xd58]
+00000001401C6C06: 48 C1 F8 07                              SAR      rax, 7
+00000001401C6C0A: 3B D8                                    CMP      ebx, eax
+00000001401C6C0C: 7C D2                                    JL       0x1401c6be0
+00000001401C6C0E: 45 8B D5                                 MOV      r10d, r13d
+00000001401C6C11: 48 8B 5C 24 50                           MOV      rbx, qword ptr [rsp + 0x50]
+00000001401C6C16: 48 85 F6                                 TEST     rsi, rsi
+00000001401C6C19: 74 79                                    JE       0x1401c6c94
+00000001401C6C1B: 4C 8B DB                                 MOV      r11, rbx
+00000001401C6C1E: F3 0F 10 05 52 30 74 00                  MOVSS    xmm0, dword ptr [rip + 0x743052]
+00000001401C6C26: 66 66 0F 1F 84 00 00 00 00 00            NOP      word ptr [rax + rax]
+00000001401C6C30: 49 8B 13                                 MOV      rdx, qword ptr [r11]
+00000001401C6C33: 45 8B CD                                 MOV      r9d, r13d
+00000001401C6C36: 48 8B 82 C0 03 00 00                     MOV      rax, qword ptr [rdx + 0x3c0]
+00000001401C6C3D: 48 2B 82 B8 03 00 00                     SUB      rax, qword ptr [rdx + 0x3b8]
+00000001401C6C44: 48 C1 F8 04                              SAR      rax, 4
+00000001401C6C48: 48 85 C0                                 TEST     rax, rax
+00000001401C6C4B: 74 38                                    JE       0x1401c6c85
+00000001401C6C4D: 4D 8B C5                                 MOV      r8, r13
+00000001401C6C50: 48 8B 82 B8 03 00 00                     MOV      rax, qword ptr [rdx + 0x3b8]
+00000001401C6C57: 41 0F 2F 44 00 08                        COMISS   xmm0, dword ptr [r8 + rax + 8]
+00000001401C6C5D: 76 05                                    JBE      0x1401c6c64
+00000001401C6C5F: 46 89 6C 00 08                           MOV      dword ptr [rax + r8 + 8], r13d
+00000001401C6C64: 41 FF C1                                 INC      r9d
+00000001401C6C67: 49 83 C0 10                              ADD      r8, 0x10
+00000001401C6C6B: 48 8B 8A C0 03 00 00                     MOV      rcx, qword ptr [rdx + 0x3c0]
+00000001401C6C72: 48 2B 8A B8 03 00 00                     SUB      rcx, qword ptr [rdx + 0x3b8]
+00000001401C6C79: 48 C1 F9 04                              SAR      rcx, 4
+00000001401C6C7D: 49 63 C1                                 MOVSXD   rax, r9d
+00000001401C6C80: 48 3B C1                                 CMP      rax, rcx
+00000001401C6C83: 72 CB                                    JB       0x1401c6c50
+00000001401C6C85: 41 FF C2                                 INC      r10d
+00000001401C6C88: 49 83 C3 08                              ADD      r11, 8
+00000001401C6C8C: 49 63 C2                                 MOVSXD   rax, r10d
+00000001401C6C8F: 48 3B C6                                 CMP      rax, rsi
+00000001401C6C92: 72 9C                                    JB       0x1401c6c30
+00000001401C6C94: 48 8D 05 F5 6A 02 00                     LEA      rax, [rip + 0x26af5]
+00000001401C6C9B: 48 89 85 90 02 00 00                     MOV      qword ptr [rbp + 0x290], rax
+00000001401C6CA2: 4C 8D 8D 90 02 00 00                     LEA      r9, [rbp + 0x290]
+00000001401C6CA9: 4C 8B C6                                 MOV      r8, rsi
+00000001401C6CAC: 49 8B D7                                 MOV      rdx, r15
+00000001401C6CAF: 48 8B CB                                 MOV      rcx, rbx
+00000001401C6CB2: E8 B9 36 F3 FF                           CALL     0x1400fa370
+00000001401C6CB7: 48 85 F6                                 TEST     rsi, rsi
+00000001401C6CBA: 74 30                                    JE       0x1401c6cec
+00000001401C6CBC: 0F 1F 40 00                              NOP      dword ptr [rax]
+00000001401C6CC0: 4C 8B C7                                 MOV      r8, rdi
+00000001401C6CC3: 48 8B 13                                 MOV      rdx, qword ptr [rbx]
+00000001401C6CC6: 49 8B CC                                 MOV      rcx, r12
+00000001401C6CC9: E8 82 E6 01 00                           CALL     0x1401e5350
+00000001401C6CCE: 45 0F B6 F6                              MOVZX    r14d, r14b
+00000001401C6CD2: 84 C0                                    TEST     al, al
+00000001401C6CD4: B8 01 00 00 00                           MOV      eax, 1
+00000001401C6CD9: 44 0F 45 F0                              CMOVNE   r14d, eax
+00000001401C6CDD: 41 FF C5                                 INC      r13d
+00000001401C6CE0: 48 8D 5B 08                              LEA      rbx, [rbx + 8]
+00000001401C6CE4: 49 63 C5                                 MOVSXD   rax, r13d
+00000001401C6CE7: 48 3B C6                                 CMP      rax, rsi
+00000001401C6CEA: 72 D4                                    JB       0x1401c6cc0
+00000001401C6CEC: C7 87 C0 0F 00 00 00 00 40 40            MOV      dword ptr [rdi + 0xfc0], 0x40400000
+00000001401C6CF6: 41 83 BC 24 BC 05 00 00 00               CMP      dword ptr [r12 + 0x5bc], 0
+00000001401C6CFF: 7E 55                                    JLE      0x1401c6d56
+00000001401C6D01: 45 84 F6                                 TEST     r14b, r14b
+00000001401C6D04: 74 50                                    JE       0x1401c6d56
+00000001401C6D06: 48 8B D7                                 MOV      rdx, rdi
+00000001401C6D09: E8 72 35 FE FF                           CALL     0x1401aa280
+00000001401C6D0E: F3 44 0F 5F C0                           MAXSS    xmm8, xmm0
+00000001401C6D13: F3 45 0F 5D F0                           MINSS    xmm14, xmm8
+00000001401C6D18: F2 0F 10 05 D0 34 74 00                  MOVSD    xmm0, qword ptr [rip + 0x7434d0]
+00000001401C6D20: 0F 54 05 D9 59 74 00                     ANDPS    xmm0, xmmword ptr [rip + 0x7459d9]
+00000001401C6D27: 66 0F 5A C0                              CVTPD2PS xmm0, xmm0
+00000001401C6D2B: 0F 2F 05 CA 2D 74 00                     COMISS   xmm0, dword ptr [rip + 0x742dca]
+00000001401C6D32: F3 0F 10 05 B2 3B 74 00                  MOVSS    xmm0, dword ptr [rip + 0x743bb2]
+00000001401C6D3A: 76 0A                                    JBE      0x1401c6d46
+00000001401C6D3C: F3 44 0F 59 F0                           MULSS    xmm14, xmm0
+00000001401C6D41: F3 41 0F 5C C6                           SUBSS    xmm0, xmm14
+00000001401C6D46: F3 0F 58 05 F6 36 74 00                  ADDSS    xmm0, dword ptr [rip + 0x7436f6]
+00000001401C6D4E: F3 0F 11 87 C0 0F 00 00                  MOVSS    dword ptr [rdi + 0xfc0], xmm0
+00000001401C6D56: 48 8B 5C 24 50                           MOV      rbx, qword ptr [rsp + 0x50]
+00000001401C6D5B: 48 85 DB                                 TEST     rbx, rbx
+00000001401C6D5E: 74 1C                                    JE       0x1401c6d7c
+00000001401C6D60: 48 8B 95 A0 02 00 00                     MOV      rdx, qword ptr [rbp + 0x2a0]
+00000001401C6D67: 48 2B D3                                 SUB      rdx, rbx
+00000001401C6D6A: 48 C1 FA 03                              SAR      rdx, 3
+00000001401C6D6E: 41 B8 08 00 00 00                        MOV      r8d, 8
+00000001401C6D74: 48 8B CB                                 MOV      rcx, rbx
+00000001401C6D77: E8 D4 AC E3 FF                           CALL     0x140001a50
+00000001401C6D7C: 4C 8D 9C 24 48 03 00 00                  LEA      r11, [rsp + 0x348]
+00000001401C6D84: 41 0F 28 73 E8                           MOVAPS   xmm6, xmmword ptr [r11 - 0x18]
+00000001401C6D89: 41 0F 28 7B D8                           MOVAPS   xmm7, xmmword ptr [r11 - 0x28]
+00000001401C6D8E: 45 0F 28 43 C8                           MOVAPS   xmm8, xmmword ptr [r11 - 0x38]
+00000001401C6D93: 45 0F 28 4B B8                           MOVAPS   xmm9, xmmword ptr [r11 - 0x48]
+00000001401C6D98: 45 0F 28 53 A8                           MOVAPS   xmm10, xmmword ptr [r11 - 0x58]
+00000001401C6D9D: 45 0F 28 5B 98                           MOVAPS   xmm11, xmmword ptr [r11 - 0x68]
+00000001401C6DA2: 45 0F 28 63 88                           MOVAPS   xmm12, xmmword ptr [r11 - 0x78]
+00000001401C6DA7: 45 0F 28 AB 78 FF FF FF                  MOVAPS   xmm13, xmmword ptr [r11 - 0x88]
+00000001401C6DAF: 45 0F 28 B3 68 FF FF FF                  MOVAPS   xmm14, xmmword ptr [r11 - 0x98]
+00000001401C6DB7: 45 0F 28 BB 58 FF FF FF                  MOVAPS   xmm15, xmmword ptr [r11 - 0xa8]
+00000001401C6DBF: 49 8B E3                                 MOV      rsp, r11
+00000001401C6DC2: 41 5F                                    POP      r15
+00000001401C6DC4: 41 5E                                    POP      r14
+00000001401C6DC6: 41 5D                                    POP      r13
+00000001401C6DC8: 41 5C                                    POP      r12
+00000001401C6DCA: 5F                                       POP      rdi
+00000001401C6DCB: 5E                                       POP      rsi
+00000001401C6DCC: 5B                                       POP      rbx
+00000001401C6DCD: 5D                                       POP      rbp
+00000001401C6DCE: C3                                       RET
+```
+
+#### `FUN_1406B8EB0` — shared association/update helper
+
+```asm
+00000001406B8EB0: 48 8B C4                                 MOV      rax, rsp
+00000001406B8EB3: 88 50 10                                 MOV      byte ptr [rax + 0x10], dl
+00000001406B8EB6: 55                                       PUSH     rbp
+00000001406B8EB7: 56                                       PUSH     rsi
+00000001406B8EB8: 57                                       PUSH     rdi
+00000001406B8EB9: 41 54                                    PUSH     r12
+00000001406B8EBB: 41 55                                    PUSH     r13
+00000001406B8EBD: 41 56                                    PUSH     r14
+00000001406B8EBF: 41 57                                    PUSH     r15
+00000001406B8EC1: 48 8D 68 A1                              LEA      rbp, [rax - 0x5f]
+00000001406B8EC5: 48 81 EC E0 00 00 00                     SUB      rsp, 0xe0
+00000001406B8ECC: 48 C7 45 9F FE FF FF FF                  MOV      qword ptr [rbp - 0x61], 0xfffffffffffffffe
+00000001406B8ED4: 48 89 58 18                              MOV      qword ptr [rax + 0x18], rbx
+00000001406B8ED8: 0F 29 70 B8                              MOVAPS   xmmword ptr [rax - 0x48], xmm6
+00000001406B8EDC: 0F 29 78 A8                              MOVAPS   xmmword ptr [rax - 0x58], xmm7
+00000001406B8EE0: 44 0F 29 40 98                           MOVAPS   xmmword ptr [rax - 0x68], xmm8
+00000001406B8EE5: 44 0F 29 48 88                           MOVAPS   xmmword ptr [rax - 0x78], xmm9
+00000001406B8EEA: 48 8B F9                                 MOV      rdi, rcx
+00000001406B8EED: 48 83 B9 80 0C 00 00 00                  CMP      qword ptr [rcx + 0xc80], 0
+00000001406B8EF5: 0F 85 6B 1D 00 00                        JNE      0x1406bac66
+00000001406B8EFB: 48 83 B9 F0 04 00 00 00                  CMP      qword ptr [rcx + 0x4f0], 0
+00000001406B8F03: 0F 84 5D 1D 00 00                        JE       0x1406bac66
+00000001406B8F09: 48 8D 81 D0 07 00 00                     LEA      rax, [rcx + 0x7d0]
+00000001406B8F10: B9 4B 00 00 00                           MOV      ecx, 0x4b
+00000001406B8F15: 45 33 F6                                 XOR      r14d, r14d
+00000001406B8F18: 0F 1F 84 00 00 00 00 00                  NOP      dword ptr [rax + rax]
+00000001406B8F20: 4C 89 30                                 MOV      qword ptr [rax], r14
+00000001406B8F23: 48 83 C0 10                              ADD      rax, 0x10
+00000001406B8F27: 48 83 E9 01                              SUB      rcx, 1
+00000001406B8F2B: 75 F3                                    JNE      0x1406b8f20
+00000001406B8F2D: 44 38 B7 FD 05 00 00                     CMP      byte ptr [rdi + 0x5fd], r14b
+00000001406B8F34: 75 47                                    JNE      0x1406b8f7d
+00000001406B8F36: C7 87 6C 06 00 00 00 00 80 BF            MOV      dword ptr [rdi + 0x66c], 0xbf800000
+00000001406B8F40: 45 84 C9                                 TEST     r9b, r9b
+00000001406B8F43: 74 31                                    JE       0x1406b8f76
+00000001406B8F45: 48 8B 87 F0 04 00 00                     MOV      rax, qword ptr [rdi + 0x4f0]
+00000001406B8F4C: 48 85 C0                                 TEST     rax, rax
+00000001406B8F4F: 74 2C                                    JE       0x1406b8f7d
+00000001406B8F51: 48 8B 80 18 03 00 00                     MOV      rax, qword ptr [rax + 0x318]
+00000001406B8F58: 48 85 C0                                 TEST     rax, rax
+00000001406B8F5B: 74 20                                    JE       0x1406b8f7d
+00000001406B8F5D: 8B 88 60 03 00 00                        MOV      ecx, dword ptr [rax + 0x360]
+00000001406B8F63: 83 F9 0F                                 CMP      ecx, 0xf
+00000001406B8F66: 74 0E                                    JE       0x1406b8f76
+00000001406B8F68: 83 F9 0E                                 CMP      ecx, 0xe
+00000001406B8F6B: 75 10                                    JNE      0x1406b8f7d
+00000001406B8F6D: 83 B8 64 03 00 00 24                     CMP      dword ptr [rax + 0x364], 0x24
+00000001406B8F74: 75 07                                    JNE      0x1406b8f7d
+00000001406B8F76: 44 89 B7 98 06 00 00                     MOV      dword ptr [rdi + 0x698], r14d
+00000001406B8F7D: 66 44 89 B7 39 0D 00 00                  MOV      word ptr [rdi + 0xd39], r14w
+00000001406B8F85: 66 44 89 B7 3D 0D 00 00                  MOV      word ptr [rdi + 0xd3d], r14w
+00000001406B8F8D: 44 88 B7 3F 0D 00 00                     MOV      byte ptr [rdi + 0xd3f], r14b
+00000001406B8F94: 45 84 C0                                 TEST     r8b, r8b
+00000001406B8F97: 75 58                                    JNE      0x1406b8ff1
+00000001406B8F99: 48 8B 87 08 17 00 00                     MOV      rax, qword ptr [rdi + 0x1708]
+00000001406B8FA0: 8B 88 94 02 00 00                        MOV      ecx, dword ptr [rax + 0x294]
+00000001406B8FA6: 83 F9 06                                 CMP      ecx, 6
+00000001406B8FA9: 75 0D                                    JNE      0x1406b8fb8
+00000001406B8FAB: 48 8B CF                                 MOV      rcx, rdi
+00000001406B8FAE: E8 7D 89 02 00                           CALL     0x1406e1930
+00000001406B8FB3: E9 CE 1C 00 00                           JMP      0x1406bac86
+00000001406B8FB8: 83 F9 08                                 CMP      ecx, 8
+00000001406B8FBB: 75 10                                    JNE      0x1406b8fcd
+00000001406B8FBD: 45 33 C0                                 XOR      r8d, r8d
+00000001406B8FC0: 83 CA FF                                 OR       edx, 0xffffffff
+00000001406B8FC3: 48 8B CF                                 MOV      rcx, rdi
+00000001406B8FC6: E8 75 EC 01 00                           CALL     0x1406d7c40
+00000001406B8FCB: EB 24                                    JMP      0x1406b8ff1
+00000001406B8FCD: 83 F9 0A                                 CMP      ecx, 0xa
+00000001406B8FD0: 48 8B CF                                 MOV      rcx, rdi
+00000001406B8FD3: 75 07                                    JNE      0x1406b8fdc
+00000001406B8FD5: E8 66 46 02 00                           CALL     0x1406dd640
+00000001406B8FDA: EB 15                                    JMP      0x1406b8ff1
+00000001406B8FDC: 44 88 74 24 28                           MOV      byte ptr [rsp + 0x28], r14b
+00000001406B8FE1: 44 88 74 24 20                           MOV      byte ptr [rsp + 0x20], r14b
+00000001406B8FE6: 41 83 C8 FF                              OR       r8d, 0xffffffff
+00000001406B8FEA: 33 D2                                    XOR      edx, edx
+00000001406B8FEC: E8 2F 7A FC FF                           CALL     0x140680a20
+00000001406B8FF1: 44 38 B7 39 0D 00 00                     CMP      byte ptr [rdi + 0xd39], r14b
+00000001406B8FF8: 75 7B                                    JNE      0x1406b9075
+00000001406B8FFA: 48 8B CF                                 MOV      rcx, rdi
+00000001406B8FFD: E8 DE A5 FA FF                           CALL     0x1406635e0
+00000001406B9002: 84 C0                                    TEST     al, al
+00000001406B9004: 75 76                                    JNE      0x1406b907c
+00000001406B9006: C6 87 3F 0D 00 00 01                     MOV      byte ptr [rdi + 0xd3f], 1
+00000001406B900D: B2 01                                    MOV      dl, 1
+00000001406B900F: 48 8B CF                                 MOV      rcx, rdi
+00000001406B9012: E8 09 D7 FE FF                           CALL     0x1406a6720
+00000001406B9017: 48 8B 87 A0 06 00 00                     MOV      rax, qword ptr [rdi + 0x6a0]
+00000001406B901E: 48 89 87 A8 06 00 00                     MOV      qword ptr [rdi + 0x6a8], rax
+00000001406B9025: 48 8B 87 B8 06 00 00                     MOV      rax, qword ptr [rdi + 0x6b8]
+00000001406B902C: 48 89 87 C0 06 00 00                     MOV      qword ptr [rdi + 0x6c0], rax
+00000001406B9033: 48 8B 87 38 07 00 00                     MOV      rax, qword ptr [rdi + 0x738]
+00000001406B903A: 48 89 87 40 07 00 00                     MOV      qword ptr [rdi + 0x740], rax
+00000001406B9041: 48 8B 87 50 07 00 00                     MOV      rax, qword ptr [rdi + 0x750]
+00000001406B9048: 48 89 87 58 07 00 00                     MOV      qword ptr [rdi + 0x758], rax
+00000001406B904F: 4C 89 B7 98 07 00 00                     MOV      qword ptr [rdi + 0x798], r14
+00000001406B9056: 48 8B 87 C0 07 00 00                     MOV      rax, qword ptr [rdi + 0x7c0]
+00000001406B905D: 48 2B 87 B8 07 00 00                     SUB      rax, qword ptr [rdi + 0x7b8]
+00000001406B9064: 48 C1 F8 03                              SAR      rax, 3
+00000001406B9068: 48 85 C0                                 TEST     rax, rax
+00000001406B906B: 74 08                                    JE       0x1406b9075
+00000001406B906D: 48 8B CF                                 MOV      rcx, rdi
+00000001406B9070: E8 FB 88 FC FF                           CALL     0x140681970
+00000001406B9075: 32 C0                                    XOR      al, al
+00000001406B9077: E9 0C 1C 00 00                           JMP      0x1406bac88
+00000001406B907C: 49 BD AB AA AA AA AA AA AA 2A            MOVABS   r13, 0x2aaaaaaaaaaaaaab
+00000001406B9086: 0F 57 F6                                 XORPS    xmm6, xmm6
+00000001406B9089: 44 38 B7 7D 06 00 00                     CMP      byte ptr [rdi + 0x67d], r14b
+00000001406B9090: 0F 85 8E 03 00 00                        JNE      0x1406b9424
+00000001406B9096: 4C 8B 8F F0 04 00 00                     MOV      r9, qword ptr [rdi + 0x4f0]
+00000001406B909D: 49 8B 81 18 03 00 00                     MOV      rax, qword ptr [r9 + 0x318]
+00000001406B90A4: 48 85 C0                                 TEST     rax, rax
+00000001406B90A7: 0F 84 77 03 00 00                        JE       0x1406b9424
+00000001406B90AD: 83 B8 60 03 00 00 0F                     CMP      dword ptr [rax + 0x360], 0xf
+00000001406B90B4: 0F 85 6A 03 00 00                        JNE      0x1406b9424
+00000001406B90BA: 4C 8B 97 08 17 00 00                     MOV      r10, qword ptr [rdi + 0x1708]
+00000001406B90C1: 41 83 BA 94 02 00 00 04                  CMP      dword ptr [r10 + 0x294], 4
+00000001406B90C9: 0F 85 55 03 00 00                        JNE      0x1406b9424
+00000001406B90CF: 48 8B 87 A8 06 00 00                     MOV      rax, qword ptr [rdi + 0x6a8]
+00000001406B90D6: 48 2B 87 A0 06 00 00                     SUB      rax, qword ptr [rdi + 0x6a0]
+00000001406B90DD: 48 83 F8 08                              CMP      rax, 8
+00000001406B90E1: 0F 82 3D 03 00 00                        JB       0x1406b9424
+00000001406B90E7: 48 8B 87 A0 06 00 00                     MOV      rax, qword ptr [rdi + 0x6a0]
+00000001406B90EE: 48 8B 08                                 MOV      rcx, qword ptr [rax]
+00000001406B90F1: 44 39 B1 E0 00 00 00                     CMP      dword ptr [rcx + 0xe0], r14d
+00000001406B90F8: 0F 85 26 03 00 00                        JNE      0x1406b9424
+00000001406B90FE: C7 45 67 FF FF FF FF                     MOV      dword ptr [rbp + 0x67], 0xffffffff
+00000001406B9105: 45 8B C6                                 MOV      r8d, r14d
+00000001406B9108: 49 8B 81 80 0B 00 00                     MOV      rax, qword ptr [r9 + 0xb80]
+00000001406B910F: 49 2B 81 78 0B 00 00                     SUB      rax, qword ptr [r9 + 0xb78]
+00000001406B9116: 48 C1 F8 05                              SAR      rax, 5
+00000001406B911A: 48 85 C0                                 TEST     rax, rax
+00000001406B911D: 74 32                                    JE       0x1406b9151
+00000001406B911F: 49 8D 91 90 0B 00 00                     LEA      rdx, [r9 + 0xb90]
+00000001406B9126: 44 38 32                                 CMP      byte ptr [rdx], r14b
+00000001406B9129: 74 22                                    JE       0x1406b914d
+00000001406B912B: 41 FF C0                                 INC      r8d
+00000001406B912E: 48 FF C2                                 INC      rdx
+00000001406B9131: 49 8B 89 80 0B 00 00                     MOV      rcx, qword ptr [r9 + 0xb80]
+00000001406B9138: 49 2B 89 78 0B 00 00                     SUB      rcx, qword ptr [r9 + 0xb78]
+00000001406B913F: 48 C1 F9 05                              SAR      rcx, 5
+00000001406B9143: 49 63 C0                                 MOVSXD   rax, r8d
+00000001406B9146: 48 3B C1                                 CMP      rax, rcx
+00000001406B9149: 72 DB                                    JB       0x1406b9126
+00000001406B914B: EB 04                                    JMP      0x1406b9151
+00000001406B914D: 44 89 45 67                              MOV      dword ptr [rbp + 0x67], r8d
+00000001406B9151: C6 87 7D 06 00 00 01                     MOV      byte ptr [rdi + 0x67d], 1
+00000001406B9158: 48 8B 05 51 B5 32 00                     MOV      rax, qword ptr [rip + 0x32b551]
+00000001406B915F: 48 89 87 10 17 00 00                     MOV      qword ptr [rdi + 0x1710], rax
+00000001406B9166: 41 8B 82 F8 7A 00 00                     MOV      eax, dword ptr [r10 + 0x7af8]
+00000001406B916D: 89 87 4C 11 00 00                        MOV      dword ptr [rdi + 0x114c], eax
+00000001406B9173: 41 8B 82 FC 7A 00 00                     MOV      eax, dword ptr [r10 + 0x7afc]
+00000001406B917A: 89 87 50 11 00 00                        MOV      dword ptr [rdi + 0x1150], eax
+00000001406B9180: 45 8B EE                                 MOV      r13d, r14d
+00000001406B9183: 48 8B 87 A8 03 00 00                     MOV      rax, qword ptr [rdi + 0x3a8]
+00000001406B918A: 48 2B 87 A0 03 00 00                     SUB      rax, qword ptr [rdi + 0x3a0]
+00000001406B9191: 48 C1 F8 03                              SAR      rax, 3
+00000001406B9195: 48 85 C0                                 TEST     rax, rax
+00000001406B9198: 0F 84 32 01 00 00                        JE       0x1406b92d0
+00000001406B919E: 4D 8B E6                                 MOV      r12, r14
+00000001406B91A1: 41 BE 01 00 00 00                        MOV      r14d, 1
+00000001406B91A7: 66 0F 1F 84 00 00 00 00 00               NOP      word ptr [rax + rax]
+00000001406B91B0: 48 8B 87 A0 03 00 00                     MOV      rax, qword ptr [rdi + 0x3a0]
+00000001406B91B7: 4A 8B 0C E0                              MOV      rcx, qword ptr [rax + r12*8]
+00000001406B91BB: 48 8B 81 B0 04 00 00                     MOV      rax, qword ptr [rcx + 0x4b0]
+00000001406B91C2: 48 2B 81 A8 04 00 00                     SUB      rax, qword ptr [rcx + 0x4a8]
+00000001406B91C9: 48 C1 F8 03                              SAR      rax, 3
+00000001406B91CD: 41 2B C6                                 SUB      eax, r14d
+00000001406B91D0: 4C 63 F8                                 MOVSXD   r15, eax
+00000001406B91D3: 0F 88 BA 00 00 00                        JS       0x1406b9293
+00000001406B91D9: 0F 1F 80 00 00 00 00                     NOP      dword ptr [rax]
+00000001406B91E0: 48 8B 87 A0 03 00 00                     MOV      rax, qword ptr [rdi + 0x3a0]
+00000001406B91E7: 4A 8B 04 E0                              MOV      rax, qword ptr [rax + r12*8]
+00000001406B91EB: 48 8B 80 A8 04 00 00                     MOV      rax, qword ptr [rax + 0x4a8]
+00000001406B91F2: 4A 8B 0C F8                              MOV      rcx, qword ptr [rax + r15*8]
+00000001406B91F6: 48 8B 87 90 03 00 00                     MOV      rax, qword ptr [rdi + 0x390]
+00000001406B91FD: 48 89 41 60                              MOV      qword ptr [rcx + 0x60], rax
+00000001406B9201: 48 8B 87 A0 03 00 00                     MOV      rax, qword ptr [rdi + 0x3a0]
+00000001406B9208: 4A 8B 04 E0                              MOV      rax, qword ptr [rax + r12*8]
+00000001406B920C: 48 8B 80 A8 04 00 00                     MOV      rax, qword ptr [rax + 0x4a8]
+00000001406B9213: 4A 8D 34 F8                              LEA      rsi, [rax + r15*8]
+00000001406B9217: 48 8B 9F 90 03 00 00                     MOV      rbx, qword ptr [rdi + 0x390]
+00000001406B921E: 48 81 C3 A8 04 00 00                     ADD      rbx, 0x4a8
+00000001406B9225: 48 3B 73 08                              CMP      rsi, qword ptr [rbx + 8]
+00000001406B9229: 73 36                                    JAE      0x1406b9261
+00000001406B922B: 48 8B 03                                 MOV      rax, qword ptr [rbx]
+00000001406B922E: 48 3B C6                                 CMP      rax, rsi
+00000001406B9231: 77 2E                                    JA       0x1406b9261
+00000001406B9233: 48 2B F0                                 SUB      rsi, rax
+00000001406B9236: 48 C1 FE 03                              SAR      rsi, 3
+00000001406B923A: 48 8B 43 10                              MOV      rax, qword ptr [rbx + 0x10]
+00000001406B923E: 48 39 43 08                              CMP      qword ptr [rbx + 8], rax
+00000001406B9242: 75 0B                                    JNE      0x1406b924f
+00000001406B9244: 49 8B D6                                 MOV      rdx, r14
+00000001406B9247: 48 8B CB                                 MOV      rcx, rbx
+00000001406B924A: E8 B1 84 9F FF                           CALL     0x1400b1700
+00000001406B924F: 48 8B 4B 08                              MOV      rcx, qword ptr [rbx + 8]
+00000001406B9253: 48 8B 03                                 MOV      rax, qword ptr [rbx]
+00000001406B9256: 48 85 C9                                 TEST     rcx, rcx
+00000001406B9259: 74 2A                                    JE       0x1406b9285
+00000001406B925B: 48 8B 04 F0                              MOV      rax, qword ptr [rax + rsi*8]
+00000001406B925F: EB 21                                    JMP      0x1406b9282
+00000001406B9261: 48 8B 43 10                              MOV      rax, qword ptr [rbx + 0x10]
+00000001406B9265: 48 39 43 08                              CMP      qword ptr [rbx + 8], rax
+00000001406B9269: 75 0B                                    JNE      0x1406b9276
+00000001406B926B: 49 8B D6                                 MOV      rdx, r14
+00000001406B926E: 48 8B CB                                 MOV      rcx, rbx
+00000001406B9271: E8 8A 84 9F FF                           CALL     0x1400b1700
+00000001406B9276: 48 8B 4B 08                              MOV      rcx, qword ptr [rbx + 8]
+00000001406B927A: 48 85 C9                                 TEST     rcx, rcx
+00000001406B927D: 74 06                                    JE       0x1406b9285
+00000001406B927F: 48 8B 06                                 MOV      rax, qword ptr [rsi]
+00000001406B9282: 48 89 01                                 MOV      qword ptr [rcx], rax
+00000001406B9285: 48 83 43 08 08                           ADD      qword ptr [rbx + 8], 8
+00000001406B928A: 4D 2B FE                                 SUB      r15, r14
+00000001406B928D: 0F 89 4D FF FF FF                        JNS      0x1406b91e0
+00000001406B9293: 48 8B 87 A0 03 00 00                     MOV      rax, qword ptr [rdi + 0x3a0]
+00000001406B929A: 4A 8B 0C E0                              MOV      rcx, qword ptr [rax + r12*8]
+00000001406B929E: 48 8B 81 A8 04 00 00                     MOV      rax, qword ptr [rcx + 0x4a8]
+00000001406B92A5: 48 89 81 B0 04 00 00                     MOV      qword ptr [rcx + 0x4b0], rax
+00000001406B92AC: 41 FF C5                                 INC      r13d
+00000001406B92AF: 48 8B 87 A8 03 00 00                     MOV      rax, qword ptr [rdi + 0x3a8]
+00000001406B92B6: 48 2B 87 A0 03 00 00                     SUB      rax, qword ptr [rdi + 0x3a0]
+00000001406B92BD: 48 C1 F8 03                              SAR      rax, 3
+00000001406B92C1: 45 8B E5                                 MOV      r12d, r13d
+00000001406B92C4: 4C 3B E0                                 CMP      r12, rax
+00000001406B92C7: 0F 82 E3 FE FF FF                        JB       0x1406b91b0
+00000001406B92CD: 45 33 F6                                 XOR      r14d, r14d
+00000001406B92D0: 83 7D 67 00                              CMP      dword ptr [rbp + 0x67], 0
+00000001406B92D4: 7C 17                                    JL       0x1406b92ed
+00000001406B92D6: 48 8B CF                                 MOV      rcx, rdi
+00000001406B92D9: E8 72 E1 FA FF                           CALL     0x140667450
+00000001406B92DE: 49 BD AB AA AA AA AA AA AA 2A            MOVABS   r13, 0x2aaaaaaaaaaaaaab
+00000001406B92E8: E9 2F 01 00 00                           JMP      0x1406b941c
+00000001406B92ED: 45 8B D6                                 MOV      r10d, r14d
+00000001406B92F0: 4C 8B 87 F0 04 00 00                     MOV      r8, qword ptr [rdi + 0x4f0]
+00000001406B92F7: 49 8B 88 18 0A 00 00                     MOV      rcx, qword ptr [r8 + 0xa18]
+00000001406B92FE: 49 2B 88 10 0A 00 00                     SUB      rcx, qword ptr [r8 + 0xa10]
+00000001406B9305: 49 BD AB AA AA AA AA AA AA 2A            MOVABS   r13, 0x2aaaaaaaaaaaaaab
+00000001406B930F: 49 8B C5                                 MOV      rax, r13
+00000001406B9312: 48 F7 E9                                 IMUL     rcx
+00000001406B9315: 48 C1 FA 04                              SAR      rdx, 4
+00000001406B9319: 48 8B C2                                 MOV      rax, rdx
+00000001406B931C: 48 C1 E8 3F                              SHR      rax, 0x3f
+00000001406B9320: 48 03 D0                                 ADD      rdx, rax
+00000001406B9323: 0F 84 F3 00 00 00                        JE       0x1406b941c
+00000001406B9329: 48 8B 87 A0 06 00 00                     MOV      rax, qword ptr [rdi + 0x6a0]
+00000001406B9330: 4C 8B 18                                 MOV      r11, qword ptr [rax]
+00000001406B9333: 4D 8B CE                                 MOV      r9, r14
+00000001406B9336: 66 66 0F 1F 84 00 00 00 00 00            NOP      word ptr [rax + rax]
+00000001406B9340: 49 8B 80 10 0A 00 00                     MOV      rax, qword ptr [r8 + 0xa10]
+00000001406B9347: 4D 39 5C 01 30                           CMP      qword ptr [r9 + rax + 0x30], r11
+00000001406B934C: 74 32                                    JE       0x1406b9380
+00000001406B934E: 41 FF C2                                 INC      r10d
+00000001406B9351: 49 83 C1 60                              ADD      r9, 0x60
+00000001406B9355: 49 8B 88 18 0A 00 00                     MOV      rcx, qword ptr [r8 + 0xa18]
+00000001406B935C: 48 2B C8                                 SUB      rcx, rax
+00000001406B935F: 49 8B C5                                 MOV      rax, r13
+00000001406B9362: 48 F7 E9                                 IMUL     rcx
+00000001406B9365: 48 C1 FA 04                              SAR      rdx, 4
+00000001406B9369: 48 8B C2                                 MOV      rax, rdx
+00000001406B936C: 48 C1 E8 3F                              SHR      rax, 0x3f
+00000001406B9370: 48 03 D0                                 ADD      rdx, rax
+00000001406B9373: 49 63 C2                                 MOVSXD   rax, r10d
+00000001406B9376: 48 3B C2                                 CMP      rax, rdx
+00000001406B9379: 72 C5                                    JB       0x1406b9340
+00000001406B937B: E9 9C 00 00 00                           JMP      0x1406b941c
+00000001406B9380: 49 63 C2                                 MOVSXD   rax, r10d
+00000001406B9383: 48 8D 1C 40                              LEA      rbx, [rax + rax*2]
+00000001406B9387: 48 C1 E3 05                              SHL      rbx, 5
+00000001406B938B: 49 8B 88 10 0A 00 00                     MOV      rcx, qword ptr [r8 + 0xa10]
+00000001406B9392: F3 0F 10 54 0B 10                        MOVSS    xmm2, dword ptr [rbx + rcx + 0x10]
+00000001406B9398: F3 0F 5C 54 0B 1C                        SUBSS    xmm2, dword ptr [rbx + rcx + 0x1c]
+00000001406B939E: F3 0F 10 4C 0B 0C                        MOVSS    xmm1, dword ptr [rbx + rcx + 0xc]
+00000001406B93A4: F3 0F 5C 4C 0B 18                        SUBSS    xmm1, dword ptr [rbx + rcx + 0x18]
+00000001406B93AA: F3 0F 10 44 0B 08                        MOVSS    xmm0, dword ptr [rbx + rcx + 8]
+00000001406B93B0: F3 0F 5C 44 0B 14                        SUBSS    xmm0, dword ptr [rbx + rcx + 0x14]
+00000001406B93B6: F3 0F 11 44 24 30                        MOVSS    dword ptr [rsp + 0x30], xmm0
+00000001406B93BC: F3 0F 11 4C 24 34                        MOVSS    dword ptr [rsp + 0x34], xmm1
+00000001406B93C2: F3 0F 11 54 24 38                        MOVSS    dword ptr [rsp + 0x38], xmm2
+00000001406B93C8: 48 8D 54 24 30                           LEA      rdx, [rsp + 0x30]
+00000001406B93CD: 48 8D 4C 24 30                           LEA      rcx, [rsp + 0x30]
+00000001406B93D2: FF 15 28 3C 1B 00                        CALL     qword ptr [rip + 0x1b3c28]
+00000001406B93D8: 48 8B 87 F0 04 00 00                     MOV      rax, qword ptr [rdi + 0x4f0]
+00000001406B93DF: 48 8B 88 10 0A 00 00                     MOV      rcx, qword ptr [rax + 0xa10]
+00000001406B93E6: F3 0F 10 44 0B 08                        MOVSS    xmm0, dword ptr [rbx + rcx + 8]
+00000001406B93EC: F3 0F 11 45 87                           MOVSS    dword ptr [rbp - 0x79], xmm0
+00000001406B93F1: F3 0F 10 4C 0B 0C                        MOVSS    xmm1, dword ptr [rbx + rcx + 0xc]
+00000001406B93F7: F3 0F 11 4D 8B                           MOVSS    dword ptr [rbp - 0x75], xmm1
+00000001406B93FC: F3 0F 10 44 0B 10                        MOVSS    xmm0, dword ptr [rbx + rcx + 0x10]
+00000001406B9402: F3 0F 11 45 8F                           MOVSS    dword ptr [rbp - 0x71], xmm0
+00000001406B9407: 0F 28 DE                                 MOVAPS   xmm3, xmm6
+00000001406B940A: F3 0F 10 54 24 34                        MOVSS    xmm2, dword ptr [rsp + 0x34]
+00000001406B9410: 48 8D 55 87                              LEA      rdx, [rbp - 0x79]
+00000001406B9414: 48 8B CF                                 MOV      rcx, rdi
+00000001406B9417: E8 C4 69 FF FF                           CALL     0x1406afde0
+00000001406B941C: 48 8B CF                                 MOV      rcx, rdi
+00000001406B941F: E8 6C 3E FF FF                           CALL     0x1406ad290
+00000001406B9424: 80 BF 7D 06 00 00 00                     CMP      byte ptr [rdi + 0x67d], 0
+00000001406B942B: 0F 85 B7 07 00 00                        JNE      0x1406b9be8
+00000001406B9431: 48 8B 8F 08 17 00 00                     MOV      rcx, qword ptr [rdi + 0x1708]
+00000001406B9438: 8B 81 94 02 00 00                        MOV      eax, dword ptr [rcx + 0x294]
+00000001406B943E: 83 E8 04                                 SUB      eax, 4
+00000001406B9441: 83 F8 01                                 CMP      eax, 1
+00000001406B9444: 0F 87 9E 07 00 00                        JA       0x1406b9be8
+00000001406B944A: 48 85 C9                                 TEST     rcx, rcx
+00000001406B944D: 0F 84 0E 03 00 00                        JE       0x1406b9761
+00000001406B9453: F3 0F 10 81 84 86 00 00                  MOVSS    xmm0, dword ptr [rcx + 0x8684]
+00000001406B945B: 0F 2F C6                                 COMISS   xmm0, xmm6
+00000001406B945E: 76 10                                    JBE      0x1406b9470
+00000001406B9460: 48 8B CF                                 MOV      rcx, rdi
+00000001406B9463: E8 68 41 00 00                           CALL     0x1406bd5d0
+00000001406B9468: 84 C0                                    TEST     al, al
+00000001406B946A: 75 04                                    JNE      0x1406b9470
+00000001406B946C: 32 D2                                    XOR      dl, dl
+00000001406B946E: EB 02                                    JMP      0x1406b9472
+00000001406B9470: B2 01                                    MOV      dl, 1
+00000001406B9472: 45 8B CE                                 MOV      r9d, r14d
+00000001406B9475: 48 8B 87 A8 03 00 00                     MOV      rax, qword ptr [rdi + 0x3a8]
+00000001406B947C: 48 2B 87 A0 03 00 00                     SUB      rax, qword ptr [rdi + 0x3a0]
+00000001406B9483: 48 C1 F8 03                              SAR      rax, 3
+00000001406B9487: 48 85 C0                                 TEST     rax, rax
+00000001406B948A: 74 60                                    JE       0x1406b94ec
+00000001406B948C: 4D 8B C6                                 MOV      r8, r14
+00000001406B948F: 90                                       NOP
+00000001406B9490: 48 8B 87 A0 03 00 00                     MOV      rax, qword ptr [rdi + 0x3a0]
+00000001406B9497: 4A 8B 0C C0                              MOV      rcx, qword ptr [rax + r8*8]
+00000001406B949B: 48 8B 81 08 17 00 00                     MOV      rax, qword ptr [rcx + 0x1708]
+00000001406B94A2: F3 0F 10 80 84 86 00 00                  MOVSS    xmm0, dword ptr [rax + 0x8684]
+00000001406B94AA: 0F 2F C6                                 COMISS   xmm0, xmm6
+00000001406B94AD: 76 20                                    JBE      0x1406b94cf
+00000001406B94AF: 48 8B 87 A0 03 00 00                     MOV      rax, qword ptr [rdi + 0x3a0]
+00000001406B94B6: 4A 8B 0C C0                              MOV      rcx, qword ptr [rax + r8*8]
+00000001406B94BA: 48 8B 81 08 17 00 00                     MOV      rax, qword ptr [rcx + 0x1708]
+00000001406B94C1: 0F B6 D2                                 MOVZX    edx, dl
+00000001406B94C4: 83 B8 94 02 00 00 04                     CMP      dword ptr [rax + 0x294], 4
+00000001406B94CB: 41 0F 44 D6                              CMOVE    edx, r14d
+00000001406B94CF: 41 FF C1                                 INC      r9d
+00000001406B94D2: 48 8B 87 A8 03 00 00                     MOV      rax, qword ptr [rdi + 0x3a8]
+00000001406B94D9: 48 2B 87 A0 03 00 00                     SUB      rax, qword ptr [rdi + 0x3a0]
+00000001406B94E0: 48 C1 F8 03                              SAR      rax, 3
+00000001406B94E4: 45 8B C1                                 MOV      r8d, r9d
+00000001406B94E7: 4C 3B C0                                 CMP      r8, rax
+00000001406B94EA: 72 A4                                    JB       0x1406b9490
+00000001406B94EC: 84 D2                                    TEST     dl, dl
+00000001406B94EE: 0F 84 6D 02 00 00                        JE       0x1406b9761
+00000001406B94F4: 83 3D C5 BF 31 00 02                     CMP      dword ptr [rip + 0x31bfc5], 2
+00000001406B94FB: 0F 85 60 02 00 00                        JNE      0x1406b9761
+00000001406B9501: 48 8B 87 A0 06 00 00                     MOV      rax, qword ptr [rdi + 0x6a0]
+00000001406B9508: 48 8B 00                                 MOV      rax, qword ptr [rax]
+00000001406B950B: 48 8B 40 28                              MOV      rax, qword ptr [rax + 0x28]
+00000001406B950F: 4C 8B 28                                 MOV      r13, qword ptr [rax]
+00000001406B9512: 49 8B 85 A8 01 00 00                     MOV      rax, qword ptr [r13 + 0x1a8]
+00000001406B9519: 49 2B 85 A0 01 00 00                     SUB      rax, qword ptr [r13 + 0x1a0]
+00000001406B9520: 48 83 F8 08                              CMP      rax, 8
+00000001406B9524: 73 0C                                    JAE      0x1406b9532
+00000001406B9526: C6 87 3E 0D 00 00 01                     MOV      byte ptr [rdi + 0xd3e], 1
+00000001406B952D: E9 DB FA FF FF                           JMP      0x1406b900d
+00000001406B9532: 0F 57 C0                                 XORPS    xmm0, xmm0
+00000001406B9535: F3 0F 7F 45 87                           MOVDQU   xmmword ptr [rbp - 0x79], xmm0
+00000001406B953A: 4D 8B FE                                 MOV      r15, r14
+00000001406B953D: 4C 89 75 97                              MOV      qword ptr [rbp - 0x69], r14
+00000001406B9541: 45 8B E6                                 MOV      r12d, r14d
+00000001406B9544: 49 8B 85 A8 01 00 00                     MOV      rax, qword ptr [r13 + 0x1a8]
+00000001406B954B: 49 2B 85 A0 01 00 00                     SUB      rax, qword ptr [r13 + 0x1a0]
+00000001406B9552: 48 C1 F8 03                              SAR      rax, 3
+00000001406B9556: 4C 8B 55 8F                              MOV      r10, qword ptr [rbp - 0x71]
+00000001406B955A: 48 8B 75 87                              MOV      rsi, qword ptr [rbp - 0x79]
+00000001406B955E: 48 85 C0                                 TEST     rax, rax
+00000001406B9561: 0F 84 BD 00 00 00                        JE       0x1406b9624
+00000001406B9567: 4D 8B DE                                 MOV      r11, r14
+00000001406B956A: 66 0F 1F 44 00 00                        NOP      word ptr [rax + rax]
+00000001406B9570: 49 8B 95 A0 01 00 00                     MOV      rdx, qword ptr [r13 + 0x1a0]
+00000001406B9577: 4A 8B 14 DA                              MOV      rdx, qword ptr [rdx + r11*8]
+00000001406B957B: 48 8D 0D 8E B9 31 00                     LEA      rcx, [rip + 0x31b98e]
+00000001406B9582: E8 59 2A B0 FF                           CALL     0x1401bbfe0
+00000001406B9587: 84 C0                                    TEST     al, al
+00000001406B9589: 75 78                                    JNE      0x1406b9603
+00000001406B958B: 49 8B 85 A0 01 00 00                     MOV      rax, qword ptr [r13 + 0x1a0]
+00000001406B9592: 4A 8D 1C D8                              LEA      rbx, [rax + r11*8]
+00000001406B9596: 49 3B DA                                 CMP      rbx, r10
+00000001406B9599: 73 36                                    JAE      0x1406b95d1
+00000001406B959B: 48 3B F3                                 CMP      rsi, rbx
+00000001406B959E: 77 31                                    JA       0x1406b95d1
+00000001406B95A0: 48 2B DE                                 SUB      rbx, rsi
+00000001406B95A3: 48 C1 FB 03                              SAR      rbx, 3
+00000001406B95A7: 4D 3B D7                                 CMP      r10, r15
+00000001406B95AA: 75 1A                                    JNE      0x1406b95c6
+00000001406B95AC: BA 01 00 00 00                           MOV      edx, 1
+00000001406B95B1: 48 8D 4D 87                              LEA      rcx, [rbp - 0x79]
+00000001406B95B5: E8 46 81 9F FF                           CALL     0x1400b1700
+00000001406B95BA: 4C 8B 7D 97                              MOV      r15, qword ptr [rbp - 0x69]
+00000001406B95BE: 4C 8B 55 8F                              MOV      r10, qword ptr [rbp - 0x71]
+00000001406B95C2: 48 8B 75 87                              MOV      rsi, qword ptr [rbp - 0x79]
+00000001406B95C6: 4D 85 D2                                 TEST     r10, r10
+00000001406B95C9: 74 30                                    JE       0x1406b95fb
+00000001406B95CB: 48 8B 04 DE                              MOV      rax, qword ptr [rsi + rbx*8]
+00000001406B95CF: EB 27                                    JMP      0x1406b95f8
+00000001406B95D1: 4D 3B D7                                 CMP      r10, r15
+00000001406B95D4: 75 1A                                    JNE      0x1406b95f0
+00000001406B95D6: BA 01 00 00 00                           MOV      edx, 1
+00000001406B95DB: 48 8D 4D 87                              LEA      rcx, [rbp - 0x79]
+00000001406B95DF: E8 1C 81 9F FF                           CALL     0x1400b1700
+00000001406B95E4: 4C 8B 7D 97                              MOV      r15, qword ptr [rbp - 0x69]
+00000001406B95E8: 4C 8B 55 8F                              MOV      r10, qword ptr [rbp - 0x71]
+00000001406B95EC: 48 8B 75 87                              MOV      rsi, qword ptr [rbp - 0x79]
+00000001406B95F0: 4D 85 D2                                 TEST     r10, r10
+00000001406B95F3: 74 06                                    JE       0x1406b95fb
+00000001406B95F5: 48 8B 03                                 MOV      rax, qword ptr [rbx]
+00000001406B95F8: 49 89 02                                 MOV      qword ptr [r10], rax
+00000001406B95FB: 49 83 C2 08                              ADD      r10, 8
+00000001406B95FF: 4C 89 55 8F                              MOV      qword ptr [rbp - 0x71], r10
+00000001406B9603: 41 FF C4                                 INC      r12d
+00000001406B9606: 49 8B 85 A8 01 00 00                     MOV      rax, qword ptr [r13 + 0x1a8]
+00000001406B960D: 49 2B 85 A0 01 00 00                     SUB      rax, qword ptr [r13 + 0x1a0]
+00000001406B9614: 48 C1 F8 03                              SAR      rax, 3
+00000001406B9618: 45 8B DC                                 MOV      r11d, r12d
+00000001406B961B: 4C 3B D8                                 CMP      r11, rax
+00000001406B961E: 0F 82 4C FF FF FF                        JB       0x1406b9570
+00000001406B9624: 4C 2B D6                                 SUB      r10, rsi
+00000001406B9627: 49 83 FA 08                              CMP      r10, 8
+00000001406B962B: 0F 82 7D 00 00 00                        JB       0x1406b96ae
+00000001406B9631: 80 BF 3D 0D 00 00 00                     CMP      byte ptr [rdi + 0xd3d], 0
+00000001406B9638: 0F 85 06 01 00 00                        JNE      0x1406b9744
+00000001406B963E: 45 8B C6                                 MOV      r8d, r14d
+00000001406B9641: 49 C1 FA 03                              SAR      r10, 3
+00000001406B9645: 4D 85 D2                                 TEST     r10, r10
+00000001406B9648: 74 3A                                    JE       0x1406b9684
+00000001406B964A: 49 8B C6                                 MOV      rax, r14
+00000001406B964D: 0F 1F 00                                 NOP      dword ptr [rax]
+00000001406B9650: 48 8B 14 C6                              MOV      rdx, qword ptr [rsi + rax*8]
+00000001406B9654: 48 8B 82 E0 10 00 00                     MOV      rax, qword ptr [rdx + 0x10e0]
+00000001406B965B: 48 8B 8A F8 10 00 00                     MOV      rcx, qword ptr [rdx + 0x10f8]
+00000001406B9662: F3 0F 10 00                              MOVSS    xmm0, dword ptr [rax]
+00000001406B9666: F3 0F 5E 01                              DIVSS    xmm0, dword ptr [rcx]
+00000001406B966A: 48 8B 82 E8 10 00 00                     MOV      rax, qword ptr [rdx + 0x10e8]
+00000001406B9671: F3 0F 59 00                              MULSS    xmm0, dword ptr [rax]
+00000001406B9675: F3 0F 58 F0                              ADDSS    xmm6, xmm0
+00000001406B9679: 41 FF C0                                 INC      r8d
+00000001406B967C: 41 8B C0                                 MOV      eax, r8d
+00000001406B967F: 49 3B C2                                 CMP      rax, r10
+00000001406B9682: 72 CC                                    JB       0x1406b9650
+00000001406B9684: 0F 57 C0                                 XORPS    xmm0, xmm0
+00000001406B9687: F3 49 0F 2A C2                           CVTSI2SS xmm0, r10
+00000001406B968C: 4D 85 D2                                 TEST     r10, r10
+00000001406B968F: 79 08                                    JNS      0x1406b9699
+00000001406B9691: F3 0F 58 05 93 1B 25 00                  ADDSS    xmm0, dword ptr [rip + 0x251b93]
+00000001406B9699: F3 0F 5E F0                              DIVSS    xmm6, xmm0
+00000001406B969D: F3 0F 10 05 33 06 25 00                  MOVSS    xmm0, dword ptr [rip + 0x250633]
+00000001406B96A5: 0F 2F C6                                 COMISS   xmm0, xmm6
+00000001406B96A8: 0F 86 96 00 00 00                        JBE      0x1406b9744
+00000001406B96AE: C6 87 3D 0D 00 00 01                     MOV      byte ptr [rdi + 0xd3d], 1
+00000001406B96B5: B2 01                                    MOV      dl, 1
+00000001406B96B7: 48 8B CF                                 MOV      rcx, rdi
+00000001406B96BA: E8 61 D0 FE FF                           CALL     0x1406a6720
+00000001406B96BF: 48 8B 87 A0 06 00 00                     MOV      rax, qword ptr [rdi + 0x6a0]
+00000001406B96C6: 48 89 87 A8 06 00 00                     MOV      qword ptr [rdi + 0x6a8], rax
+00000001406B96CD: 48 8B 87 B8 06 00 00                     MOV      rax, qword ptr [rdi + 0x6b8]
+00000001406B96D4: 48 89 87 C0 06 00 00                     MOV      qword ptr [rdi + 0x6c0], rax
+00000001406B96DB: 48 8B 87 38 07 00 00                     MOV      rax, qword ptr [rdi + 0x738]
+00000001406B96E2: 48 89 87 40 07 00 00                     MOV      qword ptr [rdi + 0x740], rax
+00000001406B96E9: 48 8B 87 50 07 00 00                     MOV      rax, qword ptr [rdi + 0x750]
+00000001406B96F0: 48 89 87 58 07 00 00                     MOV      qword ptr [rdi + 0x758], rax
+00000001406B96F7: 4C 89 B7 98 07 00 00                     MOV      qword ptr [rdi + 0x798], r14
+00000001406B96FE: 48 8B 87 C0 07 00 00                     MOV      rax, qword ptr [rdi + 0x7c0]
+00000001406B9705: 48 2B 87 B8 07 00 00                     SUB      rax, qword ptr [rdi + 0x7b8]
+00000001406B970C: 48 C1 F8 03                              SAR      rax, 3
+00000001406B9710: 48 85 C0                                 TEST     rax, rax
+00000001406B9713: 74 09                                    JE       0x1406b971e
+00000001406B9715: 48 8B CF                                 MOV      rcx, rdi
+00000001406B9718: E8 53 82 FC FF                           CALL     0x140681970
+00000001406B971D: 90                                       NOP
+00000001406B971E: 48 85 F6                                 TEST     rsi, rsi
+00000001406B9721: 0F 84 4E F9 FF FF                        JE       0x1406b9075
+00000001406B9727: 4C 2B FE                                 SUB      r15, rsi
+00000001406B972A: 49 C1 FF 03                              SAR      r15, 3
+00000001406B972E: 41 B8 08 00 00 00                        MOV      r8d, 8
+00000001406B9734: 49 8B D7                                 MOV      rdx, r15
+00000001406B9737: 48 8B CE                                 MOV      rcx, rsi
+00000001406B973A: E8 11 83 94 FF                           CALL     0x140001a50
+00000001406B973F: E9 31 F9 FF FF                           JMP      0x1406b9075
+00000001406B9744: 48 85 F6                                 TEST     rsi, rsi
+00000001406B9747: 74 18                                    JE       0x1406b9761
+00000001406B9749: 4C 2B FE                                 SUB      r15, rsi
+00000001406B974C: 49 C1 FF 03                              SAR      r15, 3
+00000001406B9750: 41 B8 08 00 00 00                        MOV      r8d, 8
+00000001406B9756: 49 8B D7                                 MOV      rdx, r15
+00000001406B9759: 48 8B CE                                 MOV      rcx, rsi
+00000001406B975C: E8 EF 82 94 FF                           CALL     0x140001a50
+00000001406B9761: 4C 8B 97 F0 04 00 00                     MOV      r10, qword ptr [rdi + 0x4f0]
+00000001406B9768: 49 BD AB AA AA AA AA AA AA 2A            MOVABS   r13, 0x2aaaaaaaaaaaaaab
+00000001406B9772: 4D 85 D2                                 TEST     r10, r10
+00000001406B9775: 0F 84 BB 01 00 00                        JE       0x1406b9936
+00000001406B977B: 4C 3B 97 F8 04 00 00                     CMP      r10, qword ptr [rdi + 0x4f8]
+00000001406B9782: 0F 85 AE 01 00 00                        JNE      0x1406b9936
+00000001406B9788: 45 8B C6                                 MOV      r8d, r14d
+00000001406B978B: 49 8B 8A 18 0A 00 00                     MOV      rcx, qword ptr [r10 + 0xa18]
+00000001406B9792: 49 2B 8A 10 0A 00 00                     SUB      rcx, qword ptr [r10 + 0xa10]
+00000001406B9799: 49 8B C5                                 MOV      rax, r13
+00000001406B979C: 48 F7 E9                                 IMUL     rcx
+00000001406B979F: 48 C1 FA 04                              SAR      rdx, 4
+00000001406B97A3: 48 8B C2                                 MOV      rax, rdx
+00000001406B97A6: 48 C1 E8 3F                              SHR      rax, 0x3f
+00000001406B97AA: 48 03 D0                                 ADD      rdx, rax
+00000001406B97AD: 0F 84 83 01 00 00                        JE       0x1406b9936
+00000001406B97B3: 49 8B CE                                 MOV      rcx, r14
+00000001406B97B6: 48 8B 87 A0 06 00 00                     MOV      rax, qword ptr [rdi + 0x6a0]
+00000001406B97BD: 4C 8B 08                                 MOV      r9, qword ptr [rax]
+00000001406B97C0: 48 8D 0C 49                              LEA      rcx, [rcx + rcx*2]
+00000001406B97C4: 48 C1 E1 05                              SHL      rcx, 5
+00000001406B97C8: 49 8B 82 10 0A 00 00                     MOV      rax, qword ptr [r10 + 0xa10]
+00000001406B97CF: 4C 39 4C 01 30                           CMP      qword ptr [rcx + rax + 0x30], r9
+00000001406B97D4: 74 2E                                    JE       0x1406b9804
+00000001406B97D6: 41 FF C0                                 INC      r8d
+00000001406B97D9: 49 8B 8A 18 0A 00 00                     MOV      rcx, qword ptr [r10 + 0xa18]
+00000001406B97E0: 48 2B C8                                 SUB      rcx, rax
+00000001406B97E3: 49 8B C5                                 MOV      rax, r13
+00000001406B97E6: 48 F7 E9                                 IMUL     rcx
+00000001406B97E9: 48 C1 FA 04                              SAR      rdx, 4
+00000001406B97ED: 48 8B C2                                 MOV      rax, rdx
+00000001406B97F0: 48 C1 E8 3F                              SHR      rax, 0x3f
+00000001406B97F4: 48 03 D0                                 ADD      rdx, rax
+00000001406B97F7: 41 8B C8                                 MOV      ecx, r8d
+00000001406B97FA: 48 3B CA                                 CMP      rcx, rdx
+00000001406B97FD: 72 C1                                    JB       0x1406b97c0
+00000001406B97FF: E9 32 01 00 00                           JMP      0x1406b9936
+00000001406B9804: 41 8B C0                                 MOV      eax, r8d
+00000001406B9807: 48 8D 0C 40                              LEA      rcx, [rax + rax*2]
+00000001406B980B: 48 C1 E1 05                              SHL      rcx, 5
+00000001406B980F: 49 8B 82 10 0A 00 00                     MOV      rax, qword ptr [r10 + 0xa10]
+00000001406B9816: 48 8B 54 01 28                           MOV      rdx, qword ptr [rcx + rax + 0x28]
+00000001406B981B: 4C 8B 44 01 20                           MOV      r8, qword ptr [rcx + rax + 0x20]
+00000001406B9820: 48 85 D2                                 TEST     rdx, rdx
+00000001406B9823: 0F 84 C0 00 00 00                        JE       0x1406b98e9
+00000001406B9829: 45 8B CE                                 MOV      r9d, r14d
+00000001406B982C: 48 8B 42 40                              MOV      rax, qword ptr [rdx + 0x40]
+00000001406B9830: 48 2B 42 38                              SUB      rax, qword ptr [rdx + 0x38]
+00000001406B9834: 48 C1 F8 03                              SAR      rax, 3
+00000001406B9838: 48 85 C0                                 TEST     rax, rax
+00000001406B983B: 0F 84 A8 00 00 00                        JE       0x1406b98e9
+00000001406B9841: 49 8B CE                                 MOV      rcx, r14
+00000001406B9844: 48 8B 42 38                              MOV      rax, qword ptr [rdx + 0x38]
+00000001406B9848: 48 39 3C C8                              CMP      qword ptr [rax + rcx*8], rdi
+00000001406B984C: 74 0E                                    JE       0x1406b985c
+00000001406B984E: 48 8B 0C C8                              MOV      rcx, qword ptr [rax + rcx*8]
+00000001406B9852: 48 83 B9 F0 04 00 00 00                  CMP      qword ptr [rcx + 0x4f0], 0
+00000001406B985A: 74 19                                    JE       0x1406b9875
+00000001406B985C: 41 FF C1                                 INC      r9d
+00000001406B985F: 48 8B 42 40                              MOV      rax, qword ptr [rdx + 0x40]
+00000001406B9863: 48 2B 42 38                              SUB      rax, qword ptr [rdx + 0x38]
+00000001406B9867: 48 C1 F8 03                              SAR      rax, 3
+00000001406B986B: 41 8B C9                                 MOV      ecx, r9d
+00000001406B986E: 48 3B C8                                 CMP      rcx, rax
+00000001406B9871: 73 76                                    JAE      0x1406b98e9
+00000001406B9873: EB CF                                    JMP      0x1406b9844
+00000001406B9875: B2 01                                    MOV      dl, 1
+00000001406B9877: 48 8B CF                                 MOV      rcx, rdi
+00000001406B987A: E8 A1 CE FE FF                           CALL     0x1406a6720
+00000001406B987F: 48 8B 87 A0 06 00 00                     MOV      rax, qword ptr [rdi + 0x6a0]
+00000001406B9886: 48 89 87 A8 06 00 00                     MOV      qword ptr [rdi + 0x6a8], rax
+00000001406B988D: 48 8B 87 B8 06 00 00                     MOV      rax, qword ptr [rdi + 0x6b8]
+00000001406B9894: 48 89 87 C0 06 00 00                     MOV      qword ptr [rdi + 0x6c0], rax
+00000001406B989B: 48 8B 87 38 07 00 00                     MOV      rax, qword ptr [rdi + 0x738]
+00000001406B98A2: 48 89 87 40 07 00 00                     MOV      qword ptr [rdi + 0x740], rax
+00000001406B98A9: 48 8B 87 50 07 00 00                     MOV      rax, qword ptr [rdi + 0x750]
+00000001406B98B0: 48 89 87 58 07 00 00                     MOV      qword ptr [rdi + 0x758], rax
+00000001406B98B7: 4C 89 B7 98 07 00 00                     MOV      qword ptr [rdi + 0x798], r14
+00000001406B98BE: 48 8B 87 C0 07 00 00                     MOV      rax, qword ptr [rdi + 0x7c0]
+00000001406B98C5: 48 2B 87 B8 07 00 00                     SUB      rax, qword ptr [rdi + 0x7b8]
+00000001406B98CC: 48 C1 F8 03                              SAR      rax, 3
+00000001406B98D0: 48 85 C0                                 TEST     rax, rax
+00000001406B98D3: 74 08                                    JE       0x1406b98dd
+00000001406B98D5: 48 8B CF                                 MOV      rcx, rdi
+00000001406B98D8: E8 93 80 FC FF                           CALL     0x140681970
+00000001406B98DD: C6 87 3F 0D 00 00 01                     MOV      byte ptr [rdi + 0xd3f], 1
+00000001406B98E4: E9 8C F7 FF FF                           JMP      0x1406b9075
+00000001406B98E9: 4D 85 C0                                 TEST     r8, r8
+00000001406B98EC: 74 48                                    JE       0x1406b9936
+00000001406B98EE: 41 8B D6                                 MOV      edx, r14d
+00000001406B98F1: 49 8B 40 40                              MOV      rax, qword ptr [r8 + 0x40]
+00000001406B98F5: 49 2B 40 38                              SUB      rax, qword ptr [r8 + 0x38]
+00000001406B98F9: 48 C1 F8 03                              SAR      rax, 3
+00000001406B98FD: 48 85 C0                                 TEST     rax, rax
+00000001406B9900: 74 34                                    JE       0x1406b9936
+00000001406B9902: 49 8B CE                                 MOV      rcx, r14
+00000001406B9905: 49 8B 40 38                              MOV      rax, qword ptr [r8 + 0x38]
+00000001406B9909: 48 39 3C C8                              CMP      qword ptr [rax + rcx*8], rdi
+00000001406B990D: 74 12                                    JE       0x1406b9921
+00000001406B990F: 48 8B 0C C8                              MOV      rcx, qword ptr [rax + rcx*8]
+00000001406B9913: 48 83 B9 F0 04 00 00 00                  CMP      qword ptr [rcx + 0x4f0], 0
+00000001406B991B: 0F 84 54 FF FF FF                        JE       0x1406b9875
+00000001406B9921: FF C2                                    INC      edx
+00000001406B9923: 49 8B 40 40                              MOV      rax, qword ptr [r8 + 0x40]
+00000001406B9927: 49 2B 40 38                              SUB      rax, qword ptr [r8 + 0x38]
+00000001406B992B: 48 C1 F8 03                              SAR      rax, 3
+00000001406B992F: 8B CA                                    MOV      ecx, edx
+00000001406B9931: 48 3B C8                                 CMP      rcx, rax
+00000001406B9934: 72 CF                                    JB       0x1406b9905
+00000001406B9936: 80 7D 6F 00                              CMP      byte ptr [rbp + 0x6f], 0
+00000001406B993A: 0F 84 26 01 00 00                        JE       0x1406b9a66
+00000001406B9940: 32 D2                                    XOR      dl, dl
+00000001406B9942: 45 8B C6                                 MOV      r8d, r14d
+00000001406B9945: 48 8B 87 A8 06 00 00                     MOV      rax, qword ptr [rdi + 0x6a8]
+00000001406B994C: 48 2B 87 A0 06 00 00                     SUB      rax, qword ptr [rdi + 0x6a0]
+00000001406B9953: 48 C1 F8 03                              SAR      rax, 3
+00000001406B9957: 48 85 C0                                 TEST     rax, rax
+00000001406B995A: 74 61                                    JE       0x1406b99bd
+00000001406B995C: 49 8B CE                                 MOV      rcx, r14
+00000001406B995F: 41 BA 01 00 00 00                        MOV      r10d, 1
+00000001406B9965: 66 66 66 0F 1F 84 00 00 00 00 00         NOP      word ptr [rax + rax]
+00000001406B9970: 48 8B 87 A0 06 00 00                     MOV      rax, qword ptr [rdi + 0x6a0]
+00000001406B9977: 48 83 3C C8 00                           CMP      qword ptr [rax + rcx*8], 0
+00000001406B997C: 74 13                                    JE       0x1406b9991
+00000001406B997E: 48 8B 0C C8                              MOV      rcx, qword ptr [rax + rcx*8]
+00000001406B9982: 0F B6 D2                                 MOVZX    edx, dl
+00000001406B9985: 48 83 B9 B8 00 00 00 00                  CMP      qword ptr [rcx + 0xb8], 0
+00000001406B998D: 41 0F 45 D2                              CMOVNE   edx, r10d
+00000001406B9991: 41 FF C0                                 INC      r8d
+00000001406B9994: 48 8B 87 A8 06 00 00                     MOV      rax, qword ptr [rdi + 0x6a8]
+00000001406B999B: 48 2B 87 A0 06 00 00                     SUB      rax, qword ptr [rdi + 0x6a0]
+00000001406B99A2: 48 C1 F8 03                              SAR      rax, 3
+00000001406B99A6: 41 8B C8                                 MOV      ecx, r8d
+00000001406B99A9: 48 3B C8                                 CMP      rcx, rax
+00000001406B99AC: 72 C2                                    JB       0x1406b9970
+00000001406B99AE: 84 D2                                    TEST     dl, dl
+00000001406B99B0: 4C 8B 97 F0 04 00 00                     MOV      r10, qword ptr [rdi + 0x4f0]
+00000001406B99B7: 0F 85 A9 00 00 00                        JNE      0x1406b9a66
+00000001406B99BD: 45 8B DE                                 MOV      r11d, r14d
+00000001406B99C0: 48 8B 87 C0 06 00 00                     MOV      rax, qword ptr [rdi + 0x6c0]
+00000001406B99C7: 48 2B 87 B8 06 00 00                     SUB      rax, qword ptr [rdi + 0x6b8]
+00000001406B99CE: 48 C1 F8 03                              SAR      rax, 3
+00000001406B99D2: 48 85 C0                                 TEST     rax, rax
+00000001406B99D5: 0F 84 8B 00 00 00                        JE       0x1406b9a66
+00000001406B99DB: 49 8B CE                                 MOV      rcx, r14
+00000001406B99DE: 66 90                                    NOP
+00000001406B99E0: 48 8B 87 B8 06 00 00                     MOV      rax, qword ptr [rdi + 0x6b8]
+00000001406B99E7: 48 8B 0C C8                              MOV      rcx, qword ptr [rax + rcx*8]
+00000001406B99EB: 48 8B 41 40                              MOV      rax, qword ptr [rcx + 0x40]
+00000001406B99EF: 48 2B 41 38                              SUB      rax, qword ptr [rcx + 0x38]
+00000001406B99F3: 48 C1 F8 03                              SAR      rax, 3
+00000001406B99F7: 48 85 C0                                 TEST     rax, rax
+00000001406B99FA: 74 49                                    JE       0x1406b9a45
+00000001406B99FC: 45 8B C6                                 MOV      r8d, r14d
+00000001406B99FF: 48 8B 41 40                              MOV      rax, qword ptr [rcx + 0x40]
+00000001406B9A03: 48 2B 41 38                              SUB      rax, qword ptr [rcx + 0x38]
+00000001406B9A07: 48 C1 F8 03                              SAR      rax, 3
+00000001406B9A0B: 48 85 C0                                 TEST     rax, rax
+00000001406B9A0E: 74 35                                    JE       0x1406b9a45
+00000001406B9A10: 4C 8B 8F 90 03 00 00                     MOV      r9, qword ptr [rdi + 0x390]
+00000001406B9A17: 49 8B D6                                 MOV      rdx, r14
+00000001406B9A1A: 66 0F 1F 44 00 00                        NOP      word ptr [rax + rax]
+00000001406B9A20: 48 8B 41 38                              MOV      rax, qword ptr [rcx + 0x38]
+00000001406B9A24: 4C 39 0C D0                              CMP      qword ptr [rax + rdx*8], r9
+00000001406B9A28: 0F 85 DF F5 FF FF                        JNE      0x1406b900d
+00000001406B9A2E: 41 FF C0                                 INC      r8d
+00000001406B9A31: 48 8B 41 40                              MOV      rax, qword ptr [rcx + 0x40]
+00000001406B9A35: 48 2B 41 38                              SUB      rax, qword ptr [rcx + 0x38]
+00000001406B9A39: 48 C1 F8 03                              SAR      rax, 3
+00000001406B9A3D: 41 8B D0                                 MOV      edx, r8d
+00000001406B9A40: 48 3B D0                                 CMP      rdx, rax
+00000001406B9A43: 72 DB                                    JB       0x1406b9a20
+00000001406B9A45: 41 FF C3                                 INC      r11d
+00000001406B9A48: 48 8B 87 C0 06 00 00                     MOV      rax, qword ptr [rdi + 0x6c0]
+00000001406B9A4F: 48 2B 87 B8 06 00 00                     SUB      rax, qword ptr [rdi + 0x6b8]
+00000001406B9A56: 48 C1 F8 03                              SAR      rax, 3
+00000001406B9A5A: 41 8B CB                                 MOV      ecx, r11d
+00000001406B9A5D: 48 3B C8                                 CMP      rcx, rax
+00000001406B9A60: 0F 82 7A FF FF FF                        JB       0x1406b99e0
+00000001406B9A66: 49 8D 8A 20 03 00 00                     LEA      rcx, [r10 + 0x320]
+00000001406B9A6D: 48 8D 55 87                              LEA      rdx, [rbp - 0x79]
+00000001406B9A71: FF 15 41 2D 1B 00                        CALL     qword ptr [rip + 0x1b2d41]
+00000001406B9A77: 4C 8B C0                                 MOV      r8, rax
+00000001406B9A7A: 48 8B 97 08 17 00 00                     MOV      rdx, qword ptr [rdi + 0x1708]
+00000001406B9A81: 48 81 C2 94 94 00 00                     ADD      rdx, 0x9494
+00000001406B9A88: F3 0F 10 05 C8 04 25 00                  MOVSS    xmm0, dword ptr [rip + 0x2504c8]
+00000001406B9A90: F3 0F 11 44 24 20                        MOVSS    dword ptr [rsp + 0x20], xmm0
+00000001406B9A96: 45 33 C9                                 XOR      r9d, r9d
+00000001406B9A99: 48 8B 0D 70 B1 32 00                     MOV      rcx, qword ptr [rip + 0x32b170]
+00000001406B9AA0: FF 15 32 31 1B 00                        CALL     qword ptr [rip + 0x1b3132]
+00000001406B9AA6: 48 8D 9F D0 07 00 00                     LEA      rbx, [rdi + 0x7d0]
+00000001406B9AAD: 48 8B C3                                 MOV      rax, rbx
+00000001406B9AB0: B9 4B 00 00 00                           MOV      ecx, 0x4b
+00000001406B9AB5: 66 66 66 0F 1F 84 00 00 00 00 00         NOP      word ptr [rax + rax]
+00000001406B9AC0: 4C 89 30                                 MOV      qword ptr [rax], r14
+00000001406B9AC3: 48 8D 40 10                              LEA      rax, [rax + 0x10]
+00000001406B9AC7: 48 83 E9 01                              SUB      rcx, 1
+00000001406B9ACB: 75 F3                                    JNE      0x1406b9ac0
+00000001406B9ACD: 4C 8B 87 F0 04 00 00                     MOV      r8, qword ptr [rdi + 0x4f0]
+00000001406B9AD4: 4D 85 C0                                 TEST     r8, r8
+00000001406B9AD7: 75 1E                                    JNE      0x1406b9af7
+00000001406B9AD9: 48 8B 8F 88 06 00 00                     MOV      rcx, qword ptr [rdi + 0x688]
+00000001406B9AE0: 48 2B 8F 80 06 00 00                     SUB      rcx, qword ptr [rdi + 0x680]
+00000001406B9AE7: 48 C1 F9 03                              SAR      rcx, 3
+00000001406B9AEB: 48 8B 87 80 06 00 00                     MOV      rax, qword ptr [rdi + 0x680]
+00000001406B9AF2: 4C 8B 44 C8 F8                           MOV      r8, qword ptr [rax + rcx*8 - 8]
+00000001406B9AF7: 45 8B D6                                 MOV      r10d, r14d
+00000001406B9AFA: 49 8B 88 18 0A 00 00                     MOV      rcx, qword ptr [r8 + 0xa18]
+00000001406B9B01: 49 2B 88 10 0A 00 00                     SUB      rcx, qword ptr [r8 + 0xa10]
+00000001406B9B08: 49 8B C5                                 MOV      rax, r13
+00000001406B9B0B: 48 F7 E9                                 IMUL     rcx
+00000001406B9B0E: 48 C1 FA 04                              SAR      rdx, 4
+00000001406B9B12: 48 8B C2                                 MOV      rax, rdx
+00000001406B9B15: 48 C1 E8 3F                              SHR      rax, 0x3f
+00000001406B9B19: 48 03 D0                                 ADD      rdx, rax
+00000001406B9B1C: 85 D2                                    TEST     edx, edx
+00000001406B9B1E: 0F 8E 7C 02 00 00                        JLE      0x1406b9da0
+00000001406B9B24: 4D 8B CE                                 MOV      r9, r14
+00000001406B9B27: 66 0F 1F 84 00 00 00 00 00               NOP      word ptr [rax + rax]
+00000001406B9B30: 49 8B 80 10 0A 00 00                     MOV      rax, qword ptr [r8 + 0xa10]
+00000001406B9B37: 41 83 3C 01 01                           CMP      dword ptr [r9 + rax], 1
+00000001406B9B3C: 75 73                                    JNE      0x1406b9bb1
+00000001406B9B3E: 48 8B D0                                 MOV      rdx, rax
+00000001406B9B41: 48 8B 87 A0 06 00 00                     MOV      rax, qword ptr [rdi + 0x6a0]
+00000001406B9B48: 48 8B 08                                 MOV      rcx, qword ptr [rax]
+00000001406B9B4B: F3 41 0F 10 44 11 08                     MOVSS    xmm0, dword ptr [r9 + rdx + 8]
+00000001406B9B52: 0F 2E 41 04                              UCOMISS  xmm0, dword ptr [rcx + 4]
+00000001406B9B56: 7A 59                                    JP       0x1406b9bb1
+00000001406B9B58: 75 57                                    JNE      0x1406b9bb1
+00000001406B9B5A: 48 8B 08                                 MOV      rcx, qword ptr [rax]
+00000001406B9B5D: F3 41 0F 10 44 11 10                     MOVSS    xmm0, dword ptr [r9 + rdx + 0x10]
+00000001406B9B64: 0F 2E 41 0C                              UCOMISS  xmm0, dword ptr [rcx + 0xc]
+00000001406B9B68: 7A 47                                    JP       0x1406b9bb1
+00000001406B9B6A: 75 45                                    JNE      0x1406b9bb1
+00000001406B9B6C: 41 0F B6 D2                              MOVZX    edx, r10b
+00000001406B9B70: F6 D2                                    NOT      dl
+00000001406B9B72: 80 E2 01                                 AND      dl, 1
+00000001406B9B75: 49 8B 80 10 0A 00 00                     MOV      rax, qword ptr [r8 + 0xa10]
+00000001406B9B7C: 4D 8B 5C 01 20                           MOV      r11, qword ptr [r9 + rax + 0x20]
+00000001406B9B81: 48 8D 87 60 0C 00 00                     LEA      rax, [rdi + 0xc60]
+00000001406B9B88: B9 25 00 00 00                           MOV      ecx, 0x25
+00000001406B9B8D: 0F 1F 00                                 NOP      dword ptr [rax]
+00000001406B9B90: 0F 10 00                                 MOVUPS   xmm0, xmmword ptr [rax]
+00000001406B9B93: 0F 11 40 10                              MOVUPS   xmmword ptr [rax + 0x10], xmm0
+00000001406B9B97: 0F 10 40 F0                              MOVUPS   xmm0, xmmword ptr [rax - 0x10]
+00000001406B9B9B: 0F 11 00                                 MOVUPS   xmmword ptr [rax], xmm0
+00000001406B9B9E: 48 8D 40 E0                              LEA      rax, [rax - 0x20]
+00000001406B9BA2: 48 83 E9 01                              SUB      rcx, 1
+00000001406B9BA6: 75 E8                                    JNE      0x1406b9b90
+00000001406B9BA8: 4C 89 1B                                 MOV      qword ptr [rbx], r11
+00000001406B9BAB: 88 97 D8 07 00 00                        MOV      byte ptr [rdi + 0x7d8], dl
+00000001406B9BB1: 41 FF C2                                 INC      r10d
+00000001406B9BB4: 49 83 C1 60                              ADD      r9, 0x60
+00000001406B9BB8: 49 8B 88 18 0A 00 00                     MOV      rcx, qword ptr [r8 + 0xa18]
+00000001406B9BBF: 49 2B 88 10 0A 00 00                     SUB      rcx, qword ptr [r8 + 0xa10]
+00000001406B9BC6: 49 8B C5                                 MOV      rax, r13
+00000001406B9BC9: 48 F7 E9                                 IMUL     rcx
+00000001406B9BCC: 48 C1 FA 04                              SAR      rdx, 4
+00000001406B9BD0: 48 8B C2                                 MOV      rax, rdx
+00000001406B9BD3: 48 C1 E8 3F                              SHR      rax, 0x3f
+00000001406B9BD7: 48 03 D0                                 ADD      rdx, rax
+00000001406B9BDA: 44 3B D2                                 CMP      r10d, edx
+00000001406B9BDD: 0F 8C 4D FF FF FF                        JL       0x1406b9b30
+00000001406B9BE3: E9 B8 01 00 00                           JMP      0x1406b9da0
+00000001406B9BE8: 48 8B 87 08 17 00 00                     MOV      rax, qword ptr [rdi + 0x1708]
+00000001406B9BEF: 8B 88 94 02 00 00                        MOV      ecx, dword ptr [rax + 0x294]
+00000001406B9BF5: 83 F9 08                                 CMP      ecx, 8
+00000001406B9BF8: 75 7B                                    JNE      0x1406b9c75
+00000001406B9BFA: 48 8B 8F 80 0C 00 00                     MOV      rcx, qword ptr [rdi + 0xc80]
+00000001406B9C01: 48 85 C9                                 TEST     rcx, rcx
+00000001406B9C04: 74 17                                    JE       0x1406b9c1d
+00000001406B9C06: 48 8B 87 90 03 00 00                     MOV      rax, qword ptr [rdi + 0x390]
+00000001406B9C0D: 48 39 81 B0 0B 00 00                     CMP      qword ptr [rcx + 0xbb0], rax
+00000001406B9C14: 75 07                                    JNE      0x1406b9c1d
+00000001406B9C16: 4C 89 B1 B0 0B 00 00                     MOV      qword ptr [rcx + 0xbb0], r14
+00000001406B9C1D: 83 BF 6C 05 00 00 00                     CMP      dword ptr [rdi + 0x56c], 0
+00000001406B9C24: 7D 0D                                    JGE      0x1406b9c33
+00000001406B9C26: 83 BF 10 05 00 00 00                     CMP      dword ptr [rdi + 0x510], 0
+00000001406B9C2D: 0F 8C 6D 01 00 00                        JL       0x1406b9da0
+00000001406B9C33: 48 8B 87 F0 04 00 00                     MOV      rax, qword ptr [rdi + 0x4f0]
+00000001406B9C3A: 48 8B 88 B0 0B 00 00                     MOV      rcx, qword ptr [rax + 0xbb0]
+00000001406B9C41: 48 85 C9                                 TEST     rcx, rcx
+00000001406B9C44: 74 23                                    JE       0x1406b9c69
+00000001406B9C46: 48 8B 81 80 0C 00 00                     MOV      rax, qword ptr [rcx + 0xc80]
+00000001406B9C4D: 48 85 C0                                 TEST     rax, rax
+00000001406B9C50: 74 17                                    JE       0x1406b9c69
+00000001406B9C52: 48 39 88 B0 0B 00 00                     CMP      qword ptr [rax + 0xbb0], rcx
+00000001406B9C59: 75 07                                    JNE      0x1406b9c62
+00000001406B9C5B: 4C 89 B0 B0 0B 00 00                     MOV      qword ptr [rax + 0xbb0], r14
+00000001406B9C62: 4C 89 B1 80 0C 00 00                     MOV      qword ptr [rcx + 0xc80], r14
+00000001406B9C69: 48 8B 8F F0 04 00 00                     MOV      rcx, qword ptr [rdi + 0x4f0]
+00000001406B9C70: E9 0F 01 00 00                           JMP      0x1406b9d84
+00000001406B9C75: 83 F9 0A                                 CMP      ecx, 0xa
+00000001406B9C78: 75 49                                    JNE      0x1406b9cc3
+00000001406B9C7A: 48 8B 8F 80 0C 00 00                     MOV      rcx, qword ptr [rdi + 0xc80]
+00000001406B9C81: 48 85 C9                                 TEST     rcx, rcx
+00000001406B9C84: 74 1E                                    JE       0x1406b9ca4
+00000001406B9C86: 48 8B 87 90 03 00 00                     MOV      rax, qword ptr [rdi + 0x390]
+00000001406B9C8D: 48 39 81 B0 0B 00 00                     CMP      qword ptr [rcx + 0xbb0], rax
+00000001406B9C94: 75 0E                                    JNE      0x1406b9ca4
+00000001406B9C96: 4C 89 B1 B0 0B 00 00                     MOV      qword ptr [rcx + 0xbb0], r14
+00000001406B9C9D: 4C 89 B7 80 0C 00 00                     MOV      qword ptr [rdi + 0xc80], r14
+00000001406B9CA4: 83 BF 6C 05 00 00 00                     CMP      dword ptr [rdi + 0x56c], 0
+00000001406B9CAB: 0F 8D E1 00 00 00                        JGE      0x1406b9d92
+00000001406B9CB1: 83 BF 10 05 00 00 00                     CMP      dword ptr [rdi + 0x510], 0
+00000001406B9CB8: 0F 8C E2 00 00 00                        JL       0x1406b9da0
+00000001406B9CBE: E9 CF 00 00 00                           JMP      0x1406b9d92
+00000001406B9CC3: 83 F9 06                                 CMP      ecx, 6
+00000001406B9CC6: 0F 84 D4 00 00 00                        JE       0x1406b9da0
+00000001406B9CCC: 48 8B 87 F0 04 00 00                     MOV      rax, qword ptr [rdi + 0x4f0]
+00000001406B9CD3: 48 83 B8 B0 0B 00 00 00                  CMP      qword ptr [rax + 0xbb0], 0
+00000001406B9CDB: 74 56                                    JE       0x1406b9d33
+00000001406B9CDD: 83 BF 6C 05 00 00 00                     CMP      dword ptr [rdi + 0x56c], 0
+00000001406B9CE4: 7D 09                                    JGE      0x1406b9cef
+00000001406B9CE6: 83 BF 10 05 00 00 00                     CMP      dword ptr [rdi + 0x510], 0
+00000001406B9CED: 7C 44                                    JL       0x1406b9d33
+00000001406B9CEF: 48 8B 87 A0 06 00 00                     MOV      rax, qword ptr [rdi + 0x6a0]
+00000001406B9CF6: 48 89 87 A8 06 00 00                     MOV      qword ptr [rdi + 0x6a8], rax
+00000001406B9CFD: 48 8B 87 B8 06 00 00                     MOV      rax, qword ptr [rdi + 0x6b8]
+00000001406B9D04: 48 89 87 C0 06 00 00                     MOV      qword ptr [rdi + 0x6c0], rax
+00000001406B9D0B: 48 8B 87 38 07 00 00                     MOV      rax, qword ptr [rdi + 0x738]
+00000001406B9D12: 48 89 87 40 07 00 00                     MOV      qword ptr [rdi + 0x740], rax
+00000001406B9D19: 48 8B 87 50 07 00 00                     MOV      rax, qword ptr [rdi + 0x750]
+00000001406B9D20: 48 89 87 58 07 00 00                     MOV      qword ptr [rdi + 0x758], rax
+00000001406B9D27: 44 89 B7 34 0D 00 00                     MOV      dword ptr [rdi + 0xd34], r14d
+00000001406B9D2E: E9 1C F3 FF FF                           JMP      0x1406b904f
+00000001406B9D33: 48 8B 8F 80 0C 00 00                     MOV      rcx, qword ptr [rdi + 0xc80]
+00000001406B9D3A: 48 85 C9                                 TEST     rcx, rcx
+00000001406B9D3D: 74 17                                    JE       0x1406b9d56
+00000001406B9D3F: 48 8B 87 90 03 00 00                     MOV      rax, qword ptr [rdi + 0x390]
+00000001406B9D46: 48 39 81 B0 0B 00 00                     CMP      qword ptr [rcx + 0xbb0], rax
+00000001406B9D4D: 75 07                                    JNE      0x1406b9d56
+00000001406B9D4F: 4C 89 B1 B0 0B 00 00                     MOV      qword ptr [rcx + 0xbb0], r14
+00000001406B9D56: 83 BF 6C 05 00 00 00                     CMP      dword ptr [rdi + 0x56c], 0
+00000001406B9D5D: 7D 09                                    JGE      0x1406b9d68
+00000001406B9D5F: 83 BF 10 05 00 00 00                     CMP      dword ptr [rdi + 0x510], 0
+00000001406B9D66: 7C 38                                    JL       0x1406b9da0
+00000001406B9D68: 48 8B 8F F0 04 00 00                     MOV      rcx, qword ptr [rdi + 0x4f0]
+00000001406B9D6F: 48 8B 81 18 03 00 00                     MOV      rax, qword ptr [rcx + 0x318]
+00000001406B9D76: 48 85 C0                                 TEST     rax, rax
+00000001406B9D79: 74 25                                    JE       0x1406b9da0
+00000001406B9D7B: 80 B8 79 09 00 00 00                     CMP      byte ptr [rax + 0x979], 0
+00000001406B9D82: 75 1C                                    JNE      0x1406b9da0
+00000001406B9D84: 48 8B 87 90 03 00 00                     MOV      rax, qword ptr [rdi + 0x390]
+00000001406B9D8B: 48 89 81 B0 0B 00 00                     MOV      qword ptr [rcx + 0xbb0], rax
+00000001406B9D92: 48 8B 87 F0 04 00 00                     MOV      rax, qword ptr [rdi + 0x4f0]
+00000001406B9D99: 48 89 87 80 0C 00 00                     MOV      qword ptr [rdi + 0xc80], rax
+00000001406B9DA0: 44 89 B7 A4 07 00 00                     MOV      dword ptr [rdi + 0x7a4], r14d
+00000001406B9DA7: 48 63 8F 10 05 00 00                     MOVSXD   rcx, dword ptr [rdi + 0x510]
+00000001406B9DAE: F3 44 0F 10 0D A9 02 25 00               MOVSS    xmm9, dword ptr [rip + 0x2502a9]
+00000001406B9DB7: 85 C9                                    TEST     ecx, ecx
+00000001406B9DB9: 0F 88 0F 04 00 00                        JS       0x1406ba1ce
+00000001406B9DBF: 48 8B 87 08 17 00 00                     MOV      rax, qword ptr [rdi + 0x1708]
+00000001406B9DC6: 83 B8 94 02 00 00 01                     CMP      dword ptr [rax + 0x294], 1
+00000001406B9DCD: 74 0D                                    JE       0x1406b9ddc
+00000001406B9DCF: 80 BF 7D 06 00 00 00                     CMP      byte ptr [rdi + 0x67d], 0
+00000001406B9DD6: 0F 84 F2 03 00 00                        JE       0x1406ba1ce
+00000001406B9DDC: 48 8B 87 F0 04 00 00                     MOV      rax, qword ptr [rdi + 0x4f0]
+00000001406B9DE3: C6 84 01 90 0B 00 00 00                  MOV      byte ptr [rcx + rax + 0xb90], 0
+00000001406B9DEB: 48 8B 87 F0 04 00 00                     MOV      rax, qword ptr [rdi + 0x4f0]
+00000001406B9DF2: 48 8B 90 18 03 00 00                     MOV      rdx, qword ptr [rax + 0x318]
+00000001406B9DF9: 48 85 D2                                 TEST     rdx, rdx
+00000001406B9DFC: 0F 84 8A 03 00 00                        JE       0x1406ba18c
+00000001406B9E02: 49 8B C5                                 MOV      rax, r13
+00000001406B9E05: 80 BA 79 09 00 00 00                     CMP      byte ptr [rdx + 0x979], 0
+00000001406B9E0C: 0F 85 0B 01 00 00                        JNE      0x1406b9f1d
+00000001406B9E12: 45 8B FE                                 MOV      r15d, r14d
+00000001406B9E15: 48 8B 8A D0 02 00 00                     MOV      rcx, qword ptr [rdx + 0x2d0]
+00000001406B9E1C: 48 2B 8A C8 02 00 00                     SUB      rcx, qword ptr [rdx + 0x2c8]
+00000001406B9E23: 48 F7 E9                                 IMUL     rcx
+00000001406B9E26: 48 D1 FA                                 SAR      rdx, 1
+00000001406B9E29: 48 8B C2                                 MOV      rax, rdx
+00000001406B9E2C: 48 C1 E8 3F                              SHR      rax, 0x3f
+00000001406B9E30: 48 03 D0                                 ADD      rdx, rax
+00000001406B9E33: 85 D2                                    TEST     edx, edx
+00000001406B9E35: 0F 8E 51 03 00 00                        JLE      0x1406ba18c
+00000001406B9E3B: 49 8B F6                                 MOV      rsi, r14
+00000001406B9E3E: 49 8B DE                                 MOV      rbx, r14
+00000001406B9E41: 4C 8B 87 F0 04 00 00                     MOV      r8, qword ptr [rdi + 0x4f0]
+00000001406B9E48: 49 8B 90 18 03 00 00                     MOV      rdx, qword ptr [r8 + 0x318]
+00000001406B9E4F: 48 8B 82 E0 02 00 00                     MOV      rax, qword ptr [rdx + 0x2e0]
+00000001406B9E56: 83 3C 03 FF                              CMP      dword ptr [rbx + rax], -1
+00000001406B9E5A: 74 0E                                    JE       0x1406b9e6a
+00000001406B9E5C: 48 8B C8                                 MOV      rcx, rax
+00000001406B9E5F: 8B 87 10 05 00 00                        MOV      eax, dword ptr [rdi + 0x510]
+00000001406B9E65: 39 04 0B                                 CMP      dword ptr [rbx + rcx], eax
+00000001406B9E68: 75 6B                                    JNE      0x1406b9ed5
+00000001406B9E6A: 48 8B 82 C8 02 00 00                     MOV      rax, qword ptr [rdx + 0x2c8]
+00000001406B9E71: F3 0F 10 04 06                           MOVSS    xmm0, dword ptr [rsi + rax]
+00000001406B9E76: F3 0F 11 44 24 30                        MOVSS    dword ptr [rsp + 0x30], xmm0
+00000001406B9E7C: F3 0F 10 4C 06 04                        MOVSS    xmm1, dword ptr [rsi + rax + 4]
+00000001406B9E82: F3 0F 11 4C 24 34                        MOVSS    dword ptr [rsp + 0x34], xmm1
+00000001406B9E88: F3 0F 10 44 06 08                        MOVSS    xmm0, dword ptr [rsi + rax + 8]
+00000001406B9E8E: F3 0F 11 44 24 38                        MOVSS    dword ptr [rsp + 0x38], xmm0
+00000001406B9E94: 49 8D 88 20 03 00 00                     LEA      rcx, [r8 + 0x320]
+00000001406B9E9B: 48 8D 55 A7                              LEA      rdx, [rbp - 0x59]
+00000001406B9E9F: FF 15 1B 29 1B 00                        CALL     qword ptr [rip + 0x1b291b]
+00000001406B9EA5: 4C 8B C0                                 MOV      r8, rax
+00000001406B9EA8: 48 8D 54 24 30                           LEA      rdx, [rsp + 0x30]
+00000001406B9EAD: 48 8D 4C 24 30                           LEA      rcx, [rsp + 0x30]
+00000001406B9EB2: FF 15 50 27 1B 00                        CALL     qword ptr [rip + 0x1b2750]
+00000001406B9EB8: 48 8D 8F 38 07 00 00                     LEA      rcx, [rdi + 0x738]
+00000001406B9EBF: 48 8D 44 24 30                           LEA      rax, [rsp + 0x30]
+00000001406B9EC4: 48 89 44 24 20                           MOV      qword ptr [rsp + 0x20], rax
+00000001406B9EC9: 4C 8B 01                                 MOV      r8, qword ptr [rcx]
+00000001406B9ECC: 48 8D 55 67                              LEA      rdx, [rbp + 0x67]
+00000001406B9ED0: E8 7B 87 B9 FF                           CALL     0x140252650
+00000001406B9ED5: 41 FF C7                                 INC      r15d
+00000001406B9ED8: 48 83 C3 04                              ADD      rbx, 4
+00000001406B9EDC: 48 83 C6 0C                              ADD      rsi, 0xc
+00000001406B9EE0: 48 8B 87 F0 04 00 00                     MOV      rax, qword ptr [rdi + 0x4f0]
+00000001406B9EE7: 48 8B 90 18 03 00 00                     MOV      rdx, qword ptr [rax + 0x318]
+00000001406B9EEE: 48 8B 8A D0 02 00 00                     MOV      rcx, qword ptr [rdx + 0x2d0]
+00000001406B9EF5: 48 2B 8A C8 02 00 00                     SUB      rcx, qword ptr [rdx + 0x2c8]
+00000001406B9EFC: 49 8B C5                                 MOV      rax, r13
+00000001406B9EFF: 48 F7 E9                                 IMUL     rcx
+00000001406B9F02: 48 D1 FA                                 SAR      rdx, 1
+00000001406B9F05: 48 8B C2                                 MOV      rax, rdx
+00000001406B9F08: 48 C1 E8 3F                              SHR      rax, 0x3f
+00000001406B9F0C: 48 03 D0                                 ADD      rdx, rax
+00000001406B9F0F: 44 3B FA                                 CMP      r15d, edx
+00000001406B9F12: 0F 8C 29 FF FF FF                        JL       0x1406b9e41
+00000001406B9F18: E9 6F 02 00 00                           JMP      0x1406ba18c
+00000001406B9F1D: 48 8B 8A 88 09 00 00                     MOV      rcx, qword ptr [rdx + 0x988]
+00000001406B9F24: 48 2B 8A 80 09 00 00                     SUB      rcx, qword ptr [rdx + 0x980]
+00000001406B9F2B: 48 F7 E9                                 IMUL     rcx
+00000001406B9F2E: 48 D1 FA                                 SAR      rdx, 1
+00000001406B9F31: 48 8B C2                                 MOV      rax, rdx
+00000001406B9F34: 48 C1 E8 3F                              SHR      rax, 0x3f
+00000001406B9F38: 48 03 C2                                 ADD      rax, rdx
+00000001406B9F3B: 83 E8 01                                 SUB      eax, 1
+00000001406B9F3E: 48 63 D8                                 MOVSXD   rbx, eax
+00000001406B9F41: 0F 88 AE 00 00 00                        JS       0x1406b9ff5
+00000001406B9F47: 48 8D 34 5B                              LEA      rsi, [rbx + rbx*2]
+00000001406B9F4B: 48 C1 E6 02                              SHL      rsi, 2
+00000001406B9F4F: 90                                       NOP
+00000001406B9F50: 4C 8B 87 F0 04 00 00                     MOV      r8, qword ptr [rdi + 0x4f0]
+00000001406B9F57: 49 8B 90 18 03 00 00                     MOV      rdx, qword ptr [r8 + 0x318]
+00000001406B9F5E: 48 8B 82 98 09 00 00                     MOV      rax, qword ptr [rdx + 0x998]
+00000001406B9F65: 83 3C 98 FE                              CMP      dword ptr [rax + rbx*4], -2
+00000001406B9F69: 74 11                                    JE       0x1406b9f7c
+00000001406B9F6B: 48 8B C8                                 MOV      rcx, rax
+00000001406B9F6E: 8B 87 10 05 00 00                        MOV      eax, dword ptr [rdi + 0x510]
+00000001406B9F74: 83 C0 64                                 ADD      eax, 0x64
+00000001406B9F77: 39 04 99                                 CMP      dword ptr [rcx + rbx*4], eax
+00000001406B9F7A: 75 6B                                    JNE      0x1406b9fe7
+00000001406B9F7C: 48 8B 82 80 09 00 00                     MOV      rax, qword ptr [rdx + 0x980]
+00000001406B9F83: F3 0F 10 04 06                           MOVSS    xmm0, dword ptr [rsi + rax]
+00000001406B9F88: F3 0F 11 44 24 30                        MOVSS    dword ptr [rsp + 0x30], xmm0
+00000001406B9F8E: F3 0F 10 4C 06 04                        MOVSS    xmm1, dword ptr [rsi + rax + 4]
+00000001406B9F94: F3 0F 11 4C 24 34                        MOVSS    dword ptr [rsp + 0x34], xmm1
+00000001406B9F9A: F3 0F 10 44 06 08                        MOVSS    xmm0, dword ptr [rsi + rax + 8]
+00000001406B9FA0: F3 0F 11 44 24 38                        MOVSS    dword ptr [rsp + 0x38], xmm0
+00000001406B9FA6: 49 8D 88 20 03 00 00                     LEA      rcx, [r8 + 0x320]
+00000001406B9FAD: 48 8D 55 A7                              LEA      rdx, [rbp - 0x59]
+00000001406B9FB1: FF 15 09 28 1B 00                        CALL     qword ptr [rip + 0x1b2809]
+00000001406B9FB7: 4C 8B C0                                 MOV      r8, rax
+00000001406B9FBA: 48 8D 54 24 30                           LEA      rdx, [rsp + 0x30]
+00000001406B9FBF: 48 8D 4C 24 30                           LEA      rcx, [rsp + 0x30]
+00000001406B9FC4: FF 15 3E 26 1B 00                        CALL     qword ptr [rip + 0x1b263e]
+00000001406B9FCA: 48 8D 8F 38 07 00 00                     LEA      rcx, [rdi + 0x738]
+00000001406B9FD1: 48 8D 44 24 30                           LEA      rax, [rsp + 0x30]
+00000001406B9FD6: 48 89 44 24 20                           MOV      qword ptr [rsp + 0x20], rax
+00000001406B9FDB: 4C 8B 01                                 MOV      r8, qword ptr [rcx]
+00000001406B9FDE: 48 8D 55 67                              LEA      rdx, [rbp + 0x67]
+00000001406B9FE2: E8 69 86 B9 FF                           CALL     0x140252650
+00000001406B9FE7: 48 83 EE 0C                              SUB      rsi, 0xc
+00000001406B9FEB: 48 83 EB 01                              SUB      rbx, 1
+00000001406B9FEF: 0F 89 5B FF FF FF                        JNS      0x1406b9f50
+00000001406B9FF5: 48 8D 9F 38 07 00 00                     LEA      rbx, [rdi + 0x738]
+00000001406B9FFC: 48 8B 4B 08                              MOV      rcx, qword ptr [rbx + 8]
+00000001406BA000: 48 2B 0B                                 SUB      rcx, qword ptr [rbx]
+00000001406BA003: 49 8B C5                                 MOV      rax, r13
+00000001406BA006: 48 F7 E9                                 IMUL     rcx
+00000001406BA009: 48 D1 FA                                 SAR      rdx, 1
+00000001406BA00C: 48 8B C2                                 MOV      rax, rdx
+00000001406BA00F: 48 C1 E8 3F                              SHR      rax, 0x3f
+00000001406BA013: 48 03 D0                                 ADD      rdx, rax
+00000001406BA016: 0F 85 A8 01 00 00                        JNE      0x1406ba1c4
+00000001406BA01C: 48 63 97 10 05 00 00                     MOVSXD   rdx, dword ptr [rdi + 0x510]
+00000001406BA023: 48 8B 87 F0 04 00 00                     MOV      rax, qword ptr [rdi + 0x4f0]
+00000001406BA02A: 48 8B CA                                 MOV      rcx, rdx
+00000001406BA02D: 48 C1 E1 05                              SHL      rcx, 5
+00000001406BA031: 48 03 88 78 0B 00 00                     ADD      rcx, qword ptr [rax + 0xb78]
+00000001406BA038: 48 C1 E2 05                              SHL      rdx, 5
+00000001406BA03C: 48 8B 80 78 0B 00 00                     MOV      rax, qword ptr [rax + 0xb78]
+00000001406BA043: F3 0F 10 54 02 14                        MOVSS    xmm2, dword ptr [rdx + rax + 0x14]
+00000001406BA049: F3 0F 5C 51 08                           SUBSS    xmm2, dword ptr [rcx + 8]
+00000001406BA04E: F3 0F 10 4C 02 10                        MOVSS    xmm1, dword ptr [rdx + rax + 0x10]
+00000001406BA054: F3 0F 5C 49 04                           SUBSS    xmm1, dword ptr [rcx + 4]
+00000001406BA059: F3 0F 10 44 02 0C                        MOVSS    xmm0, dword ptr [rdx + rax + 0xc]
+00000001406BA05F: F3 0F 5C 01                              SUBSS    xmm0, dword ptr [rcx]
+00000001406BA063: F3 0F 11 44 24 30                        MOVSS    dword ptr [rsp + 0x30], xmm0
+00000001406BA069: F3 0F 11 4C 24 34                        MOVSS    dword ptr [rsp + 0x34], xmm1
+00000001406BA06F: F3 0F 11 54 24 38                        MOVSS    dword ptr [rsp + 0x38], xmm2
+00000001406BA075: 48 8D 54 24 30                           LEA      rdx, [rsp + 0x30]
+00000001406BA07A: 48 8D 4C 24 30                           LEA      rcx, [rsp + 0x30]
+00000001406BA07F: FF 15 83 20 1B 00                        CALL     qword ptr [rip + 0x1b2083]
+00000001406BA085: F3 0F 10 74 24 38                        MOVSS    xmm6, dword ptr [rsp + 0x38]
+00000001406BA08B: F3 41 0F 59 F1                           MULSS    xmm6, xmm9
+00000001406BA090: F3 0F 10 7C 24 34                        MOVSS    xmm7, dword ptr [rsp + 0x34]
+00000001406BA096: F3 41 0F 59 F9                           MULSS    xmm7, xmm9
+00000001406BA09B: F3 44 0F 10 44 24 30                     MOVSS    xmm8, dword ptr [rsp + 0x30]
+00000001406BA0A2: F3 45 0F 59 C1                           MULSS    xmm8, xmm9
+00000001406BA0A7: 48 63 8F 10 05 00 00                     MOVSXD   rcx, dword ptr [rdi + 0x510]
+00000001406BA0AE: 48 8B 87 F0 04 00 00                     MOV      rax, qword ptr [rdi + 0x4f0]
+00000001406BA0B5: 48 C1 E1 05                              SHL      rcx, 5
+00000001406BA0B9: 48 03 88 78 0B 00 00                     ADD      rcx, qword ptr [rax + 0xb78]
+00000001406BA0C0: F3 0F 58 71 08                           ADDSS    xmm6, dword ptr [rcx + 8]
+00000001406BA0C5: F3 0F 58 79 04                           ADDSS    xmm7, dword ptr [rcx + 4]
+00000001406BA0CA: F3 44 0F 58 01                           ADDSS    xmm8, dword ptr [rcx]
+00000001406BA0CF: F3 44 0F 11 45 87                        MOVSS    dword ptr [rbp - 0x79], xmm8
+00000001406BA0D5: F3 0F 11 7D 8B                           MOVSS    dword ptr [rbp - 0x75], xmm7
+00000001406BA0DA: F3 0F 11 75 8F                           MOVSS    dword ptr [rbp - 0x71], xmm6
+00000001406BA0DF: 48 8D 45 87                              LEA      rax, [rbp - 0x79]
+00000001406BA0E3: 48 3B 43 08                              CMP      rax, qword ptr [rbx + 8]
+00000001406BA0E7: 73 6D                                    JAE      0x1406ba156
+00000001406BA0E9: 48 8B 03                                 MOV      rax, qword ptr [rbx]
+00000001406BA0EC: 48 8D 4D 87                              LEA      rcx, [rbp - 0x79]
+00000001406BA0F0: 48 3B C1                                 CMP      rax, rcx
+00000001406BA0F3: 77 61                                    JA       0x1406ba156
+00000001406BA0F5: 48 8D 4D 87                              LEA      rcx, [rbp - 0x79]
+00000001406BA0F9: 48 2B C8                                 SUB      rcx, rax
+00000001406BA0FC: 49 8B C5                                 MOV      rax, r13
+00000001406BA0FF: 48 F7 E9                                 IMUL     rcx
+00000001406BA102: 48 8B F2                                 MOV      rsi, rdx
+00000001406BA105: 48 D1 FE                                 SAR      rsi, 1
+00000001406BA108: 48 8B C6                                 MOV      rax, rsi
+00000001406BA10B: 48 C1 E8 3F                              SHR      rax, 0x3f
+00000001406BA10F: 48 03 F0                                 ADD      rsi, rax
+00000001406BA112: 48 8B 43 10                              MOV      rax, qword ptr [rbx + 0x10]
+00000001406BA116: 48 39 43 08                              CMP      qword ptr [rbx + 8], rax
+00000001406BA11A: 75 0D                                    JNE      0x1406ba129
+00000001406BA11C: BA 01 00 00 00                           MOV      edx, 1
+00000001406BA121: 48 8B CB                                 MOV      rcx, rbx
+00000001406BA124: E8 57 4D 97 FF                           CALL     0x14002ee80
+00000001406BA129: 48 8B 4B 08                              MOV      rcx, qword ptr [rbx + 8]
+00000001406BA12D: 48 8D 14 76                              LEA      rdx, [rsi + rsi*2]
+00000001406BA131: 4C 8B 03                                 MOV      r8, qword ptr [rbx]
+00000001406BA134: 48 85 C9                                 TEST     rcx, rcx
+00000001406BA137: 74 16                                    JE       0x1406ba14f
+00000001406BA139: 41 8B 04 90                              MOV      eax, dword ptr [r8 + rdx*4]
+00000001406BA13D: 89 01                                    MOV      dword ptr [rcx], eax
+00000001406BA13F: 41 8B 44 90 04                           MOV      eax, dword ptr [r8 + rdx*4 + 4]
+00000001406BA144: 89 41 04                                 MOV      dword ptr [rcx + 4], eax
+00000001406BA147: 41 8B 44 90 08                           MOV      eax, dword ptr [r8 + rdx*4 + 8]
+00000001406BA14C: 89 41 08                                 MOV      dword ptr [rcx + 8], eax
+00000001406BA14F: 48 83 43 08 0C                           ADD      qword ptr [rbx + 8], 0xc
+00000001406BA154: EB 6E                                    JMP      0x1406ba1c4
+00000001406BA156: 48 8B 43 10                              MOV      rax, qword ptr [rbx + 0x10]
+00000001406BA15A: 48 39 43 08                              CMP      qword ptr [rbx + 8], rax
+00000001406BA15E: 75 0D                                    JNE      0x1406ba16d
+00000001406BA160: BA 01 00 00 00                           MOV      edx, 1
+00000001406BA165: 48 8B CB                                 MOV      rcx, rbx
+00000001406BA168: E8 13 4D 97 FF                           CALL     0x14002ee80
+00000001406BA16D: 48 8B 43 08                              MOV      rax, qword ptr [rbx + 8]
+00000001406BA171: 48 85 C0                                 TEST     rax, rax
+00000001406BA174: 74 0F                                    JE       0x1406ba185
+00000001406BA176: F3 44 0F 11 00                           MOVSS    dword ptr [rax], xmm8
+00000001406BA17B: F3 0F 11 78 04                           MOVSS    dword ptr [rax + 4], xmm7
+00000001406BA180: F3 0F 11 70 08                           MOVSS    dword ptr [rax + 8], xmm6
+00000001406BA185: 48 83 43 08 0C                           ADD      qword ptr [rbx + 8], 0xc
+00000001406BA18A: EB 38                                    JMP      0x1406ba1c4
+00000001406BA18C: 48 8D 8F 38 07 00 00                     LEA      rcx, [rdi + 0x738]
+00000001406BA193: 48 63 97 10 05 00 00                     MOVSXD   rdx, dword ptr [rdi + 0x510]
+00000001406BA19A: 48 8B 87 F0 04 00 00                     MOV      rax, qword ptr [rdi + 0x4f0]
+00000001406BA1A1: 48 C1 E2 05                              SHL      rdx, 5
+00000001406BA1A5: 48 8B 80 78 0B 00 00                     MOV      rax, qword ptr [rax + 0xb78]
+00000001406BA1AC: 48 83 C0 0C                              ADD      rax, 0xc
+00000001406BA1B0: 48 03 D0                                 ADD      rdx, rax
+00000001406BA1B3: 48 89 54 24 20                           MOV      qword ptr [rsp + 0x20], rdx
+00000001406BA1B8: 4C 8B 01                                 MOV      r8, qword ptr [rcx]
+00000001406BA1BB: 48 8D 55 67                              LEA      rdx, [rbp + 0x67]
+00000001406BA1BF: E8 8C 84 B9 FF                           CALL     0x140252650
+00000001406BA1C4: C7 87 10 05 00 00 FF FF FF FF            MOV      dword ptr [rdi + 0x510], 0xffffffff
+00000001406BA1CE: 4C 63 87 6C 05 00 00                     MOVSXD   r8, dword ptr [rdi + 0x56c]
+00000001406BA1D5: 45 85 C0                                 TEST     r8d, r8d
+00000001406BA1D8: 0F 88 D3 01 00 00                        JS       0x1406ba3b1
+00000001406BA1DE: 48 8B 87 08 17 00 00                     MOV      rax, qword ptr [rdi + 0x1708]
+00000001406BA1E5: 83 B8 94 02 00 00 01                     CMP      dword ptr [rax + 0x294], 1
+00000001406BA1EC: 0F 85 BF 01 00 00                        JNE      0x1406ba3b1
+00000001406BA1F2: 48 83 BF 28 05 00 00 00                  CMP      qword ptr [rdi + 0x528], 0
+00000001406BA1FA: 0F 85 B1 01 00 00                        JNE      0x1406ba3b1
+00000001406BA200: 48 8B 8F F0 04 00 00                     MOV      rcx, qword ptr [rdi + 0x4f0]
+00000001406BA207: 48 85 C9                                 TEST     rcx, rcx
+00000001406BA20A: 0F 84 A1 01 00 00                        JE       0x1406ba3b1
+00000001406BA210: 48 8B 81 18 03 00 00                     MOV      rax, qword ptr [rcx + 0x318]
+00000001406BA217: 48 85 C0                                 TEST     rax, rax
+00000001406BA21A: 0F 84 91 01 00 00                        JE       0x1406ba3b1
+00000001406BA220: 8B 90 60 03 00 00                        MOV      edx, dword ptr [rax + 0x360]
+00000001406BA226: 83 FA 14                                 CMP      edx, 0x14
+00000001406BA229: 74 09                                    JE       0x1406ba234
+00000001406BA22B: 83 FA 6D                                 CMP      edx, 0x6d
+00000001406BA22E: 0F 85 7D 01 00 00                        JNE      0x1406ba3b1
+00000001406BA234: 4E 89 B4 C1 78 0A 00 00                  MOV      qword ptr [rcx + r8*8 + 0xa78], r14
+00000001406BA23C: 48 63 8F 6C 05 00 00                     MOVSXD   rcx, dword ptr [rdi + 0x56c]
+00000001406BA243: 48 8B 87 F0 04 00 00                     MOV      rax, qword ptr [rdi + 0x4f0]
+00000001406BA24A: C6 84 01 58 0A 00 00 00                  MOV      byte ptr [rcx + rax + 0xa58], 0
+00000001406BA252: 48 8B 87 F0 04 00 00                     MOV      rax, qword ptr [rdi + 0x4f0]
+00000001406BA259: 48 8B 88 18 03 00 00                     MOV      rcx, qword ptr [rax + 0x318]
+00000001406BA260: 48 85 C9                                 TEST     rcx, rcx
+00000001406BA263: 0F 84 0D 01 00 00                        JE       0x1406ba376
+00000001406BA269: 80 B9 79 09 00 00 00                     CMP      byte ptr [rcx + 0x979], 0
+00000001406BA270: 0F 84 00 01 00 00                        JE       0x1406ba376
+00000001406BA276: 48 8B D0                                 MOV      rdx, rax
+00000001406BA279: 48 8B CF                                 MOV      rcx, rdi
+00000001406BA27C: E8 DF 8A FC FF                           CALL     0x140682d60
+00000001406BA281: 48 8D 9F 38 07 00 00                     LEA      rbx, [rdi + 0x738]
+00000001406BA288: 48 8B 4B 08                              MOV      rcx, qword ptr [rbx + 8]
+00000001406BA28C: 48 2B 0B                                 SUB      rcx, qword ptr [rbx]
+00000001406BA28F: 49 8B C5                                 MOV      rax, r13
+00000001406BA292: 48 F7 E9                                 IMUL     rcx
+00000001406BA295: 48 D1 FA                                 SAR      rdx, 1
+00000001406BA298: 48 8B C2                                 MOV      rax, rdx
+00000001406BA29B: 48 C1 E8 3F                              SHR      rax, 0x3f
+00000001406BA29F: 48 03 D0                                 ADD      rdx, rax
+00000001406BA2A2: 0F 85 FF 00 00 00                        JNE      0x1406ba3a7
+00000001406BA2A8: 48 63 97 6C 05 00 00                     MOVSXD   rdx, dword ptr [rdi + 0x56c]
+00000001406BA2AF: 48 8B 87 F0 04 00 00                     MOV      rax, qword ptr [rdi + 0x4f0]
+00000001406BA2B6: 48 8B CA                                 MOV      rcx, rdx
+00000001406BA2B9: 48 C1 E1 05                              SHL      rcx, 5
+00000001406BA2BD: 48 03 88 78 0B 00 00                     ADD      rcx, qword ptr [rax + 0xb78]
+00000001406BA2C4: 48 C1 E2 05                              SHL      rdx, 5
+00000001406BA2C8: 48 8B 80 40 0A 00 00                     MOV      rax, qword ptr [rax + 0xa40]
+00000001406BA2CF: F3 0F 10 54 02 14                        MOVSS    xmm2, dword ptr [rdx + rax + 0x14]
+00000001406BA2D5: F3 0F 5C 51 08                           SUBSS    xmm2, dword ptr [rcx + 8]
+00000001406BA2DA: F3 0F 10 4C 02 10                        MOVSS    xmm1, dword ptr [rdx + rax + 0x10]
+00000001406BA2E0: F3 0F 5C 49 04                           SUBSS    xmm1, dword ptr [rcx + 4]
+00000001406BA2E5: F3 0F 10 44 02 0C                        MOVSS    xmm0, dword ptr [rdx + rax + 0xc]
+00000001406BA2EB: F3 0F 5C 01                              SUBSS    xmm0, dword ptr [rcx]
+00000001406BA2EF: F3 0F 11 44 24 30                        MOVSS    dword ptr [rsp + 0x30], xmm0
+00000001406BA2F5: F3 0F 11 4C 24 34                        MOVSS    dword ptr [rsp + 0x34], xmm1
+00000001406BA2FB: F3 0F 11 54 24 38                        MOVSS    dword ptr [rsp + 0x38], xmm2
+00000001406BA301: 48 8D 54 24 30                           LEA      rdx, [rsp + 0x30]
+00000001406BA306: 48 8D 4C 24 30                           LEA      rcx, [rsp + 0x30]
+00000001406BA30B: FF 15 F7 1D 1B 00                        CALL     qword ptr [rip + 0x1b1df7]
+00000001406BA311: F3 0F 10 54 24 38                        MOVSS    xmm2, dword ptr [rsp + 0x38]
+00000001406BA317: F3 41 0F 59 D1                           MULSS    xmm2, xmm9
+00000001406BA31C: F3 0F 10 4C 24 34                        MOVSS    xmm1, dword ptr [rsp + 0x34]
+00000001406BA322: F3 41 0F 59 C9                           MULSS    xmm1, xmm9
+00000001406BA327: F3 0F 10 44 24 30                        MOVSS    xmm0, dword ptr [rsp + 0x30]
+00000001406BA32D: F3 41 0F 59 C1                           MULSS    xmm0, xmm9
+00000001406BA332: 48 63 97 6C 05 00 00                     MOVSXD   rdx, dword ptr [rdi + 0x56c]
+00000001406BA339: 48 8B 87 F0 04 00 00                     MOV      rax, qword ptr [rdi + 0x4f0]
+00000001406BA340: 48 C1 E2 05                              SHL      rdx, 5
+00000001406BA344: 48 03 90 40 0A 00 00                     ADD      rdx, qword ptr [rax + 0xa40]
+00000001406BA34B: F3 0F 58 52 08                           ADDSS    xmm2, dword ptr [rdx + 8]
+00000001406BA350: F3 0F 58 4A 04                           ADDSS    xmm1, dword ptr [rdx + 4]
+00000001406BA355: F3 0F 58 02                              ADDSS    xmm0, dword ptr [rdx]
+00000001406BA359: F3 0F 11 45 87                           MOVSS    dword ptr [rbp - 0x79], xmm0
+00000001406BA35E: F3 0F 11 4D 8B                           MOVSS    dword ptr [rbp - 0x75], xmm1
+00000001406BA363: F3 0F 11 55 8F                           MOVSS    dword ptr [rbp - 0x71], xmm2
+00000001406BA368: 48 8D 55 87                              LEA      rdx, [rbp - 0x79]
+00000001406BA36C: 48 8B CB                                 MOV      rcx, rbx
+00000001406BA36F: E8 7C 4F 97 FF                           CALL     0x14002f2f0
+00000001406BA374: EB 31                                    JMP      0x1406ba3a7
+00000001406BA376: 48 8D 8F 38 07 00 00                     LEA      rcx, [rdi + 0x738]
+00000001406BA37D: 48 63 97 6C 05 00 00                     MOVSXD   rdx, dword ptr [rdi + 0x56c]
+00000001406BA384: 48 C1 E2 05                              SHL      rdx, 5
+00000001406BA388: 48 8B 80 40 0A 00 00                     MOV      rax, qword ptr [rax + 0xa40]
+00000001406BA38F: 48 83 C0 0C                              ADD      rax, 0xc
+00000001406BA393: 48 03 D0                                 ADD      rdx, rax
+00000001406BA396: 48 89 54 24 20                           MOV      qword ptr [rsp + 0x20], rdx
+00000001406BA39B: 4C 8B 01                                 MOV      r8, qword ptr [rcx]
+00000001406BA39E: 48 8D 55 67                              LEA      rdx, [rbp + 0x67]
+00000001406BA3A2: E8 A9 82 B9 FF                           CALL     0x140252650
+00000001406BA3A7: C7 87 6C 05 00 00 FF FF FF FF            MOV      dword ptr [rdi + 0x56c], 0xffffffff
+00000001406BA3B1: 48 8B 87 08 17 00 00                     MOV      rax, qword ptr [rdi + 0x1708]
+00000001406BA3B8: 48 85 C0                                 TEST     rax, rax
+00000001406BA3BB: 0F 84 27 01 00 00                        JE       0x1406ba4e8
+00000001406BA3C1: 83 B8 94 02 00 00 08                     CMP      dword ptr [rax + 0x294], 8
+00000001406BA3C8: 0F 85 1A 01 00 00                        JNE      0x1406ba4e8
+00000001406BA3CE: 44 8B 8F 6C 05 00 00                     MOV      r9d, dword ptr [rdi + 0x56c]
+00000001406BA3D5: 45 85 C9                                 TEST     r9d, r9d
+00000001406BA3D8: 0F 88 0A 01 00 00                        JS       0x1406ba4e8
+00000001406BA3DE: 0F 57 C0                                 XORPS    xmm0, xmm0
+00000001406BA3E1: F3 0F 7F 45 87                           MOVDQU   xmmword ptr [rbp - 0x79], xmm0
+00000001406BA3E6: 4C 89 75 97                              MOV      qword ptr [rbp - 0x69], r14
+00000001406BA3EA: 4C 8B 87 F0 04 00 00                     MOV      r8, qword ptr [rdi + 0x4f0]
+00000001406BA3F1: 33 D2                                    XOR      edx, edx
+00000001406BA3F3: E8 E8 25 D0 FF                           CALL     0x1403bc9e0
+00000001406BA3F8: 44 8B 8F 6C 05 00 00                     MOV      r9d, dword ptr [rdi + 0x56c]
+00000001406BA3FF: 4C 8B 87 F0 04 00 00                     MOV      r8, qword ptr [rdi + 0x4f0]
+00000001406BA406: 33 D2                                    XOR      edx, edx
+00000001406BA408: E8 C3 26 D0 FF                           CALL     0x1403bcad0
+00000001406BA40D: 4C 8D 4D A7                              LEA      r9, [rbp - 0x59]
+00000001406BA411: 44 8B 87 6C 05 00 00                     MOV      r8d, dword ptr [rdi + 0x56c]
+00000001406BA418: 48 8B 97 F0 04 00 00                     MOV      rdx, qword ptr [rdi + 0x4f0]
+00000001406BA41F: E8 0C 19 D0 FF                           CALL     0x1403bbd30
+00000001406BA424: 4C 8D 4D 87                              LEA      r9, [rbp - 0x79]
+00000001406BA428: 44 8B 87 6C 05 00 00                     MOV      r8d, dword ptr [rdi + 0x56c]
+00000001406BA42F: 48 8B 97 F0 04 00 00                     MOV      rdx, qword ptr [rdi + 0x4f0]
+00000001406BA436: E8 E5 1C D0 FF                           CALL     0x1403bc120
+00000001406BA43B: 48 8B 4D 8F                              MOV      rcx, qword ptr [rbp - 0x71]
+00000001406BA43F: 4C 8B 65 87                              MOV      r12, qword ptr [rbp - 0x79]
+00000001406BA443: 49 2B CC                                 SUB      rcx, r12
+00000001406BA446: 49 8B C5                                 MOV      rax, r13
+00000001406BA449: 48 F7 E9                                 IMUL     rcx
+00000001406BA44C: 48 D1 FA                                 SAR      rdx, 1
+00000001406BA44F: 48 8B C2                                 MOV      rax, rdx
+00000001406BA452: 48 C1 E8 3F                              SHR      rax, 0x3f
+00000001406BA456: 48 03 D0                                 ADD      rdx, rax
+00000001406BA459: 74 3A                                    JE       0x1406ba495
+00000001406BA45B: 8D 5A FF                                 LEA      ebx, [rdx - 1]
+00000001406BA45E: 85 DB                                    TEST     ebx, ebx
+00000001406BA460: 78 33                                    JS       0x1406ba495
+00000001406BA462: 48 63 C3                                 MOVSXD   rax, ebx
+00000001406BA465: 48 8D 0C 40                              LEA      rcx, [rax + rax*2]
+00000001406BA469: 49 8D 34 8C                              LEA      rsi, [r12 + rcx*4]
+00000001406BA46D: 0F 1F 00                                 NOP      dword ptr [rax]
+00000001406BA470: 48 89 74 24 20                           MOV      qword ptr [rsp + 0x20], rsi
+00000001406BA475: 4C 8B 87 38 07 00 00                     MOV      r8, qword ptr [rdi + 0x738]
+00000001406BA47C: 48 8D 55 67                              LEA      rdx, [rbp + 0x67]
+00000001406BA480: 48 8D 8F 38 07 00 00                     LEA      rcx, [rdi + 0x738]
+00000001406BA487: E8 C4 81 B9 FF                           CALL     0x140252650
+00000001406BA48C: 48 83 EE 0C                              SUB      rsi, 0xc
+00000001406BA490: 83 EB 01                                 SUB      ebx, 1
+00000001406BA493: 79 DB                                    JNS      0x1406ba470
+00000001406BA495: 48 8D 8F 38 07 00 00                     LEA      rcx, [rdi + 0x738]
+00000001406BA49C: 48 8D 55 B3                              LEA      rdx, [rbp - 0x4d]
+00000001406BA4A0: 48 89 54 24 20                           MOV      qword ptr [rsp + 0x20], rdx
+00000001406BA4A5: 4C 8B 01                                 MOV      r8, qword ptr [rcx]
+00000001406BA4A8: 48 8D 55 67                              LEA      rdx, [rbp + 0x67]
+00000001406BA4AC: E8 9F 81 B9 FF                           CALL     0x140252650
+00000001406BA4B1: C7 87 6C 05 00 00 FF FF FF FF            MOV      dword ptr [rdi + 0x56c], 0xffffffff
+00000001406BA4BB: 4D 85 E4                                 TEST     r12, r12
+00000001406BA4BE: 74 28                                    JE       0x1406ba4e8
+00000001406BA4C0: 48 8B 55 97                              MOV      rdx, qword ptr [rbp - 0x69]
+00000001406BA4C4: 49 2B D4                                 SUB      rdx, r12
+00000001406BA4C7: 49 8B C5                                 MOV      rax, r13
+00000001406BA4CA: 48 F7 EA                                 IMUL     rdx
+00000001406BA4CD: 48 D1 FA                                 SAR      rdx, 1
+00000001406BA4D0: 48 8B C2                                 MOV      rax, rdx
+00000001406BA4D3: 48 C1 E8 3F                              SHR      rax, 0x3f
+00000001406BA4D7: 48 03 D0                                 ADD      rdx, rax
+00000001406BA4DA: 41 B8 0C 00 00 00                        MOV      r8d, 0xc
+00000001406BA4E0: 49 8B CC                                 MOV      rcx, r12
+00000001406BA4E3: E8 68 75 94 FF                           CALL     0x140001a50
+00000001406BA4E8: 48 8B B7 F8 04 00 00                     MOV      rsi, qword ptr [rdi + 0x4f8]
+00000001406BA4EF: 48 85 F6                                 TEST     rsi, rsi
+00000001406BA4F2: 0F 84 53 02 00 00                        JE       0x1406ba74b
+00000001406BA4F8: 32 DB                                    XOR      bl, bl
+00000001406BA4FA: 48 8B 8F 08 17 00 00                     MOV      rcx, qword ptr [rdi + 0x1708]
+00000001406BA501: 8B 91 94 02 00 00                        MOV      edx, dword ptr [rcx + 0x294]
+00000001406BA507: 83 FA 08                                 CMP      edx, 8
+00000001406BA50A: 75 3A                                    JNE      0x1406ba546
+00000001406BA50C: 48 83 BE 18 03 00 00 00                  CMP      qword ptr [rsi + 0x318], 0
+00000001406BA514: 74 30                                    JE       0x1406ba546
+00000001406BA516: 48 8B 86 B0 05 00 00                     MOV      rax, qword ptr [rsi + 0x5b0]
+00000001406BA51D: 48 85 C0                                 TEST     rax, rax
+00000001406BA520: 74 24                                    JE       0x1406ba546
+00000001406BA522: 4C 8B 80 18 03 00 00                     MOV      r8, qword ptr [rax + 0x318]
+00000001406BA529: 41 83 B8 60 03 00 00 28                  CMP      dword ptr [r8 + 0x360], 0x28
+00000001406BA531: 75 13                                    JNE      0x1406ba546
+00000001406BA533: 0F B6 DB                                 MOVZX    ebx, bl
+00000001406BA536: 41 83 B8 64 03 00 00 21                  CMP      dword ptr [r8 + 0x364], 0x21
+00000001406BA53E: B8 01 00 00 00                           MOV      eax, 1
+00000001406BA543: 0F 44 D8                                 CMOVE    ebx, eax
+00000001406BA546: 48 85 C9                                 TEST     rcx, rcx
+00000001406BA549: 74 0E                                    JE       0x1406ba559
+00000001406BA54B: 8D 42 FA                                 LEA      eax, [rdx - 6]
+00000001406BA54E: A9 FB FF FF FF                           TEST     eax, 0xfffffffb
+00000001406BA553: 0F 84 F2 01 00 00                        JE       0x1406ba74b
+00000001406BA559: 45 33 C9                                 XOR      r9d, r9d
+00000001406BA55C: 4C 8B C7                                 MOV      r8, rdi
+00000001406BA55F: 48 8B D6                                 MOV      rdx, rsi
+00000001406BA562: E8 D9 10 D0 FF                           CALL     0x1403bb640
+00000001406BA567: 84 C0                                    TEST     al, al
+00000001406BA569: 75 08                                    JNE      0x1406ba573
+00000001406BA56B: 84 DB                                    TEST     bl, bl
+00000001406BA56D: 0F 84 D8 01 00 00                        JE       0x1406ba74b
+00000001406BA573: 48 8B 96 78 0C 00 00                     MOV      rdx, qword ptr [rsi + 0xc78]
+00000001406BA57A: 48 8B B6 70 0C 00 00                     MOV      rsi, qword ptr [rsi + 0xc70]
+00000001406BA581: 48 3B F2                                 CMP      rsi, rdx
+00000001406BA584: 74 55                                    JE       0x1406ba5db
+00000001406BA586: 48 39 3E                                 CMP      qword ptr [rsi], rdi
+00000001406BA589: 74 09                                    JE       0x1406ba594
+00000001406BA58B: 48 83 C6 08                              ADD      rsi, 8
+00000001406BA58F: 48 3B F2                                 CMP      rsi, rdx
+00000001406BA592: 75 F2                                    JNE      0x1406ba586
+00000001406BA594: 48 3B F2                                 CMP      rsi, rdx
+00000001406BA597: 74 42                                    JE       0x1406ba5db
+00000001406BA599: 48 8D 46 08                              LEA      rax, [rsi + 8]
+00000001406BA59D: 49 8B CE                                 MOV      rcx, r14
+00000001406BA5A0: 4C 8B CA                                 MOV      r9, rdx
+00000001406BA5A3: 4C 2B C8                                 SUB      r9, rax
+00000001406BA5A6: 49 83 C1 07                              ADD      r9, 7
+00000001406BA5AA: 49 C1 E9 03                              SHR      r9, 3
+00000001406BA5AE: 48 3B C2                                 CMP      rax, rdx
+00000001406BA5B1: 4D 0F 47 CE                              CMOVA    r9, r14
+00000001406BA5B5: 4D 85 C9                                 TEST     r9, r9
+00000001406BA5B8: 74 21                                    JE       0x1406ba5db
+00000001406BA5BA: 66 0F 1F 44 00 00                        NOP      word ptr [rax + rax]
+00000001406BA5C0: 4C 8B 00                                 MOV      r8, qword ptr [rax]
+00000001406BA5C3: 4C 3B C7                                 CMP      r8, rdi
+00000001406BA5C6: 74 07                                    JE       0x1406ba5cf
+00000001406BA5C8: 4C 89 06                                 MOV      qword ptr [rsi], r8
+00000001406BA5CB: 48 83 C6 08                              ADD      rsi, 8
+00000001406BA5CF: 48 83 C0 08                              ADD      rax, 8
+00000001406BA5D3: 48 FF C1                                 INC      rcx
+00000001406BA5D6: 49 3B C9                                 CMP      rcx, r9
+00000001406BA5D9: 75 E5                                    JNE      0x1406ba5c0
+00000001406BA5DB: 4C 8B BF F8 04 00 00                     MOV      r15, qword ptr [rdi + 0x4f8]
+00000001406BA5E2: 49 8B 87 70 0C 00 00                     MOV      rax, qword ptr [r15 + 0xc70]
+00000001406BA5E9: 48 3B F0                                 CMP      rsi, rax
+00000001406BA5EC: 75 09                                    JNE      0x1406ba5f7
+00000001406BA5EE: 49 3B 97 78 0C 00 00                     CMP      rdx, qword ptr [r15 + 0xc78]
+00000001406BA5F5: 74 1F                                    JE       0x1406ba616
+00000001406BA5F7: 48 3B F2                                 CMP      rsi, rdx
+00000001406BA5FA: 74 21                                    JE       0x1406ba61d
+00000001406BA5FC: 49 8B 9F 78 0C 00 00                     MOV      rbx, qword ptr [r15 + 0xc78]
+00000001406BA603: 48 2B DA                                 SUB      rbx, rdx
+00000001406BA606: 4C 8B C3                                 MOV      r8, rbx
+00000001406BA609: 48 8B CE                                 MOV      rcx, rsi
+00000001406BA60C: FF 15 36 36 1B 00                        CALL     qword ptr [rip + 0x1b3636]
+00000001406BA612: 48 8D 04 33                              LEA      rax, [rbx + rsi]
+00000001406BA616: 49 89 87 78 0C 00 00                     MOV      qword ptr [r15 + 0xc78], rax
+00000001406BA61D: 45 8B EE                                 MOV      r13d, r14d
+00000001406BA620: 48 8B 87 90 04 00 00                     MOV      rax, qword ptr [rdi + 0x490]
+00000001406BA627: 48 2B 87 88 04 00 00                     SUB      rax, qword ptr [rdi + 0x488]
+00000001406BA62E: 48 C1 F8 03                              SAR      rax, 3
+00000001406BA632: 48 85 C0                                 TEST     rax, rax
+00000001406BA635: 0F 84 09 01 00 00                        JE       0x1406ba744
+00000001406BA63B: 4D 8B FE                                 MOV      r15, r14
+00000001406BA63E: 66 90                                    NOP
+00000001406BA640: 4C 8B 97 88 04 00 00                     MOV      r10, qword ptr [rdi + 0x488]
+00000001406BA647: 4B 8B 04 FA                              MOV      rax, qword ptr [r10 + r15*8]
+00000001406BA64B: 48 8B B0 F8 04 00 00                     MOV      rsi, qword ptr [rax + 0x4f8]
+00000001406BA652: 48 85 F6                                 TEST     rsi, rsi
+00000001406BA655: 0F 84 B6 00 00 00                        JE       0x1406ba711
+00000001406BA65B: 48 8B 96 78 0C 00 00                     MOV      rdx, qword ptr [rsi + 0xc78]
+00000001406BA662: 48 8B B6 70 0C 00 00                     MOV      rsi, qword ptr [rsi + 0xc70]
+00000001406BA669: 48 3B F2                                 CMP      rsi, rdx
+00000001406BA66C: 74 52                                    JE       0x1406ba6c0
+00000001406BA66E: 66 90                                    NOP
+00000001406BA670: 48 39 06                                 CMP      qword ptr [rsi], rax
+00000001406BA673: 74 09                                    JE       0x1406ba67e
+00000001406BA675: 48 83 C6 08                              ADD      rsi, 8
+00000001406BA679: 48 3B F2                                 CMP      rsi, rdx
+00000001406BA67C: 75 F2                                    JNE      0x1406ba670
+00000001406BA67E: 48 3B F2                                 CMP      rsi, rdx
+00000001406BA681: 74 3D                                    JE       0x1406ba6c0
+00000001406BA683: 48 8D 46 08                              LEA      rax, [rsi + 8]
+00000001406BA687: 49 8B CE                                 MOV      rcx, r14
+00000001406BA68A: 4C 8B CA                                 MOV      r9, rdx
+00000001406BA68D: 4C 2B C8                                 SUB      r9, rax
+00000001406BA690: 49 83 C1 07                              ADD      r9, 7
+00000001406BA694: 49 C1 E9 03                              SHR      r9, 3
+00000001406BA698: 48 3B C2                                 CMP      rax, rdx
+00000001406BA69B: 4D 0F 47 CE                              CMOVA    r9, r14
+00000001406BA69F: 4D 85 C9                                 TEST     r9, r9
+00000001406BA6A2: 74 1C                                    JE       0x1406ba6c0
+00000001406BA6A4: 4C 8B 00                                 MOV      r8, qword ptr [rax]
+00000001406BA6A7: 4F 3B 04 FA                              CMP      r8, qword ptr [r10 + r15*8]
+00000001406BA6AB: 74 07                                    JE       0x1406ba6b4
+00000001406BA6AD: 4C 89 06                                 MOV      qword ptr [rsi], r8
+00000001406BA6B0: 48 83 C6 08                              ADD      rsi, 8
+00000001406BA6B4: 48 83 C0 08                              ADD      rax, 8
+00000001406BA6B8: 48 FF C1                                 INC      rcx
+00000001406BA6BB: 49 3B C9                                 CMP      rcx, r9
+00000001406BA6BE: 75 E4                                    JNE      0x1406ba6a4
+00000001406BA6C0: 48 8B 87 88 04 00 00                     MOV      rax, qword ptr [rdi + 0x488]
+00000001406BA6C7: 4A 8B 0C F8                              MOV      rcx, qword ptr [rax + r15*8]
+00000001406BA6CB: 4C 8B A1 F8 04 00 00                     MOV      r12, qword ptr [rcx + 0x4f8]
+00000001406BA6D2: 49 8B 84 24 70 0C 00 00                  MOV      rax, qword ptr [r12 + 0xc70]
+00000001406BA6DA: 48 3B F0                                 CMP      rsi, rax
+00000001406BA6DD: 75 0A                                    JNE      0x1406ba6e9
+00000001406BA6DF: 49 3B 94 24 78 0C 00 00                  CMP      rdx, qword ptr [r12 + 0xc78]
+00000001406BA6E7: 74 20                                    JE       0x1406ba709
+00000001406BA6E9: 48 3B F2                                 CMP      rsi, rdx
+00000001406BA6EC: 74 23                                    JE       0x1406ba711
+00000001406BA6EE: 49 8B 9C 24 78 0C 00 00                  MOV      rbx, qword ptr [r12 + 0xc78]
+00000001406BA6F6: 48 2B DA                                 SUB      rbx, rdx
+00000001406BA6F9: 4C 8B C3                                 MOV      r8, rbx
+00000001406BA6FC: 48 8B CE                                 MOV      rcx, rsi
+00000001406BA6FF: FF 15 43 35 1B 00                        CALL     qword ptr [rip + 0x1b3543]
+00000001406BA705: 48 8D 04 33                              LEA      rax, [rbx + rsi]
+00000001406BA709: 49 89 84 24 78 0C 00 00                  MOV      qword ptr [r12 + 0xc78], rax
+00000001406BA711: 48 8B 87 88 04 00 00                     MOV      rax, qword ptr [rdi + 0x488]
+00000001406BA718: 4A 8B 0C F8                              MOV      rcx, qword ptr [rax + r15*8]
+00000001406BA71C: 4C 89 B1 F8 04 00 00                     MOV      qword ptr [rcx + 0x4f8], r14
+00000001406BA723: 41 FF C5                                 INC      r13d
+00000001406BA726: 45 8B FD                                 MOV      r15d, r13d
+00000001406BA729: 48 8B 87 90 04 00 00                     MOV      rax, qword ptr [rdi + 0x490]
+00000001406BA730: 48 2B 87 88 04 00 00                     SUB      rax, qword ptr [rdi + 0x488]
+00000001406BA737: 48 C1 F8 03                              SAR      rax, 3
+00000001406BA73B: 4C 3B F8                                 CMP      r15, rax
+00000001406BA73E: 0F 82 FC FE FF FF                        JB       0x1406ba640
+00000001406BA744: 4C 89 B7 F8 04 00 00                     MOV      qword ptr [rdi + 0x4f8], r14
+00000001406BA74B: 83 BF 0C 05 00 00 0C                     CMP      dword ptr [rdi + 0x50c], 0xc
+00000001406BA752: 0F 84 D2 01 00 00                        JE       0x1406ba92a
+00000001406BA758: 48 8B 87 F8 04 00 00                     MOV      rax, qword ptr [rdi + 0x4f8]
+00000001406BA75F: 48 85 C0                                 TEST     rax, rax
+00000001406BA762: 0F 84 C2 01 00 00                        JE       0x1406ba92a
+00000001406BA768: 48 8B B7 F0 04 00 00                     MOV      rsi, qword ptr [rdi + 0x4f0]
+00000001406BA76F: 48 3B F0                                 CMP      rsi, rax
+00000001406BA772: 0F 84 B2 01 00 00                        JE       0x1406ba92a
+00000001406BA778: 48 8B 96 78 0C 00 00                     MOV      rdx, qword ptr [rsi + 0xc78]
+00000001406BA77F: 48 8B B6 70 0C 00 00                     MOV      rsi, qword ptr [rsi + 0xc70]
+00000001406BA786: 48 3B F2                                 CMP      rsi, rdx
+00000001406BA789: 74 54                                    JE       0x1406ba7df
+00000001406BA78B: 0F 1F 44 00 00                           NOP      dword ptr [rax + rax]
+00000001406BA790: 48 39 3E                                 CMP      qword ptr [rsi], rdi
+00000001406BA793: 74 09                                    JE       0x1406ba79e
+00000001406BA795: 48 83 C6 08                              ADD      rsi, 8
+00000001406BA799: 48 3B F2                                 CMP      rsi, rdx
+00000001406BA79C: 75 F2                                    JNE      0x1406ba790
+00000001406BA79E: 48 3B F2                                 CMP      rsi, rdx
+00000001406BA7A1: 74 3C                                    JE       0x1406ba7df
+00000001406BA7A3: 48 8D 46 08                              LEA      rax, [rsi + 8]
+00000001406BA7A7: 49 8B CE                                 MOV      rcx, r14
+00000001406BA7AA: 4C 8B CA                                 MOV      r9, rdx
+00000001406BA7AD: 4C 2B C8                                 SUB      r9, rax
+00000001406BA7B0: 49 83 C1 07                              ADD      r9, 7
+00000001406BA7B4: 49 C1 E9 03                              SHR      r9, 3
+00000001406BA7B8: 48 3B C2                                 CMP      rax, rdx
+00000001406BA7BB: 4D 0F 47 CE                              CMOVA    r9, r14
+00000001406BA7BF: 4D 85 C9                                 TEST     r9, r9
+00000001406BA7C2: 74 1B                                    JE       0x1406ba7df
+00000001406BA7C4: 4C 8B 00                                 MOV      r8, qword ptr [rax]
+00000001406BA7C7: 4C 3B C7                                 CMP      r8, rdi
+00000001406BA7CA: 74 07                                    JE       0x1406ba7d3
+00000001406BA7CC: 4C 89 06                                 MOV      qword ptr [rsi], r8
+00000001406BA7CF: 48 83 C6 08                              ADD      rsi, 8
+00000001406BA7D3: 48 83 C0 08                              ADD      rax, 8
+00000001406BA7D7: 48 FF C1                                 INC      rcx
+00000001406BA7DA: 49 3B C9                                 CMP      rcx, r9
+00000001406BA7DD: 75 E5                                    JNE      0x1406ba7c4
+00000001406BA7DF: 4C 8B BF F0 04 00 00                     MOV      r15, qword ptr [rdi + 0x4f0]
+00000001406BA7E6: 49 8B 87 70 0C 00 00                     MOV      rax, qword ptr [r15 + 0xc70]
+00000001406BA7ED: 48 3B F0                                 CMP      rsi, rax
+00000001406BA7F0: 75 09                                    JNE      0x1406ba7fb
+00000001406BA7F2: 49 3B 97 78 0C 00 00                     CMP      rdx, qword ptr [r15 + 0xc78]
+00000001406BA7F9: 74 1F                                    JE       0x1406ba81a
+00000001406BA7FB: 48 3B F2                                 CMP      rsi, rdx
+00000001406BA7FE: 74 21                                    JE       0x1406ba821
+00000001406BA800: 49 8B 9F 78 0C 00 00                     MOV      rbx, qword ptr [r15 + 0xc78]
+00000001406BA807: 48 2B DA                                 SUB      rbx, rdx
+00000001406BA80A: 4C 8B C3                                 MOV      r8, rbx
+00000001406BA80D: 48 8B CE                                 MOV      rcx, rsi
+00000001406BA810: FF 15 32 34 1B 00                        CALL     qword ptr [rip + 0x1b3432]
+00000001406BA816: 48 8D 04 33                              LEA      rax, [rbx + rsi]
+00000001406BA81A: 49 89 87 78 0C 00 00                     MOV      qword ptr [r15 + 0xc78], rax
+00000001406BA821: 45 8B E6                                 MOV      r12d, r14d
+00000001406BA824: 48 8B 87 90 04 00 00                     MOV      rax, qword ptr [rdi + 0x490]
+00000001406BA82B: 48 2B 87 88 04 00 00                     SUB      rax, qword ptr [rdi + 0x488]
+00000001406BA832: 48 C1 F8 03                              SAR      rax, 3
+00000001406BA836: 48 85 C0                                 TEST     rax, rax
+00000001406BA839: 0F 84 EB 00 00 00                        JE       0x1406ba92a
+00000001406BA83F: 4D 8B D6                                 MOV      r10, r14
+00000001406BA842: 4C 8B 9F 88 04 00 00                     MOV      r11, qword ptr [rdi + 0x488]
+00000001406BA849: 4B 8B 04 D3                              MOV      rax, qword ptr [r11 + r10*8]
+00000001406BA84D: 48 8B 88 F0 04 00 00                     MOV      rcx, qword ptr [rax + 0x4f0]
+00000001406BA854: 48 8B 91 78 0C 00 00                     MOV      rdx, qword ptr [rcx + 0xc78]
+00000001406BA85B: 48 8B B1 70 0C 00 00                     MOV      rsi, qword ptr [rcx + 0xc70]
+00000001406BA862: 48 3B F2                                 CMP      rsi, rdx
+00000001406BA865: 74 55                                    JE       0x1406ba8bc
+00000001406BA867: 48 39 06                                 CMP      qword ptr [rsi], rax
+00000001406BA86A: 74 09                                    JE       0x1406ba875
+00000001406BA86C: 48 83 C6 08                              ADD      rsi, 8
+00000001406BA870: 48 3B F2                                 CMP      rsi, rdx
+00000001406BA873: 75 F2                                    JNE      0x1406ba867
+00000001406BA875: 48 3B F2                                 CMP      rsi, rdx
+00000001406BA878: 74 42                                    JE       0x1406ba8bc
+00000001406BA87A: 48 8D 46 08                              LEA      rax, [rsi + 8]
+00000001406BA87E: 49 8B CE                                 MOV      rcx, r14
+00000001406BA881: 4C 8B CA                                 MOV      r9, rdx
+00000001406BA884: 4C 2B C8                                 SUB      r9, rax
+00000001406BA887: 49 83 C1 07                              ADD      r9, 7
+00000001406BA88B: 49 C1 E9 03                              SHR      r9, 3
+00000001406BA88F: 48 3B C2                                 CMP      rax, rdx
+00000001406BA892: 4D 0F 47 CE                              CMOVA    r9, r14
+00000001406BA896: 4D 85 C9                                 TEST     r9, r9
+00000001406BA899: 74 21                                    JE       0x1406ba8bc
+00000001406BA89B: 0F 1F 44 00 00                           NOP      dword ptr [rax + rax]
+00000001406BA8A0: 4C 8B 00                                 MOV      r8, qword ptr [rax]
+00000001406BA8A3: 4F 3B 04 D3                              CMP      r8, qword ptr [r11 + r10*8]
+00000001406BA8A7: 74 07                                    JE       0x1406ba8b0
+00000001406BA8A9: 4C 89 06                                 MOV      qword ptr [rsi], r8
+00000001406BA8AC: 48 83 C6 08                              ADD      rsi, 8
+00000001406BA8B0: 48 83 C0 08                              ADD      rax, 8
+00000001406BA8B4: 48 FF C1                                 INC      rcx
+00000001406BA8B7: 49 3B C9                                 CMP      rcx, r9
+00000001406BA8BA: 75 E4                                    JNE      0x1406ba8a0
+00000001406BA8BC: 48 8B 87 88 04 00 00                     MOV      rax, qword ptr [rdi + 0x488]
+00000001406BA8C3: 4A 8B 0C D0                              MOV      rcx, qword ptr [rax + r10*8]
+00000001406BA8C7: 4C 8B B9 F0 04 00 00                     MOV      r15, qword ptr [rcx + 0x4f0]
+00000001406BA8CE: 49 8B 87 70 0C 00 00                     MOV      rax, qword ptr [r15 + 0xc70]
+00000001406BA8D5: 48 3B F0                                 CMP      rsi, rax
+00000001406BA8D8: 75 09                                    JNE      0x1406ba8e3
+00000001406BA8DA: 49 3B 97 78 0C 00 00                     CMP      rdx, qword ptr [r15 + 0xc78]
+00000001406BA8E1: 74 1F                                    JE       0x1406ba902
+00000001406BA8E3: 48 3B F2                                 CMP      rsi, rdx
+00000001406BA8E6: 74 21                                    JE       0x1406ba909
+00000001406BA8E8: 49 8B 9F 78 0C 00 00                     MOV      rbx, qword ptr [r15 + 0xc78]
+00000001406BA8EF: 48 2B DA                                 SUB      rbx, rdx
+00000001406BA8F2: 4C 8B C3                                 MOV      r8, rbx
+00000001406BA8F5: 48 8B CE                                 MOV      rcx, rsi
+00000001406BA8F8: FF 15 4A 33 1B 00                        CALL     qword ptr [rip + 0x1b334a]
+00000001406BA8FE: 48 8D 04 33                              LEA      rax, [rbx + rsi]
+00000001406BA902: 49 89 87 78 0C 00 00                     MOV      qword ptr [r15 + 0xc78], rax
+00000001406BA909: 41 FF C4                                 INC      r12d
+00000001406BA90C: 45 8B D4                                 MOV      r10d, r12d
+00000001406BA90F: 48 8B 87 90 04 00 00                     MOV      rax, qword ptr [rdi + 0x490]
+00000001406BA916: 48 2B 87 88 04 00 00                     SUB      rax, qword ptr [rdi + 0x488]
+00000001406BA91D: 48 C1 F8 03                              SAR      rax, 3
+00000001406BA921: 4C 3B D0                                 CMP      r10, rax
+00000001406BA924: 0F 82 18 FF FF FF                        JB       0x1406ba842
+00000001406BA92A: 80 BF 7D 06 00 00 00                     CMP      byte ptr [rdi + 0x67d], 0
+00000001406BA931: 75 4C                                    JNE      0x1406ba97f
+00000001406BA933: 48 8B 87 08 17 00 00                     MOV      rax, qword ptr [rdi + 0x1708]
+00000001406BA93A: 8B 88 94 02 00 00                        MOV      ecx, dword ptr [rax + 0x294]
+00000001406BA940: 83 E9 04                                 SUB      ecx, 4
+00000001406BA943: 83 F9 01                                 CMP      ecx, 1
+00000001406BA946: 77 37                                    JA       0x1406ba97f
+00000001406BA948: 48 83 BF F0 04 00 00 00                  CMP      qword ptr [rdi + 0x4f0], 0
+00000001406BA950: 74 2D                                    JE       0x1406ba97f
+00000001406BA952: 48 8B 87 A8 06 00 00                     MOV      rax, qword ptr [rdi + 0x6a8]
+00000001406BA959: 48 2B 87 A0 06 00 00                     SUB      rax, qword ptr [rdi + 0x6a0]
+00000001406BA960: 48 C1 F8 03                              SAR      rax, 3
+00000001406BA964: 48 85 C0                                 TEST     rax, rax
+00000001406BA967: 74 16                                    JE       0x1406ba97f
+00000001406BA969: 48 8B 97 A0 06 00 00                     MOV      rdx, qword ptr [rdi + 0x6a0]
+00000001406BA970: 48 8B 12                                 MOV      rdx, qword ptr [rdx]
+00000001406BA973: 48 8D 0D 96 A5 31 00                     LEA      rcx, [rip + 0x31a596]
+00000001406BA97A: E8 31 41 D6 FF                           CALL     0x14041eab0
+00000001406BA97F: 4C 89 B7 F0 04 00 00                     MOV      qword ptr [rdi + 0x4f0], r14
+00000001406BA986: 45 8B EE                                 MOV      r13d, r14d
+00000001406BA989: 48 8B 87 90 04 00 00                     MOV      rax, qword ptr [rdi + 0x490]
+00000001406BA990: 48 2B 87 88 04 00 00                     SUB      rax, qword ptr [rdi + 0x488]
+00000001406BA997: 48 C1 F8 03                              SAR      rax, 3
+00000001406BA99B: 48 85 C0                                 TEST     rax, rax
+00000001406BA99E: 0F 84 3E 01 00 00                        JE       0x1406baae2
+00000001406BA9A4: 4D 8B FE                                 MOV      r15, r14
+00000001406BA9A7: 66 0F 1F 84 00 00 00 00 00               NOP      word ptr [rax + rax]
+00000001406BA9B0: 48 8B 9F 88 04 00 00                     MOV      rbx, qword ptr [rdi + 0x488]
+00000001406BA9B7: 4A 8B 04 FB                              MOV      rax, qword ptr [rbx + r15*8]
+00000001406BA9BB: 48 8B B0 F8 04 00 00                     MOV      rsi, qword ptr [rax + 0x4f8]
+00000001406BA9C2: 48 85 F6                                 TEST     rsi, rsi
+00000001406BA9C5: 0F 84 E4 00 00 00                        JE       0x1406baaaf
+00000001406BA9CB: 45 33 C9                                 XOR      r9d, r9d
+00000001406BA9CE: 4C 8B C7                                 MOV      r8, rdi
+00000001406BA9D1: 48 8B D6                                 MOV      rdx, rsi
+00000001406BA9D4: E8 67 0C D0 FF                           CALL     0x1403bb640
+00000001406BA9D9: 84 C0                                    TEST     al, al
+00000001406BA9DB: 0F 84 CE 00 00 00                        JE       0x1406baaaf
+00000001406BA9E1: 48 8B 96 78 0C 00 00                     MOV      rdx, qword ptr [rsi + 0xc78]
+00000001406BA9E8: 48 8B B6 70 0C 00 00                     MOV      rsi, qword ptr [rsi + 0xc70]
+00000001406BA9EF: 48 3B F2                                 CMP      rsi, rdx
+00000001406BA9F2: 74 58                                    JE       0x1406baa4c
+00000001406BA9F4: 4A 8B 04 FB                              MOV      rax, qword ptr [rbx + r15*8]
+00000001406BA9F8: 48 39 06                                 CMP      qword ptr [rsi], rax
+00000001406BA9FB: 74 09                                    JE       0x1406baa06
+00000001406BA9FD: 48 83 C6 08                              ADD      rsi, 8
+00000001406BAA01: 48 3B F2                                 CMP      rsi, rdx
+00000001406BAA04: 75 F2                                    JNE      0x1406ba9f8
+00000001406BAA06: 48 3B F2                                 CMP      rsi, rdx
+00000001406BAA09: 74 41                                    JE       0x1406baa4c
+00000001406BAA0B: 48 8D 46 08                              LEA      rax, [rsi + 8]
+00000001406BAA0F: 49 8B CE                                 MOV      rcx, r14
+00000001406BAA12: 4C 8B CA                                 MOV      r9, rdx
+00000001406BAA15: 4C 2B C8                                 SUB      r9, rax
+00000001406BAA18: 49 83 C1 07                              ADD      r9, 7
+00000001406BAA1C: 49 C1 E9 03                              SHR      r9, 3
+00000001406BAA20: 48 3B C2                                 CMP      rax, rdx
+00000001406BAA23: 4D 0F 47 CE                              CMOVA    r9, r14
+00000001406BAA27: 4D 85 C9                                 TEST     r9, r9
+00000001406BAA2A: 74 20                                    JE       0x1406baa4c
+00000001406BAA2C: 0F 1F 40 00                              NOP      dword ptr [rax]
+00000001406BAA30: 4C 8B 00                                 MOV      r8, qword ptr [rax]
+00000001406BAA33: 4E 3B 04 FB                              CMP      r8, qword ptr [rbx + r15*8]
+00000001406BAA37: 74 07                                    JE       0x1406baa40
+00000001406BAA39: 4C 89 06                                 MOV      qword ptr [rsi], r8
+00000001406BAA3C: 48 83 C6 08                              ADD      rsi, 8
+00000001406BAA40: 48 83 C0 08                              ADD      rax, 8
+00000001406BAA44: 48 FF C1                                 INC      rcx
+00000001406BAA47: 49 3B C9                                 CMP      rcx, r9
+00000001406BAA4A: 75 E4                                    JNE      0x1406baa30
+00000001406BAA4C: 48 8B 87 88 04 00 00                     MOV      rax, qword ptr [rdi + 0x488]
+00000001406BAA53: 4A 8B 0C F8                              MOV      rcx, qword ptr [rax + r15*8]
+00000001406BAA57: 4C 8B A1 F8 04 00 00                     MOV      r12, qword ptr [rcx + 0x4f8]
+00000001406BAA5E: 49 8B 84 24 70 0C 00 00                  MOV      rax, qword ptr [r12 + 0xc70]
+00000001406BAA66: 48 3B F0                                 CMP      rsi, rax
+00000001406BAA69: 75 0A                                    JNE      0x1406baa75
+00000001406BAA6B: 49 3B 94 24 78 0C 00 00                  CMP      rdx, qword ptr [r12 + 0xc78]
+00000001406BAA73: 74 20                                    JE       0x1406baa95
+00000001406BAA75: 48 3B F2                                 CMP      rsi, rdx
+00000001406BAA78: 74 23                                    JE       0x1406baa9d
+00000001406BAA7A: 49 8B 9C 24 78 0C 00 00                  MOV      rbx, qword ptr [r12 + 0xc78]
+00000001406BAA82: 48 2B DA                                 SUB      rbx, rdx
+00000001406BAA85: 4C 8B C3                                 MOV      r8, rbx
+00000001406BAA88: 48 8B CE                                 MOV      rcx, rsi
+00000001406BAA8B: FF 15 B7 31 1B 00                        CALL     qword ptr [rip + 0x1b31b7]
+00000001406BAA91: 48 8D 04 1E                              LEA      rax, [rsi + rbx]
+00000001406BAA95: 49 89 84 24 78 0C 00 00                  MOV      qword ptr [r12 + 0xc78], rax
+00000001406BAA9D: 48 8B 87 88 04 00 00                     MOV      rax, qword ptr [rdi + 0x488]
+00000001406BAAA4: 4A 8B 0C F8                              MOV      rcx, qword ptr [rax + r15*8]
+00000001406BAAA8: 4C 89 B1 F8 04 00 00                     MOV      qword ptr [rcx + 0x4f8], r14
+00000001406BAAAF: 48 8B 87 88 04 00 00                     MOV      rax, qword ptr [rdi + 0x488]
+00000001406BAAB6: 4A 8B 0C F8                              MOV      rcx, qword ptr [rax + r15*8]
+00000001406BAABA: 4C 89 B1 F0 04 00 00                     MOV      qword ptr [rcx + 0x4f0], r14
+00000001406BAAC1: 41 FF C5                                 INC      r13d
+00000001406BAAC4: 45 8B FD                                 MOV      r15d, r13d
+00000001406BAAC7: 48 8B 87 90 04 00 00                     MOV      rax, qword ptr [rdi + 0x490]
+00000001406BAACE: 48 2B 87 88 04 00 00                     SUB      rax, qword ptr [rdi + 0x488]
+00000001406BAAD5: 48 C1 F8 03                              SAR      rax, 3
+00000001406BAAD9: 4C 3B F8                                 CMP      r15, rax
+00000001406BAADC: 0F 82 CE FE FF FF                        JB       0x1406ba9b0
+00000001406BAAE2: 48 8B 87 08 17 00 00                     MOV      rax, qword ptr [rdi + 0x1708]
+00000001406BAAE9: 8B 88 94 02 00 00                        MOV      ecx, dword ptr [rax + 0x294]
+00000001406BAAEF: 83 E9 04                                 SUB      ecx, 4
+00000001406BAAF2: 83 F9 01                                 CMP      ecx, 1
+00000001406BAAF5: 0F 87 8B 01 00 00                        JA       0x1406bac86
+00000001406BAAFB: 45 8B EE                                 MOV      r13d, r14d
+00000001406BAAFE: 48 8B 87 A8 03 00 00                     MOV      rax, qword ptr [rdi + 0x3a8]
+00000001406BAB05: 48 2B 87 A0 03 00 00                     SUB      rax, qword ptr [rdi + 0x3a0]
+00000001406BAB0C: 48 C1 F8 03                              SAR      rax, 3
+00000001406BAB10: 48 85 C0                                 TEST     rax, rax
+00000001406BAB13: 0F 84 6D 01 00 00                        JE       0x1406bac86
+00000001406BAB19: 4D 8B FE                                 MOV      r15, r14
+00000001406BAB1C: 0F 1F 40 00                              NOP      dword ptr [rax]
+00000001406BAB20: 48 8B 9F A0 03 00 00                     MOV      rbx, qword ptr [rdi + 0x3a0]
+00000001406BAB27: 4A 8B 04 FB                              MOV      rax, qword ptr [rbx + r15*8]
+00000001406BAB2B: 48 8B B0 F8 04 00 00                     MOV      rsi, qword ptr [rax + 0x4f8]
+00000001406BAB32: 48 85 F6                                 TEST     rsi, rsi
+00000001406BAB35: 0F 84 E4 00 00 00                        JE       0x1406bac1f
+00000001406BAB3B: 45 33 C9                                 XOR      r9d, r9d
+00000001406BAB3E: 4C 8B C7                                 MOV      r8, rdi
+00000001406BAB41: 48 8B D6                                 MOV      rdx, rsi
+00000001406BAB44: E8 F7 0A D0 FF                           CALL     0x1403bb640
+00000001406BAB49: 84 C0                                    TEST     al, al
+00000001406BAB4B: 0F 84 CE 00 00 00                        JE       0x1406bac1f
+00000001406BAB51: 48 8B 96 78 0C 00 00                     MOV      rdx, qword ptr [rsi + 0xc78]
+00000001406BAB58: 48 8B B6 70 0C 00 00                     MOV      rsi, qword ptr [rsi + 0xc70]
+00000001406BAB5F: 48 3B F2                                 CMP      rsi, rdx
+00000001406BAB62: 74 58                                    JE       0x1406babbc
+00000001406BAB64: 4A 8B 04 FB                              MOV      rax, qword ptr [rbx + r15*8]
+00000001406BAB68: 48 39 06                                 CMP      qword ptr [rsi], rax
+00000001406BAB6B: 74 09                                    JE       0x1406bab76
+00000001406BAB6D: 48 83 C6 08                              ADD      rsi, 8
+00000001406BAB71: 48 3B F2                                 CMP      rsi, rdx
+00000001406BAB74: 75 F2                                    JNE      0x1406bab68
+00000001406BAB76: 48 3B F2                                 CMP      rsi, rdx
+00000001406BAB79: 74 41                                    JE       0x1406babbc
+00000001406BAB7B: 48 8D 46 08                              LEA      rax, [rsi + 8]
+00000001406BAB7F: 49 8B CE                                 MOV      rcx, r14
+00000001406BAB82: 4C 8B CA                                 MOV      r9, rdx
+00000001406BAB85: 4C 2B C8                                 SUB      r9, rax
+00000001406BAB88: 49 83 C1 07                              ADD      r9, 7
+00000001406BAB8C: 49 C1 E9 03                              SHR      r9, 3
+00000001406BAB90: 48 3B C2                                 CMP      rax, rdx
+00000001406BAB93: 4D 0F 47 CE                              CMOVA    r9, r14
+00000001406BAB97: 4D 85 C9                                 TEST     r9, r9
+00000001406BAB9A: 74 20                                    JE       0x1406babbc
+00000001406BAB9C: 0F 1F 40 00                              NOP      dword ptr [rax]
+00000001406BABA0: 4C 8B 00                                 MOV      r8, qword ptr [rax]
+00000001406BABA3: 4E 3B 04 FB                              CMP      r8, qword ptr [rbx + r15*8]
+00000001406BABA7: 74 07                                    JE       0x1406babb0
+00000001406BABA9: 4C 89 06                                 MOV      qword ptr [rsi], r8
+00000001406BABAC: 48 83 C6 08                              ADD      rsi, 8
+00000001406BABB0: 48 83 C0 08                              ADD      rax, 8
+00000001406BABB4: 48 FF C1                                 INC      rcx
+00000001406BABB7: 49 3B C9                                 CMP      rcx, r9
+00000001406BABBA: 75 E4                                    JNE      0x1406baba0
+00000001406BABBC: 48 8B 87 A0 03 00 00                     MOV      rax, qword ptr [rdi + 0x3a0]
+00000001406BABC3: 4A 8B 0C F8                              MOV      rcx, qword ptr [rax + r15*8]
+00000001406BABC7: 4C 8B A1 F8 04 00 00                     MOV      r12, qword ptr [rcx + 0x4f8]
+00000001406BABCE: 49 8B 84 24 70 0C 00 00                  MOV      rax, qword ptr [r12 + 0xc70]
+00000001406BABD6: 48 3B F0                                 CMP      rsi, rax
+00000001406BABD9: 75 0A                                    JNE      0x1406babe5
+00000001406BABDB: 49 3B 94 24 78 0C 00 00                  CMP      rdx, qword ptr [r12 + 0xc78]
+00000001406BABE3: 74 20                                    JE       0x1406bac05
+00000001406BABE5: 48 3B F2                                 CMP      rsi, rdx
+00000001406BABE8: 74 23                                    JE       0x1406bac0d
+00000001406BABEA: 49 8B 9C 24 78 0C 00 00                  MOV      rbx, qword ptr [r12 + 0xc78]
+00000001406BABF2: 48 2B DA                                 SUB      rbx, rdx
+00000001406BABF5: 4C 8B C3                                 MOV      r8, rbx
+00000001406BABF8: 48 8B CE                                 MOV      rcx, rsi
+00000001406BABFB: FF 15 47 30 1B 00                        CALL     qword ptr [rip + 0x1b3047]
+00000001406BAC01: 48 8D 04 33                              LEA      rax, [rbx + rsi]
+00000001406BAC05: 49 89 84 24 78 0C 00 00                  MOV      qword ptr [r12 + 0xc78], rax
+00000001406BAC0D: 48 8B 87 A0 03 00 00                     MOV      rax, qword ptr [rdi + 0x3a0]
+00000001406BAC14: 4A 8B 0C F8                              MOV      rcx, qword ptr [rax + r15*8]
+00000001406BAC18: 4C 89 B1 F8 04 00 00                     MOV      qword ptr [rcx + 0x4f8], r14
+00000001406BAC1F: 48 8B 87 A0 03 00 00                     MOV      rax, qword ptr [rdi + 0x3a0]
+00000001406BAC26: 4A 8B 0C F8                              MOV      rcx, qword ptr [rax + r15*8]
+00000001406BAC2A: 4C 89 B1 F0 04 00 00                     MOV      qword ptr [rcx + 0x4f0], r14
+00000001406BAC31: 48 8B 87 A0 03 00 00                     MOV      rax, qword ptr [rdi + 0x3a0]
+00000001406BAC38: 4A 8B 0C F8                              MOV      rcx, qword ptr [rax + r15*8]
+00000001406BAC3C: 44 89 B1 A4 07 00 00                     MOV      dword ptr [rcx + 0x7a4], r14d
+00000001406BAC43: 41 FF C5                                 INC      r13d
+00000001406BAC46: 45 8B FD                                 MOV      r15d, r13d
+00000001406BAC49: 48 8B 87 A8 03 00 00                     MOV      rax, qword ptr [rdi + 0x3a8]
+00000001406BAC50: 48 2B 87 A0 03 00 00                     SUB      rax, qword ptr [rdi + 0x3a0]
+00000001406BAC57: 48 C1 F8 03                              SAR      rax, 3
+00000001406BAC5B: 4C 3B F8                                 CMP      r15, rax
+00000001406BAC5E: 0F 82 BC FE FF FF                        JB       0x1406bab20
+00000001406BAC64: EB 20                                    JMP      0x1406bac86
+00000001406BAC66: C6 81 3A 0D 00 00 01                     MOV      byte ptr [rcx + 0xd3a], 1
+00000001406BAC6D: C7 81 6C 06 00 00 00 00 80 BF            MOV      dword ptr [rcx + 0x66c], 0xbf800000
+00000001406BAC77: 45 84 C9                                 TEST     r9b, r9b
+00000001406BAC7A: 75 0A                                    JNE      0x1406bac86
+00000001406BAC7C: 45 33 F6                                 XOR      r14d, r14d
+00000001406BAC7F: 44 89 B1 98 06 00 00                     MOV      dword ptr [rcx + 0x698], r14d
+00000001406BAC86: B0 01                                    MOV      al, 1
+00000001406BAC88: 4C 8D 9C 24 E0 00 00 00                  LEA      r11, [rsp + 0xe0]
+00000001406BAC90: 49 8B 5B 50                              MOV      rbx, qword ptr [r11 + 0x50]
+00000001406BAC94: 41 0F 28 73 F0                           MOVAPS   xmm6, xmmword ptr [r11 - 0x10]
+00000001406BAC99: 41 0F 28 7B E0                           MOVAPS   xmm7, xmmword ptr [r11 - 0x20]
+00000001406BAC9E: 45 0F 28 43 D0                           MOVAPS   xmm8, xmmword ptr [r11 - 0x30]
+00000001406BACA3: 45 0F 28 4B C0                           MOVAPS   xmm9, xmmword ptr [r11 - 0x40]
+00000001406BACA8: 49 8B E3                                 MOV      rsp, r11
+00000001406BACAB: 41 5F                                    POP      r15
+00000001406BACAD: 41 5E                                    POP      r14
+00000001406BACAF: 41 5D                                    POP      r13
+00000001406BACB1: 41 5C                                    POP      r12
+00000001406BACB3: 5F                                       POP      rdi
+00000001406BACB4: 5E                                       POP      rsi
+00000001406BACB5: 5D                                       POP      rbp
+00000001406BACB6: C3                                       RET
 ```
