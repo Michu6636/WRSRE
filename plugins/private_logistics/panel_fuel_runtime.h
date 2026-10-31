@@ -4,10 +4,12 @@
 #define PRIVATE_LOGISTICS_PANEL_FUEL_RUNTIME_H
 #include "panel_fuel_observer.h"
 #include "schedule_observer.h"
+#include "schedule_assignment_ledger.h"
 
 static bool g_scheduleReady = false;
 static volatile LONG g_scheduleFault = 0;
 static private_logistics_schedule::History g_scheduleHistory; // simulation tick only
+static private_logistics_assignment::Ledger g_scheduleLedger; // simulation tick only
 static LONG g_scheduleLastEpoch = 0;
 static unsigned g_scheduleLastCaptureDrops = 0;
 static CRITICAL_SECTION g_panelQueueLock;
@@ -155,6 +157,36 @@ static const char* PanelMatch(private_logistics_panel::Match m)
     default: return "unavailable";
     }
 }
+static void ScheduleAssignmentLog(const PanelRecord& record,
+                                  const private_logistics_schedule::Delta& delta,
+                                  const private_logistics_schedule::FieldChanges& changes,
+                                  uintptr_t home)
+{
+    const auto& fuel = record.snapshot;
+    const auto result = g_scheduleLedger.Observe(record.schedule, delta, changes,
+        (unsigned long long)record.epoch, fuel.root, home,
+        {record.sequence, record.milliseconds, fuel.aggregateValid, fuel.litresCandidate});
+    for (unsigned i = 0; i < result.count; ++i) {
+        const auto& event = result.events[i];
+        const auto& c = event.candidate;
+        Logf("[PANEL ASSIGNMENT] observation_epoch=%ld sample=%u observation_root=%p "
+             "id=%llu candidate_epoch=%llu root=%p home=%p event=%s reason=%s "
+             "first_sample=%u first_ms=%llu first_fuel_valid=%d first_litres_candidate=%.9g "
+             "last_sample=%u last_ms=%llu last_fuel_valid=%d last_litres_candidate=%.9g "
+             "boundary_sample=%u boundary_ms=%llu boundary_fuel_valid=%d boundary_litres_candidate=%.9g "
+             "unknown_start=%d observation_gap=%d role_uncertain=%d "
+             "id_scope=process_local_selected_panel native_boundary=unverified completion=unverified "
+             "exact_burn=0 cost=not_computed settlement=none billing=off",
+             record.epoch, record.sequence, (void*)fuel.root,
+             (unsigned long long)c.id, (unsigned long long)c.epoch, (void*)c.root, (void*)c.home,
+             private_logistics_assignment::KindName(event.kind), event.reason,
+             c.first.sample, (unsigned long long)c.first.ms, c.first.fuelValid ? 1 : 0, (double)c.first.litres,
+             c.last.sample, (unsigned long long)c.last.ms, c.last.fuelValid ? 1 : 0, (double)c.last.litres,
+             event.boundary.sample, (unsigned long long)event.boundary.ms,
+             event.boundary.fuelValid ? 1 : 0, (double)event.boundary.litres,
+             c.unknownStart ? 1 : 0, c.observationGap ? 1 : 0, c.roleUncertain ? 1 : 0);
+    }
+}
 static void ScheduleObserverLog(const PanelRecord& record, bool gap)
 {
     if (!g_scheduleReady) return;
@@ -170,6 +202,11 @@ static void ScheduleObserverLog(const PanelRecord& record, bool gap)
     const auto previous = g_scheduleHistory.LastValidValues();
     const auto d = g_scheduleHistory.Observe(s, (unsigned long long)record.epoch, fuel.root, home,
                                            record.sequence, record.milliseconds);
+    const auto changes = d.endpointCompared
+        ? private_logistics_schedule::ClassifyChanges(previous, s)
+        : private_logistics_schedule::FieldChanges{};
+    // Every accepted record updates the ledger, including quiet fuel endpoints.
+    ScheduleAssignmentLog(record, d, changes, home);
     if (!d.emit) return;
     Logf("[PANEL SCHEDULE] epoch=%ld sample=%u ms=%llu root=%p candidate_home=%p "
          "status=%s baseline=%s observed_fields_changed=%d storage_changed=%d "
@@ -190,9 +227,6 @@ static void ScheduleObserverLog(const PanelRecord& record, bool gap)
          fuel.aggregateValid ? 1 : 0, fuel.count ? (double)fuel.objects[0].raw : 0.0,
          (double)fuel.litresCandidate);
     if (s.status != private_logistics_schedule::Status::Complete) return;
-    const auto changes = d.endpointCompared
-        ? private_logistics_schedule::ClassifyChanges(previous, s)
-        : private_logistics_schedule::FieldChanges{};
     const auto currentPattern = private_logistics_schedule::ClassifyPattern(s, home);
     const auto previousPattern = d.endpointCompared
         ? private_logistics_schedule::ClassifyPattern(previous, home)
@@ -281,7 +315,10 @@ static void PanelObserverTick(void*, float, float)
              "sample_ids=accepted_records_only simulation_event_coverage=unverified exact_burn=0",
              epoch, newDrops, (unsigned long long)firstDropMs,
              (unsigned long long)lastDropMs, dropped);
-    if (g_scheduleReady && (fault || cap || contention || newDrops)) g_scheduleHistory.Break();
+    if (g_scheduleReady && (fault || cap || contention || newDrops)) {
+        g_scheduleHistory.Break();
+        g_scheduleLedger.Break();
+    }
     if (!have || record.epoch != InterlockedCompareExchange(&g_panelEpoch, 0, 0)) return;
     if (record.coalesced)
         Logf("[PANEL GAP] epoch=%ld sample=%u reason=paused_snapshot_coalescing "
@@ -378,7 +415,7 @@ static void PanelObserverStart(void)
     g_scheduleReady = g_scheduleObserverEnabled && ScheduleTargetMatches();
     Logf("[PANEL SCHEDULE] enabled=%d fingerprint=%s mode=read_only_selected_fields "
          "max_rows=16 last_flag5fd_row_config=not_read gap_endpoints=enabled_cached_values_only "
-         "classification=enabled_captured_values job_lifecycle=unverified billing=off",
+         "classification=enabled_captured_values assignment_ledger=selected_panel_dry_run job_lifecycle=unverified billing=off",
          g_scheduleObserverEnabled ? 1 : 0, g_scheduleReady ? "matched" : "disabled_or_mismatch");
     InitializeCriticalSection(&g_panelQueueLock);
     if (!g_simClock->registerTick(PanelObserverTick, nullptr)) {
