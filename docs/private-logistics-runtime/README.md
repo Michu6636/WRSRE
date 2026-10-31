@@ -1,5 +1,21 @@
 # Private logistics — runtime observation work package
 
+> **v0.18.9 changed diagnostic implemented (2026-10-31).** Last-valid
+> endpoint comparison now reports content differences across pause/drop gaps
+> with continuity_valid=0, preserving existing baseline safeguards. No native
+> read/hook or billing changes.27schedule/98suite testsPASS; sanitized host
+> checks and test5 endpoint replayPASS. Full final source/results and Windows
+> build/test instructions in cumulative. Windows DLL build and in-game test
+> are still pending; verify0.18.9-schedule-gap-endpoints before testing.
+
+> **LIVE TEST5: existing probe reads the screenshot task lists (2026-10-31).**
+> Empty->three rows->changed three rows->empty captured; target/setting changes
+> occur with unchanged storage. Index-only changes remain separate. Paused
+> coalescing rebaselines suppress replacement/clearing delta flags, despite
+> raw rows capturing them. Full checkpoint analysis/source/results/input archive
+> in cumulative. Next: descriptive endpoint comparison across gaps, not new
+> native reads or a jobID investigation. No production changes; paymentsOFF.
+
 > **AWAITING APPROVAL: 911b5f1 publication confirmed (2026-10-31).**
 > Corrected report and cached helper are visible; no more research/publication
 > round needed. Illustrative vector reader still uses the wrong base and loses
