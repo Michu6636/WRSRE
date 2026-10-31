@@ -40,7 +40,7 @@ class ScheduleObserverTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         result = subprocess.run([str(exe)], capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertIn('8 schedule runtime host-shim scenarios PASS', result.stdout)
+        self.assertIn('10 schedule runtime host-shim scenarios PASS', result.stdout)
 
     def test_native_fingerprints_match_existing_raw_bytes(self):
         raw = (ROOT / 'docs/private-logistics-runtime/RAW_EXPORTS_VEHICLE_DETAIL_RENDERER.md').read_bytes().decode('utf-16')
@@ -83,6 +83,20 @@ class ScheduleObserverTest(unittest.TestCase):
         self.assertIn('completion=unverified exact_burn=0 billing=off', runtime)
         self.assertIn('g_scheduleObserverEnabled && ScheduleTargetMatches()', runtime)
         self.assertEqual(runtime.count('InstallInlineHook('), 1)  # same existing hook
+
+    def test_gap_endpoint_source_contract(self):
+        header = (PLUGIN / 'schedule_observer.h').read_text()
+        runtime = (PLUGIN / 'panel_fuel_runtime.h').read_text()
+        cpp = (PLUGIN / 'private_logistics.cpp').read_text()
+        history = header.split('class History {', 1)[1]
+        self.assertNotIn('m.Get(', history)  # cached-value comparisons only
+        self.assertEqual(header.count('m.Get('), 13)  # native read sites unchanged
+        self.assertIn('0.18.9-schedule-gap-endpoints', cpp)
+        self.assertIn('if (d.endpointCompared && d.endpointAcrossGap)', runtime)
+        self.assertIn('compared_across_gap=1 continuity_valid=0', runtime)
+        self.assertIn('native_event_time=unknown', runtime)
+        self.assertIn('[PANEL SCHEDULE PREVIOUS ROW]', runtime)
+        self.assertIn('record.sequence, record.milliseconds', runtime)
 
     def test_windows_min_max_macros(self):
         path = Path(self.directory.name) / 'macros.cpp'

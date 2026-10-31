@@ -46,8 +46,34 @@ int main() {
     paused=true;capture();putFloat(configs+4,0.25f);capture();
     CHECK(g_panelCount==1 && g_panelQueue[g_panelHead].schedule.rows[0].value04==0.25f);
     logs.clear();paused=false;drain();CHECK(contains("baseline=diagnostic_gap") && contains("value04=0.25"));
+    CHECK(contains("[PANEL SCHEDULE ENDPOINT]") && contains("endpoint_fields_differ=1"));
+    CHECK(contains("compared_across_gap=1 continuity_valid=0"));
+    CHECK(contains("[PANEL SCHEDULE PREVIOUS ROW]") && contains("values=cached_not_native_read"));
     std::puts("PASS schedule_runtime_paused_coalescing_carries_latest_schedule_and_rebaselines");
+    // User-test shape: three rows are replaced in place across paused captures.
+    put(fixture.root+0x688,ptr(targets+24));put(targets+16,ptr(fixture.home));
+    logs.clear();capture();drain();
+    const unsigned lastValidSample=g_panelSamples;
+    paused=true;capture();put(targets+8,Address(0xABCE0000));putFloat(configs+4,0.50917542f);
+    capture();logs.clear();paused=false;drain();
+    CHECK(contains("baseline=diagnostic_gap observed_fields_changed=0 storage_changed=0 row_index_changed=0"));
+    CHECK(contains("previous_rows=3 current_rows=3 endpoint_fields_differ=1 endpoint_storage_differ=0"));
+    CHECK(contains(("previous_sample="+std::to_string(lastValidSample)+" ").c_str()));
+    CHECK(contains("[PANEL SCHEDULE PREVIOUS ROW]") && contains("target_raw=0xbeef0000"));
+    CHECK(contains("[PANEL SCHEDULE ROW]") && contains("target_raw=0xabce0000"));
+    CHECK(contains("compared_across_gap=1 continuity_valid=0") && contains("native_event_time=unknown"));
+    std::puts("PASS schedule_runtime_in_place_three_row_replacement_across_pause");
+    paused=true;capture();put(fixture.root+0x688,ptr(targets));capture();
+    logs.clear();paused=false;drain();
+    CHECK(contains("previous_rows=3 current_rows=0 endpoint_fields_differ=1"));
+    CHECK(contains("[PANEL SCHEDULE PREVIOUS ROW]") && !contains("[PANEL SCHEDULE ROW]"));
+    CHECK(contains("baseline=diagnostic_gap observed_fields_changed=0"));
+    logs.clear();capture();drain();CHECK(!contains("[PANEL SCHEDULE")); // unchanged empty quiet
+    put(fixture.root+0x688,ptr(targets+16));logs.clear();capture();drain();
+    CHECK(contains("baseline=none observed_fields_changed=1") && !contains("[PANEL SCHEDULE ENDPOINT]"));
+    std::puts("PASS schedule_runtime_clear_across_pause_old_rows_and_recovery");
     PanelObserverLoading();drain();logs.clear();capture();drain();CHECK(contains("baseline=load_epoch"));
+    CHECK(!contains("[PANEL SCHEDULE ENDPOINT]"));
     put(fixture.fleet,Address(0));logs.clear();capture();drain();
     CHECK(contains("status=not_unique_road_fleet_root") && !contains("[PANEL SCHEDULE ROW]"));
     put(fixture.fleet,ptr(fixture.root));logs.clear();capture();drain();CHECK(contains("baseline=diagnostic_gap"));
@@ -73,5 +99,5 @@ int main() {
     CHECK(g_scheduleFault && contains("guarded_schedule_fault_disabled") && contains("[PANEL FUEL]") && !g_panelFault);
     logs.clear();capture();drain();CHECK(contains("guarded_schedule_fault_disabled") && !g_panelFault);
     std::puts("PASS schedule_runtime_fault_latch_isolated_from_fuel_not_a_windows_seh_test");
-    std::puts("8 schedule runtime host-shim scenarios PASS (not Windows ABI/SEH or a DLL)");
+    std::puts("10 schedule runtime host-shim scenarios PASS (not Windows ABI/SEH or a DLL)");
 }

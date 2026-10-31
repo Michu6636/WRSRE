@@ -108,18 +108,32 @@ inline const char* BaselineName(Baseline b) {
 struct Delta {
     bool emit=false, fields=false, storage=false, index=false, context=false;
     Baseline baseline=Baseline::None;
+    // Descriptive endpoint comparison, NEVER continuous native event coverage.
+    // The original delta flags above stay false when rebaselining.
+    bool endpointCompared=false, endpointAcrossGap=false;
+    bool endpointFields=false, endpointStorage=false, endpointIndex=false, endpointContext=false;
+    unsigned previousSample=0;
+    std::uint64_t previousMs=0;
 };
 // One selected vehicle's previous *values*, never a retained native object
 // consumer. Windows are transient and are deliberately not identity keys.
 class History {
-    bool known_=false, gap_=false;
-    std::uint64_t epoch_=0;
+    bool known_=false, gap_=false, endpointKnown_=false;
+    std::uint64_t epoch_=0,previousMs_=0;
+    unsigned previousSample_=0;
     Address root_=0,home_=0;
     Snapshot previous_{};
 public:
     void Break() {gap_=true;}
-    Delta Observe(const Snapshot& s,std::uint64_t epoch,Address root,Address home) {
+    // Copied values only. Caller must copy BEFORE Observe replaces them and
+    // use them only if the returned Delta says endpointCompared.
+    const Snapshot& LastValidValues() const {return previous_;}
+    Delta Observe(const Snapshot& s,std::uint64_t epoch,Address root,Address home,
+                  unsigned sample=0,std::uint64_t captureMs=0) {
         Delta d;
+        // Even an invalid observation of a different identity/load invalidates
+        // the endpoint cache; switching away and back must not join vehicles.
+        if(epoch!=epoch_ || root!=root_ || home!=home_) endpointKnown_=false;
         if(s.status!=Status::Complete) {
             known_=false;gap_=true;d.emit=true;d.baseline=Baseline::Invalid;return d;
         }
@@ -127,17 +141,25 @@ public:
         else if(epoch!=epoch_) d.baseline=Baseline::Epoch;
         else if(root!=root_ || home!=home_) d.baseline=Baseline::Identity;
         else if(gap_) d.baseline=Baseline::Gap;
-        if(d.baseline==Baseline::None) {
-            d.fields=s.count!=previous_.count;
-            if(!d.fields) for(unsigned i=0;i<s.count;++i)
-                if(!SameRow(s.rows[i],previous_.rows[i])) {d.fields=true;break;}
-            d.storage=s.begin!=previous_.begin || s.end!=previous_.end || s.configs!=previous_.configs;
-            d.index=s.index698!=previous_.index698;
-            d.context=s.raw4a0!=previous_.raw4a0 || s.raw610!=previous_.raw610 ||
+        if(endpointKnown_) {
+            d.endpointCompared=true;
+            d.endpointAcrossGap=d.baseline==Baseline::Gap;
+            d.previousSample=previousSample_;d.previousMs=previousMs_;
+            d.endpointFields=s.count!=previous_.count;
+            if(!d.endpointFields) for(unsigned i=0;i<s.count;++i)
+                if(!SameRow(s.rows[i],previous_.rows[i])) {d.endpointFields=true;break;}
+            d.endpointStorage=s.begin!=previous_.begin || s.end!=previous_.end || s.configs!=previous_.configs;
+            d.endpointIndex=s.index698!=previous_.index698;
+            d.endpointContext=s.raw4a0!=previous_.raw4a0 || s.raw610!=previous_.raw610 ||
                 s.raw650!=previous_.raw650 || s.flag5fd!=previous_.flag5fd;
+            if(d.baseline==Baseline::None) {
+                d.fields=d.endpointFields;d.storage=d.endpointStorage;
+                d.index=d.endpointIndex;d.context=d.endpointContext;
+            }
         }
         d.emit=d.baseline!=Baseline::None || d.fields || d.storage || d.index || d.context;
-        epoch_=epoch;root_=root;home_=home;previous_=s;known_=true;gap_=false;
+        epoch_=epoch;root_=root;home_=home;previous_=s;known_=endpointKnown_=true;gap_=false;
+        previousSample_=sample;previousMs_=captureMs;
         return d;
     }
 };

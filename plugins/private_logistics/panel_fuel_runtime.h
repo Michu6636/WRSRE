@@ -166,7 +166,10 @@ static void ScheduleObserverLog(const PanelRecord& record, bool gap)
     const auto& fuel = record.snapshot;
     const auto& s = record.schedule;
     const uintptr_t home = fuel.count ? fuel.objects[0].homeCandidate : 0;
-    const auto d = g_scheduleHistory.Observe(s, (unsigned long long)record.epoch, fuel.root, home);
+    // Simulation-thread copy of previously captured VALUES, not native reads.
+    const auto previous = g_scheduleHistory.LastValidValues();
+    const auto d = g_scheduleHistory.Observe(s, (unsigned long long)record.epoch, fuel.root, home,
+                                           record.sequence, record.milliseconds);
     if (!d.emit) return;
     Logf("[PANEL SCHEDULE] epoch=%ld sample=%u ms=%llu root=%p candidate_home=%p "
          "status=%s baseline=%s observed_fields_changed=%d storage_changed=%d "
@@ -187,6 +190,29 @@ static void ScheduleObserverLog(const PanelRecord& record, bool gap)
          fuel.aggregateValid ? 1 : 0, fuel.count ? (double)fuel.objects[0].raw : 0.0,
          (double)fuel.litresCandidate);
     if (s.status != private_logistics_schedule::Status::Complete) return;
+    if (d.endpointCompared && d.endpointAcrossGap) {
+        Logf("[PANEL SCHEDULE ENDPOINT] epoch=%ld sample=%u ms=%llu root=%p candidate_home=%p "
+             "previous_sample=%u previous_ms=%llu previous_rows=%u current_rows=%u "
+             "endpoint_fields_differ=%d endpoint_storage_differ=%d endpoint_index_differ=%d "
+             "endpoint_context_differ=%d compared_across_gap=1 continuity_valid=0 "
+             "comparison=last_valid_captured_values native_event_time=unknown "
+             "native_event_coverage=unverified completion=unverified billing=off",
+             record.epoch, record.sequence, (unsigned long long)record.milliseconds,
+             (void*)fuel.root, (void*)home, d.previousSample, (unsigned long long)d.previousMs,
+             previous.count, s.count, d.endpointFields ? 1 : 0, d.endpointStorage ? 1 : 0,
+             d.endpointIndex ? 1 : 0, d.endpointContext ? 1 : 0);
+        // The last valid sample may not have emitted rows (unchanged). Include
+        // its values when content differs so both endpoints are reconstructible.
+        if (d.endpointFields) for (unsigned i = 0; i < previous.count; ++i) {
+            const auto& r = previous.rows[i];
+            Logf("[PANEL SCHEDULE PREVIOUS ROW] epoch=%ld sample=%u compared_to_sample=%u "
+                 "row=%u target_raw=%p config_fields_read=%d flag00=%u value04=%.9g "
+                 "flagc8=%u valuecc=%.9g values=cached_not_native_read billing=off",
+                 record.epoch, d.previousSample, record.sequence, i, (void*)r.target,
+                 r.configRead ? 1 : 0, (unsigned)r.flag00, (double)r.value04,
+                 (unsigned)r.flagC8, (double)r.valueCC);
+        }
+    }
     for (unsigned i = 0; i < s.count; ++i) {
         const auto& r = s.rows[i];
         Logf("[PANEL SCHEDULE ROW] epoch=%ld sample=%u row=%u target_raw=%p "
@@ -328,7 +354,8 @@ static void PanelObserverStart(void)
     }
     g_scheduleReady = g_scheduleObserverEnabled && ScheduleTargetMatches();
     Logf("[PANEL SCHEDULE] enabled=%d fingerprint=%s mode=read_only_selected_fields "
-         "max_rows=16 last_flag5fd_row_config=not_read job_lifecycle=unverified billing=off",
+         "max_rows=16 last_flag5fd_row_config=not_read gap_endpoints=enabled_cached_values_only "
+         "job_lifecycle=unverified billing=off",
          g_scheduleObserverEnabled ? 1 : 0, g_scheduleReady ? "matched" : "disabled_or_mismatch");
     InitializeCriticalSection(&g_panelQueueLock);
     if (!g_simClock->registerTick(PanelObserverTick, nullptr)) {
