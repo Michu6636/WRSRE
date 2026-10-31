@@ -1,5 +1,100 @@
 # Private logistics — runtime observation work package
 
+> **AWAITING APPROVAL: 911b5f1 publication confirmed (2026-10-31).**
+> Corrected report and cached helper are visible; no more research/publication
+> round needed. Illustrative vector reader still uses the wrong base and loses
+> per-row coverage. Coordinator corrected contract is in the cumulative; do not
+> implement the draft verbatim. No new runtime reads or production changes
+> authorized. Stop agent work pending explicit user implementation decision.
+
+> **ACTIVE: aadf4b9 delivery confirmed (2026-10-31).** All four report
+> deliverables are published; do not repeat that mapping. Native installer
+> bytes checked and corrected contract supplied directly in cumulative. Draft
+> still omits vectors and has fallback/relocation/ABA/bounds/gap errors. Next
+> is an explicit implementation decision, not another research round. No
+> runtime/code/config/billing/build/game changes or approval inferred.
+
+> **ACTIVE: df23d12 per-row report independently reviewed (2026-10-31).**
+> Published receipt confirmed, but negative C8/04/CC and vector display-read
+> claims rejected against the same cached renderer. Coordinator supplied actual
+> reads; omitted inputs are config+08/+D0 vectors and conditional+190, not a new
+> config-entry identity. Full source/actual audit output/bytes/corrected map and
+> SAME-parent continuation in cumulative. Existing partial observer stays usable.
+> No new runtime reads/hooks/config/billing/build/game changes. Newest notice
+> supersedes older historical ACTIVE notices below.
+
+> **ACTIVE: published23225b2task-list report reviewed (2026-10-31).** Saved
+> receipt/report confirmed. Useful existing observer mapping, but no new detector
+> implementation or fleet-wide coverage proof. Kind7road chain, C80job-close labels
+> and storage=>wholeplan classifier rejected; neutral rules supplied directly.
+> Next new evidence is per-truck-row resource/filter renderer mapping, not office
+> task storage or anotherD39loop. Full receipt/bytes/audit/source/results/prompt
+> consolidated in cumulative. PaymentsOFF; no native/runtime changes.
+
+> **ACTIVE: task-list change investigation resumed (2026-10-31).** User wants
+> changes to the vehicle panel’s task/connections list. Earlier closure covers only
+> the failedC80/D39line. Reuse existing0.18.8schedule observer; missing visible-field
+> coverage and a connected simulation plan writer are the next targets. New host
+>3->1->3/same-count replacement regression;19testsPASS, not native/game validation.
+> Full final source/results and SAME-parent continuation in cumulative. No new
+> runtime hooks/config/billing/native build/game changes; paymentsOFF.
+
+> **Final closeout confirmed (2026-10-31):** both final canonical corrections
+> received and accepted. Static round CLOSED with the three lifecycle questions
+> UNTRACED; no further work requested and no billing boundary proved. Full record
+> remains in the cumulative. PaymentsOFF; no runtime changes.
+
+> **Final call-table receipt accepted; static round CLOSED (2026-10-31):**
+> Latest chat table matches canonical31sites. QualifiedUNTRACEDresult accepted,
+> not a proved lifecycle/billing boundary. Minor summary fixes:252650has6sites;
+> unresolved PREstore effects are after the inner guard(e.g.6635E0at6B8FFD).
+> Canonical source/results and final closure prompt preserved in cumulative.
+> No further native query/trace requested; paymentsOFF, runtime unchanged.
+
+> **Bounded call-table receipt (2026-10-31):** qualified UNTRACED result accepted;
+> the31-row transcription still had9bad rows. Canonical table mechanically generated
+> from pinned complete bytes; input/source/actual results and bounded correction/
+> qualified closure are consolidated in the handover. No further speculative trace
+> or native query requested; matrix formatting remains CLOSED. No runtime changes.
+
+> **Further trace rejected against complete cached bytes (2026-10-31):**
+> The alleged call-free post-store interval contains31CALLsites.6BAC66is an entry
+> bailout, not post-store tail; updater6480/6486instructions are mistranscribed.
+> D39memory preservation remains unproved, not disproved merely by calls. Full
+> reproducible source/actual stdout and bounded correction in the cumulative.
+> Matrix7x8format stays accepted; no new native queries/runtime changes.
+
+> **Published10719a1 matrix received; same-truck trace reviewed (2026-10-31):**
+> Actual7single-line rows x8cells: formatting/publication issue CLOSED, superseding
+> older notices below. Existing complete6B8EB0bytes exclude the proposed inner-
+> D39nonzero path from reaching the association stores. Actual-store normal return
+> goes throughMOVAL,1, so caller520=0; laterD39effects/lifecycle still unresolved.
+> Full scoped review, reproducible audit source/actual stdout, matrix/index receipts
+> and SAME-parent continuation are in the cumulative. No native/runtime changes.
+
+> **Published6f7b04b corrections checked (2026-10-31):** gate-skip and cleanup/
+> timing wording improved; index count27+README confirmed. Published matrix still
+> has wrong physical cell counts and contradictions around HIGH-byte confidence,
+> unproved528writer and internal continuity. A newer local version may differ.
+> Exact receipt/diff/audit/source/results and SAME-parent continuation are in the
+> cumulative handover. No native execution or runtime changes.
+
+> **Published c7ced75 matrix/gate claims reviewed (2026-10-31):** all seven
+> case labels received, but Markdown cells/continuations do not form a valid
+> eight-column table. Cached bytes disprove gate-false enqueue:1C68EB jumps69B8
+> past insertion.3FBDC0 call68BD is before gate/consumer; earlierC80guard is not
+> a post-write invariant. Complete743-instruction cached body re-decode passes;
+> native lifecycle and proposed logging remain unproved. Full review/evidence/
+> audit/source/results and SAME-parent correction prompt in cumulative handover.
+
+> **Published e7f92ef recovery checked (2026-10-31):** final matrix heading
+> and valid eight-column header/separator received; zero case rows. Exact440-byte
+> append preserves the prior handover. Newly published C report/index also reviewed:
+> receiver join untraced, stale cleanup/verified-index claims and verifier failures
+> require reconciliation. Full receipt/audit/source/results and one SAME-parent
+> continuation prompt in the cumulative handover. Continue verified single-row
+> writes automatically; this is not a completed native lifecycle contract.
+
 > **Reusable team workflow guide added (2026-10-31):**
 > [KILO_AGENT_WORKFLOW.md](../../KILO_AGENT_WORKFLOW.md) is the maintained guide
 > for future Kilo task prompts, resource ownership and automated coordination.

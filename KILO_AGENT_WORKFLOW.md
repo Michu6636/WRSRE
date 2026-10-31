@@ -95,9 +95,10 @@ packet, or resume an interrupted child using a genuinely exposed resumable
 
 ## Reliable writes without reducing output quality
 
-The user reports that the following instruction resolved their larger-write
-failures in Kilo7.8.18 through Kilo Gateway. Use this lightweight default; it is a
-successful workflow mitigation, not a diagnosis of the upstream service defect.
+The following instruction initially helped with larger-write failures in
+Kilo7.8.18 through Kilo Gateway, but a later final-matrix append timed out again.
+Use it as the baseline, with the explicit write checkpoints below. This is a
+workflow mitigation, not a diagnosis or verified cure for the upstream defect.
 
 ```text
 Preserve existing files. Do not rewrite large documents in full.
@@ -110,6 +111,34 @@ Perform large additions in bounded sections and verify the result after each.
 If a request times out, inspect the file and diff before retrying.
 Only the parent writes shared reports; research children return findings.
 ```
+
+### Explicit checkpoints for matrices and long additions
+
+"Append only" limits where content goes, not how much the model generates. Do not
+put an entire final matrix/section into one write, patch, shell command or chat
+reply. Changing the tool while sending the same large payload is not a reduction.
+
+1. Inspect a bounded tail and the relevant diff; confirm what actually reached
+   disk. A pre-write announcement plus API504 does not prove a tool executed.
+   Do not print a whole large file/diff back into model context.
+2. If needed, append only the section heading and table header. Read them back.
+3. Append **one complete lifecycle-case row per operation**. If the case needs
+   extensive explanation, use a concise row and add its supporting paragraphs
+   separately. For ordinary prose, add one coherent paragraph/subsection fragment
+   at a time. These are structural checkpoints, not claimed provider size limits.
+4. Read back the affected tail and check the change before the next write.
+   Preserve unique section/row identity so recovery does not duplicate content.
+5. Finish with a parent review across all rows/sections. Reference full evidence
+   already preserved in the handover; do not reproduce exports inside table cells.
+   Add any newly required complete sources/results in separate bounded additions.
+
+For the first recovery attempt, do just one missing fragment, verify it and report
+that checkpoint. After success, the parent can continue autonomously using the
+same write/verify cycle; the user need not approve every row. If that small attempt
+also times out, stop blind retries and isolate the model/provider/session instead.
+Do not restart native research merely to recover a report write. If available file
+tools require full-file replacement, report that capability problem rather than
+reconstructing the entire report. Keep scripts optional, not the default solution.
 
 **Change the delivery granularity, not the analytical standard.** Keep the global
 plan, evidence, counterexamples, cross-references and full required source/results
@@ -226,10 +255,15 @@ Stop on completion or an exact blocker; do not repeat unchanged queries.
 
 Preserve existing files and use narrowly targeted edits. Append only new sections
 to the cumulative handover; do not load or reproduce its entire history. Perform
-large additions in coherent bounded sections and verify each. After a timeout,
-inspect the file and diff before retrying. Only the parent writes shared reports.
-Preserve analytical depth, complete evidence and cross-section consistency; no
-assembly script or arbitrary byte limit is required.
+large additions with explicit checkpoints: heading/header separately, then one
+complete matrix-case row or supporting paragraph per write. Read back and verify
+each before continuing. Never send the entire new section in one tool payload.
+After a timeout, inspect only the relevant tail/diff before retrying; first recover
+one missing fragment and report its verified checkpoint. After success, continue
+autonomously with write/verify cycles. If that small fragment also fails, stop and
+isolate the model/provider/session rather than blindly retrying. Only the parent
+writes shared reports. Preserve analytical depth, complete evidence and cross-section
+consistency; no assembly script or arbitrary byte limit is required.
 
 Deliver one integrated result at the designated output, actual checks performed,
 changed files and any minimal approval request. Do not claim unperformed native
