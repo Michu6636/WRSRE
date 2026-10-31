@@ -84348,7 +84348,7 @@ lVar8 = *(longlong *)((longlong)iVar6 * 0x198 + 400 + *(longlong *)(param_1 + 0x
 
 ---
 
-## Minimal schedule_observer.h Extension Proposal
+## Minimal schedule_observer.h Extension Proposal (Corrected per Coordinator)
 
 ### New Fields in `Row` Struct
 
@@ -84363,8 +84363,8 @@ struct Row {
     
     // NEW — verified omitted raw content:
     Address configEntry = 0;         // truck+0x638 + row*0x198 (base of config entry)
-    Address fallbackTarget = 0;      // configEntry + 0x190 (conditional, valid when target==0)
-    bool fallbackValid = false;      // true iff fallbackTarget != 0 and read succeeded
+    Address fallbackTarget = 0;      // configEntry + 0x190 (conditional: read when target==0, BEFORE 5FD)
+    bool fallbackValid = false;      // true iff read succeeded (zero is valid); false on read failure
 };
 ```
 
@@ -84376,40 +84376,87 @@ struct Snapshot {
     unsigned count = 0;
     Row rows[MaxRows]{};
     
-    // NEW — bounds/overflow/partial-capture rules:
+    // NEW — config vector base/end (allocation addresses only)
     bool configVectorRead = false;   // true iff truck+0x638 read succeeded
     Address configsBegin = 0;        // truck+0x638 (base)
-    Address configsEnd = 0;          // truck+0x638 + count*0x198 (computed)
-    bool configBoundsOk = false;     // configsEnd >= configsBegin, no overflow
+    Address configsEnd = 0;          // truck+0x638 + count*0x198 (computed span, NOT allocation metadata)
+    
+    // NEW — config+0xD0 / config+0x08 vector snapshots (verified renderer vectors)
+    struct VectorSnap {
+        Address base = 0;            // config+0xD0 or config+0x08
+        unsigned count = 0;          // (end-begin) >> 4 (16-byte stride)
+        Address records[16];         // record[0] = object* (up to MaxRows, truncated)
+    };
+    VectorSnap vecD0{};              // config+0xD0 vector
+    VectorSnap vec08{};              // config+0x08 vector
 };
 ```
 
-### Read Contract (in `ReadRow`)
+### Read Contract (in `ReadRow`) — Order Fixed
 
 ```cpp
 inline bool ReadRow(const Memory& m, const Snapshot& s, unsigned i, Row& r) {
     if (!m.Get(s.begin, Address(i) * 8, r.target)) return false;
     
-    // Special last-row skip (5FD) — existing logic
-    if (s.flag5fd && i + 1 == s.count) return true;
-    
     const Address configEntry = s.configsBegin + Address(i) * 0x198;
     r.configEntry = configEntry;
+    
+    // 1. Core config fields
     r.configRead = m.Get(configEntry, 0x0, r.flag00) &&
                    m.Get(configEntry, 0x4, r.value04) &&
                    m.Get(configEntry, 0xC8, r.flagC8) &&
                    m.Get(configEntry, 0xCC, r.valueCC);
+    if (!r.configRead) return false;
     
-    // NEW: conditional fallback target (+0x190)
+    // 2. Conditional fallback target (+0x190) — READ BEFORE 5FD suppression
+    // Condition: route target is null (renderer: TEST R14,R14 at 0x1407E817A)
     r.fallbackValid = false;
-    if (r.target == 0) {  // only when route target is null
+    if (r.target == 0) {
         r.fallbackValid = m.Get(configEntry, 0x190, r.fallbackTarget);
+        // Zero is VALID; read failure (false return) -> capture fails, not Complete
+        if (!r.fallbackValid) return false;
     }
-    return r.configRead;
+    
+    // 3. Special last-row skip (5FD) — AFTER raw190
+    if (s.flag5fd && i + 1 == s.count) return true;
+    
+    return true;
 }
 ```
 
-### Delta Comparison (in `History::Observe`)
+### Vector Snapshot Capture (config+0xD0 / config+0x08)
+
+```cpp
+// Called once per capture after Header, before row loop
+inline bool CaptureVectors(const Memory& m, const Snapshot& s) {
+    // config+0xD0
+    if (!m.Get(s.root, 0xD0, s.vecD0.base)) return false;
+    Address endD0 = 0;
+    if (!m.Get(s.root, 0xD8, endD0)) return false;
+    if (endD0 >= s.vecD0.base) {
+        s.vecD0.count = static_cast<unsigned>((endD0 - s.vecD0.base) >> 4);  // 16-byte stride
+        if (s.vecD0.count > 16) s.vecD0.count = 16;
+        for (unsigned i = 0; i < s.vecD0.count; ++i) {
+            if (!m.Get(s.vecD0.base, Address(i) * 0x10, s.vecD0.records[i])) return false;
+        }
+    }
+    
+    // config+0x08
+    if (!m.Get(s.root, 0x08, s.vec08.base)) return false;
+    Address end08 = 0;
+    if (!m.Get(s.root, 0x10, end08)) return false;
+    if (end08 >= s.vec08.base) {
+        s.vec08.count = static_cast<unsigned>((end08 - s.vec08.base) >> 4);
+        if (s.vec08.count > 16) s.vec08.count = 16;
+        for (unsigned i = 0; i < s.vec08.count; ++i) {
+            if (!m.Get(s.vec08.base, Address(i) * 0x10, s.vec08.records[i])) return false;
+        }
+    }
+    return true;
+}
+```
+
+### Delta Comparison (in `History::Observe`) — Corrected
 
 ```cpp
 // Content comparison — ordered element content, separate from allocation
@@ -84430,9 +84477,28 @@ if (!d.fields) {
     }
 }
 
-// Storage relocation — allocation addresses only
+// NEW: vector record[0] comparison (ordered, separate from allocation)
+if (!d.fields) {
+    // config+0xD0
+    if (s.vecD0.count == previous_.vecD0.count) {
+        for (unsigned i = 0; i < s.vecD0.count; ++i) {
+            if (s.vecD0.records[i] != previous_.vecD0.records[i]) { d.fields = true; break; }
+        }
+    } else { d.fields = true; }
+    
+    // config+0x08
+    if (!d.fields && s.vec08.count == previous_.vec08.count) {
+        for (unsigned i = 0; i < s.vec08.count; ++i) {
+            if (s.vec08.records[i] != previous_.vec08.records[i]) { d.fields = true; break; }
+        }
+    } else if (!d.fields) { d.fields = true; }
+}
+
+// Storage relocation — allocation addresses ONLY (no whole_plan_replaced verdict)
 d.storage = s.begin != previous_.begin || s.end != previous_.end || 
-            s.configsBegin != previous_.configsBegin;
+            s.configsBegin != previous_.configsBegin ||
+            s.vecD0.base != previous_.vecD0.base || s.vecD0.count != previous_.vecD0.count ||
+            s.vec08.base != previous_.vec08.base || s.vec08.count != previous_.vec08.count;
 
 // Index progression
 d.index = s.index698 != previous_.index698;
@@ -84440,47 +84506,77 @@ d.index = s.index698 != previous_.index698;
 // Context (opaque renderer fields)
 d.context = s.raw4a0 != previous_.raw4a0 || s.raw610 != previous_.raw610 ||
             s.raw650 != previous_.raw650 || s.flag5fd != previous_.flag5fd;
+
+// NO whole_plan_replaced flag — relocation does not imply semantic replacement
+// Sampling cannot guarantee identical replacement or detect every ABA change
 ```
 
-### Bounds / Overflow / Readability Rules
+### Bounds / Overflow / Readability Rules (Corrected)
 
 | Condition | Status | Action |
 |-----------|--------|--------|
 | `configsBegin == 0 && count > 0` | `MissingConfigs` | Abort capture |
-| `configsEnd` wraps (`configsBegin + count*0x198` overflows) | `BadBounds` | Abort capture |
-| Any `ReadRow` fails | `Unreadable` | Abort capture, `gap_=true` |
-| `flag5fd && count > 0` but last row `target != 0` | `NonFinite` | Abort (inconsistent) |
+| `configsBegin + count*0x198` wraps (overflow) | `BadBounds` | Abort capture |
+| Core config read fails | `Unreadable` | Abort capture, `gap_=true` |
+| `target==0` AND raw190 read fails | `Unreadable` | Abort capture, `gap_=true` (zero is valid; failure is not) |
 | Partial capture (exception mid-loop) | `GuardedFault` | `gap_=true`, disable schedule reads |
+| **REMOVED**: `flag5fd && count > 0` but last row `target != 0` → `NonFinite` | — | Computed span end is NOT allocation metadata; do not invent consistency rules |
 
-### Old/New Sample Correspondence & Gap Handling
+### Old/New Sample Correspondence & Gap Handling (Corrected)
 
-- **Correspondence**: By `truck` base address + `epoch` + `home` (existing `History` logic). Row index `i` maps 1:1 between snapshots when `count` unchanged and `!storage`.
-- **Identical replacement**: If `storage && count==old_count && all rows SameRow`, classified as `whole_plan_replaced` (not `storage_relocation_only`). **Sampling cannot distinguish** identical reinstall from no-change — marked `Baseline::Gap` if preceding gap.
-- **ABA on fallbackTarget**: If `fallbackTarget` changes A→B→A between samples, `d.fields` catches it. If ABA occurs within one sample (mid-read mutation), `ChangedDuringRead` status (existing double-read check).
-- **Gap propagation**: Any `status != Complete` or `Baseline != None` → `History::Break()` → next capture gets `Baseline::Gap`.
-
----
-
-## Missing Contract (Precise Blockers)
-
-| Missing | Why Blocked | Required Evidence |
-|---------|-------------|-------------------|
-| **Meaning of config+0x08** (second qword in 0x10-stride vector) | Renderer only reads `record[0]` → `object+0x48`; `+0x08` never accessed | Trace writer of config+D0/+08 vectors (office dispatch? `67D5D0`?) |
-| **Resource type/filter per task row** | Renderer reads `flagC8`/`valueCC`/`value04` but these are **display formatting inputs**, not proven resource IDs. No evidenced renderer read of a resource/filter byte. | Find UI builder that emits resource icon/label per row (not in 7D5460 loop) |
-| **Task-row quantity display source** | Not `value04`/`valueCC` (those are cargo/fuel for route execution). Source untraced. | Search panel string builder for quantity format calls |
-
-**No new Ghidra queries issued** — all above from cached exports. `02ECD0` decompilation added to `scratch/out/02ecd0_decomp.c`.
+- **Correspondence**: By `truck` base + `epoch` + `home` (existing `History`). Row index `i` maps 1:1 when `count` unchanged and `!d.storage`.
+- **Identical replacement**: Sampling CANNOT distinguish identical reinstall from no-change. If `d.storage && count==old_count && all rows SameRow && vecD0/vec08 Same`, classified as `storage` change only — **no `whole_plan_replaced` verdict**.
+- **ABA on fallbackTarget / vec records**: Caught by `d.fields` between samples. Mid-read mutation caught by existing `ChangedDuringRead` double-read.
+- **Gap propagation**: Any `status != Complete` or `d.baseline != None` → `History::Break()` → next capture gets `Baseline::Gap`. **Do not Break for successful baselines**.
 
 ---
 
-## Approval Scope
+## Native Corrections (from 67D5D0 decompilation)
 
-**Proposed implementation** (requires approval before any code change):
-1. Extend `schedule_observer.h` `Row` with `configEntry`, `fallbackTarget`, `fallbackValid`
-2. Extend `Snapshot` with `configVectorRead`, `configsBegin`, `configsEnd`, `configBoundsOk`
-3. Update `ReadRow` to read `configEntry` base and conditional `+0x190`
-4. Update `History::Observe` to compare `fallbackTarget` when both valid
-5. Add bounds/overflow checks for config vector
-6. **No runtime hooks, no DLL build, no game changes** — read contract only
+| Address | Instruction | Correction |
+|---------|-------------|------------|
+| `0x14067D774` | `lVar8 = *(longlong *)(iVar6 * 0x198 + 400 + *(longlong *)(param_1 + 0x638))` | **raw190 read** — reads `config_entry+0x190` from currently active row (`iVar6 = truck+0x698` at entry). Producer of this value not proved by consumer. |
+| `0x14067D854` | `*(undefined1 *)(param_1 + 0xd3a) = 1` | **D3A store** — route dirty flag on truck, NOT config entry flag. |
+| `0x14067D85B` | `*(undefined4 *)(param_1 + 0x698) = 0xffffffff` | **698 reset** — invalidates route index before recompute loop. |
 
-**Excluded**: config_entry as semantic identity, unverified resource-object traversal, unverified record payload interpretation.
+**Raw190 consumer (renderer `0x1407E818D`) does not prove its producer** — the value at `config_entry+0x190` comes from the active row at insert time, not necessarily `target+0x400`.
+
+---
+
+## Cached 02ECD0 Decompilation (Verbatim from `scratch/out/02ecd0_decomp.c`)
+
+```c
+// ============================================================
+// Function: FUN_14002ecd0 at 14002ecd0
+// Target address checked: 0x14002ECD0
+// ============================================================
+
+longlong FUN_14002ecd0(longlong *param_1,longlong param_2)
+{
+  return param_2 * 0x10 + *param_1;
+}
+```
+
+**Contract**: `record = base + index * 0x10`. Renderer calls with `R14` = `config+0xD0` base (saved at `0x1407E9602`) and `config+0x08` base (saved at `0x1407E9899`). Only `record[0]` (object pointer) consumed → `object+0x48`. `record[1]` (`+0x08`) never read.
+
+---
+
+## Approval Request: Bounded Logging-Only Patch
+
+**Scope** (logging only, no runtime hooks, no build/deploy, no game changes):
+
+1. **Row logging**: conditional `raw190` (fallbackTarget), validity flag, configEntry base
+2. **Vector snapshots**: `vecD0`/`vec08` — count + ordered `record[0]` (object*) up to 16, allocation base
+3. **Validity/overflow/cap/consistency**: config vector bounds, raw190 read failure = Unreadable, vector count truncation at 16
+3. **Independent flags**: content (row fields + fallbackTarget + vec record[0]), storage (all bases/counts), index (698), context (raw4a0/610/650/5FD) — no cross-contamination
+
+**Test coverage required**:
+- `raw190` zero value / read failure (→ Unreadable, not Complete)
+- Special last row (5FD) with/without `target==0` — raw190 read order verified
+- Vector-only changes (vecD0/vec08 record[0] change without row config change)
+- Pure relocation (all bases change, content identical — storage flag only)
+- Nested mutation (mid-capture exception → GuardedFault → gap)
+- Cap at 16 rows / 16 vector records (truncation behavior)
+- Gap recovery (3→1→3 row count with Baseline::Gap marking)
+
+**Decision required**: Explicit approval to implement this logging-only patch in `schedule_observer.h` / `panel_fuel_runtime.h`. Without approval, stop at this request.
