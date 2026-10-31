@@ -103,6 +103,34 @@ TEST(schedule_history_list_clear_replacement_are_observed_fields_only) {
     // No success/cancel reason/job generation exists in this class.
     CHECK(!h.Observe(s,1,f.root,f.home).emit);
 }
+TEST(schedule_history_three_one_three_rows_and_same_count_replacement) {
+    ScheduleFixture f;
+    const Address originalFirst=0xDEAD0000, singleTarget=0xABCD0000;
+    f.Set(f.root,0x688,f.targets+24);
+    f.Set(f.targets,16,Address(0xCAFE0000));
+    auto s=f.Now();CHECK(s.status==sch::Status::Complete && s.count==3);
+    sch::History h;h.Observe(s,1,f.root,f.home);
+    // Advancing within the same three rows is not a content replacement.
+    f.Set(f.root,0x698,std::int32_t(2));
+    s=f.Now();auto d=h.Observe(s,1,f.root,f.home);
+    CHECK(d.index && !d.fields && !d.storage);
+    // A one-row list is a content change, not proof of a refuelling task.
+    f.Set(f.root,0x688,f.targets+8);
+    f.Set(f.root,0x698,std::int32_t(0));
+    f.Set(f.targets,0,singleTarget);
+    s=f.Now();CHECK(s.status==sch::Status::Complete && s.count==1);
+    d=h.Observe(s,1,f.root,f.home);CHECK(d.fields && d.storage && d.index);
+    CHECK(!h.Observe(s,1,f.root,f.home).emit);
+    // Equal row count is not enough: a different target must be detected.
+    f.Set(f.targets,0,Address(0xABCE0000));
+    s=f.Now();d=h.Observe(s,1,f.root,f.home);
+    CHECK(d.fields && !d.storage && !d.index);
+    // Returning to three rows is another observed content change.
+    f.Set(f.targets,0,originalFirst);f.Set(f.root,0x688,f.targets+24);
+    s=f.Now();CHECK(s.status==sch::Status::Complete && s.count==3);
+    d=h.Observe(s,1,f.root,f.home);CHECK(d.fields && d.storage && !d.index);
+    CHECK(!h.Observe(s,1,f.root,f.home).emit);
+}
 TEST(schedule_history_epoch_identity_and_gaps_rebaseline_no_deltas) {
     ScheduleFixture f;auto s=f.Now();sch::History h;h.Observe(s,1,f.root,f.home);
     s.index698=0;auto d=h.Observe(s,2,f.root,f.home);CHECK(d.baseline==sch::Baseline::Epoch && !d.index);
@@ -133,6 +161,7 @@ int main(int argc,char** argv) {
     RUN(schedule_history_first_unchanged_and_index_only);
     RUN(schedule_history_field_storage_and_context_changes_separate);
     RUN(schedule_history_list_clear_replacement_are_observed_fields_only);
+    RUN(schedule_history_three_one_three_rows_and_same_count_replacement);
     RUN(schedule_history_epoch_identity_and_gaps_rebaseline_no_deltas);
     RUN(schedule_identical_visible_schedule_is_not_new_job);
     CHECK(count);std::printf("%u schedule host scenarios PASS (not native lifecycle validation)\n",count);
