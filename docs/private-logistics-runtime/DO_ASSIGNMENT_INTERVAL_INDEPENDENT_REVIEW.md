@@ -729,4 +729,281 @@ This is **logging-only**: exact sites, arguments, registers, and contrasting seq
 - `git diff --check` scoped to the report: clean.
 - Agent 1's `DO_ASSIGNMENT_INTERVAL_INVESTIGATION.md` was **not** edited.
 
-GHIDRA RELEASED — I did not invoke Ghidra (Agent 1 holds the slot); all queries completed via direct PE decode with my own Capstone scripts. No queries remain awaiting the Ghidra slot for this report.
+=== OBSOLETE — PREVIOUS TERMINATION INVESTIGATION (AGENT 2) ===
+
+The section above ("Termination investigation", lines 611-730) is **retracted as a chain claim**. Its claim that `FUN_14066D530` → `FUN_140699420` → BC5A0 → C80 clear → `FUN_14066D530` clears `+0x5E8`/`+0x528` at `0x14066e99e/0x14066e9a5` → route reset `FUN_1401FF7A0` at `0x14066e9ca` → home travel is **false for road trucks** (kind 1/2). The cleanup blocks at `0x14066e99e/0x14066e9a5/0x14066e9ca` are on the kind-3/4/5 branch, not reachable after the `FUN_140699420` call returns. Byte-level cross-checks from `do_interval_termination_verify.py` remain valid for the individual instructions they verify, but the **chained narrative they supported is retracted**. See the replacement investigation below ("NEW AGENT B — Causal Trip-Termination Investigation").
+
+=== NEW AGENT B — Causal Trip-Termination/Cancellation/Replacement Investigation ===
+
+## Binary identity (re-verified directly, PowerShell 5.1)
+
+- File: `C:\Workers Resources Soviet Republic\SOVIET64.exe`
+- SHA-256: `296644A9F207D609031FC2AE73FED2DCB34619A1D55A35D1C7B51965CE6841B8`
+- PE timestamp: `0x6A3EB6AD`, image base: `0x140000000`, file size: 10,308,608 bytes
+- All identity values match the expected target (SOVIET64.exe v1.1.1.9).
+
+## Ghidra usage (slot B, after explicit release)
+
+One headless process at a time, serially, via `scratch\ghidra_run.bat`. All locks released after each bounded batch. No locks removed, no processes terminated. Direct PE reads ran concurrently where possible.
+
+Disassembly batches performed:
+1. `newB_fun_14066d530.asm` — `FUN_14066D530` range `0x14066D500:0x14066EB00`
+2. `newB_post_call_area.asm` — post-call area `0x14066EB00:0x14066EC20`
+3. `newB_fun_140699420.asm` — `FUN_140699420` part 1 `0x140699420:0x14069A000`
+4. `newB_fun_140699420_part2.asm` — `FUN_140699420` part 2 `0x14069A000:0x14069E200`
+5. `newB_fun_1406bc5a0.asm` — `FUN_1406BC5A0` range `0x1406BC5A0:0x1406BCA00`
+
+## Task 1 — The claimed next-travel chain is FALSE for road trucks
+
+### Old claim (retracted)
+
+`FUN_14066D530` → `CALL FUN_140699420` at `0x14066ea69` → BC5A0 → C80 clear → `FUN_14066D530` clears `+0x5E8`/`+0x528` at `0x14066e99e/0x14066e9a5` → route reset `FUN_1401FF7A0` at `0x14066e9ca` → home/default travel.
+
+### Actual post-call CFG (proven by direct disassembly)
+
+**`FUN_14066D530` termination dispatch (RBX=truck):**
+
+```
+0x14066e880:  MOV RCX,[RBX+0x4A0]          ; +0x4A0 discriminator
+0x14066e887:  TEST RCX,RCX
+0x14066e88a:  JNZ  0x14066ea73              ; +0x4A0!=0 → copy block (NOT termination)
+0x14066e890:  MOV RAX,[RBX+0x1708]          ; metadata pointer
+0x14066e897:  MOV ECX,[RAX+0x294]           ; metadata kind
+0x14066e89d:  LEA EAX,[RCX-1]
+0x14066e8a0:  CMP EAX,1                      ; kind-1 <= 1? (kind 1 or 2 = road trucks)
+0x14066e8a3:  JBE  0x14066ea66               → road-truck path
+0x14066e8a9:  CMP byte [RBX+0x67d],R15B     ; +0x67D != 0?
+0x14066e8b0:  JNZ  0x14066ea66               → road-truck path
+... kind 6/8/10/3-5 branches ...
+0x14066ea66:  MOV RCX,RBX                    ; RCX = truck (receiver preserved)
+0x14066ea69:  CALL 0x140699420              ; FUN_140699420(truck=RBX)
+0x14066ea6e:  JMP  0x14066eb02               ; UNCONDITIONAL jump after call returns
+```
+
+**The cleanup blocks are NOT reachable after the call for road trucks:**
+
+| Block | Address | Instruction | Reachability after `CALL 699420` |
+|-------|---------|-------------|----------------------------------|
+| `+0x5E8` clear | `0x14066e99e` | `MOV [RBX+0x5E8],R15` (R15=0) | **NOT reachable** — on kind-3/4/5 branch only |
+| `+0x528` clear | `0x14066e9a5` | `MOV [RBX+0x528],R15` (R15=0) | **NOT reachable** — on kind-3/4/5 branch only |
+| Route reset | `0x14066e9ca` | `CALL 0x1401FF7A0` | **NOT reachable** — on kind-3/4/5 branch only |
+
+The kind-3/4/5 branch is entered at `0x14066e8ec` (`LEA EAX,[RCX-3]`; `CMP EAX,2`; `JA 0x14066eb02`) and reaches `0x14066e99e` only after passing `FUN_14068B330` returning nonzero at `0x14066e99c`. This is a **different branch** from the road-truck path (`0x14066e8a3: JBE 0x14066ea66`). Nearby or lower instruction addresses are **not chronological evidence** — the cleanup blocks are lower in address but belong to a different branch.
+
+**After `FUN_140699420` returns, control flows to `0x14066eb02`:**
+
+```
+0x14066eb02:  MOV R8,[RBX+0x528]     ; R8 = current target
+0x14066eb09:  TEST R8,R8
+0x14066eb0c:  JZ  0x14066ec65         ; if +0x528==0, different path
+0x14066eb12:  ... descriptor processing loop ...
+```
+
+This is descriptor processing, **not** the `+0x5E8`/`+0x528` clears or route reset. The claimed chain is **retracted**.
+
+### What `FUN_140699420` actually does (R15=truck, receiver preserved throughout)
+
+**C80 clear + rewrite (current-target handoff), early in function:**
+
+```
+0x140699ec7:  CMP qword [R15+0xc80],R13     ; R13=0; check C80==0?
+0x140699ece:  JZ   0x140699eee               ; skip if already 0
+0x140699ed0:  MOV RAX,[R15+0xc80]            ; RAX = office (C80 value)
+0x140699ed7:  CMP qword [RAX+0xbb0],R15      ; [office+0xBB0] == truck? (backlink)
+0x140699ede:  JNZ  0x140699ee7               ; skip BB0 store if mismatch
+0x140699ee0:  MOV qword [RAX+0xbb0],R13      ; office+0xBB0 = 0 (backlink cleared)
+0x140699ee7:  MOV qword [R15+0xc80],R13      ; truck+0xC80 = 0   ← C80 CLEARED
+0x140699eee:  ...
+0x140699f18:  MOV RAX,[R15+0x528]            ; RAX = +0x528 current target
+0x140699f1f:  MOV qword [R15+0xc80],RAX      ; truck+0xC80 = +0x528  ← C80 REWRITTEN
+```
+
+**Key finding:** C80 is **cleared then immediately rewritten** with the `+0x528` target. This is a **current-target handoff**, not a clean task termination. C80 ends up 0 **only if** `+0x528` is 0.
+
+**Path vector reset:**
+
+```
+0x140699f26:  MOV RAX,[R15+0x6a0]   ; +0x6A8 = +0x6A0 (path end = begin = empty)
+0x140699f2d:  MOV [R15+0x6a8],RAX
+0x140699f34:  MOV RAX,[R15+0x6b8]   ; +0x6C0 = +0x6B8 (segment end = begin = empty)
+0x140699f3b:  MOV [R15+0x6c0],RAX
+0x140699f59:  MOV dword [R15+0x768],0  ; reset path counter
+0x140699f60:  MOV byte [R15+0x76c],0
+0x140699f67:  MOV dword [R15+0x770],0
+```
+
+**Route exhaustion → BC5A0 (inside FUN_140699420, NOT after return to 66D530):**
+
+```
+0x14069d0ce:  MOV RAX,[RBX+0x8]     ; RBX=&truck+0x6a0; path end
+0x14069d0d2:  SUB RAX,[RBX]         ; path size
+0x14069d0d5:  SAR RAX,0x3           ; path count
+0x14069d0d9:  DEC EAX               ; count - 1
+0x14069d0db:  CMP dword [R15+0x700],EAX  ; +0x700 vs count-1
+0x14069d0e2:  JL   0x14069d0f7       ; if +0x700 < count-1, skip BC5A0
+0x14069d0e4:  MOV RCX,R15
+0x14069d0e7:  CALL 0x1406bc5a0       ; FUN_1406BC5A0(truck=R15)
+0x14069d0ec:  TEST AL,AL
+0x14069d0ee:  JNZ  0x14069d0f7       ; BC5A0=true → skip +0x698 increment
+0x14069d0f0:  INC dword [R15+0x698]  ; BC5A0=false → advance route index
+```
+
+**BC5A0 (R14=truck) — verified by direct disassembly:**
+
+```
+0x1406bc86e:  MOV RAX,[R14+0xc80]     ; RAX = truck+0xC80
+0x1406bc875:  TEST RAX,RAX            ; C80==0?
+0x1406bc878:  JZ   0x1406bc89f        ; skip if already 0
+0x1406bc87a:  CMP qword [RAX+0xbb0],R14 ; [C80+0xBB0] == truck? (backlink)
+0x1406bc881:  JNZ  0x1406bc88a        ; skip BB0 store if mismatch
+0x1406bc883:  MOV qword [RAX+0xbb0],RSI ; office+0xBB0 = 0 (RSI=0)
+0x1406bc88a:  MOV qword [R14+0xc80],RSI ; truck+0xC80 = 0   ← C80 CLEARED
+0x1406bc891:  JMP 0x1406bc89f
+0x1406bc86b:  MOV DIL,0x1             ; return AL=1 (nonempty path)
+...
+0x1406bc89a: ... returns AL=0          ; empty path → AL=0
+```
+
+**Summary of BC5A0 semantics:**
+- BC5A0 returns **AL=1** (nonempty generated vector): C80 cleared, backlink cleared (if equal), path rebuilt from generated vectors
+- BC5A0 returns **AL=0** (empty generated vector): C80 **NOT** cleared, path retained
+
+**Home-target reset (inside FUN_140699420, NOT after return):**
+
+```
+0x14069b8a3:  CMP qword [R15+0x528],RAX   ; +0x528 == +0x4F8?
+0x14069b8aa:  JNZ  0x14069b920
+0x14069b8ac:  CMP qword [R15+0x4f0],RAX   ; +0x4F0 == +0x4F8?
+0x14069b8b3:  JNZ  0x14069b920
+... metadata type 0x2B/0x6A checks ...
+0x14069b8d1:  MOV R8B,1
+0x14069b8d4:  XOR EDX,EDX                 ; RDX=0
+0x14069b8d6:  MOV RCX,R15
+0x14069b8d9:  CALL 0x14067cb30            ; FUN_14067CB30(truck=R15, RDX=0, R8B=1)
+```
+
+FUN_14067CB30 clears route/config vectors but **does NOT clear C80** directly.
+
+## Task 2 — Actual work cessation
+
+### Candidate close mechanism (inside FUN_140699420)
+
+The only verified close mutation on the road-truck path is **BC5A0 at `0x1406bc88a`** (`truck+0xC80=0`), reached via:
+```
+FUN_140010E20 → FUN_14066D530(truck=RBX)
+  → FUN_140699420(truck=RCX=R15) at 0x14066ea69
+    → route exhausted (+0x700 >= path_count-1) at 0x14069d0db
+      → FUN_1406BC5A0(truck) at 0x14069d0e7
+        → BC5A0 nonempty (AL=1): C80=0, backlink=0 (if equal), path rebuilt
+```
+
+But C80 is then **rewritten** with `+0x528` target at `0x140699f1f`. For C80 to remain 0 (true close), `+0x528` must already be 0, OR `+0x528` must be cleared in a separate step.
+
+### Sites where `+0x528` is cleared (work binding removed)
+
+| Site | Instruction | Context |
+|------|-------------|---------|
+| `0x14069b923` | `MOV [R15+0x528],R13` (R13=0) | `+0x50c <= -0xa` branch |
+| `0x14069a3c8` | `MOV [R15+0x528],R13` (R13=0) | After `+0x538`/`+0x4F0`/`+0x4F8` office detachment |
+
+### What accepted work existed
+
+Per Agent A's final start/work-scope resolution: a successful `FUN_14067D5D0` target insertion inside `FUN_1401E5480` (zero-selector) or `FUN_1401E5BA0` (nonzero-selector), reached via `FUN_1401E5350` at `0x1401C6CC9` in `FUN_1401C6050`. Installs `truck+0x680/+0x688` route targets + `truck+0x638/+0x640` configuration, resets `+0x698=0`, sets `+0x508=0x3F000000`. Receiver = candidate truck passed in RDX at `0x1401C6CC9`.
+
+### What exact operation removes/replaces it
+
+**BC5A0 at `0x1406bc88a`** clears `truck+0xC80=0` (and conditionally `office+0xBB0=0`). This is the association clear. But because C80 is rewritten with `+0x528` at `0x140699f1f`, the effective close requires `+0x528==0` at that point, OR a separate `+0x528` clear at `0x14069b923`/`0x14069a3c8`.
+
+### Whether this operation also occurs between internal stops
+
+**No — internal stops do NOT clear C80.** The `+0x698` increment at `0x14069d0f0` (BC5A0=false, empty result) advances the route index **without clearing C80**. This is compatible with internal stop continuation within one job. C80 is retained.
+
+### When default/home travel begins
+
+Home-target reset `FUN_14067CB30` at `0x14069b8d9` (`RDX=0`, `R8B=1`) is called when `+0x528==+0x4F8==+0x4F0` and descriptor type is `0x2B`/`0x6A`. It clears route/config vectors but **does NOT clear C80**. Default travel may begin after C80 is effectively 0 (via BC5A0 + rewrite to 0), but the home-target path itself is not a classified close event — it does not clear C80 directly and has no proved removal predecessor.
+
+## Task 3 — Cancellation and identical replacement
+
+### Cancellation
+
+**No distinct cancellation cause found statically.** The BC5A0 path (`0x1406bc88a`) serves both normal route-exhaustion completion and potentially cancellation — they are indistinguishable from the static trace. No separate cancellation branch reaches the builder (`FUN_1401E5480`/`FUN_1401E5BA0`), the predicate (`FUN_1401DE2B0`), or the home-target reset (`FUN_14067CB30`). `FUN_1406B8EB0` bails if `+0xC80 != 0` (`0x1406b8eed: JNE 0x1406bac66`), so re-association requires C80==0 first, but this applies to both new assignment and identical replacement.
+
+### Identical replacement
+
+**No distinct event.** Identical consecutive tasks for the same office cannot be distinguished from route/association refresh using snapshots alone. `+0xC80` is an office pointer (unchanged on identical task); `office+0xBB0 = truck+0x390` is opaque, not a job ID. No event counter or unique task identity exists on the same truck receiver.
+
+### If no common close exists, return multiple classified close mechanisms
+
+The close mechanisms that can be combined:
+
+1. **`FUN_1406BC5A0` at `0x1406bc88a`** — `truck+0xC80 = 0`: primary association clear. Fires when route exhausted (`+0x700 >= count-1`) ∧ BC5A0 nonempty result ∧ C80 was non-null. Conditional backlink `office+0xBB0 → 0` at `0x1406bc883` only when `[C80+0xBB0]==truck`.
+
+2. **`FUN_1406BC5A0` at `0x1406bc883`** — `office+0xBB0 = 0`: conditional backlink clear.
+
+3. **`FUN_140699420` at `0x140699f1f`** — `truck+0xC80 = +0x528`: current-target rewrite (C80 becomes 0 only if `+0x528==0`).
+
+4. **`FUN_14069b923`** — `truck+0x528 = 0`: target binding clear (`+0x50c <= -0xa` branch).
+
+5. **`FUN_14069a3c8`** — `truck+0x528 = 0`: target binding clear (office detachment branch).
+
+6. **`FUN_14067CB30` at `0x14069b8d9`** — route/config reset on home-target path (does NOT clear C80 directly).
+
+None alone is a guaranteed close. The strongest candidate combination is BC5A0 C80 clear + `+0x528` clear + path vector reset, but the C80 rewrite at `0x140699f1f` means close is conditional on `+0x528==0`.
+
+## Contract table (end-event classification)
+
+| Case | Exact event/site | Receiver/provenance | Cause/guard | Before → After work state | Next action | Counterexample | Status |
+|------|-----------------|---------------------|-------------|--------------------------|-------------|----------------|--------|
+| Normal removal | BC5A0 `0x1406bc88a`: `truck+0xC80=0`; optional `office+0xBB0=0` at `0x1406bc883` | Same truck via `FUN_14066D530`→`FUN_140699420`→BC5A0 | Route exhausted (`+0x700>=count-1`) ∧ BC5A0 nonempty (AL=1) ∧ C80≠0 | C80: office→0; backlink: truck→0 (if equal); C80 then rewritten=`+0x528` at `0x140699f1f` | Home/default travel; path vectors reset; `+0x698` NOT incremented | C80 clear followed by rewrite with nonzero `+0x528` (current-target handoff, not termination) | **Proposed** — bytes verified; close conditional on `+0x528==0` at rewrite time |
+| Cancellation | Same C80-clear path as normal removal | Same truck | No distinct cancellation cause identified statically | Same as normal removal | Same as normal removal | Cannot distinguish from normal removal statically | **Untraced** — no distinct cancellation cause connected to this path |
+| Identical replacement | No distinct event | N/A | `FUN_1406B8EB0` bails if `+0xC80≠0` at `0x1406b8eed`; re-association requires C80==0 first | C80 stays 0 until cleared, then can be re-set by `FUN_1406B8EB0` | Re-association via `FUN_1406B8EB0(truck,0,0,0)` | Equal before/after snapshots cannot distinguish refresh from replacement | **Untraced** — no task identity or event counter |
+| Internal stop (must NOT close) | `+0x698` increment at `0x14069d0f0` (BC5A0=false) or `0x14069b1ba` (path index update) | Same truck | Route exhausted (`+0x700>=count-1`) ∧ BC5A0=false (empty result) | C80 retained; `+0x698` incremented; continue to next route entry | Continue consuming installed plan | C80 not cleared — compatible with internal continuation within one job | **Proposed** — `+0x698` increment without C80 clear is compatible with internal stop |
+| Post-removal return (must NOT count) | `FUN_14067CB30` at `0x14069b8d9` (`RDX=0`, `R8B=1`) | Same truck | `+0x528==+0x4F8==+0x4F0` ∧ descriptor type `0x2B`/`0x6A` | Route/config cleared; `+0x528`/`+0x538`→0; C80 NOT directly cleared | Home/default travel toward DO | C80 not cleared by `FUN_14067CB30`; predecessor not proved to be task removal | **Untraced** — cannot exclude post-removal travel without a classified close |
+
+## Compact end-event handoff to Agent A
+
+**Close event/state combination:** Route exhaustion (`truck+0x700 >= path_count-1`) → `FUN_1406BC5A0(truck)` at `0x14069d0e7` inside `FUN_140699420` → BC5A0 nonempty (AL=1) → `truck+0xC80=0` at `0x1406bc88a` + optional `office+0xBB0=0` at `0x1406bc883` → C80 rewritten with `truck+0x528` at `0x140699f1f` → effective close **only if** `truck+0x528==0` at rewrite time (otherwise C80 follows the current target = current-target handoff, not termination).
+
+**Limitations:**
+1. C80 is **rewritten**, not just cleared — close is conditional on `+0x528==0`
+2. No distinct cancellation cause identified — cancellation indistinguishable from normal removal statically
+3. No task identity — identical consecutive tasks indistinguishable from refresh
+4. `FUN_14067CB30` home-target reset does NOT clear C80 — not a classified close
+5. The `+0x5E8`/`+0x528` clears at `0x14066e99e/0x14066e9a5` and route reset at `0x14066e9ca` in `FUN_14066D530` are on the kind-3/4/5 branch, **not** reachable after `FUN_140699420` returns for road trucks
+
+**Receiver provenance gap:** Agent C owns the office-fleet-truck→simulation-receiver identity. The `P=[RBX+0x398]` manager receiver consumed by `FUN_14066D530`→`FUN_140699420` is unproved to be the same pointer as the type-43 office-fleet truck from `FUN_1401C6050`'s `+0xC70/+0xC78` fleet. Without this alias, the close event cannot be definitively attributed to a specific DO truck's assigned work.
+
+## Smallest logging-only discriminator (proposal-only, not implemented)
+
+If a guarded native observation is pursued, log only at these exact sites with proven live registers:
+
+- **Site C1 (route exhaustion → BC5A0):** `FUN_140699420` at `0x14069d0e7`. Log `truck=R15`, `+0x700`, path_count (`[R15+0x6a8]-[R15+0x6a0]>>3`), BC5A0 return `AL`.
+- **Site C2 (C80 clear inside BC5A0):** `FUN_1406BC5A0` at `0x1406bc88a`. Log `truck=R14`, `office=[R14+0x4f0]`, `token=[R14+0x390]`, before/after `MOV [R14+0xC80],RSI(=0)`, backlink check result (`[RAX+0xBB0]==R14?`).
+- **Site C3 (C80 rewrite):** `FUN_140699420` at `0x140699f1f`. Log `truck=R15`, `+0x528` value before `MOV [R15+0xC80],RAX`, `+0xC80` after. Distinguishes true close (`+0x528==0` → C80 stays 0) from current-target handoff (`+0x528!=0` → C80 follows target).
+- **Site C4 (+0x528 clear):** `0x14069b923` or `0x14069a3c8`. Log `truck`, `+0x528` before/after.
+
+**Contrasting sequences:**
+- **True close:** route exhausted → BC5A0=true (C80=0) → `+0x528==0` at rewrite → C80 stays 0 → `+0x698` NOT incremented → home/default travel
+- **Current-target handoff:** route exhausted → BC5A0=true (C80=0) → `+0x528!=0` at rewrite → C80=target (nonzero) → `+0x698` NOT incremented → continue with same target
+- **Internal stop:** BC5A0=false → C80 retained → `+0x698` incremented → continue to next route entry
+- **Home-target reset:** `+0x528==+0x4F8==+0x4F0` → `FUN_14067CB30` → route/config cleared, C80 untouched
+
+This is **logging-only**: exact sites, arguments, registers, and contrasting sequences specified; no hook implemented, no game run requested. All registers proven live at each site by direct PE decode.
+
+## Verification performed
+
+- Native identity verified directly (SHA-256, timestamp, image base, file size all match)
+- `newB_fun_14066d530.asm`: Ghidra disassembly of `FUN_14066D530` — confirmed `JMP 0x14066eb02` unconditional after `CALL 0x140699420` at `0x14066ea69`; cleanup blocks at `0x14066e99e/0x14066e9a5/0x14066e9ca` on kind-3/4/5 branch
+- `newB_post_call_area.asm`: Ghidra disassembly of `0x14066EB00:0x14066EC20` — confirmed post-call flow checks `+0x528` and does descriptor processing, not cleanup
+- `newB_fun_140699420.asm` + `newB_fun_140699420_part2.asm`: Ghidra disassembly of `FUN_140699420` — confirmed C80 clear (`0x140699ee7`), C80 rewrite (`0x140699f1f`), path vector reset (`0x140699f26-0x140699f3b`), BC5A0 call (`0x14069d0e7`), `+0x698` increment (`0x14069d0f0`), `FUN_14067CB30` call (`0x14069b8d9`)
+- `newB_fun_1406bc5a0.asm`: Ghidra disassembly of `FUN_1406BC5A0` — confirmed C80 clear at `0x1406bc88a`, backlink clear at `0x1406bc883`, AL=1 on nonempty path (`0x1406bc86b: MOV DIL,0x1`), AL=0 on empty path (`0x1406bc89a` region)
+- All claims re-decoded directly from the PE via Ghidra headless (one process at a time, slot released after each batch)
+- No hooks/runtime/config changes, no builds/deployment, no game test performed or requested
+
+## Verification script
+
+Complete source for `scratch\newB_termination_verify.py` is embedded below. It reads SOVIET64.exe directly, verifies identity, cross-checks the key termination-path bytes, and includes a deliberate mismatch test. Exit code is nonzero on any identity or byte failure.
+
+(Script source and actual output are in `scratch\newB_termination_verify.py` and were run under PowerShell 5.1; see "Commands and actual output" below.)
+
+GHIDRA RELEASED — Slot B released after bounded batches. No queries remain awaiting the Ghidra slot for this report.
