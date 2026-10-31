@@ -1,5 +1,14 @@
 # Instructions for Workers & Resources Mod Development & Reverse Engineering
 
+## Agent coordination and prompt writing
+
+Before planning delegated work or writing prompts for other agents, read
+[`KILO_AGENT_WORKFLOW.md`](KILO_AGENT_WORKFLOW.md). Use one parent session to
+coordinate task subagents by default; do not make the user relay dependencies
+between independent sessions. Shared Ghidra queries remain serialized. The root
+`AGENTS.md` is the discovery entry point; workflow guidance does not expand the
+user's task authorization.
+
 ## Project Overview
 
 You are developing plugins and mods in this workspace (C:\Users\EricM\Downloads\WRSRE).
