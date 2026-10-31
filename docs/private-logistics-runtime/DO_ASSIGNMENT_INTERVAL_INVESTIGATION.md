@@ -6,6 +6,8 @@
 
 The type-43 (`0x2B`) dispatcher passes an object whose metadata type is `0x2B` into `FUN_1401C6050`. That updater traverses that same object's `+0xC70/+0xC78` fleet and calls `FUN_1406B8EB0` on a guarded truck from it. The helper can write `truck+0xC80 = office` and `office+0xBB0 = truck+0x390`. This proves a type-43 office/truck association path, but not a whole-task installation, task-presence signal, final removal, cancellation, or replacement boundary. `truck+0x390` is used as a pointer-like internal object/container value; it is not a proven job ID or payer. Whether this association persists across internal pickup/unload stops is unresolved.
 
+The latest follow-up traces the type-43 updater's candidate-truck buffer into `FUN_1401E5350` and its same-truck route/configuration rebuilders. A positive DO-row predicate can clear and rebuild that truck's `+0x680/+0x688` route list and `+0x638/+0x640` configuration vector in one helper call. This establishes a native candidate-route installation path, but not a reliable accounting interval: the DO-row commit semantics, persistence through stop progression, and paired cancellation/removal path remain unproved.
+
 The existing `FUN_1406BF1D0` renderer investigation remains below for continuity and is not repeated or used as an assignment signal here. This correction instead records the exact type-43 receiver path, `+0x390` provenance, contiguous direct bytes, and remaining lifecycle gaps.
 
 No plugin, dispatch, permission, default, or billing behavior was changed. No hooks were installed and no live-game run was performed or requested.
@@ -4274,6 +4276,7 @@ The following are complete contiguous direct decodes from the identity-verified 
 00000001406BACB4: 5E                                       POP      rsi
 00000001406BACB5: 5D                                       POP      rbp
 00000001406BACB6: C3                                       RET
+```
 
 ## Type-43 lifecycle follow-up: updater association is not a task boundary
 
@@ -4282,10 +4285,10 @@ The following are complete contiguous direct decodes from the identity-verified 
 This follow-up supersedes any reading of the earlier `FUN_1403FBDC0` call as evidence that the type-43 updater removes an active assignment:
 
 - Newly established: `FUN_1401C6050` only enters its per-truck processing for a truck with `truck+0xC80 == 0`. Its same-office fleet receiver is still established by `office+0xC70/+0xC78`, `truck+0x4F8 == office`, and the type-`0x2B` dispatcher path.
-- Newly established: the `FUN_1406B8EB0` association candidate and the `FUN_1403FBDC0` configuration/reset call are on mutually exclusive `truck+0xD39` paths in this updater. The former path skips the latter; the latter path does not call the association candidate.
+- Newly established: at the outer updater call-site, the `FUN_1406B8EB0` association candidate and the `FUN_1403FBDC0` configuration/reset call are mutually exclusive based on the truck's entry `+0xD39` branch. The former path skips the latter; the latter path does not call the association candidate. This does not imply that `FUN_1406B8EB0` reaches its later association stores.
 - Newly established: `FUN_1406BD6B0`, called after the reset path, is a read-only boolean predicate over route/home/metadata-related fields and scalar helper results. It is not a task setter or remover.
 - Narrowed/withdrawn: the `FUN_1403FBDC0` call is not a demonstrated removal of a live type-43 association. The updater's earlier `+0xC80 == 0` guard makes that interpretation unsupported; its generic clear body alone is not evidence of a task boundary.
-- Still unknown: which same-truck type-43 operation installs the actual dispatched work represented by a route, preserves it over internal stops, and removes/replaces it on cancellation or completion.
+- Still unknown at the time of this prior pass: which same-truck type-43 operation installs the actual dispatched work represented by a route, preserves it over internal stops, and removes/replaces it on cancellation or completion. The candidate-route installation path is traced in the later follow-up below; its task-boundary semantics remain unknown.
 
 Identity and project for this pass:
 
@@ -4625,7 +4628,7 @@ Complete raw bodies of the small dependencies:
 | Empty return after removal | The only new route-related predicate compares `truck+0x680[truck+0x698]` against `truck+0x4F8`. | Not enough to establish removal timing or exclude post-removal return travel. |
 | Save/reload | No reconstruction or continuity path was traced. | Explicitly unsupported. |
 
-**Integration decision:** do not use `truck+0xC80`, `office+0xBB0`, route-list occupancy/index, `FUN_1403FBDC0`, or `FUN_1406BD6B0` as an interval rule. The precise missing native path is the type-43 same-truck operation that materializes/replaces the actual dispatched task into the route/configuration observed by the updater, together with its paired final removal/cancellation path. The current bodies consume an already-nonempty route and skip trucks whose association is present; they do not prove that operation. This is an incomplete trace, not a claim that static proof is impossible. No hook or logging instrumentation was installed; no plugin, dispatch, permissions, defaults, or billing behavior changed. No live-game validation was performed. The reported road-truck metadata kind `1` remains a reported fact; `truck+0x1708 -> metadata+0x294` is metadata-kind provenance only.
+**Integration decision at that pass:** do not use `truck+0xC80`, `office+0xBB0`, route-list occupancy/index, `FUN_1403FBDC0`, or `FUN_1406BD6B0` as an interval rule. The candidate route-install/rebuild path was not yet traced then. The later section below establishes that path but does not establish its task-boundary semantics or paired final removal/cancellation path. This remains an incomplete trace, not a claim that static proof is impossible. No hook or logging instrumentation was installed; no plugin, dispatch, permissions, defaults, or billing behavior changed. No live-game validation was performed. The reported road-truck metadata kind `1` remains a reported fact; `truck+0x1708 -> metadata+0x294` is metadata-kind provenance only.
 
 ### Ghidra commands and output accounting
 
@@ -4654,5 +4657,758 @@ C:\WRSRE\scratch\ghidra_run.bat DisasmMany.java C:\WRSRE\scratch\agent1_func_140
 C:\WRSRE\scratch\ghidra_run.bat DisasmMany.java C:\WRSRE\scratch\agent1_func_1406c24a0.asm 0x1406C24A0:0x1406C2514
 ```
 
-The listed exact ranges end at the last instruction boundary and each exported body ends in `RET`; the complete raw output for `FUN_1406BD6B0` and all of its bounded callees, including nested `FUN_1406C24A0`, is included above. The first `FUN_1406C24A0` disassembly range ended at `0x1406C24B4`; it was visibly partial and was replaced by the exact `0x1406C24A0..0x1406C2514` range before drawing conclusions. A preceding broad command, `scratch\ghidra_run.bat ListFuncs.java C:\WRSRE\scratch\agent1_funcs_lifecycle_helpers.txt 0x1403FBDC0 0x1406BE000`, produced 2,549 entries; that overbroad output was discarded and is not evidence used here. No other broad function-range query or global offset search was used in this follow-up.
+The listed exact ranges end at the last instruction boundary and each exported body ends in `RET`; the complete raw output for `FUN_1406BD6B0` and all of its bounded callees, including nested `FUN_1406C24A0`, is included above. The first `FUN_1406C24A0` disassembly range ended at `0x1406C24B4`; it was visibly partial and was replaced by the exact `0x1406C24A0..0x1406C2514` range before drawing conclusions. A preceding broad command, `scratch\ghidra_run.bat ListFuncs.java C:\WRSRE\scratch\agent1_funcs_lifecycle_helpers.txt 0x1403FBDC0 0x1406BE000`, produced 2,549 entries; that overbroad output was discarded and is not evidence used here. No other broad function-range query or global offset search was used in that follow-up.
+
+## Type-43 candidate-route installation follow-up
+
+### Delta
+
+- Newly traced: a fleet truck collected by `FUN_1401C6050` is stored in a temporary candidate buffer and passed, with the same type-43 office, to `FUN_1401E5350` at `0x1401C6CC9`.
+- Newly established: `FUN_1401E5350` selects `FUN_1401E5480` or `FUN_1401E5BA0` using the result of `FUN_1406BDC30` on that same truck. Both selected branches can reset the truck's existing route/configuration vectors and rebuild them from records in that same office's `+0xD58/+0xD60` vector. The route-row mutator is `FUN_14067D5D0`.
+- Qualified: the type-43 updater's `+0xD39` test makes its `FUN_1406B8EB0` call and `FUN_1403FBDC0` call mutually exclusive at the updater's branch/call-site level. It does not imply that calling `FUN_1406B8EB0` reaches association stores. That helper calls `FUN_140680A20`, then branches on the resulting `truck+0xD39`; nonzero returns before its later association logic.
+- Not established: an accepted `+0xD58` record is a committed job rather than a candidate/rebuild input; route persistence through internal stops; actual removal/cancellation; or whether identical consecutive work has a distinct event.
+
+### Identity and address convention
+
+The executable was rechecked directly at `C:\Workers Resources Soviet Republic\SOVIET64.exe`: 10,308,608 bytes, SHA-256 `296644A9F207D609031FC2AE73FED2DCB34619A1D55A35D1C7B51965CE6841B8`, PE timestamp `0x6A3EB6AD`, machine `0x8664`, optional-header magic `0x020B`, image base `0x140000000`. The configured wrapper opened the existing Ghidra project `C:\Users\EricM\Downloads\TesmioLoader-master\TesmioLoader-master\ghidra\proj\soviet`, program `/SOVIET64.exe`.
+
+The checkout is `C:\WRSRE`, branch `DO-fuel-cost-calculatotr`, HEAD `31e6e416d4f56c02aacfdbb848874d5c305dd632`; the worktree was clean before this Markdown update. All disassembly addresses in this section are file-based VAs in the loaded Ghidra image. RVAs are the VA minus `0x140000000` (for example, `0x1401E5350` is RVA `0x1E5350`). PE file offsets were not used for these queries. A future runtime address is module base plus RVA, not the file VA.
+
+All findings are static. No runtime logging, hook, build, save, dispatch/permission change, billing change, or live-game replay was performed.
+
+### Same-office receiver path
+
+```text
+type-43 dispatcher
+  office descriptor [office+0x318]+0x360 == 0x2B
+  -> FUN_1401C6050(context, office)
+     RDI = that office
+     fleet iteration from that office's +0xC70/+0xC78
+     RSI = candidate truck from that fleet
+     require truck+0x4F8 == office
+     require truck+0xC80 == 0
+     append RSI to temporary candidate buffer at 0x1401C69AC
+  -> loop over the temporary buffer
+     RCX = R12 context
+     RDX = [RBX] candidate truck
+     R8  = RDI same office
+     call FUN_1401E5350 at 0x1401C6CC9
+        truck+0x528 != 0 -> immediate false return
+        otherwise call FUN_1406BDC30(truck, 0.0)
+        zero result -> FUN_1401E5480(context, truck, office)
+        nonzero result -> FUN_1401E5BA0(context, truck, office, result)
 ```
+
+The buffer operation is not an unrelated pointer list: `0x1401C69AC` stores the current `RSI`, which the updater obtained from the same office fleet. The processing loop later loads that stored pointer into `RDX`; `RDI` remains the office receiver and is passed as `R8`. The call setup is:
+
+```asm
+1401c69a7: 48 85 C9                                 TEST RCX,RCX
+1401c69aa: 74 03                                    JE 0x1401c69af
+1401c69ac: 48 89 31                                 MOV qword ptr [RCX],RSI
+1401c69af: 48 83 C1 08                              ADD RCX,8
+1401c69b3: 48 89 4C 24 58                           MOV qword ptr [RSP + 0x58],RCX
+...
+1401c6cc0: 4C 8B C7                                 MOV R8,RDI
+1401c6cc3: 48 8B 13                                 MOV RDX,qword ptr [RBX]
+1401c6cc6: 49 8B CC                                 MOV RCX,R12
+1401c6cc9: E8 82 E6 01 00                           CALL 0x1401e5350
+1401c6cce: 45 0F B6 F6                              MOVZX R14D,R14B
+1401c6cd2: 84 C0                                    TEST AL,AL
+```
+
+### What the connected functions do
+
+`FUN_1401E5350` is 293 bytes (`0x1401E5350..0x1401E5474`, inclusive). `RBX` retains the candidate truck, `RSI` the office, and `RBP` the context. It rejects a truck with nonzero `+0x528`; otherwise it calls `FUN_1406BDC30` on the same truck with a zero float argument and uses the returned scalar/pointer-like value to choose one of two route-build paths. The returned value is not a verified job ID.
+
+`FUN_1406BDC30` is 145 bytes (`0x1406BDC30..0x1406BDCC0`). For the branch whose metadata `+0x8600` is not `0x11`, it scans the same truck's `+0x3B8/+0x3C0` entries and returns an entry value selected by a float threshold. It does not read or return a demonstrated task ID. The `0x11` case delegates to `FUN_14019CD70`; no claim about that branch is used for the reported kind-1 road truck.
+
+`FUN_1401E5480` is 1,812 bytes (`0x1401E5480..0x1401E5B93`); `FUN_1401E5BA0` is 1,343 bytes (`0x1401E5BA0..0x1401E60DE`). In both, `RSI` is the candidate truck and `RBP`/`R14` retains the office. `FUN_1401E5480` scans office `+0xD58/+0xD60` records, passing each record to `FUN_1401DE2B0(context, row, truck, office)`. Only a positive row predicate proceeds to its rebuild block. `FUN_1401E5BA0` scans the same office vector and requires a row's first qword to equal the value returned by `FUN_1406BDC30`, plus its further per-row tests.
+
+On the positive path, each branch sets the same truck's `+0x688` end pointer to `+0x680` and destroys/reinitializes its `+0x638/+0x640` configuration entries. It then calls `FUN_14067D5D0` on the same truck with a selected row target, insertion index `-1`, and flag zero. That helper can insert/overwrite route targets and their `0x198`-stride configuration rows, sets truck `+0xD3A`, and recomputes `+0x698`. The route rebuild is therefore concrete and receiver-preserving; it is not merely a read of an existing schedule.
+
+Selected raw blocks from the two rebuilders:
+
+```asm
+1401e554b: 48 8B 86 80 06 00 00     MOV RAX,[RSI + 0x680]
+1401e5564: 48 89 86 88 06 00 00     MOV [RSI + 0x688],RAX
+1401e556b: 48 8B BE 40 06 00 00     MOV RDI,[RSI + 0x640]
+1401e5572: 48 8B 9E 38 06 00 00     MOV RBX,[RSI + 0x638]
+1401e5590: 48 8D 8B C8 00 00 00     LEA RCX,[RBX + 0xc8]
+1401e5597: E8 54 BE F6 FF           CALL 0x1401513f0
+1401e559c: 48 8B CB                 MOV RCX,RBX
+1401e559f: E8 4C BE F6 FF           CALL 0x1401513f0
+1401e55b0: 48 8B 86 38 06 00 00     MOV RAX,[RSI + 0x638]
+1401e55ba: 48 89 86 40 06 00 00     MOV [RSI + 0x640],RAX
+1401e55c1: 41 83 C8 FF              OR R8D,0xffffffff
+1401e55c5: 49 8B 06                 MOV RAX,[R14]
+1401e55c8: 48 8B CE                 MOV RCX,RSI
+1401e55cb: 49 8B 56 10              MOV RDX,[R14 + 0x10]
+1401e55e5: E8 E6 7F 49 00           CALL 0x14067d5d0
+...
+1401e5cd1: 48 8B 86 80 06 00 00     MOV RAX,[RSI + 0x680]
+1401e5cdd: 48 89 86 88 06 00 00     MOV [RSI + 0x688],RAX
+1401e5ce4: 48 8B BE 40 06 00 00     MOV RDI,[RSI + 0x640]
+1401e5ceb: 48 8B 9E 38 06 00 00     MOV RBX,[RSI + 0x638]
+1401e5d30: 48 8B 86 38 06 00 00     MOV RAX,[RSI + 0x638]
+1401e5d3a: 48 89 86 40 06 00 00     MOV [RSI + 0x640],RAX
+1401e5d41: 41 83 C8 FF              OR R8D,0xffffffff
+1401e5d45: 49 8B 07                 MOV RAX,[R15]
+1401e5d48: 48 8B CE                 MOV RCX,RSI
+1401e5d4b: 49 8B 57 48              MOV RDX,[R15 + 0x48]
+...
+1401e5fd1: 45 33 C0                 XOR R8D,R8D
+1401e5fd4: 33 D2                    XOR EDX,EDX
+1401e5fd6: 48 8B CE                 MOV RCX,RSI
+1401e5fd9: E8 D2 2E 4D 00           CALL 0x1406b8eb0
+```
+
+`FUN_1401E4B10(context, office, row)` subsequently scans the same office `+0xD58/+0xD60` rows and calls `FUN_1401E3BD0(context, row)` when two row fields match. `FUN_1401E3BD0` directly recomputes row metrics/flags; its direct receiver is the office row, not the truck. These calls do not establish removal of truck work. The indirect effects of its callees are not used to rule out other behavior.
+
+`FUN_1401DE2B0` is an 864-byte boolean row predicate. It receives `(context, row, truck, office)`, reads the row's configuration indexes through the same office `+0xD38`, checks route/resource/threshold conditions, and can inspect the candidate truck's `+0x3B8` vector. Its type check special-cases office type `0x2D`; the actual type-43 receiver does not take that special case. A true return means the row passes this predicate, not independently that a new task has been committed.
+
+### `FUN_140680A20` qualifies the updater's mutually-exclusive calls
+
+At `0x1401C6050`, the outer `truck+0xD39` branch still chooses between the `FUN_1406B8EB0` call and the `FUN_1403FBDC0` call; those call sites are mutually exclusive for that updater iteration. But this is only an entry-state fact. `FUN_1406B8EB0` clears the byte at entry, calls `FUN_140680A20`, and reads the byte again before reaching later association logic:
+
+```asm
+1406b8fdc: 44 88 74 24 28           MOV byte ptr [RSP + 0x28],R14B
+1406b8fe1: 44 88 74 24 20           MOV byte ptr [RSP + 0x20],R14B
+1406b8fe6: 41 83 C8 FF              OR R8D,0xffffffff
+1406b8fea: 33 D2                    XOR EDX,EDX
+1406b8fec: E8 2F 7A FC FF           CALL 0x140680a20
+1406b8ff1: 44 38 B7 39 0D 00 00     CMP byte ptr [RDI + 0xd39],R14B
+1406b8ff8: 75 7B                    JNE 0x1406b9075
+```
+
+For the type-43 call, `RCX` is still the candidate truck, `RDX=0`, `R8=-1`, and the two stack flag bytes are explicitly zero. The outer caller passes `R9=0` to `FUN_1406B8EB0`, but `R9` is not reloaded at the nested `FUN_140680A20` call; this pass does not assume its value survives the intervening helper calls. `FUN_140680A20` writes `truck+0xD39 = 1` at `0x140680AF2` before its selection work. With a nonnull `truck+0x1708` whose metadata-kind `+0x294` is not 4 (including the reported kind 1), it takes the `FUN_14067E8F0` branch at `0x140680B4D..0x140680B6E`, not the kind-4 `FUN_14067FA20` branch. Its later flag branches can clear `+0xD39` and rebuild internal vectors `+0x6A0/+0x6B8/+0x6E8`; for example, `0x140681683` clears it when the two local flags tested at `0x140681670..0x14068167D` are both 1, while `0x14068182F` writes zero when the tested local flag is zero. Other paths leave it nonzero, including a conditional `0x100` store. Thus the association stores after `0x1406B8FF1` are conditional on the helper's post-call state and subsequent guards; merely calling `FUN_1406B8EB0` does not prove that `truck+0xC80` or `office+0xBB0` is written.
+
+This value remains a byte/field used by control flow, not a proven job-state enum. `truck+0x1708 -> metadata+0x294` remains metadata-kind provenance only.
+
+### Lifecycle matrix and current integration decision
+
+| Case | Static evidence in this trace | Status |
+|---|---|---|
+| Idle/default route at DO | Candidate selection requires `truck+0xC80 == 0`; a positive `+0xD58` row predicate rebuilds a route. Existing route contents can be cleared and recreated. | Cannot classify a retained/default/return route as work from list occupancy. |
+| Assigned but not loaded | The type-43 updater can materialize a route from a same-office row before any identified resource-transfer call on this path. `truck+0x528` is an unexplained guard. | Candidate route construction is proved; task commitment and assigned-before-load semantics are not. |
+| Internal pickup/unload stops | `FUN_14067D5D0` updates route rows/index, but this pass did not follow simulation stop advancement on the same truck. The updater skips trucks with nonzero `+0xC80`. | Persistence across stops remains unproved. |
+| Final removal/cancellation | `FUN_1403FBDC0` is called from the updater only on its entry path with `truck+0xC80 == 0`; its generic clear is not evidence of closing active work. No paired same-truck cancellation/removal edge was identified. | No close boundary established; success is not required, but the removal operation is missing. |
+| Replacement in one update | Both route rebuilders first set route end to begin and config end to begin, then may repopulate them synchronously. | An internal empty interval can be hidden from polling, but the clear/rebuild is not proven to mean task replacement rather than route refresh. |
+| Identical consecutive work | The selector uses a row pointer/value and route targets, not a verified stable job ID. Old and new work may produce identical final route/configuration values. | Cannot distinguish with final snapshots; no event semantics proved. |
+| Empty return after removal | The route builder can set index `+0x698` to zero; no same-truck post-removal return transition was traced. | Not established; exclude-travel-after-removal cannot yet be enforced. |
+| Reload | Not traced in this pass. | Explicitly unsupported. |
+
+**Integration decision:** do not implement a polling interval from `+0x680/+0x688`, `+0x698`, `+0xC80`, `+0xBB0`, `+0xD39`, or `+0x390`. The trace now identifies a concrete same-truck route-install/rebuild path, but not a sufficient assignment start/end pair. The narrow static gaps are: (1) whether the type-43 office `+0xD58/+0xD60` row consumed by the route builder is a committed assignment or a regenerated candidate; and (2) which same-truck simulation path removes/cancels that work and whether it preserves association over internal stops. The precise next bounded targets are the `FUN_1401E2380` path that the updater calls before this candidate pass and the actual same-truck writer/clear path for the active route/association; neither is classified as a boundary here.
+
+No destination-payer conclusion follows from this route path. Do not equate the selected row, `truck+0x390`, or the candidate home office with the payer.
+
+### Logging-only observation proposal (not performed)
+
+If a later changed logging-only capture is approved, use the already identified same-office call at `0x1401C6CC9` as the narrow entry/return observation site:
+
+- Receiver/arguments: `RCX=R12` context, `RDX=[RBX]` candidate truck from this office's fleet, `R8=RDI` same type-43 office.
+- Before and after: `truck+0x528`, `+0x4F8`, `+0xC80`, `+0xD39`, `+0x680/+0x688` row contents, `+0x638/+0x640` config bounds/contents, `+0x698`, and the selected office `+0xD58` row fields. Record whether the callee chose `FUN_1401E5480` or `FUN_1401E5BA0`, and whether the nested `FUN_1406B8EB0` post-`FUN_140680A20` test at `0x1406B8FF1` passes.
+- Expected contrast: an accepted row shows a route/config clear-and-rebuild in one call; a rejected row returns without that rebuild. This can determine whether repeated same-row rebuilds occur and whether the `+0xC80` association persists during observed stop changes.
+- Limitation: this cannot by itself label a rebuild as a new assignment versus planner refresh, identify a removal that occurs outside these calls, or distinguish identical consecutive jobs with identical row/route values. Those semantics still require the bounded static edges above; no unchanged game replay is requested.
+
+### Complete raw bodies: small connected functions
+
+The following complete bodies are Ghidra instruction exports from the identity-checked `/SOVIET64.exe`. Larger `FUN_1401E5480` and `FUN_1401E5BA0` bodies are not duplicated; their relevant blocks and bounds are documented above.
+
+#### `FUN_1401E5350` — 293 bytes, `0x1401E5350..0x1401E5474`
+
+```asm
+1401e5350:  48 89 5C 24 18           MOV qword ptr [RSP + 0x18],RBX
+1401e5355:  48 89 6C 24 20           MOV qword ptr [RSP + 0x20],RBP
+1401e535a:  56                       PUSH RSI
+1401e535b:  48 83 EC 20              SUB RSP,0x20
+1401e535f:  48 83 BA 28 05 00 00 00  CMP qword ptr [RDX + 0x528],0
+1401e5367:  49 8B F0                 MOV RSI,R8
+1401e536a:  48 8B DA                 MOV RBX,RDX
+1401e536d:  48 8B E9                 MOV RBP,RCX
+1401e5370:  74 12                    JE 0x1401e5384
+1401e5372:  32 C0                    XOR AL,AL
+1401e5374:  48 8B 5C 24 40           MOV RBX,qword ptr [RSP + 0x40]
+1401e5379:  48 8B 6C 24 48           MOV RBP,qword ptr [RSP + 0x48]
+1401e537e:  48 83 C4 20              ADD RSP,0x20
+1401e5382:  5E                       POP RSI
+1401e5383:  C3                       RET
+1401e5384:  0F 57 C9                 XORPS XMM1,XMM1
+1401e5387:  48 89 7C 24 30           MOV qword ptr [RSP + 0x30],RDI
+1401e538c:  48 8B CB                 MOV RCX,RBX
+1401e538f:  E8 9C 88 4D 00           CALL 0x1406bdc30
+1401e5394:  4C 8D 86 58 0D 00 00     LEA R8,[RSI + 0xd58]
+1401e539b:  48 8B F8                 MOV RDI,RAX
+1401e539e:  49 8B 48 08              MOV RCX,qword ptr [R8 + 0x8]
+1401e53a2:  49 2B 08                 SUB RCX,qword ptr [R8]
+1401e53a5:  48 C1 F9 07              SAR RCX,0x7
+1401e53a9:  48 83 F9 01              CMP RCX,0x1
+1401e53ad:  76 40                    JBE 0x1401e53ef
+1401e53af:  48 85 C0                 TEST RAX,RAX
+1401e53b2:  74 50                    JE 0x1401e5404
+1401e53b4:  4D 85 C0                 TEST R8,R8
+1401e53b7:  74 36                    JE 0x1401e53ef
+1401e53b9:  49 8B 50 08              MOV RDX,qword ptr [R8 + 0x8]
+1401e53bd:  49 8B 08                 MOV RCX,qword ptr [R8]
+1401e53c0:  48 8B C2                 MOV RAX,RDX
+1401e53c3:  48 2B C1                 SUB RAX,RCX
+1401e53c6:  48 C1 F8 07              SAR RAX,0x7
+1401e53ca:  48 85 C0                 TEST RAX,RAX
+1401e53cd:  74 20                    JE 0x1401e53ef
+1401e53cf:  4C 8B C2                 MOV R8,RDX
+1401e53d2:  48 8D 05 17 48 F2 FF     LEA RAX,[0x140109bf0]
+1401e53d9:  4C 2B C1                 SUB R8,RCX
+1401e53dc:  48 89 44 24 38           MOV qword ptr [RSP + 0x38],RAX
+1401e53e1:  49 C1 F8 07              SAR R8,0x7
+1401e53e5:  4C 8D 4C 24 38           LEA R9,[RSP + 0x38]
+1401e53ea:  E8 D1 59 02 00           CALL 0x14020adc0
+1401e53ef:  48 85 FF                 TEST RDI,RDI
+1401e53f2:  75 5B                    JNE 0x1401e544f
+1401e53f4:  4C 8B C6                 MOV R8,RSI
+1401e53f7:  48 8B D3                 MOV RDX,RBX
+1401e53fa:  48 8B CD                 MOV RCX,RBP
+1401e53fd:  E8 7E 00 00 00           CALL 0x1401e5480
+1401e5402:  EB 5C                    JMP 0x1401e5460
+1401e5404:  4D 85 C0                 TEST R8,R8
+1401e5407:  74 EB                    JE 0x1401e53f4
+1401e5409:  49 8B 50 08              MOV RDX,qword ptr [R8 + 0x8]
+1401e540d:  49 8B 08                 MOV RCX,qword ptr [R8]
+1401e5410:  48 8B C2                 MOV RAX,RDX
+1401e5413:  48 2B C1                 SUB RAX,RCX
+1401e5416:  48 C1 F8 07              SAR RAX,0x7
+1401e541a:  48 85 C0                 TEST RAX,RAX
+1401e541d:  74 D5                    JE 0x1401e53f4
+1401e541f:  4C 8B C2                 MOV R8,RDX
+1401e5422:  48 8D 05 A7 47 F2 FF     LEA RAX,[0x140109bd0]
+1401e5429:  4C 2B C1                 SUB R8,RCX
+1401e542c:  48 89 44 24 38           MOV qword ptr [RSP + 0x38],RAX
+1401e5431:  49 C1 F8 07              SAR R8,0x7
+1401e5435:  4C 8D 4C 24 38           LEA R9,[RSP + 0x38]
+1401e543a:  E8 81 59 02 00           CALL 0x14020adc0
+1401e543f:  4C 8B C6                 MOV R8,RSI
+1401e5442:  48 8B D3                 MOV RDX,RBX
+1401e5445:  48 8B CD                 MOV RCX,RBP
+1401e5448:  E8 33 00 00 00           CALL 0x1401e5480
+1401e544d:  EB 11                    JMP 0x1401e5460
+1401e544f:  4C 8B CF                 MOV R9,RDI
+1401e5452:  4C 8B C6                 MOV R8,RSI
+1401e5455:  48 8B D3                 MOV RDX,RBX
+1401e5458:  48 8B CD                 MOV RCX,RBP
+1401e545b:  E8 40 07 00 00           CALL 0x1401e5ba0
+1401e5460:  48 8B 7C 24 30           MOV RDI,qword ptr [RSP + 0x30]
+1401e5465:  48 8B 5C 24 40           MOV RBX,qword ptr [RSP + 0x40]
+1401e546a:  48 8B 6C 24 48           MOV RBP,qword ptr [RSP + 0x48]
+1401e546f:  48 83 C4 20              ADD RSP,0x20
+1401e5473:  5E                       POP RSI
+1401e5474:  C3                       RET
+```
+
+#### `FUN_1401DE2B0` — 864 bytes, `0x1401DE2B0..0x1401DE60F`
+
+```asm
+1401de2b0:  40 53                    PUSH RBX
+1401de2b2:  55                       PUSH RBP
+1401de2b3:  57                       PUSH RDI
+1401de2b4:  41 54                    PUSH R12
+1401de2b6:  48 83 EC 48              SUB RSP,0x48
+1401de2ba:  4D 8B 99 38 0D 00 00     MOV R11,qword ptr [R9 + 0xd38]
+1401de2c1:  45 32 E4                 XOR R12B,R12B
+1401de2c4:  48 63 42 18              MOVSXD RAX,dword ptr [RDX + 0x18]
+1401de2c8:  49 8B D8                 MOV RBX,R8
+1401de2cb:  44 0F 29 44 24 20        MOVAPS xmmword ptr [RSP + 0x20],XMM8
+1401de2d1:  48 8B FA                 MOV RDI,RDX
+1401de2d4:  F2 44 0F 10 05 13 BF 72 00 MOVSD XMM8,qword ptr [0x14090a1f0]
+1401de2dd:  48 8B E9                 MOV RBP,RCX
+1401de2e0:  4D 8B 14 C3              MOV R10,qword ptr [R11 + RAX*0x8]
+1401de2e4:  49 8B 42 10              MOV RAX,qword ptr [R10 + 0x10]
+1401de2e8:  F3 0F 10 50 04           MOVSS XMM2,dword ptr [RAX + 0x4]
+1401de2ed:  48 63 42 50              MOVSXD RAX,dword ptr [RDX + 0x50]
+1401de2f1:  0F 5A D2                 CVTPS2PD XMM2,XMM2
+1401de2f4:  4D 8B 14 C3              MOV R10,qword ptr [R11 + RAX*0x8]
+1401de2f8:  49 8B 42 10              MOV RAX,qword ptr [R10 + 0x10]
+1401de2fc:  F3 0F 10 80 CC 00 00 00  MOVSS XMM0,dword ptr [RAX + 0xcc]
+1401de304:  49 8B 81 18 03 00 00     MOV RAX,qword ptr [R9 + 0x318]
+1401de30b:  0F 5A C0                 CVTPS2PD XMM0,XMM0
+1401de30e:  F2 44 0F 5C C0           SUBSD XMM8,XMM0
+1401de313:  48 85 C0                 TEST RAX,RAX
+1401de316:  74 0D                    JE 0x1401de325
+1401de318:  83 B8 60 03 00 00 2D     CMP dword ptr [RAX + 0x360],0x2d
+1401de31f:  75 04                    JNE 0x1401de325
+1401de321:  B1 01                    MOV CL,0x1
+1401de323:  EB 02                    JMP 0x1401de327
+1401de325:  32 C9                    XOR CL,CL
+1401de327:  F2 0F 10 4A 60           MOVSD XMM1,qword ptr [RDX + 0x60]
+1401de32c:  0F 57 C0                 XORPS XMM0,XMM0
+1401de32f:  66 0F 2F C8              COMISD XMM1,XMM0
+1401de333:  0F 86 C3 02 00 00        JBE 0x1401de5fc
+1401de339:  F2 0F 10 42 28           MOVSD XMM0,qword ptr [RDX + 0x28]
+1401de33e:  66 0F 2F C2              COMISD XMM0,XMM2
+1401de342:  0F 86 B4 02 00 00        JBE 0x1401de5fc
+1401de348:  84 C9                    TEST CL,CL
+1401de34a:  75 0E                    JNZ 0x1401de35a
+1401de34c:  66 0F 2F 05 5C BB 72 00  COMISD XMM0,qword ptr [0x140909eb0]
+1401de354:  0F 86 A2 02 00 00        JBE 0x1401de5fc
+1401de35a:  66 41 0F 2F C8           COMISD XMM1,XMM8
+1401de35f:  0F 82 97 02 00 00        JC 0x1401de5fc
+1401de365:  48 89 74 24 70           MOV qword ptr [RSP + 0x70],RSI
+1401de36a:  4C 89 6C 24 78           MOV qword ptr [RSP + 0x78],R13
+1401de36f:  4C 8B 6A 10              MOV R13,qword ptr [RDX + 0x10]
+1401de373:  0F 29 74 24 30           MOVAPS xmmword ptr [RSP + 0x30],XMM6
+1401de378:  49 8B 85 18 03 00 00     MOV RAX,qword ptr [R13 + 0x318]
+1401de37f:  48 85 C0                 TEST RAX,RAX
+1401de382:  74 0E                    JE 0x1401de392
+1401de384:  83 B8 60 03 00 00 08     CMP dword ptr [RAX + 0x360],0x8
+1401de38b:  75 05                    JNE 0x1401de392
+1401de38d:  41 B0 01                 MOV R8B,0x1
+1401de390:  EB 03                    JMP 0x1401de395
+1401de392:  45 32 C0                 XOR R8B,R8B
+1401de395:  F2 0F 10 35 6B BC 72 00  MOVSD XMM6,qword ptr [0x14090a008]
+1401de39d:  66 0F 2F D6              COMISD XMM2,XMM6
+1401de3a1:  4C 89 7C 24 40           MOV qword ptr [RSP + 0x40],R15
+1401de3a6:  77 73                    JA 0x1401de41b
+1401de3a8:  66 0F 2F 05 98 BC 72 00  COMISD XMM0,qword ptr [0x14090a048]
+1401de3b0:  73 69                    JNC 0x1401de41b
+1401de3b2:  48 85 C0                 TEST RAX,RAX
+1401de3b5:  74 0F                    JE 0x1401de3c6
+1401de3b7:  8B 90 60 03 00 00        MOV EDX,dword ptr [RAX + 0x360]
+1401de3bd:  85 D2                    TEST EDX,EDX
+1401de3bf:  74 5A                    JE 0x1401de41b
+1401de3c1:  83 FA 14                 CMP EDX,0x14
+1401de3c4:  74 55                    JE 0x1401de41b
+1401de3c6:  45 84 C0                 TEST R8B,R8B
+1401de3c9:  75 50                    JNZ 0x1401de41b
+1401de3cb:  84 C9                    TEST CL,CL
+1401de3cd:  74 19                    JE 0x1401de3e8
+1401de3cf:  48 8B 47 48              MOV RAX,qword ptr [RDI + 0x48]
+1401de3d3:  48 8B 88 18 03 00 00     MOV RCX,qword ptr [RAX + 0x318]
+1401de3da:  48 85 C9                 TEST RCX,RCX
+1401de3dd:  74 09                    JE 0x1401de3e8
+1401de3df:  83 B9 60 03 00 00 00     CMP dword ptr [RCX + 0x360],0
+1401de3e6:  74 33                    JE 0x1401de41b
+1401de3e8:  F2 0F 10 67 30           MOVSD XMM4,qword ptr [RDI + 0x30]
+1401de3ed:  45 33 C9                 XOR R9D,R9D
+1401de3f0:  48 8B 17                 MOV RDX,qword ptr [RDI]
+1401de3f3:  F2 0F 5C E6              SUBSD XMM4,XMM6
+1401de3f7:  45 33 C0                 XOR R8D,R8D
+1401de3fa:  48 8B CB                 MOV RCX,RBX
+1401de3fd:  E8 AE F9 4D 00           CALL 0x1406bddb0
+1401de402:  0F 57 DB                 XORPS XMM3,XMM3
+1401de405:  F3 0F 5A D8              CVTSS2SD XMM3,XMM0
+1401de409:  F2 0F 5E E3              DIVSD XMM4,XMM3
+1401de40d:  66 0F 2F 25 AB BD 72 00  COMISD XMM4,qword ptr [0x14090a1c0]
+1401de415:  41 0F 97 C7              SETA R15B
+1401de419:  EB 03                    JMP 0x1401de41e
+1401de41b:  41 B7 01                 MOV R15B,0x1
+1401de41e:  F2 0F 10 6F 70           MOVSD XMM5,qword ptr [RDI + 0x70]
+1401de423:  F2 0F 5C 6F 68           SUBSD XMM5,qword ptr [RDI + 0x68]
+1401de428:  66 0F 2F EE              COMISD XMM5,XMM6
+1401de42c:  76 08                    JBE 0x1401de436
+1401de42e:  F2 0F 58 2D EA CE 72 00  ADDSD XMM5,qword ptr [0x14090b320]
+1401de436:  48 8B 37                 MOV RSI,qword ptr [RDI]
+1401de439:  45 33 C9                 XOR R9D,R9D
+1401de43c:  48 8B D6                 MOV RDX,RSI
+1401de43f:  4C 89 B4 24 80 00 00 00  MOV qword ptr [RSP + 0x80],R14
+1401de447:  45 33 C0                 XOR R8D,R8D
+1401de44a:  48 8B CB                 MOV RCX,RBX
+1401de44d:  E8 5E F9 4D 00           CALL 0x1406bddb0
+1401de452:  48 8B 47 48              MOV RAX,qword ptr [RDI + 0x48]
+1401de456:  0F 57 DB                 XORPS XMM3,XMM3
+1401de459:  F3 0F 5A D8              CVTSS2SD XMM3,XMM0
+1401de45d:  48 8B 88 18 03 00 00     MOV RCX,qword ptr [RAX + 0x318]
+1401de464:  F2 0F 5E EB              DIVSD XMM5,XMM3
+1401de468:  48 85 C9                 TEST RCX,RCX
+1401de46b:  74 0E                    JE 0x1401de47b
+1401de46d:  83 B9 60 03 00 00 14     CMP dword ptr [RCX + 0x360],0x14
+1401de474:  75 05                    JNE 0x1401de47b
+1401de476:  41 B6 01                 MOV R14B,0x1
+1401de479:  EB 03                    JMP 0x1401de47e
+1401de47b:  45 32 F6                 XOR R14B,R14B
+1401de47e:  48 3B B5 F0 C3 00 00     CMP RSI,qword ptr [RBP + 0xc3f0]
+1401de485:  0F 85 81 00 00 00        JNE 0x1401de50c
+1401de48b:  48 63 47 1C              MOVSXD RAX,dword ptr [RDI + 0x1c]
+1401de48f:  49 8B D5                 MOV RDX,R13
+1401de492:  48 69 F0 E0 00 00 00     IMUL RSI,RAX,0xe0
+1401de499:  49 03 B5 70 09 00 00     ADD RSI,qword ptr [R13 + 0x970]
+1401de4a0:  E8 CB 1D FB FF           CALL 0x140190270
+1401de4a5:  84 C0                    TEST AL,AL
+1401de4a7:  74 0E                    JE 0x1401de4b7
+1401de4a9:  48 85 F6                 TEST RSI,RSI
+1401de4ac:  74 09                    JE 0x1401de4b7
+1401de4ae:  83 BE 88 00 00 00 09     CMP dword ptr [RSI + 0x88],0x9
+1401de4b5:  74 55                    JE 0x1401de50c
+1401de4b7:  0F 57 DB                 XORPS XMM3,XMM3
+1401de4ba:  41 B0 01                 MOV R8B,0x1
+1401de4bd:  48 8B D6                 MOV RDX,RSI
+1401de4c0:  48 8B CD                 MOV RCX,RBP
+1401de4c3:  E8 98 AE 24 00           CALL 0x140429360
+1401de4c8:  48 3B 85 E8 C3 00 00     CMP RAX,qword ptr [RBP + 0xc3e8]
+1401de4cf:  75 3B                                    JNE 0x1401de50c
+1401de4d1:  48 8B D6                 MOV RDX,RSI
+1401de4d4:  48 8B CD                 MOV RCX,RBP
+1401de4d7:  E8 E4 97 FB FF           CALL 0x140197cc0
+1401de4dc:  48 8B 17                 MOV RDX,qword ptr [RDI]
+1401de4df:  0F 57 E4                 XORPS XMM4,XMM4
+1401de4e2:  45 33 C9                 XOR R9D,R9D
+1401de4e5:  45 33 C0                 XOR R8D,R8D
+1401de4e8:  48 8B CB                 MOV RCX,RBX
+1401de4eb:  F3 0F 5A E0              CVTSS2SD XMM4,XMM0
+1401de4ef:  E8 BC F8 4D 00           CALL 0x1406bddb0
+1401de4f4:  0F 57 DB                 XORPS XMM3,XMM3
+1401de4f7:  F3 0F 5A D8              CVTSS2SD XMM3,XMM0
+1401de4fb:  F2 0F 5E E3              DIVSD XMM4,XMM3
+1401de4ff:  66 0F 2F 25 B9 BC 72 00  COMISD XMM4,qword ptr [0x14090a1c0]
+1401de507:  0F 97 C0                 SETA AL
+1401de50a:  EB 02                    JMP 0x1401de50e
+1401de50c:  B0 01                    MOV AL,0x1
+1401de50e:  66 0F 2F 2D 9A B9 72 00  COMISD XMM5,qword ptr [0x140909eb0]
+1401de516:  4C 8B 6C 24 78           MOV R13,qword ptr [RSP + 0x78]
+1401de51b:  77 09                    JA 0x1401de526
+1401de51d:  45 84 F6                 TEST R14B,R14B
+1401de520:  0F 84 BF 00 00 00        JE 0x1401de5e5
+1401de526:  45 84 FF                 TEST R15B,R15B
+1401de529:  0F 84 B6 00 00 00        JE 0x1401de5e5
+1401de52f:  84 C0                    TEST AL,AL
+1401de531:  0F 84 AE 00 00 00        JE 0x1401de5e5
+1401de537:  66 44 0F 2F C6           COMISD XMM8,XMM6
+1401de53c:  77 22                    JA 0x1401de560
+1401de53e:  F2 0F 10 47 60           MOVSD XMM0,qword ptr [RDI + 0x60]
+1401de543:  66 0F 2F 05 FD BA 72 00  COMISD XMM0,qword ptr [0x14090a048]
+1401de54b:  73 13                    JNC 0x1401de560
+1401de54d:  66 0F 2F 2D 6B BC 72 00  COMISD XMM5,qword ptr [0x14090a1c0]
+1401de555:  77 09                    JA 0x1401de560
+1401de557:  45 84 F6                 TEST R14B,R14B
+1401de55a:  0F 84 85 00 00 00        JE 0x1401de5e5
+1401de560:  48 8B 37                 MOV RSI,qword ptr [RDI]
+1401de563:  48 3B B5 B8 C3 00 00     CMP RSI,qword ptr [RBP + 0xc3b8]
+1401de56a:  75 07                    JNE 0x1401de573
+1401de56c:  48 8B B5 08 C4 00 00     MOV RSI,qword ptr [RBP + 0xc408]
+1401de573:  48 8B D6                 MOV RDX,RSI
+1401de576:  48 8B CD                 MOV RCX,RBP
+1401de579:  E8 D2 A1 24 00           CALL 0x140428750
+1401de57e:  84 C0                    TEST AL,AL
+1401de580:  74 19                    JE 0x1401de59b
+1401de582:  48 83 BB 08 17 00 00 00  CMP qword ptr [RBX + 0x1708],0
+1401de58a:  74 0F                    JE 0x1401de59b
+1401de58c:  4C 8B C7                 MOV R8,RDI
+1401de58f:  48 8B D3                 MOV RDX,RBX
+1401de592:  E8 C9 03 00 00           CALL 0x1401de960
+1401de597:  84 C0                    TEST AL,AL
+1401de599:  74 4A                    JE 0x1401de5e5
+1401de59b:  48 8B 83 C0 03 00 00     MOV RAX,qword ptr [RBX + 0x3c0]
+1401de5a2:  33 D2                    XOR EDX,EDX
+1401de5a4:  48 2B 83 B8 03 00 00     SUB RAX,qword ptr [RBX + 0x3b8]
+1401de5ab:  48 C1 F8 04              SAR RAX,0x4
+1401de5af:  48 85 C0                 TEST RAX,RAX
+1401de5b2:  74 31                    JE 0x1401de5e5
+1401de5b4:  4C 8B 83 B8 03 00 00     MOV R8,qword ptr [RBX + 0x3b8]
+1401de5bb:  8B CA                    MOV ECX,EDX
+1401de5bd:  0F 1F 00                 NOP dword ptr [RAX]
+1401de5c0:  48 03 C9                 ADD RCX,RCX
+1401de5c3:  49 3B 34 C8              CMP RSI,qword ptr [R8 + RCX*0x8]
+1401de5c7:  74 19                    JE 0x1401de5e2
+1401de5c9:  48 8B 83 C0 03 00 00     MOV RAX,qword ptr [RBX + 0x3c0]
+1401de5d0:  FF C2                    INC EDX
+1401de5d2:  49 2B C0                 SUB RAX,R8
+1401de5d5:  8B CA                    MOV ECX,EDX
+1401de5d7:  48 C1 F8 04              SAR RAX,0x4
+1401de5db:  48 3B C8                 CMP RCX,RAX
+1401de5de:  72 E0                    JC 0x1401de5c0
+1401de5e0:  EB 03                    JMP 0x1401de5e5
+1401de5e2:  41 B4 01                 MOV R12B,0x1
+1401de5e5:  4C 8B B4 24 80 00 00 00  MOV R14,qword ptr [RSP + 0x80]
+1401de5ed:  4C 8B 7C 24 40           MOV R15,qword ptr [RSP + 0x40]
+1401de5f2:  48 8B 74 24 70           MOV RSI,qword ptr [RSP + 0x70]
+1401de5f7:  0F 28 74 24 30           MOVAPS xmm6,xmmword ptr [RSP + 0x30]
+1401de5fc:  41 0F B6 C4              MOVZX EAX,R12B
+1401de600:  44 0F 28 44 24 20        MOVAPS xmm8,xmmword ptr [RSP + 0x20]
+1401de606:  48 83 C4 48              ADD RSP,0x48
+1401de60a:  41 5C                    POP R12
+1401de60c:  5F                       POP RDI
+1401de60d:  5D                       POP RBP
+1401de60e:  5B                       POP RBX
+1401de60f:  C3                       RET
+```
+
+#### `FUN_14067D5D0` — 830 bytes, `0x14067D5D0..0x14067D90D`
+
+```asm
+14067d5d0:  48 89 54 24 10           MOV qword ptr [RSP + 0x10],RDX
+14067d5d5:  55                       PUSH RBP
+14067d5d6:  56                       PUSH RSI
+14067d5d7:  57                       PUSH RDI
+14067d5d8:  41 54                    PUSH R12
+14067d5da:  41 55                    PUSH R13
+14067d5dc:  41 56                    PUSH R14
+14067d5de:  41 57                    PUSH R15
+14067d5e0:  48 81 EC E0 01 00 00     SUB RSP,0x1e0
+14067d5e7:  48 C7 44 24 30 FE FF FF FF MOV qword ptr [RSP + 0x30],-0x2
+14067d5f0:  48 89 9C 24 30 02 00 00  MOV qword ptr [RSP + 0x230],RBX
+14067d5f8:  45 0F B6 E9              MOVZX R13D,R9B
+14067d5fc:  41 8B D8                 MOV EBX,R8D
+14067d5ff:  4C 8B E2                 MOV R12,RDX
+14067d602:  48 8B E9                 MOV RBP,RCX
+14067d605:  C6 84 24 38 02 00 00 01  MOV byte ptr [RSP + 0x238],1
+14067d60d:  45 33 F6                 XOR R14D,R14D
+14067d610:  45 33 FF                 XOR R15D,R15D
+14067d613:  48 8D 4C 24 40           LEA RCX,[RSP + 0x40]
+14067d618:  E8 83 3C AD FF           CALL 0x1401512a0
+14067d61d:  90                       NOP
+14067d61e:  48 8D B5 80 06 00 00     LEA RSI,[RBP + 0x680]
+14067d625:  48 8B 7E 08              MOV RDI,qword ptr [RSI + 0x8]
+14067d629:  48 2B 3E                 SUB RDI,qword ptr [RSI]
+14067d62c:  48 C1 FF 03              SAR RDI,3
+14067d630:  F3 0F 10 1D 20 C9 28 00  MOVSS XMM3,dword ptr [0x140909f58]
+14067d638:  45 84 C9                 TEST R9B,R9B
+14067d63b:  75 76                    JNE 0x14067d6b3
+14067d63d:  44 38 BD FD 05 00 00     CMP byte ptr [RBP + 0x5fd],R15B
+14067d644:  74 02                    JE 0x14067d648
+14067d646:  FF CF                    DEC EDI
+14067d648:  4D 85 E4                 TEST R12,R12
+14067d64b:  74 66                    JE 0x14067d6b3
+14067d64d:  F3 0F 10 82 04 06 00 00  MOVSS XMM0,dword ptr [RDX + 0x604]
+14067d655:  0F 2F C3                 COMISS XMM0,XMM3
+14067d658:  72 59                    JC 0x14067d6b3
+14067d65a:  45 33 C9                 XOR R9D,R9D
+14067d65d:  4C 8B C5                 MOV R8,RBP
+14067d660:  E8 DB DF D3 FF           CALL 0x1403bb640
+14067d665:  84 C0                    TEST AL,AL
+14067d667:  74 4A                    JE 0x14067d6b3
+14067d669:  48 8B 46 08              MOV RAX,qword ptr [RSI + 0x8]
+14067d66d:  48 2B 06                 SUB RAX,qword ptr [RSI]
+14067d670:  48 C1 F8 03              SAR RAX,3
+14067d674:  48 85 C0                 TEST RAX,RAX
+14067d677:  0F 84 AD 00 00 00        JE 0x14067d72a
+14067d67d:  48 8B 46 08              MOV RAX,qword ptr [RSI + 0x8]
+14067d681:  48 2B 06                 SUB RAX,qword ptr [RSI]
+14067d684:  48 C1 F8 03              SAR RAX,3
+14067d688:  48 8B 16                 MOV RDX,qword ptr [RSI]
+14067d68b:  45 33 C9                 XOR R9D,R9D
+14067d68e:  4C 8B C5                 MOV R8,RBP
+14067d691:  48 8B 54 C2 F8           MOV RDX,qword ptr [RDX + RAX*8 - 8]
+14067d696:  E8 A5 DF D3 FF           CALL 0x1403bb640
+14067d69b:  84 C0                    TEST AL,AL
+14067d69d:  0F 84 87 00 00 00        JE 0x14067d72a
+14067d6a3:  40 32 FF                 XOR DIL,DIL
+14067d6a6:  40 88 BC 24 38 02 00 00  MOV byte ptr [RSP + 0x238],DIL
+14067d6ae:  E9 89 00 00 00           JMP 0x14067d73c
+14067d6b3:  80 BD FD 05 00 00 00     CMP byte ptr [RBP + 0x5fd],0
+14067d6ba:  75 69                    JNE 0x14067d725
+14067d6bc:  45 84 ED                 TEST R13B,R13B
+14067d6bf:  75 64                    JNE 0x14067d725
+14067d6c1:  48 8B 46 08              MOV RAX,qword ptr [RSI + 0x8]
+14067d6c5:  48 2B 06                 SUB RAX,qword ptr [RSI]
+14067d6c8:  48 C1 F8 03              SAR RAX,3
+14067d6cc:  48 85 C0                 TEST RAX,RAX
+14067d6cf:  74 54                    JE 0x14067d725
+14067d6d1:  48 8B 46 08              MOV RAX,qword ptr [RSI + 0x8]
+14067d6d5:  48 2B 06                 SUB RAX,qword ptr [RSI]
+14067d6d8:  48 C1 F8 03              SAR RAX,3
+14067d6dc:  48 8B 0E                 MOV RCX,qword ptr [RSI]
+14067d6df:  48 83 7C C1 F8 00        CMP qword ptr [RCX + RAX*8 - 8],0
+14067d6e5:  74 3E                    JE 0x14067d725
+14067d6e7:  48 8B 46 08              MOV RAX,qword ptr [RSI + 0x8]
+14067d6eb:  48 2B C1                 SUB RAX,RCX
+14067d6ee:  48 C1 F8 03              SAR RAX,3
+14067d6f2:  48 8B 44 C1 F8           MOV RAX,qword ptr [RCX + RAX*8 - 8]
+14067d6f7:  F3 0F 10 80 04 06 00 00  MOVSS XMM0,dword ptr [RAX + 0x604]
+14067d6ff:  0F 2F C3                 COMISS XMM0,XMM3
+14067d702:  72 21                    JC 0x14067d725
+14067d704:  48 8B 56 08              MOV RDX,qword ptr [RSI + 0x8]
+14067d708:  48 2B D1                 SUB RDX,RCX
+14067d70b:  48 C1 FA 03              SAR RDX,3
+14067d70f:  45 33 C9                 XOR R9D,R9D
+14067d712:  4C 8B C5                 MOV R8,RBP
+14067d715:  48 8B 54 D1 F8           MOV RDX,qword ptr [RCX + RDX*8 - 8]
+14067d71a:  E8 21 DF D3 FF           CALL 0x1403bb640
+14067d71f:  84 C0                    TEST AL,AL
+14067d721:  74 02                    JE 0x14067d725
+14067d723:  FF CF                    DEC EDI
+14067d725:  83 FB FF                 CMP EBX,-1
+14067d728:  75 04                    JNE 0x14067d72e
+14067d72a:  8B DF                    MOV EBX,EDI
+14067d72c:  EB 0B                    JMP 0x14067d739
+14067d72e:  3B DF                    CMP EBX,EDI
+14067d730:  7D 04                    JGE 0x14067d736
+14067d732:  FF C3                    INC EBX
+14067d734:  EB 03                    JMP 0x14067d739
+14067d736:  0F 4F DF                 CMOVG EBX,EDI
+14067d739:  40 B7 01                 MOV DIL,1
+14067d73c:  48 63 8D 98 06 00 00     MOVSXD RCX,dword ptr [RBP + 0x698]
+14067d743:  85 C9                    TEST ECX,ECX
+14067d745:  78 35                    JS 0x14067d77c
+14067d747:  48 8B 46 08              MOV RAX,qword ptr [RSI + 0x8]
+14067d74b:  48 2B 06                 SUB RAX,qword ptr [RSI]
+14067d74e:  48 C1 F8 03              SAR RAX,3
+14067d752:  3B C8                    CMP ECX,EAX
+14067d754:  7D 26                    JGE 0x14067d77c
+14067d756:  48 8B D1                 MOV RDX,RCX
+14067d759:  48 8B 06                 MOV RAX,qword ptr [RSI]
+14067d75c:  4C 8B 34 C8              MOV R14,qword ptr [RAX + RCX*8]
+14067d760:  49 83 FE 00              CMP R14,0
+14067d764:  75 16                    JNE 0x14067d77c
+14067d766:  48 69 CA 98 01 00 00     IMUL RCX,RDX,0x198
+14067d76d:  48 8B 85 38 06 00 00     MOV RAX,qword ptr [RBP + 0x638]
+14067d774:  4C 8B BC 01 90 01 00 00  MOV R15,qword ptr [RCX + RAX + 0x190]
+14067d77c:  40 84 FF                 TEST DIL,DIL
+14067d77f:  0F 84 BC 00 00 00        JE 0x14067d841
+14067d785:  48 8D 94 24 20 02 00 00  LEA RDX,[RSP + 0x220]
+14067d78d:  48 8B CE                 MOV RCX,RSI
+14067d790:  85 DB                    TEST EBX,EBX
+14067d792:  78 62                    JS 0x14067d7f6
+14067d794:  48 8B 06                 MOV RAX,qword ptr [RSI]
+14067d797:  48 63 DB                 MOVSXD RBX,EBX
+14067d79a:  4C 8D 04 D8              LEA R8,[RAX + RBX*8]
+14067d79e:  48 8D 84 24 28 02 00 00  LEA RAX,[RSP + 0x228]
+14067d7a6:  48 89 44 24 20           MOV qword ptr [RSP + 0x20],RAX
+14067d7ab:  E8 90 09 9A FF           CALL 0x14001e140
+14067d7b0:  48 8D BD 38 06 00 00     LEA RDI,[RBP + 0x638]
+14067d7b7:  4C 8B 07                 MOV R8,qword ptr [RDI]
+14067d7ba:  48 69 DB 98 01 00 00     IMUL RBX,RBX,0x198
+14067d7c1:  4C 03 C3                 ADD R8,RBX
+14067d7c4:  48 8D 44 24 40           LEA RAX,[RSP + 0x40]
+14067d7c9:  48 89 44 24 20           MOV qword ptr [RSP + 0x20],RAX
+14067d7ce:  48 8D 94 24 20 02 00 00  LEA RDX,[RSP + 0x220]
+14067d7d6:  48 8B CF                 MOV RCX,RDI
+14067d7d9:  E8 12 59 B8 FF           CALL 0x1402030f0
+14067d7de:  48 8B 17                 MOV RDX,qword ptr [RDI]
+14067d7e1:  48 03 D3                 ADD RDX,RBX
+14067d7e4:  48 8B CD                 MOV RCX,RBP
+14067d7e7:  E8 34 F5 FF FF           CALL 0x14067cd20
+14067d7ec:  0F B6 BC 24 38 02 00 00  MOVZX EDI,byte ptr [RSP + 0x238]
+14067d7f4:  EB 5E                    JMP 0x14067d854
+14067d7f6:  48 8D 84 24 28 02 00 00  LEA RAX,[RSP + 0x228]
+14067d7fe:  48 89 44 24 20           MOV qword ptr [RSP + 0x20],RAX
+14067d803:  4C 8B 06                 MOV R8,qword ptr [RSI]
+14067d806:  E8 35 09 9A FF           CALL 0x14001e140
+14067d80b:  48 8D 44 24 40           LEA RAX,[RSP + 0x40]
+14067d810:  48 89 44 24 20           MOV qword ptr [RSP + 0x20],RAX
+14067d815:  4C 8B 85 38 06 00 00     MOV R8,qword ptr [RBP + 0x638]
+14067d81c:  48 8D 94 24 20 02 00 00  LEA RDX,[RSP + 0x220]
+14067d824:  48 8D 8D 38 06 00 00     LEA RCX,[RBP + 0x638]
+14067d82b:  E8 C0 58 B8 FF           CALL 0x1402030f0
+14067d830:  48 8B 95 38 06 00 00     MOV RDX,qword ptr [RBP + 0x638]
+14067d837:  48 8B CD                 MOV RCX,RBP
+14067d83a:  E8 E1 F4 FF FF           CALL 0x14067cd20
+14067d83f:  EB 1A                    JMP 0x14067d85b
+14067d841:  48 8B 4E 08              MOV RCX,qword ptr [RSI + 0x8]
+14067d845:  48 2B 0E                 SUB RCX,qword ptr [RSI]
+14067d848:  48 C1 F9 03              SAR RCX,3
+14067d84c:  48 8B 06                 MOV RAX,qword ptr [RSI]
+14067d84f:  4C 89 64 C8 F8           MOV qword ptr [RAX + RCX*8 - 8],R12
+14067d854:  C6 85 3A 0D 00 00 01     MOV byte ptr [RBP + 0xd3a],1
+14067d85b:  C7 85 98 06 00 00 FF FF FF FF MOV dword ptr [RBP + 0x698],-1
+14067d865:  33 D2                    XOR EDX,EDX
+14067d867:  48 8B 46 08              MOV RAX,qword ptr [RSI + 0x8]
+14067d86b:  48 2B 06                 SUB RAX,qword ptr [RSI]
+14067d86e:  48 C1 F8 03              SAR RAX,3
+14067d872:  48 85 C0                 TEST RAX,RAX
+14067d875:  74 49                    JE 0x14067d8c0
+14067d877:  4D 85 F6                 TEST R14,R14
+14067d87a:  74 09                    JE 0x14067d885
+14067d87c:  48 8B 06                 MOV RAX,qword ptr [RSI]
+14067d87f:  4C 39 34 D0              CMP qword ptr [RAX + RDX*8],R14
+14067d883:  EB 1D                    JMP 0x14067d8a2
+14067d885:  4D 85 FF                 TEST R15,R15
+14067d888:  74 1A                    JE 0x14067d8a4
+14067d88a:  8B C2                    MOV EAX,EDX
+14067d88c:  48 69 C8 98 01 00 00     IMUL RCX,RAX,0x198
+14067d893:  48 8B 85 38 06 00 00     MOV RAX,qword ptr [RBP + 0x638]
+14067d89a:  4C 39 BC 01 90 01 00 00  CMP qword ptr [RCX + RAX + 0x190],R15
+14067d8a2:  74 16                    JE 0x14067d8ba
+14067d8a4:  FF C2                    INC EDX
+14067d8a6:  48 8B 4E 08              MOV RCX,qword ptr [RSI + 0x8]
+14067d8aa:  48 2B 0E                 SUB RCX,qword ptr [RSI]
+14067d8ad:  48 C1 F9 03              SAR RCX,3
+14067d8b1:  8B C2                    MOV EAX,EDX
+14067d8b3:  48 3B C1                 CMP RAX,RCX
+14067d8b6:  73 08                    JNC 0x14067d8c0
+14067d8b8:  EB BD                    JMP 0x14067d877
+14067d8ba:  89 95 98 06 00 00        MOV dword ptr [RBP + 0x698],EDX
+14067d8c0:  83 BD 98 06 00 00 FF     CMP dword ptr [RBP + 0x698],-1
+14067d8c7:  75 0F                    JNE 0x14067d8d8
+14067d8c9:  4D 85 F6                 TEST R14,R14
+14067d8cc:  74 0A                    JE 0x14067d8d8
+14067d8ce:  C7 85 98 06 00 00 00 00 00 00 MOV dword ptr [RBP + 0x698],0
+14067d8d8:  48 8D 8C 24 08 01 00 00  LEA RCX,[RSP + 0x108]
+14067d8e0:  E8 0B 3B AD FF           CALL 0x1401513f0
+14067d8e5:  48 8D 4C 24 40           LEA RCX,[RSP + 0x40]
+14067d8ea:  E8 01 3B AD FF           CALL 0x1401513f0
+14067d8ef:  40 0F B6 C7              MOVZX EAX,DIL
+14067d8f3:  48 8B 9C 24 30 02 00 00  MOV RBX,qword ptr [RSP + 0x230]
+14067d8fb:  48 81 C4 E0 01 00 00     ADD RSP,0x1e0
+14067d902:  41 5F                    POP R15
+14067d904:  41 5E                    POP R14
+14067d906:  41 5D                    POP R13
+14067d908:  41 5C                    POP R12
+14067d90a:  5F                       POP RDI
+14067d90b:  5E                       POP RSI
+14067d90c:  5D                       POP RBP
+14067d90d:  C3                       RET
+```
+
+#### `FUN_1406BDC30` — 145 bytes, `0x1406BDC30..0x1406BDCC0`
+
+```asm
+1406bdc30:  48 8B 81 08 17 00 00     MOV RAX,[RCX + 0x1708]
+1406bdc37:  48 8B D1                 MOV RDX,RCX
+1406bdc3a:  48 85 C0                 TEST RAX,RAX
+1406bdc3d:  74 1F                    JE 0x1406bdc5e
+1406bdc3f:  83 B8 00 86 00 00 11     CMP dword ptr [RAX + 0x8600],0x11
+1406bdc46:  75 16                    JNE 0x1406bdc5e
+1406bdc48:  48 81 C2 B8 03 00 00     ADD RDX,0x3b8
+1406bdc4f:  48 8D 0D BA 72 31 00     LEA RCX,[0x1409d4f10]
+1406bdc56:  0F 28 D1                 MOVAPS XMM2,XMM1
+1406bdc59:  E9 12 F1 AD FF           JMP 0x14019cd70
+1406bdc5e:  0F 57 C0                 XORPS XMM0,XMM0
+1406bdc61:  0F 2F C1                 COMISS XMM0,XMM1
+1406bdc64:  76 07                    JBE 0x1406bdc6d
+1406bdc66:  0F 57 0D B3 EA 24 00     XORPS XMM1,xmmword ptr [0x14090c720]
+1406bdc6d:  48 8B 81 C0 03 00 00     MOV RAX,[RCX + 0x3c0]
+1406bdc74:  45 33 C0                 XOR R8D,R8D
+1406bdc77:  48 2B 81 B8 03 00 00     SUB RAX,[RCX + 0x3b8]
+1406bdc7e:  48 C1 F8 04              SAR RAX,0x4
+1406bdc82:  48 85 C0                 TEST RAX,RAX
+1406bdc85:  74 32                    JE 0x1406bdcb9
+1406bdc87:  4C 8B 89 B8 03 00 00     MOV R9,[RCX + 0x3b8]
+1406bdc8e:  41 8B C8                 MOV ECX,R8D
+1406bdc91:  48 03 C9                 ADD RCX,RCX
+1406bdc94:  F3 41 0F 10 44 C9 08     MOVSS XMM0,[R9 + RCX*8 + 8]
+1406bdc9b:  0F 2F C1                 COMISS XMM0,XMM1
+1406bdc9e:  77 1C                    JA 0x1406bdcbc
+1406bdca0:  48 8B 82 C0 03 00 00     MOV RAX,[RDX + 0x3c0]
+1406bdca7:  41 FF C0                 INC R8D
+1406bdcaa:  49 2B C1                 SUB RAX,R9
+1406bdcad:  41 8B C8                 MOV ECX,R8D
+1406bdcb0:  48 C1 F8 04              SAR RAX,0x4
+1406bdcb4:  48 3B C8                 CMP RCX,RAX
+1406bdcb7:  72 D8                 JC 0x1406bdc91
+1406bdcb9:  33 C0                 XOR EAX,EAX
+1406bdcbb:  C3                    RET
+1406bdcbc:  49 8B 04 C9           MOV RAX,[R9 + RCX*8]
+1406bdcc0:  C3                    RET
+```
+
+### Commands, outputs, and failures
+
+The existing Java scripts were run one Ghidra invocation at a time through `scratch\ghidra_run.bat`; no analysis script was created or modified. The complete raw output for the two 830/864-byte bodies and the 293/145-byte bodies is included above. The larger `FUN_140680A20` and `FUN_1406B8EB0` bodies were reused from the prior verified exports and were not re-exported.
+
+Commands used for this follow-up:
+
+```text
+scratch\ghidra_run.bat DecompAt.java scratch\agent1_install_branch_decomp.c 0x1401E5480 0x1401E5BA0 0x1406BDC30
+scratch\ghidra_run.bat DecompAt.java scratch\agent1_func_1401de2b0.c 0x1401DE2B0
+scratch\ghidra_run.bat DecompAt.java scratch\agent1_install_connected_decomp.c 0x14067D5D0 0x1401E4B10
+scratch\ghidra_run.bat DecompAt.java scratch\agent1_func_1401e3bd0.c 0x1401E3BD0
+scratch\ghidra_run.bat ListFuncs.java scratch\agent1_func_1401de2b0.txt 0x1401DE2B0 0x1401DE2B0
+scratch\ghidra_run.bat DisasmMany.java scratch\agent1_func_1401de2b0.asm 0x1401DE2B0:0x1401DE610
+scratch\ghidra_run.bat ListFuncs.java scratch\agent1_func_14067d5d0.txt 0x14067D5D0 0x14067D5D0
+scratch\ghidra_run.bat DisasmMany.java scratch\agent1_func_14067d5d0.asm 0x14067D5D0:0x14067D90E
+```
+
+Actual `ListFuncs.java` results:
+
+```text
+0x1401DE2B0  size 864  FUN_1401de2b0
+0x14067D5D0  size 830  FUN_14067d5d0
+```
+
+Earlier bounded output in this investigation records `FUN_1401E5350` size 293, `FUN_1401E5480` size 1812, `FUN_1401E5BA0` size 1343, and `FUN_1406BDC30` size 145. `FUN_1401DE2B0` ends at its `RET` at `0x1401DE60F`; the requested disassembly range also printed the next function's entry at `0x1401DE610`, which is not included in its body above. `FUN_14067D5D0` ends at `0x14067D90D` with `RET`; no undecoded tail was used. All listed Ghidra commands completed successfully. A lookup for `Tesmio Mods\docs\03-reverse-engineering.md` found no matching file in this checkout; the repository-root `INSTRUCTIONS.md` and the existing report methodology were used. No new script output or tracked file was created beyond this Markdown report.
