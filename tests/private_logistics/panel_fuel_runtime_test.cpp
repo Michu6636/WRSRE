@@ -48,6 +48,20 @@ static void Original(void*,void*) { ++originalCalls; }
 static bool InstallInlineHook(void*,void*,void** trampoline,const BYTE*,std::size_t n,const char*) {
     CHECK(n==20);*trampoline=(void*)Original;++installed;return true;
 }
+// Mock resource_pricing and currency for header compilation: endpoint estimate
+// cost computation in ScheduleAssignmentLog uses these when computing
+// hypothetical_cost_if_no_refill. In the real DLL they resolve via service
+// consumption in private_logistics.cpp.
+struct TsmCurrencyApi { unsigned structSize; };
+static int TsmCurrencyActive(const TsmCurrencyApi*) { return 0; }
+struct TsmResourcePricingApi {
+    unsigned structSize;
+    void* (*getByName)(const char* name);
+    float (*getPrice)(void* resRecord, int currency);
+};
+static const TsmResourcePricingApi* g_pricing = nullptr;
+static char gFuelResource[64] = "fuel";
+static const TsmCurrencyApi* g_currency = nullptr;
 using Tick=void(*)(void*,float,float);
 static Tick tick=nullptr;
 static int RegisterTick(Tick fn,void*) { tick=fn;return 1; }

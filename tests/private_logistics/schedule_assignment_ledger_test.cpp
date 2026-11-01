@@ -164,6 +164,47 @@ TEST(other_structural_plan_ends_candidate_without_inventing_goods) {
     Fixture f;f.Step();f.s.count=1;f.s.rows[0].target=0x90000;f.s.rows[0].flag00=0;
     auto r=f.Step();CHECK(r.count==1 && r.events[0].kind==a::Kind::Closed && !f.ledger.Active());
 }
+// ---- Endpoint estimate tests ----
+TEST(net_change_consumption_negative_when_level_drops) {
+    Fixture f;f.s.count=0;f.Step();f.s=Goods();f.Step();f.Step(false,true,80);
+    CHECK(f.ledger.Current().netChangeValid);
+    CHECK(f.ledger.Current().netChange==-20.0); // 80-100: level dropped
+}
+TEST(net_change_refill_positive_when_level_rises) {
+    Fixture f;f.s.count=0;f.Step();f.s=Goods();f.Step();f.Step(false,true,120);
+    CHECK(f.ledger.Current().netChangeValid);
+    CHECK(f.ledger.Current().netChange==20.0); // 120-100: level rose (refill)
+}
+TEST(net_change_invalid_when_unknown_start) {
+    Fixture f;f.s.rows[0].flag00=0;f.s.rows[1].flag00=0;f.s.rows[2].flag00=0;
+    f.Step();f.s=Goods();auto r=f.Step(); // Adopted, unknownStart=true
+    f.Step(false,true,80);
+    CHECK(!f.ledger.Current().netChangeValid);
+}
+TEST(net_change_invalid_when_gap) {
+    Fixture f;f.s.count=0;f.Step();f.s=Goods();f.Step();f.Step(true);
+    CHECK(!f.ledger.Current().netChangeValid);
+}
+TEST(net_change_reset_on_identity_change) {
+    Fixture f;f.s.count=0;f.Step();f.s=Goods();f.Step();f.Step(false,true,80);
+    CHECK(f.ledger.Current().netChange==-20.0);
+    f.root+=0x10000;auto r=f.Step(); // Abandoned + Adopted
+    CHECK(r.count==2);
+    CHECK(!f.ledger.Current().netChangeValid); // new candidate: unknownStart=true
+    CHECK(f.ledger.Current().netChange==0.0);
+}
+TEST(net_change_preserved_across_scalar_index_changes) {
+    Fixture f;f.s.count=0;f.Step();f.s=Goods();f.Step();f.Step(false,true,90);
+    f.s.rows[0].value04=std::nextafter(1.0f,0.0f);f.s.index698=1;
+    f.Step(false,true,90); // Updated, last stays 90 (pass litres explicitly)
+    CHECK(f.ledger.Current().netChangeValid);
+    CHECK(f.ledger.Current().netChange==-10.0);
+}
+TEST(net_change_zero_when_first_equals_last) {
+    Fixture f;f.s.count=0;f.Step();f.s=Goods();f.Step();
+    CHECK(f.ledger.Current().netChangeValid);
+    CHECK(f.ledger.Current().netChange==0.0);
+}
 // RUN entries are kept explicit so each test is selectable by the Python wrapper.
 int main(int argc,char** argv) {
     unsigned count=0;
@@ -191,5 +232,12 @@ int main(int argc,char** argv) {
     RUN(id_exhaustion_saturates_without_reuse);
     RUN(oversize_or_missing_identity_never_opens_a_candidate);
     RUN(other_structural_plan_ends_candidate_without_inventing_goods);
+    RUN(net_change_consumption_negative_when_level_drops);
+    RUN(net_change_refill_positive_when_level_rises);
+    RUN(net_change_invalid_when_unknown_start);
+    RUN(net_change_invalid_when_gap);
+    RUN(net_change_reset_on_identity_change);
+    RUN(net_change_preserved_across_scalar_index_changes);
+    RUN(net_change_zero_when_first_equals_last);
     CHECK(count);std::printf("%u assignment ledger cases PASS (copied values only)\n",count);
 }

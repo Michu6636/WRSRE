@@ -232,12 +232,42 @@ static void ScheduleAssignmentLog(const PanelRecord& record,
     for (unsigned i = 0; i < result.count; ++i) {
         const auto& event = result.events[i];
         const auto& c = event.candidate;
+        // Endpoint estimate: net change from first to last reading, assumed tonnes.
+        // netChange = last - first: negative means level dropped (consumption),
+        // positive means level rose (refill). Not actual burn - refills are not
+        // netted out, so a refilled assignment can show small net change despite
+        // genuine burn.
+        // hypothetical_cost_if_no_refill = (-netChange) x fuel_price only when:
+        //   start known (!c.unknownStart), no gap (!c.observationGap),
+        //   same receiver (no identity change), netChange < 0 (level dropped),
+        //   and resource_pricing resolves a positive finite price.
+        // Missing prices/readings/unknown starts/gaps/changed receivers => unavailable (not zero cost).
+        double netChangeAssumedTonnes = 0;
+        bool netChangeValid = c.netChangeValid;
+        double hypotheticalCostIfNoRefill = 0;
+        bool costAvailable = false;
+        if (netChangeValid) {
+            netChangeAssumedTonnes = c.netChange;
+            if (c.netChange < 0.0 && g_pricing && g_pricing->getByName) {
+                const auto res = g_pricing->getByName(gFuelResource);
+                if (res) {
+                    const int cur = g_currency ? TsmCurrencyActive(g_currency) : 0;
+                    const float p = g_pricing->getPrice(res, cur);
+                    if (p == p && p > 0.0f && p < 1e9f) {
+                        hypotheticalCostIfNoRefill = (-c.netChange) * (double)p;
+                        costAvailable = true;
+                    }
+                }
+            }
+        }
         Logf("[PANEL ASSIGNMENT] observation_epoch=%ld sample=%u observation_root=%p "
              "id=%llu candidate_epoch=%llu root=%p home=%p event=%s reason=%s "
              "first_sample=%u first_ms=%llu first_fuel_valid=%d first_litres_candidate=%.9g "
              "last_sample=%u last_ms=%llu last_fuel_valid=%d last_litres_candidate=%.9g "
              "boundary_sample=%u boundary_ms=%llu boundary_fuel_valid=%d boundary_litres_candidate=%.9g "
              "unknown_start=%d observation_gap=%d role_uncertain=%d "
+             "net_change_valid=%d net_change_assumed_tonnes=%.9g "
+             "hypothetical_cost_if_no_refill_available=%d hypothetical_cost_if_no_refill=%.9g "
              "id_scope=process_local_selected_panel native_boundary=unverified completion=unverified "
              "exact_burn=0 cost=not_computed settlement=none billing=off",
              record.epoch, record.sequence, (void*)fuel.root,
@@ -247,7 +277,9 @@ static void ScheduleAssignmentLog(const PanelRecord& record,
              c.last.sample, (unsigned long long)c.last.ms, c.last.fuelValid ? 1 : 0, (double)c.last.litres,
              event.boundary.sample, (unsigned long long)event.boundary.ms,
              event.boundary.fuelValid ? 1 : 0, (double)event.boundary.litres,
-             c.unknownStart ? 1 : 0, c.observationGap ? 1 : 0, c.roleUncertain ? 1 : 0);
+             c.unknownStart ? 1 : 0, c.observationGap ? 1 : 0, c.roleUncertain ? 1 : 0,
+             c.netChangeValid ? 1 : 0, c.netChange,
+             costAvailable ? 1 : 0, hypotheticalCostIfNoRefill);
     }
 }
 static void ScheduleObserverLog(const PanelRecord& record, bool gap)

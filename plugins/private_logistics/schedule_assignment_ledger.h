@@ -17,6 +17,15 @@ struct Candidate {
     Address root=0,home=0;
     Point first{},last{};
     bool unknownStart=false,observationGap=false,roleUncertain=false;
+    // Endpoint estimate: net change from first to last reading, assumed tonnes.
+    // Valid only when start is known (!unknownStart), no gap (!observationGap),
+    // and same receiver (no identity change). netChange = last - first: negative
+    // means level dropped (consumption), positive means level rose (refill).
+    // Not actual burn - refills are not netted out, so a refilled assignment can
+    // show small net change despite genuine burn. Missing/invalid =>
+    // netChangeValid=false (not zero cost).
+    double netChange=0;
+    bool netChangeValid=false;
 };
 enum class Kind { Opened, Adopted, Updated, Closed, Abandoned, Uncertain, IdExhausted };
 inline const char* KindName(Kind k) {
@@ -98,6 +107,8 @@ public:
                 // another assignment. Losing role recognition is uncertainty.
                 active_.roleUncertain=active_.roleUncertain || pattern!=sch::Pattern::LoadUnload;
                 active_.last=point; // Quiet accepted samples matter for endpoints.
+                active_.netChangeValid=!active_.unknownStart && !active_.observationGap;
+                active_.netChange=active_.last.litres-active_.first.litres;
                 if(d.emit) Add(result,Kind::Updated,"same_observed_targets",active_,point);
                 return result;
             }
@@ -113,6 +124,8 @@ public:
             active_.first=active_.last=point;
             active_.unknownStart=!appeared;
             active_.observationGap=d.endpointAcrossGap;
+            active_.netChangeValid=!active_.unknownStart && !active_.observationGap;
+            active_.netChange=0; // first == last at open: no net change yet
             Add(result,appeared?Kind::Opened:Kind::Adopted,
                 appeared?"observed_appearance":"start_not_observed",active_,point);
         }
