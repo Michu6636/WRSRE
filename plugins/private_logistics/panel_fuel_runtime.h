@@ -86,8 +86,14 @@ static void PanelCapture(void* context, void* window)
     }
 
     // Module-bounds check for the signed int32 global at RVA 0x9D54C0.
+    // Qualified address lookup with checked arithmetic: verify no overflow
+    // before adding RVA to module base.
+    const Address baseAddr = reinterpret_cast<Address>(g_exeBase);
+    const bool baseNoOverflow = g_exeBase != nullptr &&
+        baseAddr <= UINTPTR_MAX - 0x9D54C0;
+    const Address globalAddr = baseNoOverflow ? baseAddr + 0x9D54C0 : 0;
     // RVA <= size && sizeof(int32) <= size - RVA (overflow-safe).
-    bool globalBoundsValid = g_exeBase != nullptr &&
+    bool globalBoundsValid = baseNoOverflow &&
         static_cast<uint64_t>(0x9D54C0) <= g_exeSize &&
         sizeof(std::int32_t) <= g_exeSize - 0x9D54C0;
 
@@ -112,8 +118,7 @@ static void PanelCapture(void* context, void* window)
         // Signed int32 global at module base + RVA 0x9D54C0 — signed compare against 2.
         if (globalBoundsValid) {
             __try {
-                snapshot.gateGlobalRead = PanelRead(
-                    reinterpret_cast<Address>(g_exeBase) + 0x9D54C0,
+                snapshot.gateGlobalRead = PanelRead(globalAddr,
                     &snapshot.gateGlobal, sizeof(snapshot.gateGlobal), nullptr);
             } __except (EXCEPTION_EXECUTE_HANDLER) {
                 snapshot.gateGlobalRead = false;

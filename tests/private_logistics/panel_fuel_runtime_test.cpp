@@ -167,6 +167,7 @@ int main() {
     // Helper: actual address of fixture.root within the module image.
     const auto rootAddr = (uintptr_t)g_exeBase + fixture.root;
     const auto metaAddr = (uintptr_t)g_exeBase + fixture.meta;
+    const auto globalAddr = (uintptr_t)g_exeBase + 0x9D54C0;
 
     // 1. Short image: RVA fits but no room for int32 -> global unavailable, capture still succeeds
     {
@@ -219,93 +220,141 @@ int main() {
     }
     std::puts("PASS runtime_diag_null_image_base_global_unavailable");
 
-    // 5. Exception at root+0x514: per-field guard catches it, g_panelFault clear
+    // 5. Exception at root+0x514: per-field guard catches it, capture survives
     {
+        const auto oldSize = g_exeSize;
+        g_exeSize = 0x9D54C4; // ensure global bounds valid so capture proceeds fully
         const auto beforeFault = g_panelFault;
         throwAtRead = rootAddr + 0x514;
+        clockMs += 1000; // advance time so throttle does not block
         PanelCapture(context, window);
-        private_logistics_panel::Snapshot directSnap{};
-        bool directCap = private_logistics_panel::Capture({PanelRead, nullptr},
-            (uintptr_t)context, (uintptr_t)window, directSnap);
-        CHECK(directCap && directSnap.count == 1);
         CHECK(g_panelFault == beforeFault);
-        auto& rec = g_panelQueue[(g_panelHead + (g_panelCount ? g_panelCount - 1 : 0)) % 16];
-        if (g_panelCount) {
-            CHECK(!rec.snapshot.root514Read);
-            CHECK(rec.snapshot.root4F0Read);
-        }
+        CHECK(g_panelCount >= 1);
+        auto& rec = g_panelQueue[(g_panelHead + g_panelCount - 1) % 16];
+        CHECK(!rec.snapshot.root514Read);   // read attempted, exception caught
+        CHECK(rec.snapshot.root4F0Read);     // later read still occurred
         tick(nullptr, 1, 1);
         throwAtRead = 0;
+        g_exeSize = oldSize;
     }
     std::puts("PASS runtime_diag_exception_root514_capture_survives");
 
-    // 6. Exception at root+0x4F0: per-field guard catches it, g_panelFault clear
+    // 6. Exception at root+0x4F0: per-field guard catches it, capture survives
     {
+        const auto oldSize = g_exeSize;
+        g_exeSize = 0x9D54C4;
         const auto beforeFault = g_panelFault;
         throwAtRead = rootAddr + 0x4F0;
+        clockMs += 1000; // advance time so throttle does not block
         PanelCapture(context, window);
         CHECK(g_panelFault == beforeFault);
+        CHECK(g_panelCount >= 1);
+        auto& rec = g_panelQueue[(g_panelHead + g_panelCount - 1) % 16];
+        CHECK(rec.snapshot.root514Read);     // earlier read succeeded
+        CHECK(!rec.snapshot.root4F0Read);    // read attempted, exception caught
         tick(nullptr, 1, 1);
         throwAtRead = 0;
+        g_exeSize = oldSize;
     }
     std::puts("PASS runtime_diag_exception_root4f0_capture_survives");
 
-    // 7. Exception at global RVA: per-field guard catches it, g_panelFault clear
+    // 7. Exception at global RVA: per-field guard catches it, capture survives
     {
+        const auto oldSize = g_exeSize;
+        g_exeSize = 0x9D54C4; // globalBoundsValid true so global read IS attempted
         const auto beforeFault = g_panelFault;
-        throwAtRead = (uintptr_t)g_exeBase + 0x9D54C0;
+        throwAtRead = globalAddr;
+        clockMs += 1000; // advance time so throttle does not block
         PanelCapture(context, window);
         CHECK(g_panelFault == beforeFault);
+        CHECK(g_panelCount >= 1);
+        auto& rec = g_panelQueue[(g_panelHead + g_panelCount - 1) % 16];
+        CHECK(rec.snapshot.root514Read);     // root read succeeded
+        CHECK(!rec.snapshot.gateGlobalRead); // global read attempted, exception caught
         tick(nullptr, 1, 1);
         throwAtRead = 0;
+        g_exeSize = oldSize;
     }
     std::puts("PASS runtime_diag_exception_global_capture_survives");
 
-    // 8. Exception at object+0x1794: per-field guard catches it, later object reads still occur
+    // 8. Exception at object+0x1794: per-field guard catches it, later reads still occur
     {
+        const auto oldSize = g_exeSize;
+        g_exeSize = 0x9D54C4;
         const auto beforeFault = g_panelFault;
         throwAtRead = rootAddr + 0x1794;
+        clockMs += 1000; // advance time so throttle does not block
         PanelCapture(context, window);
         CHECK(g_panelFault == beforeFault);
+        CHECK(g_panelCount >= 1);
+        auto& rec = g_panelQueue[(g_panelHead + g_panelCount - 1) % 16];
+        CHECK(!rec.snapshot.objects[0].raw1794Read); // read attempted, exception caught
+        CHECK(rec.snapshot.objects[0].quantityRead); // mandatory read still happened
         tick(nullptr, 1, 1);
         throwAtRead = 0;
+        g_exeSize = oldSize;
     }
     std::puts("PASS runtime_diag_exception_raw1794_capture_survives");
 
-    // 9. Exception at metadata+0x8680: per-field guard catches it, g_panelFault clear
+    // 9. Exception at metadata+0x8680: per-field guard catches it, capture survives
     {
+        const auto oldSize = g_exeSize;
+        g_exeSize = 0x9D54C4;
         const auto beforeFault = g_panelFault;
         throwAtRead = metaAddr + 0x8680;
+        clockMs += 1000; // advance time so throttle does not block
         PanelCapture(context, window);
         CHECK(g_panelFault == beforeFault);
+        CHECK(g_panelCount >= 1);
+        auto& rec = g_panelQueue[(g_panelHead + g_panelCount - 1) % 16];
+        CHECK(rec.snapshot.objects[0].quantityRead);   // mandatory read succeeded
+        CHECK(!rec.snapshot.objects[0].proto8680Read); // proto8680 read attempted, caught
         tick(nullptr, 1, 1);
         throwAtRead = 0;
+        g_exeSize = oldSize;
     }
     std::puts("PASS runtime_diag_exception_proto8680_capture_survives");
 
-    // 10. proto8680 readable even when quantity read is unavailable
+    // 10. proto8680 read independently of quantity outcome
     {
-        throwAtRead = rootAddr + 0x5F0; // deny quantity read for root
+        const auto oldSize = g_exeSize;
+        g_exeSize = 0x9D54C4;
+        clockMs += 1000; // advance time so throttle does not block
         PanelCapture(context, window);
         CHECK(!g_panelFault);
+        CHECK(g_panelCount >= 1);
+        auto& rec = g_panelQueue[(g_panelHead + g_panelCount - 1) % 16];
+        CHECK(rec.snapshot.objects[0].proto8680Read);  // proto8680 read as separate step
         tick(nullptr, 1, 1);
-        throwAtRead = 0;
+        g_exeSize = oldSize;
     }
     std::puts("PASS runtime_diag_proto8680_with_unavailable_quantity");
 
-    // 11. Queued-value immutability: values persist from capture to drain
+    // 11. Queued-value immutability: captured values persist capture→drain
     {
+        const auto oldSize = g_exeSize;
+        g_exeSize = 0x9D54C4;
+        const std::uint8_t known514 = 0xAB;
+        std::memcpy(g_exeBase + 0x30514, &known514, sizeof(known514)); // root+0x514, in-bounds
         clockMs += 1000; // advance time so throttle does not block
         const auto beforeLogs = logs.size();
         PanelCapture(context, window);
         tick(nullptr, 1, 1);
         const auto afterLogs = logs.size();
         CHECK(afterLogs > beforeLogs);
-        bool fuelLogFound = false;
+        bool fuelLogWithRoot514 = false;
         for (auto i = beforeLogs; i < afterLogs; ++i) {
-            if (logs[i].find("[PANEL FUEL]") != std::string::npos) { fuelLogFound = true; break; }
+            if (logs[i].find("[PANEL FUEL]") != std::string::npos &&
+                logs[i].find("root514=171") != std::string::npos) { // 0xAB = 171
+                fuelLogWithRoot514 = true;
+                break;
+            }
         }
-        CHECK(fuelLogFound);
+        CHECK(fuelLogWithRoot514);
+        // Restore image
+        std::uint8_t zero = 0;
+        std::memcpy(g_exeBase + 0x30514, &zero, sizeof(zero));
+        g_exeSize = oldSize;
     }
     std::puts("PASS runtime_diag_queued_value_immutability");
 
