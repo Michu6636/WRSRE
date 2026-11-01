@@ -1,6 +1,9 @@
 // private_logistics - what a private company earns, and what it pays.
 //
 // ---------------------------------------------------------------------------
+// v0.18.16: approximate sampled-drop fuel/cost diagnostics, refill-safe totals,
+// pause-tolerant comparisons, cached prices and quieter bounded fleet logging.
+// Provisional units only; no settlement, payments, new hooks or dispatch changes.
 // v0.18.15: bounded private-road-fleet polling on existing simulation ticks;
 // per-vehicle copied-value ledgers, frozen unloading-target candidates, no new
 // hooks, exact-burn claim, settlement or payments. Requires live validation.
@@ -496,7 +499,7 @@ static char   gFuelResource[64] = "fuel";  // resolved through resource_pricing
 static double gBasketsPerTrip   = 0.80;    // CPI fallback, in daily survival baskets
 static double gBasketsPerTonne  = 0.02;
 
-#define PL_VERSION "0.18.15-fleet-observer"
+#define PL_VERSION "0.18.16-approx-fuel"
 static int g_panelObserverEnabled = 1;
 static int g_scheduleObserverEnabled = 1;
 static void PanelObserverLoading(void);

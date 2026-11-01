@@ -22,7 +22,7 @@ class FleetFuelObserverTest(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             result = subprocess.run([str(exe)], capture_output=True, text=True)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-            self.assertIn('16 fleet scenarios PASS', result.stdout)
+            self.assertIn('29 fleet scenarios PASS', result.stdout)
 
     def test_integration_and_no_economic_or_hook_writes(self):
         core = (PLUGIN / 'fleet_fuel_observer.h').read_text()
