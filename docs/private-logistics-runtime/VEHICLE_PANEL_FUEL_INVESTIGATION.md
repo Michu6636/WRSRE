@@ -161578,3 +161578,5 @@ Final implementation checkpoint: independent archive verification PASS — the c
 ## Pull-request publication authorization
 
 The user subsequently requested a pull request for this branch, authorizing commit/push and PR creation from arena/2a900efa-wrsre into DO-fuel-cost-calculatotr. GitHub confirms the target remains at a2e15a61d3de2803f316dc0ce7fb2346a6655eb5 (merged PR40); the prior no-publication statement describes the implementation checkpoint, not this newly authorized publication. Include the implementation, regressions, cumulative report and preserved Test10 evidence. No merge, deployment, Windows build or payment authorization is inferred. Pre-publication git diff --check PASS.
+
+Publication result: implementation commit df645bd was pushed to arena/2a900efa-wrsre. Pull request #41 is OPEN: https://github.com/Michu6636/WRSRE/pull/41, base DO-fuel-cost-calculatotr, head arena/2a900efa-wrsre. PR description records the actual 139-test / 29-fleet / nine-endpoint validation, partial/provisional estimate limitations and outstanding Windows/live checks. This is publication only; the PR has not been merged and payments remain OFF.
