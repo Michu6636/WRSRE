@@ -19,12 +19,13 @@ struct Fixture {
     sch::Snapshot s=Goods();
     std::uint64_t epoch=1;sch::Address root=0x40000,home=0x30000;
     unsigned sequence=0;
+    a::NativeFuel native{};
     a::Result Step(bool gap=false,bool fuelValid=true,float litres=100) {
         if(gap) history.Break();
         const auto previous=history.LastValidValues();++sequence;
         const auto d=history.Observe(s,epoch,root,home,sequence,sequence*1000);
         const auto c=d.endpointCompared?sch::ClassifyChanges(previous,s):sch::FieldChanges{};
-        return ledger.Observe(s,d,c,epoch,root,home,{sequence,sequence*1000,fuelValid,litres});
+        return ledger.Observe(s,d,c,epoch,root,home,{sequence,sequence*1000,fuelValid,litres,native});
     }
 };
 TEST(adopt_existing_does_not_invent_assignment_start) {
@@ -164,6 +165,66 @@ TEST(other_structural_plan_ends_candidate_without_inventing_goods) {
     Fixture f;f.Step();f.s.count=1;f.s.rows[0].target=0x90000;f.s.rows[0].flag00=0;
     auto r=f.Step();CHECK(r.count==1 && r.events[0].kind==a::Kind::Closed && !f.ledger.Active());
 }
+struct EndpointFixture : Fixture {
+    EndpointFixture() {
+        native.count=1;native.valid=true;native.objects[0]=root;native.metadata[0]=0x50000;
+        native.raw[0]=1;native.capacity[0]=2;
+        s.count=0;Step();s=Goods();Step();
+    }
+    void Level(float value) {native.raw[0]=value;Step();}
+    a::Event Close(float value) {native.raw[0]=value;s.count=0;auto r=Step();CHECK(r.count==1);return r.events[0];}
+};
+TEST(native_endpoint_uses_closing_boundary_not_previous_or_ui) {
+    EndpointFixture f;f.Level(.9f);auto event=f.Close(.8f);
+    auto e=a::Estimate(event.candidate,event.boundary);
+    CHECK(e.valid && !e.observedRise && std::fabs(e.net+.2)<1e-6);
+    CHECK(event.candidate.last.native.raw[0]==.9f && event.boundary.native.raw[0]==.8f);
+    CHECK(event.candidate.first.litres==event.boundary.litres);
+}
+TEST(native_missing_intermediate_read_stays_uncertain) {
+    EndpointFixture f;f.native.valid=false;f.Step();f.native.valid=true;
+    auto event=f.Close(.5f);CHECK(event.candidate.fuelUncertain);
+    CHECK(!a::Estimate(event.candidate,event.boundary).valid);
+}
+TEST(native_receiver_change_is_sticky_even_after_restoration) {
+    for(unsigned change=0;change<4;++change) {
+        EndpointFixture f;const auto original=f.native;
+        if(change==0) f.native.metadata[0]++;
+        if(change==1) f.native.capacity[0]++;
+        if(change>=2) {
+            f.native.count=2;f.native.objects[1]=0x70000;f.native.metadata[1]=0x80000;
+            f.native.raw[1]=.2f;f.native.capacity[1]=1;
+            if(change==3) {f.Step();f.native.objects[1]++;}
+        }
+        f.Step();f.native=original;auto event=f.Close(.5f);
+        CHECK(event.candidate.receiverChanged && !a::Estimate(event.candidate,event.boundary).valid);
+    }
+}
+TEST(native_quiet_observed_rise_survives_later_decrease) {
+    EndpointFixture f;f.Level(.6f);f.Level(.9f);auto event=f.Close(.5f);
+    auto e=a::Estimate(event.candidate,event.boundary);
+    CHECK(e.valid && e.observedRise && std::fabs(e.net+.5)<1e-6);
+}
+TEST(native_signed_negative_endpoint_is_not_clipped) {
+    EndpointFixture f;auto event=f.Close(-.1f);auto e=a::Estimate(event.candidate,event.boundary);
+    CHECK(e.valid && std::fabs(e.net+1.1)<1e-6);
+}
+TEST(native_invalid_values_and_per_receiver_rise_are_checked) {
+    EndpointFixture f;auto bad=f.native;
+    bad.raw[0]=std::numeric_limits<float>::infinity();CHECK(!a::ValidFuel(bad));
+    bad=f.native;bad.capacity[0]=0;CHECK(!a::ValidFuel(bad));
+    bad=f.native;bad.metadata[0]=0;CHECK(!a::ValidFuel(bad));
+    bad=f.native;bad.count=private_logistics_panel::MaxObjects+1;CHECK(!a::ValidFuel(bad));
+    bad=f.native;bad.count=2;bad.objects[1]=bad.objects[0];bad.metadata[1]=1;
+    bad.capacity[1]=1;CHECK(!a::ValidFuel(bad));
+    Fixture multi;multi.native=f.native;multi.native.count=2;multi.native.objects[1]=0x90000;
+    multi.native.metadata[1]=0xa0000;multi.native.capacity[1]=2;multi.native.raw[1]=1;
+    multi.s.count=0;multi.Step();multi.s=Goods();multi.Step();
+    multi.native.raw[0]=.1f;multi.native.raw[1]=1.1f;multi.Step();
+    CHECK(multi.ledger.Current().observedRise); // Falling total cannot conceal receiver rise.
+    f.native.raw[0]=.5f;f.s.count=0;auto gap=f.Step(true);
+    CHECK(gap.count==1 && !a::Estimate(gap.events[0].candidate,gap.events[0].boundary).valid);
+}
 // RUN entries are kept explicit so each test is selectable by the Python wrapper.
 int main(int argc,char** argv) {
     unsigned count=0;
@@ -191,5 +252,11 @@ int main(int argc,char** argv) {
     RUN(id_exhaustion_saturates_without_reuse);
     RUN(oversize_or_missing_identity_never_opens_a_candidate);
     RUN(other_structural_plan_ends_candidate_without_inventing_goods);
+    RUN(native_endpoint_uses_closing_boundary_not_previous_or_ui);
+    RUN(native_missing_intermediate_read_stays_uncertain);
+    RUN(native_receiver_change_is_sticky_even_after_restoration);
+    RUN(native_quiet_observed_rise_survives_later_decrease);
+    RUN(native_signed_negative_endpoint_is_not_clipped);
+    RUN(native_invalid_values_and_per_receiver_rise_are_checked);
     CHECK(count);std::printf("%u assignment ledger cases PASS (copied values only)\n",count);
 }

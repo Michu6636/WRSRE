@@ -43,6 +43,17 @@ class PanelFuelObserverTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn('8 host-shim scenarios PASS', result.stdout)
 
+    def test_endpoint_runtime_with_real_pricing_contract(self):
+        exe = Path(self.directory.name) / 'endpoint_runtime'
+        result = subprocess.run([self.compiler, '-std=c++17', '-O2', '-Wall', '-Wextra',
+                                 '-Werror', '-pedantic', '-I', str(PLUGIN),
+                                 str(HARNESS.with_name('endpoint_runtime_test.cpp')),
+                                 '-o', str(exe)], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        result = subprocess.run([str(exe)], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('6 endpoint runtime scenarios PASS', result.stdout)
+
     def test_matching_test_defaults_and_no_tracker_wiring(self):
         config = configparser.ConfigParser()
         config.read(PLUGIN / 'private_logistics.ini')
@@ -90,6 +101,15 @@ class PanelFuelObserverTest(unittest.TestCase):
             self.assertNotIn(forbidden, header + runtime)
         self.assertIn('physical_fuel=unverified exact_burn=0 billing=off', runtime)
         self.assertIn('unresolved_7c58', runtime)
+
+    def test_gate_diagnostic_version_and_qualified_address(self):
+        runtime = (PLUGIN / 'panel_fuel_runtime.h').read_text()
+        cpp = (PLUGIN / 'private_logistics.cpp').read_text()
+        self.assertIn('#define PL_VERSION "0.18.14-endpoint-estimate"', cpp)
+        self.assertIn('"0.18.14-endpoint-estimate"', runtime)
+        self.assertIn('reinterpret_cast<std::uintptr_t>(g_exeBase)', runtime)
+        self.assertNotRegex(runtime, r'\b(?:static_cast|reinterpret_cast)<Address>')
+        self.assertIn('native_execution=unobserved', runtime)
 
     def test_windows_min_max_macros(self):
         path = Path(self.directory.name) / 'macros.cpp'

@@ -6,6 +6,7 @@
 #include "schedule_observer.h"
 #include "schedule_assignment_ledger.h"
 
+static constexpr char kGateDiagnosticVersion[] = "0.18.14-endpoint-estimate";
 static bool g_scheduleReady = false;
 static volatile LONG g_scheduleFault = 0;
 static private_logistics_schedule::History g_scheduleHistory; // simulation tick only
@@ -45,6 +46,40 @@ static bool PanelRead(uintptr_t address, void* out, size_t size, void*)
     memcpy(out, (const void*)address, size);
     return true;
 }
+// Optional fields must not reach the observer-wide mandatory-read fault latch.
+// Memory::Get validates base/offset/end arithmetic before calling PanelRead.
+template<class T>
+static bool PanelDiagnosticRead(std::uintptr_t base, std::uintptr_t offset, T& out)
+{
+    const private_logistics_panel::Memory memory{PanelRead, nullptr};
+    T value{};
+    bool ok = false;
+    __try {
+        ok = memory.Get(base, offset, value);
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        return false;
+    }
+    if (ok) out = value;
+    return ok;
+}
+static void PanelCaptureDiagnostics(private_logistics_panel::Snapshot& s)
+{
+    if (!s.root) return;
+    s.root514Read = PanelDiagnosticRead(s.root, 0x514, s.root514);
+    s.root4F0Read = PanelDiagnosticRead(s.root, 0x4F0, s.root4F0);
+    constexpr std::uintptr_t globalRva = 0x9D54C0;
+    if (g_exeBase && globalRva <= g_exeSize &&
+        sizeof(s.gateGlobal) <= g_exeSize - globalRva) {
+        s.gateGlobalRead = PanelDiagnosticRead(
+            reinterpret_cast<std::uintptr_t>(g_exeBase), globalRva, s.gateGlobal);
+    }
+    for (unsigned i = 0; i < s.count && i < private_logistics_panel::MaxObjects; ++i) {
+        auto& o = s.objects[i];
+        o.raw1794Read = PanelDiagnosticRead(o.pointer, 0x1794, o.raw1794);
+        // Metadata may be available even if a later mandatory quantity read failed.
+        o.proto8680Read = PanelDiagnosticRead(o.metadata, 0x8680, o.proto8680);
+    }
+}
 static void PanelResetQueueLocked(LONG epoch)
 {
     if (g_panelQueueEpoch == epoch) return;
@@ -81,6 +116,7 @@ static void PanelCapture(void* context, void* window)
     } __except (EXCEPTION_EXECUTE_HANDLER) {
         InterlockedExchange(&g_panelFault, 1);
     }
+    if (captured) PanelCaptureDiagnostics(snapshot);
     private_logistics_schedule::Snapshot schedule{};
     if (captured && g_scheduleReady) {
         schedule.status = private_logistics_schedule::Status::Ineligible;
@@ -157,6 +193,53 @@ static const char* PanelMatch(private_logistics_panel::Match m)
     default: return "unavailable";
     }
 }
+static private_logistics_assignment::NativeFuel PanelNativeFuel(const private_logistics_panel::Snapshot& s)
+{
+    private_logistics_assignment::NativeFuel f{};
+    if(s.status!=private_logistics_panel::Status::Complete || !s.count ||
+       s.count>private_logistics_panel::MaxObjects || s.objects[0].pointer!=s.root) return f;
+    f.count=s.count;
+    for(unsigned i=0;i<s.count;++i) {
+        const auto& o=s.objects[i];
+        if(!o.quantityRead) return private_logistics_assignment::NativeFuel{};
+        f.objects[i]=o.pointer;f.metadata[i]=o.metadata;f.raw[i]=o.raw;f.capacity[i]=o.capacity;
+    }
+    f.valid=true;
+    f.valid=private_logistics_assignment::ValidFuel(f);
+    return f;
+}
+struct PanelEndpointPrice {
+    bool available=false;
+    double amount=0;
+    float perTonne=0;
+    int currency=TSM_CURRENCY_RUB;
+    const char* reason="not_closed";
+};
+static PanelEndpointPrice PanelHypotheticalPrice(const private_logistics_assignment::Event& event,
+                                                const private_logistics_assignment::Endpoint& e)
+{
+    PanelEndpointPrice q{};
+    if(event.kind!=private_logistics_assignment::Kind::Closed) return q;
+    q.reason="uncertain_endpoint";if(!e.valid || !std::isfinite(e.net)) return q;
+    q.reason="observed_level_rise";if(e.observedRise) return q;
+    q.reason="nonnegative_net";if(e.net>=0) return q;
+    q.reason="pricing_api_unavailable";
+    if(!g_pricing || g_pricing->structSize<offsetof(TsmResourcePricingApi,getPrice)+sizeof(g_pricing->getPrice) ||
+       !g_pricing->getByName || !g_pricing->getPrice) return q;
+    void* resource=g_pricing->getByName(gFuelResource);
+    q.reason="resource_unavailable";if(!resource) return q;
+    // The public helper inspects BOTH appended function pointers. Guard the full
+    // pair before calling it, including providers exposing only an older prefix.
+    const bool currencyTail=g_currency && g_currency->structSize>=
+        offsetof(TsmCurrencyApi,getCurrencySymbol)+sizeof(g_currency->getCurrencySymbol);
+    q.currency=TsmCurrencyActive(currencyTail ? g_currency : nullptr); // RUB fallback.
+    const float price=g_pricing->getPrice(resource,q.currency);
+    const double amount=-e.net*double(price);
+    q.reason="invalid_price";if(!std::isfinite(price) || price<=0) return q;
+    q.reason="invalid_product";if(!std::isfinite(amount) || amount<=0) return q;
+    q.perTonne=price;q.amount=amount;q.available=true;q.reason="no_refill_hypothesis_only";
+    return q;
+}
 static void ScheduleAssignmentLog(const PanelRecord& record,
                                   const private_logistics_schedule::Delta& delta,
                                   const private_logistics_schedule::FieldChanges& changes,
@@ -165,18 +248,26 @@ static void ScheduleAssignmentLog(const PanelRecord& record,
     const auto& fuel = record.snapshot;
     const auto result = g_scheduleLedger.Observe(record.schedule, delta, changes,
         (unsigned long long)record.epoch, fuel.root, home,
-        {record.sequence, record.milliseconds, fuel.aggregateValid, fuel.litresCandidate});
+        {record.sequence, record.milliseconds, fuel.aggregateValid, fuel.litresCandidate, PanelNativeFuel(fuel)});
     for (unsigned i = 0; i < result.count; ++i) {
         const auto& event = result.events[i];
         const auto& c = event.candidate;
+        const auto endpoint=private_logistics_assignment::Estimate(c,event.boundary);
+        const auto price=PanelHypotheticalPrice(event,endpoint);
         Logf("[PANEL ASSIGNMENT] observation_epoch=%ld sample=%u observation_root=%p "
              "id=%llu candidate_epoch=%llu root=%p home=%p event=%s reason=%s "
              "first_sample=%u first_ms=%llu first_fuel_valid=%d first_litres_candidate=%.9g "
              "last_sample=%u last_ms=%llu last_fuel_valid=%d last_litres_candidate=%.9g "
              "boundary_sample=%u boundary_ms=%llu boundary_fuel_valid=%d boundary_litres_candidate=%.9g "
              "unknown_start=%d observation_gap=%d role_uncertain=%d "
+             "native_start_valid=%d native_start=%.9g native_end_valid=%d native_end=%.9g "
+             "net_change_valid=%d net_change_native=%.9g unit_assumption=tonnes "
+             "receiver_changed=%d fuel_uncertain=%d observed_level_rise=%d refill_coverage=unverified "
+             "hypothetical_cost_if_no_refill_available=%d hypothetical_cost_if_no_refill=%.9g "
+             "hypothetical_cost_reason=%s fuel_price_per_tonne=%.9g currency=%d "
+             "currency_policy=public_api_or_RUB_fallback price_timing=observation_drain "
              "id_scope=process_local_selected_panel native_boundary=unverified completion=unverified "
-             "exact_burn=0 cost=not_computed settlement=none billing=off",
+             "exact_burn=0 actual_cost=not_computed settlement=none billing=off",
              record.epoch, record.sequence, (void*)fuel.root,
              (unsigned long long)c.id, (unsigned long long)c.epoch, (void*)c.root, (void*)c.home,
              private_logistics_assignment::KindName(event.kind), event.reason,
@@ -184,7 +275,14 @@ static void ScheduleAssignmentLog(const PanelRecord& record,
              c.last.sample, (unsigned long long)c.last.ms, c.last.fuelValid ? 1 : 0, (double)c.last.litres,
              event.boundary.sample, (unsigned long long)event.boundary.ms,
              event.boundary.fuelValid ? 1 : 0, (double)event.boundary.litres,
-             c.unknownStart ? 1 : 0, c.observationGap ? 1 : 0, c.roleUncertain ? 1 : 0);
+             c.unknownStart ? 1 : 0, c.observationGap ? 1 : 0, c.roleUncertain ? 1 : 0,
+             private_logistics_assignment::ValidFuel(c.first.native) ? 1 : 0,
+             private_logistics_assignment::NativeTotal(c.first.native),
+             private_logistics_assignment::ValidFuel(event.boundary.native) ? 1 : 0,
+             private_logistics_assignment::NativeTotal(event.boundary.native),
+             endpoint.valid ? 1 : 0, endpoint.valid ? endpoint.net : 0.0,
+             c.receiverChanged ? 1 : 0, c.fuelUncertain ? 1 : 0, endpoint.observedRise ? 1 : 0,
+             price.available ? 1 : 0, price.amount, price.reason, (double)price.perTonne, price.currency);
     }
 }
 static void ScheduleObserverLog(const PanelRecord& record, bool gap)
@@ -334,6 +432,8 @@ static void PanelObserverTick(void*, float, float)
          "adjustment_read=%d adjustment_needed=%d presentation=%s "
          "queue_full_total_at_capture=%u queue_full_total_at_drain=%u "
          "captured_paused=%d coalesced_snapshots=%u sample_ids=accepted_records_only "
+         "root514_read=%d root514=%u root4f0_read=%d root4f0=%p "
+         "gate_global_read=%d gate_global=%d gate_diag=%s native_execution=unobserved "
          "physical_fuel=unverified exact_burn=0 billing=off",
          record.epoch, record.sequence, (unsigned long long)record.milliseconds,
          (void*)s.window, (void*)s.root, PanelStatus(s.status), s.aggregateValid ? 1 : 0,
@@ -342,15 +442,20 @@ static void PanelObserverTick(void*, float, float)
          s.flagsRead ? 1 : 0, (unsigned)s.flag8681, (unsigned)s.flag8682,
          s.adjustmentRead ? 1 : 0, s.adjustmentNeeded ? 1 : 0,
          s.flagsRead && (s.flag8681 || s.flag8682) ? "alternate_if_shown" : "unresolved_7c58",
-         record.queueFullAtCapture, dropped, record.paused ? 1 : 0, record.coalesced);
+         record.queueFullAtCapture, dropped, record.paused ? 1 : 0, record.coalesced,
+         s.root514Read ? 1 : 0, (unsigned)s.root514, s.root4F0Read ? 1 : 0, (void*)s.root4F0,
+         s.gateGlobalRead ? 1 : 0, (int)s.gateGlobal, kGateDiagnosticVersion);
     for (unsigned i = 0; i < s.count; ++i) {
         const auto& o = s.objects[i];
         Logf("[PANEL OBJECT] epoch=%ld sample=%u index=%u role=%s object=%p metadata=%p "
              "quantity_read=%d raw5f0=%.9g capacity8684=%.9g candidate_home=%p "
-             "membership=%s fleet_index=%u occurrences=%u private_status=not_classified",
+             "membership=%s fleet_index=%u occurrences=%u private_status=not_classified "
+             "raw1794_read=%d raw1794=%u proto8680_read=%d proto8680=%u",
              record.epoch, record.sequence, i, i ? "linked" : "root", (void*)o.pointer,
              (void*)o.metadata, o.quantityRead ? 1 : 0, (double)o.raw, (double)o.capacity,
-             (void*)o.homeCandidate, PanelMatch(o.match), o.fleetIndex, o.occurrences);
+             (void*)o.homeCandidate, PanelMatch(o.match), o.fleetIndex, o.occurrences,
+             o.raw1794Read ? 1 : 0, (unsigned)o.raw1794,
+             o.proto8680Read ? 1 : 0, (unsigned)o.proto8680);
     }
     ScheduleObserverLog(record, fault || cap || contention || newDrops);
 }
