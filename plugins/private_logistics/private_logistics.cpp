@@ -489,7 +489,7 @@ static char   gFuelResource[64] = "fuel";  // resolved through resource_pricing
 static double gBasketsPerTrip   = 0.80;    // CPI fallback, in daily survival baskets
 static double gBasketsPerTonne  = 0.02;
 
-#define PL_VERSION "0.18.11-assignment-ledger"
+#define PL_VERSION "0.18.12-gate-diagnostic"
 static int g_panelObserverEnabled = 1;
 static int g_scheduleObserverEnabled = 1;
 static void PanelObserverLoading(void);

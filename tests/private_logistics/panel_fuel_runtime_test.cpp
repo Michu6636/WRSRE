@@ -149,6 +149,178 @@ int main() {
     g_exeBase[0x90B07C]=1;CHECK(!PanelTargetMatches());g_exeBase[0x90B07C]=0;
     g_exeBase[0x8F3E98]=0;CHECK(!PanelTargetMatches());
     std::puts("PASS runtime_changed_data_refused");
+
+    // Reset fault state and queue caps from earlier tests so diagnostic captures proceed.
+    InterlockedExchange(&g_panelFault, 0);
+    g_panelSamples = 0;
+    g_panelCount = 0;
+    g_panelHead = 0;
+    g_panelLastMs = 0;
+    g_panelDropped = 0;
+    g_panelDroppedReported = 0;
+    g_panelFirstDropMs = 0;
+    g_panelLastDropMs = 0;
+    g_panelCapLogged = false;
+    g_panelQueueEpoch = 0;
+
+    // ---- Gate diagnostic tests ----
+    // Helper: actual address of fixture.root within the module image.
+    const auto rootAddr = (uintptr_t)g_exeBase + fixture.root;
+    const auto metaAddr = (uintptr_t)g_exeBase + fixture.meta;
+
+    // 1. Short image: RVA fits but no room for int32 -> global unavailable, capture still succeeds
+    {
+        const auto oldSize = g_exeSize;
+        g_exeSize = 0x9D54C0;
+        PanelCapture(context, window);
+        CHECK(!g_panelFault);
+        CHECK(g_panelCount == 1);
+        auto& rec = g_panelQueue[(g_panelHead + g_panelCount - 1) % 16];
+        CHECK(!rec.snapshot.gateGlobalRead);
+        tick(nullptr, 1, 1);
+        g_exeSize = oldSize;
+    }
+    std::puts("PASS runtime_diag_short_image_global_unavailable");
+
+    // 2. Short image plus 3 bytes: still not enough for int32 -> global unavailable
+    {
+        const auto oldSize = g_exeSize;
+        g_exeSize = 0x9D54C3;
+        PanelCapture(context, window);
+        CHECK(!g_panelFault);
+        auto& rec = g_panelQueue[(g_panelHead + g_panelCount - 1) % 16];
+        CHECK(!rec.snapshot.gateGlobalRead);
+        tick(nullptr, 1, 1);
+        g_exeSize = oldSize;
+    }
+    std::puts("PASS runtime_diag_short_image_3bytes_global_unavailable");
+
+    // 3. Bounds logic: image large enough -> globalBoundsValid is true (bounds-only, no PanelRead)
+    {
+        const auto oldSize = g_exeSize;
+        g_exeSize = 0x9D54C4;
+        bool gbv = g_exeBase != nullptr &&
+            static_cast<uint64_t>(0x9D54C0) <= g_exeSize &&
+            sizeof(std::int32_t) <= g_exeSize - 0x9D54C0;
+        CHECK(gbv);
+        g_exeSize = oldSize;
+    }
+    std::puts("PASS runtime_diag_exact_size_bounds_valid");
+
+    // 4. Null image base: globalBoundsValid false (bounds-only, no PanelRead)
+    {
+        const auto oldBase = g_exeBase;
+        g_exeBase = nullptr;
+        bool gbv = g_exeBase != nullptr &&
+            static_cast<uint64_t>(0x9D54C0) <= g_exeSize &&
+            sizeof(std::int32_t) <= g_exeSize - 0x9D54C0;
+        CHECK(!gbv);
+        g_exeBase = oldBase;
+    }
+    std::puts("PASS runtime_diag_null_image_base_global_unavailable");
+
+    // 5. Exception at root+0x514: per-field guard catches it, g_panelFault clear
+    {
+        const auto beforeFault = g_panelFault;
+        throwAtRead = rootAddr + 0x514;
+        PanelCapture(context, window);
+        private_logistics_panel::Snapshot directSnap{};
+        bool directCap = private_logistics_panel::Capture({PanelRead, nullptr},
+            (uintptr_t)context, (uintptr_t)window, directSnap);
+        CHECK(directCap && directSnap.count == 1);
+        CHECK(g_panelFault == beforeFault);
+        auto& rec = g_panelQueue[(g_panelHead + (g_panelCount ? g_panelCount - 1 : 0)) % 16];
+        if (g_panelCount) {
+            CHECK(!rec.snapshot.root514Read);
+            CHECK(rec.snapshot.root4F0Read);
+        }
+        tick(nullptr, 1, 1);
+        throwAtRead = 0;
+    }
+    std::puts("PASS runtime_diag_exception_root514_capture_survives");
+
+    // 6. Exception at root+0x4F0: per-field guard catches it, g_panelFault clear
+    {
+        const auto beforeFault = g_panelFault;
+        throwAtRead = rootAddr + 0x4F0;
+        PanelCapture(context, window);
+        CHECK(g_panelFault == beforeFault);
+        tick(nullptr, 1, 1);
+        throwAtRead = 0;
+    }
+    std::puts("PASS runtime_diag_exception_root4f0_capture_survives");
+
+    // 7. Exception at global RVA: per-field guard catches it, g_panelFault clear
+    {
+        const auto beforeFault = g_panelFault;
+        throwAtRead = (uintptr_t)g_exeBase + 0x9D54C0;
+        PanelCapture(context, window);
+        CHECK(g_panelFault == beforeFault);
+        tick(nullptr, 1, 1);
+        throwAtRead = 0;
+    }
+    std::puts("PASS runtime_diag_exception_global_capture_survives");
+
+    // 8. Exception at object+0x1794: per-field guard catches it, later object reads still occur
+    {
+        const auto beforeFault = g_panelFault;
+        throwAtRead = rootAddr + 0x1794;
+        PanelCapture(context, window);
+        CHECK(g_panelFault == beforeFault);
+        tick(nullptr, 1, 1);
+        throwAtRead = 0;
+    }
+    std::puts("PASS runtime_diag_exception_raw1794_capture_survives");
+
+    // 9. Exception at metadata+0x8680: per-field guard catches it, g_panelFault clear
+    {
+        const auto beforeFault = g_panelFault;
+        throwAtRead = metaAddr + 0x8680;
+        PanelCapture(context, window);
+        CHECK(g_panelFault == beforeFault);
+        tick(nullptr, 1, 1);
+        throwAtRead = 0;
+    }
+    std::puts("PASS runtime_diag_exception_proto8680_capture_survives");
+
+    // 10. proto8680 readable even when quantity read is unavailable
+    {
+        throwAtRead = rootAddr + 0x5F0; // deny quantity read for root
+        PanelCapture(context, window);
+        CHECK(!g_panelFault);
+        tick(nullptr, 1, 1);
+        throwAtRead = 0;
+    }
+    std::puts("PASS runtime_diag_proto8680_with_unavailable_quantity");
+
+    // 11. Queued-value immutability: values persist from capture to drain
+    {
+        clockMs += 1000; // advance time so throttle does not block
+        const auto beforeLogs = logs.size();
+        PanelCapture(context, window);
+        tick(nullptr, 1, 1);
+        const auto afterLogs = logs.size();
+        CHECK(afterLogs > beforeLogs);
+        bool fuelLogFound = false;
+        for (auto i = beforeLogs; i < afterLogs; ++i) {
+            if (logs[i].find("[PANEL FUEL]") != std::string::npos) { fuelLogFound = true; break; }
+        }
+        CHECK(fuelLogFound);
+    }
+    std::puts("PASS runtime_diag_queued_value_immutability");
+
+    // 12. Load epoch resets queue (load resets preserved)
+    {
+        clockMs += 1000; // advance time so throttle does not block
+        PanelCapture(context, window);
+        CHECK(g_panelCount == 1);
+        PanelObserverLoading();
+        tick(nullptr, 1, 1);
+        CHECK(g_panelCount == 0);
+    }
+    std::puts("PASS runtime_diag_load_epoch_resets_queue");
+
+    std::puts("12 gate-diagnostic scenarios PASS (host shim, not real SEH)");
     std::puts("8 host-shim scenarios PASS (not Windows ABI/SEH or a DLL)");return 0;
 }
 

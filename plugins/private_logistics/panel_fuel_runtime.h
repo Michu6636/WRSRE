@@ -80,9 +80,64 @@ static void PanelCapture(void* context, void* window)
     bool captured = false;
     __try {
         captured = private_logistics_panel::Capture({PanelRead, nullptr},
-            (uintptr_t)context, (uintptr_t)window, (Address)g_exeBase, snapshot);
+            (uintptr_t)context, (uintptr_t)window, snapshot);
     } __except (EXCEPTION_EXECUTE_HANDLER) {
         InterlockedExchange(&g_panelFault, 1);
+    }
+
+    // Module-bounds check for the signed int32 global at RVA 0x9D54C0.
+    // RVA <= size && sizeof(int32) <= size - RVA (overflow-safe).
+    bool globalBoundsValid = g_exeBase != nullptr &&
+        static_cast<uint64_t>(0x9D54C0) <= g_exeSize &&
+        sizeof(std::int32_t) <= g_exeSize - 0x9D54C0;
+
+    // Independently guarded diagnostic reads. A failure on any single field
+    // does NOT set g_panelFault, does NOT abort capture, and does NOT
+    // prevent later reads or existing fuel/schedule records.
+    if (captured && snapshot.root) {
+        // Root byte +0x514 — caller gate compares with R15B; zero unproved.
+        __try {
+            snapshot.root514Read = PanelRead(snapshot.root + 0x514,
+                &snapshot.root514, sizeof(snapshot.root514), nullptr);
+        } __except (EXCEPTION_EXECUTE_HANDLER) {
+            snapshot.root514Read = false;
+        }
+        // Root qword +0x4F0 — pointer NOT followed.
+        __try {
+            snapshot.root4F0Read = PanelRead(snapshot.root + 0x4F0,
+                &snapshot.root4F0, sizeof(snapshot.root4F0), nullptr);
+        } __except (EXCEPTION_EXECUTE_HANDLER) {
+            snapshot.root4F0Read = false;
+        }
+        // Signed int32 global at module base + RVA 0x9D54C0 — signed compare against 2.
+        if (globalBoundsValid) {
+            __try {
+                snapshot.gateGlobalRead = PanelRead(
+                    reinterpret_cast<Address>(g_exeBase) + 0x9D54C0,
+                    &snapshot.gateGlobal, sizeof(snapshot.gateGlobal), nullptr);
+            } __except (EXCEPTION_EXECUTE_HANDLER) {
+                snapshot.gateGlobalRead = false;
+            }
+        }
+        // Per-object reads — raw1794 independent of quantity; proto8680
+        // immediately after metadata, independent of later quantity/capacity.
+        for (unsigned i = 0; i < snapshot.count; ++i) {
+            auto& o = snapshot.objects[i];
+            __try {
+                o.raw1794Read = PanelRead(o.pointer + 0x1794,
+                    &o.raw1794, sizeof(o.raw1794), nullptr);
+            } __except (EXCEPTION_EXECUTE_HANDLER) {
+                o.raw1794Read = false;
+            }
+            if (o.metadata) {
+                __try {
+                    o.proto8680Read = PanelRead(o.metadata + 0x8680,
+                        &o.proto8680, sizeof(o.proto8680), nullptr);
+                } __except (EXCEPTION_EXECUTE_HANDLER) {
+                    o.proto8680Read = false;
+                }
+            }
+        }
     }
     private_logistics_schedule::Snapshot schedule{};
     if (captured && g_scheduleReady) {

@@ -76,7 +76,7 @@ inline void FindMembership(const Memory& m, Object& o) {
 }
 // false = not an eligible visible detail window. true may contain an INVALID
 // snapshot: callers must check status/aggregateValid, not interpret defaults as 0.
-inline bool Capture(const Memory& m, Address context, Address window, Address imageBase, Snapshot& s) {
+inline bool Capture(const Memory& m, Address context, Address window, Snapshot& s) {
     s = Snapshot{};
     s.context = context; s.window = window;
     std::uint8_t hidden = 1, live = 0;
@@ -86,9 +86,6 @@ inline bool Capture(const Memory& m, Address context, Address window, Address im
         !m.Get(window, 0x24C, origin) || !m.Get(window, 0x23C, submode) ||
         primary != 0 || subkind != 1 || origin != 2 || submode != 0) return false;
     if (!m.Get(window, 0x240, s.root) || !s.root) return true;
-    s.root514Read = m.Get(s.root, 0x514, s.root514);
-    s.root4F0Read = m.Get(s.root, 0x4F0, s.root4F0);
-    s.gateGlobalRead = m.Get(imageBase, 0x9D54C0, s.gateGlobal);
     Address begin = 0, end = 0;
     if (!m.Get(s.root, 0x3A0, begin) || !m.Get(s.root, 0x3A8, end) ||
         end < begin || (end - begin) % sizeof(Address) || (!begin && end)) return true;
@@ -100,11 +97,9 @@ inline bool Capture(const Memory& m, Address context, Address window, Address im
         o.pointer = s.root;
         if (i && !m.Get(begin, (i - 1) * sizeof(Address), o.pointer)) return true;
         FindMembership(m, o); // independent of quantity-read validity
-        o.raw1794Read = m.Get(o.pointer, 0x1794, o.raw1794);
         if (!m.Get(o.pointer, 0x1708, o.metadata) ||
             !m.Get(o.metadata, 0x8684, o.capacity) || !m.Get(o.pointer, 0x5F0, o.raw)) return true;
         o.quantityRead = true;
-        o.proto8680Read = m.Get(o.metadata, 0x8680, o.proto8680);
         if (!std::isfinite(o.capacity) || !std::isfinite(o.raw)) {
             s.status = Status::NonFinite; return true;
         }
