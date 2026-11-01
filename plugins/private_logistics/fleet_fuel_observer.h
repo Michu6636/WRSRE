@@ -71,7 +71,7 @@ struct Vehicle {
     a::Ledger ledger{};
     a::NativeFuel previous{};
     double observedDecrease=0,observedIncrease=0;
-    unsigned discontinuities=0;
+    unsigned discontinuities=0,observedPairs=0;
     void Break() {
         history.Break();ledger.Break();previousValid=false;++discontinuities;
     }
@@ -84,6 +84,7 @@ struct Vehicle {
         previousEpoch=epoch;
         if(!a::ValidFuel(fuel) || fuel.objects[0]!=root) Break();
         if(previousValid && a::SameFuel(previous,fuel)) {
+            ++observedPairs;
             for(unsigned i=0;i<fuel.count;++i) {
                 const double delta=double(fuel.raw[i])-double(previous.raw[i]);
                 if(delta<0) observedDecrease-=delta;else observedIncrease+=delta;
@@ -100,7 +101,7 @@ struct Vehicle {
         const auto r=ledger.Abandon(reason);
         root=home=0;seen=previousValid=false;sample=0;lastMs=previousEpoch=0;
         history=sch::History{};previous=a::NativeFuel{};
-        observedDecrease=observedIncrease=0;discontinuities=0;
+        observedDecrease=observedIncrease=0;discontinuities=observedPairs=0;
         return r; // Ledger serial retained; no slot-level ID reuse.
     }
 };
