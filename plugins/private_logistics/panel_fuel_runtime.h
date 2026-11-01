@@ -18,8 +18,11 @@ static LONG g_panelQueueEpoch = 0;
 static unsigned g_panelHead = 0, g_panelCount = 0, g_panelSamples = 0, g_panelDropped = 0;
 static ULONGLONG g_panelLastMs = 0;
 static unsigned g_panelDroppedReported = 0;
-static ULONGLONG g_panelFirstDropMs = 0, g_panelLastDropMs = 0;
 static bool g_panelCapLogged = false, g_panelFaultLogged = false;
+// Gate diagnostic source version / log identity. Distinct from PL_VERSION;
+// INI defaults and hook installation are unchanged.
+static const char* kGateDiagnosticVersion = "0.18.12-gate-diagnostic";
+static ULONGLONG g_panelFirstDropMs = 0, g_panelLastDropMs = 0;
 struct PanelRecord {
     private_logistics_panel::Snapshot snapshot;
     private_logistics_schedule::Snapshot schedule;
@@ -77,7 +80,7 @@ static void PanelCapture(void* context, void* window)
     bool captured = false;
     __try {
         captured = private_logistics_panel::Capture({PanelRead, nullptr},
-            (uintptr_t)context, (uintptr_t)window, snapshot);
+            (uintptr_t)context, (uintptr_t)window, (Address)g_exeBase, snapshot);
     } __except (EXCEPTION_EXECUTE_HANDLER) {
         InterlockedExchange(&g_panelFault, 1);
     }
@@ -332,9 +335,11 @@ static void PanelObserverTick(void*, float, float)
          "capacity_unadjusted=%.9g ratio_valid=%d ratio=%.9g links=%u "
          "mode=%d metadata_kind=%d flags_read=%d flag8681=%u flag8682=%u "
          "adjustment_read=%d adjustment_needed=%d presentation=%s "
+         "root514_read=%d root514=%u root4f0_read=%d root4f0=%p "
+         "gate_global_read=%d gate_global=%d gate_diag=%s "
          "queue_full_total_at_capture=%u queue_full_total_at_drain=%u "
          "captured_paused=%d coalesced_snapshots=%u sample_ids=accepted_records_only "
-         "physical_fuel=unverified exact_burn=0 billing=off",
+         "native_execution=unobserved physical_fuel=unverified exact_burn=0 billing=off",
          record.epoch, record.sequence, (unsigned long long)record.milliseconds,
          (void*)s.window, (void*)s.root, PanelStatus(s.status), s.aggregateValid ? 1 : 0,
          (double)s.current, (double)s.litresCandidate, (double)s.unadjustedCapacity,
@@ -342,15 +347,21 @@ static void PanelObserverTick(void*, float, float)
          s.flagsRead ? 1 : 0, (unsigned)s.flag8681, (unsigned)s.flag8682,
          s.adjustmentRead ? 1 : 0, s.adjustmentNeeded ? 1 : 0,
          s.flagsRead && (s.flag8681 || s.flag8682) ? "alternate_if_shown" : "unresolved_7c58",
+         s.root514Read ? 1 : 0, (unsigned)s.root514,
+         s.root4F0Read ? 1 : 0, (void*)s.root4F0,
+         s.gateGlobalRead ? 1 : 0, (int)s.gateGlobal, kGateDiagnosticVersion,
          record.queueFullAtCapture, dropped, record.paused ? 1 : 0, record.coalesced);
     for (unsigned i = 0; i < s.count; ++i) {
         const auto& o = s.objects[i];
         Logf("[PANEL OBJECT] epoch=%ld sample=%u index=%u role=%s object=%p metadata=%p "
              "quantity_read=%d raw5f0=%.9g capacity8684=%.9g candidate_home=%p "
-             "membership=%s fleet_index=%u occurrences=%u private_status=not_classified",
+             "membership=%s fleet_index=%u occurrences=%u private_status=not_classified "
+             "raw1794_read=%d raw1794=%u proto8680_read=%d proto8680=%u",
              record.epoch, record.sequence, i, i ? "linked" : "root", (void*)o.pointer,
              (void*)o.metadata, o.quantityRead ? 1 : 0, (double)o.raw, (double)o.capacity,
-             (void*)o.homeCandidate, PanelMatch(o.match), o.fleetIndex, o.occurrences);
+             (void*)o.homeCandidate, PanelMatch(o.match), o.fleetIndex, o.occurrences,
+             o.raw1794Read ? 1 : 0, o.raw1794,
+             o.proto8680Read ? 1 : 0, (unsigned)o.proto8680);
     }
     ScheduleObserverLog(record, fault || cap || contention || newDrops);
 }

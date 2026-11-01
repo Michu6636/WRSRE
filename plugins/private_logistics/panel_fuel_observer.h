@@ -28,6 +28,10 @@ struct Object {
     bool quantityRead = false;
     Match match = Match::Unavailable;
     unsigned fleetIndex = 0, occurrences = 0;
+    std::uint32_t raw1794 = 0;
+    bool raw1794Read = false;
+    std::uint8_t proto8680 = 0;
+    bool proto8680Read = false;
 };
 struct Snapshot {
     Address context = 0, window = 0, root = 0;
@@ -39,6 +43,12 @@ struct Snapshot {
     bool flagsRead = false, adjustmentRead = false, adjustmentNeeded = false;
     bool aggregateValid = false, ratioValid = false;
     float current = 0, unadjustedCapacity = 0, litresCandidate = 0, ratio = 0;
+    std::uint8_t root514 = 0;
+    bool root514Read = false;
+    Address root4F0 = 0;
+    bool root4F0Read = false;
+    std::int32_t gateGlobal = 0;
+    bool gateGlobalRead = false;
 };
 // This tests ONLY object+4F8 as an office candidate. An absent match is NOT a
 // search of all DOs. Type 43 and literal fleet-slot pointer equality are needed.
@@ -66,7 +76,7 @@ inline void FindMembership(const Memory& m, Object& o) {
 }
 // false = not an eligible visible detail window. true may contain an INVALID
 // snapshot: callers must check status/aggregateValid, not interpret defaults as 0.
-inline bool Capture(const Memory& m, Address context, Address window, Snapshot& s) {
+inline bool Capture(const Memory& m, Address context, Address window, Address imageBase, Snapshot& s) {
     s = Snapshot{};
     s.context = context; s.window = window;
     std::uint8_t hidden = 1, live = 0;
@@ -76,6 +86,9 @@ inline bool Capture(const Memory& m, Address context, Address window, Snapshot& 
         !m.Get(window, 0x24C, origin) || !m.Get(window, 0x23C, submode) ||
         primary != 0 || subkind != 1 || origin != 2 || submode != 0) return false;
     if (!m.Get(window, 0x240, s.root) || !s.root) return true;
+    s.root514Read = m.Get(s.root, 0x514, s.root514);
+    s.root4F0Read = m.Get(s.root, 0x4F0, s.root4F0);
+    s.gateGlobalRead = m.Get(imageBase, 0x9D54C0, s.gateGlobal);
     Address begin = 0, end = 0;
     if (!m.Get(s.root, 0x3A0, begin) || !m.Get(s.root, 0x3A8, end) ||
         end < begin || (end - begin) % sizeof(Address) || (!begin && end)) return true;
@@ -87,9 +100,11 @@ inline bool Capture(const Memory& m, Address context, Address window, Snapshot& 
         o.pointer = s.root;
         if (i && !m.Get(begin, (i - 1) * sizeof(Address), o.pointer)) return true;
         FindMembership(m, o); // independent of quantity-read validity
+        o.raw1794Read = m.Get(o.pointer, 0x1794, o.raw1794);
         if (!m.Get(o.pointer, 0x1708, o.metadata) ||
             !m.Get(o.metadata, 0x8684, o.capacity) || !m.Get(o.pointer, 0x5F0, o.raw)) return true;
         o.quantityRead = true;
+        o.proto8680Read = m.Get(o.metadata, 0x8680, o.proto8680);
         if (!std::isfinite(o.capacity) || !std::isfinite(o.raw)) {
             s.status = Status::NonFinite; return true;
         }

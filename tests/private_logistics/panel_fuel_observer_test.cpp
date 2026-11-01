@@ -13,6 +13,7 @@ struct Fixture {
     std::vector<Region> regions;
     Address window=0x10000, context=0x20000, root=0x30000, meta=0x40000;
     Address home=0x50000, descriptor=0x60000, fleet=0x70000, links=0x80000;
+    Address imageBase=0x1000000;
     std::size_t reads = 0;
     std::vector<std::pair<Address,std::size_t>> denied;
     void Add(Address a, std::size_t n) { regions.push_back({a,std::vector<unsigned char>(n)}); }
@@ -40,7 +41,7 @@ struct Fixture {
         Set(root,0x4F8,home);Set(home,0x318,descriptor);Set(descriptor,0x360,43);
         Set(home,0xC70,fleet);Set(home,0xC78,fleet+8);Set(fleet,0,root);
     }
-    Snapshot CaptureNow() { Snapshot s; CHECK(Capture(Mem(),context,window,s));return s; }
+    Snapshot CaptureNow() { Snapshot s; CHECK(Capture(Mem(),context,window,imageBase,s));return s; }
     void Link(float raw, float capacity) {
         Address child=0x90000, childMeta=0xA0000;
         Add(child,0x2000);Add(childMeta,0x9000);
@@ -86,12 +87,12 @@ TEST(optional_capacity_adjustment_is_not_guessed) {
     f.denied.push_back({f.root+0x19E0,16});s=f.CaptureNow();CHECK(s.aggregateValid && !s.adjustmentRead && !s.ratioValid);
 }
 TEST(window_gates_and_4f8_not_required) {
-    Fixture f;Snapshot s;CHECK(Capture(f.Mem(),f.context,f.window,s));
-    f.Set(f.window,0x4F8,std::uint8_t(0));CHECK(Capture(f.Mem(),f.context,f.window,s));
-    for(Address off:{Address(0x34),Address(0x23C)}) {f.Set(f.window,off,9);CHECK(!Capture(f.Mem(),f.context,f.window,s));f.Set(f.window,off,0);}
-    f.Set(f.window,0x248,3);CHECK(!Capture(f.Mem(),f.context,f.window,s));f.Set(f.window,0x248,1);
-    f.Set(f.window,1,std::uint8_t(1));CHECK(!Capture(f.Mem(),f.context,f.window,s));
-    f.Set(f.window,1,std::uint8_t(0));f.Set(f.window,0x20,std::uint8_t(0));CHECK(!Capture(f.Mem(),f.context,f.window,s));
+    Fixture f;Snapshot s;CHECK(Capture(f.Mem(),f.context,f.window,f.imageBase,s));
+    f.Set(f.window,0x4F8,std::uint8_t(0));CHECK(Capture(f.Mem(),f.context,f.window,f.imageBase,s));
+    for(Address off:{Address(0x34),Address(0x23C)}) {f.Set(f.window,off,9);CHECK(!Capture(f.Mem(),f.context,f.window,f.imageBase,s));f.Set(f.window,off,0);}
+    f.Set(f.window,0x248,3);CHECK(!Capture(f.Mem(),f.context,f.window,f.imageBase,s));f.Set(f.window,0x248,1);
+    f.Set(f.window,1,std::uint8_t(1));CHECK(!Capture(f.Mem(),f.context,f.window,f.imageBase,s));
+    f.Set(f.window,1,std::uint8_t(0));f.Set(f.window,0x20,std::uint8_t(0));CHECK(!Capture(f.Mem(),f.context,f.window,f.imageBase,s));
 }
 TEST(invalid_links_never_produce_partial_total) {
     Fixture f;f.Set(f.root,0x3A0,f.links);f.Set(f.root,0x3A8,f.links+MaxObjects*8);
@@ -119,7 +120,7 @@ TEST(fleet_bounds_and_duplicate_membership) {
 }
 TEST(snapshot_reuse_clears_old_pointer_and_quantity) {
     Fixture f;Snapshot s=f.CaptureNow();CHECK(s.aggregateValid);
-    f.Set(f.window,0x240,Address(0));CHECK(Capture(f.Mem(),f.context,f.window,s));
+    f.Set(f.window,0x240,Address(0));CHECK(Capture(f.Mem(),f.context,f.window,f.imageBase,s));
     CHECK(!s.aggregateValid && s.root==0 && s.count==0 && s.objects[0].pointer==0);
 }
 TEST(address_overflow_does_not_call_reader) {
@@ -135,6 +136,76 @@ TEST(capture_is_read_only_and_bounded) {
     Fixture f;auto before=f.regions;auto s=f.CaptureNow();CHECK(s.aggregateValid && f.reads<100);
     CHECK(before.size()==f.regions.size());for(std::size_t i=0;i<before.size();++i) CHECK(before[i].data==f.regions[i].data);
 }
+TEST(root_514_and_4f0_read_independently) {
+    Fixture f;
+    f.Set(f.root,0x514,std::uint8_t(0x42));
+    f.Set(f.root,0x4F0,f.home);
+    auto s=f.CaptureNow();
+    CHECK(s.aggregateValid);
+    CHECK(s.root514Read && s.root514==0x42);
+    CHECK(s.root4F0Read && s.root4F0==f.home);
+}
+TEST(root_514_read_fails_but_4f0_succeeds) {
+    Fixture f;
+    f.Set(f.root,0x4F0,f.home);
+    f.denied.push_back({f.root+0x514,1});
+    auto s=f.CaptureNow();
+    CHECK(s.aggregateValid);
+    CHECK(!s.root514Read);
+    CHECK(s.root4F0Read && s.root4F0==f.home);
+}
+TEST(global_reads_signed_int32_at_image_base) {
+    Fixture f;f.Add(f.imageBase,0xA00000);
+    f.Set(f.imageBase,0x9D54C0,std::int32_t(-7));
+    auto s=f.CaptureNow();
+    CHECK(s.aggregateValid);
+    CHECK(s.gateGlobalRead && s.gateGlobal==-7);
+    f.Set(f.imageBase,0x9D54C0,std::int32_t(42));
+    s=f.CaptureNow();
+    CHECK(s.gateGlobalRead && s.gateGlobal==42);
+    f.Set(f.imageBase,0x9D54C0,std::int32_t(0));
+    s=f.CaptureNow();
+    CHECK(s.gateGlobalRead && s.gateGlobal==0);
+}
+TEST(global_unavailable_when_image_base_zero) {
+    Fixture f;
+    Snapshot s;
+    CHECK(Capture(f.Mem(),f.context,f.window,0,s));
+    CHECK(s.aggregateValid);
+    CHECK(!s.gateGlobalRead);
+}
+TEST(global_read_denied_does_not_invalidate_capture) {
+    Fixture f;f.Add(f.imageBase,0xA00000);
+    f.denied.push_back({f.imageBase+0x9D54C0,4});
+    auto s=f.CaptureNow();
+    CHECK(s.aggregateValid);
+    CHECK(!s.gateGlobalRead);
+}
+TEST(object_1794_and_8680_read_independently) {
+    Fixture f;
+    f.Link(0.1f,0.2f);
+    f.Set(f.root,0x1794,std::uint32_t(5));
+    f.Set(f.meta,0x8680,std::uint8_t(0));
+    auto s=f.CaptureNow();
+    CHECK(s.aggregateValid);
+    CHECK(s.objects[0].raw1794Read && s.objects[0].raw1794==5);
+    CHECK(s.objects[0].proto8680Read && s.objects[0].proto8680==0);
+    f.Set(0x90000,0x1794,std::uint32_t(3));
+    f.Set(0xA0000,0x8680,std::uint8_t(1));
+    s=f.CaptureNow();
+    CHECK(s.objects[1].raw1794Read && s.objects[1].raw1794==3);
+    CHECK(s.objects[1].proto8680Read && s.objects[1].proto8680==1);
+}
+TEST(object_read_failure_does_not_invalidate_capture) {
+    Fixture f;
+    f.Link(0.1f,0.2f);
+    f.Set(f.root,0x1794,std::uint32_t(5));
+    f.denied.push_back({f.root+0x1794,4});
+    auto s=f.CaptureNow();
+    CHECK(s.aggregateValid);
+    CHECK(!s.objects[0].raw1794Read);
+    CHECK(s.objects[1].quantityRead);
+}
 struct Case {const char* name;void(*run)();};
 static const Case cases[]={
 #define CASE(name) {#name,name}
@@ -144,7 +215,11 @@ CASE(optional_capacity_adjustment_is_not_guessed),CASE(window_gates_and_4f8_not_
 CASE(invalid_links_never_produce_partial_total),CASE(unreadable_current_keeps_identity_but_not_total),
 CASE(home_pointer_alone_is_not_membership),CASE(fleet_bounds_and_duplicate_membership),
 CASE(snapshot_reuse_clears_old_pointer_and_quantity),CASE(address_overflow_does_not_call_reader),
-CASE(flags_are_evidence_not_literal_mode_proof),CASE(capture_is_read_only_and_bounded)
+CASE(flags_are_evidence_not_literal_mode_proof),CASE(capture_is_read_only_and_bounded),
+CASE(root_514_and_4f0_read_independently),CASE(root_514_read_fails_but_4f0_succeeds),
+CASE(global_reads_signed_int32_at_image_base),CASE(global_unavailable_when_image_base_zero),
+CASE(global_read_denied_does_not_invalidate_capture),CASE(object_1794_and_8680_read_independently),
+CASE(object_read_failure_does_not_invalidate_capture)
 };
 int main(int argc,char**argv) {
     unsigned count=0;for(const auto& c:cases)if(argc==1 || std::strcmp(argv[1],c.name)==0) {c.run();std::printf("PASS %s\n",c.name);++count;}
