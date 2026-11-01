@@ -140431,3 +140431,94 @@ Local implementation commit: d6a0abd. The latest target b4c50dc was merged into 
 ## Pull request opened
 
 PR #40: https://github.com/Michu6636/WRSRE/pull/40 — **Add panel-independent fleet fuel observation (billing off)**. Base: `DO-fuel-cost-calculatotr`; head: `arena/79c4fc1d-wrsre`. GitHub verification after creation: state OPEN, mergeable MERGEABLE, merge-state CLEAN. Source implementation d6a0abd and target reconciliation 39d17f7 were pushed only to the active Arena branch. No PR merge was requested or performed. Billing, deployment and native validation limits remain unchanged. This final documentation checkpoint is published to the same PR; previous validation tested the unchanged source/test tree.
+
+## Windows DLL compile-only build — 0.18.15-fleet-observer (2026-11-01)
+
+### Source parity and pre-build checks
+
+| Check | Result |
+|---|---|
+| HEAD commit | `a2e15a61d3de2803f316dc0ce7fb2346a6655eb5` (Merge pull request #40) |
+| Branch | `DO-fuel-cost-calculatotr` |
+| `git status --short` | Empty (clean working tree) |
+| `git diff --check` | Clean (no whitespace errors) |
+| PL_VERSION | `0.18.15-fleet-observer` (`private_logistics.cpp:499`) |
+| Required files | `fleet_fuel_observer.h`, `fleet_fuel_runtime.h`, `fleet_fuel_runtime_test.cpp`, `test_fleet_fuel_observer.py` — all present |
+| INI | `private_logistics.ini` present, UTF-8 without BOM (first bytes `59 32 45`, not `239 187 191`) |
+
+### Build command and toolchain
+
+Command:
+```
+cmd /c '"C:\WRSRE\build.bat" private_logistics'
+```
+
+Compiler/SDK:
+- Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36257 for x64 (MSVC 14.51.36231 toolset)
+- Visual Studio 2026 Developer Command Prompt (x64)
+- `vcvars64.bat` sourced via `vswhere.exe` from `build.bat`
+- Compiler flags: `/nologo /MT /O2 /W3 /std:c++17 /EHsc /D_CRT_SECURE_NO_WARNINGS /D_CRT_NONSTDC_NO_DEPRECATE /I<root>/src /I<root>/src`
+- `/LD` (DLL), `/MT` (static CRT per `src/tesmio_api.h` contract)
+
+### Build output
+
+```
+[build] plugins\private_logistics.dll
+private_logistics.cpp
+   Creating library private_logistics.lib and object private_logistics.exp
+
+-----------------------------------------------------------------------------
+  built:   1
+  skipped: 0
+-----------------------------------------------------------------------------
+
+Workspace cleaned successfully.
+```
+
+Exit status: 0 (success). Warnings/errors: none reported. Intermediate files (`private_logistics.obj`, `private_logistics.exp`, `private_logistics.lib`, `private_logistics.ilk`, `private_logistics.pdb`) created during compile and cleaned by `clean.bat` afterward.
+
+### Output DLL
+
+| Property | Value |
+|---|---|
+| Path | `C:\WRSRE\build\plugins\private_logistics.dll` |
+| Size | 269,824 bytes |
+| SHA-256 | `E8426DF0FE3B550FACA349F8D5DCA489BC196960A941F0BB374DF64881027037` |
+| Architecture | x64 (machine 8664) |
+| Subsystem | Windows GUI (6.00) |
+| File type | DLL |
+
+### Required plugin exports (3 functions)
+
+| Ordinal | RVA | Name |
+|---|---|---|
+| 1 | 0x00012F60 | `TsmPluginApiVersion` |
+| 2 | 0x00012F70 | `TsmPluginInit` |
+| 3 | 0x00013080 | `TsmPluginStart` |
+
+### Deployment status
+
+Compile-only build. Output written to `build\plugins\private_logistics.dll` and `build\plugins\private_logistics.ini` (INI copied by build script). **No deployment to the game installation directory.** No DLL build artifacts committed to Git (`.obj`, `.exp`, `.lib`, `.ilk`, `.pdb` ignored). No game run, no commit, no push.
+
+### Post-build host validation — 140/140 PASS
+
+All host test binaries rerun after the build with no source changes:
+
+| Binary | Cases | Result |
+|---|---|---|
+| `fleet_runtime_test.exe` | 16 fleet scenarios | PASS |
+| `endpoint_runtime_test.exe` | 9 endpoint scenarios | PASS |
+| `assignment_ledger_test.exe` | 29 ledger cases | PASS |
+| `panel_fuel_observer_test.exe` | 16 native scenarios | PASS |
+| `panel_fuel_runtime_test.exe` | 21 cases (13 gate-diagnostic + 8 host-shim) | PASS |
+| `schedule_observer_test.exe` | 28 schedule cases | PASS |
+| `schedule_runtime_test.exe` | 1 schedule runtime case | PASS |
+| Python wrappers (`test_schedule_assignment_ledger.py`, `test_fleet_fuel_observer.py`) | — | SKIPPED (no g++/clang++ on Windows PATH; MSVC used directly for C++ compilation) |
+
+Host shims do NOT validate real Windows SEH, DLL ABI, native lifecycle, physical fuel units or exact consumption.
+
+### Build verdict
+
+**PASS.** The `private_logistics` 0.18.15-fleet-observer DLL compiles cleanly on Windows x64 with no warnings or errors, all 3 required exports present, all 140 host test cases pass, `git diff --check` clean, working tree clean, INI unchanged, billing OFF.
+
+No new native reads/hooks, feature changes, payment enablement, deployment, game launch, commit or push. Deployment and logging-only game validation require separate authorization.
