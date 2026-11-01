@@ -9,6 +9,7 @@ scratch/
 tools/peinfo-out/
 *.log
 *.pdb
+*.obj
 *.ilk
 *.dll
 *.exe

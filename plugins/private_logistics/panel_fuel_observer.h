@@ -26,12 +26,12 @@ struct Object {
     Address pointer = 0, metadata = 0, homeCandidate = 0;
     float raw = 0, capacity = 0;
     bool quantityRead = false;
-    Match match = Match::Unavailable;
-    unsigned fleetIndex = 0, occurrences = 0;
     std::uint32_t raw1794 = 0;
     bool raw1794Read = false;
     std::uint8_t proto8680 = 0;
     bool proto8680Read = false;
+    Match match = Match::Unavailable;
+    unsigned fleetIndex = 0, occurrences = 0;
 };
 struct Snapshot {
     Address context = 0, window = 0, root = 0;
@@ -40,15 +40,16 @@ struct Snapshot {
     Object objects[MaxObjects]{};
     int contextMode = -1, metadataKind = -1;
     std::uint8_t flag8681 = 0, flag8682 = 0;
-    bool flagsRead = false, adjustmentRead = false, adjustmentNeeded = false;
-    bool aggregateValid = false, ratioValid = false;
-    float current = 0, unadjustedCapacity = 0, litresCandidate = 0, ratio = 0;
+    // Optional post-render diagnostics, populated independently by the runtime.
     std::uint8_t root514 = 0;
     bool root514Read = false;
     Address root4F0 = 0;
     bool root4F0Read = false;
     std::int32_t gateGlobal = 0;
     bool gateGlobalRead = false;
+    bool flagsRead = false, adjustmentRead = false, adjustmentNeeded = false;
+    bool aggregateValid = false, ratioValid = false;
+    float current = 0, unadjustedCapacity = 0, litresCandidate = 0, ratio = 0;
 };
 // This tests ONLY object+4F8 as an office candidate. An absent match is NOT a
 // search of all DOs. Type 43 and literal fleet-slot pointer equality are needed.

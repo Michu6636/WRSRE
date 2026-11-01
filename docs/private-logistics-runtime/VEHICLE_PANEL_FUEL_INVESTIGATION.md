@@ -117318,3 +117318,4174 @@ PASS 29 small base64 writes individually read back; historical prefix 8349495 by
 PASS decoded archive equals actual attachment byte-for-byte. Not PE authentication.
 
 ````
+
+## Price-unit bridge summary received — actual report review pending (2026-11-01)
+
+User supplied a completion summary for scratch\out\FUEL_PRICE_UNIT_BRIDGE_20261101.md (reported18956bytes; no hash supplied). No matching attachment is present here. The summary explicitly leaves named-resource identity, stock/price units and observed live gates unresolved; it does not close the price-unit bridge. The previously accepted local one-to-one transfer remains useful, but does not prove tonnes. No new native query, runtime test, build, hook or production change is requested from this summary.
+
+Parent provisional checks: identifying owner as param_1/RCX identifies an argument, not its class or caller provenance; different arguments alone do not prove non-aliasing. Native resource comparison uses pointer VALUES loaded from payload+0 and owner+C2E0, not equality to the field's address. New summary's owner+5BC count needs its evidence: already-received raw rows14258F/1425D0 compare DWORD[RSI+5B4] with0; do not silently equate the two fields or declare5BC wrong before inspecting the new report. Request only the existing18,956-byte Markdown unchanged, not another extraction. Review its minimum logging plan before choosing a bounded changed diagnostic; no automatic hook/runtime authorization and no unchanged game replay. Payments remainOFF.
+
+## Price-unit bridge attachment review (2026-11-01)
+
+Actual attachment received: FUEL_PRICE_UNIT_BRIDGE_20261101.md,18956bytes,270LF,noCR; locally measured SHA256 e5c69b81da9fad13f95dc229c7bd34c8c71c5d17ddca98124ea9aa6fb4b9e17f. UTF-8 roundtrip exact. This supersedes the preceding receipt's delivery-pending status, not the unresolved native semantics. Parent read the full attachment and crosschecked relevant instructions against the already-preserved raw closure; no new Ghidra query, native run, build or production change. The report explicitly retains unknown resource name, tonnes and live applicability, which is accepted. Supplied snippets/cache references are not independent access to the Windows cache or original PE.
+
+Owner/count clarification: the report does provide a new caller excerpt: RDX=RBX, RCX=RDI, CALL at142377 with bytes E8 B4 00 00 00. Relative target arithmetic142377+5+B4=142430 agrees. Its RDI loads from[RBP+340] give a caller-local provenance step, not a concrete class or a reaching definition of that slot. Distinct arguments do not prove non-aliasing with vehicle or home. Similar offsets in d_q1_owner.c do not independently prove identical object type without that trace. The claimed5BC access is explicitly at caller142043; prior5B4 comparisons are inside142430 at14258F/1425D0. They are different accesses, not an established displacement contradiction. CMP[5BC],0 alone does not establish a count or a strictly-positive gate; the successor/use is not supplied here. No extra export is needed merely to reconcile those offsets.
+
+Storage indirection correction: entry=home_vector_begin+i*E0; entry+90 is the type. At142702, RCX=*(entry+0), a payload pointer; at14270D, *(payload+0) is compared with the VALUE loaded from owner+C2E0. Quantity is float[payload+8], not necessarily float[entry+8]. By142706 RCX no longer equals owner: RSI retains entry RCX/owner while current RCX is payload. At142737 XMM1 stores the source remainder;142744 stores operand plus old destination using XMM0. The table's shorthand 'same XMM0 at both stores' is inaccurate; the supported common operand is the XMM0 subtracted from XMM1 at142733 and then added to destination. Local one-to-one requested transfer remains supported, including float rounding caveats, but proves neither resource type by itself nor tonnes or complete event coverage.
+
+Gate corrections: report2.1 reverses its first gate's branch wording: root prototype8680==0 takes6B3CB9 JZ to6B4202, the root/member5F0 subtraction branch; nonzero falls through the other resource-handling branch. Later6B4276/6B4283 test each selected object's prototype8680 and object1794 (including root at loop index-1), requiring zero to avoid those particular skips, not establishing physical 'active' meaning or all eligibility conditions. Caller66E1F4 compares root514 withR15B, jumping on equality; R15B's reaching zero definition is OUTSIDE the supplied caller slice and remains unproved here. Callee R15B is separately derived from its third argument. Log caller-field raw514 without asserting a proven nonzero call gate. Global6B3BC6 uses signed JL, so comparison is signed int32>=2; the report's '.rdata' label is wrong under the supplied section table: RVA9D54C0 lies in .data virtual range992000..A56718, outside.rdata86C000..991C62. It is not backed by that section's small raw-data span; read loaded-image memory at runtime, not a guessed file offset. Section-table provenance is still external, not authenticated original PE.
+
+Logging-plan verdict: NOT yet a native producer specification. Reading a name or equality with another unproven 'fuel' global does not establish tonnes. Compare a verified selected resource pointer with resource_pricing.getByName(configured fuel_resource) when such a capture point exists; API price-per-ton is already implemented, not a new missing service. Independent unit evidence must tie the SAME resource and quantity path to a documented ton-based quantity, with relevant losses/other transfers excluded. Sparse samples or paired source/destination changes alone cannot prove that scale. Gate samples do not establish physical flag meaning, CALL/store execution or unobserved event coverage; refill-path execution does not establish consumption-path execution. Capturing instruction pointer or pre/post142737/142744 requires a separately verified and authorized instrumentation design; an existing panel snapshot cannot supply it. Do not identify panel renderer context with142430 owner, and do not read speculative owner/resource/name fields. The auxiliary typeF branch remains distinct without assigning a human resource name from this report.
+
+### Proposed next task: changed existing-panel gate diagnostic
+
+This is a ready-to-paste implementation task for explicit user authorization by reuse, NOT work executed in this review. Smallest new diagnostic: extend the already-installed panel capture with independently valid raw root/link gate fields and the ASLR-relative loaded global. No new native hook, resource traversal or claim of exact burn. This provides genuinely new observations rather than replaying unchangedTest8. It does not close resource/unit identity or actual-store coverage. Current review modifies only this cumulative Markdown; paymentsOFF and existing tracker/assignment behavior unchanged.
+
+```text
+Work in the existing private_logistics plugin on the current user-authorized Windows branch; do not switch/create branches. Read AGENTS.md, INSTRUCTIONS.md and KILO_AGENT_WORKFLOW.md. Preserve existing files. If EITHER planned content OR destination is long, make small coherent edits/appends and read back EACH before continuing. Use one parent; no new broad static report or Ghidra query.
+
+Task: implement one logging-only extension of the existing panel observer, NOT a native burn producer. No new hook/patch/call-site change, native function call, game-memory write, dispatch/default/INI change, tracker/ledger rewiring, price calculation, payment, deploy, game run, DLL build, commit or push. Existing native hook installation/fingerprint semantics remain unchanged. Host-side test compilation is allowed; no game/Windows DLL validation is implied.
+
+Read plugins/private_logistics/panel_fuel_observer.h, panel_fuel_runtime.h and the existing panel reader/runtime tests. Also read the newest 'Price-unit bridge attachment review (2026-11-01)' section of docs/private-logistics-runtime/VEHICLE_PANEL_FUEL_INVESTIGATION.md if present; the native corrections below make this task self-contained without an unpublished-doc dependency. Existing PL_VERSION is0.18.11-assignment-ledger; update the source version/log consistently to a distinct0.18.12 gate-diagnostic identity, without changing config defaults.
+
+Capture through existing guarded/injectable memory-reading paths:
+- Root byte+0x514 and qword+0x4F0 (read pointer VALUE only, never follow it).
+- For each already-bounded root/link object: DWORD+0x1794 as uint32 raw, and byte at its existing prototype pointer+0x8680. Use the existing root/link list, not DO fleet members as substitutes.
+- Global RVA0x9D54C0 as int32, using g_exeBase plus RVA, validated image span and guarded read. Inject the loaded-image base/address through the reader/runtime interface rather than embedding Windows globals in the portable reader. A missing/short module must not reject the existing panel observer or fabricate a value.
+
+Give EVERY new field independent read validity; failed reads must not mean zero. Failure of optional diagnostics must not suppress valid existing fuel/schedule records, change aggregation or trip the whole observer's fault latch. Keep optional reads separately guarded if required; explicitly test thrown reads as well as false returns. Do not let a new gate field be a prerequisite for existing quantity success. If an object's identity/prototype was not obtained, its fields remain unavailable, not zero-valued observations. Root is also the selected object in the native loop's index-1 iteration.
+
+Copy captured values and validity with the same epoch/sample/root identity through the existing bounded queue. Log only at the existing simulation-thread drain; no added render-thread I/O, allocations, blocking or native calls. Keep throttle/cap/drop/paused-coalescing/load-epoch policies. Label phase=post_render and native_execution=unobserved, exact_burn=0, billing=off. Do NOT synthesize an 'all gates passed', physical-active, executed-store, tonnes or fuel-name verdict.
+
+Native facts for this task (self-contained; no unpublished document pull is needed):66E1F4 compares byte[root+514] toR15B; its zero reaching definition is outside the supplied slice.6B3CB9 takes JZ to6B4202 when root prototype8680==0; nonzero falls through a different resource-handling branch.6B4276/6B4283 skip selected object when prototype8680!=0 or object1794!=0.6B3BC6 uses signed JL against2 for global9D54C0. These are not an exhaustive eligibility test. Do not identify panel-renderer context with142430 owner or dereference owner+C2E0/C2E8, resource names, storage payloads or unproven globalsC330/C3F0. No new hook is authorized.
+
+Extend existing host tests for zero/nonzero root/link values, independently unavailable fields, signed global values, nonzero image-base translation, short/null image, overflow, guarded exceptions, and unchanged existing aggregate/schedule behavior. Exercise queue snapshot immutability, load epoch, unavailable-value log labels and existing no-render-I/O/default/payment guards. Run the relevant existing Python/C++ suite and diff/INI-unchanged checks; report exact commands, actual results and unavailable tools honestly. Synthetic tests validate reader/control behavior only, not native layouts or execution.
+
+Delivery: one collision-free owned Markdown report at scratch\out\FUEL_GATE_DIAGNOSTIC_IMPLEMENTATION_20261101.md (choose a suffix if it exists). Include exact changed files/diff, full final source for any added helper/script, complete new/changed code fragments, actual test results, version, and explicit no-DLL-build/no-deploy/no-game/paymentsOFF status. Preserve all prior reports; only the coordinator appends to the shared cumulative handover. Return the actual Markdown attachment, not just a summary. Stop after implementation and host verification; do not ask the user to repeat an unchanged game test.
+```
+
+### Original price-unit report — unchanged attachment
+
+The fenced body below preserves the complete actual18956-byte attachment, including contested wording. Parent corrections above take precedence; this is evidence preservation, not semantic endorsement. Byte identity will be checked against the stated SHA256.
+
+``````markdown
+# Fuel Price Unit Bridge — Static Evidence Report
+
+**Report path:** `C:\WRSRE\scratch\out\FUEL_PRICE_UNIT_BRIDGE_20261101.md`
+**Branch:** `DO-fuel-cost-calculatotr` (no switch, no commit, no push)
+**Constraints:** No branch/settings/plugin/INI changes, no commits/push, no hooks, no builds,
+no game run, no payments. Small-chunk write rules followed. No new Ghidra query issued;
+all evidence reused from existing caches and existing source/config.
+
+**Do NOT resend or repeat:** `FUEL_NATIVE_RAW_CLOSURE_20261101.md` or any of its exports.
+**Do NOT reopen:** resolved ABI, prefix, root/member selection, or local refill-pairing questions.
+**Do NOT assume:** density, 1176, 0.001, or inference from UI*1000.
+**Keep distinct:** type2/[owner+0xC2E8] branch and auxiliary resources from type3/[owner+0xC2E0].
+
+---
+
+## 1. Resource/unit bridge
+
+### 1.1 Owner's identity
+
+**Function:** `FUN_140142430` at RVA `0x142430`
+**Signature:** `void FUN_140142430(longlong *param_1, longlong param_2, longlong *param_3)`
+**Entry register mapping:** RCX = param_1 (owner), RDX = param_2 (vehicle/destination), R8 = param_3.
+
+**Caller verified** (direct CALL to `0x140142430`, from `scratch\search_d50.asm` and `search_C8.asm`):
+
+```
+140142371:  MOV RDX,RBX          ; param_2 = RBX = vehicle
+140142374:  MOV RCX,RDI          ; param_1 = RDI = owner
+140142377:  E8 B4 00 00 00       CALL 0x140142430
+```
+
+In the caller (`scratch\search_d50.asm` around RVA `0x1401420C0`–`0x140142377`):
+
+| Register | Source instruction | Meaning |
+|---|---|---|
+| RDI | `140142024 / 140142190 / 14014230f / 140142383: MOV RDI,qword ptr [RBP + 0x340]` | owner = `[RBP + 0x340]` |
+| RBX | `1401420e1: MOV RBX,qword ptr [R14 + RAX*0x1]` | vehicle, iterated from fleet |
+| R15 | `1401420da: MOV RAX,qword ptr [R15 + 0xc70]` | building (fleet at `+0xc70/+0xc78`) |
+
+**Owner fields accessed:**
+
+| Offset | Access | Gate / role |
+|---|---|---|
+| `owner+0x5b0` | `FUN_140142430` line 57: `(int)param_1[0xb6] == 2` → `param_1 + 0x5b0 == 2` | state gate (must == 2) |
+| `owner+0x5bc` | caller `140142043: CMP dword ptr [RDI + 0x5bc],0x0` | count gate (must > 0) |
+| `owner+0xC2E0` | `FUN_140142430` type3 fallback at `140142706: MOV RAX,[RSI + 0xc2e0]` where `RSI == RCX == owner` | type3 resource key |
+| `owner+0xC2E8` | `FUN_140142430` type2 branch at `140142579: MOV RAX,[RSI + 0xc2e8]` | type2 resource key |
+
+**Owner identity verdict:** `owner` (`param_1`) is a distinct native object from both `vehicle` (`param_2`) and `home building` (`param_2+0x4F8`). It carries a state DWORD at `+0x5b0`, a count DWORD at `+0x5bc`, and two Resource* key fields at `+0xC2E0` (type3) and `+0xC2E8` (type2). Static evidence does **not** establish a human-readable class name for owner (company, fuel manager, game world, etc.).
+
+Cross-corroboration: `scratch\d_q1_owner.c` (`FUN_1401c1770`/`FUN_1401c6050`) uses the identical `param_1+0x5b0` state gate and `param_1+0xC2E0` resource-key comparison against building storage order records at `+0x970/+0x978` stride `0xE0`, confirming the same owner object type appears in related refuel contexts.
+
+### 1.2 Resource-key/name binding — type3 fallback branch (`owner+0xC2E0`)
+
+**Verified disassembly** (`scratch\out\140142530_14014275a_disasm.asm`, lines 85–127; original Ghidra `DisasmMany.java` range `0x140142530`–`0x14014275A`):
+
+```
+1401426f0:  IMUL RCX,R8,0xe0                    ; record_idx * 0xE0 stride
+1401426f7:  CMP dword ptr [RCX + R10*1 + 0x90],0x3   ; record[0x90] == 3 (type3)?
+140142700:  JNZ 0x140142716                      ; != 3 -> skip
+140142702:  MOV RCX,qword ptr [RCX + R10*1]      ; RCX = record[0] = Resource* key
+140142706:  MOV RAX,qword ptr [RSI + 0xc2e0]     ; RAX = owner+0xC2E0  (RSI==RCX==owner)
+14014270d:  CMP qword ptr [RCX],RAX              ; record key == owner+0xC2E0?
+140142710:  JNZ 0x140142716                      ; != -> skip
+140142712:  LEA R11,[RCX + 0x8]                  ; R11 = &record[8] = amount pointer
+
+; --- operand selection ---
+140142721:  MOVSS XMM1,dword ptr [R11]           ; XMM1 = source amount (float)
+140142726:  COMISS XMM1,XMM9                     ; vs 0.0
+14014272a:  JBe 0x14014274c                      ; <= 0 -> skip
+14014272c:  MOVAPS XMM0,XMM1                     ; XMM0 = amount
+14014272f:  MINSS XMM0,XMM3                      ; XMM0 = min(amount, headroom)
+140142733:  SUBSS XMM1,XMM0                      ; XMM1 = amount - operand = remaining
+
+; --- source debit (RVA 142737) ---
+140142737:  MOVSS dword ptr [R11],XMM1           ; record[8] = remaining  [SOURCE DECREASE]
+
+; --- destination credit (RVA 142744) ---
+14014273c:  ADDSS XMM0,dword ptr [RBX + 0x5f0]   ; XMM0 = operand + dest+0x5F0
+140142744:  MOVSS dword ptr [RBX + 0x5f0],XMM0   ; dest+0x5F0 = new level  [DESTINATION CREDIT]
+```
+
+Where:
+- `RSI == RCX == owner` (entry: `14014245a: MOV RSI,RCX`)
+- `RBX == RDX == vehicle/destination` (entry: `14014244e: MOV RBX,RDX`)
+- `XMM3` = headroom `= *(float *)(prototype + 0x8684) - *(float *)(vehicle + 0x5F0)` (prototype = `vehicle+0x1708`)
+- Source records: home building storage vector `home+0x970`/`home+0x978`, stride `0xE0`; each record `{+0x00 Resource*, +0x08 float amount}`
+- The selected operand `= min(source_amount, headroom)` is debited from source and credited 1:1 (float-to-float, no multiplier) to `vehicle+0x5F0`.
+
+**Resource-key/name binding:**
+
+| Item | Evidence | Status |
+|---|---|---|
+| `owner+0xC2E0` holds a `Resource*` qword | `140142706: MOV RAX,[RSI+0xc2e0]`; compared against `[record+0]` | **Verified (native bytes)** |
+| Type3 payloads match against `owner+0xC2E0` | `14014270d: CMP [record+0], RAX` | **Verified (native bytes)** |
+| Source amount at `[record+8]` (float) | `140142712: LEA R11,[RCX+0x8]`; `140142721: MOVSS [R11]` | **Verified (native bytes)** |
+| 1:1 debit/credit pairing | `140142737` stores `remaining`; `140142744` stores `operand + dest+0x5F0`; same `XMM0` operand | **Verified locally (supplied-byte scope)** |
+| Human-readable resource name at `owner+0xC2E0` | No static evidence: no name-string read, no `getByName("fuel")` resolution, no resource-record name field dereference at this offset | **Unresolved** |
+| `owner+0xC2E0 == game+0xC330` (fuel global) | `game+0xC330` (fuel for `FUN_140420350` transfer at `0x14016F81D`) and `game+0xC3F0` (fuel for slot match at `0x14016F6A0`) are globals; `owner+0xC2E0` is an object-level field. No equality proven. | **Unresolved** |
+
+### 1.3 Type2 branch `[owner+0xC2E8]` — kept distinct
+
+| Item | Evidence |
+|---|---|
+| Match key | `140142579: MOV RAX,[RSI + 0xc2e8]` → `owner+0xC2E8` |
+| Record type | `140142567: CMP [record+0x90], 0x2` → type 2 |
+| Auxiliary path | `14014258f–1401425af`: optional `type==0xF` auxiliary limits/debits at `+0x5b4` flag, `+8`/`+0x18` fields; **not** diesel, no units assigned |
+| Source debit | `140142612/140142616`: `XMM5` reduced at `[RDI]` (`record+8`) |
+| Destination credit | `140142687/14014268F`: same `XMM5` added to `[RBX+0x5F0]` |
+
+This branch is **not** the type3 fallback branch under analysis and is not conflated with it.
+
+### 1.4 Per-ton quantity vs resource_pricing `getPrice(getByName("fuel"), currency)`
+
+**`resource_pricing` contract** (`src/resource_pricing_api.h:104–120`):
+
+```c
+float (*getPrice)(void* resRecord, int currency);
+```
+
+Documented as: "The live price of **one ton** of the given resource, in the requested currency."
+Lookup order: engine `+0x58`/`+0x5C` field → `[fallback_prices]` table → `default`.
+
+**Mod-side confirmation** (`tests\private_logistics_v018_model\findings.md:49`, `MODEL_REVIEW_COMPLETE.md:26`):
+- `FuelUnitPrice()` = RUB per tonne via `src/resource_pricing_api.h:104`
+- Finding B3: `litres * price` was 1000x too high; correct is `burn_tons * fuel_price`
+
+**Native amount at RVA142737→142744:**
+
+| Question | Static evidence | Status |
+|---|---|---|
+| Is native amount in tonnes? | No. The float at `record+8` is a home-building storage order amount. No read of `slot+0x08` (authoritative tonnes per vehicle-fuel-system.md), no `game+0xC330`/`game+0xC3F0` resolution, no `getByName("fuel")` call in `FUN_140142430`. | **Unresolved** |
+| Is any conversion applied? | No. The transfer is float-to-float 1:1 (`min(source, headroom)` debited, same operand credited). No multiply by density, no `0.001`, no `1176`. | **Verified: no conversion in native code** |
+| Does amount match `getPrice(getByName("fuel"), currency)` per-ton expectation? | Cannot be established statically. `owner+0xC2E0` is not proven to be the "fuel" resource record, and the storage amount unit is not proven to be tonnes. | **Unresolved** |
+
+**Conversion shown:** None. Native code performs `dest_5F0 += min(source_amount, headroom)` and `source_amount -= min(source_amount, headroom)` with no scalar. If `source_amount` were in tonnes and `owner+0xC2E0` were the "fuel" resource, then `cost = amount * getPrice(fuel_record, currency)` would follow — but both premises are unproven statically.
+
+---
+
+## 2. Static applicability
+
+### 2.1 prototype8680 (`prototype+0x8680`)
+
+| Evidence | Address | Instruction | Meaning |
+|---|---|---|---|
+| 6B3B50 flag gate | `1406B3CB2` (`scratch\out\1406b3b50_1406b4500_disasm.asm`, line 72) | `CMP byte ptr [R9 + 0x8680], R12B` (`R12B == 0`); `JZ 0x1406b4202` | `prototype+0x8680 == 0` allows the fuel-update path to continue; `!= 0` skips to `1406b4202` alternate |
+| 6B3B50 secondary gate | `1406B4276` (same file, line 408) | `CMP byte ptr [RAX + 0x8680], 0x0`; `JNZ 0x1406b44e3` | `prototype+0x8680 != 0` skips the member-consumption block |
+
+**Meaning:** `prototype+0x8680` is a byte flag on the vehicle prototype. When `0`, the per-frame fuel consumption path in `FUN_1406B3B50` is eligible; when non-zero, that path is gated out.
+
+**Applicability:** Per-frame vehicle fuel consumption (`FUN_1406B3B50`), not the refill path `FUN_140142430`.
+
+**Physical meaning:** Unresolved (no native string/semantic evidence).
+
+**Live value for observed truck:** Unobserved.
+
+---
+
+### 2.2 root514 (`root+0x514`)
+
+| Evidence | Address | Instruction | Meaning |
+|---|---|---|---|
+| 66D530→6B3B50 call gate | `14066E1F4` (`scratch\out\14066e000_14066e250_disasm.asm`, line 135) | `CMP byte ptr [RBX + 0x514], R15B` where `R15B == 0`; `JZ 0x14066e240` | `root+0x514 != 0` → proceed to `CALL 0x1406b3b50` at `14066e20b`; `== 0` → skip to alternate path `14066e240` |
+
+**Meaning:** `root+0x514` is a byte flag on the root vehicle. Non-zero is required for `FUN_1406B3B50` to be invoked from `FUN_14066D530`.
+
+**Applicability:** Call gate in `FUN_14066D530` (per-frame update) for invoking `FUN_1406B3B50`.
+
+**Physical meaning:** Unresolved.
+
+**Live value for observed truck:** Unobserved. The `tesmioloader-8.log` sample1 (reused, not re-run) records `flag8681=0, flag8682=0, adjustment_needed0, mode2` but **does not** capture `root+0x514`, `prototype+0x8680`, `member+0x1794`, or global `0x1409D54C0` (`VEHICLE_PANEL_FUEL_INVESTIGATION.md:115805`).
+
+---
+
+### 2.3 member1794 (`member+0x1794`)
+
+| Evidence | Address | Instruction | Meaning |
+|---|---|---|---|
+| 6B3B50 member-active gate | `1406B3C36` (`1406b3b50_1406b4500_disasm.asm`, line 48) | `CMP dword ptr [RCX + 0x1794], R12D` (`R12D == 0`); `JNZ 0x1406b3c6d` | `member+0x1794 == 0` (active) required to accumulate into the consumption weighting |
+| 6B3B50 skip gate | `1406B4283` (same file, line 491) | `CMP dword ptr [RDI + 0x1794], 0x0`; `JNZ 0x1406b44e3` | `member+0x1794 != 0` skips the entire member-consumption block |
+
+**Meaning:** `member+0x1794` is a dword flag on each fleet member. Must be `0` for the member to be included in `FUN_1406B3B50` fuel consumption.
+
+**Applicability:** Per-member gate inside `FUN_1406B3B50` (fleet iteration over `vehicle+0x3A0/+0x3A8`, stride 8).
+
+**Physical meaning:** Unresolved.
+
+**Live value for observed truck:** Unobserved.
+
+---
+
+### 2.4 Global RVA9D54C0
+
+| Evidence | Address | Instruction | Meaning |
+|---|---|---|---|
+| 66D530 gate | `14066DCEB` (`newB_fun_14066d530.asm`, line 414) | `CMP dword ptr [0x1409d54c0], 0x2` | Global must be >= 2 for the caller path to proceed |
+| 6B3B50 gate | `1406B3BC6` (`1406b3b50_1406b4500_disasm.asm`, line 27) | `CMP dword ptr [0x1409d54c0], 0x2`; `JL 0x1406b4504` | Global must be >= 2 for `FUN_1406B3B50` body to execute; `< 2` skips entirely |
+
+**Meaning:** Global DWORD at RVA `0x9D54C0` (VA `0x1409D54C0`, in `.rdata`). Must be `>= 2` for both the caller (`FUN_14066D530`) and callee (`FUN_1406B3B50`) fuel-update paths to proceed.
+
+**Applicability:** Global gate spanning `FUN_14066D530` → `FUN_1406B3B50` (per-frame vehicle fuel consumption), not `FUN_140142430` refill.
+
+**Physical meaning:** Unresolved.
+
+**Live value:** Unobserved. Not captured by `tesmioloader-8.log` sample1.
+
+---
+
+### 2.5 Live values remain unobserved — applicability summary
+
+| Gate | Static evidence | Live value observed? | Proves observed truck executed a store? |
+|---|---|---|---|
+| `prototype+0x8680 == 0` | Native bytes in `FUN_1406B3B50` | No | No |
+| `root+0x514 != 0` | Native bytes in `FUN_14066D530` call gate | No | No |
+| `member+0x1794 == 0` | Native bytes in `FUN_1406B3B50` | No | No |
+| global `0x1409D54C0 >= 2` | Native bytes in `FUN_14066D530` + `FUN_1406B3B50` | No | No |
+| `tesmioloader-8.log` sample1 | `flag8681=0, flag8682=0, adjustment_needed0, mode2` | Partial (log, not these gates) | No — log does not capture the four gates above |
+
+**Verdict:** Static evidence establishes the *existence and encoding* of all four gates but captures **none of their live values** for the observed road truck. The `tesmioloader-8.log` sample does not record `prototype8680`, `root514`, `member1794`, or `global RVA9D54C0`. **Static evidence does not prove the observed truck executed a store (refill or consumption).** The local refill pairing in `FUN_140142430` (type3 `[owner+0xC2E0]`, source debit at RVA142737, destination credit at RVA142744) is verified at supplied-byte scope, but its execution on the observed truck remains unproven.
+
+---
+
+## 3. Supported / contested / unresolved table
+
+| # | Claim | Evidence basis | Status | Missing edge / minimum logging |
+|---|---|---|---|---|
+| 1 | `owner = param_1 = RCX` of `FUN_140142430` | Entry `MOV RSI,RCX`; caller `MOV RCX,RDI; CALL 0x140142430` at `0x140142377` | Supported | None (supplied-byte scope) |
+| 2 | `owner+0x5b0` state gate == 2 | `FUN_140142430` line 57 + d_q1_owner.c `param_1+0x5b0` | Supported | None |
+| 3 | `owner+0xC2E0` = type3 resource key | `140142706: MOV RAX,[RSI+0xc2e0]`; `14014270d: CMP [record+0],RAX` | Supported (native bytes) | None |
+| 4 | Source decrease at RVA142737 | `140142737: MOVSS [R11],XMM1` | Supported (native bytes) | None |
+| 5 | Destination credit at RVA142744 | `140142744: MOVSS [RBX+0x5f0],XMM0` | Supported (native bytes) | None |
+| 6 | 1:1 operand pairing (no conversion) | Same `XMM0` operand at `140142737` and `140142744`; no multiply | Supported (native bytes) | None |
+| 7 | `owner+0xC2E0` names "fuel" resource | No name-string read, no `getByName("fuel")`, no `game+0xC330` equality | **Unresolved** | Read resource record name at `[owner+0xC2E0]`; compare to `game+0xC330` |
+| 8 | Storage amount unit == tonnes | No evidence; `slot+0x08` (tonnes) is a different field; no `getPrice` call in `FUN_140142430` | **Unresolved** | Log pre/post `record+8` and `vehicle+0x5F0` values; correlate with `slot+0x08` tonnes |
+| 9 | `getPrice(getByName("fuel"), currency)` per-ton applies to native amount | Contract documented (`resource_pricing_api.h:104`); premises of #7 and #8 unproven | **Unresolved** | Same as #7 + #8 |
+| 10 | `prototype+0x8680` physical meaning | Native bytes in `FUN_1406B3B50` | **Unresolved** (meaning) | None static; runtime log of `prototype+0x8680` value |
+| 11 | `root+0x514` physical meaning | Native bytes in `FUN_14066D530` | **Unresolved** (meaning) | Runtime log of `root+0x514` value |
+| 12 | `member+0x1794` physical meaning | Native bytes in `FUN_1406B3B50` | **Unresolved** (meaning) | Runtime log of `member+0x1794` value |
+| 13 | global `0x1409D54C0` physical meaning | Native bytes in `FUN_14066D530` + `FUN_1406B3B50` | **Unresolved** (meaning) | Runtime read of global `0x1409D54C0` |
+| 14 | Observed truck executed a store (refill/consumption) | None for live gates; local pairing verified but not tied to observed truck | **Unresolved** | Runtime log capturing `owner+0xC2E0`, `record+8` pre/post, `vehicle+0x5F0` pre/post, plus the four gate values |
+
+**Minimum logging to resolve #7–#9 (resource/unit bridge):** Log the `Resource*` pointer at `owner+0xC2E0`, its record name string, the source `record+8` float before/after the `FUN_140142430` type3 fallback store, and `vehicle+0x5F0` before/after, plus `game+0xC330` for comparison. No game run, no hook, no payment — this is a logging specification only, not authorized runtime work.
+
+**Minimum logging to resolve #10–#14 (static applicability):** Log the live values of `prototype+0x8680`, `root+0x514`, `member+0x1794`, and global `0x1409D54C0` for the observed truck, plus confirmation that the type3 fallback path in `FUN_140142430` was entered (instruction pointer at RVA142737/142744). This is a logging specification only.
+
+---
+
+## 4. Commands and results (actual)
+
+No new commands were run. All evidence is from existing caches:
+
+| Artifact | Path | Source | Status |
+|---|---|---|---|
+| `FUN_140142430` decompilation | `scratch\out\140142430_decomp.c` | Cached `DecompAt.java` | Reused (not re-queried) |
+| `FUN_140142430` range `0x140142530`–`0x14014275A` disassembly | `scratch\out\140142530_14014275a_disasm.asm` | Cached `DisasmMany.java` (Section 3 of `FUEL_NATIVE_RAW_CLOSURE_20261101.md`) | Reused |
+| `FUN_140142430` range `0x140142430`–`0x140142530` disassembly | `scratch\out\140142430_140142530_disasm.asm` | Cached `DisasmMany.java` | Reused |
+| `FUN_1406B3B50` disassembly | `scratch\out\1406b3b50_1406b4500_disasm.asm` | Cached `DisasmMany.java` | Reused |
+| `FUN_14066D530` caller range | `scratch\out\14066e000_14066e250_disasm.asm` | Cached `DisasmMany.java` | Reused |
+| Caller of `FUN_140142430` at `0x140142377` | `scratch\search_d50.asm` / `scratch\search_C8.asm` | Cached `FindDisp.java` | Reused |
+| `d_q1_owner.c` (corroborating owner+0xC2E0 usage) | `scratch\d_q1_owner.c` | Cached `DecompAt.java` | Reused |
+| `resource_pricing_api.h` contract | `src\resource_pricing_api.h` | Repository source | Read |
+| PE float constants | `FUEL_NATIVE_RAW_CLOSURE_20261101.md` Section 4 | PE raw bytes + section mapping | Reused (`DAT_140909DDC=0.5`, `DAT_14090B2D0=-0.5`, `DAT_14090A618=4.0`) |
+
+No new Ghidra query was issued (serialized resource preserved). No helper source was added.
+
+---
+
+## 5. Historical reports preserved
+
+No existing files were modified. `FUEL_NATIVE_RAW_CLOSURE_20261101.md`, `FUEL_TANK_CONTRACT_20261101.md`, `FUEL_TANK_EVIDENCE_GAPS_20261101.md`, `VEHICLE_PANEL_FUEL_INVESTIGATION.md`, and all `docs\ghidra-index\*.md` entries remain unchanged.
+``````
+
+### Parent verification results
+
+Actual checks: wc -c and sha256sum matched18956bytes/e5c69b81da9fad13f95dc229c7bd34c8c71c5d17ddca98124ea9aa6fb4b9e17f; Python UTF-8 roundtrip passed. Eight bounded verbatim copy operations individually compared the appended bytes to their source slices. Final extraction compared the entire18956-byte fenced body to the attachment exactly and passed its SHA256. Historical prefix8442066bytes retained SHA2568137df090ae827e56fe708c8e2d1fb6248d094ec16856ac724675689c1affce9. Native review reused raw-closure rows66E1F4,6B3BC6,6B3C36,6B3CB2/CB9,6B4276/4283,14258F/5D0,142702/70D and supplied section-table ranges, plus existing reader/runtime/API source. No helper source file was added. Initial diff check noted a trailing blank line after the archive fence; adding this verification section resolves that formatting warning. Final git diff --check passed (exit0). No production tests were run for this docs-only review; no DLL build, installation, game run, hook change, commit/push or payment occurred. The next task above remains proposed, not executed.
+
+## Gate-diagnostic implementation summary received — artifacts pending (2026-11-01)
+
+User reports three targeted Windows file changes on DO-fuel-cost-calculatotr: panel_fuel_observer.h, panel_fuel_runtime.h and panel_fuel_observer_test.cpp;23observer/8runtime testsPASS, diff check clean, no commits/push/DLL build/deploy/game/payments. Existing report path: scratch\out\FUEL_GATE_DIAGNOSTIC_IMPLEMENTATION_20261101.md. This is a summary, not reviewed implementation evidence. No matching report attachment is present here. Current Arena branch remains arena/e24a4fb7-wrsre; only the cumulative Markdown is modified locally, and implementation symbols are absent. Uncommitted Windows changes not appearing in this checkout are expected, not an agent failure.
+
+Next step is delivery of that existing actual Markdown, not implementation repetition or game testing. Review its exact code/diff and actual commands/results before accepting23/23 or8/8 as independently checked. Specific pending acceptance checks: image size and overflow bounds (imageBase alone is not a size contract), independent validity including optional-read exceptions without global observer faults, unchanged Capture call-site compatibility/queue behavior, regression coverage, and actual PL_VERSION/plugin metadata/startup-log identity rather than only a new runtime constant. These are review questions, NOT proven defects in unseen code. No commit/push/build/deploy/game run or new query is requested for this handoff. Units remain provisional; native execution and exact-burn coverage remain unresolved; paymentsOFF.
+
+## Gate-diagnostic pasted implementation report review (2026-11-01)
+
+User supplied the report text in chat, including selected code fragments, test names and abbreviated command/results. This replaces delivery-pending status for the report TEXT, not for the exact Windows source/diff. No physical report-file digest, complete patch, final test source or full stdout was supplied; do not claim attachment-byte identity or independent23/23+8/8 verification. Existing local implementation is still unchanged. Scope/read-field widths/log labels are directionally correct, but the shown implementation is NOT accepted for DLL build/deployment: the following concrete contract gaps need bounded fixes, not new native research. Current Arena branch remains arena/e24a4fb7-wrsre; Windows work on its user-authorized fuel branch is separate and uncommitted as instructed.
+
+1. Module range: report shows Capture(...,Address imageBase,Snapshot&) and m.Get(imageBase,0x9D54C0,s.gateGlobal). Existing Memory::Get checks integer overflow and null/read callback, not SizeOfImage/g_exeSize. ReadablePtr establishes memory readability, not membership in that module. A short image followed by readable unrelated memory could falsely produce gateGlobalRead=true. Require a size-bearing module span or equivalent explicit runtime span check, with RVA<=size and sizeof(int32)<=size-RVA plus address-wrap checks. Short/null/overflow/unreadable global stays independently unavailable; do not disable the existing panel observer. No dereference should be attempted outside the module even when the test callback would allow that address.
+
+2. Exception isolation: the report relies on the runtime caller's __try/__except. The unchanged existing PanelCapture handler wraps all Capture work and sets g_panelFault=1; captured remainsfalse if Capture does not return. Thus false-return read failures are independent, but access violations from a NEW optional read are NOT isolated by the shown design: that sample is lost and subsequent captures are disabled by the observer-wide latch. ReadablePtr before memcpy does not remove that possibility. Give optional diagnostic reads their own guarded callback/path returningfalse on exception, leaving existing mandatory-read fault handling intact. A rejected read in Fixture::Reader is not a thrown-read or SEH test. The seven listed tests do not demonstrate optional-exception isolation. Move proto8680 capture immediately after successful metadata acquisition, before quantity failures can return, so an independently readable prototype diagnostic is not unnecessarily coupled to raw/capacity success.
+
+3. Identity/type context: report explicitly retains PL_VERSION0.18.11-assignment-ledger and introduces only kGateDiagnosticVersion0.18.12. Existing private_logistics.cpp uses PL_VERSION for info->version and startup logs, so the requested actual plugin version bump is missing; update it consistently and retain the gate marker if useful. The shown runtime cast(Address)g_exeBase is also unqualified, whereas the alias lives in private_logistics_panel. Existing host shim includes panel_fuel_observer_test.cpp FIRST, whose global using namespace private_logistics_panel masks this dependency; production private_logistics.cpp has no such import in the inspected source. Use std::uintptr_t or the fully qualified alias and exercise a clean include context without the test's using-directive. This is a source-context risk identified from the shown fragment, not a claimed DLL compilation result. A green combined shim does not prove production name lookup or actual Windows SEH behavior.
+
+### Submitted code excerpts (partial, not complete final source)
+
+Report's Object additions:
+```cpp
+    std::uint32_t raw1794 = 0;
+    bool raw1794Read = false;
+    std::uint8_t proto8680 = 0;
+    bool proto8680Read = false;
+```
+Report's Snapshot additions:
+```cpp
+    std::uint8_t root514 = 0;
+    bool root514Read = false;
+    Address root4F0 = 0;
+    bool root4F0Read = false;
+    std::int32_t gateGlobal = 0;
+    bool gateGlobalRead = false;
+```
+Report's signature and root/global reads (noncontiguous fragments):
+```cpp
+inline bool Capture(const Memory& m, Address context, Address window, Address imageBase, Snapshot& s)
+```
+```cpp
+   s.root514Read = m.Get(s.root, 0x514, s.root514);
+   s.root4F0Read = m.Get(s.root, 0x4F0, s.root4F0);
+   s.gateGlobalRead = m.Get(imageBase, 0x9D54C0, s.gateGlobal);
+```
+
+Other submitted fragments (not contiguous):
+```cpp
+   o.raw1794Read = m.Get(o.pointer, 0x1794, o.raw1794);
+```
+```cpp
+   o.proto8680Read = m.Get(o.metadata, 0x8680, o.proto8680);
+```
+```cpp
+static const char* kGateDiagnosticVersion = "0.18.12-gate-diagnostic";
+```
+```cpp
+captured = private_logistics_panel::Capture({PanelRead, nullptr},
+    (uintptr_t)context, (uintptr_t)window, (Address)g_exeBase, snapshot);
+```
+Report's log additions: root514_read/root514,root4f0_read/root4f0,gate_global_read/gate_global/gate_diag and native_execution=unobserved; object raw1794_read/raw1794/proto8680_read/proto8680. Existing phase=post_render,physical_fuel=unverified,exact_burn=0,billing=off retained. Report says all queue policies unchanged. These labels are appropriate; their exact formatting/argument correctness needs the actual diff.
+
+Reported tests: root_514_and_4f0_read_independently;root_514_read_fails_but_4f0_succeeds;global_reads_signed_int32_at_image_base(-7,42,0);global_unavailable_when_image_base_zero;global_read_denied_does_not_invalidate_capture;object_1794_and_8680_read_independently;object_read_failure_does_not_invalidate_capture. Reported result23/23observer and8/8unchanged runtime, MSVC/std:c++17/O2/W3/WX/EHsc, git diff--check clean. Commands contain abbreviated /Fe:... destinations and PASS stdout uses ellipses, so these are externally reported outcomes, not full reproducible transcripts or independently rerun results. No tests for short image, per-field thrown faults, new-field queue immutability or clean namespace context are shown. Native flag meanings, actual execution, resource identity/tonnes and billing readiness remain unresolved. Tonnes is a user-suggested working hypothesis, not an accepted conversion contract.
+
+### Ready-to-paste bounded correction task
+
+```text
+Fix the existing gate-diagnostic implementation in place on the current authorized Windows branch. Read AGENTS.md, INSTRUCTIONS.md and KILO_AGENT_WORKFLOW.md. Do not switch branches or recreate the feature from a report. If EITHER content OR destination is long, make small coherent edits and verify EACH. Preserve unrelated edits and all prior report content.
+
+No Ghidra/research, new hooks/patches/native calls, game-memory writes, INI/default/dispatch changes, tracker/ledger rewiring, billing/cost calculations, DLL build, deploy, game run, commit or push. Host-side test compilation is allowed. PaymentsOFF. This task is code correction plus host verification, not another static-investigation round.
+
+1. Add an explicit size-bearing loaded-image contract (or equivalent runtime check) for the signed global atRVA9D54C0. Validate null/span/address overflow before any read, including sizeof(int32)<=imageSize-RVA. Supply g_exeSize with g_exeBase. Do not confuse ReadablePtr or Memory::Get address-overflow checks with module bounds. Short/invalid image means ONLY gateGlobalRead=false; keep existing panel capture enabled.
+
+2. Give NEW optional diagnostic reads their own guarded read path/callback. Catch their memory-access faults locally, returnfalse, and preserve independent validity and later reads. The old outer PanelCapture handler sets g_panelFault and aborts the snapshot; it is NOT sufficient. Preserve mandatory-read safety behavior. Capture proto8680 as soon as its metadata pointer is successfully read, independently of subsequent quantity/capacity failures. No render-thread allocation/I/O/blocking/native calls. Test false returns separately from thrown callbacks. Real SEH remains unvalidated by a host shim.
+
+3. Set the actual private_logistics.cpp PL_VERSION to0.18.12-gate-diagnostic, consistently reaching info->version and startup logs; retain a gate log marker if useful. A separate constant alone does not bump plugin identity. Replace runtime (Address)g_exeBase with a qualified private_logistics_panel::Address or std::uintptr_t. Add a clean compile context WITHOUT the fixture's global using namespace private_logistics_panel, which currently masks the unqualified cast in the combined host shim. Update all affected Capture callers/tests, not just CaptureNow.
+
+4. Add tests proving: a readable address outside a too-short image is NOT read; null/wrapping image is unavailable; valid relocated image handles signed values; an exception at EACH optional field preserves valid existing capture, does not latch g_panelFault and does not suppress later independent reads; readable prototype8680 survives unavailable quantity; queued gate values remain the captured copy after memory mutation; load epoch/default/payment guards remain unchanged. Keep host fixture mapping bounded (do not copy a synthetic high-address global region beyond the runtime image allocation). Run the relevant existing Python suite and C++ reader/runtime/schedule/ledger host tests with available tools. Record skips as skips, not passes. No DLL build. Preserve throttle/cap/drop/pause/epoch behavior and labels post_render/native_execution=unobserved/exact_burn=0/billing=off; do not infer eligibility, execution, physical meaning or tonnes.
+
+5. Append a clearly dated correction section to the existing owned scratch\out\FUEL_GATE_DIAGNOSTIC_IMPLEMENTATION_20261101.md, using small verified chunks. Include the COMPLETE final diff for every affected production/test file against HEAD (including original diagnostic changes), full final source for any added helper/script, actual unabbreviated commands and complete relevant test stdout/counts, version, diff-check and INI-unchanged results. Mark the old 'complete' verdict superseded rather than deleting it. Only the coordinator edits the cumulative handover. Return the actual corrected Markdown, with patch/test evidence inside it, not just another completion summary. Stop before DLL build/deploy/game testing.
+```
+
+Review verification: inspected current Memory::Get, PanelRead, PanelCapture's outer exception/fault-latch flow, plugin PL_VERSION/metadata/startup references, host-shim include order, fixture global namespace import, and existing schedule/ledger test entry points. git diff--checkPASS after appends. This is a code-fragment/source-context review, not an executed Windows patch or an independent rerun of its tests. No helper/script or production change was added locally. All new findings and submitted source excerpts remain in this same cumulative Markdown. Ready-to-paste correction task above is proposed for execution in the Windows checkout that owns the actual uncommitted implementation.
+
+## Corrected gate-diagnostic pasted report review — exact patch still pending (2026-11-01)
+
+User supplied a correction summary and expanded report text in chat. Accept as shown-fragment progress: size check orders RVA<=g_exeSize before subtraction; each new optional read has its own exception handler without setting g_panelFault; Capture returns to its original four-argument shape; actual PL_VERSION change to0.18.12-gate-diagnostic is shown. Post-Capture object inspection can obtain proto8680 when an ordinary quantity read returnsfalse after metadata acquisition. Do not reopen those already-addressed design points merely because no DLL was built. Sixteen reader and twenty runtime passes are externally reported, not independently rerun here. No game/SEH/native-execution validation is claimed. Current local branch remains arena/e24a4fb7-wrsre; implementation is still absent from this checkout, with only cumulative documentation modified.
+
+Remaining source issue1: reinterpret_cast<Address>(g_exeBase) is STILL unqualified. Changing cast category resolves pointer-to-integer conversion, not namespace lookup. Use reinterpret_cast<std::uintptr_t>(g_exeBase) or private_logistics_panel::Address. The unchanged host fixture's global using-directive still masks this in combined runtime tests; a clean production-context test is not supplied. Do not invent a DLL compiler failure or an unseen using-declaration, but do not accept the 'qualified Address' claim from that snippet.
+
+Remaining source issue2: relative module bounds do not prove integer address non-wrap. The shown global call uses base_integer+0x9D54C0 directly, and moved root/object reads also bypass existing Memory::Get arithmetic checks. For the global in particular, a fabricated near-UINTPTR_MAX base could wrap to other readable memory even with sufficient g_exeSize. Require checked base/RVA/read-size arithmetic as previously requested; reusing existing Memory::Get INSIDE each independent guard is a small possible repair, alongside separate module-size validation. This identifies the missing contract check, not a claim that real Windows modules normally load at such addresses. Never fix it by broadening native reads or adding hooks.
+
+Artifact gap: 'Complete Final Diff Against HEAD' is not a complete Git patch: it contains literal ellipses, omits final field/log/test additions and shows removal of the intermediate five-argument Capture. Current HEAD9cff1a3 has the original FOUR-argument Capture; no claim is made about Windows HEAD without measuring it, but this snippet cannot be applied as the promised final patch against the known baseline. Test bodies are replaced by descriptions; /Fe:... and PASS ellipses remain. Need the actual full Git output and final test sources, not another summary or a report rewrite. Historical v1 text is explicitly superseded by the notice; do not misread its old23+8counts/version as current claims. Corrected counts16+20are reported. INI bytes59/32/45establish no BOM at the prefix, not unchanged content by themselves; unchanged status needs a diff/hash check. No new native query, test replay, commit/push or build is needed to deliver current source.
+
+### Next-agent task — exact source delivery only, no further correction round
+
+```text
+Deliver the existing uncommitted gate-diagnostic source, not another explanation. Stay on the current authorized Windows branch. No branch change, implementation edit, research/Ghidra, new test run, DLL build, deploy, game run, commit or push. PaymentsOFF.
+
+Preserve existing files. Append a 'Raw source delivery' section to the existing owned scratch\out\FUEL_GATE_DIAGNOSTIC_IMPLEMENTATION_20261101.md. If EITHER content OR destination is long, append small coherent slices and verify EACH against the captured output. Do not regenerate the hand-written diff or summarize test bodies.
+
+Record actual git rev-parse HEAD, git branch --show-current and git status --short. Capture actual git --no-pager diff --no-ext-diff --no-color --binary HEAD -- for these files:
+plugins/private_logistics/panel_fuel_observer.h
+plugins/private_logistics/panel_fuel_runtime.h
+plugins/private_logistics/private_logistics.cpp
+tests/private_logistics/panel_fuel_observer_test.cpp
+tests/private_logistics/panel_fuel_runtime_test.cpp
+
+Embed the COMPLETE raw diff, including all original diagnostic changes, full test bodies, context and hunk headers. No omitted hunks, shortened lines, replacement ellipses or corrections-only patch. Include any other changed tracked source/test files needed by this feature and full final content of any related untracked helper; do not bundle unrelated files or the whole scratch tree. Record whether git diff HEAD -- plugins/private_logistics/private_logistics.ini is empty. Include existing full test transcripts if saved; otherwise explicitly mark them unavailable rather than reconstructing commands/output or rerunning tests.
+
+Return the actual Markdown file for upload, not just a completion summary. Parent needs source to perform local patch review and bounded fixes; no further implementation/report-rewrite cycle is requested now.
+```
+
+Parent check for this review: git branch--show-current confirmed arena/e24a4fb7-wrsre; git status--short showed only this cumulative Markdown modified; git show HEAD:plugins/private_logistics/panel_fuel_observer.h confirmed the four-argument Capture at line69 and no diagnostic fields. Targeted source reads confirmed namespace import in the test fixture and absent runtime alias in the inspected baseline. No matching gate-diagnostic attachment was found in uploads. Only documentation appended; no actual Windows implementation or tests independently applied/executed here. Keep paymentsOFF and no build/game instruction until exact source review.
+
+## Assignment-boundary versus burn-meter clarification; remote source received (2026-11-01)
+
+User challenges whether prior task-change/fuel tests already suffice for start/end costing. Answer: the basic architecture is correct and a provisional endpoint dry-run does NOT require resolving every native gate. Existing selected-panel ledger already logs first/last/current-boundary candidate readings and assignment appearance/removal/replacement. It is sampled, selected-panel-only observation, not exact fleet-wide native event capture. Scalar/index changes deliberately retain assignment identity; do not close on every next-stop/index update. Actual fuel remaining is not cumulative fuel burned. Existing observer positive-only sum and display*1000 are not a continuously signed native burn counter. Endpoint estimate is useful under controlled no-refill/consistent-receiver/valid-boundary assumptions, but cannot be promoted to exact billable consumption from those tests alone. Native tonnes remains a working hypothesis.
+
+Concrete accounting example: start100,end90,external refill20 means burn30, not10, assuming no other loss/source. Generally burn=start+measured_refills-end for a valid closed tank balance; excluding a refuelling task alone does not account for every refill or burn during a refuelling journey. Even summing sampled negative level changes can miss burn/refill within one interval. Unknown refill/boundary/membership coverage must remain uncertain, not assigned zero cost. User identified the first Test8 phase as fuelling; accept for that run, not a universal classifier. A load/unload assignment can contain several stops and retain identity across index updates. Outside-assignment burn stays overhead; uncertain boundaries unallocated; cancellation/removal/replacement closes regardless success. Gate reports were intended to assess native-producer applicability and safe observation, NOT to implement assignment costing or trip detection. Parent acknowledges the report/correction relay became disproportionate; stop that relay now actual committed source is accessible.
+
+Actual source delivery now CLOSED: git fetch origin DO-fuel-cost-calculatotr succeeded; FETCH_HEAD7177c31ffd5040015c3413af577f416ff3753800, parent60ce0d1, preceded by9cff1a3. git cat-file confirmed the supplied object exists. Inspected actual git objects without merging, switching or changing production files. Thus earlier 'uncommitted source unavailable' statements are historical and superseded; no more report/source handoff request is warranted. Relative9cff1a3..7177c31 changes are observer fields, runtime capture/logging, PL_VERSION and172runtime-test lines, plus accidentally tracked root panel_fuel_observer_test.obj208180bytes and panel_fuel_runtime_test.obj368804bytes. Net observer test source is unchanged. Do not carry those compiler artifacts into an integration. INI has no diff over that baseline, independently confirming unchanged content for these commits. Reports saying no commit/push do not describe current remote state; who performed the commits is not established.
+
+Actual source review confirms remaining unqualified reinterpret_cast<Address> and unchecked base+offset calculations. Test limitations are now directly visible: after the first added diagnostic capture, subsequent scenarios generally do not advance clockMs beyond the1000ms throttle, so PanelCapture can return without exercising the intended fault. Some assertions condition on g_panelCount rather than requiring a new capture. Global fault scenario uses default image allocation0x90B080<RVA9D54C0, so its global guard skips the targeted read. Null/exact-size cases test a copied boolean expression, not production capture. The 'immutability' test checks that a fuel log appears, but neither mutates source after capture nor checks retained field values. The unavailable-quantity test sets throwAtRead (a thrown fault, not a false-return denial); if actually reached that mandatory read should still exercise the old fault latch. These PASS labels are not adequate proof of the named cases. Fix the tests and small runtime issues directly from actual source, not via another broad report. No native hook, runtime/game execution or billing authorization follows from this review.
+
+### Independent host check of fetched snapshot
+
+Exported tracked source without checkout/merge using git archive7177c31 for plugins/private_logistics,tests/private_logistics,src and docs/private-logistics-runtime/RAW_EXPORTS_VEHICLE_DETAIL_RENDERER.md into.cache/gate-review-7177c31. An initial invocation accidentally ran the local unchanged baseline; that success is NOT attributed to7177c31. Then explicitly ran python -m unittest discover -s tests/private_logistics -p 'test_panel_fuel_observer.py' -v with cwd/home/user/WRSRE/.cache/gate-review-7177c31. Exit0,22wrapper testsPASS, including reader cases and the combined runtime harness. This confirms existing host checks pass, not that the added tests exercise their intended failure paths or that production Windows compilation/SEH/native execution is validated. No helper/script source was added; snapshot and compiled test outputs remain in ignored.cache. Actual fetched-snapshot stdout/stderr follows:
+
+```text
+test_address_overflow_does_not_call_reader (test_panel_fuel_observer.PanelFuelObserverTest.test_address_overflow_does_not_call_reader) ... ok
+test_arithmetic_overflow_is_unavailable (test_panel_fuel_observer.PanelFuelObserverTest.test_arithmetic_overflow_is_unavailable) ... ok
+test_capture_is_read_only_and_bounded (test_panel_fuel_observer.PanelFuelObserverTest.test_capture_is_read_only_and_bounded) ... ok
+test_flags_are_evidence_not_literal_mode_proof (test_panel_fuel_observer.PanelFuelObserverTest.test_flags_are_evidence_not_literal_mode_proof) ... ok
+test_fleet_bounds_and_duplicate_membership (test_panel_fuel_observer.PanelFuelObserverTest.test_fleet_bounds_and_duplicate_membership) ... ok
+test_home_pointer_alone_is_not_membership (test_panel_fuel_observer.PanelFuelObserverTest.test_home_pointer_alone_is_not_membership) ... ok
+test_hook_fingerprint_and_full_instruction_boundary (test_panel_fuel_observer.PanelFuelObserverTest.test_hook_fingerprint_and_full_instruction_boundary) ... ok
+test_invalid_links_never_produce_partial_total (test_panel_fuel_observer.PanelFuelObserverTest.test_invalid_links_never_produce_partial_total) ... ok
+test_literal_litres_and_identity (test_panel_fuel_observer.PanelFuelObserverTest.test_literal_litres_and_identity) ... ok
+test_matching_test_defaults_and_no_tracker_wiring (test_panel_fuel_observer.PanelFuelObserverTest.test_matching_test_defaults_and_no_tracker_wiring) ... ok
+test_negative_raw_is_preserved_not_burn (test_panel_fuel_observer.PanelFuelObserverTest.test_negative_raw_is_preserved_not_burn) ... ok
+test_nonfinite_is_unavailable (test_panel_fuel_observer.PanelFuelObserverTest.test_nonfinite_is_unavailable) ... ok
+test_nonpositive_capacity_excludes_current (test_panel_fuel_observer.PanelFuelObserverTest.test_nonpositive_capacity_excludes_current) ... ok
+test_optional_capacity_adjustment_is_not_guessed (test_panel_fuel_observer.PanelFuelObserverTest.test_optional_capacity_adjustment_is_not_guessed) ... ok
+test_production_runtime_with_host_shim (test_panel_fuel_observer.PanelFuelObserverTest.test_production_runtime_with_host_shim) ... ok
+test_reader_has_no_native_calls_or_settlements (test_panel_fuel_observer.PanelFuelObserverTest.test_reader_has_no_native_calls_or_settlements) ... ok
+test_render_path_is_bounded_nonblocking_no_io (test_panel_fuel_observer.PanelFuelObserverTest.test_render_path_is_bounded_nonblocking_no_io) ... ok
+test_root_plus_child (test_panel_fuel_observer.PanelFuelObserverTest.test_root_plus_child) ... ok
+test_snapshot_reuse_clears_old_pointer_and_quantity (test_panel_fuel_observer.PanelFuelObserverTest.test_snapshot_reuse_clears_old_pointer_and_quantity) ... ok
+test_unreadable_current_keeps_identity_but_not_total (test_panel_fuel_observer.PanelFuelObserverTest.test_unreadable_current_keeps_identity_but_not_total) ... ok
+test_window_gates_and_4f8_not_required (test_panel_fuel_observer.PanelFuelObserverTest.test_window_gates_and_4f8_not_required) ... ok
+test_windows_min_max_macros (test_panel_fuel_observer.PanelFuelObserverTest.test_windows_min_max_macros) ... ok
+
+----------------------------------------------------------------------
+Ran 22 tests in 2.965s
+
+OK
+```
+
+### Next bounded coding task (not executed; no more Kilo report collection needed)
+
+```text
+Use the actual fetched7177c31 source, not a reconstructed report. Stay on the current authorized branch and preserve pending documentation. Read root instructions. If EITHER content OR destination is long, make small coherent changes and verify EACH. No Ghidra/new native hooks, game-memory writes, configuration/default changes, payments, DLL build, deploy, game run, commit or push. Host tests allowed.
+
+Review/integrate source-only diagnostic changes; do not import the two committed .obj artifacts. Fix qualified address lookup and checked address arithmetic while retaining independent guards and module bounds. Repair the existing runtime scenarios so EVERY case demonstrably performs a fresh capture (advance clock/reset throttle appropriately), asserts capture/read execution and relevant queued values, and cannot pass on skipped work. Use an actually backed large-enough image for global read/fault cases; retain short-image tests. Separate mandatory quantity false-return failure from mandatory exceptions. For immutability, mutate source AFTER enqueue and assert the old queued/drained values. Add a clean namespace/include context and wrapping-base check. Preserve assignment semantics and observer limits. Run relevant host regressions, report actual results in the existing cumulative Markdown with complete final new code/helper source and actual stdout. No new broad report/source-delivery task.
+```
+
+After that bounded code acceptance, propose an explicitly provisional assignment-endpoint dry-run using the existing ledger, with net level change separated from actual burn, units/pricing assumptions labelled and uncertain/refill intervals not silently billed. A controlled no-refill assignment can test this practical estimate without pretending to close every native-producer question. No costing implementation or new game run has been performed/authorized by this explanatory review. Payments remainOFF. Final git diff--checkPASS; only the cumulative Markdown is modified on the active Arena branch.
+
+## Coordinator implementation — gate diagnostic0.18.13, correction loop closed (2026-11-01)
+
+Latest user supplied a summary and pasted report with additional Windows uncommitted diffs atop7177c31 (reported report54951bytes, not a locally measured attachment). Improvements accepted from shown diff: per-test clock advances and capture assertions, checked global base+RVA. Remaining literal code still used unqualified Address; test10 no longer made quantity unavailable, and test11 did not mutate source between enqueue/drain. Rather than request another Kilo correction/report, coordinator implemented the bounded diagnostic source directly on arena/e24a4fb7-wrsre, using reviewed7177c31 evidence and preserving prior docs. Source version is now0.18.13-gate-diagnostic in actual PL_VERSION and gate log identity, distinct from both Windows0.18.12 variants. This does not automatically update the Windows checkout; preserve its uncommitted edits when later reconciling. No commit/push/PR, DLL build, deployment, game run or payment was performed. Native producer, physical units and costing are NOT promoted to verified.
+
+Implementation: Object/Snapshot hold independently valid raw fields; portable Capture signature/reads remain unchanged. New PanelDiagnosticRead<T> uses a POD temporary and existing Memory::Get to validate null/base/offset/read-end overflow before the guarded callback, catching optional faults locally and only publishing a value on success. PanelCaptureDiagnostics independently samples root514/root4F0, signed global9D54C0 after module-size checks, and each already-bounded root/link1794/prototype8680. All types at module boundary use std::uintptr_t, not leaked fixture aliases. Optional diagnostics run after successful portable capture, including early returned invalid-quantity snapshots with retained metadata. Mandatory exception latch remains unchanged. Values are copied through the existing queue and only logged at drain, labelled post_render/native_execution=unobserved/physical_fuel=unverified/exact_burn=0/billing=off. No new patch/fingerprint/hook or memory write. Added*.obj ignore; did not import the two remote compiler artifacts.
+
+Actual tests: full Python discovery130PASS. Initial full run129passed/1failed solely because an existing source test pinned old0.18.11version; updated that assertion to the actual new version without weakening its schedule read-count/gap guards, then reran130PASS. Runtime harness now compiles production header BEFORE fixture namespace import, records attempted reads, and has real backing through global+4. Fresh-capture helper advances clock and requires one new accepted record. Thirteen diagnostic scenarios exercise short/null/wrapping-start/wrapping-end spans without invalid read attempts; signed relocated globals; all five actually-reached optional exceptions and later reads; actual false-return quantity/capacity denial with metadata/proto retained; source mutation of four fields BETWEEN enqueue and drain; root/link zero/nonzero values and linked fault isolation; stale-epoch discard and new sequence1. Original8runtime scenarios retained:21total runtime; original16reader scenarios retained. ASan+UBSan runtime21 and schedule-runtime16PASS with no diagnostics. Windows DLL compilation, real SEH/threads and native execution remain untested; no Windows cross compiler found. No costing or assignment-ledger changes.
+
+### Commands and preserved final code
+
+All commands used cwd/home/user/WRSRE. Host suite: python -m unittest discover -s tests/private_logistics -p 'test_*.py' -v (final exit0; full combined stdout/stderr below). Sanitizers: g++ -std=c++17 -O1 -g -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined -fno-omit-frame-pointer -I plugins/private_logistics tests/private_logistics/panel_fuel_runtime_test.cpp -o .cache/gate-runtime-asan && .cache/gate-runtime-asan (exit0); same flags with tests/private_logistics/schedule_runtime_test.cpp -o .cache/gate-schedule-asan && .cache/gate-schedule-asan (exit0). git diff--checkPASS. INI/schedule observer/assignment-ledger diffs empty; INI SHA256fc2d763962e9f1d3684b0eabf31d2b79efdeb9c2621e98af9d3b2ce07a8fbf04. git ls-files '*.obj' empty. No standalone helper/script file added. Complete final source patch below contains every added/changed production/helper/test line against local HEAD9cff1a3, excluding this cumulative report itself; source remains in its normal tracked files. Historical prefix8501643bytes/SHA256f2dae56dca777772dff059159528e31c4942333929e709bf367f1fc955ddd70d must remain unchanged.
+
+#### Complete final source patch —377lines/19819bytes
+
+Decoded patch SHA256acaab5cb0433cfcf2992083a3fe22ff0308eebca37499f08194d60a4c8aa221b. Transport encoding: six otherwise blank Git CONTEXT lines are shown as literal `\x20` to avoid trailing whitespace in this Markdown. Replace ONLY a whole line `\x20` with one ASCII space to recover the byte-exact patch; no added/changed source line is altered. Length/line count above refer to that decoded original.
+
+````diff
+diff --git a/.gitignore b/.gitignore
+index 7d9d157..0cd0ce0 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -9,6 +9,7 @@ scratch/
+ tools/peinfo-out/
+ *.log
+ *.pdb
++*.obj
+ *.ilk
+ *.dll
+ *.exe
+diff --git a/plugins/private_logistics/panel_fuel_observer.h b/plugins/private_logistics/panel_fuel_observer.h
+index 5f3fc51..aa54ecb 100644
+--- a/plugins/private_logistics/panel_fuel_observer.h
++++ b/plugins/private_logistics/panel_fuel_observer.h
+@@ -26,6 +26,10 @@ struct Object {
+     Address pointer = 0, metadata = 0, homeCandidate = 0;
+     float raw = 0, capacity = 0;
+     bool quantityRead = false;
++    std::uint32_t raw1794 = 0;
++    bool raw1794Read = false;
++    std::uint8_t proto8680 = 0;
++    bool proto8680Read = false;
+     Match match = Match::Unavailable;
+     unsigned fleetIndex = 0, occurrences = 0;
+ };
+@@ -36,6 +40,13 @@ struct Snapshot {
+     Object objects[MaxObjects]{};
+     int contextMode = -1, metadataKind = -1;
+     std::uint8_t flag8681 = 0, flag8682 = 0;
++    // Optional post-render diagnostics, populated independently by the runtime.
++    std::uint8_t root514 = 0;
++    bool root514Read = false;
++    Address root4F0 = 0;
++    bool root4F0Read = false;
++    std::int32_t gateGlobal = 0;
++    bool gateGlobalRead = false;
+     bool flagsRead = false, adjustmentRead = false, adjustmentNeeded = false;
+     bool aggregateValid = false, ratioValid = false;
+     float current = 0, unadjustedCapacity = 0, litresCandidate = 0, ratio = 0;
+diff --git a/plugins/private_logistics/panel_fuel_runtime.h b/plugins/private_logistics/panel_fuel_runtime.h
+index 8e08df9..9cced3d 100644
+--- a/plugins/private_logistics/panel_fuel_runtime.h
++++ b/plugins/private_logistics/panel_fuel_runtime.h
+@@ -6,6 +6,7 @@
+ #include "schedule_observer.h"
+ #include "schedule_assignment_ledger.h"
+\x20
++static constexpr char kGateDiagnosticVersion[] = "0.18.13-gate-diagnostic";
+ static bool g_scheduleReady = false;
+ static volatile LONG g_scheduleFault = 0;
+ static private_logistics_schedule::History g_scheduleHistory; // simulation tick only
+@@ -45,6 +46,40 @@ static bool PanelRead(uintptr_t address, void* out, size_t size, void*)
+     memcpy(out, (const void*)address, size);
+     return true;
+ }
++// Optional fields must not reach the observer-wide mandatory-read fault latch.
++// Memory::Get validates base/offset/end arithmetic before calling PanelRead.
++template<class T>
++static bool PanelDiagnosticRead(std::uintptr_t base, std::uintptr_t offset, T& out)
++{
++    const private_logistics_panel::Memory memory{PanelRead, nullptr};
++    T value{};
++    bool ok = false;
++    __try {
++        ok = memory.Get(base, offset, value);
++    } __except (EXCEPTION_EXECUTE_HANDLER) {
++        return false;
++    }
++    if (ok) out = value;
++    return ok;
++}
++static void PanelCaptureDiagnostics(private_logistics_panel::Snapshot& s)
++{
++    if (!s.root) return;
++    s.root514Read = PanelDiagnosticRead(s.root, 0x514, s.root514);
++    s.root4F0Read = PanelDiagnosticRead(s.root, 0x4F0, s.root4F0);
++    constexpr std::uintptr_t globalRva = 0x9D54C0;
++    if (g_exeBase && globalRva <= g_exeSize &&
++        sizeof(s.gateGlobal) <= g_exeSize - globalRva) {
++        s.gateGlobalRead = PanelDiagnosticRead(
++            reinterpret_cast<std::uintptr_t>(g_exeBase), globalRva, s.gateGlobal);
++    }
++    for (unsigned i = 0; i < s.count && i < private_logistics_panel::MaxObjects; ++i) {
++        auto& o = s.objects[i];
++        o.raw1794Read = PanelDiagnosticRead(o.pointer, 0x1794, o.raw1794);
++        // Metadata may be available even if a later mandatory quantity read failed.
++        o.proto8680Read = PanelDiagnosticRead(o.metadata, 0x8680, o.proto8680);
++    }
++}
+ static void PanelResetQueueLocked(LONG epoch)
+ {
+     if (g_panelQueueEpoch == epoch) return;
+@@ -81,6 +116,7 @@ static void PanelCapture(void* context, void* window)
+     } __except (EXCEPTION_EXECUTE_HANDLER) {
+         InterlockedExchange(&g_panelFault, 1);
+     }
++    if (captured) PanelCaptureDiagnostics(snapshot);
+     private_logistics_schedule::Snapshot schedule{};
+     if (captured && g_scheduleReady) {
+         schedule.status = private_logistics_schedule::Status::Ineligible;
+@@ -334,6 +370,8 @@ static void PanelObserverTick(void*, float, float)
+          "adjustment_read=%d adjustment_needed=%d presentation=%s "
+          "queue_full_total_at_capture=%u queue_full_total_at_drain=%u "
+          "captured_paused=%d coalesced_snapshots=%u sample_ids=accepted_records_only "
++         "root514_read=%d root514=%u root4f0_read=%d root4f0=%p "
++         "gate_global_read=%d gate_global=%d gate_diag=%s native_execution=unobserved "
+          "physical_fuel=unverified exact_burn=0 billing=off",
+          record.epoch, record.sequence, (unsigned long long)record.milliseconds,
+          (void*)s.window, (void*)s.root, PanelStatus(s.status), s.aggregateValid ? 1 : 0,
+@@ -342,15 +380,20 @@ static void PanelObserverTick(void*, float, float)
+          s.flagsRead ? 1 : 0, (unsigned)s.flag8681, (unsigned)s.flag8682,
+          s.adjustmentRead ? 1 : 0, s.adjustmentNeeded ? 1 : 0,
+          s.flagsRead && (s.flag8681 || s.flag8682) ? "alternate_if_shown" : "unresolved_7c58",
+-         record.queueFullAtCapture, dropped, record.paused ? 1 : 0, record.coalesced);
++         record.queueFullAtCapture, dropped, record.paused ? 1 : 0, record.coalesced,
++         s.root514Read ? 1 : 0, (unsigned)s.root514, s.root4F0Read ? 1 : 0, (void*)s.root4F0,
++         s.gateGlobalRead ? 1 : 0, (int)s.gateGlobal, kGateDiagnosticVersion);
+     for (unsigned i = 0; i < s.count; ++i) {
+         const auto& o = s.objects[i];
+         Logf("[PANEL OBJECT] epoch=%ld sample=%u index=%u role=%s object=%p metadata=%p "
+              "quantity_read=%d raw5f0=%.9g capacity8684=%.9g candidate_home=%p "
+-             "membership=%s fleet_index=%u occurrences=%u private_status=not_classified",
++             "membership=%s fleet_index=%u occurrences=%u private_status=not_classified "
++             "raw1794_read=%d raw1794=%u proto8680_read=%d proto8680=%u",
+              record.epoch, record.sequence, i, i ? "linked" : "root", (void*)o.pointer,
+              (void*)o.metadata, o.quantityRead ? 1 : 0, (double)o.raw, (double)o.capacity,
+-             (void*)o.homeCandidate, PanelMatch(o.match), o.fleetIndex, o.occurrences);
++             (void*)o.homeCandidate, PanelMatch(o.match), o.fleetIndex, o.occurrences,
++             o.raw1794Read ? 1 : 0, (unsigned)o.raw1794,
++             o.proto8680Read ? 1 : 0, (unsigned)o.proto8680);
+     }
+     ScheduleObserverLog(record, fault || cap || contention || newDrops);
+ }
+diff --git a/plugins/private_logistics/private_logistics.cpp b/plugins/private_logistics/private_logistics.cpp
+index 407b9a4..c2ca484 100644
+--- a/plugins/private_logistics/private_logistics.cpp
++++ b/plugins/private_logistics/private_logistics.cpp
+@@ -1,6 +1,8 @@
+ // private_logistics - what a private company earns, and what it pays.
+ //
+ // ---------------------------------------------------------------------------
++// v0.18.13 updates: independently guarded raw gate diagnostics, checked image
++// reads and exercised queue/fault tests. No new hook, costing or payments.
+ // v0.18.11 updates: selected-panel dry-run assignment ledger; observed targets
+ // delimit candidates, never scalar/index edits. No costing, settlement or payments.
+ // v0.18.10 updates: captured target/flag/scalar change classification and
+@@ -489,7 +491,7 @@ static char   gFuelResource[64] = "fuel";  // resolved through resource_pricing
+ static double gBasketsPerTrip   = 0.80;    // CPI fallback, in daily survival baskets
+ static double gBasketsPerTonne  = 0.02;
+\x20
+-#define PL_VERSION "0.18.11-assignment-ledger"
++#define PL_VERSION "0.18.13-gate-diagnostic"
+ static int g_panelObserverEnabled = 1;
+ static int g_scheduleObserverEnabled = 1;
+ static void PanelObserverLoading(void);
+diff --git a/tests/private_logistics/panel_fuel_runtime_test.cpp b/tests/private_logistics/panel_fuel_runtime_test.cpp
+index 778e994..6ad5c07 100644
+--- a/tests/private_logistics/panel_fuel_runtime_test.cpp
++++ b/tests/private_logistics/panel_fuel_runtime_test.cpp
+@@ -1,9 +1,13 @@
+ // Native host shim exercises the production queue/control code. NOT Windows ABI,
+ // SEH, patch execution, real threads, or native game lifecycle validation.
+-#define main ReaderHarnessMain
+-#include "panel_fuel_observer_test.cpp"
+-#undef main
++#include <cstdint>
++#include <cstdio>
++#include <cstring>
++#include <cstdlib>
++#include <vector>
++#include <string>
+ #include <cstdarg>
++#define CHECK(x) do { if (!(x)) { std::fprintf(stderr,"line %d: %s\n",__LINE__,#x); std::exit(1); } } while (0)
+\x20
+ using BYTE = unsigned char;
+ using LONG = long; // host-shim log ABI; real Windows LONG is 32-bit
+@@ -17,14 +21,17 @@ static LONG InterlockedExchange(volatile LONG* p,LONG value) { LONG old=*p;*p=va
+ static LONG InterlockedIncrement(volatile LONG* p) { return ++*p; }
+ static ULONGLONG clockMs=1000;
+ static ULONGLONG GetTickCount64() { return clockMs; }
+-static std::vector<BYTE> image(0x90B080);
++static std::vector<BYTE> image(0x9D54C4); // backed storage through the global int32
+ static BYTE* g_exeBase=image.data();
+ static std::size_t g_exeSize=image.size();
+ static bool throwOnRead=false;
+-static uintptr_t throwAtRead=0;
++static uintptr_t throwAtRead=0, denyAtRead=0;
++static std::vector<uintptr_t> attemptedReads;
+ static bool ReadablePtr(const void* p,std::size_t n) {
++    attemptedReads.push_back((uintptr_t)p);
++    if (denyAtRead && (uintptr_t)p==denyAtRead) return false;
+     if(throwOnRead || (throwAtRead && (uintptr_t)p==throwAtRead)) throw 1;
+-    const auto a=(uintptr_t)p,b=(uintptr_t)g_exeBase;
++    const auto a=(uintptr_t)p,b=(uintptr_t)image.data(); // physical backing, not injected module base
+     return a>=b && a-b<=image.size() && n<=image.size()-(a-b);
+ }
+ constexpr unsigned IMAGE_DOS_SIGNATURE=0x5A4D,IMAGE_NT_SIGNATURE=0x4550;
+@@ -59,7 +66,11 @@ static ClockApi* g_simClock=&api;
+ #define __fastcall
+ #define __try try
+ #define __except(x) catch(...)
++// Compile production runtime BEFORE the reader fixture's global namespace import.
+ #include "panel_fuel_runtime.h"
++#define main ReaderHarnessMain
++#include "panel_fuel_observer_test.cpp"
++#undef main
+\x20
+ #ifndef PANEL_RUNTIME_TEST_NO_MAIN
+ int main() {
+@@ -149,6 +160,132 @@ int main() {
+     g_exeBase[0x90B07C]=1;CHECK(!PanelTargetMatches());g_exeBase[0x90B07C]=0;
+     g_exeBase[0x8F3E98]=0;CHECK(!PanelTargetMatches());
+     std::puts("PASS runtime_changed_data_refused");
++    InterlockedExchange(&g_panelFault,0);
++    PanelObserverLoading();tick(nullptr,1,1);
++    g_exeBase[0x8F3E98]=0x25;
++    const auto rootAddr=ptr(fixture.root),metaAddr=ptr(fixture.meta);
++    const auto globalAddr=ptr(0x9D54C0);
++    const auto wasRead=[&](uintptr_t address) {
++        for(auto attempted:attemptedReads) if(attempted==address) return true;
++        return false;
++    };
++    const auto fresh=[&]() {
++        CHECK(g_panelCount==0);
++        const auto samples=g_panelSamples;
++        clockMs+=1000;attemptedReads.clear();PanelCapture(context,window);
++        CHECK(!g_panelFault && g_panelCount==1 && g_panelSamples==samples+1);
++        return g_panelQueue[g_panelHead].snapshot;
++    };
++    for(std::size_t size:{std::size_t(0),std::size_t(0x9D54BF),
++                         std::size_t(0x9D54C0),std::size_t(0x9D54C3)}) {
++        g_exeSize=size;const auto s=fresh();
++        CHECK(s.aggregateValid && s.root514Read && !s.gateGlobalRead);
++        CHECK(!wasRead(globalAddr));tick(nullptr,1,1);
++    }
++    g_exeSize=image.size();
++    std::puts("PASS runtime_diag_short_images_never_read_global");
++    for(std::int32_t value:{-7,0,2,42}) {
++        std::memcpy((void*)globalAddr,&value,sizeof(value));
++        const auto s=fresh();
++        CHECK(s.gateGlobalRead && s.gateGlobal==value && wasRead(globalAddr));
++        tick(nullptr,1,1);
++    }
++    std::puts("PASS runtime_diag_exact_size_relocated_signed_global");
++    g_exeBase=nullptr;
++    {const auto s=fresh();CHECK(s.aggregateValid && !s.gateGlobalRead && !wasRead(globalAddr));}
++    tick(nullptr,1,1);g_exeBase=image.data();
++    std::puts("PASS runtime_diag_null_image_preserves_capture");
++    for(std::uintptr_t base:{UINTPTR_MAX-0x9D54C0+1,UINTPTR_MAX-0x9D54C0-1}) {
++        g_exeBase=reinterpret_cast<BYTE*>(base);const auto s=fresh();
++        CHECK(s.aggregateValid && !s.gateGlobalRead);
++        // No fabricated global address reaches the memory reader.
++        for(auto address:attemptedReads)
++            CHECK(address>=(uintptr_t)image.data() && address<(uintptr_t)image.data()+image.size());
++        tick(nullptr,1,1);
++    }
++    g_exeBase=image.data();
++    std::puts("PASS runtime_diag_wrapping_base_or_read_end_never_read");
++    const uintptr_t faults[]={rootAddr+0x514,rootAddr+0x4F0,globalAddr,
++                              rootAddr+0x1794,metaAddr+0x8680};
++    const char* names[]={"root514","root4f0","global","raw1794","proto8680"};
++    for(unsigned i=0;i<5;++i) {
++        throwAtRead=faults[i];const auto s=fresh();
++        CHECK(wasRead(faults[i]) && s.aggregateValid && s.objects[0].quantityRead);
++        CHECK(s.root514Read==(i!=0) && s.root4F0Read==(i!=1));
++        CHECK(s.gateGlobalRead==(i!=2) && s.objects[0].raw1794Read==(i!=3));
++        CHECK(s.objects[0].proto8680Read==(i!=4));
++        // Every later independent diagnostic was actually attempted.
++        for(unsigned j=i+1;j<5;++j) CHECK(wasRead(faults[j]));
++        throwAtRead=0;tick(nullptr,1,1);
++        std::printf("PASS runtime_diag_exception_%s_capture_survives\n",names[i]);
++    }
++    for(auto denied:{rootAddr+0x5F0,metaAddr+0x8684}) {
++        denyAtRead=denied;const auto s=fresh();
++        CHECK(wasRead(denied) && !s.aggregateValid && !s.objects[0].quantityRead);
++        CHECK(s.objects[0].metadata==metaAddr && s.objects[0].proto8680Read);
++        CHECK(wasRead(metaAddr+0x8680) && s.objects[0].raw1794Read);
++        denyAtRead=0;tick(nullptr,1,1);
++    }
++    std::puts("PASS runtime_diag_proto8680_with_unavailable_quantity_or_capacity");
++    {
++        std::uint8_t flag=0xAB,proto=1;std::uint32_t raw=17;std::int32_t global=-7;
++        std::memcpy((void*)(rootAddr+0x514),&flag,sizeof(flag));
++        std::memcpy((void*)(metaAddr+0x8680),&proto,sizeof(proto));
++        std::memcpy((void*)(rootAddr+0x1794),&raw,sizeof(raw));
++        std::memcpy((void*)globalAddr,&global,sizeof(global));
++        const auto s=fresh();CHECK(s.root514==0xAB && s.gateGlobal==-7);
++        const auto beforeLogs=logs.size();
++        flag=0;proto=0;raw=29;global=42; // mutate AFTER enqueue, BEFORE drain
++        std::memcpy((void*)(rootAddr+0x514),&flag,sizeof(flag));
++        std::memcpy((void*)(metaAddr+0x8680),&proto,sizeof(proto));
++        std::memcpy((void*)(rootAddr+0x1794),&raw,sizeof(raw));
++        std::memcpy((void*)globalAddr,&global,sizeof(global));
++        const auto& queued=g_panelQueue[g_panelHead].snapshot;
++        CHECK(queued.root514==0xAB && queued.objects[0].raw1794==17);
++        CHECK(queued.objects[0].proto8680==1 && queued.gateGlobal==-7);
++        tick(nullptr,1,1);
++        CHECK(logs.size()==beforeLogs+2);
++        CHECK(logs[beforeLogs].find("root514=171 ")!=std::string::npos);
++        CHECK(logs[beforeLogs].find("gate_global=-7 ")!=std::string::npos);
++        CHECK(logs[beforeLogs+1].find("raw1794=17 ")!=std::string::npos);
++        CHECK(logs[beforeLogs+1].find("proto8680=1")!=std::string::npos);
++    }
++    std::puts("PASS runtime_diag_queued_values_immutable_after_source_mutation");
++    {
++        const auto child=Address(0x90000),childMeta=Address(0xA0000);
++        put(fixture.root+0x3A0,ptr(fixture.links));put(fixture.root+0x3A8,ptr(fixture.links+8));
++        put(fixture.links,ptr(child));put(child+0x1708,ptr(childMeta));
++        const float raw=0.1f,capacity=0.2f;
++        std::memcpy((void*)ptr(child+0x5F0),&raw,sizeof(raw));
++        std::memcpy((void*)ptr(childMeta+0x8684),&capacity,sizeof(capacity));
++        for(std::uint8_t flag:{0,1}) {
++            const std::uint32_t state=flag ? 0x80000000u : 0u;
++            std::memcpy((void*)ptr(childMeta+0x8680),&flag,sizeof(flag));
++            std::memcpy((void*)ptr(child+0x1794),&state,sizeof(state));
++            const auto s=fresh();CHECK(s.aggregateValid && s.count==2);
++            CHECK(s.objects[0].proto8680Read && s.objects[1].proto8680Read);
++            CHECK(s.objects[1].proto8680==flag && s.objects[1].raw1794==state);
++            CHECK(s.objects[1].raw1794Read);tick(nullptr,1,1);
++        }
++        throwAtRead=ptr(child+0x1794);const auto s=fresh();
++        CHECK(wasRead(throwAtRead) && !s.objects[1].raw1794Read);
++        CHECK(s.objects[1].quantityRead && s.objects[1].proto8680Read);
++        CHECK(s.objects[0].raw1794Read && s.aggregateValid);
++        throwAtRead=0;tick(nullptr,1,1);
++        put(fixture.root+0x3A0,0);put(fixture.root+0x3A8,0);
++    }
++    std::puts("PASS runtime_diag_linked_zero_nonzero_and_independent_fault");
++    {
++        (void)fresh();const auto oldEpoch=g_panelQueue[g_panelHead].epoch;
++        const auto beforeLogs=logs.size();PanelObserverLoading();tick(nullptr,1,1);
++        CHECK(g_panelCount==0);
++        for(auto i=beforeLogs;i<logs.size();++i)
++            CHECK(logs[i].find("[PANEL FUEL]")==std::string::npos);
++        (void)fresh();CHECK(g_panelQueue[g_panelHead].epoch!=oldEpoch);
++        CHECK(g_panelQueue[g_panelHead].sequence==1);tick(nullptr,1,1);
++    }
++    std::puts("PASS runtime_diag_load_epoch_discards_stale_values");
++    std::puts("13 gate-diagnostic scenarios PASS (host shim, not real SEH)");
+     std::puts("8 host-shim scenarios PASS (not Windows ABI/SEH or a DLL)");return 0;
+ }
+\x20
+diff --git a/tests/private_logistics/test_panel_fuel_observer.py b/tests/private_logistics/test_panel_fuel_observer.py
+index e598a24..3aa0fac 100644
+--- a/tests/private_logistics/test_panel_fuel_observer.py
++++ b/tests/private_logistics/test_panel_fuel_observer.py
+@@ -91,6 +91,15 @@ class PanelFuelObserverTest(unittest.TestCase):
+         self.assertIn('physical_fuel=unverified exact_burn=0 billing=off', runtime)
+         self.assertIn('unresolved_7c58', runtime)
+\x20
++    def test_gate_diagnostic_version_and_qualified_address(self):
++        runtime = (PLUGIN / 'panel_fuel_runtime.h').read_text()
++        cpp = (PLUGIN / 'private_logistics.cpp').read_text()
++        self.assertIn('#define PL_VERSION "0.18.13-gate-diagnostic"', cpp)
++        self.assertIn('"0.18.13-gate-diagnostic"', runtime)
++        self.assertIn('reinterpret_cast<std::uintptr_t>(g_exeBase)', runtime)
++        self.assertNotRegex(runtime, r'\b(?:static_cast|reinterpret_cast)<Address>')
++        self.assertIn('native_execution=unobserved', runtime)
++
+     def test_windows_min_max_macros(self):
+         path = Path(self.directory.name) / 'macros.cpp'
+         path.write_text('#include <cstddef>\n#include <cstdint>\n#include <cmath>\n'
+diff --git a/tests/private_logistics/test_schedule_observer.py b/tests/private_logistics/test_schedule_observer.py
+index 11d15a2..a3a2c6f 100644
+--- a/tests/private_logistics/test_schedule_observer.py
++++ b/tests/private_logistics/test_schedule_observer.py
+@@ -91,7 +91,7 @@ class ScheduleObserverTest(unittest.TestCase):
+         history = header.split('class History {', 1)[1]
+         self.assertNotIn('m.Get(', history)  # cached-value comparisons only
+         self.assertEqual(header.count('m.Get('), 13)  # native read sites unchanged
+-        self.assertIn('0.18.11-assignment-ledger', cpp)
++        self.assertIn('0.18.13-gate-diagnostic', cpp)
+         self.assertIn('if (d.endpointCompared && d.endpointAcrossGap)', runtime)
+         self.assertIn('compared_across_gap=1 continuity_valid=0', runtime)
+         self.assertIn('native_event_time=unknown', runtime)
+````
+
+#### Actual final full-suite stdout/stderr —135lines/18678bytes
+
+SHA25644b43960e2baf7b29cf2b1b1015da783e58aa950d3e13168a0fcfbbef6c8ff60.
+
+````text
+test_existing_targets_are_still_deduplicated (test_automatic_reconnection.AutomaticReconnectionTest.test_existing_targets_are_still_deduplicated) ... ok
+test_missing_generated_target_is_not_a_permanent_veto (test_automatic_reconnection.AutomaticReconnectionTest.test_missing_generated_target_is_not_a_permanent_veto) ... ok
+test_state_opt_in_and_native_capacity_guards_are_not_removed (test_automatic_reconnection.AutomaticReconnectionTest.test_state_opt_in_and_native_capacity_guards_are_not_removed) ... ok
+test_actual_readtank_and_slot_reader_with_host_memory (test_fuel_diagnostics.FuelDiagnosticsTest.test_actual_readtank_and_slot_reader_with_host_memory) ... ok
+test_candidate_provenance_core (test_fuel_diagnostics.FuelDiagnosticsTest.test_candidate_provenance_core) ... ok
+test_no_sampled_burn_calibration_or_tracker_feed (test_fuel_diagnostics.FuelDiagnosticsTest.test_no_sampled_burn_calibration_or_tracker_feed) ... ok
+test_tariff_logs_are_model_fragments_not_charged_totals (test_fuel_diagnostics.FuelDiagnosticsTest.test_tariff_logs_are_model_fragments_not_charged_totals) ... ok
+test_boundaries (test_journey_tracker.JourneyTrackerTest.test_boundaries) ... ok
+test_conflicting_duplicate (test_journey_tracker.JourneyTrackerTest.test_conflicting_duplicate) ... ok
+test_coverage_default_is_unverified (test_journey_tracker.JourneyTrackerTest.test_coverage_default_is_unverified) ... ok
+test_duplicate_burn_and_equal_values (test_journey_tracker.JourneyTrackerTest.test_duplicate_burn_and_equal_values) ... ok
+test_duplicate_completion (test_journey_tracker.JourneyTrackerTest.test_duplicate_completion) ... ok
+test_explicit_gap (test_journey_tracker.JourneyTrackerTest.test_explicit_gap) ... ok
+test_format_incomplete (test_journey_tracker.JourneyTrackerTest.test_format_incomplete) ... ok
+test_formatted_output (test_journey_tracker.JourneyTrackerTest.test_formatted_output) ... ok
+test_fuel_excluded (test_journey_tracker.JourneyTrackerTest.test_fuel_excluded) ... ok
+test_gap_empty_payload_not_baseline (test_journey_tracker.JourneyTrackerTest.test_gap_empty_payload_not_baseline) ... ok
+test_identity_changes (test_journey_tracker.JourneyTrackerTest.test_identity_changes) ... ok
+test_initially_loaded (test_journey_tracker.JourneyTrackerTest.test_initially_loaded) ... ok
+test_interleaved_vehicles (test_journey_tracker.JourneyTrackerTest.test_interleaved_vehicles) ... ok
+test_invalid_cargo (test_journey_tracker.JourneyTrackerTest.test_invalid_cargo) ... ok
+test_invalid_enums (test_journey_tracker.JourneyTrackerTest.test_invalid_enums) ... ok
+test_invalid_fuel (test_journey_tracker.JourneyTrackerTest.test_invalid_fuel) ... ok
+test_mismatched_cargo (test_journey_tracker.JourneyTrackerTest.test_mismatched_cargo) ... ok
+test_overflow (test_journey_tracker.JourneyTrackerTest.test_overflow) ... ok
+test_partial_snapshots_and_residue (test_journey_tracker.JourneyTrackerTest.test_partial_snapshots_and_residue) ... ok
+test_randomized_journeys (test_journey_tracker.JourneyTrackerTest.test_randomized_journeys) ... ok
+test_refill_does_not_cancel_burn (test_journey_tracker.JourneyTrackerTest.test_refill_does_not_cancel_burn) ... ok
+test_reload_reset (test_journey_tracker.JourneyTrackerTest.test_reload_reset) ... ok
+test_runtime_wiring_remains_deferred (test_journey_tracker.JourneyTrackerTest.test_runtime_wiring_remains_deferred) ... ok
+test_sequence_exhaustion (test_journey_tracker.JourneyTrackerTest.test_sequence_exhaustion) ... ok
+test_sequence_gap (test_journey_tracker.JourneyTrackerTest.test_sequence_gap) ... ok
+test_sequence_order (test_journey_tracker.JourneyTrackerTest.test_sequence_order) ... ok
+test_snapshots_not_transfers (test_journey_tracker.JourneyTrackerTest.test_snapshots_not_transfers) ... ok
+test_transfer_before_is_baseline (test_journey_tracker.JourneyTrackerTest.test_transfer_before_is_baseline) ... ok
+test_two_journeys (test_journey_tracker.JourneyTrackerTest.test_two_journeys) ... ok
+test_uncertain_evidence (test_journey_tracker.JourneyTrackerTest.test_uncertain_evidence) ... ok
+test_windows_min_max_macro_compatibility (test_journey_tracker.JourneyTrackerTest.test_windows_min_max_macro_compatibility) ... ok
+test_zero_deductions (test_journey_tracker.JourneyTrackerTest.test_zero_deductions) ... ok
+test_address_overflow_does_not_call_reader (test_panel_fuel_observer.PanelFuelObserverTest.test_address_overflow_does_not_call_reader) ... ok
+test_arithmetic_overflow_is_unavailable (test_panel_fuel_observer.PanelFuelObserverTest.test_arithmetic_overflow_is_unavailable) ... ok
+test_capture_is_read_only_and_bounded (test_panel_fuel_observer.PanelFuelObserverTest.test_capture_is_read_only_and_bounded) ... ok
+test_flags_are_evidence_not_literal_mode_proof (test_panel_fuel_observer.PanelFuelObserverTest.test_flags_are_evidence_not_literal_mode_proof) ... ok
+test_fleet_bounds_and_duplicate_membership (test_panel_fuel_observer.PanelFuelObserverTest.test_fleet_bounds_and_duplicate_membership) ... ok
+test_gate_diagnostic_version_and_qualified_address (test_panel_fuel_observer.PanelFuelObserverTest.test_gate_diagnostic_version_and_qualified_address) ... ok
+test_home_pointer_alone_is_not_membership (test_panel_fuel_observer.PanelFuelObserverTest.test_home_pointer_alone_is_not_membership) ... ok
+test_hook_fingerprint_and_full_instruction_boundary (test_panel_fuel_observer.PanelFuelObserverTest.test_hook_fingerprint_and_full_instruction_boundary) ... ok
+test_invalid_links_never_produce_partial_total (test_panel_fuel_observer.PanelFuelObserverTest.test_invalid_links_never_produce_partial_total) ... ok
+test_literal_litres_and_identity (test_panel_fuel_observer.PanelFuelObserverTest.test_literal_litres_and_identity) ... ok
+test_matching_test_defaults_and_no_tracker_wiring (test_panel_fuel_observer.PanelFuelObserverTest.test_matching_test_defaults_and_no_tracker_wiring) ... ok
+test_negative_raw_is_preserved_not_burn (test_panel_fuel_observer.PanelFuelObserverTest.test_negative_raw_is_preserved_not_burn) ... ok
+test_nonfinite_is_unavailable (test_panel_fuel_observer.PanelFuelObserverTest.test_nonfinite_is_unavailable) ... ok
+test_nonpositive_capacity_excludes_current (test_panel_fuel_observer.PanelFuelObserverTest.test_nonpositive_capacity_excludes_current) ... ok
+test_optional_capacity_adjustment_is_not_guessed (test_panel_fuel_observer.PanelFuelObserverTest.test_optional_capacity_adjustment_is_not_guessed) ... ok
+test_production_runtime_with_host_shim (test_panel_fuel_observer.PanelFuelObserverTest.test_production_runtime_with_host_shim) ... ok
+test_reader_has_no_native_calls_or_settlements (test_panel_fuel_observer.PanelFuelObserverTest.test_reader_has_no_native_calls_or_settlements) ... ok
+test_render_path_is_bounded_nonblocking_no_io (test_panel_fuel_observer.PanelFuelObserverTest.test_render_path_is_bounded_nonblocking_no_io) ... ok
+test_root_plus_child (test_panel_fuel_observer.PanelFuelObserverTest.test_root_plus_child) ... ok
+test_snapshot_reuse_clears_old_pointer_and_quantity (test_panel_fuel_observer.PanelFuelObserverTest.test_snapshot_reuse_clears_old_pointer_and_quantity) ... ok
+test_unreadable_current_keeps_identity_but_not_total (test_panel_fuel_observer.PanelFuelObserverTest.test_unreadable_current_keeps_identity_but_not_total) ... ok
+test_window_gates_and_4f8_not_required (test_panel_fuel_observer.PanelFuelObserverTest.test_window_gates_and_4f8_not_required) ... ok
+test_windows_min_max_macros (test_panel_fuel_observer.PanelFuelObserverTest.test_windows_min_max_macros) ... ok
+test_ini_and_fallback_match_permissions_test (test_permission_test_defaults.PermissionTestDefaults.test_ini_and_fallback_match_permissions_test) ... ok
+test_manually_added_customs_is_not_rewritten_as_unsupported (test_permission_test_defaults.PermissionTestDefaults.test_manually_added_customs_is_not_rewritten_as_unsupported) ... ok
+test_new_and_present_targets_request_activation (test_permission_test_defaults.PermissionTestDefaults.test_new_and_present_targets_request_activation) ... ok
+test_probe_defaults_match_required_capture_budget (test_permission_test_defaults.PermissionTestDefaults.test_probe_defaults_match_required_capture_budget) ... ok
+test_adopt_existing_does_not_invent_assignment_start (test_schedule_assignment_ledger.AssignmentLedgerTest.test_adopt_existing_does_not_invent_assignment_start) ... ok
+test_config_availability_loss_does_not_create_removal (test_schedule_assignment_ledger.AssignmentLedgerTest.test_config_availability_loss_does_not_create_removal) ... ok
+test_empty_schedule_closes_without_any_cargo_empty_requirement (test_schedule_assignment_ledger.AssignmentLedgerTest.test_empty_schedule_closes_without_any_cargo_empty_requirement) ... ok
+test_empty_to_goods_opens_observed_candidate (test_schedule_assignment_ledger.AssignmentLedgerTest.test_empty_to_goods_opens_observed_candidate) ... ok
+test_explicit_capture_limit_gap_does_not_auto_close (test_schedule_assignment_ledger.AssignmentLedgerTest.test_explicit_capture_limit_gap_does_not_auto_close) ... ok
+test_flag_edit_loses_pattern_but_does_not_replace_same_targets (test_schedule_assignment_ledger.AssignmentLedgerTest.test_flag_edit_loses_pattern_but_does_not_replace_same_targets) ... ok
+test_fuel_invalidity_does_not_become_zero_or_money (test_schedule_assignment_ledger.AssignmentLedgerTest.test_fuel_invalidity_does_not_become_zero_or_money) ... ok
+test_home_change_is_identity_not_completed_assignment (test_schedule_assignment_ledger.AssignmentLedgerTest.test_home_change_is_identity_not_completed_assignment) ... ok
+test_id_exhaustion_saturates_without_reuse (test_schedule_assignment_ledger.AssignmentLedgerTest.test_id_exhaustion_saturates_without_reuse) ... ok
+test_identity_switch_abandons_without_claiming_removal (test_schedule_assignment_ledger.AssignmentLedgerTest.test_identity_switch_abandons_without_claiming_removal) ... ok
+test_invalid_other_identity_prevents_switch_back_join (test_schedule_assignment_ledger.AssignmentLedgerTest.test_invalid_other_identity_prevents_switch_back_join) ... ok
+test_invalid_read_is_not_empty_or_removal_and_recovery_keeps_id (test_schedule_assignment_ledger.AssignmentLedgerTest.test_invalid_read_is_not_empty_or_removal_and_recovery_keeps_id) ... ok
+test_load_change_never_reuses_old_candidate_id (test_schedule_assignment_ledger.AssignmentLedgerTest.test_load_change_never_reuses_old_candidate_id) ... ok
+test_newly_recognized_flags_adopt_unknown_start_not_open (test_schedule_assignment_ledger.AssignmentLedgerTest.test_newly_recognized_flags_adopt_unknown_start_not_open) ... ok
+test_office_only_never_opens_goods_but_can_end_observed_structure (test_schedule_assignment_ledger.AssignmentLedgerTest.test_office_only_never_opens_goods_but_can_end_observed_structure) ... ok
+test_other_structural_plan_ends_candidate_without_inventing_goods (test_schedule_assignment_ledger.AssignmentLedgerTest.test_other_structural_plan_ends_candidate_without_inventing_goods) ... ok
+test_out_of_order_metadata_cannot_remove_a_candidate (test_schedule_assignment_ledger.AssignmentLedgerTest.test_out_of_order_metadata_cannot_remove_a_candidate) ... ok
+test_oversize_or_missing_identity_never_opens_a_candidate (test_schedule_assignment_ledger.AssignmentLedgerTest.test_oversize_or_missing_identity_never_opens_a_candidate) ... ok
+test_pause_comparison_closes_observed_targets_but_marks_uncertainty (test_schedule_assignment_ledger.AssignmentLedgerTest.test_pause_comparison_closes_observed_targets_but_marks_uncertainty) ... ok
+test_runtime_and_money_separation (test_schedule_assignment_ledger.AssignmentLedgerTest.test_runtime_and_money_separation) ... ok
+test_scalar_and_index_changes_keep_the_candidate (test_schedule_assignment_ledger.AssignmentLedgerTest.test_scalar_and_index_changes_keep_the_candidate) ... ok
+test_storage_context_and_row_order_have_distinct_meanings (test_schedule_assignment_ledger.AssignmentLedgerTest.test_storage_context_and_row_order_have_distinct_meanings) ... ok
+test_target_replacement_closes_then_opens_and_keeps_both_endpoints (test_schedule_assignment_ledger.AssignmentLedgerTest.test_target_replacement_closes_then_opens_and_keeps_both_endpoints) ... ok
+test_unavailable_comparison_abandons_not_settles (test_schedule_assignment_ledger.AssignmentLedgerTest.test_unavailable_comparison_abandons_not_settles) ... ok
+test_windows_macro_compatibility (test_schedule_assignment_ledger.AssignmentLedgerTest.test_windows_macro_compatibility) ... ok
+test_defaults_and_read_only_separation (test_schedule_observer.ScheduleObserverTest.test_defaults_and_read_only_separation) ... ok
+test_gap_endpoint_source_contract (test_schedule_observer.ScheduleObserverTest.test_gap_endpoint_source_contract) ... ok
+test_native_fingerprints_match_existing_raw_bytes (test_schedule_observer.ScheduleObserverTest.test_native_fingerprints_match_existing_raw_bytes) ... ok
+test_production_runtime_enabled (test_schedule_observer.ScheduleObserverTest.test_production_runtime_enabled) ... ok
+test_schedule_bad_bounds_and_oversize_do_not_walk (test_schedule_observer.ScheduleObserverTest.test_schedule_bad_bounds_and_oversize_do_not_walk) ... ok
+test_schedule_classification_flags_and_availability_are_separate (test_schedule_observer.ScheduleObserverTest.test_schedule_classification_flags_and_availability_are_separate) ... ok
+test_schedule_classification_gap_does_not_override_original_guard (test_schedule_observer.ScheduleObserverTest.test_schedule_classification_gap_does_not_override_original_guard) ... ok
+test_schedule_classification_scalar_only_preserves_exact_value (test_schedule_observer.ScheduleObserverTest.test_schedule_classification_scalar_only_preserves_exact_value) ... ok
+test_schedule_classification_structure_not_storage_or_index (test_schedule_observer.ScheduleObserverTest.test_schedule_classification_structure_not_storage_or_index) ... ok
+test_schedule_empty_list_is_valid_not_completion (test_schedule_observer.ScheduleObserverTest.test_schedule_empty_list_is_valid_not_completion) ... ok
+test_schedule_endpoint_equal_endpoints_do_not_invent_hidden_aba (test_schedule_observer.ScheduleObserverTest.test_schedule_endpoint_equal_endpoints_do_not_invent_hidden_aba) ... ok
+test_schedule_endpoint_invalid_identity_cannot_resurrect_cache (test_schedule_observer.ScheduleObserverTest.test_schedule_endpoint_invalid_identity_cannot_resurrect_cache) ... ok
+test_schedule_endpoint_invalid_is_not_an_empty_schedule (test_schedule_observer.ScheduleObserverTest.test_schedule_endpoint_invalid_is_not_an_empty_schedule) ... ok
+test_schedule_endpoint_vehicle_home_and_load_never_join (test_schedule_observer.ScheduleObserverTest.test_schedule_endpoint_vehicle_home_and_load_never_join) ... ok
+test_schedule_gap_changed_endpoint_keeps_original_delta_guards (test_schedule_observer.ScheduleObserverTest.test_schedule_gap_changed_endpoint_keeps_original_delta_guards) ... ok
+test_schedule_gap_empty_then_three_rows_are_endpoint_differences (test_schedule_observer.ScheduleObserverTest.test_schedule_gap_empty_then_three_rows_are_endpoint_differences) ... ok
+test_schedule_gap_unchanged_storage_index_context_are_independent (test_schedule_observer.ScheduleObserverTest.test_schedule_gap_unchanged_storage_index_context_are_independent) ... ok
+test_schedule_header_and_row_mutation_rejected (test_schedule_observer.ScheduleObserverTest.test_schedule_header_and_row_mutation_rejected) ... ok
+test_schedule_history_epoch_identity_and_gaps_rebaseline_no_deltas (test_schedule_observer.ScheduleObserverTest.test_schedule_history_epoch_identity_and_gaps_rebaseline_no_deltas) ... ok
+test_schedule_history_field_storage_and_context_changes_separate (test_schedule_observer.ScheduleObserverTest.test_schedule_history_field_storage_and_context_changes_separate) ... ok
+test_schedule_history_first_unchanged_and_index_only (test_schedule_observer.ScheduleObserverTest.test_schedule_history_first_unchanged_and_index_only) ... ok
+test_schedule_history_list_clear_replacement_are_observed_fields_only (test_schedule_observer.ScheduleObserverTest.test_schedule_history_list_clear_replacement_are_observed_fields_only) ... ok
+test_schedule_history_three_one_three_rows_and_same_count_replacement (test_schedule_observer.ScheduleObserverTest.test_schedule_history_three_one_three_rows_and_same_count_replacement) ... ok
+test_schedule_identical_visible_schedule_is_not_new_job (test_schedule_observer.ScheduleObserverTest.test_schedule_identical_visible_schedule_is_not_new_job) ... ok
+test_schedule_max_rows_and_checked_arithmetic (test_schedule_observer.ScheduleObserverTest.test_schedule_max_rows_and_checked_arithmetic) ... ok
+test_schedule_missing_header_and_config_fail_closed (test_schedule_observer.ScheduleObserverTest.test_schedule_missing_header_and_config_fail_closed) ... ok
+test_schedule_nonfinite_no_partial_table (test_schedule_observer.ScheduleObserverTest.test_schedule_nonfinite_no_partial_table) ... ok
+test_schedule_null_target_and_unknown_index_preserved (test_schedule_observer.ScheduleObserverTest.test_schedule_null_target_and_unknown_index_preserved) ... ok
+test_schedule_pattern_load_unload_is_conservative (test_schedule_observer.ScheduleObserverTest.test_schedule_pattern_load_unload_is_conservative) ... ok
+test_schedule_pattern_office_empty_and_invalid_do_not_invent_jobs (test_schedule_observer.ScheduleObserverTest.test_schedule_pattern_office_empty_and_invalid_do_not_invent_jobs) ... ok
+test_schedule_selected_fields_mapping_no_pointee_following (test_schedule_observer.ScheduleObserverTest.test_schedule_selected_fields_mapping_no_pointee_following) ... ok
+test_schedule_special_last_row_does_not_read_config (test_schedule_observer.ScheduleObserverTest.test_schedule_special_last_row_does_not_read_config) ... ok
+test_windows_min_max_macros (test_schedule_observer.ScheduleObserverTest.test_windows_min_max_macros) ... ok
+test_native_policy_and_taskcfg (test_site_permissions.SitePermissionsTest.test_native_policy_and_taskcfg) ... ok
+test_production_integration_guards (test_site_permissions.SitePermissionsTest.test_production_integration_guards) ... ok
+test_private_and_unknown_buildings_do_not_show_widgets (test_storage_checkbox.StorageCheckboxTest.test_private_and_unknown_buildings_do_not_show_widgets) ... ok
+test_production_handler (test_storage_checkbox.StorageCheckboxTest.test_production_handler) ... ok
+test_office_observations_surround_existing_notification (test_task_audit.TaskAuditTest.test_office_observations_surround_existing_notification) ... ok
+test_production_logging_is_bounded_and_transparent (test_task_audit.TaskAuditTest.test_production_logging_is_bounded_and_transparent) ... ok
+
+----------------------------------------------------------------------
+Ran 130 tests in 9.549s
+
+OK
+````
+
+#### Actual runtime ASan+UBSan stdout/stderr —1262bytes
+
+SHA2560ed23820357cab41ad64c187ff840e441bb246605db6b94f7d4d02181f25a1f9.
+
+````text
+PASS runtime_install_fingerprint
+PASS runtime_post_render_throttle_and_deferred_log
+PASS runtime_long_pause_coalesces_and_reports_omissions
+PASS runtime_pause_coalescing_never_overwrites_other_root_window_or_unpaused_record
+PASS runtime_queue_gap_capture_vs_drain_contention_and_load_discard
+PASS runtime_inactive_does_not_starve_capture_and_cap
+PASS runtime_guarded_fault_disables_and_reports_once
+PASS runtime_changed_data_refused
+PASS runtime_diag_short_images_never_read_global
+PASS runtime_diag_exact_size_relocated_signed_global
+PASS runtime_diag_null_image_preserves_capture
+PASS runtime_diag_wrapping_base_or_read_end_never_read
+PASS runtime_diag_exception_root514_capture_survives
+PASS runtime_diag_exception_root4f0_capture_survives
+PASS runtime_diag_exception_global_capture_survives
+PASS runtime_diag_exception_raw1794_capture_survives
+PASS runtime_diag_exception_proto8680_capture_survives
+PASS runtime_diag_proto8680_with_unavailable_quantity_or_capacity
+PASS runtime_diag_queued_values_immutable_after_source_mutation
+PASS runtime_diag_linked_zero_nonzero_and_independent_fault
+PASS runtime_diag_load_epoch_discards_stale_values
+13 gate-diagnostic scenarios PASS (host shim, not real SEH)
+8 host-shim scenarios PASS (not Windows ABI/SEH or a DLL)
+````
+
+#### Actual schedule-runtime ASan+UBSan stdout/stderr —1173bytes
+
+SHA256813ededdaadb087431d3427a534c59812cb420473c58bec3880ee1e1d616b91d.
+
+````text
+PASS schedule_runtime_mismatch_disables_schedule_not_fuel
+PASS schedule_runtime_same_post_render_record_deferred_rows_and_truthful_labels
+PASS schedule_runtime_unchanged_suppressed_and_row_index_not_job_end
+PASS schedule_runtime_paused_coalescing_carries_latest_schedule_and_rebaselines
+PASS schedule_runtime_in_place_three_row_replacement_across_pause
+PASS schedule_runtime_clear_across_pause_old_rows_and_recovery
+PASS schedule_runtime_classifies_scalar_target_and_index_changes
+PASS schedule_runtime_classifies_office_empty_and_load_unload_patterns
+PASS schedule_runtime_classification_preserves_gap_semantics
+PASS schedule_runtime_ledger_quiet_endpoints_and_scalar_index_keep_id
+PASS schedule_runtime_ledger_replacement_and_invalid_recovery
+PASS schedule_runtime_ledger_clear_across_pause_no_duplicate_close
+PASS schedule_runtime_load_absent_and_duplicate_fleet_fail_closed
+PASS schedule_runtime_capture_drop_counter_advance_rebaselines
+PASS schedule_runtime_invalid_schedule_never_blocks_fuel_or_prints_partial_rows
+PASS schedule_runtime_fault_latch_isolated_from_fuel_not_a_windows_seh_test
+16 schedule runtime host-shim scenarios PASS (not Windows ABI/SEH or a DLL)
+````
+
+### Next implementation task — provisional endpoint dry-run, not more diagnostic reports
+
+Proposed next task, NOT executed by this change. The reviewed code is on Arena's current branch, not automatically in Windows; reconcile/publish through the user-approved Git workflow before building there, preserving Windows uncommitted edits. Do not ask for another unchanged gate report. A future changed-version game test still needs separate build/deploy authorization. Exact native burn/resource/tonne proof remains a later acceptance question, not a prerequisite to an explicitly hypothetical no-refill estimate.
+
+```text
+Use the coordinator's reviewed0.18.13-gate-diagnostic source as the base, on the current authorized branch. Read root instructions and existing schedule_assignment_ledger/panel code. Preserve unrelated work; small coherent verified edits whenever EITHER content OR destination is long. No new native research/hooks, DLL build/deploy/game run, INI/default/dispatch changes, money movement, commit or push. Host tests allowed.
+
+Implement a logging-only provisional assignment endpoint estimate in the EXISTING plugin/ledger, not a detached model. Use stable same-receiver native raw readings, not positive-only UI litres or an assumed physical litre-to-tonne conversion. Log net level change separately from actual consumption. Under explicit unit_assumption=tonnes and no-refill assumption, label any price multiplication hypothetical_cost_if_no_refill, never actual burn/settlement. Use existing resource_pricing only when configured fuel lookup/price is available and finite; otherwise mark cost unavailable.
+
+Keep existing assignment identity: appearance opens; removal/cancellation/replacement closes regardless success; scalar/index updates retain ID. Unknown starts/gaps/changed object membership or metadata/non-finite readings must not produce an allocated cost. Observed rises/refuelling uncertainty must never cancel previously recorded burn or be presented as negative consumption; do not claim absence of a refill from sparse samples. Fuel burn outside assignments remains overhead, uncertain boundaries unallocated. Panel-only sampling and unobserved native execution remain explicit. Do not turn the existing fuelling-phase ground truth into a universal task classifier.
+
+Add production-path host tests for valid no-refill endpoints, refills/rises, unknown starts/gaps, stable versus changed receiver sets, cancellation/replacement/index-only updates, invalid price/readings and unit/cost labels. Use a distinct new version; keep billingOFF/dry_runON and no settlement. Record complete final new code/diff and actual results in the existing cumulative Markdown with small verified appends. Stop after implementation/host review; no further broad report request or unchanged game replay.
+```
+
+Final preservation/working-tree check: historical8501643-byte prefix hash matched exactly. Decoding the six explicit blank-context transport markers recovered the full19819-byte patch, byte-equal both to the saved artifact and CURRENT git diff for all seven source/test/ignore files. All three full result bodies matched their saved bytes exactly. Source patch and actual outputs were added through individually verified bounded writes; no full historical document rewrite. git diff--checkPASS. Active branch remains arena/e24a4fb7-wrsre, with eight modified files total including this cumulative report; no staged/committed/pushed changes or imported .obj files. Final code tests are130suitePASS,21runtimeASan/UBSanPASS,16schedule-runtimeASan/UBSanPASS. No DLL build/deploy/game test or payment. Next work is the explicitly provisional endpoint dry-run, not another gate-report correction round.
+
+## Coordinator implementation — 0.18.14 endpoint hypothesis correction (2026-11-01)
+
+### Verdict, provenance and scope
+
+Implemented directly here atop local HEAD `9cff1a355c4ff945e569901b5f6d3042d79f887f`, preserving the completed local 0.18.13 gate correction. The source version is now **0.18.14-endpoint-estimate**, uncommitted on `arena/e24a4fb7-wrsre`. The supplied Windows summary concerned older 0.18.12/uncommitted source on `DO-fuel-cost-calculatotr`; its claimed 62,887-byte report was not attached or measured here. Its claimed 66/66 does not match its listed 30+16+20+28+1=95. No missing Windows artifact was reconstructed, no remote implementation was imported, and nothing was synchronized to that Windows checkout.
+
+The decisive correction is **source and units**, not merely renaming a delta: historical `Point.litres` remains the positive-only UI candidate, scaled by 1000, and is NEVER used for tonne pricing. A separate bounded `NativeFuel` copies signed raw values, object pointers, metadata pointers and capacities from the already captured snapshot; there are no new native reads or hooks. The production feed rejects non-complete/missing quantity captures, invalid count/root, nonfinite raw/capacity, nonpositive capacity, missing pointers or duplicate objects. Exact ordered object/metadata/capacity identity is conservatively required throughout the candidate, so a reordered set is unavailable too. This validates copied data consistency, not native receiver semantics or physical units.
+
+Native quality faults and receiver changes are sticky even if readings later recover. Per-object observed level rises are checked on **quiet accepted samples and the closing sample**; a falling aggregate cannot hide a rise in another receiver. Net arithmetic is `sum(end.raw - start.raw)` in double precision; closing events use **event.boundary**, while `candidate.last` retains its historical previous-sample meaning. Abandonment clears native boundary data too. Unknown starts, gaps, role uncertainty, invalid readings and changed receivers suppress attribution. Existing assignment appearance/removal/replacement behavior remains: closes do not require successful delivery or empty cargo; index/scalar changes keep the candidate ID. Outside-assignment consumption is not allocated or priced by this feature.
+
+Only closed candidates with valid negative native net and no observed rise reach `PanelHypotheticalPrice`. It uses the **real public API layout**, checks the advertised pricing prefix through `getPrice`, guards both lookup and price callbacks, resolves configured `gFuelResource`, and requires finite positive price AND product. Currency follows the public API/RUB fallback, with an additional full-tail guard through `getCurrencySymbol` before calling the helper (the helper itself guards only through the preceding `getActiveCurrency` field). Short/missing services, absent resource, invalid numbers and ineligible hypotheses return unavailable with explicit reasons. Prices are sampled at observation drain, not historical burn time. No new API consumption or money mutation was introduced.
+
+The log explicitly says `unit_assumption=tonnes`, `refill_coverage=unverified`, `hypothetical_cost_if_no_refill`, `exact_burn=0`, `actual_cost=not_computed`, `settlement=none`, `billing=off`. A rise is not asserted to be a verified external refill; it simply invalidates the no-refill hypothesis. Unseen refills remain possible. **Net change is not cumulative burn and this is not actual fuel costing or settlement.** Signed negative native levels remain signed rather than UI-clipped. Native units, receiver applicability, Windows SEH/ABI and actual game execution remain unverified. No DLL build, deployment, game run, payment, INI/default/dispatch/permission changes, tracker wiring, commit or push was performed. `private_logistics.ini` stays SHA256 `fc2d763962e9f1d3684b0eabf31d2b79efdeb9c2621e98af9d3b2ce07a8fbf04`; `schedule_observer.h` is unchanged from HEAD.
+
+### Actual local verification
+
+Final `python -m unittest discover -s tests/private_logistics -p 'test_*.py' -v`: **137 PASS in 19.105s**. This is a unittest method count, including bundled C++ harness invocations; do not add scenario totals to it. Final ASan+UBSan (`g++`, C++17, O1/g, Wall/Wextra/Werror/pedantic, frame pointers): **29 ledger cases**, **21 panel runtime scenarios (8 original + 13 gate)**, **16 schedule runtime scenarios**, **6 endpoint/pricing scenarios**, all PASS. New ledger checks cover fresh closing boundary versus old last/UI, sticky missing reading, metadata/capacity/membership restoration, quiet rises, signed negative levels, duplicate/nonfinite/missing/oversize data, per-object rises hidden by total decline and gaps. Endpoint tests invoke the actual production quote function and `ScheduleAssignmentLog` using the full shared API headers, not a shortened mock struct or always-null pricing service.
+
+### Reproducible source and output archive
+
+The complete final code delta below is against HEAD `9cff1a3`, includes the preserved gate correction plus endpoint changes, all changed test wrappers and the complete new endpoint harness (including untracked new-file diff). It excludes only this cumulative report. Decoded patch: **49,021 bytes / 890 lines / SHA256 `08f0081ef2df16ecc41d5bb9b70203475d43a45260b2586eabbb86f5fba189de`**. As in the preceding gate archive, any whole-line `\x20` inside the patch represents a single-space blank diff context line; decode only those whole lines back to one space before applying. This reversible transport avoids trailing-whitespace errors in Markdown. Complete final core headers and harness sources follow separately, then exact final stdout. Copying is mechanical, in bounded line slices with immediate byte-for-byte readback after every append; existing history is not rewritten.
+
+#### ENDPOINT final source patch
+
+```diff
+diff --git a/.gitignore b/.gitignore
+index 7d9d157..0cd0ce0 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -9,6 +9,7 @@ scratch/
+ tools/peinfo-out/
+ *.log
+ *.pdb
++*.obj
+ *.ilk
+ *.dll
+ *.exe
+diff --git a/plugins/private_logistics/panel_fuel_observer.h b/plugins/private_logistics/panel_fuel_observer.h
+index 5f3fc51..aa54ecb 100644
+--- a/plugins/private_logistics/panel_fuel_observer.h
++++ b/plugins/private_logistics/panel_fuel_observer.h
+@@ -26,6 +26,10 @@ struct Object {
+     Address pointer = 0, metadata = 0, homeCandidate = 0;
+     float raw = 0, capacity = 0;
+     bool quantityRead = false;
++    std::uint32_t raw1794 = 0;
++    bool raw1794Read = false;
++    std::uint8_t proto8680 = 0;
++    bool proto8680Read = false;
+     Match match = Match::Unavailable;
+     unsigned fleetIndex = 0, occurrences = 0;
+ };
+@@ -36,6 +40,13 @@ struct Snapshot {
+     Object objects[MaxObjects]{};
+     int contextMode = -1, metadataKind = -1;
+     std::uint8_t flag8681 = 0, flag8682 = 0;
++    // Optional post-render diagnostics, populated independently by the runtime.
++    std::uint8_t root514 = 0;
++    bool root514Read = false;
++    Address root4F0 = 0;
++    bool root4F0Read = false;
++    std::int32_t gateGlobal = 0;
++    bool gateGlobalRead = false;
+     bool flagsRead = false, adjustmentRead = false, adjustmentNeeded = false;
+     bool aggregateValid = false, ratioValid = false;
+     float current = 0, unadjustedCapacity = 0, litresCandidate = 0, ratio = 0;
+diff --git a/plugins/private_logistics/panel_fuel_runtime.h b/plugins/private_logistics/panel_fuel_runtime.h
+index 8e08df9..43a5424 100644
+--- a/plugins/private_logistics/panel_fuel_runtime.h
++++ b/plugins/private_logistics/panel_fuel_runtime.h
+@@ -6,6 +6,7 @@
+ #include "schedule_observer.h"
+ #include "schedule_assignment_ledger.h"
+\x20
++static constexpr char kGateDiagnosticVersion[] = "0.18.14-endpoint-estimate";
+ static bool g_scheduleReady = false;
+ static volatile LONG g_scheduleFault = 0;
+ static private_logistics_schedule::History g_scheduleHistory; // simulation tick only
+@@ -45,6 +46,40 @@ static bool PanelRead(uintptr_t address, void* out, size_t size, void*)
+     memcpy(out, (const void*)address, size);
+     return true;
+ }
++// Optional fields must not reach the observer-wide mandatory-read fault latch.
++// Memory::Get validates base/offset/end arithmetic before calling PanelRead.
++template<class T>
++static bool PanelDiagnosticRead(std::uintptr_t base, std::uintptr_t offset, T& out)
++{
++    const private_logistics_panel::Memory memory{PanelRead, nullptr};
++    T value{};
++    bool ok = false;
++    __try {
++        ok = memory.Get(base, offset, value);
++    } __except (EXCEPTION_EXECUTE_HANDLER) {
++        return false;
++    }
++    if (ok) out = value;
++    return ok;
++}
++static void PanelCaptureDiagnostics(private_logistics_panel::Snapshot& s)
++{
++    if (!s.root) return;
++    s.root514Read = PanelDiagnosticRead(s.root, 0x514, s.root514);
++    s.root4F0Read = PanelDiagnosticRead(s.root, 0x4F0, s.root4F0);
++    constexpr std::uintptr_t globalRva = 0x9D54C0;
++    if (g_exeBase && globalRva <= g_exeSize &&
++        sizeof(s.gateGlobal) <= g_exeSize - globalRva) {
++        s.gateGlobalRead = PanelDiagnosticRead(
++            reinterpret_cast<std::uintptr_t>(g_exeBase), globalRva, s.gateGlobal);
++    }
++    for (unsigned i = 0; i < s.count && i < private_logistics_panel::MaxObjects; ++i) {
++        auto& o = s.objects[i];
++        o.raw1794Read = PanelDiagnosticRead(o.pointer, 0x1794, o.raw1794);
++        // Metadata may be available even if a later mandatory quantity read failed.
++        o.proto8680Read = PanelDiagnosticRead(o.metadata, 0x8680, o.proto8680);
++    }
++}
+ static void PanelResetQueueLocked(LONG epoch)
+ {
+     if (g_panelQueueEpoch == epoch) return;
+@@ -81,6 +116,7 @@ static void PanelCapture(void* context, void* window)
+     } __except (EXCEPTION_EXECUTE_HANDLER) {
+         InterlockedExchange(&g_panelFault, 1);
+     }
++    if (captured) PanelCaptureDiagnostics(snapshot);
+     private_logistics_schedule::Snapshot schedule{};
+     if (captured && g_scheduleReady) {
+         schedule.status = private_logistics_schedule::Status::Ineligible;
+@@ -157,6 +193,53 @@ static const char* PanelMatch(private_logistics_panel::Match m)
+     default: return "unavailable";
+     }
+ }
++static private_logistics_assignment::NativeFuel PanelNativeFuel(const private_logistics_panel::Snapshot& s)
++{
++    private_logistics_assignment::NativeFuel f{};
++    if(s.status!=private_logistics_panel::Status::Complete || !s.count ||
++       s.count>private_logistics_panel::MaxObjects || s.objects[0].pointer!=s.root) return f;
++    f.count=s.count;
++    for(unsigned i=0;i<s.count;++i) {
++        const auto& o=s.objects[i];
++        if(!o.quantityRead) return private_logistics_assignment::NativeFuel{};
++        f.objects[i]=o.pointer;f.metadata[i]=o.metadata;f.raw[i]=o.raw;f.capacity[i]=o.capacity;
++    }
++    f.valid=true;
++    f.valid=private_logistics_assignment::ValidFuel(f);
++    return f;
++}
++struct PanelEndpointPrice {
++    bool available=false;
++    double amount=0;
++    float perTonne=0;
++    int currency=TSM_CURRENCY_RUB;
++    const char* reason="not_closed";
++};
++static PanelEndpointPrice PanelHypotheticalPrice(const private_logistics_assignment::Event& event,
++                                                const private_logistics_assignment::Endpoint& e)
++{
++    PanelEndpointPrice q{};
++    if(event.kind!=private_logistics_assignment::Kind::Closed) return q;
++    q.reason="uncertain_endpoint";if(!e.valid || !std::isfinite(e.net)) return q;
++    q.reason="observed_level_rise";if(e.observedRise) return q;
++    q.reason="nonnegative_net";if(e.net>=0) return q;
++    q.reason="pricing_api_unavailable";
++    if(!g_pricing || g_pricing->structSize<offsetof(TsmResourcePricingApi,getPrice)+sizeof(g_pricing->getPrice) ||
++       !g_pricing->getByName || !g_pricing->getPrice) return q;
++    void* resource=g_pricing->getByName(gFuelResource);
++    q.reason="resource_unavailable";if(!resource) return q;
++    // The public helper inspects BOTH appended function pointers. Guard the full
++    // pair before calling it, including providers exposing only an older prefix.
++    const bool currencyTail=g_currency && g_currency->structSize>=
++        offsetof(TsmCurrencyApi,getCurrencySymbol)+sizeof(g_currency->getCurrencySymbol);
++    q.currency=TsmCurrencyActive(currencyTail ? g_currency : nullptr); // RUB fallback.
++    const float price=g_pricing->getPrice(resource,q.currency);
++    const double amount=-e.net*double(price);
++    q.reason="invalid_price";if(!std::isfinite(price) || price<=0) return q;
++    q.reason="invalid_product";if(!std::isfinite(amount) || amount<=0) return q;
++    q.perTonne=price;q.amount=amount;q.available=true;q.reason="no_refill_hypothesis_only";
++    return q;
++}
+ static void ScheduleAssignmentLog(const PanelRecord& record,
+                                   const private_logistics_schedule::Delta& delta,
+                                   const private_logistics_schedule::FieldChanges& changes,
+@@ -165,18 +248,26 @@ static void ScheduleAssignmentLog(const PanelRecord& record,
+     const auto& fuel = record.snapshot;
+     const auto result = g_scheduleLedger.Observe(record.schedule, delta, changes,
+         (unsigned long long)record.epoch, fuel.root, home,
+-        {record.sequence, record.milliseconds, fuel.aggregateValid, fuel.litresCandidate});
++        {record.sequence, record.milliseconds, fuel.aggregateValid, fuel.litresCandidate, PanelNativeFuel(fuel)});
+     for (unsigned i = 0; i < result.count; ++i) {
+         const auto& event = result.events[i];
+         const auto& c = event.candidate;
++        const auto endpoint=private_logistics_assignment::Estimate(c,event.boundary);
++        const auto price=PanelHypotheticalPrice(event,endpoint);
+         Logf("[PANEL ASSIGNMENT] observation_epoch=%ld sample=%u observation_root=%p "
+              "id=%llu candidate_epoch=%llu root=%p home=%p event=%s reason=%s "
+              "first_sample=%u first_ms=%llu first_fuel_valid=%d first_litres_candidate=%.9g "
+              "last_sample=%u last_ms=%llu last_fuel_valid=%d last_litres_candidate=%.9g "
+              "boundary_sample=%u boundary_ms=%llu boundary_fuel_valid=%d boundary_litres_candidate=%.9g "
+              "unknown_start=%d observation_gap=%d role_uncertain=%d "
++             "native_start_valid=%d native_start=%.9g native_end_valid=%d native_end=%.9g "
++             "net_change_valid=%d net_change_native=%.9g unit_assumption=tonnes "
++             "receiver_changed=%d fuel_uncertain=%d observed_level_rise=%d refill_coverage=unverified "
++             "hypothetical_cost_if_no_refill_available=%d hypothetical_cost_if_no_refill=%.9g "
++             "hypothetical_cost_reason=%s fuel_price_per_tonne=%.9g currency=%d "
++             "currency_policy=public_api_or_RUB_fallback price_timing=observation_drain "
+              "id_scope=process_local_selected_panel native_boundary=unverified completion=unverified "
+-             "exact_burn=0 cost=not_computed settlement=none billing=off",
++             "exact_burn=0 actual_cost=not_computed settlement=none billing=off",
+              record.epoch, record.sequence, (void*)fuel.root,
+              (unsigned long long)c.id, (unsigned long long)c.epoch, (void*)c.root, (void*)c.home,
+              private_logistics_assignment::KindName(event.kind), event.reason,
+@@ -184,7 +275,14 @@ static void ScheduleAssignmentLog(const PanelRecord& record,
+              c.last.sample, (unsigned long long)c.last.ms, c.last.fuelValid ? 1 : 0, (double)c.last.litres,
+              event.boundary.sample, (unsigned long long)event.boundary.ms,
+              event.boundary.fuelValid ? 1 : 0, (double)event.boundary.litres,
+-             c.unknownStart ? 1 : 0, c.observationGap ? 1 : 0, c.roleUncertain ? 1 : 0);
++             c.unknownStart ? 1 : 0, c.observationGap ? 1 : 0, c.roleUncertain ? 1 : 0,
++             private_logistics_assignment::ValidFuel(c.first.native) ? 1 : 0,
++             private_logistics_assignment::NativeTotal(c.first.native),
++             private_logistics_assignment::ValidFuel(event.boundary.native) ? 1 : 0,
++             private_logistics_assignment::NativeTotal(event.boundary.native),
++             endpoint.valid ? 1 : 0, endpoint.valid ? endpoint.net : 0.0,
++             c.receiverChanged ? 1 : 0, c.fuelUncertain ? 1 : 0, endpoint.observedRise ? 1 : 0,
++             price.available ? 1 : 0, price.amount, price.reason, (double)price.perTonne, price.currency);
+     }
+ }
+ static void ScheduleObserverLog(const PanelRecord& record, bool gap)
+@@ -334,6 +432,8 @@ static void PanelObserverTick(void*, float, float)
+          "adjustment_read=%d adjustment_needed=%d presentation=%s "
+          "queue_full_total_at_capture=%u queue_full_total_at_drain=%u "
+          "captured_paused=%d coalesced_snapshots=%u sample_ids=accepted_records_only "
++         "root514_read=%d root514=%u root4f0_read=%d root4f0=%p "
++         "gate_global_read=%d gate_global=%d gate_diag=%s native_execution=unobserved "
+          "physical_fuel=unverified exact_burn=0 billing=off",
+          record.epoch, record.sequence, (unsigned long long)record.milliseconds,
+          (void*)s.window, (void*)s.root, PanelStatus(s.status), s.aggregateValid ? 1 : 0,
+@@ -342,15 +442,20 @@ static void PanelObserverTick(void*, float, float)
+          s.flagsRead ? 1 : 0, (unsigned)s.flag8681, (unsigned)s.flag8682,
+          s.adjustmentRead ? 1 : 0, s.adjustmentNeeded ? 1 : 0,
+          s.flagsRead && (s.flag8681 || s.flag8682) ? "alternate_if_shown" : "unresolved_7c58",
+-         record.queueFullAtCapture, dropped, record.paused ? 1 : 0, record.coalesced);
++         record.queueFullAtCapture, dropped, record.paused ? 1 : 0, record.coalesced,
++         s.root514Read ? 1 : 0, (unsigned)s.root514, s.root4F0Read ? 1 : 0, (void*)s.root4F0,
++         s.gateGlobalRead ? 1 : 0, (int)s.gateGlobal, kGateDiagnosticVersion);
+     for (unsigned i = 0; i < s.count; ++i) {
+         const auto& o = s.objects[i];
+         Logf("[PANEL OBJECT] epoch=%ld sample=%u index=%u role=%s object=%p metadata=%p "
+              "quantity_read=%d raw5f0=%.9g capacity8684=%.9g candidate_home=%p "
+-             "membership=%s fleet_index=%u occurrences=%u private_status=not_classified",
++             "membership=%s fleet_index=%u occurrences=%u private_status=not_classified "
++             "raw1794_read=%d raw1794=%u proto8680_read=%d proto8680=%u",
+              record.epoch, record.sequence, i, i ? "linked" : "root", (void*)o.pointer,
+              (void*)o.metadata, o.quantityRead ? 1 : 0, (double)o.raw, (double)o.capacity,
+-             (void*)o.homeCandidate, PanelMatch(o.match), o.fleetIndex, o.occurrences);
++             (void*)o.homeCandidate, PanelMatch(o.match), o.fleetIndex, o.occurrences,
++             o.raw1794Read ? 1 : 0, (unsigned)o.raw1794,
++             o.proto8680Read ? 1 : 0, (unsigned)o.proto8680);
+     }
+     ScheduleObserverLog(record, fault || cap || contention || newDrops);
+ }
+diff --git a/plugins/private_logistics/private_logistics.cpp b/plugins/private_logistics/private_logistics.cpp
+index 407b9a4..3382a6d 100644
+--- a/plugins/private_logistics/private_logistics.cpp
++++ b/plugins/private_logistics/private_logistics.cpp
+@@ -1,6 +1,10 @@
+ // private_logistics - what a private company earns, and what it pays.
+ //
+ // ---------------------------------------------------------------------------
++// v0.18.14 updates: signed native endpoint hypothesis, stable receiver checks,
++// locally tested price path; no exact-burn claim, settlement or payments.
++// v0.18.13 updates: independently guarded raw gate diagnostics, checked image
++// reads and exercised queue/fault tests. No new hook, costing or payments.
+ // v0.18.11 updates: selected-panel dry-run assignment ledger; observed targets
+ // delimit candidates, never scalar/index edits. No costing, settlement or payments.
+ // v0.18.10 updates: captured target/flag/scalar change classification and
+@@ -489,7 +493,7 @@ static char   gFuelResource[64] = "fuel";  // resolved through resource_pricing
+ static double gBasketsPerTrip   = 0.80;    // CPI fallback, in daily survival baskets
+ static double gBasketsPerTonne  = 0.02;
+\x20
+-#define PL_VERSION "0.18.11-assignment-ledger"
++#define PL_VERSION "0.18.14-endpoint-estimate"
+ static int g_panelObserverEnabled = 1;
+ static int g_scheduleObserverEnabled = 1;
+ static void PanelObserverLoading(void);
+diff --git a/plugins/private_logistics/schedule_assignment_ledger.h b/plugins/private_logistics/schedule_assignment_ledger.h
+index b783417..5c6f8bb 100644
+--- a/plugins/private_logistics/schedule_assignment_ledger.h
++++ b/plugins/private_logistics/schedule_assignment_ledger.h
+@@ -1,4 +1,5 @@
+-// Selected-panel observation ledger ONLY. No native job IDs, costing or payments.
++// Selected-panel ledger and provisional raw endpoint hypothesis. No actual burn,
++// native job IDs, price service, settlement or payments in this portable core.
+ #ifndef PRIVATE_LOGISTICS_SCHEDULE_ASSIGNMENT_LEDGER_H
+ #define PRIVATE_LOGISTICS_SCHEDULE_ASSIGNMENT_LEDGER_H
+ #include "schedule_observer.h"
+@@ -6,18 +7,63 @@
+ namespace private_logistics_assignment {
+ namespace sch = private_logistics_schedule;
+ using sch::Address;
++// Signed native values, separate from the historical positive-only UI litres.
++struct NativeFuel {
++    unsigned count=0;
++    Address objects[private_logistics_panel::MaxObjects]{};
++    Address metadata[private_logistics_panel::MaxObjects]{};
++    float raw[private_logistics_panel::MaxObjects]{}, capacity[private_logistics_panel::MaxObjects]{};
++    bool valid=false;
++};
++inline bool ValidFuel(const NativeFuel& f) {
++    if(!f.valid || !f.count || f.count>private_logistics_panel::MaxObjects) return false;
++    for(unsigned i=0;i<f.count;++i) {
++        if(!f.objects[i] || !f.metadata[i] || !std::isfinite(f.raw[i]) ||
++           !std::isfinite(f.capacity[i]) || f.capacity[i]<=0) return false;
++        for(unsigned j=0;j<i;++j) if(f.objects[i]==f.objects[j]) return false;
++    }
++    return true;
++}
++inline double NativeTotal(const NativeFuel& f) {
++    if(!ValidFuel(f)) return 0; // Callers also log the explicit validity flag.
++    double total=0;for(unsigned i=0;i<f.count;++i) total+=double(f.raw[i]);
++    return total;
++}
++inline bool SameFuel(const NativeFuel& a,const NativeFuel& b) {
++    if(!ValidFuel(a) || !ValidFuel(b) || a.count!=b.count) return false;
++    for(unsigned i=0;i<a.count;++i)
++        if(a.objects[i]!=b.objects[i] || a.metadata[i]!=b.metadata[i] || a.capacity[i]!=b.capacity[i]) return false;
++    return true;
++}
+ struct Point {
+     unsigned sample=0;
+     std::uint64_t ms=0;
+     bool fuelValid=false;
+-    float litres=0;
++    float litres=0; // Historical UI candidate only; NEVER used for tonne pricing.
++    NativeFuel native{};
+ };
+ struct Candidate {
+     std::uint64_t id=0,epoch=0;
+     Address root=0,home=0;
+     Point first{},last{};
+     bool unknownStart=false,observationGap=false,roleUncertain=false;
++    bool fuelUncertain=false,receiverChanged=false,observedRise=false;
+ };
++struct Endpoint {
++    bool valid=false,observedRise=false;
++    double net=0; // end minus start, native raw units; NOT actual consumption.
++};
++inline Endpoint Estimate(const Candidate& c,const Point& end) {
++    Endpoint e{};e.observedRise=c.observedRise;
++    if(!c.id || c.unknownStart || c.observationGap || c.roleUncertain ||
++       c.fuelUncertain || c.receiverChanged || !SameFuel(c.first.native,end.native)) return e;
++    for(unsigned i=0;i<end.native.count;++i) {
++        e.net+=double(end.native.raw[i])-double(c.first.native.raw[i]);
++        e.observedRise=e.observedRise || end.native.raw[i]>c.last.native.raw[i];
++    }
++    e.valid=std::isfinite(e.net);
++    return e;
++}
+ enum class Kind { Opened, Adopted, Updated, Closed, Abandoned, Uncertain, IdExhausted };
+ inline const char* KindName(Kind k) {
+     switch(k) {
+@@ -41,11 +87,18 @@ class Ledger {
+     Candidate active_{};
+     std::uint64_t serial_=0;
+     bool invalidStreak_=false;
++    static void CheckFuel(Candidate& c,const Point& p) {
++        if(!ValidFuel(p.native)) {c.fuelUncertain=true;return;}
++        if(ValidFuel(c.first.native) && !SameFuel(c.first.native,p.native)) c.receiverChanged=true;
++        if(SameFuel(c.last.native,p.native))
++            for(unsigned i=0;i<p.native.count;++i)
++                c.observedRise=c.observedRise || p.native.raw[i]>c.last.native.raw[i];
++    }
+     static void Add(Result& r,Kind kind,const char* reason,const Candidate& c,const Point& p) {
+         Point boundary=p;
+         // An abandoned interval has no observed end reading for its old context.
+         // In particular, never attach another vehicle/load's fuel to it.
+-        if(kind==Kind::Abandoned) {boundary.fuelValid=false;boundary.litres=0;}
++        if(kind==Kind::Abandoned) {boundary.fuelValid=false;boundary.litres=0;boundary.native=NativeFuel{};}
+         r.events[r.count++]={kind,reason,c,boundary}; // At most close/abandon + open/adopt.
+     }
+ public:
+@@ -58,6 +111,7 @@ public:
+         Result result;
+         point.fuelValid=point.fuelValid && std::isfinite(point.litres) && point.litres>=0;
+         if(!point.fuelValid) point.litres=0; // Explicitly invalid, not observed zero.
++        if(!ValidFuel(point.native) || point.native.objects[0]!=root) point.native.valid=false;
+         const bool changedIdentity=Active() &&
+             (active_.epoch!=epoch || active_.root!=root || active_.home!=home);
+         if(changedIdentity) {
+@@ -87,6 +141,7 @@ public:
+         }
+         if(Active()) {
+             active_.observationGap=active_.observationGap || d.endpointAcrossGap;
++            CheckFuel(active_,point); // Includes quiet samples and the closing boundary.
+             if(changes.comparable && changes.Structure()) {
+                 const char* reason=pattern==sch::Pattern::Empty ? "observed_removed" :
+                     pattern==sch::Pattern::LoadUnload ? "observed_targets_replaced" :
+@@ -111,6 +166,7 @@ public:
+             const bool appeared=!changedIdentity && d.endpointCompared && changes.comparable && changes.Structure();
+             active_.id=++serial_;active_.epoch=epoch;active_.root=root;active_.home=home;
+             active_.first=active_.last=point;
++            active_.fuelUncertain=!ValidFuel(point.native);
+             active_.unknownStart=!appeared;
+             active_.observationGap=d.endpointAcrossGap;
+             Add(result,appeared?Kind::Opened:Kind::Adopted,
+diff --git a/tests/private_logistics/panel_fuel_runtime_test.cpp b/tests/private_logistics/panel_fuel_runtime_test.cpp
+index 778e994..ec7652e 100644
+--- a/tests/private_logistics/panel_fuel_runtime_test.cpp
++++ b/tests/private_logistics/panel_fuel_runtime_test.cpp
+@@ -1,9 +1,17 @@
+ // Native host shim exercises the production queue/control code. NOT Windows ABI,
+ // SEH, patch execution, real threads, or native game lifecycle validation.
+-#define main ReaderHarnessMain
+-#include "panel_fuel_observer_test.cpp"
+-#undef main
++#include <cstdint>
++#include <cstdio>
++#include <cstring>
++#include <cstdlib>
++#include <vector>
++#include <string>
+ #include <cstdarg>
++#include "../../src/resource_pricing_api.h"
++static const TsmResourcePricingApi* g_pricing=nullptr;
++static const TsmCurrencyApi* g_currency=nullptr;
++static char gFuelResource[64]="fuel";
++#define CHECK(x) do { if (!(x)) { std::fprintf(stderr,"line %d: %s\n",__LINE__,#x); std::exit(1); } } while (0)
+\x20
+ using BYTE = unsigned char;
+ using LONG = long; // host-shim log ABI; real Windows LONG is 32-bit
+@@ -17,14 +25,17 @@ static LONG InterlockedExchange(volatile LONG* p,LONG value) { LONG old=*p;*p=va
+ static LONG InterlockedIncrement(volatile LONG* p) { return ++*p; }
+ static ULONGLONG clockMs=1000;
+ static ULONGLONG GetTickCount64() { return clockMs; }
+-static std::vector<BYTE> image(0x90B080);
++static std::vector<BYTE> image(0x9D54C4); // backed storage through the global int32
+ static BYTE* g_exeBase=image.data();
+ static std::size_t g_exeSize=image.size();
+ static bool throwOnRead=false;
+-static uintptr_t throwAtRead=0;
++static uintptr_t throwAtRead=0, denyAtRead=0;
++static std::vector<uintptr_t> attemptedReads;
+ static bool ReadablePtr(const void* p,std::size_t n) {
++    attemptedReads.push_back((uintptr_t)p);
++    if (denyAtRead && (uintptr_t)p==denyAtRead) return false;
+     if(throwOnRead || (throwAtRead && (uintptr_t)p==throwAtRead)) throw 1;
+-    const auto a=(uintptr_t)p,b=(uintptr_t)g_exeBase;
++    const auto a=(uintptr_t)p,b=(uintptr_t)image.data(); // physical backing, not injected module base
+     return a>=b && a-b<=image.size() && n<=image.size()-(a-b);
+ }
+ constexpr unsigned IMAGE_DOS_SIGNATURE=0x5A4D,IMAGE_NT_SIGNATURE=0x4550;
+@@ -59,7 +70,11 @@ static ClockApi* g_simClock=&api;
+ #define __fastcall
+ #define __try try
+ #define __except(x) catch(...)
++// Compile production runtime BEFORE the reader fixture's global namespace import.
+ #include "panel_fuel_runtime.h"
++#define main ReaderHarnessMain
++#include "panel_fuel_observer_test.cpp"
++#undef main
+\x20
+ #ifndef PANEL_RUNTIME_TEST_NO_MAIN
+ int main() {
+@@ -149,6 +164,132 @@ int main() {
+     g_exeBase[0x90B07C]=1;CHECK(!PanelTargetMatches());g_exeBase[0x90B07C]=0;
+     g_exeBase[0x8F3E98]=0;CHECK(!PanelTargetMatches());
+     std::puts("PASS runtime_changed_data_refused");
++    InterlockedExchange(&g_panelFault,0);
++    PanelObserverLoading();tick(nullptr,1,1);
++    g_exeBase[0x8F3E98]=0x25;
++    const auto rootAddr=ptr(fixture.root),metaAddr=ptr(fixture.meta);
++    const auto globalAddr=ptr(0x9D54C0);
++    const auto wasRead=[&](uintptr_t address) {
++        for(auto attempted:attemptedReads) if(attempted==address) return true;
++        return false;
++    };
++    const auto fresh=[&]() {
++        CHECK(g_panelCount==0);
++        const auto samples=g_panelSamples;
++        clockMs+=1000;attemptedReads.clear();PanelCapture(context,window);
++        CHECK(!g_panelFault && g_panelCount==1 && g_panelSamples==samples+1);
++        return g_panelQueue[g_panelHead].snapshot;
++    };
++    for(std::size_t size:{std::size_t(0),std::size_t(0x9D54BF),
++                         std::size_t(0x9D54C0),std::size_t(0x9D54C3)}) {
++        g_exeSize=size;const auto s=fresh();
++        CHECK(s.aggregateValid && s.root514Read && !s.gateGlobalRead);
++        CHECK(!wasRead(globalAddr));tick(nullptr,1,1);
++    }
++    g_exeSize=image.size();
++    std::puts("PASS runtime_diag_short_images_never_read_global");
++    for(std::int32_t value:{-7,0,2,42}) {
++        std::memcpy((void*)globalAddr,&value,sizeof(value));
++        const auto s=fresh();
++        CHECK(s.gateGlobalRead && s.gateGlobal==value && wasRead(globalAddr));
++        tick(nullptr,1,1);
++    }
++    std::puts("PASS runtime_diag_exact_size_relocated_signed_global");
++    g_exeBase=nullptr;
++    {const auto s=fresh();CHECK(s.aggregateValid && !s.gateGlobalRead && !wasRead(globalAddr));}
++    tick(nullptr,1,1);g_exeBase=image.data();
++    std::puts("PASS runtime_diag_null_image_preserves_capture");
++    for(std::uintptr_t base:{UINTPTR_MAX-0x9D54C0+1,UINTPTR_MAX-0x9D54C0-1}) {
++        g_exeBase=reinterpret_cast<BYTE*>(base);const auto s=fresh();
++        CHECK(s.aggregateValid && !s.gateGlobalRead);
++        // No fabricated global address reaches the memory reader.
++        for(auto address:attemptedReads)
++            CHECK(address>=(uintptr_t)image.data() && address<(uintptr_t)image.data()+image.size());
++        tick(nullptr,1,1);
++    }
++    g_exeBase=image.data();
++    std::puts("PASS runtime_diag_wrapping_base_or_read_end_never_read");
++    const uintptr_t faults[]={rootAddr+0x514,rootAddr+0x4F0,globalAddr,
++                              rootAddr+0x1794,metaAddr+0x8680};
++    const char* names[]={"root514","root4f0","global","raw1794","proto8680"};
++    for(unsigned i=0;i<5;++i) {
++        throwAtRead=faults[i];const auto s=fresh();
++        CHECK(wasRead(faults[i]) && s.aggregateValid && s.objects[0].quantityRead);
++        CHECK(s.root514Read==(i!=0) && s.root4F0Read==(i!=1));
++        CHECK(s.gateGlobalRead==(i!=2) && s.objects[0].raw1794Read==(i!=3));
++        CHECK(s.objects[0].proto8680Read==(i!=4));
++        // Every later independent diagnostic was actually attempted.
++        for(unsigned j=i+1;j<5;++j) CHECK(wasRead(faults[j]));
++        throwAtRead=0;tick(nullptr,1,1);
++        std::printf("PASS runtime_diag_exception_%s_capture_survives\n",names[i]);
++    }
++    for(auto denied:{rootAddr+0x5F0,metaAddr+0x8684}) {
++        denyAtRead=denied;const auto s=fresh();
++        CHECK(wasRead(denied) && !s.aggregateValid && !s.objects[0].quantityRead);
++        CHECK(s.objects[0].metadata==metaAddr && s.objects[0].proto8680Read);
++        CHECK(wasRead(metaAddr+0x8680) && s.objects[0].raw1794Read);
++        denyAtRead=0;tick(nullptr,1,1);
++    }
++    std::puts("PASS runtime_diag_proto8680_with_unavailable_quantity_or_capacity");
++    {
++        std::uint8_t flag=0xAB,proto=1;std::uint32_t raw=17;std::int32_t global=-7;
++        std::memcpy((void*)(rootAddr+0x514),&flag,sizeof(flag));
++        std::memcpy((void*)(metaAddr+0x8680),&proto,sizeof(proto));
++        std::memcpy((void*)(rootAddr+0x1794),&raw,sizeof(raw));
++        std::memcpy((void*)globalAddr,&global,sizeof(global));
++        const auto s=fresh();CHECK(s.root514==0xAB && s.gateGlobal==-7);
++        const auto beforeLogs=logs.size();
++        flag=0;proto=0;raw=29;global=42; // mutate AFTER enqueue, BEFORE drain
++        std::memcpy((void*)(rootAddr+0x514),&flag,sizeof(flag));
++        std::memcpy((void*)(metaAddr+0x8680),&proto,sizeof(proto));
++        std::memcpy((void*)(rootAddr+0x1794),&raw,sizeof(raw));
++        std::memcpy((void*)globalAddr,&global,sizeof(global));
++        const auto& queued=g_panelQueue[g_panelHead].snapshot;
++        CHECK(queued.root514==0xAB && queued.objects[0].raw1794==17);
++        CHECK(queued.objects[0].proto8680==1 && queued.gateGlobal==-7);
++        tick(nullptr,1,1);
++        CHECK(logs.size()==beforeLogs+2);
++        CHECK(logs[beforeLogs].find("root514=171 ")!=std::string::npos);
++        CHECK(logs[beforeLogs].find("gate_global=-7 ")!=std::string::npos);
++        CHECK(logs[beforeLogs+1].find("raw1794=17 ")!=std::string::npos);
++        CHECK(logs[beforeLogs+1].find("proto8680=1")!=std::string::npos);
++    }
++    std::puts("PASS runtime_diag_queued_values_immutable_after_source_mutation");
++    {
++        const auto child=Address(0x90000),childMeta=Address(0xA0000);
++        put(fixture.root+0x3A0,ptr(fixture.links));put(fixture.root+0x3A8,ptr(fixture.links+8));
++        put(fixture.links,ptr(child));put(child+0x1708,ptr(childMeta));
++        const float raw=0.1f,capacity=0.2f;
++        std::memcpy((void*)ptr(child+0x5F0),&raw,sizeof(raw));
++        std::memcpy((void*)ptr(childMeta+0x8684),&capacity,sizeof(capacity));
++        for(std::uint8_t flag:{0,1}) {
++            const std::uint32_t state=flag ? 0x80000000u : 0u;
++            std::memcpy((void*)ptr(childMeta+0x8680),&flag,sizeof(flag));
++            std::memcpy((void*)ptr(child+0x1794),&state,sizeof(state));
++            const auto s=fresh();CHECK(s.aggregateValid && s.count==2);
++            CHECK(s.objects[0].proto8680Read && s.objects[1].proto8680Read);
++            CHECK(s.objects[1].proto8680==flag && s.objects[1].raw1794==state);
++            CHECK(s.objects[1].raw1794Read);tick(nullptr,1,1);
++        }
++        throwAtRead=ptr(child+0x1794);const auto s=fresh();
++        CHECK(wasRead(throwAtRead) && !s.objects[1].raw1794Read);
++        CHECK(s.objects[1].quantityRead && s.objects[1].proto8680Read);
++        CHECK(s.objects[0].raw1794Read && s.aggregateValid);
++        throwAtRead=0;tick(nullptr,1,1);
++        put(fixture.root+0x3A0,0);put(fixture.root+0x3A8,0);
++    }
++    std::puts("PASS runtime_diag_linked_zero_nonzero_and_independent_fault");
++    {
++        (void)fresh();const auto oldEpoch=g_panelQueue[g_panelHead].epoch;
++        const auto beforeLogs=logs.size();PanelObserverLoading();tick(nullptr,1,1);
++        CHECK(g_panelCount==0);
++        for(auto i=beforeLogs;i<logs.size();++i)
++            CHECK(logs[i].find("[PANEL FUEL]")==std::string::npos);
++        (void)fresh();CHECK(g_panelQueue[g_panelHead].epoch!=oldEpoch);
++        CHECK(g_panelQueue[g_panelHead].sequence==1);tick(nullptr,1,1);
++    }
++    std::puts("PASS runtime_diag_load_epoch_discards_stale_values");
++    std::puts("13 gate-diagnostic scenarios PASS (host shim, not real SEH)");
+     std::puts("8 host-shim scenarios PASS (not Windows ABI/SEH or a DLL)");return 0;
+ }
+\x20
+diff --git a/tests/private_logistics/schedule_assignment_ledger_test.cpp b/tests/private_logistics/schedule_assignment_ledger_test.cpp
+index 81250a8..63c456a 100644
+--- a/tests/private_logistics/schedule_assignment_ledger_test.cpp
++++ b/tests/private_logistics/schedule_assignment_ledger_test.cpp
+@@ -19,12 +19,13 @@ struct Fixture {
+     sch::Snapshot s=Goods();
+     std::uint64_t epoch=1;sch::Address root=0x40000,home=0x30000;
+     unsigned sequence=0;
++    a::NativeFuel native{};
+     a::Result Step(bool gap=false,bool fuelValid=true,float litres=100) {
+         if(gap) history.Break();
+         const auto previous=history.LastValidValues();++sequence;
+         const auto d=history.Observe(s,epoch,root,home,sequence,sequence*1000);
+         const auto c=d.endpointCompared?sch::ClassifyChanges(previous,s):sch::FieldChanges{};
+-        return ledger.Observe(s,d,c,epoch,root,home,{sequence,sequence*1000,fuelValid,litres});
++        return ledger.Observe(s,d,c,epoch,root,home,{sequence,sequence*1000,fuelValid,litres,native});
+     }
+ };
+ TEST(adopt_existing_does_not_invent_assignment_start) {
+@@ -164,6 +165,66 @@ TEST(other_structural_plan_ends_candidate_without_inventing_goods) {
+     Fixture f;f.Step();f.s.count=1;f.s.rows[0].target=0x90000;f.s.rows[0].flag00=0;
+     auto r=f.Step();CHECK(r.count==1 && r.events[0].kind==a::Kind::Closed && !f.ledger.Active());
+ }
++struct EndpointFixture : Fixture {
++    EndpointFixture() {
++        native.count=1;native.valid=true;native.objects[0]=root;native.metadata[0]=0x50000;
++        native.raw[0]=1;native.capacity[0]=2;
++        s.count=0;Step();s=Goods();Step();
++    }
++    void Level(float value) {native.raw[0]=value;Step();}
++    a::Event Close(float value) {native.raw[0]=value;s.count=0;auto r=Step();CHECK(r.count==1);return r.events[0];}
++};
++TEST(native_endpoint_uses_closing_boundary_not_previous_or_ui) {
++    EndpointFixture f;f.Level(.9f);auto event=f.Close(.8f);
++    auto e=a::Estimate(event.candidate,event.boundary);
++    CHECK(e.valid && !e.observedRise && std::fabs(e.net+.2)<1e-6);
++    CHECK(event.candidate.last.native.raw[0]==.9f && event.boundary.native.raw[0]==.8f);
++    CHECK(event.candidate.first.litres==event.boundary.litres);
++}
++TEST(native_missing_intermediate_read_stays_uncertain) {
++    EndpointFixture f;f.native.valid=false;f.Step();f.native.valid=true;
++    auto event=f.Close(.5f);CHECK(event.candidate.fuelUncertain);
++    CHECK(!a::Estimate(event.candidate,event.boundary).valid);
++}
++TEST(native_receiver_change_is_sticky_even_after_restoration) {
++    for(unsigned change=0;change<4;++change) {
++        EndpointFixture f;const auto original=f.native;
++        if(change==0) f.native.metadata[0]++;
++        if(change==1) f.native.capacity[0]++;
++        if(change>=2) {
++            f.native.count=2;f.native.objects[1]=0x70000;f.native.metadata[1]=0x80000;
++            f.native.raw[1]=.2f;f.native.capacity[1]=1;
++            if(change==3) {f.Step();f.native.objects[1]++;}
++        }
++        f.Step();f.native=original;auto event=f.Close(.5f);
++        CHECK(event.candidate.receiverChanged && !a::Estimate(event.candidate,event.boundary).valid);
++    }
++}
++TEST(native_quiet_observed_rise_survives_later_decrease) {
++    EndpointFixture f;f.Level(.6f);f.Level(.9f);auto event=f.Close(.5f);
++    auto e=a::Estimate(event.candidate,event.boundary);
++    CHECK(e.valid && e.observedRise && std::fabs(e.net+.5)<1e-6);
++}
++TEST(native_signed_negative_endpoint_is_not_clipped) {
++    EndpointFixture f;auto event=f.Close(-.1f);auto e=a::Estimate(event.candidate,event.boundary);
++    CHECK(e.valid && std::fabs(e.net+1.1)<1e-6);
++}
++TEST(native_invalid_values_and_per_receiver_rise_are_checked) {
++    EndpointFixture f;auto bad=f.native;
++    bad.raw[0]=std::numeric_limits<float>::infinity();CHECK(!a::ValidFuel(bad));
++    bad=f.native;bad.capacity[0]=0;CHECK(!a::ValidFuel(bad));
++    bad=f.native;bad.metadata[0]=0;CHECK(!a::ValidFuel(bad));
++    bad=f.native;bad.count=private_logistics_panel::MaxObjects+1;CHECK(!a::ValidFuel(bad));
++    bad=f.native;bad.count=2;bad.objects[1]=bad.objects[0];bad.metadata[1]=1;
++    bad.capacity[1]=1;CHECK(!a::ValidFuel(bad));
++    Fixture multi;multi.native=f.native;multi.native.count=2;multi.native.objects[1]=0x90000;
++    multi.native.metadata[1]=0xa0000;multi.native.capacity[1]=2;multi.native.raw[1]=1;
++    multi.s.count=0;multi.Step();multi.s=Goods();multi.Step();
++    multi.native.raw[0]=.1f;multi.native.raw[1]=1.1f;multi.Step();
++    CHECK(multi.ledger.Current().observedRise); // Falling total cannot conceal receiver rise.
++    f.native.raw[0]=.5f;f.s.count=0;auto gap=f.Step(true);
++    CHECK(gap.count==1 && !a::Estimate(gap.events[0].candidate,gap.events[0].boundary).valid);
++}
+ // RUN entries are kept explicit so each test is selectable by the Python wrapper.
+ int main(int argc,char** argv) {
+     unsigned count=0;
+@@ -191,5 +252,11 @@ int main(int argc,char** argv) {
+     RUN(id_exhaustion_saturates_without_reuse);
+     RUN(oversize_or_missing_identity_never_opens_a_candidate);
+     RUN(other_structural_plan_ends_candidate_without_inventing_goods);
++    RUN(native_endpoint_uses_closing_boundary_not_previous_or_ui);
++    RUN(native_missing_intermediate_read_stays_uncertain);
++    RUN(native_receiver_change_is_sticky_even_after_restoration);
++    RUN(native_quiet_observed_rise_survives_later_decrease);
++    RUN(native_signed_negative_endpoint_is_not_clipped);
++    RUN(native_invalid_values_and_per_receiver_rise_are_checked);
+     CHECK(count);std::printf("%u assignment ledger cases PASS (copied values only)\n",count);
+ }
+diff --git a/tests/private_logistics/test_panel_fuel_observer.py b/tests/private_logistics/test_panel_fuel_observer.py
+index e598a24..851f0e1 100644
+--- a/tests/private_logistics/test_panel_fuel_observer.py
++++ b/tests/private_logistics/test_panel_fuel_observer.py
+@@ -43,6 +43,17 @@ class PanelFuelObserverTest(unittest.TestCase):
+         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+         self.assertIn('8 host-shim scenarios PASS', result.stdout)
+\x20
++    def test_endpoint_runtime_with_real_pricing_contract(self):
++        exe = Path(self.directory.name) / 'endpoint_runtime'
++        result = subprocess.run([self.compiler, '-std=c++17', '-O2', '-Wall', '-Wextra',
++                                 '-Werror', '-pedantic', '-I', str(PLUGIN),
++                                 str(HARNESS.with_name('endpoint_runtime_test.cpp')),
++                                 '-o', str(exe)], capture_output=True, text=True)
++        self.assertEqual(result.returncode, 0, result.stderr)
++        result = subprocess.run([str(exe)], capture_output=True, text=True)
++        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
++        self.assertIn('6 endpoint runtime scenarios PASS', result.stdout)
++
+     def test_matching_test_defaults_and_no_tracker_wiring(self):
+         config = configparser.ConfigParser()
+         config.read(PLUGIN / 'private_logistics.ini')
+@@ -91,6 +102,15 @@ class PanelFuelObserverTest(unittest.TestCase):
+         self.assertIn('physical_fuel=unverified exact_burn=0 billing=off', runtime)
+         self.assertIn('unresolved_7c58', runtime)
+\x20
++    def test_gate_diagnostic_version_and_qualified_address(self):
++        runtime = (PLUGIN / 'panel_fuel_runtime.h').read_text()
++        cpp = (PLUGIN / 'private_logistics.cpp').read_text()
++        self.assertIn('#define PL_VERSION "0.18.14-endpoint-estimate"', cpp)
++        self.assertIn('"0.18.14-endpoint-estimate"', runtime)
++        self.assertIn('reinterpret_cast<std::uintptr_t>(g_exeBase)', runtime)
++        self.assertNotRegex(runtime, r'\b(?:static_cast|reinterpret_cast)<Address>')
++        self.assertIn('native_execution=unobserved', runtime)
++
+     def test_windows_min_max_macros(self):
+         path = Path(self.directory.name) / 'macros.cpp'
+         path.write_text('#include <cstddef>\n#include <cstdint>\n#include <cmath>\n'
+diff --git a/tests/private_logistics/test_schedule_assignment_ledger.py b/tests/private_logistics/test_schedule_assignment_ledger.py
+index d75e20a..fe67405 100644
+--- a/tests/private_logistics/test_schedule_assignment_ledger.py
++++ b/tests/private_logistics/test_schedule_assignment_ledger.py
+@@ -40,7 +40,7 @@ class AssignmentLedgerTest(unittest.TestCase):
+         self.assertIn('ScheduleAssignmentLog(record, d, changes, home);\n    if (!d.emit) return;', runtime)
+         self.assertIn('g_scheduleLedger.Break();', runtime)
+         self.assertIn('id_scope=process_local_selected_panel native_boundary=unverified', runtime)
+-        self.assertIn('exact_burn=0 cost=not_computed settlement=none billing=off', runtime)
++        self.assertIn('exact_burn=0 actual_cost=not_computed settlement=none billing=off', runtime)
+         self.assertEqual(runtime.count('InstallInlineHook('), 1)
+\x20
+     def test_windows_macro_compatibility(self):
+diff --git a/tests/private_logistics/test_schedule_observer.py b/tests/private_logistics/test_schedule_observer.py
+index 11d15a2..20095a8 100644
+--- a/tests/private_logistics/test_schedule_observer.py
++++ b/tests/private_logistics/test_schedule_observer.py
+@@ -91,7 +91,7 @@ class ScheduleObserverTest(unittest.TestCase):
+         history = header.split('class History {', 1)[1]
+         self.assertNotIn('m.Get(', history)  # cached-value comparisons only
+         self.assertEqual(header.count('m.Get('), 13)  # native read sites unchanged
+-        self.assertIn('0.18.11-assignment-ledger', cpp)
++        self.assertIn('0.18.14-endpoint-estimate', cpp)
+         self.assertIn('if (d.endpointCompared && d.endpointAcrossGap)', runtime)
+         self.assertIn('compared_across_gap=1 continuity_valid=0', runtime)
+         self.assertIn('native_event_time=unknown', runtime)
+diff --git a/tests/private_logistics/endpoint_runtime_test.cpp b/tests/private_logistics/endpoint_runtime_test.cpp
+new file mode 100644
+index 0000000..530312c
+--- /dev/null
++++ b/tests/private_logistics/endpoint_runtime_test.cpp
+@@ -0,0 +1,153 @@
++// Real public API layout and production estimator; host shim, NOT a game/DLL test.
++#define PANEL_RUNTIME_TEST_NO_MAIN
++#include "panel_fuel_runtime_test.cpp"
++#include <limits>
++namespace a=private_logistics_assignment;
++namespace sch=private_logistics_schedule;
++namespace p=private_logistics_panel;
++static TsmResourcePricingApi prices{};
++static TsmCurrencyApi currencies{};
++static float unitPrice=200;
++static bool resourcePresent=true;
++static int lookupCalls=0,priceCalls=0,activeCalls=0,lastCurrency=-1;
++static int activeCurrency=TSM_CURRENCY_USD,resourceRecord=0;
++static void* FindFuel(const char* name) {
++    ++lookupCalls;CHECK(std::strcmp(name,gFuelResource)==0);
++    return resourcePresent ? &resourceRecord : nullptr;
++}
++static float PriceFuel(void* resource,int currency) {
++    ++priceCalls;CHECK(resource==&resourceRecord);lastCurrency=currency;return unitPrice;
++}
++static int ActiveCurrency() {++activeCalls;return activeCurrency;}
++static const char* CurrencySymbol() {return "$";}
++static void ResetPrices() {
++    prices={};prices.structSize=sizeof(prices);prices.getByName=FindFuel;prices.getPrice=PriceFuel;
++    currencies={};currencies.structSize=sizeof(currencies);
++    currencies.getActiveCurrency=ActiveCurrency;currencies.getCurrencySymbol=CurrencySymbol;
++    g_pricing=&prices;g_currency=nullptr;unitPrice=200;resourcePresent=true;
++    lookupCalls=priceCalls=activeCalls=0;lastCurrency=-1;activeCurrency=TSM_CURRENCY_USD;
++}
++static void pricing_live_resource_and_currency();
++static void pricing_unavailable_interfaces();
++static void pricing_invalid_numbers_and_hypotheses();
++static void native_copy_rejects_missing_and_preserves_signed();
++static void runtime_closing_boundary_prices_native_not_ui();
++static void runtime_quiet_rise_suppresses_hypothesis();
++int main() {
++    // This harness intentionally exercises only deferred estimation, not hook installation.
++    (void)&PanelObserverStart;(void)&PanelObserverLoading;
++#define RUN(name) name();std::puts("PASS " #name)
++    RUN(pricing_live_resource_and_currency);
++    RUN(pricing_unavailable_interfaces);
++    RUN(pricing_invalid_numbers_and_hypotheses);
++    RUN(native_copy_rejects_missing_and_preserves_signed);
++    RUN(runtime_closing_boundary_prices_native_not_ui);
++    RUN(runtime_quiet_rise_suppresses_hypothesis);
++#undef RUN
++    std::puts("6 endpoint runtime scenarios PASS (real API layout, mocked services; no game proof)");
++    return 0;
++}
++static a::Event Closed() {a::Event event{};event.kind=a::Kind::Closed;return event;}
++static a::Endpoint Falling() {a::Endpoint e{};e.valid=true;e.net=-.25;return e;}
++static void pricing_unavailable_interfaces() {
++    for(unsigned mode=0;mode<5;++mode) {
++        ResetPrices();
++        if(mode==0) g_pricing=nullptr;
++        if(mode==1) prices.structSize=offsetof(TsmResourcePricingApi,getPrice);
++        if(mode==2) prices.getByName=nullptr;
++        if(mode==3) prices.getPrice=nullptr;
++        if(mode==4) resourcePresent=false;
++        auto q=PanelHypotheticalPrice(Closed(),Falling());
++        CHECK(!q.available && q.amount==0 && priceCalls==0 && lookupCalls==(mode==4 ? 1 : 0));
++    }
++}
++static void pricing_invalid_numbers_and_hypotheses() {
++    for(float price:{0.f,-1.f,std::numeric_limits<float>::infinity(),std::numeric_limits<float>::quiet_NaN()}) {
++        ResetPrices();unitPrice=price;auto q=PanelHypotheticalPrice(Closed(),Falling());
++        CHECK(!q.available && q.amount==0 && priceCalls==1);
++    }
++    for(unsigned mode=0;mode<6;++mode) {
++        ResetPrices();auto e=Falling();auto event=Closed();
++        if(mode==0) e.valid=false;
++        if(mode==1) e.observedRise=true;
++        if(mode==2) e.net=0;
++        if(mode==3) e.net=.1;
++        if(mode==4) e.net=std::numeric_limits<double>::quiet_NaN();
++        if(mode==5) event.kind=a::Kind::Abandoned;
++        CHECK(!PanelHypotheticalPrice(event,e).available && lookupCalls==0 && priceCalls==0);
++    }
++    ResetPrices();auto e=Falling();e.net=-std::numeric_limits<double>::max();
++    auto q=PanelHypotheticalPrice(Closed(),e);
++    CHECK(!q.available && priceCalls==1 && std::strcmp(q.reason,"invalid_product")==0);
++}
++static p::Snapshot NativeSnapshot() {
++    p::Snapshot s{};s.status=p::Status::Complete;s.root=0x40000;s.count=1;
++    auto& o=s.objects[0];o.pointer=s.root;o.metadata=0x50000;o.quantityRead=true;
++    o.raw=1;o.capacity=2;s.aggregateValid=true;s.litresCandidate=1000;return s;
++}
++static void native_copy_rejects_missing_and_preserves_signed() {
++    auto s=NativeSnapshot();s.objects[0].raw=-.1f;auto n=PanelNativeFuel(s);
++    CHECK(a::ValidFuel(n) && n.raw[0]==-.1f && n.raw[0]!=s.litresCandidate);
++    for(unsigned mode=0;mode<5;++mode) {
++        s=NativeSnapshot();
++        if(mode==0) s.objects[0].quantityRead=false;
++        if(mode==1) s.objects[0].pointer++;
++        if(mode==2) s.status=p::Status::Unreadable;
++        if(mode==3) s.objects[0].capacity=std::numeric_limits<float>::quiet_NaN();
++        if(mode==4) s.count=p::MaxObjects+1;
++        CHECK(!a::ValidFuel(PanelNativeFuel(s)));
++    }
++}
++struct LogFixture {
++    sch::History history;
++    PanelRecord record{};
++    LogFixture() {
++        ResetPrices();logs.clear();g_scheduleLedger=a::Ledger{};
++        record.epoch=1;record.snapshot=NativeSnapshot();record.schedule.status=sch::Status::Complete;
++        Step();record.schedule.count=3;
++        record.schedule.rows[0]={0x10000,true,1,0,1,1};
++        record.schedule.rows[1]={0x20000,true,0,1,1,1};
++        record.schedule.rows[2]={0x30000,true,0,0,1,1};Step();
++    }
++    void Step() {
++        const auto previous=history.LastValidValues();++record.sequence;record.milliseconds+=1000;
++        auto d=history.Observe(record.schedule,1,record.snapshot.root,0x30000,record.sequence,record.milliseconds);
++        auto changes=d.endpointCompared ? sch::ClassifyChanges(previous,record.schedule) : sch::FieldChanges{};
++        ScheduleAssignmentLog(record,d,changes,0x30000);
++    }
++    void Level(float raw) {record.snapshot.objects[0].raw=raw;record.snapshot.litresCandidate=raw*1000;Step();}
++    void Close(float raw) {record.schedule.count=0;Level(raw);}
++};
++static void runtime_closing_boundary_prices_native_not_ui() {
++    LogFixture f;f.Level(.75f);CHECK(priceCalls==0);f.Close(.5f);
++    CHECK(priceCalls==1 && lookupCalls==1 && lastCurrency==TSM_CURRENCY_RUB);
++    const auto& line=logs.back();
++    CHECK(line.find("event=observed_close")!=std::string::npos);
++    CHECK(line.find("net_change_valid=1 net_change_native=-0.5")!=std::string::npos);
++    CHECK(line.find("hypothetical_cost_if_no_refill_available=1 hypothetical_cost_if_no_refill=100 ")!=std::string::npos);
++    CHECK(line.find("actual_cost=not_computed settlement=none billing=off")!=std::string::npos);
++    std::puts(line.c_str()); // Archive actual emitted output, not a reconstructed example.
++}
++static void runtime_quiet_rise_suppresses_hypothesis() {
++    LogFixture f;f.Level(.5f);f.Level(.75f);f.Close(.25f);
++    CHECK(priceCalls==0 && lookupCalls==0);
++    const auto& line=logs.back();
++    CHECK(line.find("net_change_valid=1 net_change_native=-0.75")!=std::string::npos);
++    CHECK(line.find("observed_level_rise=1")!=std::string::npos);
++    CHECK(line.find("hypothetical_cost_reason=observed_level_rise")!=std::string::npos);
++    std::puts(line.c_str());
++}
++static void pricing_live_resource_and_currency() {
++    ResetPrices();auto q=PanelHypotheticalPrice(Closed(),Falling());
++    CHECK(q.available && q.amount==50 && q.perTonne==200 && q.currency==TSM_CURRENCY_RUB);
++    CHECK(lookupCalls==1 && priceCalls==1 && activeCalls==0 && lastCurrency==TSM_CURRENCY_RUB);
++    g_currency=&currencies;q=PanelHypotheticalPrice(Closed(),Falling());
++    CHECK(q.available && q.amount==50 && q.currency==TSM_CURRENCY_USD && activeCalls==1);
++    currencies.structSize=offsetof(TsmCurrencyApi,getCurrencySymbol);
++    q=PanelHypotheticalPrice(Closed(),Falling());
++    CHECK(q.available && q.currency==TSM_CURRENCY_RUB && activeCalls==1);
++    currencies.structSize=0;q=PanelHypotheticalPrice(Closed(),Falling());
++    CHECK(q.available && q.currency==TSM_CURRENCY_RUB && activeCalls==1);
++    prices.structSize=offsetof(TsmResourcePricingApi,getPrice)+sizeof(prices.getPrice);
++    CHECK(PanelHypotheticalPrice(Closed(),Falling()).available);
++}
+```
+
+#### ENDPOINT full source: plugins/private_logistics/schedule_assignment_ledger.h
+
+Bytes=8700 SHA256=b56d20f60f64d74bac0bc475cc466c569922910a465cf50fe8f8addba595d373
+
+```cpp
+// Selected-panel ledger and provisional raw endpoint hypothesis. No actual burn,
+// native job IDs, price service, settlement or payments in this portable core.
+#ifndef PRIVATE_LOGISTICS_SCHEDULE_ASSIGNMENT_LEDGER_H
+#define PRIVATE_LOGISTICS_SCHEDULE_ASSIGNMENT_LEDGER_H
+#include "schedule_observer.h"
+
+namespace private_logistics_assignment {
+namespace sch = private_logistics_schedule;
+using sch::Address;
+// Signed native values, separate from the historical positive-only UI litres.
+struct NativeFuel {
+    unsigned count=0;
+    Address objects[private_logistics_panel::MaxObjects]{};
+    Address metadata[private_logistics_panel::MaxObjects]{};
+    float raw[private_logistics_panel::MaxObjects]{}, capacity[private_logistics_panel::MaxObjects]{};
+    bool valid=false;
+};
+inline bool ValidFuel(const NativeFuel& f) {
+    if(!f.valid || !f.count || f.count>private_logistics_panel::MaxObjects) return false;
+    for(unsigned i=0;i<f.count;++i) {
+        if(!f.objects[i] || !f.metadata[i] || !std::isfinite(f.raw[i]) ||
+           !std::isfinite(f.capacity[i]) || f.capacity[i]<=0) return false;
+        for(unsigned j=0;j<i;++j) if(f.objects[i]==f.objects[j]) return false;
+    }
+    return true;
+}
+inline double NativeTotal(const NativeFuel& f) {
+    if(!ValidFuel(f)) return 0; // Callers also log the explicit validity flag.
+    double total=0;for(unsigned i=0;i<f.count;++i) total+=double(f.raw[i]);
+    return total;
+}
+inline bool SameFuel(const NativeFuel& a,const NativeFuel& b) {
+    if(!ValidFuel(a) || !ValidFuel(b) || a.count!=b.count) return false;
+    for(unsigned i=0;i<a.count;++i)
+        if(a.objects[i]!=b.objects[i] || a.metadata[i]!=b.metadata[i] || a.capacity[i]!=b.capacity[i]) return false;
+    return true;
+}
+struct Point {
+    unsigned sample=0;
+    std::uint64_t ms=0;
+    bool fuelValid=false;
+    float litres=0; // Historical UI candidate only; NEVER used for tonne pricing.
+    NativeFuel native{};
+};
+struct Candidate {
+    std::uint64_t id=0,epoch=0;
+    Address root=0,home=0;
+    Point first{},last{};
+    bool unknownStart=false,observationGap=false,roleUncertain=false;
+    bool fuelUncertain=false,receiverChanged=false,observedRise=false;
+};
+struct Endpoint {
+    bool valid=false,observedRise=false;
+    double net=0; // end minus start, native raw units; NOT actual consumption.
+};
+inline Endpoint Estimate(const Candidate& c,const Point& end) {
+    Endpoint e{};e.observedRise=c.observedRise;
+    if(!c.id || c.unknownStart || c.observationGap || c.roleUncertain ||
+       c.fuelUncertain || c.receiverChanged || !SameFuel(c.first.native,end.native)) return e;
+    for(unsigned i=0;i<end.native.count;++i) {
+        e.net+=double(end.native.raw[i])-double(c.first.native.raw[i]);
+        e.observedRise=e.observedRise || end.native.raw[i]>c.last.native.raw[i];
+    }
+    e.valid=std::isfinite(e.net);
+    return e;
+}
+enum class Kind { Opened, Adopted, Updated, Closed, Abandoned, Uncertain, IdExhausted };
+inline const char* KindName(Kind k) {
+    switch(k) {
+        case Kind::Opened:return "observed_open";
+        case Kind::Adopted:return "adopt_existing";
+        case Kind::Updated:return "observed_update";
+        case Kind::Closed:return "observed_close";
+        case Kind::Abandoned:return "abandon_unobserved";
+        case Kind::Uncertain:return "observation_unavailable";
+        default:return "id_exhausted";
+    }
+}
+struct Event {
+    Kind kind=Kind::Uncertain;
+    const char* reason="unavailable";
+    Candidate candidate{};
+    Point boundary{}; // Current captured endpoint, NOT the exact native boundary.
+};
+struct Result { Event events[2]{}; unsigned count=0; };
+class Ledger {
+    Candidate active_{};
+    std::uint64_t serial_=0;
+    bool invalidStreak_=false;
+    static void CheckFuel(Candidate& c,const Point& p) {
+        if(!ValidFuel(p.native)) {c.fuelUncertain=true;return;}
+        if(ValidFuel(c.first.native) && !SameFuel(c.first.native,p.native)) c.receiverChanged=true;
+        if(SameFuel(c.last.native,p.native))
+            for(unsigned i=0;i<p.native.count;++i)
+                c.observedRise=c.observedRise || p.native.raw[i]>c.last.native.raw[i];
+    }
+    static void Add(Result& r,Kind kind,const char* reason,const Candidate& c,const Point& p) {
+        Point boundary=p;
+        // An abandoned interval has no observed end reading for its old context.
+        // In particular, never attach another vehicle/load's fuel to it.
+        if(kind==Kind::Abandoned) {boundary.fuelValid=false;boundary.litres=0;boundary.native=NativeFuel{};}
+        r.events[r.count++]={kind,reason,c,boundary}; // At most close/abandon + open/adopt.
+    }
+public:
+    explicit Ledger(std::uint64_t initialSerial=0):serial_(initialSerial) {}
+    bool Active() const {return active_.id!=0;}
+    const Candidate& Current() const {return active_;}
+    void Break() {if(Active()) active_.observationGap=true;}
+    Result Observe(const sch::Snapshot& s,const sch::Delta& d,const sch::FieldChanges& changes,
+                   std::uint64_t epoch,Address root,Address home,Point point) {
+        Result result;
+        point.fuelValid=point.fuelValid && std::isfinite(point.litres) && point.litres>=0;
+        if(!point.fuelValid) point.litres=0; // Explicitly invalid, not observed zero.
+        if(!ValidFuel(point.native) || point.native.objects[0]!=root) point.native.valid=false;
+        const bool changedIdentity=Active() &&
+            (active_.epoch!=epoch || active_.root!=root || active_.home!=home);
+        if(changedIdentity) {
+            active_.observationGap=true;
+            Add(result,Kind::Abandoned,"identity_or_load_changed",active_,point);
+            active_=Candidate{};
+        }
+        if(Active() && (point.sample<=active_.last.sample || point.ms<active_.last.ms)) {
+            active_.observationGap=true;
+            Add(result,Kind::Uncertain,"out_of_order_not_removal",active_,point);
+            return result;
+        }
+        const auto pattern=sch::ClassifyPattern(s,home);
+        if(pattern==sch::Pattern::Unavailable || !root || !home || !epoch || !point.sample) {
+            if(Active()) {
+                active_.observationGap=true;
+                if(!invalidStreak_) Add(result,Kind::Uncertain,"invalid_capture_not_removal",active_,point);
+            }
+            invalidStreak_=true;
+            return result;
+        }
+        invalidStreak_=false;
+        if(Active() && (!d.endpointCompared || !changes.comparable)) {
+            active_.observationGap=true;
+            Add(result,Kind::Abandoned,"comparison_unavailable",active_,point);
+            active_=Candidate{};
+        }
+        if(Active()) {
+            active_.observationGap=active_.observationGap || d.endpointAcrossGap;
+            CheckFuel(active_,point); // Includes quiet samples and the closing boundary.
+            if(changes.comparable && changes.Structure()) {
+                const char* reason=pattern==sch::Pattern::Empty ? "observed_removed" :
+                    pattern==sch::Pattern::LoadUnload ? "observed_targets_replaced" :
+                    pattern==sch::Pattern::OfficeOnly ? "observed_office_only" : "observed_structure_changed";
+                Add(result,Kind::Closed,reason,active_,point);
+                active_=Candidate{};
+            } else {
+                // Flags/config availability/scalars/index/storage do not create
+                // another assignment. Losing role recognition is uncertainty.
+                active_.roleUncertain=active_.roleUncertain || pattern!=sch::Pattern::LoadUnload;
+                active_.last=point; // Quiet accepted samples matter for endpoints.
+                if(d.emit) Add(result,Kind::Updated,"same_observed_targets",active_,point);
+                return result;
+            }
+        }
+        if(pattern==sch::Pattern::LoadUnload) {
+            // Saturate rather than reuse a process-local ID. No durable native ID.
+            if(serial_==UINT64_MAX) {
+                Add(result,Kind::IdExhausted,"no_id_reuse",Candidate{},point);
+                return result;
+            }
+            const bool appeared=!changedIdentity && d.endpointCompared && changes.comparable && changes.Structure();
+            active_.id=++serial_;active_.epoch=epoch;active_.root=root;active_.home=home;
+            active_.first=active_.last=point;
+            active_.fuelUncertain=!ValidFuel(point.native);
+            active_.unknownStart=!appeared;
+            active_.observationGap=d.endpointAcrossGap;
+            Add(result,appeared?Kind::Opened:Kind::Adopted,
+                appeared?"observed_appearance":"start_not_observed",active_,point);
+        }
+        return result;
+    }
+};
+} // namespace private_logistics_assignment
+#endif
+```
+
+#### ENDPOINT full source: plugins/private_logistics/panel_fuel_runtime.h
+
+Bytes=31215 SHA256=7d873bf813feba780fa8dac48cc5cc4acaeff76560c11a070b785cb11b63dd15
+
+```cpp
+// Private to this plugin. Included after its services/globals are defined.
+// Process-lifetime hooks, like the plugin's existing transfer hooks.
+#ifndef PRIVATE_LOGISTICS_PANEL_FUEL_RUNTIME_H
+#define PRIVATE_LOGISTICS_PANEL_FUEL_RUNTIME_H
+#include "panel_fuel_observer.h"
+#include "schedule_observer.h"
+#include "schedule_assignment_ledger.h"
+
+static constexpr char kGateDiagnosticVersion[] = "0.18.14-endpoint-estimate";
+static bool g_scheduleReady = false;
+static volatile LONG g_scheduleFault = 0;
+static private_logistics_schedule::History g_scheduleHistory; // simulation tick only
+static private_logistics_assignment::Ledger g_scheduleLedger; // simulation tick only
+static LONG g_scheduleLastEpoch = 0;
+static unsigned g_scheduleLastCaptureDrops = 0;
+static CRITICAL_SECTION g_panelQueueLock;
+static volatile LONG g_panelEpoch = 1, g_panelStarted = 0, g_panelFault = 0, g_panelContention = 0;
+static LONG g_panelQueueEpoch = 0;
+static unsigned g_panelHead = 0, g_panelCount = 0, g_panelSamples = 0, g_panelDropped = 0;
+static ULONGLONG g_panelLastMs = 0;
+static unsigned g_panelDroppedReported = 0;
+static ULONGLONG g_panelFirstDropMs = 0, g_panelLastDropMs = 0;
+static bool g_panelCapLogged = false, g_panelFaultLogged = false;
+struct PanelRecord {
+    private_logistics_panel::Snapshot snapshot;
+    private_logistics_schedule::Snapshot schedule;
+    LONG epoch;
+    unsigned sequence;
+    ULONGLONG milliseconds;
+    ULONGLONG firstMilliseconds;
+    unsigned queueFullAtCapture, coalesced;
+    bool paused;
+};
+static PanelRecord g_panelQueue[16];
+using PanelRenderer = void (__fastcall*)(void*, void*);
+static void* g_panelTrampoline = nullptr;
+
+static void PanelObserverLoading(void)
+{
+    // File thread: no game reads, queue lock, retained identities or persistence.
+    InterlockedIncrement(&g_panelEpoch);
+}
+static bool PanelRead(uintptr_t address, void* out, size_t size, void*)
+{
+    if (address < 0x10000 || !ReadablePtr((const void*)address, size)) return false;
+    memcpy(out, (const void*)address, size);
+    return true;
+}
+// Optional fields must not reach the observer-wide mandatory-read fault latch.
+// Memory::Get validates base/offset/end arithmetic before calling PanelRead.
+template<class T>
+static bool PanelDiagnosticRead(std::uintptr_t base, std::uintptr_t offset, T& out)
+{
+    const private_logistics_panel::Memory memory{PanelRead, nullptr};
+    T value{};
+    bool ok = false;
+    __try {
+        ok = memory.Get(base, offset, value);
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        return false;
+    }
+    if (ok) out = value;
+    return ok;
+}
+static void PanelCaptureDiagnostics(private_logistics_panel::Snapshot& s)
+{
+    if (!s.root) return;
+    s.root514Read = PanelDiagnosticRead(s.root, 0x514, s.root514);
+    s.root4F0Read = PanelDiagnosticRead(s.root, 0x4F0, s.root4F0);
+    constexpr std::uintptr_t globalRva = 0x9D54C0;
+    if (g_exeBase && globalRva <= g_exeSize &&
+        sizeof(s.gateGlobal) <= g_exeSize - globalRva) {
+        s.gateGlobalRead = PanelDiagnosticRead(
+            reinterpret_cast<std::uintptr_t>(g_exeBase), globalRva, s.gateGlobal);
+    }
+    for (unsigned i = 0; i < s.count && i < private_logistics_panel::MaxObjects; ++i) {
+        auto& o = s.objects[i];
+        o.raw1794Read = PanelDiagnosticRead(o.pointer, 0x1794, o.raw1794);
+        // Metadata may be available even if a later mandatory quantity read failed.
+        o.proto8680Read = PanelDiagnosticRead(o.metadata, 0x8680, o.proto8680);
+    }
+}
+static void PanelResetQueueLocked(LONG epoch)
+{
+    if (g_panelQueueEpoch == epoch) return;
+    g_panelQueueEpoch = epoch;
+    g_panelHead = g_panelCount = g_panelSamples = g_panelDropped = 0;
+    g_panelLastMs = 0;
+    g_panelDroppedReported = 0;
+    g_panelFirstDropMs = g_panelLastDropMs = 0;
+    g_panelCapLogged = false;
+    InterlockedExchange(&g_panelContention, 0);
+}
+static void PanelCapture(void* context, void* window)
+{
+    if (!InterlockedCompareExchange(&g_panelStarted, 0, 0) ||
+        InterlockedCompareExchange(&g_panelFault, 0, 0)) return;
+    if (!TryEnterCriticalSection(&g_panelQueueLock)) {
+        InterlockedExchange(&g_panelContention, 1); return;
+    }
+    const LONG epoch = InterlockedCompareExchange(&g_panelEpoch, 0, 0);
+    PanelResetQueueLocked(epoch);
+    const ULONGLONG now = GetTickCount64();
+    if (g_panelSamples >= 240 || (g_panelLastMs && now - g_panelLastMs < 1000)) {
+        LeaveCriticalSection(&g_panelQueueLock); return;
+    }
+    const bool paused = g_simClock && g_simClock->isPaused && g_simClock->isPaused() == 1;
+    const unsigned tail = (g_panelHead + g_panelCount + 15) % 16;
+    // Only replace a queued paused snapshot of the SAME window/root. Preserve
+    // other vehicles and unpaused samples; no extra storage or render-thread I/O.
+    private_logistics_panel::Snapshot snapshot{};
+    bool captured = false;
+    __try {
+        captured = private_logistics_panel::Capture({PanelRead, nullptr},
+            (uintptr_t)context, (uintptr_t)window, snapshot);
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        InterlockedExchange(&g_panelFault, 1);
+    }
+    if (captured) PanelCaptureDiagnostics(snapshot);
+    private_logistics_schedule::Snapshot schedule{};
+    if (captured && g_scheduleReady) {
+        schedule.status = private_logistics_schedule::Status::Ineligible;
+        // Only the root itself, uniquely present in the verified road-DO fleet.
+        // Never walk home as buyer, follow linked vehicles, or read +650's pointee.
+        if (snapshot.count && snapshot.objects[0].pointer == snapshot.root &&
+            snapshot.objects[0].match == private_logistics_panel::Match::Found &&
+            snapshot.objects[0].occurrences == 1) {
+            if (!InterlockedCompareExchange(&g_scheduleFault, 0, 0)) {
+                __try {
+                    private_logistics_schedule::Capture({PanelRead, nullptr}, snapshot.root, schedule);
+                } __except (EXCEPTION_EXECUTE_HANDLER) {
+                    InterlockedExchange(&g_scheduleFault, 1);
+                    schedule.status = private_logistics_schedule::Status::GuardedFault;
+                }
+            } else schedule.status = private_logistics_schedule::Status::GuardedFault;
+        }
+    }
+    if (captured && epoch == InterlockedCompareExchange(&g_panelEpoch, 0, 0)) {
+        g_panelLastMs = now; // inactive windows do not consume the capture slot
+        const bool coalesce = paused && snapshot.root && g_panelCount && g_panelQueue[tail].paused &&
+            g_panelQueue[tail].snapshot.window == snapshot.window &&
+            g_panelQueue[tail].snapshot.root == snapshot.root;
+        if (coalesce) {
+            auto& record = g_panelQueue[tail];
+            record.snapshot = snapshot;
+            record.schedule = schedule;
+            record.milliseconds = now;
+            record.queueFullAtCapture = g_panelDropped;
+            if (record.coalesced < 0x7FFFFFFFu) ++record.coalesced;
+        } else if (g_panelCount == 16) {
+            if (!g_panelFirstDropMs) g_panelFirstDropMs = now;
+            g_panelLastDropMs = now;
+            if (g_panelDropped < 0x7FFFFFFFu) ++g_panelDropped;
+        } else {
+            auto& record = g_panelQueue[(g_panelHead + g_panelCount) % 16];
+            record.snapshot = snapshot;
+            record.schedule = schedule;
+            record.epoch = epoch;
+            record.sequence = ++g_panelSamples;
+            record.milliseconds = record.firstMilliseconds = now;
+            record.queueFullAtCapture = g_panelDropped;
+            record.coalesced = 0;
+            record.paused = paused;
+            ++g_panelCount;
+        }
+    }
+    LeaveCriticalSection(&g_panelQueueLock);
+}
+static void __fastcall PanelRendererDetour(void* context, void* window)
+{
+    ((PanelRenderer)g_panelTrampoline)(context, window);
+    PanelCapture(context, window); // POST render, not an atomic read at the format call
+}
+static const char* PanelStatus(private_logistics_panel::Status s)
+{
+    using private_logistics_panel::Status;
+    switch (s) {
+    case Status::Complete: return "complete";
+    case Status::TooManyLinks: return "too_many_links";
+    case Status::NonFinite: return "nonfinite";
+    case Status::Overflow: return "overflow";
+    default: return "unreadable";
+    }
+}
+static const char* PanelMatch(private_logistics_panel::Match m)
+{
+    using private_logistics_panel::Match;
+    switch (m) {
+    case Match::Found: return "exact_fleet_pointer";
+    case Match::Absent: return "absent_from_candidate_home";
+    case Match::NotRoadOffice: return "candidate_home_not_road_do";
+    case Match::InvalidFleet: return "invalid_candidate_fleet";
+    default: return "unavailable";
+    }
+}
+static private_logistics_assignment::NativeFuel PanelNativeFuel(const private_logistics_panel::Snapshot& s)
+{
+    private_logistics_assignment::NativeFuel f{};
+    if(s.status!=private_logistics_panel::Status::Complete || !s.count ||
+       s.count>private_logistics_panel::MaxObjects || s.objects[0].pointer!=s.root) return f;
+    f.count=s.count;
+    for(unsigned i=0;i<s.count;++i) {
+        const auto& o=s.objects[i];
+        if(!o.quantityRead) return private_logistics_assignment::NativeFuel{};
+        f.objects[i]=o.pointer;f.metadata[i]=o.metadata;f.raw[i]=o.raw;f.capacity[i]=o.capacity;
+    }
+    f.valid=true;
+    f.valid=private_logistics_assignment::ValidFuel(f);
+    return f;
+}
+struct PanelEndpointPrice {
+    bool available=false;
+    double amount=0;
+    float perTonne=0;
+    int currency=TSM_CURRENCY_RUB;
+    const char* reason="not_closed";
+};
+static PanelEndpointPrice PanelHypotheticalPrice(const private_logistics_assignment::Event& event,
+                                                const private_logistics_assignment::Endpoint& e)
+{
+    PanelEndpointPrice q{};
+    if(event.kind!=private_logistics_assignment::Kind::Closed) return q;
+    q.reason="uncertain_endpoint";if(!e.valid || !std::isfinite(e.net)) return q;
+    q.reason="observed_level_rise";if(e.observedRise) return q;
+    q.reason="nonnegative_net";if(e.net>=0) return q;
+    q.reason="pricing_api_unavailable";
+    if(!g_pricing || g_pricing->structSize<offsetof(TsmResourcePricingApi,getPrice)+sizeof(g_pricing->getPrice) ||
+       !g_pricing->getByName || !g_pricing->getPrice) return q;
+    void* resource=g_pricing->getByName(gFuelResource);
+    q.reason="resource_unavailable";if(!resource) return q;
+    // The public helper inspects BOTH appended function pointers. Guard the full
+    // pair before calling it, including providers exposing only an older prefix.
+    const bool currencyTail=g_currency && g_currency->structSize>=
+        offsetof(TsmCurrencyApi,getCurrencySymbol)+sizeof(g_currency->getCurrencySymbol);
+    q.currency=TsmCurrencyActive(currencyTail ? g_currency : nullptr); // RUB fallback.
+    const float price=g_pricing->getPrice(resource,q.currency);
+    const double amount=-e.net*double(price);
+    q.reason="invalid_price";if(!std::isfinite(price) || price<=0) return q;
+    q.reason="invalid_product";if(!std::isfinite(amount) || amount<=0) return q;
+    q.perTonne=price;q.amount=amount;q.available=true;q.reason="no_refill_hypothesis_only";
+    return q;
+}
+static void ScheduleAssignmentLog(const PanelRecord& record,
+                                  const private_logistics_schedule::Delta& delta,
+                                  const private_logistics_schedule::FieldChanges& changes,
+                                  uintptr_t home)
+{
+    const auto& fuel = record.snapshot;
+    const auto result = g_scheduleLedger.Observe(record.schedule, delta, changes,
+        (unsigned long long)record.epoch, fuel.root, home,
+        {record.sequence, record.milliseconds, fuel.aggregateValid, fuel.litresCandidate, PanelNativeFuel(fuel)});
+    for (unsigned i = 0; i < result.count; ++i) {
+        const auto& event = result.events[i];
+        const auto& c = event.candidate;
+        const auto endpoint=private_logistics_assignment::Estimate(c,event.boundary);
+        const auto price=PanelHypotheticalPrice(event,endpoint);
+        Logf("[PANEL ASSIGNMENT] observation_epoch=%ld sample=%u observation_root=%p "
+             "id=%llu candidate_epoch=%llu root=%p home=%p event=%s reason=%s "
+             "first_sample=%u first_ms=%llu first_fuel_valid=%d first_litres_candidate=%.9g "
+             "last_sample=%u last_ms=%llu last_fuel_valid=%d last_litres_candidate=%.9g "
+             "boundary_sample=%u boundary_ms=%llu boundary_fuel_valid=%d boundary_litres_candidate=%.9g "
+             "unknown_start=%d observation_gap=%d role_uncertain=%d "
+             "native_start_valid=%d native_start=%.9g native_end_valid=%d native_end=%.9g "
+             "net_change_valid=%d net_change_native=%.9g unit_assumption=tonnes "
+             "receiver_changed=%d fuel_uncertain=%d observed_level_rise=%d refill_coverage=unverified "
+             "hypothetical_cost_if_no_refill_available=%d hypothetical_cost_if_no_refill=%.9g "
+             "hypothetical_cost_reason=%s fuel_price_per_tonne=%.9g currency=%d "
+             "currency_policy=public_api_or_RUB_fallback price_timing=observation_drain "
+             "id_scope=process_local_selected_panel native_boundary=unverified completion=unverified "
+             "exact_burn=0 actual_cost=not_computed settlement=none billing=off",
+             record.epoch, record.sequence, (void*)fuel.root,
+             (unsigned long long)c.id, (unsigned long long)c.epoch, (void*)c.root, (void*)c.home,
+             private_logistics_assignment::KindName(event.kind), event.reason,
+             c.first.sample, (unsigned long long)c.first.ms, c.first.fuelValid ? 1 : 0, (double)c.first.litres,
+             c.last.sample, (unsigned long long)c.last.ms, c.last.fuelValid ? 1 : 0, (double)c.last.litres,
+             event.boundary.sample, (unsigned long long)event.boundary.ms,
+             event.boundary.fuelValid ? 1 : 0, (double)event.boundary.litres,
+             c.unknownStart ? 1 : 0, c.observationGap ? 1 : 0, c.roleUncertain ? 1 : 0,
+             private_logistics_assignment::ValidFuel(c.first.native) ? 1 : 0,
+             private_logistics_assignment::NativeTotal(c.first.native),
+             private_logistics_assignment::ValidFuel(event.boundary.native) ? 1 : 0,
+             private_logistics_assignment::NativeTotal(event.boundary.native),
+             endpoint.valid ? 1 : 0, endpoint.valid ? endpoint.net : 0.0,
+             c.receiverChanged ? 1 : 0, c.fuelUncertain ? 1 : 0, endpoint.observedRise ? 1 : 0,
+             price.available ? 1 : 0, price.amount, price.reason, (double)price.perTonne, price.currency);
+    }
+}
+static void ScheduleObserverLog(const PanelRecord& record, bool gap)
+{
+    if (!g_scheduleReady) return;
+    if (gap || record.coalesced ||
+        (g_scheduleLastEpoch == record.epoch &&
+         g_scheduleLastCaptureDrops != record.queueFullAtCapture)) g_scheduleHistory.Break();
+    g_scheduleLastEpoch = record.epoch;
+    g_scheduleLastCaptureDrops = record.queueFullAtCapture;
+    const auto& fuel = record.snapshot;
+    const auto& s = record.schedule;
+    const uintptr_t home = fuel.count ? fuel.objects[0].homeCandidate : 0;
+    // Simulation-thread copy of previously captured VALUES, not native reads.
+    const auto previous = g_scheduleHistory.LastValidValues();
+    const auto d = g_scheduleHistory.Observe(s, (unsigned long long)record.epoch, fuel.root, home,
+                                           record.sequence, record.milliseconds);
+    const auto changes = d.endpointCompared
+        ? private_logistics_schedule::ClassifyChanges(previous, s)
+        : private_logistics_schedule::FieldChanges{};
+    // Every accepted record updates the ledger, including quiet fuel endpoints.
+    ScheduleAssignmentLog(record, d, changes, home);
+    if (!d.emit) return;
+    Logf("[PANEL SCHEDULE] epoch=%ld sample=%u ms=%llu root=%p candidate_home=%p "
+         "status=%s baseline=%s observed_fields_changed=%d storage_changed=%d "
+         "row_index_changed=%d opaque_context_changed=%d begin680=%p end688=%p configs638=%p "
+         "raw_row_count=%llu captured_rows=%u index698=%d flag5fd=%u "
+         "raw4a0=%p raw610=%p raw650=%p fuel_valid=%d fuel_root_raw=%.9g "
+         "aggregate_litres_candidate=%.2f visibility=panel_only phase=post_render "
+         "native_event_coverage=unverified native_job_id=unverified buyer=unverified "
+         "completion=unverified exact_burn=0 billing=off",
+         record.epoch, record.sequence, (unsigned long long)record.milliseconds,
+         (void*)fuel.root, (void*)home, private_logistics_schedule::StatusName(s.status),
+         private_logistics_schedule::BaselineName(d.baseline), d.fields ? 1 : 0,
+         d.storage ? 1 : 0, d.index ? 1 : 0, d.context ? 1 : 0,
+         (void*)s.begin, (void*)s.end, (void*)s.configs,
+         (unsigned long long)(s.end >= s.begin ? (s.end - s.begin) / 8 : 0),
+         s.status == private_logistics_schedule::Status::Complete ? s.count : 0,
+         (int)s.index698, (unsigned)s.flag5fd, (void*)s.raw4a0, (void*)s.raw610, (void*)s.raw650,
+         fuel.aggregateValid ? 1 : 0, fuel.count ? (double)fuel.objects[0].raw : 0.0,
+         (double)fuel.litresCandidate);
+    if (s.status != private_logistics_schedule::Status::Complete) return;
+    const auto currentPattern = private_logistics_schedule::ClassifyPattern(s, home);
+    const auto previousPattern = d.endpointCompared
+        ? private_logistics_schedule::ClassifyPattern(previous, home)
+        : private_logistics_schedule::Pattern::Unavailable;
+    const bool indexOnly = d.endpointCompared && d.endpointIndex && !d.endpointFields &&
+                           !d.endpointStorage && !d.endpointContext;
+    Logf("[PANEL SCHEDULE CLASSIFICATION] epoch=%ld sample=%u previous_sample=%u "
+         "root=%p comparison_available=%d compared_across_gap=%d "
+         "previous_pattern=%s current_pattern=%s row_count_changed=%d ordered_targets_changed=%d "
+         "structure_changed=%d config_availability_changed=%d task_flags_changed=%d "
+         "scalar_settings_changed=%d settings_only=%d active_index_only=%d "
+         "comparison_scope=captured_endpoints pattern_semantics=observed_flags_only "
+         "resource_identity=unverified native_job_boundary=unverified billing=off",
+         record.epoch, record.sequence, d.previousSample, (void*)fuel.root,
+         changes.comparable ? 1 : 0, d.endpointAcrossGap ? 1 : 0,
+         private_logistics_schedule::PatternName(previousPattern),
+         private_logistics_schedule::PatternName(currentPattern),
+         changes.count ? 1 : 0, changes.targets ? 1 : 0, changes.Structure() ? 1 : 0,
+         changes.availability ? 1 : 0, changes.flags ? 1 : 0, changes.scalars ? 1 : 0,
+         changes.SettingsOnly() ? 1 : 0, indexOnly ? 1 : 0);
+    if (d.endpointCompared && d.endpointAcrossGap) {
+        Logf("[PANEL SCHEDULE ENDPOINT] epoch=%ld sample=%u ms=%llu root=%p candidate_home=%p "
+             "previous_sample=%u previous_ms=%llu previous_rows=%u current_rows=%u "
+             "endpoint_fields_differ=%d endpoint_storage_differ=%d endpoint_index_differ=%d "
+             "endpoint_context_differ=%d compared_across_gap=1 continuity_valid=0 "
+             "comparison=last_valid_captured_values native_event_time=unknown "
+             "native_event_coverage=unverified completion=unverified billing=off",
+             record.epoch, record.sequence, (unsigned long long)record.milliseconds,
+             (void*)fuel.root, (void*)home, d.previousSample, (unsigned long long)d.previousMs,
+             previous.count, s.count, d.endpointFields ? 1 : 0, d.endpointStorage ? 1 : 0,
+             d.endpointIndex ? 1 : 0, d.endpointContext ? 1 : 0);
+        // The last valid sample may not have emitted rows (unchanged). Include
+        // its values when content differs so both endpoints are reconstructible.
+        if (d.endpointFields) for (unsigned i = 0; i < previous.count; ++i) {
+            const auto& r = previous.rows[i];
+            Logf("[PANEL SCHEDULE PREVIOUS ROW] epoch=%ld sample=%u compared_to_sample=%u "
+                 "row=%u target_raw=%p config_fields_read=%d flag00=%u value04=%.9g "
+                 "flagc8=%u valuecc=%.9g values=cached_not_native_read billing=off",
+                 record.epoch, d.previousSample, record.sequence, i, (void*)r.target,
+                 r.configRead ? 1 : 0, (unsigned)r.flag00, (double)r.value04,
+                 (unsigned)r.flagC8, (double)r.valueCC);
+        }
+    }
+    for (unsigned i = 0; i < s.count; ++i) {
+        const auto& r = s.rows[i];
+        Logf("[PANEL SCHEDULE ROW] epoch=%ld sample=%u row=%u target_raw=%p "
+             "config_fields_read=%d flag00=%u value04=%.9g flagc8=%u valuecc=%.9g "
+             "target_role=unverified buyer=unverified",
+             record.epoch, record.sequence, i, (void*)r.target, r.configRead ? 1 : 0,
+             (unsigned)r.flag00, (double)r.value04, (unsigned)r.flagC8, (double)r.valueCC);
+    }
+}
+static void PanelObserverTick(void*, float, float)
+{
+    PanelRecord record{};
+    bool have = false, cap = false, fault = false, contention = false;
+    unsigned dropped = 0, newDrops = 0;
+    ULONGLONG firstDropMs = 0, lastDropMs = 0;
+    if (!TryEnterCriticalSection(&g_panelQueueLock)) return;
+    const LONG epoch = InterlockedCompareExchange(&g_panelEpoch, 0, 0);
+    PanelResetQueueLocked(epoch);
+    if (g_panelCount) {
+        record = g_panelQueue[g_panelHead];
+        g_panelHead = (g_panelHead + 1) % 16; --g_panelCount; have = true;
+    }
+    contention = InterlockedExchange(&g_panelContention, 0) != 0;
+    dropped = g_panelDropped;
+    newDrops = dropped - g_panelDroppedReported;
+    g_panelDroppedReported = dropped;
+    firstDropMs = g_panelFirstDropMs; lastDropMs = g_panelLastDropMs;
+    g_panelFirstDropMs = g_panelLastDropMs = 0;
+    cap = g_panelSamples >= 240 && !g_panelCapLogged;
+    if (cap) g_panelCapLogged = true;
+    fault = InterlockedCompareExchange(&g_panelFault, 0, 0) && !g_panelFaultLogged;
+    if (fault) g_panelFaultLogged = true;
+    LeaveCriticalSection(&g_panelQueueLock);
+    if (epoch != InterlockedCompareExchange(&g_panelEpoch, 0, 0)) return;
+    if (fault) Logf("[PANEL GAP] epoch=%ld reason=guarded_read_fault observer=disabled exact_burn=0", epoch);
+    if (cap) Logf("[PANEL GAP] epoch=%ld reason=capture_cap cap=240 capture=stopped exact_burn=0", epoch);
+    if (contention)
+        Logf("[PANEL GAP] epoch=%ld reason=render_trylock_contention skipped_render_attempts=unknown "
+             "simulation_event_coverage=unverified exact_burn=0", epoch);
+    if (newDrops)
+        Logf("[PANEL GAP] epoch=%ld reason=queue_full skipped_snapshot_captures=%u "
+             "first_ms=%llu last_ms=%llu queue_full_total_at_drain=%u "
+             "sample_ids=accepted_records_only simulation_event_coverage=unverified exact_burn=0",
+             epoch, newDrops, (unsigned long long)firstDropMs,
+             (unsigned long long)lastDropMs, dropped);
+    if (g_scheduleReady && (fault || cap || contention || newDrops)) {
+        g_scheduleHistory.Break();
+        g_scheduleLedger.Break();
+    }
+    if (!have || record.epoch != InterlockedCompareExchange(&g_panelEpoch, 0, 0)) return;
+    if (record.coalesced)
+        Logf("[PANEL GAP] epoch=%ld sample=%u reason=paused_snapshot_coalescing "
+             "discarded_paused_snapshots=%u first_ms=%llu latest_ms=%llu "
+             "policy=keep_latest_same_window_root simulation_event_coverage=unverified exact_burn=0",
+             record.epoch, record.sequence, record.coalesced,
+             (unsigned long long)record.firstMilliseconds, (unsigned long long)record.milliseconds);
+    const auto& s = record.snapshot;
+    Logf("[PANEL FUEL] epoch=%ld sample=%u ms=%llu phase=post_render window=%p root=%p "
+         "status=%s aggregate_valid=%d current_raw=%.9g litres_candidate=%.2f "
+         "capacity_unadjusted=%.9g ratio_valid=%d ratio=%.9g links=%u "
+         "mode=%d metadata_kind=%d flags_read=%d flag8681=%u flag8682=%u "
+         "adjustment_read=%d adjustment_needed=%d presentation=%s "
+         "queue_full_total_at_capture=%u queue_full_total_at_drain=%u "
+         "captured_paused=%d coalesced_snapshots=%u sample_ids=accepted_records_only "
+         "root514_read=%d root514=%u root4f0_read=%d root4f0=%p "
+         "gate_global_read=%d gate_global=%d gate_diag=%s native_execution=unobserved "
+         "physical_fuel=unverified exact_burn=0 billing=off",
+         record.epoch, record.sequence, (unsigned long long)record.milliseconds,
+         (void*)s.window, (void*)s.root, PanelStatus(s.status), s.aggregateValid ? 1 : 0,
+         (double)s.current, (double)s.litresCandidate, (double)s.unadjustedCapacity,
+         s.ratioValid ? 1 : 0, (double)s.ratio, s.links, s.contextMode, s.metadataKind,
+         s.flagsRead ? 1 : 0, (unsigned)s.flag8681, (unsigned)s.flag8682,
+         s.adjustmentRead ? 1 : 0, s.adjustmentNeeded ? 1 : 0,
+         s.flagsRead && (s.flag8681 || s.flag8682) ? "alternate_if_shown" : "unresolved_7c58",
+         record.queueFullAtCapture, dropped, record.paused ? 1 : 0, record.coalesced,
+         s.root514Read ? 1 : 0, (unsigned)s.root514, s.root4F0Read ? 1 : 0, (void*)s.root4F0,
+         s.gateGlobalRead ? 1 : 0, (int)s.gateGlobal, kGateDiagnosticVersion);
+    for (unsigned i = 0; i < s.count; ++i) {
+        const auto& o = s.objects[i];
+        Logf("[PANEL OBJECT] epoch=%ld sample=%u index=%u role=%s object=%p metadata=%p "
+             "quantity_read=%d raw5f0=%.9g capacity8684=%.9g candidate_home=%p "
+             "membership=%s fleet_index=%u occurrences=%u private_status=not_classified "
+             "raw1794_read=%d raw1794=%u proto8680_read=%d proto8680=%u",
+             record.epoch, record.sequence, i, i ? "linked" : "root", (void*)o.pointer,
+             (void*)o.metadata, o.quantityRead ? 1 : 0, (double)o.raw, (double)o.capacity,
+             (void*)o.homeCandidate, PanelMatch(o.match), o.fleetIndex, o.occurrences,
+             o.raw1794Read ? 1 : 0, (unsigned)o.raw1794,
+             o.proto8680Read ? 1 : 0, (unsigned)o.proto8680);
+    }
+    ScheduleObserverLog(record, fault || cap || contention || newDrops);
+}
+static bool PanelTargetMatches(void)
+{
+    // Fingerprint, not a recomputed SHA-256. Operator must verify the file hash.
+    if (!g_exeBase || g_exeSize < 0x90B080 || !ReadablePtr(g_exeBase, sizeof(IMAGE_DOS_HEADER))) return false;
+    const auto* dos = (const IMAGE_DOS_HEADER*)g_exeBase;
+    if (dos->e_magic != IMAGE_DOS_SIGNATURE || dos->e_lfanew < 0 || dos->e_lfanew > 0x100000) return false;
+    const auto* nt = (const IMAGE_NT_HEADERS64*)(g_exeBase + dos->e_lfanew);
+    if (!ReadablePtr(nt, sizeof(*nt)) || nt->Signature != IMAGE_NT_SIGNATURE ||
+        nt->FileHeader.Machine != IMAGE_FILE_MACHINE_AMD64 ||
+        nt->FileHeader.TimeDateStamp != 0x6A3EB6ADu ||
+        nt->OptionalHeader.Magic != IMAGE_NT_OPTIONAL_HDR64_MAGIC) return false;
+    static const BYTE scale[] = {0x00, 0x00, 0x7A, 0x44};
+    static const BYTE format[] = {0x25,0,0x2E,0,0x32,0,0x66,0,0x6C,0,0,0};
+    return ReadablePtr(g_exeBase + 0x90B07C, sizeof(scale)) &&
+        ReadablePtr(g_exeBase + 0x8F3E98, sizeof(format)) &&
+        memcmp(g_exeBase + 0x90B07C, scale, sizeof(scale)) == 0 &&
+        memcmp(g_exeBase + 0x8F3E98, format, sizeof(format)) == 0;
+}
+// Additional read-only schedule gate. A mismatch disables ONLY schedule reads;
+// it never installs another hook or prevents the unchanged fuel observer.
+struct ScheduleFingerprint { uintptr_t rva; unsigned size; BYTE bytes[40]; };
+static const ScheduleFingerprint g_scheduleFingerprints[] = {
+        {0x7D5550, 7, {0x4C,0x8B,0xBA,0x40,0x02,0x00,0x00}},
+        {0x7E356E, 4, {0x4C,0x8B,0x7D,0x40}},
+        {0x7E6904, 25, {0x49,0x8B,0x8F,0x88,0x06,0x00,0x00,0x49,0x2B,0x8F,0x80,0x06,0x00,0x00,0x48,0xC1,0xF9,0x03,0x41,0x38,0xBF,0xFD,0x05,0x00,0x00}},
+        {0x7E693C, 7, {0x49,0x39,0xB7,0xA0,0x04,0x00,0x00}},
+        {0x7E6BDB, 8, {0x49,0x83,0xBF,0x50,0x06,0x00,0x00,0x00}},
+        {0x7E815D, 32, {0x49,0x8B,0x87,0x80,0x06,0x00,0x00,0x48,0x8B,0x4D,0x38,0x4C,0x8B,0x34,0xC8,0x48,0x69,0xF2,0x98,0x01,0x00,0x00,0x49,0x03,0xB7,0x38,0x06,0x00,0x00,0x4D,0x85,0xF6}},
+        {0x7E81B3, 19, {0x41,0x80,0xBF,0xFD,0x05,0x00,0x00,0x00,0x74,0x06,0x4C,0x8B,0xF1,0x48,0x8B,0xF1,0x40,0x32,0xFF}},
+        {0x7E8438, 7, {0x41,0x39,0x87,0x98,0x06,0x00,0x00}},
+        {0x7E8CC6, 7, {0x4D,0x3B,0xB7,0x10,0x06,0x00,0x00}},
+        {0x7E8EB9, 7, {0x0F,0xB6,0x86,0xC8,0x00,0x00,0x00}},
+        {0x7E8ED2, 3, {0x80,0x3E,0x00}},
+        {0x7E8F07, 8, {0xF3,0x0F,0x10,0x86,0xCC,0x00,0x00,0x00}},
+        {0x7E9273, 5, {0xF3,0x0F,0x10,0x46,0x04}},
+};
+static bool ScheduleTargetMatches(void)
+{
+    for (const auto& f : g_scheduleFingerprints)
+        if (f.rva > g_exeSize || f.size > g_exeSize - f.rva ||
+            !ReadablePtr(g_exeBase + f.rva, f.size) ||
+            memcmp(g_exeBase + f.rva, f.bytes, f.size)) return false;
+    return true;
+}
+static void PanelObserverStart(void)
+{
+    if (!g_panelObserverEnabled) { Logf("[PANEL FUEL] disabled by INI"); return; }
+    if (g_billing || !g_simClock || !g_simClock->registerTick || !g_persistenceHandle) {
+        Logf("[PANEL FUEL] unavailable: requires billing=0, sim_clock tick and registered load signal"); return;
+    }
+    if (!PanelTargetMatches()) { Logf("[PANEL FUEL] target/data fingerprint mismatch; no hook installed"); return; }
+    // 20 complete bytes through LEA RBP,[RSP-2EB0]; no RIP-relative operand.
+    static const BYTE expect[] = {0x40,0x55,0x56,0x57,0x41,0x54,0x41,0x55,
+        0x41,0x56,0x41,0x57,0x48,0x8D,0xAC,0x24,0x50,0xD1,0xFF,0xFF};
+    if (!ReadablePtr(g_exeBase + 0x7D5460, sizeof(expect)) ||
+        memcmp(g_exeBase + 0x7D5460, expect, sizeof(expect))) {
+        Logf("[PANEL FUEL] renderer prologue mismatch; no hook installed"); return;
+    }
+    g_scheduleReady = g_scheduleObserverEnabled && ScheduleTargetMatches();
+    Logf("[PANEL SCHEDULE] enabled=%d fingerprint=%s mode=read_only_selected_fields "
+         "max_rows=16 last_flag5fd_row_config=not_read gap_endpoints=enabled_cached_values_only "
+         "classification=enabled_captured_values assignment_ledger=selected_panel_dry_run job_lifecycle=unverified billing=off",
+         g_scheduleObserverEnabled ? 1 : 0, g_scheduleReady ? "matched" : "disabled_or_mismatch");
+    InitializeCriticalSection(&g_panelQueueLock);
+    if (!g_simClock->registerTick(PanelObserverTick, nullptr)) {
+        Logf("[PANEL FUEL] tick registration failed; no hook installed"); return;
+    }
+    if (!InstallInlineHook(g_exeBase + 0x7D5460, (void*)PanelRendererDetour,
+                          &g_panelTrampoline, expect, sizeof(expect), "private_logistics panel fuel observer")) {
+        Logf("[PANEL FUEL] renderer hook refused; capture unavailable"); return;
+    }
+    InterlockedExchange(&g_panelStarted, 1);
+    Logf("[PANEL FUEL] installed renderer=0x7D5460 stolen=20 scale=1000 format=%%.2fl "
+         "interval_ms=1000 cap=240 queue=16 paused_coalescing=%s; logs drain on unpaused ticks; "
+         "candidate_home fleet comparison only; accepted sample IDs do not prove coverage; "
+         "no exact burn, tracker or billing", g_simClock->isPaused ? "keep_latest_same_window_root" : "unavailable");
+}
+#endif
+```
+
+#### ENDPOINT full source: tests/private_logistics/endpoint_runtime_test.cpp
+
+Bytes=8205 SHA256=41797c3fbe43acf2eebc463fdf6b5156a7d20c2cc5b3fbd40a7dd544dd853bae
+
+```cpp
+// Real public API layout and production estimator; host shim, NOT a game/DLL test.
+#define PANEL_RUNTIME_TEST_NO_MAIN
+#include "panel_fuel_runtime_test.cpp"
+#include <limits>
+namespace a=private_logistics_assignment;
+namespace sch=private_logistics_schedule;
+namespace p=private_logistics_panel;
+static TsmResourcePricingApi prices{};
+static TsmCurrencyApi currencies{};
+static float unitPrice=200;
+static bool resourcePresent=true;
+static int lookupCalls=0,priceCalls=0,activeCalls=0,lastCurrency=-1;
+static int activeCurrency=TSM_CURRENCY_USD,resourceRecord=0;
+static void* FindFuel(const char* name) {
+    ++lookupCalls;CHECK(std::strcmp(name,gFuelResource)==0);
+    return resourcePresent ? &resourceRecord : nullptr;
+}
+static float PriceFuel(void* resource,int currency) {
+    ++priceCalls;CHECK(resource==&resourceRecord);lastCurrency=currency;return unitPrice;
+}
+static int ActiveCurrency() {++activeCalls;return activeCurrency;}
+static const char* CurrencySymbol() {return "$";}
+static void ResetPrices() {
+    prices={};prices.structSize=sizeof(prices);prices.getByName=FindFuel;prices.getPrice=PriceFuel;
+    currencies={};currencies.structSize=sizeof(currencies);
+    currencies.getActiveCurrency=ActiveCurrency;currencies.getCurrencySymbol=CurrencySymbol;
+    g_pricing=&prices;g_currency=nullptr;unitPrice=200;resourcePresent=true;
+    lookupCalls=priceCalls=activeCalls=0;lastCurrency=-1;activeCurrency=TSM_CURRENCY_USD;
+}
+static void pricing_live_resource_and_currency();
+static void pricing_unavailable_interfaces();
+static void pricing_invalid_numbers_and_hypotheses();
+static void native_copy_rejects_missing_and_preserves_signed();
+static void runtime_closing_boundary_prices_native_not_ui();
+static void runtime_quiet_rise_suppresses_hypothesis();
+int main() {
+    // This harness intentionally exercises only deferred estimation, not hook installation.
+    (void)&PanelObserverStart;(void)&PanelObserverLoading;
+#define RUN(name) name();std::puts("PASS " #name)
+    RUN(pricing_live_resource_and_currency);
+    RUN(pricing_unavailable_interfaces);
+    RUN(pricing_invalid_numbers_and_hypotheses);
+    RUN(native_copy_rejects_missing_and_preserves_signed);
+    RUN(runtime_closing_boundary_prices_native_not_ui);
+    RUN(runtime_quiet_rise_suppresses_hypothesis);
+#undef RUN
+    std::puts("6 endpoint runtime scenarios PASS (real API layout, mocked services; no game proof)");
+    return 0;
+}
+static a::Event Closed() {a::Event event{};event.kind=a::Kind::Closed;return event;}
+static a::Endpoint Falling() {a::Endpoint e{};e.valid=true;e.net=-.25;return e;}
+static void pricing_unavailable_interfaces() {
+    for(unsigned mode=0;mode<5;++mode) {
+        ResetPrices();
+        if(mode==0) g_pricing=nullptr;
+        if(mode==1) prices.structSize=offsetof(TsmResourcePricingApi,getPrice);
+        if(mode==2) prices.getByName=nullptr;
+        if(mode==3) prices.getPrice=nullptr;
+        if(mode==4) resourcePresent=false;
+        auto q=PanelHypotheticalPrice(Closed(),Falling());
+        CHECK(!q.available && q.amount==0 && priceCalls==0 && lookupCalls==(mode==4 ? 1 : 0));
+    }
+}
+static void pricing_invalid_numbers_and_hypotheses() {
+    for(float price:{0.f,-1.f,std::numeric_limits<float>::infinity(),std::numeric_limits<float>::quiet_NaN()}) {
+        ResetPrices();unitPrice=price;auto q=PanelHypotheticalPrice(Closed(),Falling());
+        CHECK(!q.available && q.amount==0 && priceCalls==1);
+    }
+    for(unsigned mode=0;mode<6;++mode) {
+        ResetPrices();auto e=Falling();auto event=Closed();
+        if(mode==0) e.valid=false;
+        if(mode==1) e.observedRise=true;
+        if(mode==2) e.net=0;
+        if(mode==3) e.net=.1;
+        if(mode==4) e.net=std::numeric_limits<double>::quiet_NaN();
+        if(mode==5) event.kind=a::Kind::Abandoned;
+        CHECK(!PanelHypotheticalPrice(event,e).available && lookupCalls==0 && priceCalls==0);
+    }
+    ResetPrices();auto e=Falling();e.net=-std::numeric_limits<double>::max();
+    auto q=PanelHypotheticalPrice(Closed(),e);
+    CHECK(!q.available && priceCalls==1 && std::strcmp(q.reason,"invalid_product")==0);
+}
+static p::Snapshot NativeSnapshot() {
+    p::Snapshot s{};s.status=p::Status::Complete;s.root=0x40000;s.count=1;
+    auto& o=s.objects[0];o.pointer=s.root;o.metadata=0x50000;o.quantityRead=true;
+    o.raw=1;o.capacity=2;s.aggregateValid=true;s.litresCandidate=1000;return s;
+}
+static void native_copy_rejects_missing_and_preserves_signed() {
+    auto s=NativeSnapshot();s.objects[0].raw=-.1f;auto n=PanelNativeFuel(s);
+    CHECK(a::ValidFuel(n) && n.raw[0]==-.1f && n.raw[0]!=s.litresCandidate);
+    for(unsigned mode=0;mode<5;++mode) {
+        s=NativeSnapshot();
+        if(mode==0) s.objects[0].quantityRead=false;
+        if(mode==1) s.objects[0].pointer++;
+        if(mode==2) s.status=p::Status::Unreadable;
+        if(mode==3) s.objects[0].capacity=std::numeric_limits<float>::quiet_NaN();
+        if(mode==4) s.count=p::MaxObjects+1;
+        CHECK(!a::ValidFuel(PanelNativeFuel(s)));
+    }
+}
+struct LogFixture {
+    sch::History history;
+    PanelRecord record{};
+    LogFixture() {
+        ResetPrices();logs.clear();g_scheduleLedger=a::Ledger{};
+        record.epoch=1;record.snapshot=NativeSnapshot();record.schedule.status=sch::Status::Complete;
+        Step();record.schedule.count=3;
+        record.schedule.rows[0]={0x10000,true,1,0,1,1};
+        record.schedule.rows[1]={0x20000,true,0,1,1,1};
+        record.schedule.rows[2]={0x30000,true,0,0,1,1};Step();
+    }
+    void Step() {
+        const auto previous=history.LastValidValues();++record.sequence;record.milliseconds+=1000;
+        auto d=history.Observe(record.schedule,1,record.snapshot.root,0x30000,record.sequence,record.milliseconds);
+        auto changes=d.endpointCompared ? sch::ClassifyChanges(previous,record.schedule) : sch::FieldChanges{};
+        ScheduleAssignmentLog(record,d,changes,0x30000);
+    }
+    void Level(float raw) {record.snapshot.objects[0].raw=raw;record.snapshot.litresCandidate=raw*1000;Step();}
+    void Close(float raw) {record.schedule.count=0;Level(raw);}
+};
+static void runtime_closing_boundary_prices_native_not_ui() {
+    LogFixture f;f.Level(.75f);CHECK(priceCalls==0);f.Close(.5f);
+    CHECK(priceCalls==1 && lookupCalls==1 && lastCurrency==TSM_CURRENCY_RUB);
+    const auto& line=logs.back();
+    CHECK(line.find("event=observed_close")!=std::string::npos);
+    CHECK(line.find("net_change_valid=1 net_change_native=-0.5")!=std::string::npos);
+    CHECK(line.find("hypothetical_cost_if_no_refill_available=1 hypothetical_cost_if_no_refill=100 ")!=std::string::npos);
+    CHECK(line.find("actual_cost=not_computed settlement=none billing=off")!=std::string::npos);
+    std::puts(line.c_str()); // Archive actual emitted output, not a reconstructed example.
+}
+static void runtime_quiet_rise_suppresses_hypothesis() {
+    LogFixture f;f.Level(.5f);f.Level(.75f);f.Close(.25f);
+    CHECK(priceCalls==0 && lookupCalls==0);
+    const auto& line=logs.back();
+    CHECK(line.find("net_change_valid=1 net_change_native=-0.75")!=std::string::npos);
+    CHECK(line.find("observed_level_rise=1")!=std::string::npos);
+    CHECK(line.find("hypothetical_cost_reason=observed_level_rise")!=std::string::npos);
+    std::puts(line.c_str());
+}
+static void pricing_live_resource_and_currency() {
+    ResetPrices();auto q=PanelHypotheticalPrice(Closed(),Falling());
+    CHECK(q.available && q.amount==50 && q.perTonne==200 && q.currency==TSM_CURRENCY_RUB);
+    CHECK(lookupCalls==1 && priceCalls==1 && activeCalls==0 && lastCurrency==TSM_CURRENCY_RUB);
+    g_currency=&currencies;q=PanelHypotheticalPrice(Closed(),Falling());
+    CHECK(q.available && q.amount==50 && q.currency==TSM_CURRENCY_USD && activeCalls==1);
+    currencies.structSize=offsetof(TsmCurrencyApi,getCurrencySymbol);
+    q=PanelHypotheticalPrice(Closed(),Falling());
+    CHECK(q.available && q.currency==TSM_CURRENCY_RUB && activeCalls==1);
+    currencies.structSize=0;q=PanelHypotheticalPrice(Closed(),Falling());
+    CHECK(q.available && q.currency==TSM_CURRENCY_RUB && activeCalls==1);
+    prices.structSize=offsetof(TsmResourcePricingApi,getPrice)+sizeof(prices.getPrice);
+    CHECK(PanelHypotheticalPrice(Closed(),Falling()).available);
+}
+```
+
+#### ENDPOINT full source: tests/private_logistics/schedule_assignment_ledger_test.cpp
+
+Bytes=14865 SHA256=aab320063266161b19bc663b50ab16712553c1a6aa50683c84ed49b0420e6799
+
+```cpp
+// Synthetic copied-value tests of the production ledger; not native lifecycle proof.
+#include "schedule_assignment_ledger.h"
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <limits>
+namespace a=private_logistics_assignment;
+namespace sch=private_logistics_schedule;
+#define CHECK(x) do{if(!(x)){std::fprintf(stderr,"FAIL %d: %s\n",__LINE__,#x);std::exit(1);}}while(0)
+#define TEST(name) static void name()
+static sch::Snapshot Goods() {
+    sch::Snapshot s{};s.status=sch::Status::Complete;s.count=3;
+    s.rows[0]={0x10000,true,1,0,1,1};s.rows[1]={0x20000,true,0,1,1,1};
+    s.rows[2]={0x30000,true,0,0,1,1};return s;
+}
+struct Fixture {
+    sch::History history;
+    a::Ledger ledger;
+    sch::Snapshot s=Goods();
+    std::uint64_t epoch=1;sch::Address root=0x40000,home=0x30000;
+    unsigned sequence=0;
+    a::NativeFuel native{};
+    a::Result Step(bool gap=false,bool fuelValid=true,float litres=100) {
+        if(gap) history.Break();
+        const auto previous=history.LastValidValues();++sequence;
+        const auto d=history.Observe(s,epoch,root,home,sequence,sequence*1000);
+        const auto c=d.endpointCompared?sch::ClassifyChanges(previous,s):sch::FieldChanges{};
+        return ledger.Observe(s,d,c,epoch,root,home,{sequence,sequence*1000,fuelValid,litres,native});
+    }
+};
+TEST(adopt_existing_does_not_invent_assignment_start) {
+    Fixture f;auto r=f.Step();CHECK(r.count==1 && r.events[0].kind==a::Kind::Adopted);
+    CHECK(f.ledger.Current().unknownStart && f.ledger.Current().id==1);
+    r=f.Step(false,true,90);CHECK(r.count==0 && f.ledger.Current().last.sample==2);
+    CHECK(f.ledger.Current().first.litres==100 && f.ledger.Current().last.litres==90);
+}
+TEST(empty_to_goods_opens_observed_candidate) {
+    Fixture f;f.s.count=0;CHECK(f.Step().count==0);f.s=Goods();auto r=f.Step();
+    CHECK(r.count==1 && r.events[0].kind==a::Kind::Opened);
+    CHECK(!f.ledger.Current().unknownStart && f.ledger.Current().first.sample==2);
+}
+TEST(target_replacement_closes_then_opens_and_keeps_both_endpoints) {
+    Fixture f;f.Step();f.Step(false,true,95);f.s.rows[1].target=0x50000;
+    auto r=f.Step(false,true,90);CHECK(r.count==2);
+    CHECK(r.events[0].kind==a::Kind::Closed && r.events[1].kind==a::Kind::Opened);
+    CHECK(r.events[0].candidate.id==1 && r.events[1].candidate.id==2);
+    CHECK(r.events[0].candidate.last.sample==2 && r.events[0].candidate.last.litres==95);
+    CHECK(r.events[0].boundary.sample==3 && r.events[0].boundary.litres==90);
+    CHECK(r.events[1].candidate.first.sample==3);
+}
+TEST(scalar_and_index_changes_keep_the_candidate) {
+    Fixture f;f.Step();f.s.rows[0].value04=std::nextafter(1.0f,0.0f);f.s.index698=1;
+    auto r=f.Step();CHECK(r.count==1 && r.events[0].kind==a::Kind::Updated);
+    CHECK(f.ledger.Current().id==1 && f.ledger.Current().first.sample==1);
+}
+TEST(storage_context_and_row_order_have_distinct_meanings) {
+    Fixture f;f.Step();f.s.begin=0x90000;f.s.end=0x90018;f.s.raw610=12;
+    auto r=f.Step();CHECK(r.count==1 && r.events[0].kind==a::Kind::Updated);
+    auto row=f.s.rows[0];f.s.rows[0]=f.s.rows[1];f.s.rows[1]=row;
+    r=f.Step();CHECK(r.count==2 && r.events[0].kind==a::Kind::Closed);
+}
+TEST(empty_schedule_closes_without_any_cargo_empty_requirement) {
+    Fixture f;f.Step();f.s.count=0;f.s.index698=2;auto r=f.Step();
+    CHECK(r.count==1 && r.events[0].kind==a::Kind::Closed && !f.ledger.Active());
+    CHECK(std::strcmp(r.events[0].reason,"observed_removed")==0);
+    CHECK(f.Step().count==0); // no duplicate closing/payment-style summary
+}
+TEST(office_only_never_opens_goods_but_can_end_observed_structure) {
+    Fixture f;f.s.count=1;f.s.rows[0]=Goods().rows[2];CHECK(f.Step().count==0);
+    f.s=Goods();CHECK(f.Step().events[0].kind==a::Kind::Opened);
+    f.s.count=1;f.s.rows[0]=Goods().rows[2];auto r=f.Step();
+    CHECK(r.count==1 && r.events[0].kind==a::Kind::Closed && !f.ledger.Active());
+    CHECK(std::strcmp(r.events[0].reason,"observed_office_only")==0);
+}
+TEST(flag_edit_loses_pattern_but_does_not_replace_same_targets) {
+    Fixture f;f.Step();f.s.rows[0].flag00=0;auto r=f.Step();
+    CHECK(r.count==1 && r.events[0].kind==a::Kind::Updated);
+    CHECK(f.ledger.Current().id==1 && f.ledger.Current().roleUncertain);
+    f.s.rows[0].flag00=1;f.Step();CHECK(f.ledger.Current().id==1);
+}
+TEST(config_availability_loss_does_not_create_removal) {
+    Fixture f;f.Step();f.s.rows[0].configRead=false;auto r=f.Step();
+    CHECK(r.count==1 && r.events[0].kind==a::Kind::Updated && f.ledger.Current().id==1);
+    CHECK(f.ledger.Current().roleUncertain);
+}
+TEST(invalid_read_is_not_empty_or_removal_and_recovery_keeps_id) {
+    Fixture f;f.Step();f.s.status=sch::Status::Unreadable;f.s.count=0;auto r=f.Step();
+    CHECK(r.count==1 && r.events[0].kind==a::Kind::Uncertain && f.ledger.Active());
+    CHECK(f.Step().count==0);f.s=Goods();r=f.Step();
+    CHECK(r.count==1 && r.events[0].kind==a::Kind::Updated);
+    CHECK(f.ledger.Current().id==1 && f.ledger.Current().observationGap);
+}
+TEST(identity_switch_abandons_without_claiming_removal) {
+    Fixture f;f.Step();f.root+=0x10000;auto r=f.Step();
+    CHECK(r.count==2 && r.events[0].kind==a::Kind::Abandoned && r.events[1].kind==a::Kind::Adopted);
+    CHECK(r.events[0].candidate.root==0x40000 && f.ledger.Current().root==0x50000);
+    CHECK(!r.events[0].boundary.fuelValid && r.events[0].boundary.litres==0);
+    CHECK(f.ledger.Current().id==2 && f.ledger.Current().unknownStart);
+}
+TEST(invalid_other_identity_prevents_switch_back_join) {
+    Fixture f;f.Step();f.root+=0x10000;f.s.status=sch::Status::Ineligible;
+    auto r=f.Step();CHECK(r.count==1 && r.events[0].kind==a::Kind::Abandoned);
+    f.root-=0x10000;f.s=Goods();r=f.Step();CHECK(r.count==1 && r.events[0].kind==a::Kind::Adopted);
+    CHECK(f.ledger.Current().id==2);
+}
+TEST(load_change_never_reuses_old_candidate_id) {
+    Fixture f;f.Step();++f.epoch;auto r=f.Step();
+    CHECK(r.count==2 && r.events[0].kind==a::Kind::Abandoned && r.events[1].kind==a::Kind::Adopted);
+    CHECK(f.ledger.Current().epoch==2 && f.ledger.Current().id==2);
+}
+TEST(home_change_is_identity_not_completed_assignment) {
+    Fixture f;f.Step();f.home=0x60000;auto r=f.Step();
+    CHECK(r.count==2 && r.events[0].kind==a::Kind::Abandoned && r.events[1].kind==a::Kind::Adopted);
+}
+TEST(pause_comparison_closes_observed_targets_but_marks_uncertainty) {
+    Fixture f;f.Step();auto r=f.Step(true);CHECK(r.count==1 && r.events[0].kind==a::Kind::Updated);
+    CHECK(f.ledger.Current().id==1 && f.ledger.Current().observationGap);
+    f.s.rows[1].target=0x60000;r=f.Step(true);CHECK(r.count==2);
+    CHECK(r.events[0].candidate.observationGap && r.events[1].candidate.observationGap);
+    f.s.count=0;r=f.Step(true);CHECK(r.count==1 && r.events[0].kind==a::Kind::Closed);
+}
+TEST(explicit_capture_limit_gap_does_not_auto_close) {
+    Fixture f;f.Step();f.ledger.Break();CHECK(f.ledger.Active());
+    CHECK(f.ledger.Current().observationGap);CHECK(f.Step().count==0);
+}
+TEST(fuel_invalidity_does_not_become_zero_or_money) {
+    Fixture f;f.Step(false,true,std::numeric_limits<float>::quiet_NaN());
+    CHECK(!f.ledger.Current().first.fuelValid && f.ledger.Current().first.litres==0);
+    f.Step(false,true,-1);CHECK(!f.ledger.Current().last.fuelValid);
+    f.s.count=0;auto r=f.Step(false,false,45);
+    CHECK(r.events[0].kind==a::Kind::Closed && !r.events[0].boundary.fuelValid);
+}
+TEST(newly_recognized_flags_adopt_unknown_start_not_open) {
+    Fixture f;f.s.rows[0].flag00=0;CHECK(f.Step().count==0);
+    f.s.rows[0].flag00=1;auto r=f.Step();CHECK(r.count==1 && r.events[0].kind==a::Kind::Adopted);
+    CHECK(f.ledger.Current().unknownStart);
+}
+TEST(out_of_order_metadata_cannot_remove_a_candidate) {
+    Fixture f;f.Step();sch::Delta d;d.endpointCompared=true;
+    sch::FieldChanges c;c.comparable=true;c.count=true;auto empty=Goods();empty.count=0;
+    auto r=f.ledger.Observe(empty,d,c,1,f.root,f.home,{1,999,true,50});
+    CHECK(r.count==1 && r.events[0].kind==a::Kind::Uncertain && f.ledger.Current().id==1);
+    CHECK(f.ledger.Current().last.sample==1 && f.ledger.Current().observationGap);
+}
+TEST(unavailable_comparison_abandons_not_settles) {
+    Fixture f;f.Step();sch::Delta d;sch::FieldChanges c;
+    auto r=f.ledger.Observe(f.s,d,c,1,f.root,f.home,{2,2000,true,50});
+    CHECK(r.count==2 && r.events[0].kind==a::Kind::Abandoned && r.events[1].kind==a::Kind::Adopted);
+}
+TEST(id_exhaustion_saturates_without_reuse) {
+    a::Ledger ledger(UINT64_MAX-1);auto s=Goods();sch::Delta d;sch::FieldChanges c;
+    auto r=ledger.Observe(s,d,c,1,1,2,{1,1000,true,10});
+    CHECK(r.count==1 && ledger.Current().id==UINT64_MAX);
+    d.endpointCompared=true;c.comparable=true;c.targets=true;s.rows[1].target=0x70000;
+    r=ledger.Observe(s,d,c,1,1,2,{2,2000,true,9});
+    CHECK(r.count==2 && r.events[0].kind==a::Kind::Closed && r.events[1].kind==a::Kind::IdExhausted);
+    CHECK(!ledger.Active());
+}
+TEST(oversize_or_missing_identity_never_opens_a_candidate) {
+    Fixture f;f.s.count=sch::MaxRows+1;CHECK(f.Step().count==0 && !f.ledger.Active());
+    f.s=Goods();f.home=0;CHECK(f.Step().count==0 && !f.ledger.Active());
+    f.home=0x30000;f.root=0;CHECK(f.Step().count==0 && !f.ledger.Active());
+}
+TEST(other_structural_plan_ends_candidate_without_inventing_goods) {
+    Fixture f;f.Step();f.s.count=1;f.s.rows[0].target=0x90000;f.s.rows[0].flag00=0;
+    auto r=f.Step();CHECK(r.count==1 && r.events[0].kind==a::Kind::Closed && !f.ledger.Active());
+}
+struct EndpointFixture : Fixture {
+    EndpointFixture() {
+        native.count=1;native.valid=true;native.objects[0]=root;native.metadata[0]=0x50000;
+        native.raw[0]=1;native.capacity[0]=2;
+        s.count=0;Step();s=Goods();Step();
+    }
+    void Level(float value) {native.raw[0]=value;Step();}
+    a::Event Close(float value) {native.raw[0]=value;s.count=0;auto r=Step();CHECK(r.count==1);return r.events[0];}
+};
+TEST(native_endpoint_uses_closing_boundary_not_previous_or_ui) {
+    EndpointFixture f;f.Level(.9f);auto event=f.Close(.8f);
+    auto e=a::Estimate(event.candidate,event.boundary);
+    CHECK(e.valid && !e.observedRise && std::fabs(e.net+.2)<1e-6);
+    CHECK(event.candidate.last.native.raw[0]==.9f && event.boundary.native.raw[0]==.8f);
+    CHECK(event.candidate.first.litres==event.boundary.litres);
+}
+TEST(native_missing_intermediate_read_stays_uncertain) {
+    EndpointFixture f;f.native.valid=false;f.Step();f.native.valid=true;
+    auto event=f.Close(.5f);CHECK(event.candidate.fuelUncertain);
+    CHECK(!a::Estimate(event.candidate,event.boundary).valid);
+}
+TEST(native_receiver_change_is_sticky_even_after_restoration) {
+    for(unsigned change=0;change<4;++change) {
+        EndpointFixture f;const auto original=f.native;
+        if(change==0) f.native.metadata[0]++;
+        if(change==1) f.native.capacity[0]++;
+        if(change>=2) {
+            f.native.count=2;f.native.objects[1]=0x70000;f.native.metadata[1]=0x80000;
+            f.native.raw[1]=.2f;f.native.capacity[1]=1;
+            if(change==3) {f.Step();f.native.objects[1]++;}
+        }
+        f.Step();f.native=original;auto event=f.Close(.5f);
+        CHECK(event.candidate.receiverChanged && !a::Estimate(event.candidate,event.boundary).valid);
+    }
+}
+TEST(native_quiet_observed_rise_survives_later_decrease) {
+    EndpointFixture f;f.Level(.6f);f.Level(.9f);auto event=f.Close(.5f);
+    auto e=a::Estimate(event.candidate,event.boundary);
+    CHECK(e.valid && e.observedRise && std::fabs(e.net+.5)<1e-6);
+}
+TEST(native_signed_negative_endpoint_is_not_clipped) {
+    EndpointFixture f;auto event=f.Close(-.1f);auto e=a::Estimate(event.candidate,event.boundary);
+    CHECK(e.valid && std::fabs(e.net+1.1)<1e-6);
+}
+TEST(native_invalid_values_and_per_receiver_rise_are_checked) {
+    EndpointFixture f;auto bad=f.native;
+    bad.raw[0]=std::numeric_limits<float>::infinity();CHECK(!a::ValidFuel(bad));
+    bad=f.native;bad.capacity[0]=0;CHECK(!a::ValidFuel(bad));
+    bad=f.native;bad.metadata[0]=0;CHECK(!a::ValidFuel(bad));
+    bad=f.native;bad.count=private_logistics_panel::MaxObjects+1;CHECK(!a::ValidFuel(bad));
+    bad=f.native;bad.count=2;bad.objects[1]=bad.objects[0];bad.metadata[1]=1;
+    bad.capacity[1]=1;CHECK(!a::ValidFuel(bad));
+    Fixture multi;multi.native=f.native;multi.native.count=2;multi.native.objects[1]=0x90000;
+    multi.native.metadata[1]=0xa0000;multi.native.capacity[1]=2;multi.native.raw[1]=1;
+    multi.s.count=0;multi.Step();multi.s=Goods();multi.Step();
+    multi.native.raw[0]=.1f;multi.native.raw[1]=1.1f;multi.Step();
+    CHECK(multi.ledger.Current().observedRise); // Falling total cannot conceal receiver rise.
+    f.native.raw[0]=.5f;f.s.count=0;auto gap=f.Step(true);
+    CHECK(gap.count==1 && !a::Estimate(gap.events[0].candidate,gap.events[0].boundary).valid);
+}
+// RUN entries are kept explicit so each test is selectable by the Python wrapper.
+int main(int argc,char** argv) {
+    unsigned count=0;
+#define RUN(name) if(argc==1 || std::strcmp(argv[1],#name)==0){name();++count;std::puts("PASS " #name);}
+    RUN(adopt_existing_does_not_invent_assignment_start);
+    RUN(empty_to_goods_opens_observed_candidate);
+    RUN(target_replacement_closes_then_opens_and_keeps_both_endpoints);
+    RUN(scalar_and_index_changes_keep_the_candidate);
+    RUN(storage_context_and_row_order_have_distinct_meanings);
+    RUN(empty_schedule_closes_without_any_cargo_empty_requirement);
+    RUN(office_only_never_opens_goods_but_can_end_observed_structure);
+    RUN(flag_edit_loses_pattern_but_does_not_replace_same_targets);
+    RUN(config_availability_loss_does_not_create_removal);
+    RUN(invalid_read_is_not_empty_or_removal_and_recovery_keeps_id);
+    RUN(identity_switch_abandons_without_claiming_removal);
+    RUN(invalid_other_identity_prevents_switch_back_join);
+    RUN(load_change_never_reuses_old_candidate_id);
+    RUN(home_change_is_identity_not_completed_assignment);
+    RUN(pause_comparison_closes_observed_targets_but_marks_uncertainty);
+    RUN(explicit_capture_limit_gap_does_not_auto_close);
+    RUN(fuel_invalidity_does_not_become_zero_or_money);
+    RUN(newly_recognized_flags_adopt_unknown_start_not_open);
+    RUN(out_of_order_metadata_cannot_remove_a_candidate);
+    RUN(unavailable_comparison_abandons_not_settles);
+    RUN(id_exhaustion_saturates_without_reuse);
+    RUN(oversize_or_missing_identity_never_opens_a_candidate);
+    RUN(other_structural_plan_ends_candidate_without_inventing_goods);
+    RUN(native_endpoint_uses_closing_boundary_not_previous_or_ui);
+    RUN(native_missing_intermediate_read_stays_uncertain);
+    RUN(native_receiver_change_is_sticky_even_after_restoration);
+    RUN(native_quiet_observed_rise_survives_later_decrease);
+    RUN(native_signed_negative_endpoint_is_not_clipped);
+    RUN(native_invalid_values_and_per_receiver_rise_are_checked);
+    CHECK(count);std::printf("%u assignment ledger cases PASS (copied values only)\n",count);
+}
+```
+
+#### ENDPOINT full source: tests/private_logistics/panel_fuel_runtime_test.cpp
+
+Bytes=17287 SHA256=9f535fc5574da19470ffeed638092639bfb34e9ce7abb91a55cab323a7d73f6e
+
+```cpp
+// Native host shim exercises the production queue/control code. NOT Windows ABI,
+// SEH, patch execution, real threads, or native game lifecycle validation.
+#include <cstdint>
+#include <cstdio>
+#include <cstring>
+#include <cstdlib>
+#include <vector>
+#include <string>
+#include <cstdarg>
+#include "../../src/resource_pricing_api.h"
+static const TsmResourcePricingApi* g_pricing=nullptr;
+static const TsmCurrencyApi* g_currency=nullptr;
+static char gFuelResource[64]="fuel";
+#define CHECK(x) do { if (!(x)) { std::fprintf(stderr,"line %d: %s\n",__LINE__,#x); std::exit(1); } } while (0)
+
+using BYTE = unsigned char;
+using LONG = long; // host-shim log ABI; real Windows LONG is 32-bit
+using ULONGLONG = unsigned long long;
+struct CRITICAL_SECTION { bool busy=false; };
+static bool TryEnterCriticalSection(CRITICAL_SECTION* p) { if(p->busy)return false;p->busy=true;return true; }
+static void LeaveCriticalSection(CRITICAL_SECTION* p) { CHECK(p->busy);p->busy=false; }
+static void InitializeCriticalSection(CRITICAL_SECTION* p) { p->busy=false; }
+static LONG InterlockedCompareExchange(volatile LONG* p,LONG value,LONG expected) { LONG old=*p;if(old==expected)*p=value;return old; }
+static LONG InterlockedExchange(volatile LONG* p,LONG value) { LONG old=*p;*p=value;return old; }
+static LONG InterlockedIncrement(volatile LONG* p) { return ++*p; }
+static ULONGLONG clockMs=1000;
+static ULONGLONG GetTickCount64() { return clockMs; }
+static std::vector<BYTE> image(0x9D54C4); // backed storage through the global int32
+static BYTE* g_exeBase=image.data();
+static std::size_t g_exeSize=image.size();
+static bool throwOnRead=false;
+static uintptr_t throwAtRead=0, denyAtRead=0;
+static std::vector<uintptr_t> attemptedReads;
+static bool ReadablePtr(const void* p,std::size_t n) {
+    attemptedReads.push_back((uintptr_t)p);
+    if (denyAtRead && (uintptr_t)p==denyAtRead) return false;
+    if(throwOnRead || (throwAtRead && (uintptr_t)p==throwAtRead)) throw 1;
+    const auto a=(uintptr_t)p,b=(uintptr_t)image.data(); // physical backing, not injected module base
+    return a>=b && a-b<=image.size() && n<=image.size()-(a-b);
+}
+constexpr unsigned IMAGE_DOS_SIGNATURE=0x5A4D,IMAGE_NT_SIGNATURE=0x4550;
+constexpr unsigned IMAGE_FILE_MACHINE_AMD64=0x8664,IMAGE_NT_OPTIONAL_HDR64_MAGIC=0x20B;
+struct IMAGE_DOS_HEADER { unsigned e_magic; int e_lfanew; };
+struct IMAGE_NT_HEADERS64 {
+    unsigned Signature;
+    struct { unsigned Machine, TimeDateStamp; } FileHeader;
+    struct { unsigned Magic; } OptionalHeader;
+};
+static std::vector<std::string> logs;
+#if defined(__GNUC__) || defined(__clang__)
+static void Logf(const char*,...) __attribute__((format(printf,1,2)));
+#endif
+static void Logf(const char* format,...) {
+    char line[2048];va_list args;va_start(args,format);std::vsnprintf(line,sizeof(line),format,args);va_end(args);logs.emplace_back(line);
+}
+static int g_panelObserverEnabled=1,g_scheduleObserverEnabled=0,g_billing=0,g_persistenceHandle=1;
+static unsigned installed=0,originalCalls=0;
+static void Original(void*,void*) { ++originalCalls; }
+static bool InstallInlineHook(void*,void*,void** trampoline,const BYTE*,std::size_t n,const char*) {
+    CHECK(n==20);*trampoline=(void*)Original;++installed;return true;
+}
+using Tick=void(*)(void*,float,float);
+static Tick tick=nullptr;
+static int RegisterTick(Tick fn,void*) { tick=fn;return 1; }
+static bool paused=false;
+static int IsPaused() { return paused ? 1 : 0; }
+struct ClockApi { int(*registerTick)(Tick,void*); int(*isPaused)(); };
+static ClockApi api{RegisterTick,IsPaused};
+static ClockApi* g_simClock=&api;
+#define __fastcall
+#define __try try
+#define __except(x) catch(...)
+// Compile production runtime BEFORE the reader fixture's global namespace import.
+#include "panel_fuel_runtime.h"
+#define main ReaderHarnessMain
+#include "panel_fuel_observer_test.cpp"
+#undef main
+
+#ifndef PANEL_RUNTIME_TEST_NO_MAIN
+int main() {
+    Fixture fixture;
+    for(const auto& r:fixture.regions) std::memcpy(g_exeBase+r.address,r.data.data(),r.data.size());
+    const auto ptr=[&](Address a){return (Address)(g_exeBase+a);};
+    const auto put=[&](Address a,Address v){std::memcpy(g_exeBase+a,&v,sizeof(v));};
+    put(fixture.window+0x240,ptr(fixture.root));put(fixture.root+0x1708,ptr(fixture.meta));
+    put(fixture.root+0x4F8,ptr(fixture.home));put(fixture.home+0x318,ptr(fixture.descriptor));
+    put(fixture.home+0xC70,ptr(fixture.fleet));put(fixture.home+0xC78,ptr(fixture.fleet+8));put(fixture.fleet,ptr(fixture.root));
+    auto* dos=(IMAGE_DOS_HEADER*)g_exeBase;dos->e_magic=IMAGE_DOS_SIGNATURE;dos->e_lfanew=0x80;
+    auto* nt=(IMAGE_NT_HEADERS64*)(g_exeBase+0x80);nt->Signature=IMAGE_NT_SIGNATURE;
+    nt->FileHeader.Machine=IMAGE_FILE_MACHINE_AMD64;nt->FileHeader.TimeDateStamp=0x6A3EB6AD;
+    nt->OptionalHeader.Magic=IMAGE_NT_OPTIONAL_HDR64_MAGIC;
+    const BYTE prologue[]={0x40,0x55,0x56,0x57,0x41,0x54,0x41,0x55,0x41,0x56,0x41,0x57,0x48,0x8D,0xAC,0x24,0x50,0xD1,0xFF,0xFF};
+    std::memcpy(g_exeBase+0x7D5460,prologue,sizeof(prologue));
+    const BYTE scale[]={0,0,0x7A,0x44},format[]={0x25,0,0x2e,0,0x32,0,0x66,0,0x6c,0,0,0};
+    std::memcpy(g_exeBase+0x90B07C,scale,sizeof(scale));std::memcpy(g_exeBase+0x8F3E98,format,sizeof(format));
+    for(const auto& f:g_scheduleFingerprints) std::memcpy(g_exeBase+f.rva,f.bytes,f.size);
+    CHECK(ScheduleTargetMatches());
+    g_exeBase[0x7E8438]^=1;CHECK(!ScheduleTargetMatches());g_exeBase[0x7E8438]^=1;
+    PanelObserverStart();CHECK(installed==1 && tick && g_panelStarted);
+    std::puts("PASS runtime_install_fingerprint");
+    void* context=(void*)ptr(fixture.context);void* window=(void*)ptr(fixture.window);
+    const auto logged=logs.size();PanelRendererDetour(context,window);
+    CHECK(originalCalls==1 && g_panelCount==1 && logs.size()==logged);
+    PanelCapture(context,window);CHECK(g_panelCount==1);
+    tick(nullptr,1,1);CHECK(g_panelCount==0 && logs.size()==logged+2);
+    CHECK(logs[logged].find("litres_candidate=549.54")!=std::string::npos);
+    CHECK(logs[logged+1].find("exact_fleet_pointer")!=std::string::npos);
+    std::puts("PASS runtime_post_render_throttle_and_deferred_log");
+    paused=true;
+    const auto pausedLogs=logs.size();
+    for(unsigned i=0;i<72;++i) {clockMs+=1000;PanelCapture(context,window);}
+    CHECK(g_panelCount==1 && g_panelDropped==0 && g_panelSamples==2);
+    CHECK(g_panelQueue[g_panelHead].coalesced==71 && logs.size()==pausedLogs);
+    paused=false;clockMs+=1000;PanelCapture(context,window);
+    CHECK(g_panelCount==2);tick(nullptr,1,1);
+    CHECK(logs[pausedLogs].find("reason=paused_snapshot_coalescing")!=std::string::npos);
+    CHECK(logs[pausedLogs].find("discarded_paused_snapshots=71")!=std::string::npos);
+    CHECK(logs[pausedLogs+1].find("captured_paused=1")!=std::string::npos);
+    tick(nullptr,1,1);CHECK(g_panelCount==0);
+    std::puts("PASS runtime_long_pause_coalesces_and_reports_omissions");
+    PanelObserverLoading();tick(nullptr,1,1);paused=true;
+    clockMs+=1000;PanelCapture(context,window);
+    put(fixture.window+0x240,ptr(0x90000)); // another root, no assumed native metadata
+    clockMs+=1000;PanelCapture(context,window);
+    CHECK(g_panelCount==2 && g_panelQueue[g_panelHead].snapshot.root==ptr(fixture.root));
+    CHECK(g_panelQueue[(g_panelHead+1)%16].snapshot.root==ptr(0x90000));
+    std::memcpy(g_exeBase+0xB0000,g_exeBase+fixture.window,0x500);
+    clockMs+=1000;PanelCapture(context,(void*)ptr(0xB0000));CHECK(g_panelCount==3);
+    paused=false;clockMs+=1000;PanelCapture(context,(void*)ptr(0xB0000));CHECK(g_panelCount==4);
+    put(fixture.window+0x240,ptr(fixture.root));
+    PanelObserverLoading();tick(nullptr,1,1);
+    std::puts("PASS runtime_pause_coalescing_never_overwrites_other_root_window_or_unpaused_record");
+    for(unsigned i=0;i<17;++i) {clockMs+=1000;PanelCapture(context,window);}
+    CHECK(g_panelCount==16 && g_panelDropped==1);
+    const auto fullLogs=logs.size();tick(nullptr,1,1);
+    CHECK(logs[fullLogs].find("reason=queue_full")!=std::string::npos);
+    CHECK(logs[fullLogs].find("skipped_snapshot_captures=1")!=std::string::npos);
+    CHECK(logs[fullLogs+1].find("queue_full_total_at_capture=0 queue_full_total_at_drain=1")!=std::string::npos);
+    const auto afterGap=logs.size();tick(nullptr,1,1);
+    CHECK(logs[afterGap].find("[PANEL FUEL]")!=std::string::npos); // no duplicate gap
+    g_panelQueueLock.busy=true;clockMs+=1000;PanelCapture(context,window);
+    g_panelQueueLock.busy=false;const auto contentionLogs=logs.size();tick(nullptr,1,1);
+    CHECK(logs[contentionLogs].find("reason=render_trylock_contention")!=std::string::npos);
+    PanelObserverLoading();const auto oldLogs=logs.size();tick(nullptr,1,1);
+    CHECK(g_panelCount==0 && g_panelSamples==0 && logs.size()==oldLogs);
+    std::puts("PASS runtime_queue_gap_capture_vs_drain_contention_and_load_discard");
+    clockMs+=1000;PanelCapture(context,nullptr);CHECK(g_panelLastMs==0);
+    PanelCapture(context,window);CHECK(g_panelCount==1);
+    g_panelSamples=239;clockMs+=1000;PanelCapture(context,window);CHECK(g_panelSamples==240);
+    clockMs+=1000;PanelCapture(context,window);CHECK(g_panelSamples==240);
+    const auto capLogs=logs.size();tick(nullptr,1,1);
+    CHECK(logs[capLogs].find("reason=capture_cap cap=240 capture=stopped")!=std::string::npos);
+    tick(nullptr,1,1);const auto drainedLogs=logs.size();tick(nullptr,1,1);
+    CHECK(logs.size()==drainedLogs);
+    std::puts("PASS runtime_inactive_does_not_starve_capture_and_cap");
+    PanelObserverLoading();tick(nullptr,1,1);clockMs+=1000;
+    throwOnRead=true;PanelCapture(context,window);throwOnRead=false;
+    CHECK(g_panelFault && g_panelCount==0);
+    const auto faultLogs=logs.size();tick(nullptr,1,1);
+    CHECK(logs[faultLogs].find("reason=guarded_read_fault observer=disabled")!=std::string::npos);
+    const auto disabledLogs=logs.size();clockMs+=1000;PanelCapture(context,window);tick(nullptr,1,1);
+    CHECK(g_panelCount==0 && logs.size()==disabledLogs);
+    std::puts("PASS runtime_guarded_fault_disables_and_reports_once");
+    g_exeBase[0x90B07C]=1;CHECK(!PanelTargetMatches());g_exeBase[0x90B07C]=0;
+    g_exeBase[0x8F3E98]=0;CHECK(!PanelTargetMatches());
+    std::puts("PASS runtime_changed_data_refused");
+    InterlockedExchange(&g_panelFault,0);
+    PanelObserverLoading();tick(nullptr,1,1);
+    g_exeBase[0x8F3E98]=0x25;
+    const auto rootAddr=ptr(fixture.root),metaAddr=ptr(fixture.meta);
+    const auto globalAddr=ptr(0x9D54C0);
+    const auto wasRead=[&](uintptr_t address) {
+        for(auto attempted:attemptedReads) if(attempted==address) return true;
+        return false;
+    };
+    const auto fresh=[&]() {
+        CHECK(g_panelCount==0);
+        const auto samples=g_panelSamples;
+        clockMs+=1000;attemptedReads.clear();PanelCapture(context,window);
+        CHECK(!g_panelFault && g_panelCount==1 && g_panelSamples==samples+1);
+        return g_panelQueue[g_panelHead].snapshot;
+    };
+    for(std::size_t size:{std::size_t(0),std::size_t(0x9D54BF),
+                         std::size_t(0x9D54C0),std::size_t(0x9D54C3)}) {
+        g_exeSize=size;const auto s=fresh();
+        CHECK(s.aggregateValid && s.root514Read && !s.gateGlobalRead);
+        CHECK(!wasRead(globalAddr));tick(nullptr,1,1);
+    }
+    g_exeSize=image.size();
+    std::puts("PASS runtime_diag_short_images_never_read_global");
+    for(std::int32_t value:{-7,0,2,42}) {
+        std::memcpy((void*)globalAddr,&value,sizeof(value));
+        const auto s=fresh();
+        CHECK(s.gateGlobalRead && s.gateGlobal==value && wasRead(globalAddr));
+        tick(nullptr,1,1);
+    }
+    std::puts("PASS runtime_diag_exact_size_relocated_signed_global");
+    g_exeBase=nullptr;
+    {const auto s=fresh();CHECK(s.aggregateValid && !s.gateGlobalRead && !wasRead(globalAddr));}
+    tick(nullptr,1,1);g_exeBase=image.data();
+    std::puts("PASS runtime_diag_null_image_preserves_capture");
+    for(std::uintptr_t base:{UINTPTR_MAX-0x9D54C0+1,UINTPTR_MAX-0x9D54C0-1}) {
+        g_exeBase=reinterpret_cast<BYTE*>(base);const auto s=fresh();
+        CHECK(s.aggregateValid && !s.gateGlobalRead);
+        // No fabricated global address reaches the memory reader.
+        for(auto address:attemptedReads)
+            CHECK(address>=(uintptr_t)image.data() && address<(uintptr_t)image.data()+image.size());
+        tick(nullptr,1,1);
+    }
+    g_exeBase=image.data();
+    std::puts("PASS runtime_diag_wrapping_base_or_read_end_never_read");
+    const uintptr_t faults[]={rootAddr+0x514,rootAddr+0x4F0,globalAddr,
+                              rootAddr+0x1794,metaAddr+0x8680};
+    const char* names[]={"root514","root4f0","global","raw1794","proto8680"};
+    for(unsigned i=0;i<5;++i) {
+        throwAtRead=faults[i];const auto s=fresh();
+        CHECK(wasRead(faults[i]) && s.aggregateValid && s.objects[0].quantityRead);
+        CHECK(s.root514Read==(i!=0) && s.root4F0Read==(i!=1));
+        CHECK(s.gateGlobalRead==(i!=2) && s.objects[0].raw1794Read==(i!=3));
+        CHECK(s.objects[0].proto8680Read==(i!=4));
+        // Every later independent diagnostic was actually attempted.
+        for(unsigned j=i+1;j<5;++j) CHECK(wasRead(faults[j]));
+        throwAtRead=0;tick(nullptr,1,1);
+        std::printf("PASS runtime_diag_exception_%s_capture_survives\n",names[i]);
+    }
+    for(auto denied:{rootAddr+0x5F0,metaAddr+0x8684}) {
+        denyAtRead=denied;const auto s=fresh();
+        CHECK(wasRead(denied) && !s.aggregateValid && !s.objects[0].quantityRead);
+        CHECK(s.objects[0].metadata==metaAddr && s.objects[0].proto8680Read);
+        CHECK(wasRead(metaAddr+0x8680) && s.objects[0].raw1794Read);
+        denyAtRead=0;tick(nullptr,1,1);
+    }
+    std::puts("PASS runtime_diag_proto8680_with_unavailable_quantity_or_capacity");
+    {
+        std::uint8_t flag=0xAB,proto=1;std::uint32_t raw=17;std::int32_t global=-7;
+        std::memcpy((void*)(rootAddr+0x514),&flag,sizeof(flag));
+        std::memcpy((void*)(metaAddr+0x8680),&proto,sizeof(proto));
+        std::memcpy((void*)(rootAddr+0x1794),&raw,sizeof(raw));
+        std::memcpy((void*)globalAddr,&global,sizeof(global));
+        const auto s=fresh();CHECK(s.root514==0xAB && s.gateGlobal==-7);
+        const auto beforeLogs=logs.size();
+        flag=0;proto=0;raw=29;global=42; // mutate AFTER enqueue, BEFORE drain
+        std::memcpy((void*)(rootAddr+0x514),&flag,sizeof(flag));
+        std::memcpy((void*)(metaAddr+0x8680),&proto,sizeof(proto));
+        std::memcpy((void*)(rootAddr+0x1794),&raw,sizeof(raw));
+        std::memcpy((void*)globalAddr,&global,sizeof(global));
+        const auto& queued=g_panelQueue[g_panelHead].snapshot;
+        CHECK(queued.root514==0xAB && queued.objects[0].raw1794==17);
+        CHECK(queued.objects[0].proto8680==1 && queued.gateGlobal==-7);
+        tick(nullptr,1,1);
+        CHECK(logs.size()==beforeLogs+2);
+        CHECK(logs[beforeLogs].find("root514=171 ")!=std::string::npos);
+        CHECK(logs[beforeLogs].find("gate_global=-7 ")!=std::string::npos);
+        CHECK(logs[beforeLogs+1].find("raw1794=17 ")!=std::string::npos);
+        CHECK(logs[beforeLogs+1].find("proto8680=1")!=std::string::npos);
+    }
+    std::puts("PASS runtime_diag_queued_values_immutable_after_source_mutation");
+    {
+        const auto child=Address(0x90000),childMeta=Address(0xA0000);
+        put(fixture.root+0x3A0,ptr(fixture.links));put(fixture.root+0x3A8,ptr(fixture.links+8));
+        put(fixture.links,ptr(child));put(child+0x1708,ptr(childMeta));
+        const float raw=0.1f,capacity=0.2f;
+        std::memcpy((void*)ptr(child+0x5F0),&raw,sizeof(raw));
+        std::memcpy((void*)ptr(childMeta+0x8684),&capacity,sizeof(capacity));
+        for(std::uint8_t flag:{0,1}) {
+            const std::uint32_t state=flag ? 0x80000000u : 0u;
+            std::memcpy((void*)ptr(childMeta+0x8680),&flag,sizeof(flag));
+            std::memcpy((void*)ptr(child+0x1794),&state,sizeof(state));
+            const auto s=fresh();CHECK(s.aggregateValid && s.count==2);
+            CHECK(s.objects[0].proto8680Read && s.objects[1].proto8680Read);
+            CHECK(s.objects[1].proto8680==flag && s.objects[1].raw1794==state);
+            CHECK(s.objects[1].raw1794Read);tick(nullptr,1,1);
+        }
+        throwAtRead=ptr(child+0x1794);const auto s=fresh();
+        CHECK(wasRead(throwAtRead) && !s.objects[1].raw1794Read);
+        CHECK(s.objects[1].quantityRead && s.objects[1].proto8680Read);
+        CHECK(s.objects[0].raw1794Read && s.aggregateValid);
+        throwAtRead=0;tick(nullptr,1,1);
+        put(fixture.root+0x3A0,0);put(fixture.root+0x3A8,0);
+    }
+    std::puts("PASS runtime_diag_linked_zero_nonzero_and_independent_fault");
+    {
+        (void)fresh();const auto oldEpoch=g_panelQueue[g_panelHead].epoch;
+        const auto beforeLogs=logs.size();PanelObserverLoading();tick(nullptr,1,1);
+        CHECK(g_panelCount==0);
+        for(auto i=beforeLogs;i<logs.size();++i)
+            CHECK(logs[i].find("[PANEL FUEL]")==std::string::npos);
+        (void)fresh();CHECK(g_panelQueue[g_panelHead].epoch!=oldEpoch);
+        CHECK(g_panelQueue[g_panelHead].sequence==1);tick(nullptr,1,1);
+    }
+    std::puts("PASS runtime_diag_load_epoch_discards_stale_values");
+    std::puts("13 gate-diagnostic scenarios PASS (host shim, not real SEH)");
+    std::puts("8 host-shim scenarios PASS (not Windows ABI/SEH or a DLL)");return 0;
+}
+
+#endif
+```
+
+#### ENDPOINT verification commands
+
+The four sanitizer compile/run pairs were executed independently (in parallel); every tool returned exit 0. Compiler options for each: `g++ -std=c++17 -O1 -g -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined -fno-omit-frame-pointer -I plugins/private_logistics`. Inputs/output executable/stdout: `panel_fuel_runtime_test.cpp` → `.cache/endpoint-panel-asan` → `.cache/endpoint-panel-asan.out`; `schedule_runtime_test.cpp` → `.cache/endpoint-schedule-asan` → `.cache/endpoint-schedule-asan.out`; `schedule_assignment_ledger_test.cpp` → `.cache/endpoint-ledger-asan` → `.cache/endpoint-ledger-asan.out`; `endpoint_runtime_test.cpp` → `.cache/endpoint-pricing-asan` → `.cache/endpoint-pricing-asan.out`. Inputs are under `tests/private_logistics/`. Each executable ran without arguments, stdout and stderr redirected together to the named output. The endpoint harness was also independently compiled/run with `-O2 -Wall -Wextra -Werror -pedantic`, output `.cache/endpoint-runtime.out`. The final suite command and its exact method-by-method stdout/stderr follow. These are Linux host-shim checks, not a Windows compiler or actual SEH test.
+
+#### ENDPOINT full source: tests/private_logistics/test_panel_fuel_observer.py
+
+Bytes=7728 SHA256=3b5560e6bea9dea0944d6b5e3813a15edfa2ebe3a9cf2716537068c74583062b
+
+```python
+"""Production reader with synthetic memory; source guards are NOT a DLL/game test."""
+from pathlib import Path
+import configparser
+import re
+import shutil
+import subprocess
+import tempfile
+import unittest
+
+ROOT = Path(__file__).resolve().parents[2]
+PLUGIN = ROOT / 'plugins/private_logistics'
+HARNESS = ROOT / 'tests/private_logistics/panel_fuel_observer_test.cpp'
+
+
+class PanelFuelObserverTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.compiler = shutil.which('g++') or shutil.which('clang++')
+        if not cls.compiler:
+            raise unittest.SkipTest('C++ compiler required')
+        cls.directory = tempfile.TemporaryDirectory()
+        cls.addClassCleanup(cls.directory.cleanup)
+        cls.exe = Path(cls.directory.name) / 'panel_test'
+        result = subprocess.run([cls.compiler, '-std=c++17', '-O2', '-Wall', '-Wextra',
+                                 '-Werror', '-pedantic', '-I', str(PLUGIN), str(HARNESS),
+                                 '-o', str(cls.exe)], capture_output=True, text=True)
+        if result.returncode:
+            raise AssertionError(result.stderr)
+
+    def run_case(self, case):
+        result = subprocess.run([str(self.exe), case], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('PASS ' + case, result.stdout)
+
+    def test_production_runtime_with_host_shim(self):
+        exe = Path(self.directory.name) / 'runtime_test'
+        result = subprocess.run([self.compiler, '-std=c++17', '-O2', '-Wall', '-Wextra',
+                                 '-Werror', '-pedantic', '-I', str(PLUGIN),
+                                 str(HARNESS.with_name('panel_fuel_runtime_test.cpp')),
+                                 '-o', str(exe)], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        result = subprocess.run([str(exe)], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('8 host-shim scenarios PASS', result.stdout)
+
+    def test_endpoint_runtime_with_real_pricing_contract(self):
+        exe = Path(self.directory.name) / 'endpoint_runtime'
+        result = subprocess.run([self.compiler, '-std=c++17', '-O2', '-Wall', '-Wextra',
+                                 '-Werror', '-pedantic', '-I', str(PLUGIN),
+                                 str(HARNESS.with_name('endpoint_runtime_test.cpp')),
+                                 '-o', str(exe)], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        result = subprocess.run([str(exe)], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('6 endpoint runtime scenarios PASS', result.stdout)
+
+    def test_matching_test_defaults_and_no_tracker_wiring(self):
+        config = configparser.ConfigParser()
+        config.read(PLUGIN / 'private_logistics.ini')
+        cpp = (PLUGIN / 'private_logistics.cpp').read_text()
+        self.assertEqual(config.getint('private_logistics', 'panel_fuel_observer'), 1)
+        self.assertIn('H->configInt(ini, "private_logistics", "panel_fuel_observer", 1)', cpp)
+        self.assertEqual(config.getint('private_logistics', 'billing'), 0)
+        self.assertEqual(config.getint('private_logistics', 'dry_run'), 1)
+        self.assertEqual(config.getint('private_logistics', 'auto_source_percent'), 10)
+        self.assertEqual(config.getint('private_logistics', 'auto_destination_percent'), 30)
+        self.assertNotIn('private_logistics_journey::Tracker', cpp)
+        self.assertIn('PanelObserverStart();', cpp)
+        self.assertRegex(cpp, r'if \(event == TSM_SAVE_LOADING\) \{\s*'
+                         r'InterlockedIncrement\(&g_fuelDiagnosticEpoch\);\s*PanelObserverLoading\(\);')
+
+    def test_hook_fingerprint_and_full_instruction_boundary(self):
+        runtime = (PLUGIN / 'panel_fuel_runtime.h').read_text()
+        expect = runtime.split('static const BYTE expect[] = {', 1)[1].split('};', 1)[0]
+        actual = bytes(int(x, 16) for x in re.findall(r'0x([0-9A-Fa-f]{2})', expect))
+        # Pinned first 20 bytes from d00eaae, ending exactly after LEA RBP.
+        self.assertEqual(actual, bytes.fromhex('40 55 56 57 41 54 41 55 41 56 41 57 48 8D AC 24 50 D1 FF FF'))
+        self.assertIn('TimeDateStamp != 0x6A3EB6ADu', runtime)
+        self.assertIn('0x00, 0x00, 0x7A, 0x44', runtime)
+        self.assertIn('memcmp(g_exeBase + 0x8F3E98', runtime)
+        self.assertIn('&g_panelTrampoline, expect, sizeof(expect)', runtime)
+        self.assertIn('!g_persistenceHandle', runtime)
+        self.assertIn('if (g_billing ||', runtime)
+
+    def test_render_path_is_bounded_nonblocking_no_io(self):
+        runtime = (PLUGIN / 'panel_fuel_runtime.h').read_text()
+        render = runtime.split('static void PanelCapture(', 1)[1].split('static const char* PanelStatus(', 1)[0]
+        for forbidden in ('Logf(', 'EnterCriticalSection(', 'Sleep(', 'malloc(', 'new ', 'std::vector', 'std::string'):
+            self.assertNotIn(forbidden, render.replace('TryEnterCriticalSection(', 'TryLock('))
+        for required in ('TryEnterCriticalSection(', 'g_panelSamples >= 240', 'now - g_panelLastMs < 1000',
+                         'g_panelCount == 16', '__except', 'epoch == InterlockedCompareExchange'):
+            self.assertIn(required, render)
+        hook = render.split('static void __fastcall PanelRendererDetour(', 1)[1]
+        self.assertLess(hook.index('((PanelRenderer)g_panelTrampoline)'), hook.index('PanelCapture(context, window)'))
+
+    def test_reader_has_no_native_calls_or_settlements(self):
+        header = (PLUGIN / 'panel_fuel_observer.h').read_text()
+        runtime = (PLUGIN / 'panel_fuel_runtime.h').read_text()
+        for forbidden in ('windows.h', 'currency_api', 'modifyCompanyCapital', 'FuelSlotTons(',
+                          'FormatSummary(', 'Consume(', 'WriteProcessMemory'):
+            self.assertNotIn(forbidden, header + runtime)
+        self.assertIn('physical_fuel=unverified exact_burn=0 billing=off', runtime)
+        self.assertIn('unresolved_7c58', runtime)
+
+    def test_gate_diagnostic_version_and_qualified_address(self):
+        runtime = (PLUGIN / 'panel_fuel_runtime.h').read_text()
+        cpp = (PLUGIN / 'private_logistics.cpp').read_text()
+        self.assertIn('#define PL_VERSION "0.18.14-endpoint-estimate"', cpp)
+        self.assertIn('"0.18.14-endpoint-estimate"', runtime)
+        self.assertIn('reinterpret_cast<std::uintptr_t>(g_exeBase)', runtime)
+        self.assertNotRegex(runtime, r'\b(?:static_cast|reinterpret_cast)<Address>')
+        self.assertIn('native_execution=unobserved', runtime)
+
+    def test_windows_min_max_macros(self):
+        path = Path(self.directory.name) / 'macros.cpp'
+        path.write_text('#include <cstddef>\n#include <cstdint>\n#include <cmath>\n'
+                        '#define max(a,b) ((a)>(b)?(a):(b))\n#define min(a,b) ((a)<(b)?(a):(b))\n'
+                        '#include "panel_fuel_observer.h"\nint main(){return 0;}\n')
+        result = subprocess.run([self.compiler, '-std=c++17', '-Wall', '-Wextra', '-Werror',
+                                 '-I', str(PLUGIN), str(path), '-o', str(Path(self.directory.name) / 'macros')],
+                                capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+
+for name in re.findall(r'TEST\((\w+)\)', HARNESS.read_text()):
+    if name != 'name':
+        def run(self, case=name):
+            self.run_case(case)
+        setattr(PanelFuelObserverTest, 'test_' + name, run)
+
+if __name__ == '__main__':
+    unittest.main()
+```
+
+#### ENDPOINT full source: tests/private_logistics/test_schedule_assignment_ledger.py
+
+Bytes=3322 SHA256=66309c8169234d452caf0f4b7c7f384627e1d102d21bb87e44a07a8893469fa2
+
+```python
+"""Production observation ledger tests: never native job/burn/payment proof."""
+from pathlib import Path
+import re
+import shutil
+import subprocess
+import tempfile
+import unittest
+
+ROOT = Path(__file__).resolve().parents[2]
+PLUGIN = ROOT / 'plugins/private_logistics'
+HARNESS = Path(__file__).with_name('schedule_assignment_ledger_test.cpp')
+
+class AssignmentLedgerTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.compiler = shutil.which('g++') or shutil.which('clang++')
+        if not cls.compiler:
+            raise unittest.SkipTest('C++ compiler required')
+        cls.directory = tempfile.TemporaryDirectory()
+        cls.addClassCleanup(cls.directory.cleanup)
+        cls.exe = Path(cls.directory.name) / 'assignment_ledger'
+        result = subprocess.run([cls.compiler, '-std=c++17', '-O2', '-Wall', '-Wextra',
+                                 '-Werror', '-pedantic', '-I', str(PLUGIN), str(HARNESS),
+                                 '-o', str(cls.exe)], capture_output=True, text=True)
+        if result.returncode:
+            raise AssertionError(result.stderr)
+
+    def run_case(self, name):
+        result = subprocess.run([str(self.exe), name], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('PASS ' + name, result.stdout)
+
+    def test_runtime_and_money_separation(self):
+        header = (PLUGIN / 'schedule_assignment_ledger.h').read_text()
+        runtime = (PLUGIN / 'panel_fuel_runtime.h').read_text()
+        for forbidden in ('m.Get(', 'Capture(', 'currency_api', 'modifyCompanyCapital',
+                          'private_logistics_journey::Tracker', 'std::vector', 'std::string',
+                          'malloc(', 'new ', 'windows.h', 'reinterpret_cast'):
+            self.assertNotIn(forbidden, header)
+        self.assertIn('ScheduleAssignmentLog(record, d, changes, home);\n    if (!d.emit) return;', runtime)
+        self.assertIn('g_scheduleLedger.Break();', runtime)
+        self.assertIn('id_scope=process_local_selected_panel native_boundary=unverified', runtime)
+        self.assertIn('exact_burn=0 actual_cost=not_computed settlement=none billing=off', runtime)
+        self.assertEqual(runtime.count('InstallInlineHook('), 1)
+
+    def test_windows_macro_compatibility(self):
+        path = Path(self.directory.name) / 'macros.cpp'
+        path.write_text('#include <cstdint>\n#include <cmath>\n'
+                        '#define min(a,b) ((a)<(b)?(a):(b))\n#define max(a,b) ((a)>(b)?(a):(b))\n'
+                        '#include "schedule_assignment_ledger.h"\n'
+                        'int main(){private_logistics_assignment::Ledger ledger;return ledger.Active();}\n')
+        result = subprocess.run([self.compiler, '-std=c++17', '-Wall', '-Wextra', '-Werror',
+                                 '-I', str(PLUGIN), str(path), '-o', str(Path(self.directory.name) / 'macros')],
+                                capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+for name in re.findall(r'TEST\((\w+)\)', HARNESS.read_text()):
+    if name == 'name':
+        continue
+    def run(self, case=name):
+        self.run_case(case)
+    setattr(AssignmentLedgerTest, 'test_' + name, run)
+
+if __name__ == '__main__':
+    unittest.main()
+```
+
+#### ENDPOINT full source: tests/private_logistics/test_schedule_observer.py
+
+Bytes=6370 SHA256=6a46320b6eb05e4efc1ae3181b2e21cc3144c20d882d9e3bee3c9025a6d74a20
+
+```python
+"""Host/source tests for sampled schedule observations, NOT native job evidence."""
+from pathlib import Path
+import configparser
+import re
+import shutil
+import subprocess
+import tempfile
+import unittest
+
+ROOT = Path(__file__).resolve().parents[2]
+PLUGIN = ROOT / 'plugins/private_logistics'
+HARNESS = Path(__file__).with_name('schedule_observer_test.cpp')
+
+class ScheduleObserverTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.compiler = shutil.which('g++') or shutil.which('clang++')
+        if not cls.compiler:
+            raise unittest.SkipTest('C++ compiler required')
+        cls.directory = tempfile.TemporaryDirectory()
+        cls.addClassCleanup(cls.directory.cleanup)
+        cls.exe = Path(cls.directory.name) / 'schedule_test'
+        result = subprocess.run([cls.compiler, '-std=c++17', '-O2', '-Wall', '-Wextra',
+                                 '-Werror', '-pedantic', '-I', str(PLUGIN), str(HARNESS),
+                                 '-o', str(cls.exe)], capture_output=True, text=True)
+        if result.returncode:
+            raise AssertionError(result.stderr)
+
+    def run_case(self, name):
+        result = subprocess.run([str(self.exe), name], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('PASS ' + name, result.stdout)
+
+    def test_production_runtime_enabled(self):
+        exe = Path(self.directory.name) / 'runtime_test'
+        result = subprocess.run([self.compiler, '-std=c++17', '-O2', '-Wall', '-Wextra',
+                                 '-Werror', '-pedantic', '-I', str(PLUGIN),
+                                 str(HARNESS.with_name('schedule_runtime_test.cpp')),
+                                 '-o', str(exe)], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        result = subprocess.run([str(exe)], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('16 schedule runtime host-shim scenarios PASS', result.stdout)
+
+    def test_native_fingerprints_match_existing_raw_bytes(self):
+        raw = (ROOT / 'docs/private-logistics-runtime/RAW_EXPORTS_VEHICLE_DETAIL_RENDERER.md').read_bytes().decode('utf-16')
+        instructions = {}
+        for line in raw.splitlines():
+            m = re.match(r'^(140[0-9a-f]+):\s+((?:[0-9A-F]{2} )*[0-9A-F]{2})\s+', line)
+            if m:
+                instructions[int(m[1], 16)] = bytes.fromhex(m[2])
+        runtime = (PLUGIN / 'panel_fuel_runtime.h').read_text()
+        records = re.findall(r'\{(0x[0-9A-F]+), (\d+), \{([^}]+)\}\}', runtime)
+        self.assertEqual(len(records), 13)
+        for rva, size, values in records:
+            expected = bytes(int(x, 16) for x in re.findall(r'0x[0-9A-F]{2}', values))
+            address = int(rva, 16) + 0x140000000
+            end = address + int(size)
+            actual = b''
+            while address < end:
+                chunk = instructions[address]
+                actual += chunk
+                address += len(chunk)
+            self.assertEqual(address, end)  # whole instructions
+            self.assertEqual(len(expected), int(size))
+            self.assertEqual(actual, expected)
+
+    def test_defaults_and_read_only_separation(self):
+        config = configparser.ConfigParser()
+        config.read(PLUGIN / 'private_logistics.ini')
+        cpp = (PLUGIN / 'private_logistics.cpp').read_text()
+        runtime = (PLUGIN / 'panel_fuel_runtime.h').read_text()
+        header = (PLUGIN / 'schedule_observer.h').read_text()
+        self.assertEqual(config.getint('private_logistics', 'schedule_observer'), 1)
+        self.assertIn('static int g_scheduleObserverEnabled = 1;', cpp)
+        self.assertIn('H->configInt(ini, "private_logistics", "schedule_observer", 1)', cpp)
+        for forbidden in ('modifyCompanyCapital', 'private_logistics_journey::Tracker',
+                          'WriteProcessMemory', 'FuelSlotTons(', 'reinterpret_cast', 'new ',
+                          'std::vector', 'std::string'):
+            self.assertNotIn(forbidden, header)
+        self.assertIn('if (s.status != private_logistics_schedule::Status::Complete) return;', runtime)
+        self.assertIn('native_job_id=unverified buyer=unverified', runtime)
+        self.assertIn('completion=unverified exact_burn=0 billing=off', runtime)
+        self.assertIn('g_scheduleObserverEnabled && ScheduleTargetMatches()', runtime)
+        self.assertEqual(runtime.count('InstallInlineHook('), 1)  # same existing hook
+
+    def test_gap_endpoint_source_contract(self):
+        header = (PLUGIN / 'schedule_observer.h').read_text()
+        runtime = (PLUGIN / 'panel_fuel_runtime.h').read_text()
+        cpp = (PLUGIN / 'private_logistics.cpp').read_text()
+        history = header.split('class History {', 1)[1]
+        self.assertNotIn('m.Get(', history)  # cached-value comparisons only
+        self.assertEqual(header.count('m.Get('), 13)  # native read sites unchanged
+        self.assertIn('0.18.14-endpoint-estimate', cpp)
+        self.assertIn('if (d.endpointCompared && d.endpointAcrossGap)', runtime)
+        self.assertIn('compared_across_gap=1 continuity_valid=0', runtime)
+        self.assertIn('native_event_time=unknown', runtime)
+        self.assertIn('[PANEL SCHEDULE PREVIOUS ROW]', runtime)
+        self.assertIn('record.sequence, record.milliseconds', runtime)
+
+    def test_windows_min_max_macros(self):
+        path = Path(self.directory.name) / 'macros.cpp'
+        path.write_text('#include <cstddef>\n#include <cstdint>\n#include <cmath>\n'
+                        '#define max(a,b) ((a)>(b)?(a):(b))\n#define min(a,b) ((a)<(b)?(a):(b))\n'
+                        '#include "schedule_observer.h"\nint main(){return 0;}\n')
+        result = subprocess.run([self.compiler, '-std=c++17', '-Wall', '-Wextra', '-Werror',
+                                 '-I', str(PLUGIN), str(path), '-o', str(Path(self.directory.name) / 'macros')],
+                                capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+for name in re.findall(r'TEST\((\w+)\)', HARNESS.read_text()):
+    def run(self, case=name):
+        self.run_case(case)
+    setattr(ScheduleObserverTest, 'test_' + name, run)
+
+if __name__ == '__main__':
+    unittest.main()
+```
+
+#### ENDPOINT actual output: .cache/endpoint-final-suite.out
+
+Bytes=19897 SHA256=4314e3bf329b3aa0f718ecfac1a7a2e44756ded9041b7d19fe3e66210db2762a
+
+```text
+test_existing_targets_are_still_deduplicated (test_automatic_reconnection.AutomaticReconnectionTest.test_existing_targets_are_still_deduplicated) ... ok
+test_missing_generated_target_is_not_a_permanent_veto (test_automatic_reconnection.AutomaticReconnectionTest.test_missing_generated_target_is_not_a_permanent_veto) ... ok
+test_state_opt_in_and_native_capacity_guards_are_not_removed (test_automatic_reconnection.AutomaticReconnectionTest.test_state_opt_in_and_native_capacity_guards_are_not_removed) ... ok
+test_actual_readtank_and_slot_reader_with_host_memory (test_fuel_diagnostics.FuelDiagnosticsTest.test_actual_readtank_and_slot_reader_with_host_memory) ... ok
+test_candidate_provenance_core (test_fuel_diagnostics.FuelDiagnosticsTest.test_candidate_provenance_core) ... ok
+test_no_sampled_burn_calibration_or_tracker_feed (test_fuel_diagnostics.FuelDiagnosticsTest.test_no_sampled_burn_calibration_or_tracker_feed) ... ok
+test_tariff_logs_are_model_fragments_not_charged_totals (test_fuel_diagnostics.FuelDiagnosticsTest.test_tariff_logs_are_model_fragments_not_charged_totals) ... ok
+test_boundaries (test_journey_tracker.JourneyTrackerTest.test_boundaries) ... ok
+test_conflicting_duplicate (test_journey_tracker.JourneyTrackerTest.test_conflicting_duplicate) ... ok
+test_coverage_default_is_unverified (test_journey_tracker.JourneyTrackerTest.test_coverage_default_is_unverified) ... ok
+test_duplicate_burn_and_equal_values (test_journey_tracker.JourneyTrackerTest.test_duplicate_burn_and_equal_values) ... ok
+test_duplicate_completion (test_journey_tracker.JourneyTrackerTest.test_duplicate_completion) ... ok
+test_explicit_gap (test_journey_tracker.JourneyTrackerTest.test_explicit_gap) ... ok
+test_format_incomplete (test_journey_tracker.JourneyTrackerTest.test_format_incomplete) ... ok
+test_formatted_output (test_journey_tracker.JourneyTrackerTest.test_formatted_output) ... ok
+test_fuel_excluded (test_journey_tracker.JourneyTrackerTest.test_fuel_excluded) ... ok
+test_gap_empty_payload_not_baseline (test_journey_tracker.JourneyTrackerTest.test_gap_empty_payload_not_baseline) ... ok
+test_identity_changes (test_journey_tracker.JourneyTrackerTest.test_identity_changes) ... ok
+test_initially_loaded (test_journey_tracker.JourneyTrackerTest.test_initially_loaded) ... ok
+test_interleaved_vehicles (test_journey_tracker.JourneyTrackerTest.test_interleaved_vehicles) ... ok
+test_invalid_cargo (test_journey_tracker.JourneyTrackerTest.test_invalid_cargo) ... ok
+test_invalid_enums (test_journey_tracker.JourneyTrackerTest.test_invalid_enums) ... ok
+test_invalid_fuel (test_journey_tracker.JourneyTrackerTest.test_invalid_fuel) ... ok
+test_mismatched_cargo (test_journey_tracker.JourneyTrackerTest.test_mismatched_cargo) ... ok
+test_overflow (test_journey_tracker.JourneyTrackerTest.test_overflow) ... ok
+test_partial_snapshots_and_residue (test_journey_tracker.JourneyTrackerTest.test_partial_snapshots_and_residue) ... ok
+test_randomized_journeys (test_journey_tracker.JourneyTrackerTest.test_randomized_journeys) ... ok
+test_refill_does_not_cancel_burn (test_journey_tracker.JourneyTrackerTest.test_refill_does_not_cancel_burn) ... ok
+test_reload_reset (test_journey_tracker.JourneyTrackerTest.test_reload_reset) ... ok
+test_runtime_wiring_remains_deferred (test_journey_tracker.JourneyTrackerTest.test_runtime_wiring_remains_deferred) ... ok
+test_sequence_exhaustion (test_journey_tracker.JourneyTrackerTest.test_sequence_exhaustion) ... ok
+test_sequence_gap (test_journey_tracker.JourneyTrackerTest.test_sequence_gap) ... ok
+test_sequence_order (test_journey_tracker.JourneyTrackerTest.test_sequence_order) ... ok
+test_snapshots_not_transfers (test_journey_tracker.JourneyTrackerTest.test_snapshots_not_transfers) ... ok
+test_transfer_before_is_baseline (test_journey_tracker.JourneyTrackerTest.test_transfer_before_is_baseline) ... ok
+test_two_journeys (test_journey_tracker.JourneyTrackerTest.test_two_journeys) ... ok
+test_uncertain_evidence (test_journey_tracker.JourneyTrackerTest.test_uncertain_evidence) ... ok
+test_windows_min_max_macro_compatibility (test_journey_tracker.JourneyTrackerTest.test_windows_min_max_macro_compatibility) ... ok
+test_zero_deductions (test_journey_tracker.JourneyTrackerTest.test_zero_deductions) ... ok
+test_address_overflow_does_not_call_reader (test_panel_fuel_observer.PanelFuelObserverTest.test_address_overflow_does_not_call_reader) ... ok
+test_arithmetic_overflow_is_unavailable (test_panel_fuel_observer.PanelFuelObserverTest.test_arithmetic_overflow_is_unavailable) ... ok
+test_capture_is_read_only_and_bounded (test_panel_fuel_observer.PanelFuelObserverTest.test_capture_is_read_only_and_bounded) ... ok
+test_endpoint_runtime_with_real_pricing_contract (test_panel_fuel_observer.PanelFuelObserverTest.test_endpoint_runtime_with_real_pricing_contract) ... ok
+test_flags_are_evidence_not_literal_mode_proof (test_panel_fuel_observer.PanelFuelObserverTest.test_flags_are_evidence_not_literal_mode_proof) ... ok
+test_fleet_bounds_and_duplicate_membership (test_panel_fuel_observer.PanelFuelObserverTest.test_fleet_bounds_and_duplicate_membership) ... ok
+test_gate_diagnostic_version_and_qualified_address (test_panel_fuel_observer.PanelFuelObserverTest.test_gate_diagnostic_version_and_qualified_address) ... ok
+test_home_pointer_alone_is_not_membership (test_panel_fuel_observer.PanelFuelObserverTest.test_home_pointer_alone_is_not_membership) ... ok
+test_hook_fingerprint_and_full_instruction_boundary (test_panel_fuel_observer.PanelFuelObserverTest.test_hook_fingerprint_and_full_instruction_boundary) ... ok
+test_invalid_links_never_produce_partial_total (test_panel_fuel_observer.PanelFuelObserverTest.test_invalid_links_never_produce_partial_total) ... ok
+test_literal_litres_and_identity (test_panel_fuel_observer.PanelFuelObserverTest.test_literal_litres_and_identity) ... ok
+test_matching_test_defaults_and_no_tracker_wiring (test_panel_fuel_observer.PanelFuelObserverTest.test_matching_test_defaults_and_no_tracker_wiring) ... ok
+test_negative_raw_is_preserved_not_burn (test_panel_fuel_observer.PanelFuelObserverTest.test_negative_raw_is_preserved_not_burn) ... ok
+test_nonfinite_is_unavailable (test_panel_fuel_observer.PanelFuelObserverTest.test_nonfinite_is_unavailable) ... ok
+test_nonpositive_capacity_excludes_current (test_panel_fuel_observer.PanelFuelObserverTest.test_nonpositive_capacity_excludes_current) ... ok
+test_optional_capacity_adjustment_is_not_guessed (test_panel_fuel_observer.PanelFuelObserverTest.test_optional_capacity_adjustment_is_not_guessed) ... ok
+test_production_runtime_with_host_shim (test_panel_fuel_observer.PanelFuelObserverTest.test_production_runtime_with_host_shim) ... ok
+test_reader_has_no_native_calls_or_settlements (test_panel_fuel_observer.PanelFuelObserverTest.test_reader_has_no_native_calls_or_settlements) ... ok
+test_render_path_is_bounded_nonblocking_no_io (test_panel_fuel_observer.PanelFuelObserverTest.test_render_path_is_bounded_nonblocking_no_io) ... ok
+test_root_plus_child (test_panel_fuel_observer.PanelFuelObserverTest.test_root_plus_child) ... ok
+test_snapshot_reuse_clears_old_pointer_and_quantity (test_panel_fuel_observer.PanelFuelObserverTest.test_snapshot_reuse_clears_old_pointer_and_quantity) ... ok
+test_unreadable_current_keeps_identity_but_not_total (test_panel_fuel_observer.PanelFuelObserverTest.test_unreadable_current_keeps_identity_but_not_total) ... ok
+test_window_gates_and_4f8_not_required (test_panel_fuel_observer.PanelFuelObserverTest.test_window_gates_and_4f8_not_required) ... ok
+test_windows_min_max_macros (test_panel_fuel_observer.PanelFuelObserverTest.test_windows_min_max_macros) ... ok
+test_ini_and_fallback_match_permissions_test (test_permission_test_defaults.PermissionTestDefaults.test_ini_and_fallback_match_permissions_test) ... ok
+test_manually_added_customs_is_not_rewritten_as_unsupported (test_permission_test_defaults.PermissionTestDefaults.test_manually_added_customs_is_not_rewritten_as_unsupported) ... ok
+test_new_and_present_targets_request_activation (test_permission_test_defaults.PermissionTestDefaults.test_new_and_present_targets_request_activation) ... ok
+test_probe_defaults_match_required_capture_budget (test_permission_test_defaults.PermissionTestDefaults.test_probe_defaults_match_required_capture_budget) ... ok
+test_adopt_existing_does_not_invent_assignment_start (test_schedule_assignment_ledger.AssignmentLedgerTest.test_adopt_existing_does_not_invent_assignment_start) ... ok
+test_config_availability_loss_does_not_create_removal (test_schedule_assignment_ledger.AssignmentLedgerTest.test_config_availability_loss_does_not_create_removal) ... ok
+test_empty_schedule_closes_without_any_cargo_empty_requirement (test_schedule_assignment_ledger.AssignmentLedgerTest.test_empty_schedule_closes_without_any_cargo_empty_requirement) ... ok
+test_empty_to_goods_opens_observed_candidate (test_schedule_assignment_ledger.AssignmentLedgerTest.test_empty_to_goods_opens_observed_candidate) ... ok
+test_explicit_capture_limit_gap_does_not_auto_close (test_schedule_assignment_ledger.AssignmentLedgerTest.test_explicit_capture_limit_gap_does_not_auto_close) ... ok
+test_flag_edit_loses_pattern_but_does_not_replace_same_targets (test_schedule_assignment_ledger.AssignmentLedgerTest.test_flag_edit_loses_pattern_but_does_not_replace_same_targets) ... ok
+test_fuel_invalidity_does_not_become_zero_or_money (test_schedule_assignment_ledger.AssignmentLedgerTest.test_fuel_invalidity_does_not_become_zero_or_money) ... ok
+test_home_change_is_identity_not_completed_assignment (test_schedule_assignment_ledger.AssignmentLedgerTest.test_home_change_is_identity_not_completed_assignment) ... ok
+test_id_exhaustion_saturates_without_reuse (test_schedule_assignment_ledger.AssignmentLedgerTest.test_id_exhaustion_saturates_without_reuse) ... ok
+test_identity_switch_abandons_without_claiming_removal (test_schedule_assignment_ledger.AssignmentLedgerTest.test_identity_switch_abandons_without_claiming_removal) ... ok
+test_invalid_other_identity_prevents_switch_back_join (test_schedule_assignment_ledger.AssignmentLedgerTest.test_invalid_other_identity_prevents_switch_back_join) ... ok
+test_invalid_read_is_not_empty_or_removal_and_recovery_keeps_id (test_schedule_assignment_ledger.AssignmentLedgerTest.test_invalid_read_is_not_empty_or_removal_and_recovery_keeps_id) ... ok
+test_load_change_never_reuses_old_candidate_id (test_schedule_assignment_ledger.AssignmentLedgerTest.test_load_change_never_reuses_old_candidate_id) ... ok
+test_native_endpoint_uses_closing_boundary_not_previous_or_ui (test_schedule_assignment_ledger.AssignmentLedgerTest.test_native_endpoint_uses_closing_boundary_not_previous_or_ui) ... ok
+test_native_invalid_values_and_per_receiver_rise_are_checked (test_schedule_assignment_ledger.AssignmentLedgerTest.test_native_invalid_values_and_per_receiver_rise_are_checked) ... ok
+test_native_missing_intermediate_read_stays_uncertain (test_schedule_assignment_ledger.AssignmentLedgerTest.test_native_missing_intermediate_read_stays_uncertain) ... ok
+test_native_quiet_observed_rise_survives_later_decrease (test_schedule_assignment_ledger.AssignmentLedgerTest.test_native_quiet_observed_rise_survives_later_decrease) ... ok
+test_native_receiver_change_is_sticky_even_after_restoration (test_schedule_assignment_ledger.AssignmentLedgerTest.test_native_receiver_change_is_sticky_even_after_restoration) ... ok
+test_native_signed_negative_endpoint_is_not_clipped (test_schedule_assignment_ledger.AssignmentLedgerTest.test_native_signed_negative_endpoint_is_not_clipped) ... ok
+test_newly_recognized_flags_adopt_unknown_start_not_open (test_schedule_assignment_ledger.AssignmentLedgerTest.test_newly_recognized_flags_adopt_unknown_start_not_open) ... ok
+test_office_only_never_opens_goods_but_can_end_observed_structure (test_schedule_assignment_ledger.AssignmentLedgerTest.test_office_only_never_opens_goods_but_can_end_observed_structure) ... ok
+test_other_structural_plan_ends_candidate_without_inventing_goods (test_schedule_assignment_ledger.AssignmentLedgerTest.test_other_structural_plan_ends_candidate_without_inventing_goods) ... ok
+test_out_of_order_metadata_cannot_remove_a_candidate (test_schedule_assignment_ledger.AssignmentLedgerTest.test_out_of_order_metadata_cannot_remove_a_candidate) ... ok
+test_oversize_or_missing_identity_never_opens_a_candidate (test_schedule_assignment_ledger.AssignmentLedgerTest.test_oversize_or_missing_identity_never_opens_a_candidate) ... ok
+test_pause_comparison_closes_observed_targets_but_marks_uncertainty (test_schedule_assignment_ledger.AssignmentLedgerTest.test_pause_comparison_closes_observed_targets_but_marks_uncertainty) ... ok
+test_runtime_and_money_separation (test_schedule_assignment_ledger.AssignmentLedgerTest.test_runtime_and_money_separation) ... ok
+test_scalar_and_index_changes_keep_the_candidate (test_schedule_assignment_ledger.AssignmentLedgerTest.test_scalar_and_index_changes_keep_the_candidate) ... ok
+test_storage_context_and_row_order_have_distinct_meanings (test_schedule_assignment_ledger.AssignmentLedgerTest.test_storage_context_and_row_order_have_distinct_meanings) ... ok
+test_target_replacement_closes_then_opens_and_keeps_both_endpoints (test_schedule_assignment_ledger.AssignmentLedgerTest.test_target_replacement_closes_then_opens_and_keeps_both_endpoints) ... ok
+test_unavailable_comparison_abandons_not_settles (test_schedule_assignment_ledger.AssignmentLedgerTest.test_unavailable_comparison_abandons_not_settles) ... ok
+test_windows_macro_compatibility (test_schedule_assignment_ledger.AssignmentLedgerTest.test_windows_macro_compatibility) ... ok
+test_defaults_and_read_only_separation (test_schedule_observer.ScheduleObserverTest.test_defaults_and_read_only_separation) ... ok
+test_gap_endpoint_source_contract (test_schedule_observer.ScheduleObserverTest.test_gap_endpoint_source_contract) ... ok
+test_native_fingerprints_match_existing_raw_bytes (test_schedule_observer.ScheduleObserverTest.test_native_fingerprints_match_existing_raw_bytes) ... ok
+test_production_runtime_enabled (test_schedule_observer.ScheduleObserverTest.test_production_runtime_enabled) ... ok
+test_schedule_bad_bounds_and_oversize_do_not_walk (test_schedule_observer.ScheduleObserverTest.test_schedule_bad_bounds_and_oversize_do_not_walk) ... ok
+test_schedule_classification_flags_and_availability_are_separate (test_schedule_observer.ScheduleObserverTest.test_schedule_classification_flags_and_availability_are_separate) ... ok
+test_schedule_classification_gap_does_not_override_original_guard (test_schedule_observer.ScheduleObserverTest.test_schedule_classification_gap_does_not_override_original_guard) ... ok
+test_schedule_classification_scalar_only_preserves_exact_value (test_schedule_observer.ScheduleObserverTest.test_schedule_classification_scalar_only_preserves_exact_value) ... ok
+test_schedule_classification_structure_not_storage_or_index (test_schedule_observer.ScheduleObserverTest.test_schedule_classification_structure_not_storage_or_index) ... ok
+test_schedule_empty_list_is_valid_not_completion (test_schedule_observer.ScheduleObserverTest.test_schedule_empty_list_is_valid_not_completion) ... ok
+test_schedule_endpoint_equal_endpoints_do_not_invent_hidden_aba (test_schedule_observer.ScheduleObserverTest.test_schedule_endpoint_equal_endpoints_do_not_invent_hidden_aba) ... ok
+test_schedule_endpoint_invalid_identity_cannot_resurrect_cache (test_schedule_observer.ScheduleObserverTest.test_schedule_endpoint_invalid_identity_cannot_resurrect_cache) ... ok
+test_schedule_endpoint_invalid_is_not_an_empty_schedule (test_schedule_observer.ScheduleObserverTest.test_schedule_endpoint_invalid_is_not_an_empty_schedule) ... ok
+test_schedule_endpoint_vehicle_home_and_load_never_join (test_schedule_observer.ScheduleObserverTest.test_schedule_endpoint_vehicle_home_and_load_never_join) ... ok
+test_schedule_gap_changed_endpoint_keeps_original_delta_guards (test_schedule_observer.ScheduleObserverTest.test_schedule_gap_changed_endpoint_keeps_original_delta_guards) ... ok
+test_schedule_gap_empty_then_three_rows_are_endpoint_differences (test_schedule_observer.ScheduleObserverTest.test_schedule_gap_empty_then_three_rows_are_endpoint_differences) ... ok
+test_schedule_gap_unchanged_storage_index_context_are_independent (test_schedule_observer.ScheduleObserverTest.test_schedule_gap_unchanged_storage_index_context_are_independent) ... ok
+test_schedule_header_and_row_mutation_rejected (test_schedule_observer.ScheduleObserverTest.test_schedule_header_and_row_mutation_rejected) ... ok
+test_schedule_history_epoch_identity_and_gaps_rebaseline_no_deltas (test_schedule_observer.ScheduleObserverTest.test_schedule_history_epoch_identity_and_gaps_rebaseline_no_deltas) ... ok
+test_schedule_history_field_storage_and_context_changes_separate (test_schedule_observer.ScheduleObserverTest.test_schedule_history_field_storage_and_context_changes_separate) ... ok
+test_schedule_history_first_unchanged_and_index_only (test_schedule_observer.ScheduleObserverTest.test_schedule_history_first_unchanged_and_index_only) ... ok
+test_schedule_history_list_clear_replacement_are_observed_fields_only (test_schedule_observer.ScheduleObserverTest.test_schedule_history_list_clear_replacement_are_observed_fields_only) ... ok
+test_schedule_history_three_one_three_rows_and_same_count_replacement (test_schedule_observer.ScheduleObserverTest.test_schedule_history_three_one_three_rows_and_same_count_replacement) ... ok
+test_schedule_identical_visible_schedule_is_not_new_job (test_schedule_observer.ScheduleObserverTest.test_schedule_identical_visible_schedule_is_not_new_job) ... ok
+test_schedule_max_rows_and_checked_arithmetic (test_schedule_observer.ScheduleObserverTest.test_schedule_max_rows_and_checked_arithmetic) ... ok
+test_schedule_missing_header_and_config_fail_closed (test_schedule_observer.ScheduleObserverTest.test_schedule_missing_header_and_config_fail_closed) ... ok
+test_schedule_nonfinite_no_partial_table (test_schedule_observer.ScheduleObserverTest.test_schedule_nonfinite_no_partial_table) ... ok
+test_schedule_null_target_and_unknown_index_preserved (test_schedule_observer.ScheduleObserverTest.test_schedule_null_target_and_unknown_index_preserved) ... ok
+test_schedule_pattern_load_unload_is_conservative (test_schedule_observer.ScheduleObserverTest.test_schedule_pattern_load_unload_is_conservative) ... ok
+test_schedule_pattern_office_empty_and_invalid_do_not_invent_jobs (test_schedule_observer.ScheduleObserverTest.test_schedule_pattern_office_empty_and_invalid_do_not_invent_jobs) ... ok
+test_schedule_selected_fields_mapping_no_pointee_following (test_schedule_observer.ScheduleObserverTest.test_schedule_selected_fields_mapping_no_pointee_following) ... ok
+test_schedule_special_last_row_does_not_read_config (test_schedule_observer.ScheduleObserverTest.test_schedule_special_last_row_does_not_read_config) ... ok
+test_windows_min_max_macros (test_schedule_observer.ScheduleObserverTest.test_windows_min_max_macros) ... ok
+test_native_policy_and_taskcfg (test_site_permissions.SitePermissionsTest.test_native_policy_and_taskcfg) ... ok
+test_production_integration_guards (test_site_permissions.SitePermissionsTest.test_production_integration_guards) ... ok
+test_private_and_unknown_buildings_do_not_show_widgets (test_storage_checkbox.StorageCheckboxTest.test_private_and_unknown_buildings_do_not_show_widgets) ... ok
+test_production_handler (test_storage_checkbox.StorageCheckboxTest.test_production_handler) ... ok
+test_office_observations_surround_existing_notification (test_task_audit.TaskAuditTest.test_office_observations_surround_existing_notification) ... ok
+test_production_logging_is_bounded_and_transparent (test_task_audit.TaskAuditTest.test_production_logging_is_bounded_and_transparent) ... ok
+
+----------------------------------------------------------------------
+Ran 137 tests in 19.105s
+
+OK
+```
+
+#### ENDPOINT actual output: .cache/endpoint-panel-asan.out
+
+Bytes=1262 SHA256=0ed23820357cab41ad64c187ff840e441bb246605db6b94f7d4d02181f25a1f9
+
+```text
+PASS runtime_install_fingerprint
+PASS runtime_post_render_throttle_and_deferred_log
+PASS runtime_long_pause_coalesces_and_reports_omissions
+PASS runtime_pause_coalescing_never_overwrites_other_root_window_or_unpaused_record
+PASS runtime_queue_gap_capture_vs_drain_contention_and_load_discard
+PASS runtime_inactive_does_not_starve_capture_and_cap
+PASS runtime_guarded_fault_disables_and_reports_once
+PASS runtime_changed_data_refused
+PASS runtime_diag_short_images_never_read_global
+PASS runtime_diag_exact_size_relocated_signed_global
+PASS runtime_diag_null_image_preserves_capture
+PASS runtime_diag_wrapping_base_or_read_end_never_read
+PASS runtime_diag_exception_root514_capture_survives
+PASS runtime_diag_exception_root4f0_capture_survives
+PASS runtime_diag_exception_global_capture_survives
+PASS runtime_diag_exception_raw1794_capture_survives
+PASS runtime_diag_exception_proto8680_capture_survives
+PASS runtime_diag_proto8680_with_unavailable_quantity_or_capacity
+PASS runtime_diag_queued_values_immutable_after_source_mutation
+PASS runtime_diag_linked_zero_nonzero_and_independent_fault
+PASS runtime_diag_load_epoch_discards_stale_values
+13 gate-diagnostic scenarios PASS (host shim, not real SEH)
+8 host-shim scenarios PASS (not Windows ABI/SEH or a DLL)
+```
+
+#### ENDPOINT actual output: .cache/endpoint-schedule-asan.out
+
+Bytes=1173 SHA256=813ededdaadb087431d3427a534c59812cb420473c58bec3880ee1e1d616b91d
+
+```text
+PASS schedule_runtime_mismatch_disables_schedule_not_fuel
+PASS schedule_runtime_same_post_render_record_deferred_rows_and_truthful_labels
+PASS schedule_runtime_unchanged_suppressed_and_row_index_not_job_end
+PASS schedule_runtime_paused_coalescing_carries_latest_schedule_and_rebaselines
+PASS schedule_runtime_in_place_three_row_replacement_across_pause
+PASS schedule_runtime_clear_across_pause_old_rows_and_recovery
+PASS schedule_runtime_classifies_scalar_target_and_index_changes
+PASS schedule_runtime_classifies_office_empty_and_load_unload_patterns
+PASS schedule_runtime_classification_preserves_gap_semantics
+PASS schedule_runtime_ledger_quiet_endpoints_and_scalar_index_keep_id
+PASS schedule_runtime_ledger_replacement_and_invalid_recovery
+PASS schedule_runtime_ledger_clear_across_pause_no_duplicate_close
+PASS schedule_runtime_load_absent_and_duplicate_fleet_fail_closed
+PASS schedule_runtime_capture_drop_counter_advance_rebaselines
+PASS schedule_runtime_invalid_schedule_never_blocks_fuel_or_prints_partial_rows
+PASS schedule_runtime_fault_latch_isolated_from_fuel_not_a_windows_seh_test
+16 schedule runtime host-shim scenarios PASS (not Windows ABI/SEH or a DLL)
+```
+
+#### ENDPOINT actual output: .cache/endpoint-ledger-asan.out
+
+Bytes=1688 SHA256=fd4f4fff979f4cf930e155115bb02482b14033256a2cb892059d3dfdd35263ff
+
+```text
+PASS adopt_existing_does_not_invent_assignment_start
+PASS empty_to_goods_opens_observed_candidate
+PASS target_replacement_closes_then_opens_and_keeps_both_endpoints
+PASS scalar_and_index_changes_keep_the_candidate
+PASS storage_context_and_row_order_have_distinct_meanings
+PASS empty_schedule_closes_without_any_cargo_empty_requirement
+PASS office_only_never_opens_goods_but_can_end_observed_structure
+PASS flag_edit_loses_pattern_but_does_not_replace_same_targets
+PASS config_availability_loss_does_not_create_removal
+PASS invalid_read_is_not_empty_or_removal_and_recovery_keeps_id
+PASS identity_switch_abandons_without_claiming_removal
+PASS invalid_other_identity_prevents_switch_back_join
+PASS load_change_never_reuses_old_candidate_id
+PASS home_change_is_identity_not_completed_assignment
+PASS pause_comparison_closes_observed_targets_but_marks_uncertainty
+PASS explicit_capture_limit_gap_does_not_auto_close
+PASS fuel_invalidity_does_not_become_zero_or_money
+PASS newly_recognized_flags_adopt_unknown_start_not_open
+PASS out_of_order_metadata_cannot_remove_a_candidate
+PASS unavailable_comparison_abandons_not_settles
+PASS id_exhaustion_saturates_without_reuse
+PASS oversize_or_missing_identity_never_opens_a_candidate
+PASS other_structural_plan_ends_candidate_without_inventing_goods
+PASS native_endpoint_uses_closing_boundary_not_previous_or_ui
+PASS native_missing_intermediate_read_stays_uncertain
+PASS native_receiver_change_is_sticky_even_after_restoration
+PASS native_quiet_observed_rise_survives_later_decrease
+PASS native_signed_negative_endpoint_is_not_clipped
+PASS native_invalid_values_and_per_receiver_rise_are_checked
+29 assignment ledger cases PASS (copied values only)
+```
+
+#### ENDPOINT actual output: .cache/endpoint-pricing-asan.out
+
+Bytes=2475 SHA256=9170777c209dbe1d962462681181305c61a0762a048e2e330a480d05e71434dd
+
+```text
+PASS pricing_live_resource_and_currency
+PASS pricing_unavailable_interfaces
+PASS pricing_invalid_numbers_and_hypotheses
+PASS native_copy_rejects_missing_and_preserves_signed
+[PANEL ASSIGNMENT] observation_epoch=1 sample=4 observation_root=0x40000 id=1 candidate_epoch=1 root=0x40000 home=0x30000 event=observed_close reason=observed_removed first_sample=2 first_ms=2000 first_fuel_valid=1 first_litres_candidate=1000 last_sample=3 last_ms=3000 last_fuel_valid=1 last_litres_candidate=750 boundary_sample=4 boundary_ms=4000 boundary_fuel_valid=1 boundary_litres_candidate=500 unknown_start=0 observation_gap=0 role_uncertain=0 native_start_valid=1 native_start=1 native_end_valid=1 native_end=0.5 net_change_valid=1 net_change_native=-0.5 unit_assumption=tonnes receiver_changed=0 fuel_uncertain=0 observed_level_rise=0 refill_coverage=unverified hypothetical_cost_if_no_refill_available=1 hypothetical_cost_if_no_refill=100 hypothetical_cost_reason=no_refill_hypothesis_only fuel_price_per_tonne=200 currency=0 currency_policy=public_api_or_RUB_fallback price_timing=observation_drain id_scope=process_local_selected_panel native_boundary=unverified completion=unverified exact_burn=0 actual_cost=not_computed settlement=none billing=off
+PASS runtime_closing_boundary_prices_native_not_ui
+[PANEL ASSIGNMENT] observation_epoch=1 sample=5 observation_root=0x40000 id=1 candidate_epoch=1 root=0x40000 home=0x30000 event=observed_close reason=observed_removed first_sample=2 first_ms=2000 first_fuel_valid=1 first_litres_candidate=1000 last_sample=4 last_ms=4000 last_fuel_valid=1 last_litres_candidate=750 boundary_sample=5 boundary_ms=5000 boundary_fuel_valid=1 boundary_litres_candidate=250 unknown_start=0 observation_gap=0 role_uncertain=0 native_start_valid=1 native_start=1 native_end_valid=1 native_end=0.25 net_change_valid=1 net_change_native=-0.75 unit_assumption=tonnes receiver_changed=0 fuel_uncertain=0 observed_level_rise=1 refill_coverage=unverified hypothetical_cost_if_no_refill_available=0 hypothetical_cost_if_no_refill=0 hypothetical_cost_reason=observed_level_rise fuel_price_per_tonne=0 currency=0 currency_policy=public_api_or_RUB_fallback price_timing=observation_drain id_scope=process_local_selected_panel native_boundary=unverified completion=unverified exact_burn=0 actual_cost=not_computed settlement=none billing=off
+PASS runtime_quiet_rise_suppresses_hypothesis
+6 endpoint runtime scenarios PASS (real API layout, mocked services; no game proof)
+```
+
+#### ENDPOINT actual output: .cache/endpoint-runtime.out
+
+Bytes=2475 SHA256=9170777c209dbe1d962462681181305c61a0762a048e2e330a480d05e71434dd
+
+```text
+PASS pricing_live_resource_and_currency
+PASS pricing_unavailable_interfaces
+PASS pricing_invalid_numbers_and_hypotheses
+PASS native_copy_rejects_missing_and_preserves_signed
+[PANEL ASSIGNMENT] observation_epoch=1 sample=4 observation_root=0x40000 id=1 candidate_epoch=1 root=0x40000 home=0x30000 event=observed_close reason=observed_removed first_sample=2 first_ms=2000 first_fuel_valid=1 first_litres_candidate=1000 last_sample=3 last_ms=3000 last_fuel_valid=1 last_litres_candidate=750 boundary_sample=4 boundary_ms=4000 boundary_fuel_valid=1 boundary_litres_candidate=500 unknown_start=0 observation_gap=0 role_uncertain=0 native_start_valid=1 native_start=1 native_end_valid=1 native_end=0.5 net_change_valid=1 net_change_native=-0.5 unit_assumption=tonnes receiver_changed=0 fuel_uncertain=0 observed_level_rise=0 refill_coverage=unverified hypothetical_cost_if_no_refill_available=1 hypothetical_cost_if_no_refill=100 hypothetical_cost_reason=no_refill_hypothesis_only fuel_price_per_tonne=200 currency=0 currency_policy=public_api_or_RUB_fallback price_timing=observation_drain id_scope=process_local_selected_panel native_boundary=unverified completion=unverified exact_burn=0 actual_cost=not_computed settlement=none billing=off
+PASS runtime_closing_boundary_prices_native_not_ui
+[PANEL ASSIGNMENT] observation_epoch=1 sample=5 observation_root=0x40000 id=1 candidate_epoch=1 root=0x40000 home=0x30000 event=observed_close reason=observed_removed first_sample=2 first_ms=2000 first_fuel_valid=1 first_litres_candidate=1000 last_sample=4 last_ms=4000 last_fuel_valid=1 last_litres_candidate=750 boundary_sample=5 boundary_ms=5000 boundary_fuel_valid=1 boundary_litres_candidate=250 unknown_start=0 observation_gap=0 role_uncertain=0 native_start_valid=1 native_start=1 native_end_valid=1 native_end=0.25 net_change_valid=1 net_change_native=-0.75 unit_assumption=tonnes receiver_changed=0 fuel_uncertain=0 observed_level_rise=1 refill_coverage=unverified hypothetical_cost_if_no_refill_available=0 hypothetical_cost_if_no_refill=0 hypothetical_cost_reason=observed_level_rise fuel_price_per_tonne=0 currency=0 currency_policy=public_api_or_RUB_fallback price_timing=observation_drain id_scope=process_local_selected_panel native_boundary=unverified completion=unverified exact_burn=0 actual_cost=not_computed settlement=none billing=off
+PASS runtime_quiet_rise_suppresses_hypothesis
+6 endpoint runtime scenarios PASS (real API layout, mocked services; no game proof)
+```
+
+### Ready-to-paste next-agent prompt — source integration and acceptance only
+
+```text
+Read AGENTS.md, INSTRUCTIONS.md and KILO_AGENT_WORKFLOW.md. Act as one parent; preserve all existing uncommitted work and remain on the current authorized branch. Task: integrate/review the already-approved logging-only 0.18.14-endpoint-estimate correction, not implement actual burn or enable payments. The authoritative packet is the section “Coordinator implementation — 0.18.14 endpoint hypothesis correction (2026-11-01)” in docs/private-logistics-runtime/VEHICLE_PANEL_FUEL_INVESTIGATION.md, including its complete final patch, source and actual outputs. Inspect actual local files before any edit.
+
+Arena changes are uncommitted; git pull alone cannot retrieve them. Do not reset, clean, overwrite or blindly apply the older Windows implementation. If the authoritative packet is missing, request only that existing Markdown/source-transfer artifact and stop integration until available; do not reconstruct it from a summary or rerun research. For transfer, decode only whole-line \x20 patch markers to a single-space context line. The patch is against 9cff1a3 and includes gate corrections, so reconcile small targeted edits with the actual Windows tree instead of blindly applying across 0.18.12 or reverting local fixes. Write only small coherent chunks when either content or destination is long, and read back every write.
+
+Acceptance: use signed native raw capture copies, never UI litres/1000 scaling for tonne pricing. Preserve existing candidate.last versus closing event.boundary semantics, sticky invalidity/receiver identity and per-object quiet-sample rise detection. Quote only a closed valid negative endpoint without observed rise, explicitly under the assumed-tonnes/no-refill hypothesis. Use real shared API layouts and guarded lookup/getPrice/full currency tail, finite positive price/product, explicit unavailable reasons and RUB fallback. No actual-burn or native-unit proof claims. Preserve all existing 0.18.13 gate and original ledger regressions. Run available host tests and report passes, failures and skips separately; Linux reference is 137 unittest methods plus separate sanitizer harness totals 29/21/16/6, not a Windows result.
+
+No new native reads/hooks/Ghidra queries, INI/default/dispatch/permission changes, first-load-to-empty tracker wiring, DLL build/deploy, game run, money writes, commit or push. Append actual integration findings, complete changed code and actual outputs to this same cumulative Markdown in verified small additions; preserve its history. Deliver the result in chat with exact changed files, measured outcomes, remaining limits and a ready-to-paste next prompt. Ask separately for any Windows build/runtime authorization; do not silently advance to deployment or claim Arena code was pulled while uncommitted.
+```
+
+### Final archival and scope checkpoint
+
+Verified byte-for-byte: all eight full source blocks match their current files; all six output blocks match actual captured outputs; the eight encoded blank patch-context lines decode to the complete 49,021-byte patch, which equals the current tracked-code diff plus new-file diff. Both historical prefixes are preserved: the entire pre-endpoint report is 8,551,814 bytes / SHA256 `efb5d49283c66f24a26fef30c4ad79680bacfc8975af67963fa4363509739822`; its earlier 8,501,643-byte gate prefix remains SHA256 `f2dae56dca777772dff059159528e31c4942333929e709bf367f1fc955ddd70d`. Final `git diff --check` PASS. There are eleven modified paths plus one new endpoint harness, no staged changes. Code and host verification are complete for this provisional endpoint scope; actual fuel burn, native physical units, all-vehicle coverage, unseen refills and Windows/game execution remain unresolved. No build/deploy/game/payment/commit/push was performed. The next prompt above is source integration/acceptance only, not implicit runtime approval.
+
+## Coordinator review — Windows packet absent, five acceptance verdicts rejected (2026-11-01)
+
+The user supplied a further Windows review and pasted report, claiming `C:\WRSRE\scratch\out\FUEL_GATE_DIAGNOSTIC_IMPLEMENTATION_20261101.md` is 67,813 bytes (externally reported, not a locally measured attached file). The Windows agent correctly stopped integration when its local cumulative report lacked the authoritative section. **The section exists here**, beginning at line 118423 in this Arena checkout before this append; it had not been transferred to Windows. Our source and report remain uncommitted, so neither git pull nor another search of that older Windows file can retrieve them. This is an artifact-transfer gap, not an offset/research blocker and not permission to accept the stale implementation. The previous handoff named the packet but did not ensure its arrival in Windows; this handoff remedies that with a focused downloadable export of the existing section and this review.
+
+**Verdict 1 — “Signed native values”: REJECTED for the pasted implementation.** A `double` result and `< 0.0` comparison prove signed arithmetic, not signed native input. The pasted code subtracts `last.litres - first.litres`; the original production feed supplies `fuel.litresCandidate`. The locally available HEAD source confirms this feed, while `panel_fuel_observer.h` adds raw only when `o.raw > 0` and multiplies that aggregate by 1000. Thus the result is a delta of UI-scaled, positive-only readings, not native raw tonnes. A native drop 1.0→0.5 at 200 per assumed tonne should yield a 100-unit hypothesis; the stale UI path instead yields 100,000. Signed negative native levels are also lost by that UI aggregation. The 0.18.14 packet has a separate signed native capture-copy path; no reinterpretation of historical UI fields is permitted.
+
+**Verdict 2 — “Fresh closing endpoints”: REJECTED for the pasted estimator.** Carrying and logging a fresh `event.boundary` does not make it an operand of `c.netChange`. The report explicitly computes `netChange` from `candidate.first/last` and says it is “already computed” on closure; the original ledger intentionally keeps `candidate.last` as the preceding accepted sample. Therefore the boundary may be fresh while the priced delta is stale. The 0.18.14 production call is `Estimate(c,event.boundary)` and retains the old last/boundary distinction. Its regression uses native first=1, previous=.9, closing=.8 and requires net=-.2, not -.1.
+
+**Verdict 3 — “Sticky receiver/reading uncertainty”: REJECTED as complete acceptance.** Sticky unknownStart/observationGap/roleUncertain flags and root/home identity are only partial evidence. The pasted validity expression `!unknownStart && !observationGap` does not even consult roleUncertain, and it has no actual native-reading validity or per-object object/metadata/capacity identity checks. Missing UI readings can be normalized to zero. A trailer/receiver change can occur while root and home stay fixed; a missing intermediate native reading can recover before close. The packet independently tracks sticky `fuelUncertain` and `receiverChanged`, validates all native endpoints/readings and suppresses uncertain attribution rather than producing valid-looking money.
+
+**Verdict 4 — “Quiet-sample rise detection”: REJECTED.** Replacing last and recomputing total start→current net is not sticky rise detection. Counterexample in native units: start=1, quiet=.5, quiet=.75, close=.25. Total start→current net stays negative throughout, so the pasted estimator remains eligible for a cost even though the observed .5→.75 rise disproves its no-refill hypothesis. A rise need not exceed the starting level. Another receiver's decline can also hide a rise in the aggregate. The packet compares each stable receiver with the previous accepted reading and latches observedRise; a later decline does not clear it. The six-scenario production runtime harness includes this exact quiet-rise suppression path.
+
+**Verdict 5 — “Guarded real pricing API path”: REJECTED as complete acceptance.** The pasted path guards getByName but invokes getPrice without checking it or the advertised API prefix size. A null getPrice is not excluded by a non-null pricing object. Bounding price to positive <1e9 rejects nonfinite prices but does not establish finite product, native input units or correct ABI layout. The shown harness substitutes a truncated mock interface, keeps g_pricing=nullptr and admits that costAvailable is always false: the success/lookup/price/currency paths are not exercised. The packet uses actual shared headers, prefix and callback guards, a full currency-tail check, finite positive price/product and real production log/quote calls with successful mocked prices plus unavailable paths. It does not claim the service or native pricing was exercised inside the real game.
+
+### Test provenance and transfer decision
+
+The new Windows counts (30 ledger; 16 observer; another 16 under an older name for the same observer test; 20 runtime; 28 schedule observer; one schedule-runtime entry) are externally reported runs, not independently reproduced here. The duplicate observer names are not independent coverage, and a binary invocation count must not silently become its internal scenario count. Python tests were reported skipped, so their source/version guards were not validated there. Passing the old tests cannot establish absent checks or the unentered pricing branch. The pasted report also retains superseded scope/version/git-status statements; do not use them as a single consistent final snapshot. The current Arena source and complete archived 137-method/29+21+16+6 host results remain the reference, with the existing Windows/native caveats. No code was changed or tests rerun in this review turn; only provenance, artifact consistency and whitespace checks are performed. Preserve the corrected local gate work as well as the endpoint correction; do not import or replay the weaker 0.18.12 tests.
+
+### Ready-to-paste next-agent prompt — use the attached transfer file, then integrate
+
+This supersedes the earlier missing-packet loop. Download the focused export `COORDINATOR_ENDPOINT_0_18_14_TRANSFER_20261101.md` from this handoff, then save it to `C:\WRSRE\scratch\out\` or attach it directly to the Windows agent. It is a byte-preserving export of the existing 0.18.14 section plus this review, not a reconstructed summary. It contains the complete 49,021-byte decoded source delta against 9cff1a3, eight full source blocks and six captured test-output blocks. The cumulative report remains authoritative; this export only transports its relevant section.
+
+```text
+Read AGENTS.md, INSTRUCTIONS.md and KILO_AGENT_WORKFLOW.md. Read the supplied file C:\WRSRE\scratch\out\COORDINATOR_ENDPOINT_0_18_14_TRANSFER_20261101.md (or the identical attached Markdown). Do not search only the stale cumulative report again. This transfer contains the actual previously missing source packet and the rejection of all five stale acceptance verdicts; a double delta, logged boundary or always-null pricing mock is not acceptance evidence.
+
+Integrate the approved logging-only 0.18.14-endpoint-estimate source correction into the actual Windows tree, preserving unrelated and uncommitted work and staying on the authorized current branch. No reset/clean/stash/branch switch/commit/push. Verify the packet's decoded patch SHA256 08f0081ef2df16ecc41d5bb9b70203475d43a45260b2586eabbb86f5fba189de; decode only whole-line \x20 diff context markers. This patch is against 9cff1a3, not the existing Windows 7177c31 working tree: use the full final sources to reconcile small targeted edits, never blindly overwrite files or apply the entire old-base patch. Preserve/compare existing work before edits. If the supplied transfer file itself is absent, identify its exact missing path and stop; do not substitute another unsupported implementation-complete verdict.
+
+Acceptance requires separate signed raw capture copies, native reading validity and sticky object/metadata/capacity identity checks; Estimate(candidate,event.boundary) on close without changing historical candidate.last; per-object observedRise latched across quiet samples and later decline; and real shared API headers with guarded lookup/getPrice/prefix/full currency tail plus finite positive price/product. Keep the assumed-tonnes/no-refill labels, actual_cost=not_computed and billing=off. Require production quote/log tests: 1→.75→.5 at price 200 yields cost 100, not 100000; 1→.5→.75→.25 keeps net -.75 but quote unavailable. Test missing/short services, null callbacks, missing resource, invalid price/product and RUB/USD/fallback. Preserve the stronger gate-diagnostic source/tests in the packet too, not the stale 0.18.12 harness.
+
+Write only small coherent chunks and verify each before continuing whenever either content or destination is long. Run available source-level host tests, using MSVC if necessary, and retain actual compiler/run outputs. Report Python skips as skips, distinguish executable invocations from internal cases, and do not count the same observer under two binary names twice. No new native hooks/reads, Ghidra work, configuration/default/dispatch/permission changes, tracker wiring, DLL build/deploy, game run or payments. Native units and unseen refills remain unverified. Append complete changed code, actual outcomes and integration decisions to the cumulative Markdown without rewriting its history; return a chat handover and next prompt. Do not ask for another native extraction or claim uncommitted Arena changes were retrieved by git pull.
+```
+
+### Review checkpoint before focused export
+
+Verified now: the complete decoded source patch remains 49,021 bytes / SHA256 `08f0081ef2df16ecc41d5bb9b70203475d43a45260b2586eabbb86f5fba189de` and equals the current code/test diff plus new-file diff; all eight archived full source blocks match the actual source files; all six previously captured output blocks match their recorded lengths/hashes. This is source/artifact integrity verification, not a new test execution. The entire pre-review report prefix (8,740,957 bytes / SHA256 `277e19a87b13b4be5d24f0fa6638b1f25f5ba91008d36d7f6088b374f15ee754`) is preserved. `git diff --check` PASS. No source changes, DLL/game work, payment, commit or push occurred. Export the contiguous section from the 0.18.14 implementation heading through this checkpoint using small append/readback slices, then verify the resulting transfer file byte-for-byte against that exact report interval.
+
+### Focused export delivery manifest (outside the exported interval)
+
+Created `scratch/out/COORDINATOR_ENDPOINT_0_18_14_TRANSFER_20261101.md`: **199,776 bytes, 3,043 lines, SHA256 `93fe7d48dd9bfa59112466aacbe4a7b71fa00e0cf32454e98b24bb7f0abd332b`**. Every bounded append was read back before the next; final bytes equal the exact canonical report interval `[8551815,8751591)` (0-based/end-exclusive), beginning at the 0.18.14 heading and ending after the review checkpoint. This manifest is intentionally outside that interval so it can state the export's own hash. The file is an ignored scratch transport copy, not a competing report or a Git-synchronized implementation. Download/save or attach that file to Windows before running the integration prompt above. The entire old canonical prefix remains unchanged; no source or test execution changed in this review turn.
+
+## Pull-request publication checkpoint (2026-11-01)
+
+The user explicitly authorized opening a pull request, superseding the earlier no-commit/no-push restriction for publication of this branch. Fresh host validation: `python -m unittest discover -s tests/private_logistics -p 'test_*.py' -q` returned exit 0; exact output follows. `git diff --check` PASS. Sanitizers were not rerun for publication; their earlier actual outputs remain archived above. The fetched target branch has advanced to `4b835a20f3c2c1dcc250da600f92e401ef7315de` with overlapping implementation changes. Publish the current corrected branch without silently merging or overwriting those changes. No DLL build, deployment, game execution or payment is authorized by this publication request.
+
+```text
+----------------------------------------------------------------------
+Ran 137 tests in 8.793s
+
+OK
+```
+
+## PR #39 merge reconciliation checkpoint (2026-11-01)
+
+The user authorized merging PR #39. Reviewed every target change from common ancestor 9cff1a3 through `4b835a20f3c2c1dcc250da600f92e401ef7315de`: six source/test files containing the superseded gate/UI-endpoint implementation and five compiled root `.obj` files, with no unrelated changes. Retain the already corrected 0.18.14 source/tests and omit compiled artifacts, consistent with the existing `.obj` ignore rule. Reconcile ancestry using an explicit `ours` strategy merge of that reviewed target commit into the fixed session branch (not a blanket conflict-side choice for unseen changes). Before adding this checkpoint, both staged and working trees were verified byte-identical to PR commit `9945e8b`; no new source edits are needed. The complete final source and earlier sanitizer outputs remain archived above. Fresh host suite after reconciliation: 137 PASS in 8.233s; exact output follows. Publish the reconciliation commit, then merge PR #39 through GitHub; this checkpoint records preparation and validation, not an advance claim of remote merge success. No DLL build/deploy/game run or payment.
+
+```text
+----------------------------------------------------------------------
+Ran 137 tests in 8.233s
+
+OK
+```

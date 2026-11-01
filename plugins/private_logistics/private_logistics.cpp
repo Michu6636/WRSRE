@@ -1,6 +1,10 @@
 // private_logistics - what a private company earns, and what it pays.
 //
 // ---------------------------------------------------------------------------
+// v0.18.14 updates: signed native endpoint hypothesis, stable receiver checks,
+// locally tested price path; no exact-burn claim, settlement or payments.
+// v0.18.13 updates: independently guarded raw gate diagnostics, checked image
+// reads and exercised queue/fault tests. No new hook, costing or payments.
 // v0.18.11 updates: selected-panel dry-run assignment ledger; observed targets
 // delimit candidates, never scalar/index edits. No costing, settlement or payments.
 // v0.18.10 updates: captured target/flag/scalar change classification and
@@ -489,7 +493,7 @@ static char   gFuelResource[64] = "fuel";  // resolved through resource_pricing
 static double gBasketsPerTrip   = 0.80;    // CPI fallback, in daily survival baskets
 static double gBasketsPerTonne  = 0.02;
 
-#define PL_VERSION "0.18.12-gate-diagnostic"
+#define PL_VERSION "0.18.14-endpoint-estimate"
 static int g_panelObserverEnabled = 1;
 static int g_scheduleObserverEnabled = 1;
 static void PanelObserverLoading(void);
