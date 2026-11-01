@@ -6,7 +6,7 @@
 #include "schedule_observer.h"
 #include "schedule_assignment_ledger.h"
 
-static constexpr char kGateDiagnosticVersion[] = "0.18.14-endpoint-estimate";
+static constexpr char kGateDiagnosticVersion[] = "0.18.15-fleet-observer";
 static bool g_scheduleReady = false;
 static volatile LONG g_scheduleFault = 0;
 static private_logistics_schedule::History g_scheduleHistory; // simulation tick only
@@ -256,6 +256,7 @@ static void ScheduleAssignmentLog(const PanelRecord& record,
         const auto price=PanelHypotheticalPrice(event,endpoint);
         Logf("[PANEL ASSIGNMENT] observation_epoch=%ld sample=%u observation_root=%p "
              "id=%llu candidate_epoch=%llu root=%p home=%p event=%s reason=%s "
+             "original_target_candidate=%p original_target_rows=%u original_target_resolved=0 "
              "first_sample=%u first_ms=%llu first_fuel_valid=%d first_litres_candidate=%.9g "
              "last_sample=%u last_ms=%llu last_fuel_valid=%d last_litres_candidate=%.9g "
              "boundary_sample=%u boundary_ms=%llu boundary_fuel_valid=%d boundary_litres_candidate=%.9g "
@@ -271,6 +272,7 @@ static void ScheduleAssignmentLog(const PanelRecord& record,
              record.epoch, record.sequence, (void*)fuel.root,
              (unsigned long long)c.id, (unsigned long long)c.epoch, (void*)c.root, (void*)c.home,
              private_logistics_assignment::KindName(event.kind), event.reason,
+             (void*)c.originalTarget, c.originalTargetRows,
              c.first.sample, (unsigned long long)c.first.ms, c.first.fuelValid ? 1 : 0, (double)c.first.litres,
              c.last.sample, (unsigned long long)c.last.ms, c.last.fuelValid ? 1 : 0, (double)c.last.litres,
              event.boundary.sample, (unsigned long long)event.boundary.ms,

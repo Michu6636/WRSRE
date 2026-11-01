@@ -1,6 +1,9 @@
 // private_logistics - what a private company earns, and what it pays.
 //
 // ---------------------------------------------------------------------------
+// v0.18.15: bounded private-road-fleet polling on existing simulation ticks;
+// per-vehicle copied-value ledgers, frozen unloading-target candidates, no new
+// hooks, exact-burn claim, settlement or payments. Requires live validation.
 // v0.18.14 updates: signed native endpoint hypothesis, stable receiver checks,
 // locally tested price path; no exact-burn claim, settlement or payments.
 // v0.18.13 updates: independently guarded raw gate diagnostics, checked image
@@ -493,7 +496,7 @@ static char   gFuelResource[64] = "fuel";  // resolved through resource_pricing
 static double gBasketsPerTrip   = 0.80;    // CPI fallback, in daily survival baskets
 static double gBasketsPerTonne  = 0.02;
 
-#define PL_VERSION "0.18.14-endpoint-estimate"
+#define PL_VERSION "0.18.15-fleet-observer"
 static int g_panelObserverEnabled = 1;
 static int g_scheduleObserverEnabled = 1;
 static void PanelObserverLoading(void);
@@ -3412,6 +3415,7 @@ static void CensusFleets(int closedDay)
 // ---------------------------------------------------------------------------
 
 #include "panel_fuel_runtime.h"
+#include "fleet_fuel_runtime.h"
 
 extern "C" __declspec(dllexport) unsigned TsmPluginApiVersion(void)
 {
@@ -3533,6 +3537,7 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
     }
 
     PanelObserverStart();
+    FleetObserverStart();
 
     PatchAllSites();
 

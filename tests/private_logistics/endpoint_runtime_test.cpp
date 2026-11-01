@@ -33,6 +33,9 @@ static void pricing_invalid_numbers_and_hypotheses();
 static void native_copy_rejects_missing_and_preserves_signed();
 static void runtime_closing_boundary_prices_native_not_ui();
 static void runtime_quiet_rise_suppresses_hypothesis();
+static void target_replacement_preserves_original_target();
+static void scalar_index_continuity_preserves_original_target();
+static void closure_retains_original_target();
 int main() {
     // This harness intentionally exercises only deferred estimation, not hook installation.
     (void)&PanelObserverStart;(void)&PanelObserverLoading;
@@ -43,8 +46,11 @@ int main() {
     RUN(native_copy_rejects_missing_and_preserves_signed);
     RUN(runtime_closing_boundary_prices_native_not_ui);
     RUN(runtime_quiet_rise_suppresses_hypothesis);
+    RUN(target_replacement_preserves_original_target);
+    RUN(scalar_index_continuity_preserves_original_target);
+    RUN(closure_retains_original_target);
 #undef RUN
-    std::puts("6 endpoint runtime scenarios PASS (real API layout, mocked services; no game proof)");
+    std::puts("9 endpoint runtime scenarios PASS (real API layout, mocked services; no game proof)");
     return 0;
 }
 static a::Event Closed() {a::Event event{};event.kind=a::Kind::Closed;return event;}
@@ -150,4 +156,40 @@ static void pricing_live_resource_and_currency() {
     CHECK(q.available && q.currency==TSM_CURRENCY_RUB && activeCalls==1);
     prices.structSize=offsetof(TsmResourcePricingApi,getPrice)+sizeof(prices.getPrice);
     CHECK(PanelHypotheticalPrice(Closed(),Falling()).available);
+}
+// Corrected b4c50dc attribution scenarios: home stays the DO, target is unload row.
+static std::string TargetToken(Address target) {
+    char text[96];std::snprintf(text,sizeof(text),"original_target_candidate=%p",(void*)target);
+    return text; // Match the host's %p format rather than Windows-only zero padding.
+}
+static void target_replacement_preserves_original_target() {
+    LogFixture f;
+    CHECK(g_scheduleLedger.Current().home==0x30000 && g_scheduleLedger.Current().originalTarget==0x20000);
+    CHECK(logs.back().find(TargetToken(0x20000))!=std::string::npos);
+    f.record.schedule.rows[1].target=0x60000;f.Level(.5f);
+    CHECK(logs.size()>=2);
+    const auto& closed=logs[logs.size()-2];const auto& opened=logs.back();
+    CHECK(closed.find("event=observed_close reason=observed_targets_replaced")!=std::string::npos);
+    CHECK(closed.find(TargetToken(0x20000))!=std::string::npos);
+    CHECK(opened.find("event=observed_open")!=std::string::npos);
+    CHECK(opened.find(TargetToken(0x60000))!=std::string::npos);
+    CHECK(g_scheduleLedger.Current().home==0x30000 && g_scheduleLedger.Current().root==f.record.snapshot.root);
+    CHECK(g_scheduleLedger.Current().id==2 && g_scheduleLedger.Current().originalTarget==0x60000);
+    CHECK(closed.find("original_target_resolved=0")!=std::string::npos);
+    CHECK(opened.find("original_target_resolved=0")!=std::string::npos);
+}
+static void scalar_index_continuity_preserves_original_target() {
+    LogFixture f;const auto id=g_scheduleLedger.Current().id;
+    f.record.schedule.rows[1].valueCC=7;f.record.schedule.index698=1;f.Level(.75f);
+    CHECK(g_scheduleLedger.Current().id==id && g_scheduleLedger.Current().originalTarget==0x20000);
+    f.Close(.5f);
+    CHECK(logs.back().find("event=observed_close")!=std::string::npos);
+    CHECK(logs.back().find(TargetToken(0x20000))!=std::string::npos);
+}
+static void closure_retains_original_target() {
+    LogFixture f;f.Level(.8f);f.Close(.2f);
+    CHECK(logs.back().find(TargetToken(0x20000))!=std::string::npos);
+    CHECK(logs.back().find("original_target_resolved=0")!=std::string::npos);
+    CHECK(logs.back().find("hypothetical_cost_if_no_refill_available=1")!=std::string::npos);
+    CHECK(logs.back().find("actual_cost=not_computed settlement=none billing=off")!=std::string::npos);
 }
