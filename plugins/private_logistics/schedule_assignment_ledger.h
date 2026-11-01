@@ -45,6 +45,8 @@ struct Point {
 struct Candidate {
     std::uint64_t id=0,epoch=0;
     Address root=0,home=0;
+    Address originalTarget=0; // Frozen at Open/Adopt; never transferred to a replacement target.
+    bool originalTargetResolved=false; // Always false: we never invent a stable payer identity from a raw pointer.
     Point first{},last{};
     bool unknownStart=false,observationGap=false,roleUncertain=false;
     bool fuelUncertain=false,receiverChanged=false,observedRise=false;
@@ -165,6 +167,8 @@ public:
             }
             const bool appeared=!changedIdentity && d.endpointCompared && changes.comparable && changes.Structure();
             active_.id=++serial_;active_.epoch=epoch;active_.root=root;active_.home=home;
+            active_.originalTarget=home; // Freeze the intended target at open/adopt; never transferred later.
+            active_.originalTargetResolved=false; // Raw pointers are not resolved into stable payer identities.
             active_.first=active_.last=point;
             active_.fuelUncertain=!ValidFuel(point.native);
             active_.unknownStart=!appeared;

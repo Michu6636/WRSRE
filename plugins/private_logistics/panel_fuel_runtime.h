@@ -255,7 +255,8 @@ static void ScheduleAssignmentLog(const PanelRecord& record,
         const auto endpoint=private_logistics_assignment::Estimate(c,event.boundary);
         const auto price=PanelHypotheticalPrice(event,endpoint);
         Logf("[PANEL ASSIGNMENT] observation_epoch=%ld sample=%u observation_root=%p "
-             "id=%llu candidate_epoch=%llu root=%p home=%p event=%s reason=%s "
+             "id=%llu candidate_epoch=%llu root=%p home=%p original_target=%p original_target_resolved=%d "
+             "event=%s reason=%s "
              "first_sample=%u first_ms=%llu first_fuel_valid=%d first_litres_candidate=%.9g "
              "last_sample=%u last_ms=%llu last_fuel_valid=%d last_litres_candidate=%.9g "
              "boundary_sample=%u boundary_ms=%llu boundary_fuel_valid=%d boundary_litres_candidate=%.9g "
@@ -270,6 +271,7 @@ static void ScheduleAssignmentLog(const PanelRecord& record,
              "exact_burn=0 actual_cost=not_computed settlement=none billing=off",
              record.epoch, record.sequence, (void*)fuel.root,
              (unsigned long long)c.id, (unsigned long long)c.epoch, (void*)c.root, (void*)c.home,
+             (void*)c.originalTarget, c.originalTargetResolved ? 1 : 0,
              private_logistics_assignment::KindName(event.kind), event.reason,
              c.first.sample, (unsigned long long)c.first.ms, c.first.fuelValid ? 1 : 0, (double)c.first.litres,
              c.last.sample, (unsigned long long)c.last.ms, c.last.fuelValid ? 1 : 0, (double)c.last.litres,
