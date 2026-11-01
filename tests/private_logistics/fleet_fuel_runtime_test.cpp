@@ -111,6 +111,8 @@ static void PrepareRuntime(unsigned n=1) {
     enterprises.getEnterpriseCount=EnterpriseCount;enterprises.getEnterpriseByIndex=EnterpriseAt;
     for(auto& v:g_fleetVehicles) v=fleet::Vehicle{};
     g_fleetLastMs=0;g_fleetEpoch=0;g_fleetFault=false;g_billing=0;clockMs=1000;logs.clear();
+    g_fleetPrice={};g_fleetPriceCached=false;g_fleetPriceMs=g_fleetCoverageLogMs=0;
+    g_fleetDiscoveryComplete=true;g_fleetCoverageWarned=false;g_pricing=nullptr;g_currency=nullptr;
     throwOnRead=false;throwAtRead=denyAtRead=0;attemptedReads.clear();
 }
 static void runtime_samples_two_vehicles_without_rendering() {
@@ -123,12 +125,12 @@ static void runtime_samples_two_vehicles_without_rendering() {
     for(auto address:attemptedReads) CHECK(address<Ptr(0x10000) || address>=Ptr(0x10500));
     CHECK(logs[0].find("panel_required=0")!=std::string::npos);
 }
-static void runtime_throttles_and_marks_long_gaps() {
+static void runtime_throttles_but_preserves_long_pause_difference() {
     PrepareRuntime();FleetObserverTick(nullptr,1,1);clockMs+=500;FleetObserverTick(nullptr,1,1);
     CHECK(g_fleetVehicles[0].sample==1);
-    clockMs+=2500;Put(0x30000+0x5F0,.1f);FleetObserverTick(nullptr,1,1);
-    CHECK(g_fleetVehicles[0].sample==2 && g_fleetVehicles[0].observedDecrease==0);
-    CHECK(g_fleetVehicles[0].discontinuities==1);
+    clockMs+=125000;Put(0x30000+0x5F0,.1f);FleetObserverTick(nullptr,1,1);
+    CHECK(g_fleetVehicles[0].sample==2 && g_fleetVehicles[0].observedDecrease>0);
+    CHECK(g_fleetVehicles[0].discontinuities==0 && g_fleetVehicles[0].observedPairs==1);
 }
 static void runtime_limits_and_duplicate_roots_are_explicit() {
     PrepareRuntime();owners.push_back(owners[0]);bool complete=true;
@@ -168,6 +170,7 @@ static void runtime_start_uses_existing_tick_and_no_new_hook() {
     tick=nullptr;g_billing=1;FleetObserverStart();CHECK(!tick);g_billing=0;
     enterprises.structSize=0;FleetObserverStart();CHECK(!tick);
 }
+#include "fleet_approximation_cases.h"
 int main() {
     (void)&PanelObserverStart;(void)&PanelObserverLoading;
 #define RUN(name) name();std::puts("PASS " #name)
@@ -182,11 +185,24 @@ int main() {
     RUN(multiple_unload_rows_do_not_invent_a_payer);
     RUN(epoch_and_clock_changes_prevent_cross_load_deltas);
     RUN(runtime_samples_two_vehicles_without_rendering);
-    RUN(runtime_throttles_and_marks_long_gaps);
+    RUN(runtime_throttles_but_preserves_long_pause_difference);
     RUN(runtime_limits_and_duplicate_roots_are_explicit);
     RUN(runtime_load_signal_retires_before_new_reading);
     RUN(runtime_guarded_reads_and_billing_gate);
     RUN(runtime_start_uses_existing_tick_and_no_new_hook);
+    RUN(assignment_estimate_survives_refill_and_includes_closure);
+    RUN(cancelled_assignment_keeps_target_and_excludes_post_close_overhead);
+    RUN(mixed_object_rise_does_not_mask_another_object_drop);
+    RUN(invalid_schedule_skips_assignment_gap_but_keeps_earlier_drops);
+    RUN(invalid_fuel_and_changed_receiver_rebase_without_erasing_drops);
+    RUN(replacement_boundary_does_not_charge_new_target_for_old_decreases);
+    RUN(runtime_caches_one_quote_for_all_vehicles_and_resets_on_load);
+    RUN(unavailable_price_is_not_a_zero_estimate_and_true_zero_is_available);
+    RUN(partial_large_discovery_keeps_visible_vehicle_pairs_and_throttles_warnings);
+    RUN(assignment_logs_label_refill_estimate_without_charging_money);
+    RUN(backward_clock_skips_pair_and_rebases);
+    RUN(newly_duplicate_or_missing_identity_is_retired_despite_partial_discovery);
+    RUN(changing_roster_still_breaks_baselines_unlike_capacity_only);
 #undef RUN
-    std::puts("16 fleet scenarios PASS (synthetic memory, host services; no game/DLL proof)");
+    std::puts("29 fleet scenarios PASS (synthetic memory, host services; no game/DLL proof)");
 }

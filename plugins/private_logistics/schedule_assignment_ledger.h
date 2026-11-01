@@ -50,6 +50,10 @@ struct Candidate {
     Address originalTarget=0;
     unsigned originalTargetRows=0;
     Point first{},last{};
+    // Approximation only: sum positive per-object drops; rises never erase drops.
+    double sampledDecrease=0,sampledIncrease=0;
+    unsigned sampledPairs=0;
+    bool sampleBaselineLost=false;
     bool unknownStart=false,observationGap=false,roleUncertain=false;
     bool fuelUncertain=false,receiverChanged=false,observedRise=false;
 };
@@ -91,12 +95,21 @@ class Ledger {
     Candidate active_{};
     std::uint64_t serial_=0;
     bool invalidStreak_=false;
-    static void CheckFuel(Candidate& c,const Point& p) {
-        if(!ValidFuel(p.native)) {c.fuelUncertain=true;return;}
+    static void CheckFuel(Candidate& c,const Point& p,bool comparable) {
+        if(!ValidFuel(p.native)) {c.fuelUncertain=true;c.sampleBaselineLost=true;return;}
         if(ValidFuel(c.first.native) && !SameFuel(c.first.native,p.native)) c.receiverChanged=true;
-        if(SameFuel(c.last.native,p.native))
-            for(unsigned i=0;i<p.native.count;++i)
-                c.observedRise=c.observedRise || p.native.raw[i]>c.last.native.raw[i];
+        const bool same=SameFuel(c.last.native,p.native);
+        if(same) {
+            for(unsigned i=0;i<p.native.count;++i) {
+                const double delta=double(p.native.raw[i])-double(c.last.native.raw[i]);
+                c.observedRise=c.observedRise || delta>0;
+                if(comparable && !c.sampleBaselineLost) {
+                    if(delta<0) c.sampledDecrease-=delta;else c.sampledIncrease+=delta;
+                }
+            }
+            if(comparable && !c.sampleBaselineLost) ++c.sampledPairs;
+        }
+        c.sampleBaselineLost=false; // Rebase; never bridge a known invalid interval.
     }
     static void Add(Result& r,Kind kind,const char* reason,const Candidate& c,const Point& p) {
         Point boundary=p;
@@ -109,7 +122,7 @@ public:
     explicit Ledger(std::uint64_t initialSerial=0):serial_(initialSerial) {}
     bool Active() const {return active_.id!=0;}
     const Candidate& Current() const {return active_;}
-    void Break() {if(Active()) active_.observationGap=true;}
+    void Break() {if(Active()) {active_.observationGap=true;active_.sampleBaselineLost=true;}}
     Result Abandon(const char* reason) {
         Result r;
         if(Active()) {
@@ -133,14 +146,14 @@ public:
             active_=Candidate{};
         }
         if(Active() && (point.sample<=active_.last.sample || point.ms<active_.last.ms)) {
-            active_.observationGap=true;
+            Break();
             Add(result,Kind::Uncertain,"out_of_order_not_removal",active_,point);
             return result;
         }
         const auto pattern=sch::ClassifyPattern(s,home);
         if(pattern==sch::Pattern::Unavailable || !root || !home || !epoch || !point.sample) {
             if(Active()) {
-                active_.observationGap=true;
+                Break();
                 if(!invalidStreak_) Add(result,Kind::Uncertain,"invalid_capture_not_removal",active_,point);
             }
             invalidStreak_=true;
@@ -154,7 +167,7 @@ public:
         }
         if(Active()) {
             active_.observationGap=active_.observationGap || d.endpointAcrossGap;
-            CheckFuel(active_,point); // Includes quiet samples and the closing boundary.
+            CheckFuel(active_,point,!d.endpointAcrossGap); // Includes quiet samples and the closing boundary.
             if(changes.comparable && changes.Structure()) {
                 const char* reason=pattern==sch::Pattern::Empty ? "observed_removed" :
                     pattern==sch::Pattern::LoadUnload ? "observed_targets_replaced" :

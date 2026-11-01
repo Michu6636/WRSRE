@@ -6,7 +6,7 @@
 #include "schedule_observer.h"
 #include "schedule_assignment_ledger.h"
 
-static constexpr char kGateDiagnosticVersion[] = "0.18.15-fleet-observer";
+static constexpr char kGateDiagnosticVersion[] = "0.18.16-approx-fuel";
 static bool g_scheduleReady = false;
 static volatile LONG g_scheduleFault = 0;
 static private_logistics_schedule::History g_scheduleHistory; // simulation tick only
@@ -215,14 +215,10 @@ struct PanelEndpointPrice {
     int currency=TSM_CURRENCY_RUB;
     const char* reason="not_closed";
 };
-static PanelEndpointPrice PanelHypotheticalPrice(const private_logistics_assignment::Event& event,
-                                                const private_logistics_assignment::Endpoint& e)
+// Public service quote only: copied values, no retained resource pointer or money writes.
+static PanelEndpointPrice DiagnosticFuelPrice()
 {
     PanelEndpointPrice q{};
-    if(event.kind!=private_logistics_assignment::Kind::Closed) return q;
-    q.reason="uncertain_endpoint";if(!e.valid || !std::isfinite(e.net)) return q;
-    q.reason="observed_level_rise";if(e.observedRise) return q;
-    q.reason="nonnegative_net";if(e.net>=0) return q;
     q.reason="pricing_api_unavailable";
     if(!g_pricing || g_pricing->structSize<offsetof(TsmResourcePricingApi,getPrice)+sizeof(g_pricing->getPrice) ||
        !g_pricing->getByName || !g_pricing->getPrice) return q;
@@ -234,10 +230,23 @@ static PanelEndpointPrice PanelHypotheticalPrice(const private_logistics_assignm
         offsetof(TsmCurrencyApi,getCurrencySymbol)+sizeof(g_currency->getCurrencySymbol);
     q.currency=TsmCurrencyActive(currencyTail ? g_currency : nullptr); // RUB fallback.
     const float price=g_pricing->getPrice(resource,q.currency);
-    const double amount=-e.net*double(price);
     q.reason="invalid_price";if(!std::isfinite(price) || price<=0) return q;
-    q.reason="invalid_product";if(!std::isfinite(amount) || amount<=0) return q;
-    q.perTonne=price;q.amount=amount;q.available=true;q.reason="no_refill_hypothesis_only";
+    q.perTonne=price;q.available=true;q.reason="quoted";
+    return q;
+}
+static PanelEndpointPrice PanelHypotheticalPrice(const private_logistics_assignment::Event& event,
+                                                const private_logistics_assignment::Endpoint& e)
+{
+    PanelEndpointPrice q{};
+    if(event.kind!=private_logistics_assignment::Kind::Closed) return q;
+    q.reason="uncertain_endpoint";if(!e.valid || !std::isfinite(e.net)) return q;
+    q.reason="observed_level_rise";if(e.observedRise) return q;
+    q.reason="nonnegative_net";if(e.net>=0) return q;
+    q=DiagnosticFuelPrice();if(!q.available) return q;
+    q.available=false;q.reason="invalid_product";
+    const double amount=-e.net*double(q.perTonne);
+    if(!std::isfinite(amount) || amount<=0) return q;
+    q.amount=amount;q.available=true;q.reason="no_refill_hypothesis_only";
     return q;
 }
 static void ScheduleAssignmentLog(const PanelRecord& record,

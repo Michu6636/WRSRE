@@ -9,7 +9,26 @@ struct FleetRoot { uintptr_t root=0,home=0;bool duplicate=false; };
 static FleetRoot g_fleetRoots[FleetVehicleLimit];
 static ULONGLONG g_fleetLastMs=0;
 static LONG g_fleetEpoch=0;
-static bool g_fleetFault=false;
+static bool g_fleetFault=false,g_fleetDiscoveryComplete=true,g_fleetCoverageWarned=false;
+static ULONGLONG g_fleetPriceMs=0,g_fleetCoverageLogMs=0;
+static bool g_fleetPriceCached=false;
+static PanelEndpointPrice g_fleetPrice{}; // Copied quote only; no native pointer retained.
+static void FleetRefreshPrice(ULONGLONG now) {
+    if(!g_fleetPriceCached || now<g_fleetPriceMs || now-g_fleetPriceMs>=30000) {
+        g_fleetPrice=DiagnosticFuelPrice();g_fleetPriceMs=now;g_fleetPriceCached=true;
+    }
+}
+static PanelEndpointPrice FleetApproximatePrice(double decrease,unsigned pairs) {
+    PanelEndpointPrice q=g_fleetPrice;q.available=false;q.amount=0;
+    q.reason="no_compared_samples";if(!pairs) return q;
+    q.reason="invalid_decrease";if(!std::isfinite(decrease) || decrease<0) return q;
+    q.reason=g_fleetPrice.reason;if(!g_fleetPrice.available) return q;
+    q.reason="invalid_product";
+    const double amount=decrease*double(q.perTonne);
+    if(!std::isfinite(amount) || amount<0) return q;
+    q.amount=amount;q.available=true;q.reason="approximate_positive_drops";
+    return q;
+}
 static bool FleetRead(uintptr_t address,void* out,size_t size,void*) {
     __try { return PanelRead(address,out,size,nullptr); }
     __except(EXCEPTION_EXECUTE_HANDLER) { return false; }
@@ -18,6 +37,7 @@ static void FleetEvents(const fleet::a::Result& result) {
     for(unsigned i=0;i<result.count;++i) {
         const auto& e=result.events[i];const auto& c=e.candidate;
         const auto endpoint=fleet::a::Estimate(c,e.boundary);
+        const auto price=FleetApproximatePrice(c.sampledDecrease,c.sampledPairs);
         Logf("[FLEET ASSIGNMENT] epoch=%llu root=%p home=%p id=%llu event=%s reason=%s "
              "original_target_candidate=%p original_target_rows=%u original_target_resolved=0 "
              "first_sample=%u boundary_sample=%u first_ms=%llu boundary_ms=%llu "
@@ -26,6 +46,10 @@ static void FleetEvents(const fleet::a::Result& result) {
              "role_uncertain=%d fuel_uncertain=%d receiver_changed=%d observed_level_rise=%d "
              "net_change_valid=%d net_change_native=%.9g units=unverified id_scope=process_local_vehicle_slot "
              "native_boundary=unverified refill_coverage=unverified exact_burn=0 "
+             "sampled_decrease_native=%.9g sampled_increase_native=%.9g compared_pairs=%u "
+             "estimate_partial=%d discovery_complete=%d estimated_cost_available=%d estimated_cost=%.9g "
+             "estimate_reason=%s estimate_currency=%d price_per_tonne=%.9g "
+             "price_basis=current_cached_30s quantity_assumption=native_tonnes_provisional "
              "actual_cost=not_computed settlement=none billing=off",
              (unsigned long long)c.epoch,(void*)c.root,(void*)c.home,(unsigned long long)c.id,
              fleet::a::KindName(e.kind),e.reason,(void*)c.originalTarget,c.originalTargetRows,
@@ -34,13 +58,18 @@ static void FleetEvents(const fleet::a::Result& result) {
              fleet::a::ValidFuel(e.boundary.native)?1:0,fleet::a::NativeTotal(e.boundary.native),
              c.unknownStart?1:0,c.observationGap?1:0,
              c.roleUncertain?1:0,c.fuelUncertain?1:0,c.receiverChanged?1:0,endpoint.observedRise?1:0,
-             endpoint.valid?1:0,endpoint.valid?endpoint.net:0.0);
+             endpoint.valid?1:0,endpoint.valid?endpoint.net:0.0,
+             c.sampledDecrease,c.sampledIncrease,c.sampledPairs,
+             (c.unknownStart || c.observationGap || c.roleUncertain || c.fuelUncertain || c.receiverChanged ||
+              c.observedRise || !c.sampledPairs || !g_fleetDiscoveryComplete)?1:0,g_fleetDiscoveryComplete?1:0,
+             price.available?1:0,price.amount,price.reason,price.currency,double(price.perTonne));
     }
 }
 static void FleetBreakAll() {
     for(auto& v:g_fleetVehicles) if(v.root) v.Break();
 }
-static unsigned FleetCollect(const fleet::p::Memory& memory,bool& complete) {
+static unsigned FleetCollect(const fleet::p::Memory& memory,bool& complete,bool* stable=nullptr) {
+    if(stable) *stable=true;
     unsigned count=0;
     const size_t total=g_enterprise->getEnterpriseCount();
     if(total>FleetEnterpriseLimit) complete=false;
@@ -61,20 +90,30 @@ static unsigned FleetCollect(const fleet::p::Memory& memory,bool& complete) {
             g_fleetRoots[count++]={list.roots[k],(uintptr_t)office,false};
         }
     }
-    if(g_enterprise->getEnterpriseCount()!=total) complete=false;
+    if(g_enterprise->getEnterpriseCount()!=total) {
+        complete=false;if(stable) *stable=false;
+    }
     return count;
 }
 static void FleetVehicleLog(const fleet::Vehicle& v,const char* reason) {
+    const auto price=FleetApproximatePrice(v.observedDecrease,v.observedPairs);
     Logf("[FLEET FUEL] epoch=%llu root=%p home=%p sample=%u ms=%llu reason=%s "
          "native_valid=%d native_total=%.9g objects=%u root_metadata=%p root_raw=%.9g root_capacity=%.9g "
          "observed_decrease_raw=%.9g observed_increase_raw=%.9g "
          "discontinuities=%u panel_required=0 units=unverified refill_coverage=unverified "
-         "exact_burn=0 actual_cost=not_computed settlement=none billing=off",
+         "compared_pairs=%u estimate_partial=%d discovery_complete=%d "
+         "estimated_cost_available=%d estimated_cost=%.9g estimate_reason=%s estimate_currency=%d "
+         "price_per_tonne=%.9g price_basis=current_cached_30s quantity_assumption=native_tonnes_provisional "
+         "estimate_scope=vehicle_observed_not_bill exact_burn=0 "
+         "actual_cost=not_computed settlement=none billing=off",
          (unsigned long long)v.previousEpoch,(void*)v.root,(void*)v.home,v.sample,
          (unsigned long long)v.lastMs,reason,v.previousValid?1:0,
          fleet::a::NativeTotal(v.previous),v.previous.count,(void*)v.previous.metadata[0],
          (double)v.previous.raw[0],(double)v.previous.capacity[0],
-         v.observedDecrease,v.observedIncrease,v.discontinuities);
+         v.observedDecrease,v.observedIncrease,v.discontinuities,v.observedPairs,
+         (v.discontinuities || v.observedIncrease>0 || !v.observedPairs || !g_fleetDiscoveryComplete)?1:0,
+         g_fleetDiscoveryComplete?1:0,
+         price.available?1:0,price.amount,price.reason,price.currency,double(price.perTonne));
 }
 static void FleetTickBody() {
     const ULONGLONG now=GetTickCount64();
@@ -84,19 +123,27 @@ static void FleetTickBody() {
         for(auto& v:g_fleetVehicles) if(v.root) {
             FleetVehicleLog(v,"load_epoch_changed");FleetEvents(v.Forget("load_epoch_changed"));
         }
-        g_fleetEpoch=epoch;
+        g_fleetEpoch=epoch;g_fleetPriceCached=false;g_fleetCoverageWarned=false;
     }
-    if(g_fleetLastMs && (now<g_fleetLastMs || now-g_fleetLastMs>1500)) FleetBreakAll();
+    // Elapsed wall time (including an ordinary pause) is not an identity break.
+    if(g_fleetLastMs && now<g_fleetLastMs) FleetBreakAll();
     g_fleetLastMs=now;
+    FleetRefreshPrice(now);
     const fleet::p::Memory memory{FleetRead,nullptr};
-    bool complete=true;
-    const unsigned count=FleetCollect(memory,complete);
+    bool complete=true,stable=true;
+    const unsigned count=FleetCollect(memory,complete,&stable);
     if(epoch!=InterlockedCompareExchange(&g_panelEpoch,0,0)) {FleetBreakAll();return;}
-    if(!complete) {
-        FleetBreakAll();
+    // Partial discovery does not invalidate independently revalidated visible roots.
+    // Known duplicates and absent identities are still excluded/retired below.
+    g_fleetDiscoveryComplete=complete;
+    if(!complete && (!g_fleetCoverageWarned || now<g_fleetCoverageLogMs ||
+                     now-g_fleetCoverageLogMs>=30000)) {
         Logf("[FLEET COVERAGE] complete=0 reason=invalid_duplicate_changed_or_capacity "
              "max_enterprises=32 max_vehicles=64 no_missing_vehicle_cost_inferred=1 billing=off");
+        g_fleetCoverageLogMs=now;
     }
+    g_fleetCoverageWarned=!complete;
+    if(!stable) {FleetBreakAll();return;} // A changing roster is not merely a capacity limit.
     // Retire missing identities BEFORE allocating slots. No saved pointer is dereferenced.
     for(auto& v:g_fleetVehicles) if(v.root) {
         v.seen=false;
@@ -115,11 +162,11 @@ static void FleetTickBody() {
         fleet::sch::Snapshot schedule{};
         if(fleet::a::ValidFuel(fuel)) fleet::sch::Capture(memory,r.root,schedule);
         if(epoch!=InterlockedCompareExchange(&g_panelEpoch,0,0)) {FleetBreakAll();return;}
-        const double oldIncrease=slot->observedIncrease;
+        const bool wasValid=slot->previousValid;
         const auto events=slot->Observe(schedule,fuel,(unsigned long long)epoch,now);
         FleetEvents(events);
-        if(slot->sample==1 || slot->sample%10==0 || events.count ||
-           slot->observedIncrease!=oldIncrease || !slot->previousValid) FleetVehicleLog(*slot,"poll");
+        if(slot->sample==1 || slot->sample%30==0 || events.count ||
+           slot->previousValid!=wasValid) FleetVehicleLog(*slot,"poll");
     }
 }
 static void FleetObserverTick(void*,float,float) {
