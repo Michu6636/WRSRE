@@ -1,5 +1,57 @@
 # Private logistics — runtime observation work package
 
+> **ACTUAL RAW CLOSURE RECEIVED AND HASH-MATCHED (2026-11-01).** Attachment
+> 65056bytes/SHA188d6595…fcacf206;801 supplied instructions independently
+> decoded. Two local source-debit/5F0-credit pairs are present. Supplied constants
+> decode4.0,+0.5,-0.5: the negative floor retires the earlier speculative large
+> undershoot/restoration concern. No more delivery-only or repeated raw exports.
+> Remaining: observed-producer applicability and named-resource/price-unit bridge.
+> Full correction review, complete lossless attachment, audit source/results and
+> finite next task are cumulative. Display samples remain not an exact burn meter.
+> Payments OFF; no new native query, production change, hook, build or game run.
+
+> **EVIDENCE-GAPS PACKET REVIEWED (2026-11-01).** Exact call-site bytes and
+> callee copies resolve the ABI: RCX/XMM1/R8B is ordinary Windows x64 for the
+> reported signature; no hidden parameter is needed. New41-prefix input resolves
+> the MOVAPS transcription. Root/member selection is supported. Earlier SIL/R14
+> reachability, store-length and factor-name claims remain wrong or unproved.
+> Early refill credit bytes/resource selection are still absent; one bounded
+> continuation is the next native gap. Full review/input/audit/output/reference
+> and raw-extraction task are cumulative. Payments OFF; no hook/build/game run.
+
+> **TANK CONTRACT REVIEWED, NOT ACCEPTED (2026-11-01).** Actual report text is
+> received; no resend needed. Its typed caller expressions imply +4F0/+514,
+> not +13C/+145. Its loop includes the root despite claiming never-written.
+> Independent decoding of29 supplied rows confirms8/9-byte stores and exposes
+> a MOVAPS byte/mnemonic mismatch. Argument defaults are unproved; floor
+> restoration is not automatically a refill. Full correction review, selected
+> evidence, complete audit source/output and bounded next task are cumulative.
+> Producer applicability/ABI/transaction boundary/refill resource/units remain
+> blocked. No hook, build, game replay, code change or payment is authorized.
+
+> **FUEL-COST INTEGRATION: RAW RECOVERY REVIEWED, CONTRACT BLOCKED (2026-11-01).**
+> The recovery's actual raw exports and six index entries were received in chat;
+> no repeated delivery-only request or unchanged game test is needed.
+> They contradict key claims: effective table stride16, nested storage receiver
+> rather than a proved truck tank, reused formula registers, and mistaken5F0
+> writer/object classifications.6B3B50 really deducts5F0 in one branch; its alleged
+> top-up is a local calculation.142430 has a real credit AND later cargo work.
+> Next: targeted caller/receiver/floor/refill/unit evidence for those paths using
+> the authorized local extractor and caches first. No unverified hook is approved.
+> Complete parent review, selected raw excerpts, audit source/actual output and
+> next prompt are in the cumulative handover. No production/version/build/run or
+> payment changes; outside-assignment burn remains separate operating overhead.
+
+> **TEST8 PASSES: actual v0.18.11 ledger paths (2026-10-31).**
+> User confirms the first single-row phase is vehicle refuelling; no delivery
+> ledger record opens for it. ID2opens53, is replaced by ID3at101; scalar edit121
+> keeps ID3; removal152closes it once. Actual quiet last-sample fuel endpoints
+> 100/151and boundary101/152match accepted records.16classifications/12ledger
+> events checked;193fuel samples,5gaps/29discarded,4unchanged comparisons.
+> Full final parser/results/evidence/lossless log in cumulative. No runtime fix
+> or unchanged-probe retest requested. Billing OFF; costing remains unconnected.
+> Earlier0.18.11Windows smoke-check-pending notices are historical for these paths.
+
 > **v0.18.11 dry-run assignment ledger implemented (2026-10-31).**
 > Selected-panel candidates open on observed appearance, close/reopen on target
 > replacement, and close on removal without requiring empty cargo. Scalar edits

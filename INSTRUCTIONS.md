@@ -9,6 +9,25 @@ between independent sessions. Shared Ghidra queries remain serialized. The root
 `AGENTS.md` is the discovery entry point; workflow guidance does not expand the
 user's task authorization.
 
+## Mandatory small-chunk writes
+
+If EITHER the content an AI agent plans to write OR the destination file is
+long, the agent MUST use small, coherent chunks and verify each write before
+continuing. This applies to code, scripts, documentation and reports, including
+appends and edits to an already-long file. A short edit to a long file must stay
+a small targeted edit; never replace the whole file to make that change.
+
+Preserve existing content. Split long additions at logical boundaries (for
+example, a heading, paragraph, table row or bounded verbatim artifact slice).
+Read back the affected region after each operation. Do not hide a long write in
+one large patch, shell command, generated script or tool payload. After a timeout,
+inspect disk state before retrying to avoid duplicate or lost content.
+
+Chunking changes delivery size, not completeness: retain all evidence, source,
+results and reasoning, then check the assembled result. No arbitrary byte cap or
+assembly script is required. Short writes to short files can use a normal single
+operation. Follow the detailed checkpoints in KILO_AGENT_WORKFLOW.md.
+
 ## Project Overview
 
 You are developing plugins and mods in this workspace (C:\Users\EricM\Downloads\WRSRE).
@@ -51,9 +70,11 @@ first instead of appending. Multiple dirs go in one flag, ';' separated.
   "LockException: Unable to lock project!". Never run Ghidra queries in
   parallel with each other. (See "Serialization across agents" below - this
   rule applies to _all_ agents and Agent Manager sessions, not just your own.)
-- Addresses for these scripts are FILE-BASED: the project loads SOVIET64.exe
-  at base 0x140000000, so pass `0x140` + RVA. RVA 0x997590 -> 0x140997590.
-  An address without the 0x140 prefix reads as "No function found containing".
+- These scripts accept preferred-image virtual addresses (VAs), NOT raw file
+  offsets or RVAs. The project image base is 0x140000000: compute VA = image
+  base + RVA (e.g. RVA 0x997590 -> VA 0x140997590). Do not concatenate prefixes
+  as a general conversion rule. Runtime VA = actual loaded base + RVA; mapping
+  an RVA to a raw PE file offset requires the containing section's headers.
 - Java lives at C:\Program Files\Eclipse Adoptium\jdk-21.0.12.101-hotspot.
   Without a JDK on PATH, analyzeHeadless prints "The 'java' command could not
   be found" and then hangs on a keypress. (If the JDK is patched or moved,
@@ -85,11 +106,15 @@ pass. Treat it as mandatory infrastructure, not an optional nicety.
 1. Grep `docs\ghidra-index\` for the RVA or the function name.
 2. Grep `docs\17-ui-and-integration.md` and `Tesmio Mods\docs\01-16` for the
    subsystem the function belongs to.
-3. If the index entry is `Status: verified` -> use the entry. **DO NOT re-run
-   Ghidra.**
-4. If the entry is `Status: partial` -> run only what's needed to fill the gap.
-5. If the entry is `Status: contested` -> re-verify with a fresh query, then
-   update the entry (do not silently overwrite - see below).
+3. If the index entry is `Status: verified` -> reuse its evidenced claims and
+   cached exports. **DO NOT re-run Ghidra for the same available evidence.**
+   This label does not verify every inferred purpose, receiver, unit or runtime
+   application; follow the claim-level evidence gates in KILO_AGENT_WORKFLOW.md.
+4. If the entry is `Status: partial` -> inspect caches, then query only the gap.
+5. If the entry is `Status: contested` -> first test the conflicting claims
+   against existing raw evidence. Query only a genuinely missing edge/range;
+   a disagreement in interpretation does not itself justify another export.
+   Preserve both views and record the evidence-based resolution.
 
 **After ANY `ghidra_run.bat` call:**
 
@@ -156,9 +181,21 @@ To prevent bloat and crashes as the mod grows, you MUST adhere to these boundari
 
 ### B. Memory Safety & Hooking
 
-- **FAIL-SAFE MEMORY ACCESS:** When reading game memory, use `ReadablePtr(ptr, size)` before dereferencing. If an offset is unverified, wrap it in a `try/catch` or heuristic check.
-- **HOOK SAFETY:** Inline hooks require at least 14 stolen bytes. If a prologue is <14 bytes, patch the caller's `call rel32` instead. Always provide an `expect` array to verify prologue bytes before patching.
-- **UNVERIFIED HOOKS:** If you cannot verify a function's layout via Ghidra, compile the hook but disable it by default (`stolen = 0`, `expect = NULL`) and document how to verify it.
+- **MEMORY ACCESS:** Use `ReadablePtr(ptr, size)` before approved reads, but
+  readability/exception handling does not prove object type, lifetime or offset.
+  Unverified fields stay unavailable outside explicitly approved diagnostics;
+  a `try/catch` or heuristic is not a substitute for native layout evidence.
+- **HOOK SAFETY:** The project's 14-byte inline patch requires a sufficient
+  contiguous span of WHOLE instructions, not a 14-byte first instruction.
+  Verify exact bytes, boundaries, incoming edges, relocation of RIP-relative and
+  relative-control-flow instructions, ABI and receiver/event semantics. A short
+  instruction/prologue does NOT automatically justify patching a caller's
+  `call rel32`; that is a separate design requiring proof and authorization.
+  Always provide a verified `expect` array for an approved patch.
+- **UNVERIFIED HOOKS:** Stop at the exact missing evidence. Do not implement or
+  compile a speculative hook merely because it would default to disabled.
+  Implementation, logging-only runtime validation and deployment each require
+  the task's authorization; static evidence alone grants none of them.
 
 ### C. Performance (Zero-Allocation Rule)
 
@@ -231,6 +268,10 @@ Whenever researching new game systems or writing code caves/hooks, refer to `doc
 ### Verifying bug reports
 
 - Report line numbers are ALWAYS stale - locate by the verbatim snippet or symbol name.
-- Confirm every field/layout claim from >=2 independent sources.
+- Corroborate consequential field/layout semantics with independent native
+  evidence (e.g. writer plus caller/parser), not two summaries of one export.
+  Cite each source and the inference it supports; mark missing corroboration
+  unresolved rather than inventing support. A decoded operand can prove a byte
+  displacement without proving object type, ownership, physical units or purpose.
 - Trace the FULL impact chain before verdicts.
 - Fix conventions: new `// vN.N updates:` block -> `info->version = "N.N"` -> `Logf(...)` -> edit -> `build.bat <plugin>` -> verify.

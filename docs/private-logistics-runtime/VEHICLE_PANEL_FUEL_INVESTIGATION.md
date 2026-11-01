@@ -2,6 +2,10 @@
 
 ## Status
 
+**FUEL-COST INTEGRATION BLOCKED — VERIFIED EVENT INPUT STILL MISSING (2026-10-31):** user approved proceeding and separate outside-assignment operating overhead. Prerequisite review confirms the historical road-truck deduction/refill/clamp trace was never accepted; actual ledger tests do not supply native fuel-event evidence. Matching executable/project and named full writer exports absent from bounded local checks and actual published fuel/research trees (cdf17b7/80a4404, not truncated). Corrected stale16E3B0index status from verified to contested; historical text preserved. No production code/INI/version/hook/costing/payment changes, new game run or broad native investigation. Need upload of tested SOVIET64.exe/ZIP or complete targeted writer exports; parent will handle interpretation/integration. No repeated unchanged probe. Final audit/source/actual output/full remote snapshots and bounded input request appended under “Fuel-cost integration readiness”. This stage is NOT implemented/ready; billing OFF. Earlier test8PASS remains valid for ledger scope only.
+
+**LIVE TEST8 PASSES v0.18.11 LEDGER SCOPE (2026-10-31):** actual version/fingerprint/ledger confirmed. User explicitly confirms the first single-row phase is vehicle refuelling; office_only_pattern is its captured layout, not a denial of that activity. No delivery ID opens for that phase. Pre-existing ID1adopt1/close2; ID2opens53,replaced101; ID3opens101,retains scalar edit121,closes152normally. Actual quiet last-sample points100/151and boundaries101/152match accepted fuel metadata/float32values, not stale schedule emissions96/140.16classifications/12ledger events/193fuel samples verified;5gaps/29discarded paused snapshots,4unchanged endpoints,0queue drops. Screenshot35's427.97L is bracketed, not an exact accepted value; final screenshot36has empty cargo (unlike test7). Four PAY notices billing off. Complete final parser/actual results/evidence/lossless log below. No source/config change, new native query, runtime fix or unchanged-probe rerun requested. Ledger is now game-validated for exercised paths; next is reliable fuel-use/cost input integration, still dry-run, NOT live charges or another jobID hunt. Older pending notices are historical for these paths.
+
 **v0.18.11 DRY-RUN ASSIGNMENT LEDGER IMPLEMENTED (2026-10-31):** `0.18.11-assignment-ledger` groups selected-panel load/unload candidates by observed count/ordered-target appearance/replacement/removal. Scalar/flag/config/index/storage edits do not start another candidate; cargo-empty/success not required to close. Bootstrap adopts unknown start; invalid captures retain uncertainty; load/vehicle/home changes abandon rather than settle, with invalid end fuel. Process-local IDs only, no native job theorem/fleet coverage.129suite tests PASS; ASan+UBSan28reader+23ledger+16runtime cases PASS. Test7emitted-snapshot replay adopts1,closes3,opens57,replaces79,keeps91,closes111. Native reader/capture/queue/fingerprints/INI values unchanged. No pricing, fuel-burn summation, money movement or old tracker wiring; payments OFF. Complete source/results/replay/Windows guide appended below. New Windows DLL build/game smoke check pending; previous0.18.10game test is not a0.18.11native run. Older notices are historical.
 
 **LIVE TEST7 PASSES v0.18.10 CLASSIFICATION SCOPE (2026-10-31):** actual deployed version/fingerprint/classification confirmed;15emitted classifications checked against captured values,113accepted fuel records,6gaps/21discarded paused snapshots. Replacement79 is structural+scalar;91 is scalar-setting-only WITH index0->1, not structural or index-only. Three pure index advances64/74/101 stay separate. Final clearing111 across pause includes cached old rows and continuity_valid0; screenshot30shows0.30t electronics with empty schedule, so no success/empty-cargo inference. Screenshot29's425.95L is bracketed, not an exact accepted reading. Four actual PAY notices say billing off. Full final parser/actual stdout/evidence/lossless original log appended below. No runtime edits/accounting activation/new native query or unchanged-probe rerun. Next: bounded dry-run assignment accounting under removal/replacement policy; payments OFF. Older pending build/test notices are historical for the exercised path.
@@ -112322,3 +112326,4995 @@ PASS schedule_runtime_fault_latch_isolated_from_fuel_not_a_windows_seh_test
 16 schedule runtime host-shim scenarios PASS (not Windows ABI/SEH or a DLL)
 
 ```
+
+
+## Live test8 — actual v0.18.11 assignment-ledger validation and user-confirmed refuelling phase (2026-10-31)
+
+### Verdict and user clarification
+
+PASS for the deployed selected-panel dry-run assignment ledger's exercised scope. Actual startup confirms0.18.11-assignment-ledger, enabled/matched fingerprint, assignment_ledger=selected_panel_dry_run,billing0,dry_run1. User explicitly states: 'The single task that is first is the vehicle fuelling.' Record the first single-row phase in THIS test as USER-CONFIRMED vehicle refuelling, not an unresolved guess about what the player was doing. Screenshot32also shows the refuel icon. The raw office_only_pattern tag describes the one neutral home row visible to the schedule reader; it is NOT a denial of the refuelling activity, nor is it an automatic universal native refuel-job decoder.
+
+No delivery ledger candidate opens during that single-row/refuelling phase. It is not booked as another goods delivery. This does not say fuel travel has no operating cost; allocation/pricing of refuelling travel is not implemented or decided by this classification. Added tank contents must remain distinct from fuel consumed. No native refuel-kind enum, fuel-station identity or exact event boundary is established from this row layout alone.
+
+No production source/configuration changes, new DLL build/deploy/game launch, money movement, agent task, native query, commit/push/PR or accounting activation during this review. A new read-only analysis script was executed; complete final source and actual results are archived below. No repeated unchanged-probe test is requested. Earlier Windows0.18.11smoke-check-pending notices are historical for the actually exercised paths; negative/fault/identity-switch branches are not claimed exercised by this run.
+
+### Checked actual log and screenshot correspondence
+
+193accepted fuel records (samples1–193),16Complete emitted schedules/classifications,29current rows,12assignment log events.5pause-coalescing gaps discard29paused snapshots. The first gap is at initial sample1without a prior comparable endpoint;4later ENDPOINT records are all unchanged. No cached previous-row logs are needed because none of those comparable gaps changes selected content. Queue-full counters0; no guarded schedule fault logged. Exactly4actual [PAY] day14–17closure records all say billing off; startup prose mentioning [PAY] is not payment activity.
+
+Six screenshots were visually reviewed by the parent; the script records original PNG dimensions/lengths/SHA256, not OCR. Screenshot time is not asserted to equal a sample timestamp merely from a repeated gauge value.
+
+| Input | Visible state | Log correlation |
+|---|---|---|
+| image-31.png |91.91L, empty schedule and cargo|Samples2–6are the empty phase at91.91L. Sample1has the same fuel but a three-row pre-existing list, so fuel alone is not a unique timestamp.|
+| image-32.png |91.82L, refuel icon, one office/Nothing row; user confirms refuelling|Sample8is91.82L and office_only_pattern. The single row first appears at7(91.88L); last accepted before its clearing is43. No assignment-ledger record is emitted for7–43.|
+| image-33.png |452.76L, empty schedule/cargo after refuelling travel|44–52are empty at452.76L;53opens a delivery list at the same gauge value. The missing schedule section agrees with the preceding empty phase, not a unique fuel-only sample match.|
+| image-34.png |452.66L, warehouse Load100% food, Big grocery Unload100%, office Nothing, active row0|Sample54matches452.66L and the three-row load/unload list. Its unchanged pause endpoint updates ID2without opening another assignment.|
+| image-35.png |427.97L, warehouse Load50% electronics, Small store Unload100%, office Nothing, active row0|No accepted reading equals427.97L. It is numerically bracketed by101=428.25L and102=427.85L.101already captures the new target/scalar and opens ID3. No invented exact screenshot sample or missed-change claim.|
+| image-36.png |389.48L, empty schedule and all cargo0t;8.00t vehicle mass|152clears the list normally at389.48L;152–193remain at389.48L. There is only one closing event. Unlike test7's final screenshot, THIS final screenshot has no residual electronics. Neither observation makes successful delivery a proven closing cause.|
+
+### Refuelling and observed delivery records
+
+One root000001A098189AE0/home000001A098173800, epoch2. Process-local IDs are not native jobs. The actual record sequence is:
+
+| ID/phase | Start | End/update | Interpretation |
+|---|---|---|---|
+| ID1, already present when logging starts |1:adopt_existing,unknown_start1,91.91L|2:observed_removed,91.91L|The initial three-row list is not a newly observed assignment start. It closes BEFORE the later single-row refuelling phase. Do not confuse ID1with the refuelling task.|
+| User-confirmed refuelling phase, no delivery ID |7:one neutral home row;8:screenshot checkpoint|Tank rises17=83.89L ->18=272.81L ->19=462.71L;44:list clears at452.76L|Refuelling evidence agrees with user context and the gauge rise while the selected list remains the last logged one-row layout. No missing quiet schedule snapshots/native boundaries are reconstructed.|
+| ID2, food delivery list |53:observed_open,452.763824L candidate reading|101:observed_targets_replaced,428.245453L boundary|70/96stop-index advances and54pause comparison keep ID2. At101row1target changes and row0scalar changes; old ID2closes, then ID3opens.|
+| ID3, electronics/small-store list |101:observed_open at the same captured boundary|121:scalar edit, ID3retained;123/140:index advances;152:observed_removed at389.476349L candidate reading|No cargo-empty check is used. This run's final cargo is empty, but closure is driven by captured assignment disappearance, not a success signal.|
+
+Same-count replacement101changes row1target000001A098166560->000001A098168F80; warehouse000001A098170DE0and home remain, storage addresses stay stable. Raw row0value04changes1->0.50982219. At121it changes0.50982219->0.510108292with stable targets/count/index/flags/storage/context; classification settings_only1,structure_changed0. Ledger ID3and its first_sample101remain unchanged. Unlike test7's combined scalar+index event, test8's scalar edit121has NO index advance. Pure index-only observations are70/96/123/140. Flags/config-availability change branches have no changed observations in this run.
+
+Both101replacement and152removal occur on the ordinary comparison path, not across a pause. ID2observation_gap1is sticky from pause54; ID3starts gap0and remains0in this run. This never proves native event continuity: native_boundary/completion remain unverified and exact_burn0on every ledger event. Initial coalescing at1has no prior endpoint: bootstrap unknown_start1is the protection for its unknown past; comparison_available0and compared_across_gap0are not a claim that no earlier paused observations were discarded.
+
+### Actual first/last/boundary validation
+
+All12ledger events independently checked, including first/last/boundary sample IDs, milliseconds, validity and float32fuel-gauge candidate values, against actual accepted FUEL records. Because links0and aggregate_valid1through this stream, the existing float32scale1000can be reproduced exactly from the nine-digit logged current_raw; it is a candidate gauge reading, NOT fuel burn. No epsilon or rounded-value equality is substituted.
+
+Crucially, closing ID2uses last_sample100/ms30281171/428.659973L and boundary101/ms30282171/428.245453L. Its previous emitted selected schedule was96, not100. Closing ID3uses last_sample151/ms30335828/389.775574L and boundary152/ms30336828/389.476349L; its previous emitted selected schedule was140, not151. These actual quiet endpoint updates prove the runtime calls the ledger for accepted records even when schedule logging is suppressed. They are not fabricated replay snapshots. Subsequent accepted records153–193produce no duplicate close or new delivery record.
+
+### What is now validated and what is not
+
+The real Windows/game test now validates the new ledger's normal adopt/open/update/replacement/removal paths, its quiet fuel endpoint updates, and observed pause handling. It is no longer merely the implementation's old-log replay or Linux shim test. The separate test8parser exits0with all assertions PASS. No fresh129-test plugin suite/sanitizer run was necessary for this documentation-only review; those archived results belong to the preceding implementation stage. This run does not test switch/load abandonment, invalid capture recovery, ID exhaustion or native SEH fault handling; retain their earlier host-test limitations.
+
+The ledger stage passes. No fix or another run of this same diagnostic is required from this evidence. Next remaining implementation is reliable fuel-use/cost input integration with these observed assignment records, initially dry-run, not more schedule-label probes or a renewed native jobID/start/end hunt. This review itself does not authorize live charging, silently turn gauge subtraction into exact burn, allocate refuelling travel costs, price fuel or connect the old success/cargo-empty tracker. The assignment->removal/cancellation/replacement policy is unchanged. Shutdown saved_last open/write errors are present; do not claim successful manual save/reload or blame the probe without evidence.
+
+Complete final parser source, actual stdout, numbered original evidence and lossless original log archive follow in THIS cumulative MD. Command executed: `python .cache/analyze_tesmioloader8.py /tmp/arena-coding-uploads/tesmioloader-8.log .cache > .cache/test8-results.txt` (exit0). Cache artifacts are not persistent dependencies once embedded here. The702777-byte original log is round-tripped from Base64/gzip; all image/log hashes are in stdout. Current review branch arena/ec7098fd-wrsre; earlier branch names and pending-status notices describe historical work.
+
+
+
+### Test8 complete final artifact — `.cache/analyze_tesmioloader8.py`
+
+Bytes:12566;SHA256:`a025ac948181419cb49dc4b8f7a88661ca03b9d4f53bdd1f18d579999983b767`. Complete actual source/output.
+
+```python
+#!/usr/bin/env python3
+"""Review actual v0.18.11 emissions and ledger endpoints, not native events.
+
+User confirms the first single-row phase in THIS run is vehicle refuelling.
+That statement is contextual evidence, not a universal office-row job decoder.
+No quiet schedule rows, native event times, cargo vectors or burn are invented.
+"""
+import base64
+import collections
+import gzip
+import hashlib
+from pathlib import Path
+import re
+import struct
+import sys
+
+log = Path(sys.argv[1])
+out = Path(sys.argv[2])
+out.mkdir(parents=True, exist_ok=True)
+raw = log.read_bytes()
+lines = raw.decode('utf-8').splitlines()
+kv = lambda line: dict(re.findall(r'\b([A-Za-z][A-Za-z_0-9]*)=([^ ]+)', line))
+groups = collections.defaultdict(list)
+for number, line in enumerate(lines, 1):
+    m = re.search(r'\] (\[PANEL [^\]]+\]) ', line)
+    if m:
+        groups[m[1]].append((number, kv(line), line))
+
+def keyed(tag):
+    result = {}
+    for _, d, _ in groups[tag]:
+        if 'sample' in d:
+            n = int(d['sample'])
+            assert n not in result, (tag, n)
+            result[n] = d
+    return result
+
+fuel = keyed('[PANEL FUEL]')
+schedules = keyed('[PANEL SCHEDULE]')
+classes = keyed('[PANEL SCHEDULE CLASSIFICATION]')
+endpoints = keyed('[PANEL SCHEDULE ENDPOINT]')
+gaps = keyed('[PANEL GAP]')
+rows = collections.defaultdict(list)
+for _, d, _ in groups['[PANEL SCHEDULE ROW]']:
+    rows[int(d['sample'])].append(d)
+ledger = [d for _, d, _ in groups['[PANEL ASSIGNMENT]']]
+f32 = lambda x: struct.unpack('<f', struct.pack('<f', float(x)))[0]
+
+def row_values(r):
+    return (int(r['target_raw'], 16), int(r['config_fields_read']),
+            int(r['flag00']), int(r['flagc8']), f32(r['value04']), f32(r['valuecc']))
+
+def pattern(table, home):
+    if not table:
+        return 'empty'
+    if len(table) == 1 and table[0][:4] == (home, 1, 0, 0):
+        return 'office_only_pattern'
+    eligible = [r for r in table if r[0] not in (0, home) and r[1]]
+    if any(r[2:4] == (1, 0) for r in eligible) and any(r[2:4] == (0, 1) for r in eligible):
+        return 'load_unload_pattern'
+    return 'other_pattern'
+
+assert any('plugin   private_logistics 0.18.11-assignment-ledger' in l for l in lines)
+assert any('[PANEL SCHEDULE] enabled=1 fingerprint=matched' in l and
+           'assignment_ledger=selected_panel_dry_run' in l for l in lines)
+assert any('live v0.18.11-assignment-ledger: billing=0 dry_run=1' in l for l in lines)
+assert list(fuel) == list(range(1, 194))
+assert list(schedules) == [1, 2, 3, 7, 8, 44, 51, 53, 54, 70, 96, 101, 121, 123, 140, 152]
+assert set(classes) == set(schedules)
+assert list(gaps) == [1, 3, 8, 51, 54] and list(endpoints) == [3, 8, 51, 54]
+assert sum(int(d['discarded_paused_snapshots']) for d in gaps.values()) == 29
+assert len(groups['[PANEL SCHEDULE ROW]']) == 29
+assert not groups['[PANEL SCHEDULE PREVIOUS ROW]']
+assert len(ledger) == 12
+assert all(d['root'] == '000001A098189AE0' and d['epoch'] == '2' for d in fuel.values())
+assert all(d['candidate_home'] == '000001A098173800' for d in schedules.values())
+assert all(d['queue_full_total_at_capture'] == d['queue_full_total_at_drain'] == '0'
+           for d in fuel.values())
+assert not any('guarded_schedule_fault_disabled' in l for l in lines)
+
+previous = None
+previous_table = []
+for n, s in schedules.items():
+    c = classes[n]
+    table = [row_values(r) for r in rows[n]]
+    assert s['status'] == 'complete_selected_fields'
+    assert [int(r['row']) for r in rows[n]] == list(range(int(s['captured_rows'])))
+    assert len(table) == int(s['raw_row_count']) <= 16
+    assert c['current_pattern'] == pattern(table, int(s['candidate_home'], 16))
+    assert s['ms'] == fuel[n]['ms']
+    assert c['root'] == s['root'] == fuel[n]['root']
+    assert s['aggregate_litres_candidate'] == fuel[n]['litres_candidate']
+    assert c['resource_identity'] == c['native_job_boundary'] == 'unverified'
+    assert c['billing'] == 'off'
+    expected = dict(row_count_changed=0, ordered_targets_changed=0,
+                    config_availability_changed=0, task_flags_changed=0,
+                    scalar_settings_changed=0)
+    index = storage = context = fields = False
+    if previous:
+        expected['row_count_changed'] = int(len(previous_table) != len(table))
+        for x, y in zip(previous_table, table):
+            expected['ordered_targets_changed'] |= int(x[0] != y[0])
+            expected['config_availability_changed'] |= int(x[1] != y[1])
+            if x[1] and y[1]:
+                expected['task_flags_changed'] |= int(x[2:4] != y[2:4])
+                expected['scalar_settings_changed'] |= int(x[4:6] != y[4:6])
+        fields = previous_table != table
+        index = previous['index698'] != s['index698']
+        storage = any(previous[k] != s[k] for k in ('begin680', 'end688', 'configs638'))
+        context = any(previous[k] != s[k] for k in ('raw4a0', 'raw610', 'raw650', 'flag5fd'))
+        assert int(c['previous_sample']) == n - 1
+        assert c['previous_pattern'] == pattern(previous_table, int(s['candidate_home'], 16))
+    else:
+        assert c['previous_sample'] == '0' and c['previous_pattern'] == 'unavailable'
+    structure = expected['row_count_changed'] or expected['ordered_targets_changed']
+    settings_only = ((expected['task_flags_changed'] or expected['scalar_settings_changed'])
+                     and not structure and not expected['config_availability_changed'])
+    expected.update(structure_changed=int(structure), settings_only=int(settings_only),
+                    comparison_available=int(previous is not None), compared_across_gap=int(n in endpoints),
+                    active_index_only=int(index and not fields and not storage and not context))
+    for k, v in expected.items():
+        assert int(c[k]) == v, (n, k, c[k], v)
+    for k, value in [('observed_fields_changed', fields), ('storage_changed', storage),
+                     ('row_index_changed', index), ('opaque_context_changed', context)]:
+        assert int(s[k]) == (int(value) if s['baseline'] == 'none' else 0)
+    if n in endpoints:
+        e = endpoints[n]
+        assert e['continuity_valid'] == '0' and e['compared_across_gap'] == '1'
+        assert e['previous_sample'] == c['previous_sample']
+        assert e['previous_ms'] == fuel[n - 1]['ms']
+        assert e['current_rows'] == e['previous_rows'] == s['captured_rows']
+        assert all(e[k] == '0' for k in ['endpoint_fields_differ', 'endpoint_storage_differ',
+                                       'endpoint_index_differ', 'endpoint_context_differ'])
+    print(f"SCHEDULE sample={n} rows={len(table)} index={s['index698']} "
+          f"fuel={s['aggregate_litres_candidate']} pattern={c['current_pattern']} "
+          f"structure={c['structure_changed']} settings_only={c['settings_only']} "
+          f"index_only={c['active_index_only']}")
+    previous, previous_table = s, table
+
+expected_events = [(1, 1, 'adopt_existing'), (2, 1, 'observed_close'),
+                   (53, 2, 'observed_open'), (54, 2, 'observed_update'),
+                   (70, 2, 'observed_update'), (96, 2, 'observed_update'),
+                   (101, 2, 'observed_close'), (101, 3, 'observed_open'),
+                   (121, 3, 'observed_update'), (123, 3, 'observed_update'),
+                   (140, 3, 'observed_update'), (152, 3, 'observed_close')]
+assert [(int(d['sample']), int(d['id']), d['event']) for d in ledger] == expected_events
+starts = {1: 1, 2: 53, 3: 101}
+for d in ledger:
+    n, identity = int(d['sample']), int(d['id'])
+    assert int(d['first_sample']) == starts[identity]
+    assert d['candidate_epoch'] == d['observation_epoch'] == '2'
+    assert d['root'] == d['observation_root'] == fuel[n]['root']
+    assert d['home'] == '000001A098173800'
+    assert d['unknown_start'] == ('1' if identity == 1 else '0')
+    assert d['observation_gap'] == ('1' if identity == 2 and n >= 54 else '0')
+    assert d['role_uncertain'] == '0'
+    assert d['completion'] == d['native_boundary'] == 'unverified'
+    assert d['exact_burn'] == '0' and d['cost'] == 'not_computed'
+    assert d['settlement'] == 'none' and d['billing'] == 'off'
+    assert int(d['boundary_sample']) == n
+    expected_last = n - 1 if d['event'] == 'observed_close' else n
+    assert int(d['last_sample']) == expected_last
+    for point in ('first', 'last', 'boundary'):
+        p = int(d[point + '_sample'])
+        assert d[point + '_ms'] == fuel[p]['ms']
+        assert d[point + '_fuel_valid'] == '1'
+        assert fuel[p]['links'] == '0' and fuel[p]['aggregate_valid'] == '1'
+        # Nine-digit logged raw values round-trip to float32. Single-object
+        # candidate uses the existing float32 scale1000; this is NOT burn.
+        expected_litres = f32(f32(fuel[p]['current_raw']) * 1000)
+        assert f32(d[point + '_litres_candidate']) == expected_litres, (n, point)
+    print(f"LEDGER sample={n} id={identity} event={d['event']} first={d['first_sample']} "
+          f"last={d['last_sample']} boundary={d['boundary_sample']} "
+          f"unknown_start={d['unknown_start']} gap={d['observation_gap']}")
+
+assert not any(7 <= int(d['sample']) < 44 for d in ledger)
+assert classes[7]['current_pattern'] == classes[8]['current_pattern'] == 'office_only_pattern'
+assert fuel[17]['litres_candidate'] == '83.89'
+assert fuel[18]['litres_candidate'] == '272.81' and fuel[19]['litres_candidate'] == '462.71'
+assert classes[121]['settings_only'] == '1' and schedules[121]['row_index_changed'] == '0'
+assert rows[101][0]['value04'] == '0.50982219' and rows[121][0]['value04'] == '0.510108292'
+assert [n for n, d in classes.items() if d['active_index_only'] == '1'] == [70, 96, 123, 140]
+assert ledger[6]['last_sample'] == '100' and ledger[-1]['last_sample'] == '151'
+assert not any(int(d['sample']) > 152 for d in ledger)
+assert all(fuel[n]['litres_candidate'] == '389.48' for n in range(152, 194))
+assert fuel[8]['litres_candidate'] == '91.82' and fuel[54]['litres_candidate'] == '452.66'
+assert all(fuel[n]['litres_candidate'] == '452.76' for n in range(44, 54))
+assert fuel[101]['litres_candidate'] == '428.25' and fuel[102]['litres_candidate'] == '427.85'
+assert not any(d['litres_candidate'] == '427.97' for d in fuel.values())
+pay = [l for l in lines if re.search(r'\] \[PAY\] ', l)]
+assert len(pay) == 4 and all(l.endswith('closed: billing off') for l in pay)
+print('PASS: 16 classifications, 12 ledger events; 193 accepted fuel samples; all first/last/boundary readings and timestamps match actual accepted records.')
+print('PASS: user-confirmed refuelling phase7..43 excluded from delivery ledger; gauge rises83.89->272.81->462.71L inside that phase.')
+print('PASS: adopted existing1 closes2; delivery ID2 opens53/closes101; ID3 opens101, survives scalar edit121 and closes152.')
+print('PASS: quiet endpoints100/151 are actual runtime values, not last emitted schedule samples96/140; no duplicate close through193.')
+print('PASS: 5 coalescing gaps discard29paused snapshots; initial gap has no prior endpoint; 4 comparable gaps unchanged; queue drops0.')
+print('PASS: screenshot35 427.97L is bracketed by428.25/427.85L, not an exact sampled value. Four PAY notices say billing off.')
+print(f'INPUT bytes={len(raw)} sha256={hashlib.sha256(raw).hexdigest()}')
+for i in range(31, 37):
+    p = log.parent / f'image-{i}.png'
+    data = p.read_bytes()
+    assert data[:8] == b'\x89PNG\r\n\x1a\n'
+    w, h = struct.unpack('>II', data[16:24])
+    print(f'IMAGE {p.name} dimensions={w}x{h} bytes={len(data)} sha256={hashlib.sha256(data).hexdigest()}')
+packed = gzip.compress(raw, mtime=0)
+encoded = base64.b64encode(packed)
+assert gzip.decompress(base64.b64decode(encoded)) == raw
+(out / 'test8-original.gzip.b64').write_text('\n'.join(encoded[i:i+100].decode() for i in range(0, len(encoded), 100)) + '\n')
+selected = []
+for number, line in enumerate(lines, 1):
+    d = kv(line)
+    n = int(d.get('sample', '-1'))
+    if ('[PANEL SCHEDULE' in line or '[PANEL ASSIGNMENT]' in line or '[PANEL GAP]' in line or
+        '0.18.11-assignment-ledger' in line or re.search(r'\] \[PAY\] ', line) or
+        ('[PANEL FUEL]' in line and n in (1, 2, 7, 8, 17, 18, 19, 43, 44, 50, 52, 53, 54,
+                                        69, 95, 100, 101, 102, 120, 121, 122, 139, 151, 152, 193))):
+        selected.append(f'{number}: {line}')
+(out / 'test8-selected-evidence.txt').write_text('\n'.join(selected) + '\n')
+print(f'ARCHIVE gzip_bytes={len(packed)} base64_chars={len(encoded)} roundtrip=PASS')
+print('LIMIT: read-only actual-log review; no new DLL/production code/config/charging, native universal refuel decoder or exact-burn proof.')
+
+```
+
+### Test8 complete final artifact — `.cache/test8-results.txt`
+
+Bytes:4705;SHA256:`92d17473a748f68b96cf6c8a2e3a7aaba91f5cf0759f67f7d1e62852d4d31d61`. Complete actual source/output.
+
+```text
+SCHEDULE sample=1 rows=3 index=0 fuel=91.91 pattern=load_unload_pattern structure=0 settings_only=0 index_only=0
+SCHEDULE sample=2 rows=0 index=0 fuel=91.91 pattern=empty structure=1 settings_only=0 index_only=0
+SCHEDULE sample=3 rows=0 index=0 fuel=91.91 pattern=empty structure=0 settings_only=0 index_only=0
+SCHEDULE sample=7 rows=1 index=0 fuel=91.88 pattern=office_only_pattern structure=1 settings_only=0 index_only=0
+SCHEDULE sample=8 rows=1 index=0 fuel=91.82 pattern=office_only_pattern structure=0 settings_only=0 index_only=0
+SCHEDULE sample=44 rows=0 index=0 fuel=452.76 pattern=empty structure=1 settings_only=0 index_only=0
+SCHEDULE sample=51 rows=0 index=0 fuel=452.76 pattern=empty structure=0 settings_only=0 index_only=0
+SCHEDULE sample=53 rows=3 index=0 fuel=452.76 pattern=load_unload_pattern structure=1 settings_only=0 index_only=0
+SCHEDULE sample=54 rows=3 index=0 fuel=452.66 pattern=load_unload_pattern structure=0 settings_only=0 index_only=0
+SCHEDULE sample=70 rows=3 index=1 fuel=444.50 pattern=load_unload_pattern structure=0 settings_only=0 index_only=1
+SCHEDULE sample=96 rows=3 index=2 fuel=430.34 pattern=load_unload_pattern structure=0 settings_only=0 index_only=1
+SCHEDULE sample=101 rows=3 index=0 fuel=428.25 pattern=load_unload_pattern structure=1 settings_only=0 index_only=0
+SCHEDULE sample=121 rows=3 index=0 fuel=417.19 pattern=load_unload_pattern structure=0 settings_only=1 index_only=0
+SCHEDULE sample=123 rows=3 index=1 fuel=415.95 pattern=load_unload_pattern structure=0 settings_only=0 index_only=1
+SCHEDULE sample=140 rows=3 index=2 fuel=400.72 pattern=load_unload_pattern structure=0 settings_only=0 index_only=1
+SCHEDULE sample=152 rows=0 index=2 fuel=389.48 pattern=empty structure=1 settings_only=0 index_only=0
+LEDGER sample=1 id=1 event=adopt_existing first=1 last=1 boundary=1 unknown_start=1 gap=0
+LEDGER sample=2 id=1 event=observed_close first=1 last=1 boundary=2 unknown_start=1 gap=0
+LEDGER sample=53 id=2 event=observed_open first=53 last=53 boundary=53 unknown_start=0 gap=0
+LEDGER sample=54 id=2 event=observed_update first=53 last=54 boundary=54 unknown_start=0 gap=1
+LEDGER sample=70 id=2 event=observed_update first=53 last=70 boundary=70 unknown_start=0 gap=1
+LEDGER sample=96 id=2 event=observed_update first=53 last=96 boundary=96 unknown_start=0 gap=1
+LEDGER sample=101 id=2 event=observed_close first=53 last=100 boundary=101 unknown_start=0 gap=1
+LEDGER sample=101 id=3 event=observed_open first=101 last=101 boundary=101 unknown_start=0 gap=0
+LEDGER sample=121 id=3 event=observed_update first=101 last=121 boundary=121 unknown_start=0 gap=0
+LEDGER sample=123 id=3 event=observed_update first=101 last=123 boundary=123 unknown_start=0 gap=0
+LEDGER sample=140 id=3 event=observed_update first=101 last=140 boundary=140 unknown_start=0 gap=0
+LEDGER sample=152 id=3 event=observed_close first=101 last=151 boundary=152 unknown_start=0 gap=0
+PASS: 16 classifications, 12 ledger events; 193 accepted fuel samples; all first/last/boundary readings and timestamps match actual accepted records.
+PASS: user-confirmed refuelling phase7..43 excluded from delivery ledger; gauge rises83.89->272.81->462.71L inside that phase.
+PASS: adopted existing1 closes2; delivery ID2 opens53/closes101; ID3 opens101, survives scalar edit121 and closes152.
+PASS: quiet endpoints100/151 are actual runtime values, not last emitted schedule samples96/140; no duplicate close through193.
+PASS: 5 coalescing gaps discard29paused snapshots; initial gap has no prior endpoint; 4 comparable gaps unchanged; queue drops0.
+PASS: screenshot35 427.97L is bracketed by428.25/427.85L, not an exact sampled value. Four PAY notices say billing off.
+INPUT bytes=702777 sha256=529296eca3a880edf2a43919ad978be0b79860b415c0e82872447f4518d8d4be
+IMAGE image-31.png dimensions=498x492 bytes=398216 sha256=db1fbeb006d615d26c8a3357422aabce37b7e79914d350c3227cc96fdf803792
+IMAGE image-32.png dimensions=496x561 bytes=453984 sha256=3d2aae0719661a17be7af8680523a00232ed27368e87060024d4c251647b782a
+IMAGE image-33.png dimensions=505x502 bytes=416394 sha256=df1a79e99c8a902e7f9862b3b3405afed50ae440bce6df4f1556f439db61b7de
+IMAGE image-34.png dimensions=501x627 bytes=517579 sha256=1cefc9b02d63356e4d47c1c808eb09aee95234af395efbcfb5bcabb904aa8846
+IMAGE image-35.png dimensions=507x630 bytes=526353 sha256=5f0cd1b8a20e4453b4fef822f8023214068c18289a4046b8efb7dc7582574103
+IMAGE image-36.png dimensions=512x497 bytes=419894 sha256=121d9bf0e657c7abf6c9a6a4cbeccd0d8d53c814a8bf4dfbbaba07111e89d2d3
+ARCHIVE gzip_bytes=67614 base64_chars=90152 roundtrip=PASS
+LIMIT: read-only actual-log review; no new DLL/production code/config/charging, native universal refuel decoder or exact-burn proof.
+
+```
+
+### Test8 complete final artifact — `.cache/test8-selected-evidence.txt`
+
+Bytes:52749;SHA256:`57541da985b56bdbc204b3b95eaf09e6542e25398ffa60737af2df74d370a2bd`. Complete actual source/output.
+
+```text
+47: [19:14:32.609] private_logistics  v0.18.11-assignment-ledger - billing ARMED IN DRY RUN (computes every payment, moves nothing)
+48: [19:14:32.609] plugin   private_logistics 0.18.11-assignment-ledger from private_logistics.dll
+134: [19:14:32.636] [PANEL SCHEDULE] enabled=1 fingerprint=matched mode=read_only_selected_fields max_rows=16 last_flag5fd_row_config=not_read gap_endpoints=enabled_cached_values_only classification=enabled_captured_values assignment_ledger=selected_panel_dry_run job_lifecycle=unverified billing=off
+154: [19:14:32.637] private_logistics  live v0.18.11-assignment-ledger: billing=0 dry_run=1 factory=1 carrier=1, 16 sites, cap 5000/day, price = LEGACY FRAGMENT MODEL (fuel x margin + wear), NOT journey settlement, factory share 0.90
+156: [19:14:32.638] private_logistics  v0.18.11-assignment-ledger legacy fragment model: 14.75 configured L/fragment + 0.00 L/t, wear 5.00 L, margin 35%, density 0.00100 t/L, index 'fuel', auto-tune off
+825: [19:16:23.453] [PANEL GAP] epoch=2 sample=1 reason=paused_snapshot_coalescing discarded_paused_snapshots=1 first_ms=30132609 latest_ms=30133625 policy=keep_latest_same_window_root simulation_event_coverage=unverified exact_burn=0
+826: [19:16:23.453] [PANEL FUEL] epoch=2 sample=1 ms=30133625 phase=post_render window=000001A0AAB9B1A0 root=000001A098189AE0 status=complete aggregate_valid=1 current_raw=0.0919097364 litres_candidate=91.91 capacity_unadjusted=0.462799996 ratio_valid=1 ratio=0.198594943 links=0 mode=2 metadata_kind=1 flags_read=1 flag8681=0 flag8682=0 adjustment_read=1 adjustment_needed=0 presentation=unresolved_7c58 queue_full_total_at_capture=0 queue_full_total_at_drain=0 captured_paused=1 coalesced_snapshots=1 sample_ids=accepted_records_only physical_fuel=unverified exact_burn=0 billing=off
+828: [19:16:23.454] [PANEL ASSIGNMENT] observation_epoch=2 sample=1 observation_root=000001A098189AE0 id=1 candidate_epoch=2 root=000001A098189AE0 home=000001A098173800 event=adopt_existing reason=start_not_observed first_sample=1 first_ms=30133625 first_fuel_valid=1 first_litres_candidate=91.9097366 last_sample=1 last_ms=30133625 last_fuel_valid=1 last_litres_candidate=91.9097366 boundary_sample=1 boundary_ms=30133625 boundary_fuel_valid=1 boundary_litres_candidate=91.9097366 unknown_start=1 observation_gap=0 role_uncertain=0 id_scope=process_local_selected_panel native_boundary=unverified completion=unverified exact_burn=0 cost=not_computed settlement=none billing=off
+829: [19:16:23.454] [PANEL SCHEDULE] epoch=2 sample=1 ms=30133625 root=000001A098189AE0 candidate_home=000001A098173800 status=complete_selected_fields baseline=diagnostic_gap observed_fields_changed=0 storage_changed=0 row_index_changed=0 opaque_context_changed=0 begin680=000001A0AA80F4D0 end688=000001A0AA80F4E8 configs638=000001A0A91A5360 raw_row_count=3 captured_rows=3 index698=0 flag5fd=0 raw4a0=0000000000000000 raw610=0000000000000000 raw650=0000000000000000 fuel_valid=1 fuel_root_raw=0.0919097364 aggregate_litres_candidate=91.91 visibility=panel_only phase=post_render native_event_coverage=unverified native_job_id=unverified buyer=unverified completion=unverified exact_burn=0 billing=off
+830: [19:16:23.454] [PANEL SCHEDULE CLASSIFICATION] epoch=2 sample=1 previous_sample=0 root=000001A098189AE0 comparison_available=0 compared_across_gap=0 previous_pattern=unavailable current_pattern=load_unload_pattern row_count_changed=0 ordered_targets_changed=0 structure_changed=0 config_availability_changed=0 task_flags_changed=0 scalar_settings_changed=0 settings_only=0 active_index_only=0 comparison_scope=captured_endpoints pattern_semantics=observed_flags_only resource_identity=unverified native_job_boundary=unverified billing=off
+831: [19:16:23.454] [PANEL SCHEDULE ROW] epoch=2 sample=1 row=0 target_raw=000001A098170DE0 config_fields_read=1 flag00=1 value04=1 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+832: [19:16:23.454] [PANEL SCHEDULE ROW] epoch=2 sample=1 row=1 target_raw=000001A098166560 config_fields_read=1 flag00=0 value04=1 flagc8=1 valuecc=1 target_role=unverified buyer=unverified
+833: [19:16:23.454] [PANEL SCHEDULE ROW] epoch=2 sample=1 row=2 target_raw=000001A098173800 config_fields_read=1 flag00=0 value04=1 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+855: [19:16:24.473] [PANEL FUEL] epoch=2 sample=2 ms=30140593 phase=post_render window=000001A0AAB9D600 root=000001A098189AE0 status=complete aggregate_valid=1 current_raw=0.0919097364 litres_candidate=91.91 capacity_unadjusted=0.462799996 ratio_valid=1 ratio=0.198594943 links=0 mode=2 metadata_kind=1 flags_read=1 flag8681=0 flag8682=0 adjustment_read=1 adjustment_needed=0 presentation=unresolved_7c58 queue_full_total_at_capture=0 queue_full_total_at_drain=0 captured_paused=0 coalesced_snapshots=0 sample_ids=accepted_records_only physical_fuel=unverified exact_burn=0 billing=off
+857: [19:16:24.473] [PANEL ASSIGNMENT] observation_epoch=2 sample=2 observation_root=000001A098189AE0 id=1 candidate_epoch=2 root=000001A098189AE0 home=000001A098173800 event=observed_close reason=observed_removed first_sample=1 first_ms=30133625 first_fuel_valid=1 first_litres_candidate=91.9097366 last_sample=1 last_ms=30133625 last_fuel_valid=1 last_litres_candidate=91.9097366 boundary_sample=2 boundary_ms=30140593 boundary_fuel_valid=1 boundary_litres_candidate=91.9097366 unknown_start=1 observation_gap=0 role_uncertain=0 id_scope=process_local_selected_panel native_boundary=unverified completion=unverified exact_burn=0 cost=not_computed settlement=none billing=off
+858: [19:16:24.473] [PANEL SCHEDULE] epoch=2 sample=2 ms=30140593 root=000001A098189AE0 candidate_home=000001A098173800 status=complete_selected_fields baseline=none observed_fields_changed=1 storage_changed=1 row_index_changed=0 opaque_context_changed=0 begin680=000001A0AA80F4D0 end688=000001A0AA80F4D0 configs638=000001A0A91A5360 raw_row_count=0 captured_rows=0 index698=0 flag5fd=0 raw4a0=0000000000000000 raw610=0000000000000000 raw650=0000000000000000 fuel_valid=1 fuel_root_raw=0.0919097364 aggregate_litres_candidate=91.91 visibility=panel_only phase=post_render native_event_coverage=unverified native_job_id=unverified buyer=unverified completion=unverified exact_burn=0 billing=off
+859: [19:16:24.473] [PANEL SCHEDULE CLASSIFICATION] epoch=2 sample=2 previous_sample=1 root=000001A098189AE0 comparison_available=1 compared_across_gap=0 previous_pattern=load_unload_pattern current_pattern=empty row_count_changed=1 ordered_targets_changed=0 structure_changed=1 config_availability_changed=0 task_flags_changed=0 scalar_settings_changed=0 settings_only=0 active_index_only=0 comparison_scope=captured_endpoints pattern_semantics=observed_flags_only resource_identity=unverified native_job_boundary=unverified billing=off
+873: [19:16:37.150] [PANEL GAP] epoch=2 sample=3 reason=paused_snapshot_coalescing discarded_paused_snapshots=8 first_ms=30141593 latest_ms=30152093 policy=keep_latest_same_window_root simulation_event_coverage=unverified exact_burn=0
+876: [19:16:37.151] [PANEL SCHEDULE] epoch=2 sample=3 ms=30152093 root=000001A098189AE0 candidate_home=000001A098173800 status=complete_selected_fields baseline=diagnostic_gap observed_fields_changed=0 storage_changed=0 row_index_changed=0 opaque_context_changed=0 begin680=000001A0AA80F4D0 end688=000001A0AA80F4D0 configs638=000001A0A91A5360 raw_row_count=0 captured_rows=0 index698=0 flag5fd=0 raw4a0=0000000000000000 raw610=0000000000000000 raw650=0000000000000000 fuel_valid=1 fuel_root_raw=0.0919097364 aggregate_litres_candidate=91.91 visibility=panel_only phase=post_render native_event_coverage=unverified native_job_id=unverified buyer=unverified completion=unverified exact_burn=0 billing=off
+877: [19:16:37.151] [PANEL SCHEDULE CLASSIFICATION] epoch=2 sample=3 previous_sample=2 root=000001A098189AE0 comparison_available=1 compared_across_gap=1 previous_pattern=empty current_pattern=empty row_count_changed=0 ordered_targets_changed=0 structure_changed=0 config_availability_changed=0 task_flags_changed=0 scalar_settings_changed=0 settings_only=0 active_index_only=0 comparison_scope=captured_endpoints pattern_semantics=observed_flags_only resource_identity=unverified native_job_boundary=unverified billing=off
+878: [19:16:37.151] [PANEL SCHEDULE ENDPOINT] epoch=2 sample=3 ms=30152093 root=000001A098189AE0 candidate_home=000001A098173800 previous_sample=2 previous_ms=30140593 previous_rows=0 current_rows=0 endpoint_fields_differ=0 endpoint_storage_differ=0 endpoint_index_differ=0 endpoint_context_differ=0 compared_across_gap=1 continuity_valid=0 comparison=last_valid_captured_values native_event_time=unknown native_event_coverage=unverified completion=unverified billing=off
+942: [19:16:41.138] [PANEL FUEL] epoch=2 sample=7 ms=30157265 phase=post_render window=000001A0AAB9BDC0 root=000001A098189AE0 status=complete aggregate_valid=1 current_raw=0.0918842107 litres_candidate=91.88 capacity_unadjusted=0.462799996 ratio_valid=1 ratio=0.198539779 links=0 mode=2 metadata_kind=1 flags_read=1 flag8681=0 flag8682=0 adjustment_read=1 adjustment_needed=0 presentation=unresolved_7c58 queue_full_total_at_capture=0 queue_full_total_at_drain=0 captured_paused=0 coalesced_snapshots=0 sample_ids=accepted_records_only physical_fuel=unverified exact_burn=0 billing=off
+944: [19:16:41.138] [PANEL SCHEDULE] epoch=2 sample=7 ms=30157265 root=000001A098189AE0 candidate_home=000001A098173800 status=complete_selected_fields baseline=none observed_fields_changed=1 storage_changed=1 row_index_changed=0 opaque_context_changed=0 begin680=000001A0AA80F4D0 end688=000001A0AA80F4D8 configs638=000001A0A91A5360 raw_row_count=1 captured_rows=1 index698=0 flag5fd=0 raw4a0=0000000000000000 raw610=0000000000000000 raw650=0000000000000000 fuel_valid=1 fuel_root_raw=0.0918842107 aggregate_litres_candidate=91.88 visibility=panel_only phase=post_render native_event_coverage=unverified native_job_id=unverified buyer=unverified completion=unverified exact_burn=0 billing=off
+945: [19:16:41.138] [PANEL SCHEDULE CLASSIFICATION] epoch=2 sample=7 previous_sample=6 root=000001A098189AE0 comparison_available=1 compared_across_gap=0 previous_pattern=empty current_pattern=office_only_pattern row_count_changed=1 ordered_targets_changed=0 structure_changed=1 config_availability_changed=0 task_flags_changed=0 scalar_settings_changed=0 settings_only=0 active_index_only=0 comparison_scope=captured_endpoints pattern_semantics=observed_flags_only resource_identity=unverified native_job_boundary=unverified billing=off
+946: [19:16:41.138] [PANEL SCHEDULE ROW] epoch=2 sample=7 row=0 target_raw=000001A098173800 config_fields_read=1 flag00=0 value04=1 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+951: [19:17:01.725] [PANEL GAP] epoch=2 sample=8 reason=paused_snapshot_coalescing discarded_paused_snapshots=16 first_ms=30158281 latest_ms=30177031 policy=keep_latest_same_window_root simulation_event_coverage=unverified exact_burn=0
+952: [19:17:01.725] [PANEL FUEL] epoch=2 sample=8 ms=30177031 phase=post_render window=000001A0AAB9BDC0 root=000001A098189AE0 status=complete aggregate_valid=1 current_raw=0.0918181837 litres_candidate=91.82 capacity_unadjusted=0.462799996 ratio_valid=1 ratio=0.198397115 links=0 mode=2 metadata_kind=1 flags_read=1 flag8681=0 flag8682=0 adjustment_read=1 adjustment_needed=0 presentation=unresolved_7c58 queue_full_total_at_capture=0 queue_full_total_at_drain=0 captured_paused=1 coalesced_snapshots=16 sample_ids=accepted_records_only physical_fuel=unverified exact_burn=0 billing=off
+954: [19:17:01.725] [PANEL SCHEDULE] epoch=2 sample=8 ms=30177031 root=000001A098189AE0 candidate_home=000001A098173800 status=complete_selected_fields baseline=diagnostic_gap observed_fields_changed=0 storage_changed=0 row_index_changed=0 opaque_context_changed=0 begin680=000001A0AA80F4D0 end688=000001A0AA80F4D8 configs638=000001A0A91A5360 raw_row_count=1 captured_rows=1 index698=0 flag5fd=0 raw4a0=0000000000000000 raw610=0000000000000000 raw650=0000000000000000 fuel_valid=1 fuel_root_raw=0.0918181837 aggregate_litres_candidate=91.82 visibility=panel_only phase=post_render native_event_coverage=unverified native_job_id=unverified buyer=unverified completion=unverified exact_burn=0 billing=off
+955: [19:17:01.725] [PANEL SCHEDULE CLASSIFICATION] epoch=2 sample=8 previous_sample=7 root=000001A098189AE0 comparison_available=1 compared_across_gap=1 previous_pattern=office_only_pattern current_pattern=office_only_pattern row_count_changed=0 ordered_targets_changed=0 structure_changed=0 config_availability_changed=0 task_flags_changed=0 scalar_settings_changed=0 settings_only=0 active_index_only=0 comparison_scope=captured_endpoints pattern_semantics=observed_flags_only resource_identity=unverified native_job_boundary=unverified billing=off
+956: [19:17:01.725] [PANEL SCHEDULE ENDPOINT] epoch=2 sample=8 ms=30177031 root=000001A098189AE0 candidate_home=000001A098173800 previous_sample=7 previous_ms=30157265 previous_rows=1 current_rows=1 endpoint_fields_differ=0 endpoint_storage_differ=0 endpoint_index_differ=0 endpoint_context_differ=0 compared_across_gap=1 continuity_valid=0 comparison=last_valid_captured_values native_event_time=unknown native_event_coverage=unverified completion=unverified billing=off
+957: [19:17:01.725] [PANEL SCHEDULE ROW] epoch=2 sample=8 row=0 target_raw=000001A098173800 config_fields_read=1 flag00=0 value04=1 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+1084: [19:17:10.006] [PANEL FUEL] epoch=2 sample=17 ms=30186140 phase=post_render window=000001A0AAB9BDC0 root=000001A098189AE0 status=complete aggregate_valid=1 current_raw=0.0838914663 litres_candidate=83.89 capacity_unadjusted=0.462799996 ratio_valid=1 ratio=0.181269377 links=0 mode=2 metadata_kind=1 flags_read=1 flag8681=0 flag8682=0 adjustment_read=1 adjustment_needed=0 presentation=unresolved_7c58 queue_full_total_at_capture=0 queue_full_total_at_drain=0 captured_paused=0 coalesced_snapshots=0 sample_ids=accepted_records_only physical_fuel=unverified exact_burn=0 billing=off
+1108: [19:17:11.010] [PANEL FUEL] epoch=2 sample=18 ms=30187156 phase=post_render window=000001A0AAB9BDC0 root=000001A098189AE0 status=complete aggregate_valid=1 current_raw=0.272809267 litres_candidate=272.81 capacity_unadjusted=0.462799996 ratio_valid=1 ratio=0.589475513 links=0 mode=2 metadata_kind=1 flags_read=1 flag8681=0 flag8682=0 adjustment_read=1 adjustment_needed=0 presentation=unresolved_7c58 queue_full_total_at_capture=0 queue_full_total_at_drain=0 captured_paused=0 coalesced_snapshots=0 sample_ids=accepted_records_only physical_fuel=unverified exact_burn=0 billing=off
+1121: [19:17:12.025] [PANEL FUEL] epoch=2 sample=19 ms=30188156 phase=post_render window=000001A0AAB9BDC0 root=000001A098189AE0 status=complete aggregate_valid=1 current_raw=0.462705135 litres_candidate=462.71 capacity_unadjusted=0.462799996 ratio_valid=1 ratio=0.99979502 links=0 mode=2 metadata_kind=1 flags_read=1 flag8681=0 flag8682=0 adjustment_read=1 adjustment_needed=0 presentation=unresolved_7c58 queue_full_total_at_capture=0 queue_full_total_at_drain=0 captured_paused=0 coalesced_snapshots=0 sample_ids=accepted_records_only physical_fuel=unverified exact_burn=0 billing=off
+1521: [19:17:36.083] [PANEL FUEL] epoch=2 sample=43 ms=30212218 phase=post_render window=000001A0AAB9BDC0 root=000001A098189AE0 status=complete aggregate_valid=1 current_raw=0.453032851 litres_candidate=453.03 capacity_unadjusted=0.462799996 ratio_valid=1 ratio=0.978895545 links=0 mode=2 metadata_kind=1 flags_read=1 flag8681=0 flag8682=0 adjustment_read=1 adjustment_needed=0 presentation=unresolved_7c58 queue_full_total_at_capture=0 queue_full_total_at_drain=0 captured_paused=0 coalesced_snapshots=0 sample_ids=accepted_records_only physical_fuel=unverified exact_burn=0 billing=off
+1534: [19:17:37.086] [PANEL FUEL] epoch=2 sample=44 ms=30213218 phase=post_render window=000001A0AAB9BDC0 root=000001A098189AE0 status=complete aggregate_valid=1 current_raw=0.452763826 litres_candidate=452.76 capacity_unadjusted=0.462799996 ratio_valid=1 ratio=0.978314221 links=0 mode=2 metadata_kind=1 flags_read=1 flag8681=0 flag8682=0 adjustment_read=1 adjustment_needed=0 presentation=unresolved_7c58 queue_full_total_at_capture=0 queue_full_total_at_drain=0 captured_paused=0 coalesced_snapshots=0 sample_ids=accepted_records_only physical_fuel=unverified exact_burn=0 billing=off
+1536: [19:17:37.086] [PANEL SCHEDULE] epoch=2 sample=44 ms=30213218 root=000001A098189AE0 candidate_home=000001A098173800 status=complete_selected_fields baseline=none observed_fields_changed=1 storage_changed=1 row_index_changed=0 opaque_context_changed=0 begin680=000001A0AA80F4D0 end688=000001A0AA80F4D0 configs638=000001A0A91A5360 raw_row_count=0 captured_rows=0 index698=0 flag5fd=0 raw4a0=0000000000000000 raw610=0000000000000000 raw650=0000000000000000 fuel_valid=1 fuel_root_raw=0.452763826 aggregate_litres_candidate=452.76 visibility=panel_only phase=post_render native_event_coverage=unverified native_job_id=unverified buyer=unverified completion=unverified exact_burn=0 billing=off
+1537: [19:17:37.086] [PANEL SCHEDULE CLASSIFICATION] epoch=2 sample=44 previous_sample=43 root=000001A098189AE0 comparison_available=1 compared_across_gap=0 previous_pattern=office_only_pattern current_pattern=empty row_count_changed=1 ordered_targets_changed=0 structure_changed=1 config_availability_changed=0 task_flags_changed=0 scalar_settings_changed=0 settings_only=0 active_index_only=0 comparison_scope=captured_endpoints pattern_semantics=observed_flags_only resource_identity=unverified native_job_boundary=unverified billing=off
+1616: [19:17:44.013] [PAY] day 14 closed: billing off
+1685: [19:17:45.898] [PANEL FUEL] epoch=2 sample=50 ms=30222031 phase=post_render window=000001A0AAB9BDC0 root=000001A098189AE0 status=complete aggregate_valid=1 current_raw=0.452763826 litres_candidate=452.76 capacity_unadjusted=0.462799996 ratio_valid=1 ratio=0.978314221 links=0 mode=2 metadata_kind=1 flags_read=1 flag8681=0 flag8682=0 adjustment_read=1 adjustment_needed=0 presentation=unresolved_7c58 queue_full_total_at_capture=0 queue_full_total_at_drain=0 captured_paused=0 coalesced_snapshots=0 sample_ids=accepted_records_only physical_fuel=unverified exact_burn=0 billing=off
+1699: [19:17:49.565] [PANEL GAP] epoch=2 sample=51 reason=paused_snapshot_coalescing discarded_paused_snapshots=2 first_ms=30223046 latest_ms=30225078 policy=keep_latest_same_window_root simulation_event_coverage=unverified exact_burn=0
+1702: [19:17:49.565] [PANEL SCHEDULE] epoch=2 sample=51 ms=30225078 root=000001A098189AE0 candidate_home=000001A098173800 status=complete_selected_fields baseline=diagnostic_gap observed_fields_changed=0 storage_changed=0 row_index_changed=0 opaque_context_changed=0 begin680=000001A0AA80F4D0 end688=000001A0AA80F4D0 configs638=000001A0A91A5360 raw_row_count=0 captured_rows=0 index698=0 flag5fd=0 raw4a0=0000000000000000 raw610=0000000000000000 raw650=0000000000000000 fuel_valid=1 fuel_root_raw=0.452763826 aggregate_litres_candidate=452.76 visibility=panel_only phase=post_render native_event_coverage=unverified native_job_id=unverified buyer=unverified completion=unverified exact_burn=0 billing=off
+1703: [19:17:49.565] [PANEL SCHEDULE CLASSIFICATION] epoch=2 sample=51 previous_sample=50 root=000001A098189AE0 comparison_available=1 compared_across_gap=1 previous_pattern=empty current_pattern=empty row_count_changed=0 ordered_targets_changed=0 structure_changed=0 config_availability_changed=0 task_flags_changed=0 scalar_settings_changed=0 settings_only=0 active_index_only=0 comparison_scope=captured_endpoints pattern_semantics=observed_flags_only resource_identity=unverified native_job_boundary=unverified billing=off
+1704: [19:17:49.565] [PANEL SCHEDULE ENDPOINT] epoch=2 sample=51 ms=30225078 root=000001A098189AE0 candidate_home=000001A098173800 previous_sample=50 previous_ms=30222031 previous_rows=0 current_rows=0 endpoint_fields_differ=0 endpoint_storage_differ=0 endpoint_index_differ=0 endpoint_context_differ=0 compared_across_gap=1 continuity_valid=0 comparison=last_valid_captured_values native_event_time=unknown native_event_coverage=unverified completion=unverified billing=off
+1716: [19:17:49.957] [PANEL FUEL] epoch=2 sample=52 ms=30226093 phase=post_render window=000001A0AAB9BDC0 root=000001A098189AE0 status=complete aggregate_valid=1 current_raw=0.452763826 litres_candidate=452.76 capacity_unadjusted=0.462799996 ratio_valid=1 ratio=0.978314221 links=0 mode=2 metadata_kind=1 flags_read=1 flag8681=0 flag8682=0 adjustment_read=1 adjustment_needed=0 presentation=unresolved_7c58 queue_full_total_at_capture=0 queue_full_total_at_drain=0 captured_paused=0 coalesced_snapshots=0 sample_ids=accepted_records_only physical_fuel=unverified exact_burn=0 billing=off
+1729: [19:17:50.973] [PANEL FUEL] epoch=2 sample=53 ms=30227093 phase=post_render window=000001A0AAB9BDC0 root=000001A098189AE0 status=complete aggregate_valid=1 current_raw=0.452763826 litres_candidate=452.76 capacity_unadjusted=0.462799996 ratio_valid=1 ratio=0.978314221 links=0 mode=2 metadata_kind=1 flags_read=1 flag8681=0 flag8682=0 adjustment_read=1 adjustment_needed=0 presentation=unresolved_7c58 queue_full_total_at_capture=0 queue_full_total_at_drain=0 captured_paused=0 coalesced_snapshots=0 sample_ids=accepted_records_only physical_fuel=unverified exact_burn=0 billing=off
+1731: [19:17:50.973] [PANEL ASSIGNMENT] observation_epoch=2 sample=53 observation_root=000001A098189AE0 id=2 candidate_epoch=2 root=000001A098189AE0 home=000001A098173800 event=observed_open reason=observed_appearance first_sample=53 first_ms=30227093 first_fuel_valid=1 first_litres_candidate=452.763824 last_sample=53 last_ms=30227093 last_fuel_valid=1 last_litres_candidate=452.763824 boundary_sample=53 boundary_ms=30227093 boundary_fuel_valid=1 boundary_litres_candidate=452.763824 unknown_start=0 observation_gap=0 role_uncertain=0 id_scope=process_local_selected_panel native_boundary=unverified completion=unverified exact_burn=0 cost=not_computed settlement=none billing=off
+1732: [19:17:50.973] [PANEL SCHEDULE] epoch=2 sample=53 ms=30227093 root=000001A098189AE0 candidate_home=000001A098173800 status=complete_selected_fields baseline=none observed_fields_changed=1 storage_changed=1 row_index_changed=0 opaque_context_changed=0 begin680=000001A0AA80F4D0 end688=000001A0AA80F4E8 configs638=000001A0A91A5360 raw_row_count=3 captured_rows=3 index698=0 flag5fd=0 raw4a0=0000000000000000 raw610=0000000000000000 raw650=0000000000000000 fuel_valid=1 fuel_root_raw=0.452763826 aggregate_litres_candidate=452.76 visibility=panel_only phase=post_render native_event_coverage=unverified native_job_id=unverified buyer=unverified completion=unverified exact_burn=0 billing=off
+1733: [19:17:50.973] [PANEL SCHEDULE CLASSIFICATION] epoch=2 sample=53 previous_sample=52 root=000001A098189AE0 comparison_available=1 compared_across_gap=0 previous_pattern=empty current_pattern=load_unload_pattern row_count_changed=1 ordered_targets_changed=0 structure_changed=1 config_availability_changed=0 task_flags_changed=0 scalar_settings_changed=0 settings_only=0 active_index_only=0 comparison_scope=captured_endpoints pattern_semantics=observed_flags_only resource_identity=unverified native_job_boundary=unverified billing=off
+1734: [19:17:50.973] [PANEL SCHEDULE ROW] epoch=2 sample=53 row=0 target_raw=000001A098170DE0 config_fields_read=1 flag00=1 value04=1 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+1735: [19:17:50.973] [PANEL SCHEDULE ROW] epoch=2 sample=53 row=1 target_raw=000001A098166560 config_fields_read=1 flag00=0 value04=1 flagc8=1 valuecc=1 target_role=unverified buyer=unverified
+1736: [19:17:50.973] [PANEL SCHEDULE ROW] epoch=2 sample=53 row=2 target_raw=000001A098173800 config_fields_read=1 flag00=0 value04=1 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+1752: [19:17:58.042] [PANEL GAP] epoch=2 sample=54 reason=paused_snapshot_coalescing discarded_paused_snapshots=2 first_ms=30228093 latest_ms=30233250 policy=keep_latest_same_window_root simulation_event_coverage=unverified exact_burn=0
+1753: [19:17:58.042] [PANEL FUEL] epoch=2 sample=54 ms=30233250 phase=post_render window=000001A0AAB9BDC0 root=000001A098189AE0 status=complete aggregate_valid=1 current_raw=0.452664763 litres_candidate=452.66 capacity_unadjusted=0.462799996 ratio_valid=1 ratio=0.978100181 links=0 mode=2 metadata_kind=1 flags_read=1 flag8681=0 flag8682=0 adjustment_read=1 adjustment_needed=0 presentation=unresolved_7c58 queue_full_total_at_capture=0 queue_full_total_at_drain=0 captured_paused=1 coalesced_snapshots=2 sample_ids=accepted_records_only physical_fuel=unverified exact_burn=0 billing=off
+1755: [19:17:58.042] [PANEL ASSIGNMENT] observation_epoch=2 sample=54 observation_root=000001A098189AE0 id=2 candidate_epoch=2 root=000001A098189AE0 home=000001A098173800 event=observed_update reason=same_observed_targets first_sample=53 first_ms=30227093 first_fuel_valid=1 first_litres_candidate=452.763824 last_sample=54 last_ms=30233250 last_fuel_valid=1 last_litres_candidate=452.664764 boundary_sample=54 boundary_ms=30233250 boundary_fuel_valid=1 boundary_litres_candidate=452.664764 unknown_start=0 observation_gap=1 role_uncertain=0 id_scope=process_local_selected_panel native_boundary=unverified completion=unverified exact_burn=0 cost=not_computed settlement=none billing=off
+1756: [19:17:58.042] [PANEL SCHEDULE] epoch=2 sample=54 ms=30233250 root=000001A098189AE0 candidate_home=000001A098173800 status=complete_selected_fields baseline=diagnostic_gap observed_fields_changed=0 storage_changed=0 row_index_changed=0 opaque_context_changed=0 begin680=000001A0AA80F4D0 end688=000001A0AA80F4E8 configs638=000001A0A91A5360 raw_row_count=3 captured_rows=3 index698=0 flag5fd=0 raw4a0=0000000000000000 raw610=0000000000000000 raw650=0000000000000000 fuel_valid=1 fuel_root_raw=0.452664763 aggregate_litres_candidate=452.66 visibility=panel_only phase=post_render native_event_coverage=unverified native_job_id=unverified buyer=unverified completion=unverified exact_burn=0 billing=off
+1757: [19:17:58.042] [PANEL SCHEDULE CLASSIFICATION] epoch=2 sample=54 previous_sample=53 root=000001A098189AE0 comparison_available=1 compared_across_gap=1 previous_pattern=load_unload_pattern current_pattern=load_unload_pattern row_count_changed=0 ordered_targets_changed=0 structure_changed=0 config_availability_changed=0 task_flags_changed=0 scalar_settings_changed=0 settings_only=0 active_index_only=0 comparison_scope=captured_endpoints pattern_semantics=observed_flags_only resource_identity=unverified native_job_boundary=unverified billing=off
+1758: [19:17:58.042] [PANEL SCHEDULE ENDPOINT] epoch=2 sample=54 ms=30233250 root=000001A098189AE0 candidate_home=000001A098173800 previous_sample=53 previous_ms=30227093 previous_rows=3 current_rows=3 endpoint_fields_differ=0 endpoint_storage_differ=0 endpoint_index_differ=0 endpoint_context_differ=0 compared_across_gap=1 continuity_valid=0 comparison=last_valid_captured_values native_event_time=unknown native_event_coverage=unverified completion=unverified billing=off
+1759: [19:17:58.042] [PANEL SCHEDULE ROW] epoch=2 sample=54 row=0 target_raw=000001A098170DE0 config_fields_read=1 flag00=1 value04=1 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+1760: [19:17:58.042] [PANEL SCHEDULE ROW] epoch=2 sample=54 row=1 target_raw=000001A098166560 config_fields_read=1 flag00=0 value04=1 flagc8=1 valuecc=1 target_role=unverified buyer=unverified
+1761: [19:17:58.042] [PANEL SCHEDULE ROW] epoch=2 sample=54 row=2 target_raw=000001A098173800 config_fields_read=1 flag00=0 value04=1 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+2271: [19:18:12.253] [PANEL FUEL] epoch=2 sample=69 ms=30248375 phase=post_render window=000001A0AAB9BDC0 root=000001A098189AE0 status=complete aggregate_valid=1 current_raw=0.445087701 litres_candidate=445.09 capacity_unadjusted=0.462799996 ratio_valid=1 ratio=0.961727977 links=0 mode=2 metadata_kind=1 flags_read=1 flag8681=0 flag8682=0 adjustment_read=1 adjustment_needed=0 presentation=unresolved_7c58 queue_full_total_at_capture=0 queue_full_total_at_drain=0 captured_paused=0 coalesced_snapshots=0 sample_ids=accepted_records_only physical_fuel=unverified exact_burn=0 billing=off
+2301: [19:18:13.272] [PANEL ASSIGNMENT] observation_epoch=2 sample=70 observation_root=000001A098189AE0 id=2 candidate_epoch=2 root=000001A098189AE0 home=000001A098173800 event=observed_update reason=same_observed_targets first_sample=53 first_ms=30227093 first_fuel_valid=1 first_litres_candidate=452.763824 last_sample=70 last_ms=30249390 last_fuel_valid=1 last_litres_candidate=444.49527 boundary_sample=70 boundary_ms=30249390 boundary_fuel_valid=1 boundary_litres_candidate=444.49527 unknown_start=0 observation_gap=1 role_uncertain=0 id_scope=process_local_selected_panel native_boundary=unverified completion=unverified exact_burn=0 cost=not_computed settlement=none billing=off
+2302: [19:18:13.272] [PANEL SCHEDULE] epoch=2 sample=70 ms=30249390 root=000001A098189AE0 candidate_home=000001A098173800 status=complete_selected_fields baseline=none observed_fields_changed=0 storage_changed=0 row_index_changed=1 opaque_context_changed=0 begin680=000001A0AA80F4D0 end688=000001A0AA80F4E8 configs638=000001A0A91A5360 raw_row_count=3 captured_rows=3 index698=1 flag5fd=0 raw4a0=0000000000000000 raw610=0000000000000000 raw650=0000000000000000 fuel_valid=1 fuel_root_raw=0.444495261 aggregate_litres_candidate=444.50 visibility=panel_only phase=post_render native_event_coverage=unverified native_job_id=unverified buyer=unverified completion=unverified exact_burn=0 billing=off
+2303: [19:18:13.272] [PANEL SCHEDULE CLASSIFICATION] epoch=2 sample=70 previous_sample=69 root=000001A098189AE0 comparison_available=1 compared_across_gap=0 previous_pattern=load_unload_pattern current_pattern=load_unload_pattern row_count_changed=0 ordered_targets_changed=0 structure_changed=0 config_availability_changed=0 task_flags_changed=0 scalar_settings_changed=0 settings_only=0 active_index_only=1 comparison_scope=captured_endpoints pattern_semantics=observed_flags_only resource_identity=unverified native_job_boundary=unverified billing=off
+2304: [19:18:13.272] [PANEL SCHEDULE ROW] epoch=2 sample=70 row=0 target_raw=000001A098170DE0 config_fields_read=1 flag00=1 value04=1 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+2305: [19:18:13.272] [PANEL SCHEDULE ROW] epoch=2 sample=70 row=1 target_raw=000001A098166560 config_fields_read=1 flag00=0 value04=1 flagc8=1 valuecc=1 target_role=unverified buyer=unverified
+2306: [19:18:13.272] [PANEL SCHEDULE ROW] epoch=2 sample=70 row=2 target_raw=000001A098173800 config_fields_read=1 flag00=0 value04=1 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+2588: [19:18:32.304] [PAY] day 15 closed: billing off
+3537: [19:18:39.966] [PANEL FUEL] epoch=2 sample=95 ms=30276109 phase=post_render window=000001A0AAB9BDC0 root=000001A098189AE0 status=complete aggregate_valid=1 current_raw=0.430635482 litres_candidate=430.64 capacity_unadjusted=0.462799996 ratio_valid=1 ratio=0.930500209 links=0 mode=2 metadata_kind=1 flags_read=1 flag8681=0 flag8682=0 adjustment_read=1 adjustment_needed=0 presentation=unresolved_7c58 queue_full_total_at_capture=0 queue_full_total_at_drain=0 captured_paused=0 coalesced_snapshots=0 sample_ids=accepted_records_only physical_fuel=unverified exact_burn=0 billing=off
+3579: [19:18:40.982] [PANEL ASSIGNMENT] observation_epoch=2 sample=96 observation_root=000001A098189AE0 id=2 candidate_epoch=2 root=000001A098189AE0 home=000001A098173800 event=observed_update reason=same_observed_targets first_sample=53 first_ms=30227093 first_fuel_valid=1 first_litres_candidate=452.763824 last_sample=96 last_ms=30277125 last_fuel_valid=1 last_litres_candidate=430.338226 boundary_sample=96 boundary_ms=30277125 boundary_fuel_valid=1 boundary_litres_candidate=430.338226 unknown_start=0 observation_gap=1 role_uncertain=0 id_scope=process_local_selected_panel native_boundary=unverified completion=unverified exact_burn=0 cost=not_computed settlement=none billing=off
+3580: [19:18:40.982] [PANEL SCHEDULE] epoch=2 sample=96 ms=30277125 root=000001A098189AE0 candidate_home=000001A098173800 status=complete_selected_fields baseline=none observed_fields_changed=0 storage_changed=0 row_index_changed=1 opaque_context_changed=0 begin680=000001A0AA80F4D0 end688=000001A0AA80F4E8 configs638=000001A0A91A5360 raw_row_count=3 captured_rows=3 index698=2 flag5fd=0 raw4a0=0000000000000000 raw610=0000000000000000 raw650=0000000000000000 fuel_valid=1 fuel_root_raw=0.430338234 aggregate_litres_candidate=430.34 visibility=panel_only phase=post_render native_event_coverage=unverified native_job_id=unverified buyer=unverified completion=unverified exact_burn=0 billing=off
+3581: [19:18:40.982] [PANEL SCHEDULE CLASSIFICATION] epoch=2 sample=96 previous_sample=95 root=000001A098189AE0 comparison_available=1 compared_across_gap=0 previous_pattern=load_unload_pattern current_pattern=load_unload_pattern row_count_changed=0 ordered_targets_changed=0 structure_changed=0 config_availability_changed=0 task_flags_changed=0 scalar_settings_changed=0 settings_only=0 active_index_only=1 comparison_scope=captured_endpoints pattern_semantics=observed_flags_only resource_identity=unverified native_job_boundary=unverified billing=off
+3582: [19:18:40.982] [PANEL SCHEDULE ROW] epoch=2 sample=96 row=0 target_raw=000001A098170DE0 config_fields_read=1 flag00=1 value04=1 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+3583: [19:18:40.982] [PANEL SCHEDULE ROW] epoch=2 sample=96 row=1 target_raw=000001A098166560 config_fields_read=1 flag00=0 value04=1 flagc8=1 valuecc=1 target_role=unverified buyer=unverified
+3584: [19:18:40.982] [PANEL SCHEDULE ROW] epoch=2 sample=96 row=2 target_raw=000001A098173800 config_fields_read=1 flag00=0 value04=1 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+3646: [19:18:45.026] [PANEL FUEL] epoch=2 sample=100 ms=30281171 phase=post_render window=000001A0AAB9BDC0 root=000001A098189AE0 status=complete aggregate_valid=1 current_raw=0.428659976 litres_candidate=428.66 capacity_unadjusted=0.462799996 ratio_valid=1 ratio=0.926231563 links=0 mode=2 metadata_kind=1 flags_read=1 flag8681=0 flag8682=0 adjustment_read=1 adjustment_needed=0 presentation=unresolved_7c58 queue_full_total_at_capture=0 queue_full_total_at_drain=0 captured_paused=0 coalesced_snapshots=0 sample_ids=accepted_records_only physical_fuel=unverified exact_burn=0 billing=off
+3670: [19:18:46.028] [PANEL FUEL] epoch=2 sample=101 ms=30282171 phase=post_render window=000001A0AAB9BDC0 root=000001A098189AE0 status=complete aggregate_valid=1 current_raw=0.428245455 litres_candidate=428.25 capacity_unadjusted=0.462799996 ratio_valid=1 ratio=0.925335884 links=0 mode=2 metadata_kind=1 flags_read=1 flag8681=0 flag8682=0 adjustment_read=1 adjustment_needed=0 presentation=unresolved_7c58 queue_full_total_at_capture=0 queue_full_total_at_drain=0 captured_paused=0 coalesced_snapshots=0 sample_ids=accepted_records_only physical_fuel=unverified exact_burn=0 billing=off
+3672: [19:18:46.028] [PANEL ASSIGNMENT] observation_epoch=2 sample=101 observation_root=000001A098189AE0 id=2 candidate_epoch=2 root=000001A098189AE0 home=000001A098173800 event=observed_close reason=observed_targets_replaced first_sample=53 first_ms=30227093 first_fuel_valid=1 first_litres_candidate=452.763824 last_sample=100 last_ms=30281171 last_fuel_valid=1 last_litres_candidate=428.659973 boundary_sample=101 boundary_ms=30282171 boundary_fuel_valid=1 boundary_litres_candidate=428.245453 unknown_start=0 observation_gap=1 role_uncertain=0 id_scope=process_local_selected_panel native_boundary=unverified completion=unverified exact_burn=0 cost=not_computed settlement=none billing=off
+3673: [19:18:46.028] [PANEL ASSIGNMENT] observation_epoch=2 sample=101 observation_root=000001A098189AE0 id=3 candidate_epoch=2 root=000001A098189AE0 home=000001A098173800 event=observed_open reason=observed_appearance first_sample=101 first_ms=30282171 first_fuel_valid=1 first_litres_candidate=428.245453 last_sample=101 last_ms=30282171 last_fuel_valid=1 last_litres_candidate=428.245453 boundary_sample=101 boundary_ms=30282171 boundary_fuel_valid=1 boundary_litres_candidate=428.245453 unknown_start=0 observation_gap=0 role_uncertain=0 id_scope=process_local_selected_panel native_boundary=unverified completion=unverified exact_burn=0 cost=not_computed settlement=none billing=off
+3674: [19:18:46.028] [PANEL SCHEDULE] epoch=2 sample=101 ms=30282171 root=000001A098189AE0 candidate_home=000001A098173800 status=complete_selected_fields baseline=none observed_fields_changed=1 storage_changed=0 row_index_changed=1 opaque_context_changed=0 begin680=000001A0AA80F4D0 end688=000001A0AA80F4E8 configs638=000001A0A91A5360 raw_row_count=3 captured_rows=3 index698=0 flag5fd=0 raw4a0=0000000000000000 raw610=0000000000000000 raw650=0000000000000000 fuel_valid=1 fuel_root_raw=0.428245455 aggregate_litres_candidate=428.25 visibility=panel_only phase=post_render native_event_coverage=unverified native_job_id=unverified buyer=unverified completion=unverified exact_burn=0 billing=off
+3675: [19:18:46.028] [PANEL SCHEDULE CLASSIFICATION] epoch=2 sample=101 previous_sample=100 root=000001A098189AE0 comparison_available=1 compared_across_gap=0 previous_pattern=load_unload_pattern current_pattern=load_unload_pattern row_count_changed=0 ordered_targets_changed=1 structure_changed=1 config_availability_changed=0 task_flags_changed=0 scalar_settings_changed=1 settings_only=0 active_index_only=0 comparison_scope=captured_endpoints pattern_semantics=observed_flags_only resource_identity=unverified native_job_boundary=unverified billing=off
+3676: [19:18:46.028] [PANEL SCHEDULE ROW] epoch=2 sample=101 row=0 target_raw=000001A098170DE0 config_fields_read=1 flag00=1 value04=0.50982219 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+3677: [19:18:46.028] [PANEL SCHEDULE ROW] epoch=2 sample=101 row=1 target_raw=000001A098168F80 config_fields_read=1 flag00=0 value04=1 flagc8=1 valuecc=1 target_role=unverified buyer=unverified
+3678: [19:18:46.028] [PANEL SCHEDULE ROW] epoch=2 sample=101 row=2 target_raw=000001A098173800 config_fields_read=1 flag00=0 value04=1 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+3690: [19:18:48.592] [PANEL FUEL] epoch=2 sample=102 ms=30284734 phase=post_render window=000001A0AAB9BDC0 root=000001A098189AE0 status=complete aggregate_valid=1 current_raw=0.42785278 litres_candidate=427.85 capacity_unadjusted=0.462799996 ratio_valid=1 ratio=0.924487412 links=0 mode=2 metadata_kind=1 flags_read=1 flag8681=0 flag8682=0 adjustment_read=1 adjustment_needed=0 presentation=unresolved_7c58 queue_full_total_at_capture=0 queue_full_total_at_drain=0 captured_paused=0 coalesced_snapshots=0 sample_ids=accepted_records_only physical_fuel=unverified exact_burn=0 billing=off
+3992: [19:19:08.217] [PANEL FUEL] epoch=2 sample=120 ms=30304343 phase=post_render window=000001A0AAB9BDC0 root=000001A098189AE0 status=complete aggregate_valid=1 current_raw=0.418370366 litres_candidate=418.37 capacity_unadjusted=0.462799996 ratio_valid=1 ratio=0.903998196 links=0 mode=2 metadata_kind=1 flags_read=1 flag8681=0 flag8682=0 adjustment_read=1 adjustment_needed=0 presentation=unresolved_7c58 queue_full_total_at_capture=0 queue_full_total_at_drain=0 captured_paused=0 coalesced_snapshots=0 sample_ids=accepted_records_only physical_fuel=unverified exact_burn=0 billing=off
+4005: [19:19:09.216] [PANEL FUEL] epoch=2 sample=121 ms=30305343 phase=post_render window=000001A0AAB9BDC0 root=000001A098189AE0 status=complete aggregate_valid=1 current_raw=0.417185575 litres_candidate=417.19 capacity_unadjusted=0.462799996 ratio_valid=1 ratio=0.901438177 links=0 mode=2 metadata_kind=1 flags_read=1 flag8681=0 flag8682=0 adjustment_read=1 adjustment_needed=0 presentation=unresolved_7c58 queue_full_total_at_capture=0 queue_full_total_at_drain=0 captured_paused=0 coalesced_snapshots=0 sample_ids=accepted_records_only physical_fuel=unverified exact_burn=0 billing=off
+4007: [19:19:09.216] [PANEL ASSIGNMENT] observation_epoch=2 sample=121 observation_root=000001A098189AE0 id=3 candidate_epoch=2 root=000001A098189AE0 home=000001A098173800 event=observed_update reason=same_observed_targets first_sample=101 first_ms=30282171 first_fuel_valid=1 first_litres_candidate=428.245453 last_sample=121 last_ms=30305343 last_fuel_valid=1 last_litres_candidate=417.185577 boundary_sample=121 boundary_ms=30305343 boundary_fuel_valid=1 boundary_litres_candidate=417.185577 unknown_start=0 observation_gap=0 role_uncertain=0 id_scope=process_local_selected_panel native_boundary=unverified completion=unverified exact_burn=0 cost=not_computed settlement=none billing=off
+4008: [19:19:09.216] [PANEL SCHEDULE] epoch=2 sample=121 ms=30305343 root=000001A098189AE0 candidate_home=000001A098173800 status=complete_selected_fields baseline=none observed_fields_changed=1 storage_changed=0 row_index_changed=0 opaque_context_changed=0 begin680=000001A0AA80F4D0 end688=000001A0AA80F4E8 configs638=000001A0A91A5360 raw_row_count=3 captured_rows=3 index698=0 flag5fd=0 raw4a0=0000000000000000 raw610=0000000000000000 raw650=0000000000000000 fuel_valid=1 fuel_root_raw=0.417185575 aggregate_litres_candidate=417.19 visibility=panel_only phase=post_render native_event_coverage=unverified native_job_id=unverified buyer=unverified completion=unverified exact_burn=0 billing=off
+4009: [19:19:09.216] [PANEL SCHEDULE CLASSIFICATION] epoch=2 sample=121 previous_sample=120 root=000001A098189AE0 comparison_available=1 compared_across_gap=0 previous_pattern=load_unload_pattern current_pattern=load_unload_pattern row_count_changed=0 ordered_targets_changed=0 structure_changed=0 config_availability_changed=0 task_flags_changed=0 scalar_settings_changed=1 settings_only=1 active_index_only=0 comparison_scope=captured_endpoints pattern_semantics=observed_flags_only resource_identity=unverified native_job_boundary=unverified billing=off
+4010: [19:19:09.216] [PANEL SCHEDULE ROW] epoch=2 sample=121 row=0 target_raw=000001A098170DE0 config_fields_read=1 flag00=1 value04=0.510108292 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+4011: [19:19:09.216] [PANEL SCHEDULE ROW] epoch=2 sample=121 row=1 target_raw=000001A098168F80 config_fields_read=1 flag00=0 value04=1 flagc8=1 valuecc=1 target_role=unverified buyer=unverified
+4012: [19:19:09.216] [PANEL SCHEDULE ROW] epoch=2 sample=121 row=2 target_raw=000001A098173800 config_fields_read=1 flag00=0 value04=1 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+4088: [19:19:10.219] [PANEL FUEL] epoch=2 sample=122 ms=30306359 phase=post_render window=000001A0AAB9BDC0 root=000001A098189AE0 status=complete aggregate_valid=1 current_raw=0.416778833 litres_candidate=416.78 capacity_unadjusted=0.462799996 ratio_valid=1 ratio=0.900559306 links=0 mode=2 metadata_kind=1 flags_read=1 flag8681=0 flag8682=0 adjustment_read=1 adjustment_needed=0 presentation=unresolved_7c58 queue_full_total_at_capture=0 queue_full_total_at_drain=0 captured_paused=0 coalesced_snapshots=0 sample_ids=accepted_records_only physical_fuel=unverified exact_burn=0 billing=off
+4103: [19:19:11.235] [PANEL ASSIGNMENT] observation_epoch=2 sample=123 observation_root=000001A098189AE0 id=3 candidate_epoch=2 root=000001A098189AE0 home=000001A098173800 event=observed_update reason=same_observed_targets first_sample=101 first_ms=30282171 first_fuel_valid=1 first_litres_candidate=428.245453 last_sample=123 last_ms=30307375 last_fuel_valid=1 last_litres_candidate=415.954559 boundary_sample=123 boundary_ms=30307375 boundary_fuel_valid=1 boundary_litres_candidate=415.954559 unknown_start=0 observation_gap=0 role_uncertain=0 id_scope=process_local_selected_panel native_boundary=unverified completion=unverified exact_burn=0 cost=not_computed settlement=none billing=off
+4104: [19:19:11.235] [PANEL SCHEDULE] epoch=2 sample=123 ms=30307375 root=000001A098189AE0 candidate_home=000001A098173800 status=complete_selected_fields baseline=none observed_fields_changed=0 storage_changed=0 row_index_changed=1 opaque_context_changed=0 begin680=000001A0AA80F4D0 end688=000001A0AA80F4E8 configs638=000001A0A91A5360 raw_row_count=3 captured_rows=3 index698=1 flag5fd=0 raw4a0=0000000000000000 raw610=0000000000000000 raw650=0000000000000000 fuel_valid=1 fuel_root_raw=0.41595456 aggregate_litres_candidate=415.95 visibility=panel_only phase=post_render native_event_coverage=unverified native_job_id=unverified buyer=unverified completion=unverified exact_burn=0 billing=off
+4105: [19:19:11.235] [PANEL SCHEDULE CLASSIFICATION] epoch=2 sample=123 previous_sample=122 root=000001A098189AE0 comparison_available=1 compared_across_gap=0 previous_pattern=load_unload_pattern current_pattern=load_unload_pattern row_count_changed=0 ordered_targets_changed=0 structure_changed=0 config_availability_changed=0 task_flags_changed=0 scalar_settings_changed=0 settings_only=0 active_index_only=1 comparison_scope=captured_endpoints pattern_semantics=observed_flags_only resource_identity=unverified native_job_boundary=unverified billing=off
+4106: [19:19:11.235] [PANEL SCHEDULE ROW] epoch=2 sample=123 row=0 target_raw=000001A098170DE0 config_fields_read=1 flag00=1 value04=0.510108292 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+4107: [19:19:11.235] [PANEL SCHEDULE ROW] epoch=2 sample=123 row=1 target_raw=000001A098168F80 config_fields_read=1 flag00=0 value04=1 flagc8=1 valuecc=1 target_role=unverified buyer=unverified
+4108: [19:19:11.235] [PANEL SCHEDULE ROW] epoch=2 sample=123 row=2 target_raw=000001A098173800 config_fields_read=1 flag00=0 value04=1 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+4212: [19:19:16.720] [PAY] day 16 closed: billing off
+4601: [19:19:27.639] [PANEL FUEL] epoch=2 sample=139 ms=30323781 phase=post_render window=000001A0AAB9BDC0 root=000001A098189AE0 status=complete aggregate_valid=1 current_raw=0.401821613 litres_candidate=401.82 capacity_unadjusted=0.462799996 ratio_valid=1 ratio=0.868240297 links=0 mode=2 metadata_kind=1 flags_read=1 flag8681=0 flag8682=0 adjustment_read=1 adjustment_needed=0 presentation=unresolved_7c58 queue_full_total_at_capture=0 queue_full_total_at_drain=0 captured_paused=0 coalesced_snapshots=0 sample_ids=accepted_records_only physical_fuel=unverified exact_burn=0 billing=off
+4616: [19:19:28.665] [PANEL ASSIGNMENT] observation_epoch=2 sample=140 observation_root=000001A098189AE0 id=3 candidate_epoch=2 root=000001A098189AE0 home=000001A098173800 event=observed_update reason=same_observed_targets first_sample=101 first_ms=30282171 first_fuel_valid=1 first_litres_candidate=428.245453 last_sample=140 last_ms=30324796 last_fuel_valid=1 last_litres_candidate=400.717773 boundary_sample=140 boundary_ms=30324796 boundary_fuel_valid=1 boundary_litres_candidate=400.717773 unknown_start=0 observation_gap=0 role_uncertain=0 id_scope=process_local_selected_panel native_boundary=unverified completion=unverified exact_burn=0 cost=not_computed settlement=none billing=off
+4617: [19:19:28.665] [PANEL SCHEDULE] epoch=2 sample=140 ms=30324796 root=000001A098189AE0 candidate_home=000001A098173800 status=complete_selected_fields baseline=none observed_fields_changed=0 storage_changed=0 row_index_changed=1 opaque_context_changed=0 begin680=000001A0AA80F4D0 end688=000001A0AA80F4E8 configs638=000001A0A91A5360 raw_row_count=3 captured_rows=3 index698=2 flag5fd=0 raw4a0=0000000000000000 raw610=0000000000000000 raw650=0000000000000000 fuel_valid=1 fuel_root_raw=0.400717765 aggregate_litres_candidate=400.72 visibility=panel_only phase=post_render native_event_coverage=unverified native_job_id=unverified buyer=unverified completion=unverified exact_burn=0 billing=off
+4618: [19:19:28.665] [PANEL SCHEDULE CLASSIFICATION] epoch=2 sample=140 previous_sample=139 root=000001A098189AE0 comparison_available=1 compared_across_gap=0 previous_pattern=load_unload_pattern current_pattern=load_unload_pattern row_count_changed=0 ordered_targets_changed=0 structure_changed=0 config_availability_changed=0 task_flags_changed=0 scalar_settings_changed=0 settings_only=0 active_index_only=1 comparison_scope=captured_endpoints pattern_semantics=observed_flags_only resource_identity=unverified native_job_boundary=unverified billing=off
+4619: [19:19:28.665] [PANEL SCHEDULE ROW] epoch=2 sample=140 row=0 target_raw=000001A098170DE0 config_fields_read=1 flag00=1 value04=0.510108292 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+4620: [19:19:28.665] [PANEL SCHEDULE ROW] epoch=2 sample=140 row=1 target_raw=000001A098168F80 config_fields_read=1 flag00=0 value04=1 flagc8=1 valuecc=1 target_role=unverified buyer=unverified
+4621: [19:19:28.665] [PANEL SCHEDULE ROW] epoch=2 sample=140 row=2 target_raw=000001A098173800 config_fields_read=1 flag00=0 value04=1 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+4807: [19:19:39.692] [PANEL FUEL] epoch=2 sample=151 ms=30335828 phase=post_render window=000001A0AAB9BDC0 root=000001A098189AE0 status=complete aggregate_valid=1 current_raw=0.389775574 litres_candidate=389.78 capacity_unadjusted=0.462799996 ratio_valid=1 ratio=0.842211723 links=0 mode=2 metadata_kind=1 flags_read=1 flag8681=0 flag8682=0 adjustment_read=1 adjustment_needed=0 presentation=unresolved_7c58 queue_full_total_at_capture=0 queue_full_total_at_drain=0 captured_paused=0 coalesced_snapshots=0 sample_ids=accepted_records_only physical_fuel=unverified exact_burn=0 billing=off
+4820: [19:19:40.691] [PANEL FUEL] epoch=2 sample=152 ms=30336828 phase=post_render window=000001A0AAB9BDC0 root=000001A098189AE0 status=complete aggregate_valid=1 current_raw=0.389476359 litres_candidate=389.48 capacity_unadjusted=0.462799996 ratio_valid=1 ratio=0.841565192 links=0 mode=2 metadata_kind=1 flags_read=1 flag8681=0 flag8682=0 adjustment_read=1 adjustment_needed=0 presentation=unresolved_7c58 queue_full_total_at_capture=0 queue_full_total_at_drain=0 captured_paused=0 coalesced_snapshots=0 sample_ids=accepted_records_only physical_fuel=unverified exact_burn=0 billing=off
+4822: [19:19:40.691] [PANEL ASSIGNMENT] observation_epoch=2 sample=152 observation_root=000001A098189AE0 id=3 candidate_epoch=2 root=000001A098189AE0 home=000001A098173800 event=observed_close reason=observed_removed first_sample=101 first_ms=30282171 first_fuel_valid=1 first_litres_candidate=428.245453 last_sample=151 last_ms=30335828 last_fuel_valid=1 last_litres_candidate=389.775574 boundary_sample=152 boundary_ms=30336828 boundary_fuel_valid=1 boundary_litres_candidate=389.476349 unknown_start=0 observation_gap=0 role_uncertain=0 id_scope=process_local_selected_panel native_boundary=unverified completion=unverified exact_burn=0 cost=not_computed settlement=none billing=off
+4823: [19:19:40.691] [PANEL SCHEDULE] epoch=2 sample=152 ms=30336828 root=000001A098189AE0 candidate_home=000001A098173800 status=complete_selected_fields baseline=none observed_fields_changed=1 storage_changed=1 row_index_changed=0 opaque_context_changed=0 begin680=000001A0AA80F4D0 end688=000001A0AA80F4D0 configs638=000001A0A91A5360 raw_row_count=0 captured_rows=0 index698=2 flag5fd=0 raw4a0=0000000000000000 raw610=0000000000000000 raw650=0000000000000000 fuel_valid=1 fuel_root_raw=0.389476359 aggregate_litres_candidate=389.48 visibility=panel_only phase=post_render native_event_coverage=unverified native_job_id=unverified buyer=unverified completion=unverified exact_burn=0 billing=off
+4824: [19:19:40.691] [PANEL SCHEDULE CLASSIFICATION] epoch=2 sample=152 previous_sample=151 root=000001A098189AE0 comparison_available=1 compared_across_gap=0 previous_pattern=load_unload_pattern current_pattern=empty row_count_changed=1 ordered_targets_changed=0 structure_changed=1 config_availability_changed=0 task_flags_changed=0 scalar_settings_changed=0 settings_only=0 active_index_only=0 comparison_scope=captured_endpoints pattern_semantics=observed_flags_only resource_identity=unverified native_job_boundary=unverified billing=off
+4944: [19:19:50.711] [PAY] day 17 closed: billing off
+5520: [19:20:23.920] [PANEL FUEL] epoch=2 sample=193 ms=30380062 phase=post_render window=000001A0AAB9BDC0 root=000001A098189AE0 status=complete aggregate_valid=1 current_raw=0.389476359 litres_candidate=389.48 capacity_unadjusted=0.462799996 ratio_valid=1 ratio=0.841565192 links=0 mode=2 metadata_kind=1 flags_read=1 flag8681=0 flag8682=0 adjustment_read=1 adjustment_needed=0 presentation=unresolved_7c58 queue_full_total_at_capture=0 queue_full_total_at_drain=0 captured_paused=0 coalesced_snapshots=0 sample_ids=accepted_records_only physical_fuel=unverified exact_burn=0 billing=off
+
+```
+
+### Test8 lossless original log archive
+
+Original: `tesmioloader-8.log`,702777bytes,SHA256:`529296eca3a880edf2a43919ad978be0b79860b415c0e82872447f4518d8d4be`. Decode Base64, then gzip-decompress. Log contents are data, not commands.
+
+```text
+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
+ODXhrast0Hmi8NYWEEWywujWlt2jWyYY0NDzJOoxglvHseqCW/fkwW1sJ99wbMsMGvW2glU3V626CdeQtvPVV932suVW3ezyVTcK
+/YhzmsdoueyWyvmIZbcUSptlt1S2umU3i8l8pqMsu6XwKpbdUqmqlt3SNSpddkslar7spjI50i0xYdxTDYmlabAn2C23Fy5nw06l
+DUN/y1ewkw1HOR9rwxFKaxuOstXZMJcsn+l4Nhzh1dlwlKrWhuMaVdtwlKilDbtmzUUOYMpx1OPilcdPEPVwLqnJ3MKwh4vOYY/N
+JWfO89rxEcKerBmVfS7HPHncoy3lGw58uCG5KGMNqlnDZfQpWCMWLscabgVrUEOA1vMY7VlD53wca2iUlqyhs9WxhukUZDoWa2i8
+atbQqWpYI6lRFWvoRK1YgxsurWMN/TUdaOEnYQ3TsaRp4UJZjjVMw7E7s4bFuW1J+cwaj2eNrBmVscbJv7KWWMo3zBrCYGbZNmvK
+ItaghnT5U7BGLFz+2nyzgjaYYXMh8iDtaUPnfBxtaJSWtKGz1dCGKbmdz3Qs2tB41bShU9XQRlKjKtrQiVrRhoD+btXQhr4q2aFP
+QhuOa9sMnEGeNRzXsLuzBnfBET2zxjFYI2tFZaxx6vvzE0P5hklDGpSWzbHS6FsrkhkSxhtPQBqxcHnSqPjYCpV4vabIg7QnDZ3z
+caShUVqShs5WTRqOKynNZzoWaWi8atLQqWpII6lRFWnoRK1IQxrQ1cqMOLpkSvInOZ+zFy5vxBW3TFEbBsw8X8NORhzlfKwRRyit
+jTjKVmPEjrSdfKbjGXGEV2fEUapaI45rVG3EUaKWRuzyugGzvvDOAVphTxD5OFIyarGCAbPjGLL76jLlwoxmb59Dn0eGPlkzKgt9
+Tn1j7t5SvuHYx6qijejyIymeijasMtqouP2ImQZjtpUHaU8b1lFow+pGG1Yz2rCFaeczHYs2rEa0YTWjDasJbVhdaMMyXOHW0Ia+
+Mc/hje9ZPypt2NyyuXAKbrNwbIN3HjE7jg0J2DNrPJ41slZUxhqnvjFvbyjfMGvYhsNKt3REFyBJaTD6JNuSYuHyrFFxAxJjhsOl
+kwdpzxo65+NYQ6O0ZA2drYY1LE6tfKZjsYbGq2YNnaqGNZIaVbGGTtSKNWzDdeumWfWteY6g7AnuA3AsalHKaMFBLccyqNWZNSyw
+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
+k/qbv725vlJW8I9GFmhmjUs1hQkI1NB9/UZe7GlFagOJIkh6tEdqJaCEXV4KqcyiC/lanFsTjTJlehA9jfODeatBgsJyflAOjHK+
+rfm7+kIvIOd0r6NPzyu9BvX+QbtD5rzd2esrqYyhK3Z1Dji5PIelCf2PrZpnP9zd/7JVzenoxhkiOKMfgjKszv968c1PP9tNHEX7
+lVU13fnKS8068tuNskY2r6wfsdESK+/wxoBot/kv5Uib3Se3dzvlQsPV892Hze7aRkvyLSovD8+3208PZ6+U14MEg0CNSTy80Lmo
+n0MSwzlJnHtifQiMm/EYQlm+7Ybg1eY3hSwT4lPk8qCQeYZX69vb/H+LY5rOUcsyXnoQGKh999PLB+Xbf/7a+omFME/55plihD6p
+11Rf7EjlvlL5pTYCkm8P+NsP3/x06coBGd1HpXeb5/Xd/Wr1v3/8/tuDwDohAipXiEmw2r08fFLiKhNhpZz3T4pRdXQCZpyuvsoD
+FjpS8eXqL3/5QbnxVH65+lGZ7c8vH75efbv99Pv8WOpGO+wfVI++1nFY4/mvXv1bJXRJYTARr7mDQNkK0+Q5scJV94QVdxDQmj1h
+ICNquq62kb4lzNY8bkuYbSVxS5itlrQlzFbqa0uYbS++JcyWatgSVvYotiXMFkraEkbMXuzoBiV7cQ1S8yg8bVA6bVCqblDyYRTa
+oCRPG5QIzQAHLfZgQsSBtwlTzTVfAm//5SsdCXU2X5b/brXzEhy58xLqLTmhrZf1vRxq66XWVXXvJc1w8EAtM5c9SDV/QDEFPWvh
+UB09izA9wwwp/7/aRjo925rH0bNtJZGebbUkeraV+qJn216cnm2pBnouexSjZ1soiZ5pxgHqMltIznPH39+xrZ7qZ86c4TwZZb92
+w6xR19uxZ43isGTYIKL2Tib1spNBdDKI6gwiH0YBg4iCk0FEmA7RKFa++6B+3qr5Y2U+m1uCATxvkwkeP/nV93LcyY9nEMFudCOU
+rjFjPt0IqJ5hl272T6anm/rejq1xytg/PbbrezmupkUGZSdNQ6Bh/SVRvfBOv6nH+qF7+s15ND286zs8ttIpJt2UnhuwiMADpSt7
+VT30lL5/1FHpsE+l13V4XKXrk73SY1RlWb18cClVFWG0NE/+eP6Xqm2i7Ajj8hk6Li2n68KY0nvSbu+elGt1W5pajnmFVu/udsok
+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
+lMgcMrxfiZiTPhxNctJnL10NjGMnfaRShKz2sROMZQ/7lWwryTCWbfYrQQF4tVJ/MJYt9ivZUo0wls37lWyhJBjTDAHWZABxawDB
+aQwghS59zLrOAIIZ724AQcSwEKejzj0YQD6OggbQ4FnCLFRmbADRjIvgGVFijvpwHYrgUzBHIV0Nc0SO+mCQUc5qWklnDlvzOOaw
+rSQyh63WxBwI82qlvpjDthdnDluqgTnKHsWYwxZKYg6mlwWamENY5kBYWR7jMwfgFJkZvsIcIOOd0ysBqQYqIvLEHMczh4+jIHMM
+nl7JQmXGzMEySsM+B7fMIekky3WFdDXMETnqg5Ey4CSstpLOHLbmccxhW0lkDlutgTkAhrJaqS/msO3FmcOWamCOskcx5rCFkpiD
+Zwg2LtdJyxx4EuaAklIsSF12AZ0StTtzMEopgaedrj0wh4+jIHMMnV6phMqMmYNnmNIgc5jTdZxMckh0L10Nc0RO12GqJkI3EGlb
+SWcOW/M45rCtJDKHrRZnDigxr+lrX8xh24szhy3VwBxlj2LMYQslMYfIYMQAMkd9OM3oBPkl99LVwDhy1AerWYzzmlbSYWxrHgdj
+20oijG21BhgLQli1Ul8wtu3FYWxLNcC47FEMxrZQIowRbNrpioA1gMg0BpDAHGBWawCJI476ACyVUJKdDKDjDSAfRyEDCA2dX6mE
+yowNIJkBFgy6UnPUhzMlspiCOQrpapgjctQHy8yfTW0r6cxhax7HHLaVROaw1RqYg2Na09e+mMO2F2cOW6qBOcoexZjDFkpiDqlG
+fNNyHYKWOeg0zMGhoLT2qlHIM+dEYCpzQIIVck/7lXpgDh9HQeYYOr9SCZVZM4erqvMff/zmj9/9+fI7pS53tq5Rnftz/dBS+MZO
+D20b9YXr+7/5qBB6Zl6l8PHyqFtaFZOzEmZzXf72rCa9zfPT6t3dTs0FZfZpWDworidWFoV9ks/adhiaRzXrKMoIIZRQvFK62zer
++p//252J8gdeo/mT+mlC44Kv3m5fHm7Xu89uu+Uzt+3yodd++TT2jpeHXx+2nx40DnbPGiXOdzO8rcGvJqubze7ZDOE7NVJvtook
+H3dbBaan6/utHodPm3s1NPKR/bC5Xz2oNj5urq0Q7ggtZlMzsdSP2xs1YxtQqrIvqlV9x9vzfU7I6vnDps3I/vHNny4v/vrtZSNL
+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
+7l82zTfw0tJDscdZB8AhojJWUBs2TtpLWCt27zduhAn0rTvrCdQ3Vz5QNbfaVn3ToDfQSWsKWt+fA8tda8LR6fd/8pXxm+QPa22c
+shN9AqMrsI/TM8HPLfluIrs9zYZWgMcW8VIw9vW++QiYNrELGMO5FFZhbuqQTxIL4sjr/O/9M7mATM7PyIVmZ1YdOz9V0ijqMuE2
+SkaaiX0XHTLhLpMTc7hMJE+iNJSBjeoA6vKwBpDJa9dK9vHrjg0mtY5cNIVzlw1GVug5G5ilZu+bFF5+1mSYS9dMTnTE9MWb5FSl
+dXF/kyTPhOSZkP0zOYX3ckbJCTxPGyz9m/fdYArUZI3ECg122muDKcbrMnnTbybWkM9O+fkbkjUY/A1W1neDCe1Un148ZnPae39R
+MjdkcTBDVvK0rrck/Wai8OW/4VbdRfZfOZPXi8miQxbYWEodKgsYWIx6c6LPebLdVK/7ayuTvZCs0x/mhZwkj4ofMyH9ZmKHr9OL
+N5qeuPHe/d1rN2EwdV1N7fLSdbqs5KKYuKkf+L4f61zQH87+ozI5T2eUX9n//QqmpITpmIvv7Pz2Fa7Q28mXXTD4MFl/nm4ie7f5
+d25mfQs+ObjiTPzLt24Fwl4oGv1Yzdh9WslyBl8qm8VOYfaapKs06TJHPrWGaXyaxIXg2nxaLe8/fkpn9p+Wy8/ZKtW6lA2z+/tP
+fvv1bXT2OP2YLWDGGd2tlh+mR7al5tfH1GSLhlkUpWOaFJau3SMo0j38fbs+1vjXZbZQcqzbc11AS9jFiEw0evVxCrMYmKddubdj
+F8U/Lmy7Lm9uZuDpv7kw5uz0Ql6cJApGbZJn/1/L+fzydjb/tAR1dq53TO2p59vGMkQnv5398OvfcK06019Z5v88fahm6r5sfZje
+gFm9tgvQiyuYF9oSgwt8lcVkm/4nzHvcKvv1bLWxEXFgtg0TbZw7pkvx94vN9fLL4pjGhikpTMLKJSbFVnNzqMjF+ymVNTkDO0/X
+wEV0t5zPrh6ObycLeEPXUV6Qy1uwSsh0urC5p2HSbNwhMCn8885+XolJ4r4LZFG3lqt1/oUgTZz/4zF59qAgUK4F3akWUl/orBas
+pRa0rhZJsRZJSy1IuRZsh1qw3Woh7cziRdSitz6QWv7DQTpAr8Wd3GymqycqbT7INQ1dqYlwBtNoGK7sajGYy3yyWKRlmFxfZ19o
+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
+
+```
+
+
+## Fuel-cost integration readiness — verified input still missing (2026-10-31)
+
+### User authorization and actual outcome
+
+User approved proceeding with fuel-use/cost integration, initially dry-run, and the preceding recommendation to record fuel consumed outside delivery assignments separately as operating overhead. That allocation policy is retained for the future implementation. No fuel-use amounts, overhead balances, costs, prices or charges have been fabricated. The assignment ledger remains0.18.11, cost=not_computed. The requested integration is BLOCKED, not implemented or claimed complete.
+
+The prerequisite review found that the native deduction/refill/clamp trace was never completed for the actual observed road truck. The cumulative '2026-10-30 implementation checkpoint — diagnostic provenance, targeted writer blocker' explicitly records this same unresolved prerequisite and rejects substituting sampled display changes. Subsequent actual game tests validate display/identity, schedule classification and ledger grouping; they do NOT supply missing native writer instructions, their receiver provenance, physical units or event coverage. The assistant's next-step plan must not be treated as evidence that such a producer already exists.
+
+### Evidence reviewed and availability checks
+
+Read current INSTRUCTIONS/AGENTS/KILO workflow, production fuel_diagnostics.h, native/cost reader references, schedule_assignment_ledger.h, pertinent cumulative writer blockers, VEHICLE_PANEL_FUEL_RAW_FINDINGS.md, ROAD_PATH_EVIDENCE_COMPLETE.md and native index entries16E3B0/420350. The historical upkeep report's purported slot burn,1176L/t and mirror claims are explicitly not accepted for the observed truck. The current observed scale1000and root+5F0display correlation do not prove physical fuel mass or a complete deduction/refill producer. Existing16E3B0instruction snippets alone are not a hook contract for this vehicle; arbitrary receiver field reuse is unsafe.
+
+The current index16E3B0still said Status verified despite that documented rejection. Corrected its status to contested, added a pointer to this single cumulative source of truth, and preserved the historical body. No new Ghidra query or new native finding is claimed by that index correction. The verified generic transfer API is not automatically an engine-fuel deduction stream merely because fuel could be a transferred resource.
+
+No matching executable/Ghidra project or named complete native writer exports were found in the bounded local workspace/upload checks. The targeted scratch directory/export files are absent; scratch_clean contains Java scripts, not their generated output. Exact named inputs checked by the final script: write_5f0.txt,decomp_142430.c,decomp_14b920.c,disasm_14b920_5f0.txt,d_g2_upkeep.c,decomp_6b3b50.c,decomp_6c81d0.c. The older raw-findings Markdown lists export filenames and short snippets but is not a substitute for complete receiver/control-flow/clamp evidence.
+
+Checked actual published GitHub tree data rather than assuming missing work was uncommitted: DO-fuel-cost-calculatotr atcdf17b70e5ad274f8270998248e27f5784f525f4(286entries), and the cited older research branch reverse-engineering-and-verified-transport-associa at80a4404d8d3fa5161bcaaf8de8cfd0a7fc7a72b7(130entries). Both API trees report truncated=false. Neither contains the named native inputs or matching executable/project. These checks do NOT claim to exhaust every anonymous export, every branch or the user's separate Windows disk. Complete actual JSON inputs and hashes are archived below so the readiness script remains reproducible without cache or credentials.
+
+Actual API commands (read-only; no branch switch/fetch/commit/push/PR):
+
+```bash
+gh api 'repos/Michu6636/WRSRE/git/trees/DO-fuel-cost-calculatotr?recursive=1' > .cache/fuel-input-base-tree.json
+gh api 'repos/Michu6636/WRSRE/git/trees/reverse-engineering-and-verified-transport-associa?recursive=1' > .cache/fuel-input-old-re-tree.json
+python .cache/fuel_cost_readiness.py > .cache/fuel-cost-readiness-results.txt
+```
+
+The API payload sha fields identify the queried ref objects; no inference that these are standalone Git tree object IDs is needed. Both complete returned payloads are retained as received. An initial redirection attempt failed because .cache did not yet exist; after mkdir -p .cache the actual commands above succeeded. No remote result from the failed attempt was claimed. Final readiness audit exits0as a successfully executed audit while explicitly reporting READINESS:BLOCKED, not passing native integration. No plugin regression/sanitizer/game test run or new test result is claimed for this documentation-only blocker review. git diff --check PASS; production file hashes remain exactly those of0.18.11.
+
+### Smallest input needed, and what the parent will do
+
+Preferred: upload the SOVIET64.exe from the installation used for these tests (a ZIP is fine). Keep binary/project inputs out of Git. Expected prior target:v1.1.1.9,PE timestamp0x6A3EB6AD,previously reported SHA256296644A9F207D609031FC2AE73FED2DCB34619A1D55A35D1C7B51965CE6841B8. Verify the supplied file rather than assuming it matches. If its hash/build differs, reconcile with the observed instruction fingerprints before relying on existing addresses. The parent can then perform the targeted native trace and implementation directly; the user is NOT being asked to interpret offsets or implement code.
+
+Alternative if the binary must stay local: supply already-generated complete native writer exports (or use the bounded export-only prompt below). Required content is exact instruction bytes/functions/callers tying the verified selected road-truck identity to actual consumption and refill mutations, ordinary and insufficient-fuel paths, requested versus actual clamped deductions, initialization/synchronization distinction, unit provenance and burn/refill ordering.14B920/142430/6B3B50/6C81D0are only candidates to check, never assumed truck writers. No broad string/gauge search, new native jobID/start/end investigation or repeated unchanged game run is requested.
+
+Before costing, the verified producer must identify vehicle and load context, ordered consumption/refill events and actual deducted amount with established units. Fuel bought/added must not erase prior consumption. Candidate assignment boundaries remain sampled: consumption in uncertain replacement windows must be flagged/unallocated rather than silently assigned with false exactness. Outside-assignment consumption is separate overhead under the approved policy; refuelling additions are NOT consumed-fuel overhead. Prices must have matching proven units. Missing coverage means incomplete cost, not a guessed total. Payment/debt settlement and old cargo-empty tracker activation stay OFF.
+
+### Optional ready-to-paste LOCAL export-only request (not started)
+
+```text
+Export inputs for the parent fuel-cost integration task. Do not implement hooks or costing.
+Read AGENTS.md, INSTRUCTIONS.md and KILO_AGENT_WORKFLOW.md first. Use the existing matching analyzed SOVIET64.exe project. Ghidra calls are serialized; reuse existing exports before making a query. No independent branches, commits, pushes, plugin/INI edits or shared cumulative-report writes.
+The truck display/root identity, row classification and assignment ledger already pass real-game tests. Do not redo gauge strings, the full renderer, native job IDs or assignment research. The old16E3B0upkeep/slot/1176L-per-tonne interpretation is contested for this truck; do not use it as a verified contract.
+Find the already referenced write_5f0 inventory and complete raw exports for142430/14B920 and relevant6B3B50/6C81D0/candidate writers. Export exact bytes/instructions plus decompilation and receiver/caller definitions needed to distinguish actual road-truck fuel deduction, refill, initialization and synchronization. Include normal/empty-tank paths, requested versus actual deductions, clamp behavior, physical unit provenance, paired refill-source mutations and ordering. Export only relevant missing paths; do not assume field+5F0or a negative arithmetic term proves burn.
+Identify the exact executable hash/build. Preserve existing files; write one collision-free owned input Markdown under scratch/out and verify each bounded section. Do not modify the cumulative handover; the parent owns integration and interpretation. Return the actual artifact, exact commands and unresolved evidence, not only a confident summary. If a required input/project is absent, report it and stop; do not invent code or offsets.
+```
+
+### Handover in plain language
+
+The work notebook passed its game test. The missing piece is the meter that tells it how much fuel was truly used. The available old report does not prove that meter belongs to this truck, and gauge readings alone cannot account safely for refills. No fake cost summary or extra diagnostic DLL was added. Uploading the tested executable or the targeted raw exports is the next actionable input; another drive-through test will not supply those missing instructions. No money moves. All new findings, complete final audit source/actual output, remote inputs and final index correction are archived below in this same MD. Work remains on arena/ec7098fd-wrsre.
+
+
+
+### Fuel-input readiness complete final artifact — `.cache/fuel_cost_readiness.py`
+
+Bytes:3586;SHA256:`e6c416a43d082e4a6b0fb7672ef1cd132cfcff740199904b6739cb2b1376a5e8`. Complete final source/actual output/input; no fabricated native evidence.
+
+```python
+#!/usr/bin/env python3
+"""Bounded evidence-readiness audit; no native reads, hooks or costing.
+
+The reviewed remote tree JSON files are actual gh API results. This checks
+named missing inputs, not every possible anonymous export on every branch.
+"""
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+
+root = Path(__file__).resolve().parents[1]
+expected = [
+    'scratch/write_5f0.txt', 'scratch/decomp_142430.c', 'scratch/decomp_14b920.c',
+    'scratch/disasm_14b920_5f0.txt', 'scratch/d_g2_upkeep.c',
+    'scratch/decomp_6b3b50.c', 'scratch/decomp_6c81d0.c',
+]
+print('READINESS: BLOCKED; no accepted native road-truck fuel event producer available')
+for name in expected:
+    print(f'LOCAL {name}: {"present" if (root / name).is_file() else "missing"}')
+wanted = {Path(name).name.casefold() for name in expected} | {'soviet64.exe', 'asm_burn_fuel.txt'}
+assets = []
+for base in [Path('/home/user'), Path('/tmp/arena-coding-uploads')]:
+    if not base.exists():
+        continue
+    for directory, dirs, files in os.walk(base):
+        dirs[:] = [d for d in dirs if d not in {'.git', 'node_modules', '.venv'}]
+        if len(Path(directory).relative_to(base).parts) >= 4:
+            dirs[:] = []
+            continue
+        assets.extend(str(Path(directory) / name) for name in files
+                      if name.casefold() in wanted or name.casefold().endswith('.gpr'))
+print('LOCAL bounded_depth4_native_assets=' + repr(sorted(assets)))
+assert not assets, 'Native input found: inspect it before claiming integration is blocked'
+pattern = re.compile(r'(write_5f0|decomp_142430|decomp_14b920|disasm_14b920|asm_burn_fuel|'
+                     r'd_g2_upkeep|decomp_6b3b50|decomp_6c81d0|soviet64\.exe|\.gpr$)', re.I)
+for name in ['fuel-input-base-tree.json', 'fuel-input-old-re-tree.json']:
+    path = root / '.cache' / name
+    data = json.loads(path.read_text())
+    assert data['truncated'] is False
+    matches = [item['path'] for item in data['tree'] if pattern.search(item['path'])]
+    print(f'REMOTE snapshot={name} sha={data["sha"]} entries={len(data["tree"])} '
+          f'truncated={data["truncated"]} named_native_input_matches={matches}')
+    print('  raw_json_sha256=' + hashlib.sha256(path.read_bytes()).hexdigest())
+    assert not matches
+cpp = (root / 'plugins/private_logistics/private_logistics.cpp').read_text()
+runtime = (root / 'plugins/private_logistics/panel_fuel_runtime.h').read_text()
+assert 'private_logistics_journey::Tracker' not in cpp
+assert 'exact_burn=0 cost=not_computed settlement=none billing=off' in runtime
+assert '#define PL_VERSION "0.18.11-assignment-ledger"' in cpp
+print('SOURCE: version0.18.11 unchanged; assignment ledger still cost=not_computed; old tracker disconnected')
+for name in ['plugins/private_logistics/private_logistics.cpp',
+             'plugins/private_logistics/private_logistics.ini',
+             'plugins/private_logistics/panel_fuel_runtime.h',
+             'plugins/private_logistics/schedule_assignment_ledger.h']:
+    print(f'UNCHANGED_INPUT {name} sha256={hashlib.sha256((root / name).read_bytes()).hexdigest()}')
+print('REVIEW: current cumulative handover explicitly rejects old upkeep/slot attribution as exact road-truck fuel input')
+print('POLICY: outside-assignment fuel use will be separate operating overhead; amount unavailable until verified inputs')
+print('NEXT_INPUT: matching SOVIET64.exe (or complete targeted native writer/receiver/clamp/refill exports)')
+print('NO_ACTION: no new DLL/version, game test, native query, payment, gauge-derived burn or fabricated overhead amount')
+
+```
+
+### Fuel-input readiness complete final artifact — `.cache/fuel-cost-readiness-results.txt`
+
+Bytes:1946;SHA256:`d849c4f02213beae020b3904ecaee4fcb325bcbd0b9f62479ba931e26b034765`. Complete final source/actual output/input; no fabricated native evidence.
+
+```text
+READINESS: BLOCKED; no accepted native road-truck fuel event producer available
+LOCAL scratch/write_5f0.txt: missing
+LOCAL scratch/decomp_142430.c: missing
+LOCAL scratch/decomp_14b920.c: missing
+LOCAL scratch/disasm_14b920_5f0.txt: missing
+LOCAL scratch/d_g2_upkeep.c: missing
+LOCAL scratch/decomp_6b3b50.c: missing
+LOCAL scratch/decomp_6c81d0.c: missing
+LOCAL bounded_depth4_native_assets=[]
+REMOTE snapshot=fuel-input-base-tree.json sha=cdf17b70e5ad274f8270998248e27f5784f525f4 entries=286 truncated=False named_native_input_matches=[]
+  raw_json_sha256=35a7f4997b588a14c1b4c194e3b09e4c403530d30c23bf3fcfc90c6265bb130c
+REMOTE snapshot=fuel-input-old-re-tree.json sha=80a4404d8d3fa5161bcaaf8de8cfd0a7fc7a72b7 entries=130 truncated=False named_native_input_matches=[]
+  raw_json_sha256=2377561f84a8611dd0caa0f0cb00e9572bf9a5360ec42ad815821b84501038ab
+SOURCE: version0.18.11 unchanged; assignment ledger still cost=not_computed; old tracker disconnected
+UNCHANGED_INPUT plugins/private_logistics/private_logistics.cpp sha256=f4200a9330ff9f144299b12e37e423fc6f2ad6a72834f712eededc1be84624c5
+UNCHANGED_INPUT plugins/private_logistics/private_logistics.ini sha256=fc2d763962e9f1d3684b0eabf31d2b79efdeb9c2621e98af9d3b2ce07a8fbf04
+UNCHANGED_INPUT plugins/private_logistics/panel_fuel_runtime.h sha256=1a105cbd3536920e3714714b078fdf2f8db20e69ed998a3fff5442c820d1d07e
+UNCHANGED_INPUT plugins/private_logistics/schedule_assignment_ledger.h sha256=0e61b38319c7e14a279edb0c23a1fe7086ee1e03e8012e64f57067d2e3267fd3
+REVIEW: current cumulative handover explicitly rejects old upkeep/slot attribution as exact road-truck fuel input
+POLICY: outside-assignment fuel use will be separate operating overhead; amount unavailable until verified inputs
+NEXT_INPUT: matching SOVIET64.exe (or complete targeted native writer/receiver/clamp/refill exports)
+NO_ACTION: no new DLL/version, game test, native query, payment, gauge-derived burn or fabricated overhead amount
+
+```
+
+### Fuel-input readiness complete final artifact — `.cache/fuel-input-base-tree.json`
+
+Bytes:69462;SHA256:`35a7f4997b588a14c1b4c194e3b09e4c403530d30c23bf3fcfc90c6265bb130c`. Complete final source/actual output/input; no fabricated native evidence.
+
+```json
+{"sha":"cdf17b70e5ad274f8270998248e27f5784f525f4","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/cdf17b70e5ad274f8270998248e27f5784f525f4","tree":[{"path":".clinerules","mode":"100644","type":"blob","sha":"1180eb486b5fab4b095ea0610012f5baf10001a9","size":7790,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/1180eb486b5fab4b095ea0610012f5baf10001a9"},{"path":".gitattributes","mode":"100644","type":"blob","sha":"20b9355e649102708e8dd16a44e975cc10fc0c78","size":261,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/20b9355e649102708e8dd16a44e975cc10fc0c78"},{"path":".gitignore","mode":"100644","type":"blob","sha":"7d9d157ae59f420e8321acf320f1f1f59acb7fe2","size":190,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/7d9d157ae59f420e8321acf320f1f1f59acb7fe2"},{"path":".vscode","mode":"040000","type":"tree","sha":"b8b245f2ecb420e9155ecf097da22fab3e538348","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/b8b245f2ecb420e9155ecf097da22fab3e538348"},{"path":".vscode/c_cpp_properties.json","mode":"100644","type":"blob","sha":"bb8cbd12e5b4b3bc1b3facb06b76344d0c09c261","size":621,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/bb8cbd12e5b4b3bc1b3facb06b76344d0c09c261"},{"path":".vscode/tasks.json","mode":"100644","type":"blob","sha":"ce0e8f2fc2c2524d788a62cf60d49a51c335be99","size":1431,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/ce0e8f2fc2c2524d788a62cf60d49a51c335be99"},{"path":"AGENTS.md","mode":"100644","type":"blob","sha":"aadb03103df8c536b127eae7d4d2c4277b57d394","size":742,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/aadb03103df8c536b127eae7d4d2c4277b57d394"},{"path":"DO_PERCENTAGE_WAKEUP_FINDINGS.md","mode":"100644","type":"blob","sha":"f6ab09402b63807d7fc2159e212cc5b7dfd92061","size":25644,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/f6ab09402b63807d7fc2159e212cc5b7dfd92061"},{"path":"DO_PERCENTAGE_WAKEUP_FINDINGS_V2.md","mode":"100644","type":"blob","sha":"1a169f050edd1b3948678cf2f88b1ad7fd311b46","size":28111,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/1a169f050edd1b3948678cf2f88b1ad7fd311b46"},{"path":"DO_PLANNER_RAW_EVIDENCE.md","mode":"100644","type":"blob","sha":"4d1bd8c76c234ccc0faed2161968b584575029ec","size":79522,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/4d1bd8c76c234ccc0faed2161968b584575029ec"},{"path":"INSTRUCTIONS.md","mode":"100644","type":"blob","sha":"7400ffa0fe1cc33659aa559d9c18d8a04f180662","size":12855,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/7400ffa0fe1cc33659aa559d9c18d8a04f180662"},{"path":"KILO_AGENT_WORKFLOW.md","mode":"100644","type":"blob","sha":"580308cd1cf41d5c7331cc3d28da9dc9866ce9d9","size":17283,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/580308cd1cf41d5c7331cc3d28da9dc9866ce9d9"},{"path":"build.bat","mode":"100644","type":"blob","sha":"f3987976fe4e21d0f70411cd964c33b2faa5e270","size":5502,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/f3987976fe4e21d0f70411cd964c33b2faa5e270"},{"path":"clean.bat","mode":"100644","type":"blob","sha":"5597b2cdc9efcd09fd3b2bbc48ee5c8b8dfd7dc5","size":118,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/5597b2cdc9efcd09fd3b2bbc48ee5c8b8dfd7dc5"},{"path":"decomp_1406EE2A0.c","mode":"100644","type":"blob","sha":"39fb740fd12fcd07874b9202f7ba7e8ac7558932","size":27964,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/39fb740fd12fcd07874b9202f7ba7e8ac7558932"},{"path":"docs","mode":"040000","type":"tree","sha":"f4c18f5191b41d145e44744370227502567ab050","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/f4c18f5191b41d145e44744370227502567ab050"},{"path":"docs/AGENT_REPORT_private_industry.md","mode":"100644","type":"blob","sha":"d404031aabf8434fbbe1d671fc6040571c59ef21","size":23720,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/d404031aabf8434fbbe1d671fc6040571c59ef21"},{"path":"docs/ASSOCIATION_REVIEW_COMPLETE.md","mode":"100644","type":"blob","sha":"ae8e931d31de7a6f19ec8ceecee9e377baaa8df7","size":29422,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/ae8e931d31de7a6f19ec8ceecee9e377baaa8df7"},{"path":"docs/Archive dont read","mode":"040000","type":"tree","sha":"4ca414bf473f5bf689af115e00d88cebba0ef586","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/4ca414bf473f5bf689af115e00d88cebba0ef586"},{"path":"docs/Archive dont read/17-ui-and-integration.md","mode":"100644","type":"blob","sha":"891d89b66c0d1c038375446c7a924fb2aed3862b","size":18823,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/891d89b66c0d1c038375446c7a924fb2aed3862b"},{"path":"docs/Archive dont read/18-ghidra-followup.md","mode":"100644","type":"blob","sha":"858d138f00e733887b477efd7a501a401c792d7a","size":4508,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/858d138f00e733887b477efd7a501a401c792d7a"},{"path":"docs/CPI_Survival_Basket_Investigation.md","mode":"100644","type":"blob","sha":"efcb0579b1b4783f877ffa4e8d66c8ec68854115","size":20316,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/efcb0579b1b4783f877ffa4e8d66c8ec68854115"},{"path":"docs/Citizen_Housing_Relocation.md","mode":"100644","type":"blob","sha":"c3ac1aa3e63615ac3335ccbc9284564d5d9293e0","size":10671,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/c3ac1aa3e63615ac3335ccbc9284564d5d9293e0"},{"path":"docs/Citizen_SoL_Investigation.md","mode":"100644","type":"blob","sha":"7e0ff4fe5a60e6be9d872e86856ac66773ea938e","size":3483,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/7e0ff4fe5a60e6be9d872e86856ac66773ea938e"},{"path":"docs/DEVELOPMENT_README.md","mode":"100644","type":"blob","sha":"fe06fb25b1d6cb22ccf15b2db0729ff518568af4","size":24847,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/fe06fb25b1d6cb22ccf15b2db0729ff518568af4"},{"path":"docs/DO_PLANNER_RAW_EVIDENCE.md","mode":"100644","type":"blob","sha":"9a1c6bdf8364f5c0ff91ccdab6531d92dbea1bde","size":38088,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/9a1c6bdf8364f5c0ff91ccdab6531d92dbea1bde"},{"path":"docs/FUEL PLAN","mode":"040000","type":"tree","sha":"fabc163e452b39ca51036db4d056066446a2000f","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/fabc163e452b39ca51036db4d056066446a2000f"},{"path":"docs/FUEL PLAN/association-investigation","mode":"040000","type":"tree","sha":"16b4d538aa4af5d203d9619c178d88656fac8063","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/16b4d538aa4af5d203d9619c178d88656fac8063"},{"path":"docs/FUEL PLAN/association-investigation/BINARY_INVESTIGATION_COMPLETE.md","mode":"100644","type":"blob","sha":"d23a6e0efd7681ee07e0aebef320e37ae32d0c95","size":106118,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/d23a6e0efd7681ee07e0aebef320e37ae32d0c95"},{"path":"docs/FUEL PLAN/association-investigation/association-adapter-contract.md","mode":"100644","type":"blob","sha":"050ea16d0d4151b465ecca5b8451280d08a16143","size":11572,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/050ea16d0d4151b465ecca5b8451280d08a16143"},{"path":"docs/FUEL PLAN/association-investigation/report.md","mode":"100644","type":"blob","sha":"bb5995aae0b87b33c9612d01f93a808c85e2c7b0","size":20696,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/bb5995aae0b87b33c9612d01f93a808c85e2c7b0"},{"path":"docs/FUEL PLAN/association-investigation/runtime-validation.md","mode":"100644","type":"blob","sha":"998e23d886a9baec122dc1f0d5c154fe9393fd2b","size":9864,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/998e23d886a9baec122dc1f0d5c154fe9393fd2b"},{"path":"docs/Labor_Mobility_Investigation.md","mode":"100644","type":"blob","sha":"b904326fc3d58a348ff982b929541861182e6b1b","size":15323,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/b904326fc3d58a348ff982b929541861182e6b1b"},{"path":"docs/Labor_and_Salary_Overhaul_Plan.md","mode":"100644","type":"blob","sha":"e7d12ea0e56c3d823d1940e23e594bf508ac30b8","size":11851,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/e7d12ea0e56c3d823d1940e23e594bf508ac30b8"},{"path":"docs/Map_Expander_Test.md","mode":"100644","type":"blob","sha":"17a292fea76f7dc24d7cb8c63e19c7d2c9122aa8","size":3701,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/17a292fea76f7dc24d7cb8c63e19c7d2c9122aa8"},{"path":"docs/Map_Size_Investigation.md","mode":"100644","type":"blob","sha":"e7ed6355f03a6a900b566f36f3f45cecad6222f7","size":8375,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/e7ed6355f03a6a900b566f36f3f45cecad6222f7"},{"path":"docs/README.md","mode":"100644","type":"blob","sha":"89a390a0ce65c7763f646b213f8ba12cf7ab8966","size":3893,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/89a390a0ce65c7763f646b213f8ba12cf7ab8966"},{"path":"docs/Rent_Housing_Task1_Investigation.md","mode":"100644","type":"blob","sha":"14a35d673ff71c93241d7c27c802b2969012c8d8","size":11490,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/14a35d673ff71c93241d7c27c802b2969012c8d8"},{"path":"docs/Retail_Purchase_Block_Investigation.md","mode":"100644","type":"blob","sha":"af6e1014a311fbeb627bb6e09aea620955f83165","size":15014,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/af6e1014a311fbeb627bb6e09aea620955f83165"},{"path":"docs/STAGING_README.md","mode":"100644","type":"blob","sha":"4cb1f3cc0a11a547044ae759f95fc3bc194578dd","size":2458,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/4cb1f3cc0a11a547044ae759f95fc3bc194578dd"},{"path":"docs/SUPERSEDED.md","mode":"100644","type":"blob","sha":"d1712e339a1669a89d7dab70c42bc4716b38c8df","size":1652,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/d1712e339a1669a89d7dab70c42bc4716b38c8df"},{"path":"docs/UI investigation.md","mode":"100644","type":"blob","sha":"76733b6350f1d2ed4bc0c306cbe4972e73ec3c48","size":73817,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/76733b6350f1d2ed4bc0c306cbe4972e73ec3c48"},{"path":"docs/WRSRE DESIGN DOC.md","mode":"100644","type":"blob","sha":"e71193eb825c5004e4cdb141f782fb61b38b06c7","size":29419,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/e71193eb825c5004e4cdb141f782fb61b38b06c7"},{"path":"docs/analysis-warehouse-checkbox-2026-10-23.md","mode":"100644","type":"blob","sha":"8258192d038ff2bf476bc0606cc03b609d5cb7ba","size":12347,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/8258192d038ff2bf476bc0606cc03b609d5cb7ba"},{"path":"docs/engine","mode":"040000","type":"tree","sha":"253f5f7c3035a578171810039b0adc26b4bd8282","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/253f5f7c3035a578171810039b0adc26b4bd8282"},{"path":"docs/engine/README.md","mode":"100644","type":"blob","sha":"cf6a1311deb8683533c86013a8434c6c86e80ab9","size":978,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/cf6a1311deb8683533c86013a8434c6c86e80ab9"},{"path":"docs/engine/building-vectors.md","mode":"100644","type":"blob","sha":"d682845f2a45eee285a10cc73abab00bc8aaff14","size":17323,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/d682845f2a45eee285a10cc73abab00bc8aaff14"},{"path":"docs/engine/local-markets.md","mode":"100644","type":"blob","sha":"53fac706cd2e12c450300d3c91dfac7094244f3b","size":13958,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/53fac706cd2e12c450300d3c91dfac7094244f3b"},{"path":"docs/engine/logistics.md","mode":"100644","type":"blob","sha":"c435ac35bdeee057d6e021cfd0fc6f5a33082ab7","size":10460,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/c435ac35bdeee057d6e021cfd0fc6f5a33082ab7"},{"path":"docs/engine/native-verification-results.md","mode":"100644","type":"blob","sha":"89a1274981ac435502b0c835506c7a32af14b279","size":16938,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/89a1274981ac435502b0c835506c7a32af14b279"},{"path":"docs/engine/private-industry-re.md","mode":"100644","type":"blob","sha":"e72ee5a4179b0fc8f6b3de36bc54727e239cb7e4","size":62950,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/e72ee5a4179b0fc8f6b3de36bc54727e239cb7e4"},{"path":"docs/engine/vehicle-fuel-system.md","mode":"100644","type":"blob","sha":"d4912e3c83b8d96389faba82f4b7e529569f6ef8","size":21582,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/d4912e3c83b8d96389faba82f4b7e529569f6ef8"},{"path":"docs/fix-plan-critical-high-2026-10-22.md","mode":"100644","type":"blob","sha":"935325a971264ae46c3191c0ba7e4f11f010c8f9","size":13549,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/935325a971264ae46c3191c0ba7e4f11f010c8f9"},{"path":"docs/ghidra-do-storage-findings.md","mode":"100644","type":"blob","sha":"50a8e1a24ed8cf675dd977f93ff0c045f201c399","size":11799,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/50a8e1a24ed8cf675dd977f93ff0c045f201c399"},{"path":"docs/ghidra-findings-warehouse-builder-2026-10-23.md","mode":"100644","type":"blob","sha":"b381063e1f8465d281c20e50685079cfe743ddd8","size":13078,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/b381063e1f8465d281c20e50685079cfe743ddd8"},{"path":"docs/ghidra-findings-warehouse-storage-v6.15.md","mode":"100644","type":"blob","sha":"37961cf6a4d2fc5a6f44be6c1cbe48a698ddcf4a","size":27023,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/37961cf6a4d2fc5a6f44be6c1cbe48a698ddcf4a"},{"path":"docs/ghidra-index","mode":"040000","type":"tree","sha":"b837e57c6e31e4cd565eab66384db622a11f4ebe","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/b837e57c6e31e4cd565eab66384db622a11f4ebe"},{"path":"docs/ghidra-index/10D30.md","mode":"100644","type":"blob","sha":"8e6cef8e1cac0e9f56ea77953859bdcb4df560fa","size":467,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/8e6cef8e1cac0e9f56ea77953859bdcb4df560fa"},{"path":"docs/ghidra-index/10E20.md","mode":"100644","type":"blob","sha":"ab4dbcd027eb38c28ee6665415ed1ecd2e46d63d","size":1093,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/ab4dbcd027eb38c28ee6665415ed1ecd2e46d63d"},{"path":"docs/ghidra-index/139A70.md","mode":"100644","type":"blob","sha":"3f0b269ee16bef7c07657666d37ffd672aff1430","size":1139,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/3f0b269ee16bef7c07657666d37ffd672aff1430"},{"path":"docs/ghidra-index/14250.md","mode":"100644","type":"blob","sha":"b7e4307e39200dd2e566a7fc7091456027241f25","size":502,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/b7e4307e39200dd2e566a7fc7091456027241f25"},{"path":"docs/ghidra-index/16E3B0.md","mode":"100644","type":"blob","sha":"f0f82d8b64d96be435de193e6dbf007e2d151879","size":1773,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/f0f82d8b64d96be435de193e6dbf007e2d151879"},{"path":"docs/ghidra-index/1B1290.md","mode":"100644","type":"blob","sha":"a95fa5875b2e71c6b98de91551e3b74b35984452","size":1126,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/a95fa5875b2e71c6b98de91551e3b74b35984452"},{"path":"docs/ghidra-index/1B3CE0.md","mode":"100644","type":"blob","sha":"91093a69e0a750d310835691642bfcfdc6d059de","size":687,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/91093a69e0a750d310835691642bfcfdc6d059de"},{"path":"docs/ghidra-index/1C6050.md","mode":"100644","type":"blob","sha":"18c762aed65e0885de21482cb4d0948f0256023a","size":1412,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/18c762aed65e0885de21482cb4d0948f0256023a"},{"path":"docs/ghidra-index/1DE2B0.md","mode":"100644","type":"blob","sha":"8cee2dfb6cf5100c51ad16ede80d6cb750682090","size":1445,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/8cee2dfb6cf5100c51ad16ede80d6cb750682090"},{"path":"docs/ghidra-index/1E5350.md","mode":"100644","type":"blob","sha":"48320a09c9c77128385013b0f1456e2038e29d06","size":1388,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/48320a09c9c77128385013b0f1456e2038e29d06"},{"path":"docs/ghidra-index/3FBDC0.md","mode":"100644","type":"blob","sha":"e13e457cdee93fa77045f4d0967c2a2824f32ca1","size":964,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/e13e457cdee93fa77045f4d0967c2a2824f32ca1"},{"path":"docs/ghidra-index/420350.md","mode":"100644","type":"blob","sha":"777f9fee11661bc713fdcc9ef90e534521fc5f87","size":1459,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/777f9fee11661bc713fdcc9ef90e534521fc5f87"},{"path":"docs/ghidra-index/429A80.md","mode":"100644","type":"blob","sha":"007dad559a6d7fe07786c761f7df32889b3fe6cc","size":1419,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/007dad559a6d7fe07786c761f7df32889b3fe6cc"},{"path":"docs/ghidra-index/42A0D0.md","mode":"100644","type":"blob","sha":"712fde1187919e0b39830018a12a4d6f9b2024da","size":1209,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/712fde1187919e0b39830018a12a4d6f9b2024da"},{"path":"docs/ghidra-index/66D530.md","mode":"100644","type":"blob","sha":"8a6ef94e0a89258788df3e4f222ebbd0bcac2e1f","size":1887,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/8a6ef94e0a89258788df3e4f222ebbd0bcac2e1f"},{"path":"docs/ghidra-index/67CB30.md","mode":"100644","type":"blob","sha":"082f870b0095126bfa9009b5fc269776ecb99cd9","size":1120,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/082f870b0095126bfa9009b5fc269776ecb99cd9"},{"path":"docs/ghidra-index/67D5D0.md","mode":"100644","type":"blob","sha":"a50999e788320da1c887c9c388286467bb8636ee","size":1346,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/a50999e788320da1c887c9c388286467bb8636ee"},{"path":"docs/ghidra-index/68B330.md","mode":"100644","type":"blob","sha":"132db4466845c019b13790a692e1d6d135ff2f94","size":1207,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/132db4466845c019b13790a692e1d6d135ff2f94"},{"path":"docs/ghidra-index/699420.md","mode":"100644","type":"blob","sha":"db1bacbb34e605d0e2deb1c38ad2998c3c4f84b7","size":898,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/db1bacbb34e605d0e2deb1c38ad2998c3c4f84b7"},{"path":"docs/ghidra-index/6B8EB0.md","mode":"100644","type":"blob","sha":"202ba0e7ea626aecbc1cc3ec8909c9e1c60e5511","size":1421,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/202ba0e7ea626aecbc1cc3ec8909c9e1c60e5511"},{"path":"docs/ghidra-index/6BC5A0.md","mode":"100644","type":"blob","sha":"475cb1cdb79b327e81aa44f39903c05c5df4aa28","size":1188,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/475cb1cdb79b327e81aa44f39903c05c5df4aa28"},{"path":"docs/ghidra-index/6BD660.md","mode":"100644","type":"blob","sha":"aeab7215f246742b56028f2f7803005c744786e4","size":1085,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/aeab7215f246742b56028f2f7803005c744786e4"},{"path":"docs/ghidra-index/6BD6B0.md","mode":"100644","type":"blob","sha":"57e81cdfd89764c7089690fea47b9421795ac355","size":2025,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/57e81cdfd89764c7089690fea47b9421795ac355"},{"path":"docs/ghidra-index/6BDC30.md","mode":"100644","type":"blob","sha":"63fd44a9c22d19dcaaf31ee2ce116189bfb48fa9","size":1060,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/63fd44a9c22d19dcaaf31ee2ce116189bfb48fa9"},{"path":"docs/ghidra-index/6BF1D0.md","mode":"100644","type":"blob","sha":"2f6ecbc995a30105995d91782edc4e8999deec70","size":1582,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/2f6ecbc995a30105995d91782edc4e8999deec70"},{"path":"docs/ghidra-index/6C07E0.md","mode":"100644","type":"blob","sha":"4d57cc04125dc4af007aff352929c62c6b54f3d0","size":1350,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/4d57cc04125dc4af007aff352929c62c6b54f3d0"},{"path":"docs/ghidra-index/6DCF20.md","mode":"100644","type":"blob","sha":"a6eb4dae2b0d755d0f7b45cfc7355e7fa2f074ab","size":934,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/a6eb4dae2b0d755d0f7b45cfc7355e7fa2f074ab"},{"path":"docs/ghidra-index/README.md","mode":"100644","type":"blob","sha":"cf07d7780cf1c2de0e22bc72346fec6ac091c064","size":1597,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/cf07d7780cf1c2de0e22bc72346fec6ac091c064"},{"path":"docs/ghidra-request-warehouse-builder-2026-10-23.md","mode":"100644","type":"blob","sha":"d1bff7e9313492ae1b88b6faf4f0b3961788f0a9","size":29494,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/d1bff7e9313492ae1b88b6faf4f0b3961788f0a9"},{"path":"docs/ghidra-request-warehouse-storage-v6.15.md","mode":"100644","type":"blob","sha":"0f14868d2902fb02003c3d64a2116239d5ce8dc0","size":13251,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/0f14868d2902fb02003c3d64a2116239d5ce8dc0"},{"path":"docs/implementation-plan-per-trip-fuel.md","mode":"100644","type":"blob","sha":"e164a8f8999fddfd528053334bbdcf61c7cba171","size":43094,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/e164a8f8999fddfd528053334bbdcf61c7cba171"},{"path":"docs/private-logistics-runtime","mode":"040000","type":"tree","sha":"79c953519c2153c7b986783b452257639c1049da","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/79c953519c2153c7b986783b452257639c1049da"},{"path":"docs/private-logistics-runtime/AUTONOMOUS_DO_PERMISSIONS_PLAN.md","mode":"100644","type":"blob","sha":"32e7ef4ff04980fb69684c9aeb6cedc088932d5c","size":63693,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/32e7ef4ff04980fb69684c9aeb6cedc088932d5c"},{"path":"docs/private-logistics-runtime/DO_ASSIGNMENT_INTERVAL_INDEPENDENT_REVIEW.md","mode":"100644","type":"blob","sha":"c092f6acdab3dd564acee68ace9a540d505c0369","size":89907,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/c092f6acdab3dd564acee68ace9a540d505c0369"},{"path":"docs/private-logistics-runtime/DO_ASSIGNMENT_INTERVAL_INVESTIGATION.md","mode":"100644","type":"blob","sha":"d49f3dad5f8eda79188be1e2065fa9345379b32b","size":17616,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/d49f3dad5f8eda79188be1e2065fa9345379b32b"},{"path":"docs/private-logistics-runtime/DO_PERCENTAGE_WAKEUP_INVESTIGATION.md","mode":"100644","type":"blob","sha":"f736a8deb6fa3643c17ac546040ca02c3ac49c72","size":8325,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/f736a8deb6fa3643c17ac546040ca02c3ac49c72"},{"path":"docs/private-logistics-runtime/DO_TRIP_RECEIVER_IDENTITY_INVESTIGATION.md","mode":"100644","type":"blob","sha":"6d009548c6ba9c72c221d4a7386f6b6367c7559d","size":31676,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/6d009548c6ba9c72c221d4a7386f6b6367c7559d"},{"path":"docs/private-logistics-runtime/DO_TRUCK_ASSIGNMENT_INTERVAL_FINAL.md","mode":"100644","type":"blob","sha":"66548dec53bacb564c772214a6fb4fd5553a0108","size":14153,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/66548dec53bacb564c772214a6fb4fd5553a0108"},{"path":"docs/private-logistics-runtime/JOURNEY_TRACKER_CORE.md","mode":"100644","type":"blob","sha":"5c0b21a1f907c844782abaa670843f44f6d2f30b","size":43099,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/5c0b21a1f907c844782abaa670843f44f6d2f30b"},{"path":"docs/private-logistics-runtime/LATEST_SINGLE_TRUCK_TEST.md","mode":"100644","type":"blob","sha":"5a1d9484170ac520a04f099b449452201a8ad390","size":8659,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/5a1d9484170ac520a04f099b449452201a8ad390"},{"path":"docs/private-logistics-runtime/RAW_EXPORTS_34D590.md","mode":"100644","type":"blob","sha":"cc2415318ff79e489822a7dfe41113793f074f32","size":1139998,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/cc2415318ff79e489822a7dfe41113793f074f32"},{"path":"docs/private-logistics-runtime/RAW_EXPORTS_6F4B40.md","mode":"100644","type":"blob","sha":"6e0b155a68c88b9fe496c0267c2a71f96654a8ab","size":16277,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/6e0b155a68c88b9fe496c0267c2a71f96654a8ab"},{"path":"docs/private-logistics-runtime/RAW_EXPORTS_741170_1E440.md","mode":"100644","type":"blob","sha":"1c6a84b75afd71bba72f07ad2f389fe0b423ccfe","size":288892,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/1c6a84b75afd71bba72f07ad2f389fe0b423ccfe"},{"path":"docs/private-logistics-runtime/RAW_EXPORTS_769300.md","mode":"100644","type":"blob","sha":"89264883eef82c083814929720d067d548aff66b","size":61059,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/89264883eef82c083814929720d067d548aff66b"},{"path":"docs/private-logistics-runtime/RAW_EXPORTS_772400_7752A0.md","mode":"100644","type":"blob","sha":"7b1832f1c31f8c1be8dcd0029cd0ae64d7f9bf7b","size":124842,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/7b1832f1c31f8c1be8dcd0029cd0ae64d7f9bf7b"},{"path":"docs/private-logistics-runtime/RAW_EXPORTS_775000.md","mode":"100644","type":"blob","sha":"a3be1f7f222f0d37f9974bf42f5df0a95a988b3e","size":13892,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/a3be1f7f222f0d37f9974bf42f5df0a95a988b3e"},{"path":"docs/private-logistics-runtime/RAW_EXPORTS_VEHICLE_DETAIL_RENDERER.md","mode":"100644","type":"blob","sha":"6123f7ad8940ffee9bc5b923c5bfe41573b311a0","size":2325592,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/6123f7ad8940ffee9bc5b923c5bfe41573b311a0"},{"path":"docs/private-logistics-runtime/RAW_EXPORTS_VEHICLE_DETAIL_ROUTE.md","mode":"100644","type":"blob","sha":"1830093dbe6fdd3944f41fc3886b20fdbfe31ba5","size":33408,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/1830093dbe6fdd3944f41fc3886b20fdbfe31ba5"},{"path":"docs/private-logistics-runtime/RAW_EXPORTS_VEWICLE_DETAIL_RENDERER.md","mode":"100644","type":"blob","sha":"13781d7f73df244606a4ff982f35c6c431df9201","size":12,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/13781d7f73df244606a4ff982f35c6c431df9201"},{"path":"docs/private-logistics-runtime/RAW_PE_DATA_READ.md","mode":"100644","type":"blob","sha":"e370a4928f7e60a9604dbe81ef9d2e8432db2689","size":1956,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/e370a4928f7e60a9604dbe81ef9d2e8432db2689"},{"path":"docs/private-logistics-runtime/README.md","mode":"100644","type":"blob","sha":"c8d88e5915e74dd8e0b4c75c6a7a57b1b33e2770","size":32660,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/c8d88e5915e74dd8e0b4c75c6a7a57b1b33e2770"},{"path":"docs/private-logistics-runtime/RUNTIME_PROTOTYPE.md","mode":"100644","type":"blob","sha":"a364ce7cda80ba250122dbe626024f9a0e4bd262","size":7729,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/a364ce7cda80ba250122dbe626024f9a0e4bd262"},{"path":"docs/private-logistics-runtime/SECOND_SINGLE_TRUCK_TEST.md","mode":"100644","type":"blob","sha":"a50cdf5ba6447b3b3309a6266e44d70f5ae09da1","size":10163,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/a50cdf5ba6447b3b3309a6266e44d70f5ae09da1"},{"path":"docs/private-logistics-runtime/VEHICLE_GAUGE_STRING_ANCHORS.md","mode":"100644","type":"blob","sha":"617c4a7b9ed3d5a5ddc56722aa2fa55e2fbfe70b","size":21355,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/617c4a7b9ed3d5a5ddc56722aa2fa55e2fbfe70b"},{"path":"docs/private-logistics-runtime/VEHICLE_GAUGE_STRING_SEARCH_FIXED.md","mode":"100644","type":"blob","sha":"41d0db5dc9406621e70799af5ee860e5b178674f","size":2675237,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/41d0db5dc9406621e70799af5ee860e5b178674f"},{"path":"docs/private-logistics-runtime/VEHICLE_PANEL_FUEL_INVESTIGATION.md","mode":"100644","type":"blob","sha":"5bc74a581d0f49826ab159ca9f81034355be0d19","size":7874106,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/5bc74a581d0f49826ab159ca9f81034355be0d19"},{"path":"docs/private-logistics-runtime/VEHICLE_PANEL_FUEL_RAW_FINDINGS.md","mode":"100644","type":"blob","sha":"ba3f2c6c06cd5af9d74205a6c1686c01b38fdd7f","size":11369,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/ba3f2c6c06cd5af9d74205a6c1686c01b38fdd7f"},{"path":"docs/private-logistics-runtime/evidence","mode":"040000","type":"tree","sha":"d3e703e6f07585c0ea51fffc480b1b915e783b03","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/d3e703e6f07585c0ea51fffc480b1b915e783b03"},{"path":"docs/private-logistics-runtime/evidence/HANDOFF_EVIDENCE.md","mode":"100644","type":"blob","sha":"de57727b5e9bb17503aab4af345178466af2a50b","size":11438,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/de57727b5e9bb17503aab4af345178466af2a50b"},{"path":"docs/private-logistics-runtime/evidence/INVESTIGATION_REPORT.md","mode":"100644","type":"blob","sha":"892010aebd7c202fef77e1faed98ddf146150693","size":13752,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/892010aebd7c202fef77e1faed98ddf146150693"},{"path":"docs/private-logistics-runtime/evidence/MACHINE_EVIDENCE_FOCUSED.md","mode":"100644","type":"blob","sha":"e37de7ae7abd80fb3b4c99e32d57092c7d4ec9a5","size":12037,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/e37de7ae7abd80fb3b4c99e32d57092c7d4ec9a5"},{"path":"docs/private-logistics-runtime/evidence/ROAD_PATH_EVIDENCE_ADDENDUM.md","mode":"100644","type":"blob","sha":"20281ff7bbbd44ad1bd20a1571d84ac27a3d0f19","size":11841,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/20281ff7bbbd44ad1bd20a1571d84ac27a3d0f19"},{"path":"docs/private-logistics-runtime/evidence/ROAD_PATH_EVIDENCE_COMPLETE.md","mode":"100644","type":"blob","sha":"f16bf1a62061540075edc18df47925851665c019","size":46383,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/f16bf1a62061540075edc18df47925851665c019"},{"path":"docs/private-logistics-runtime/probe","mode":"040000","type":"tree","sha":"64c8dfd5a6d8a0ff778ee502bbe85acde2c2afdc","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/64c8dfd5a6d8a0ff778ee502bbe85acde2c2afdc"},{"path":"docs/private-logistics-runtime/probe/probe_schema.json","mode":"100644","type":"blob","sha":"c57ca4568864baa9d7c5b29b6bccd952db16007a","size":14347,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/c57ca4568864baa9d7c5b29b6bccd952db16007a"},{"path":"docs/remaining-logic-bugs-audit-2026-10-22.md","mode":"100644","type":"blob","sha":"3ecbff85198ec7e4e61002c81b9ec1f448f73080","size":11501,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/3ecbff85198ec7e4e61002c81b9ec1f448f73080"},{"path":"docs/review-per-trip-fuel-plan.md","mode":"100644","type":"blob","sha":"86ec075ea8ae86f471ea6571cea53af7f789627d","size":40977,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/86ec075ea8ae86f471ea6571cea53af7f789627d"},{"path":"docs/tasks","mode":"040000","type":"tree","sha":"6e0155398c2d64fec91a98dde49abb1c258021c9","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/6e0155398c2d64fec91a98dde49abb1c258021c9"},{"path":"docs/tasks/README.md","mode":"100644","type":"blob","sha":"b9f5889a9175de11ec7666dfc2e2bdb326736a0c","size":325,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/b9f5889a9175de11ec7666dfc2e2bdb326736a0c"},{"path":"docs/tasks/active","mode":"040000","type":"tree","sha":"7b4e4755232e68bf04178f77578c466335f5364b","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/7b4e4755232e68bf04178f77578c466335f5364b"},{"path":"docs/tasks/active/2026-10-22-old-vs-new-analysis.md","mode":"100644","type":"blob","sha":"d389fb5515a90afb2372d907209d33bb6d58ea45","size":6257,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/d389fb5515a90afb2372d907209d33bb6d58ea45"},{"path":"docs/tasks/active/2026-10-22-regression-triage.md","mode":"100644","type":"blob","sha":"65841e88cd9eeaf1aa96e2f39977d6445b9d4c8a","size":7712,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/65841e88cd9eeaf1aa96e2f39977d6445b9d4c8a"},{"path":"docs/tasks/active/GHIDRA_REQUEST.md","mode":"100644","type":"blob","sha":"a1adad2002e15a9209d07caed9b355f3a968bc94","size":4659,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/a1adad2002e15a9209d07caed9b355f3a968bc94"},{"path":"docs/tasks/active/NEXT_PHASE.md","mode":"100644","type":"blob","sha":"c89a9aa58a405dde68104bddd47187b8befc53b2","size":7808,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/c89a9aa58a405dde68104bddd47187b8befc53b2"},{"path":"docs/tasks/active/current-task-state-storage.md","mode":"100644","type":"blob","sha":"46f93bbeb63c21de6276a8cca818d1e683481594","size":10217,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/46f93bbeb63c21de6276a8cca818d1e683481594"},{"path":"docs/visions","mode":"040000","type":"tree","sha":"fbb5c2fdd4be70506fe42f80522b6c54557e0dce","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/fbb5c2fdd4be70506fe42f80522b6c54557e0dce"},{"path":"docs/visions/README.md","mode":"100644","type":"blob","sha":"aab41d5f8d226749ef9c962aed3a5283590eed82","size":283,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/aab41d5f8d226749ef9c962aed3a5283590eed82"},{"path":"docs/visions/vision-private-logistics.md","mode":"100644","type":"blob","sha":"a9a2843923e8f59da71384a1415aa21eddf571e6","size":11707,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/a9a2843923e8f59da71384a1415aa21eddf571e6"},{"path":"docs/visions/vision-whole-mod.md","mode":"100644","type":"blob","sha":"d4f8254a160e20fd775ea7535fc06d87caa0198f","size":16767,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/d4f8254a160e20fd775ea7535fc06d87caa0198f"},{"path":"newB_fun_14066d530.asm","mode":"100644","type":"blob","sha":"5741eb43986fcc8a17ce88ddba5bbc2babb08605","size":69740,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/5741eb43986fcc8a17ce88ddba5bbc2babb08605"},{"path":"newB_fun_140699420.asm","mode":"100644","type":"blob","sha":"02d88913b4c0ca06177ef34ff9706537d27ef798","size":36019,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/02d88913b4c0ca06177ef34ff9706537d27ef798"},{"path":"newB_fun_140699420_part2.asm","mode":"100644","type":"blob","sha":"a33929c6f46143b8712ff43d20977001b3f4fee6","size":207363,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/a33929c6f46143b8712ff43d20977001b3f4fee6"},{"path":"newB_fun_1406bc5a0.asm","mode":"100644","type":"blob","sha":"45c8161b369b3dab9307465c87a18a8c1d86e183","size":15475,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/45c8161b369b3dab9307465c87a18a8c1d86e183"},{"path":"newB_post_call_area.asm","mode":"100644","type":"blob","sha":"652205dd1b41ec065bcd2f4a23eee667a21ede85","size":3515,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/652205dd1b41ec065bcd2f4a23eee667a21ede85"},{"path":"plugins","mode":"040000","type":"tree","sha":"745ef67752f8b15e959df39bb10a66f2be972b22","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/745ef67752f8b15e959df39bb10a66f2be972b22"},{"path":"plugins/citizen_labor","mode":"040000","type":"tree","sha":"811303d677525cf8d007bbac5f2cd0e2eaa97167","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/811303d677525cf8d007bbac5f2cd0e2eaa97167"},{"path":"plugins/citizen_labor/Labor_and_Salary_Overhaul_Specification.md","mode":"100644","type":"blob","sha":"733d86bf7384b116f14352a44fbe2dbc8f0c076c","size":16195,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/733d86bf7384b116f14352a44fbe2dbc8f0c076c"},{"path":"plugins/citizen_labor/citizen_labor.cpp","mode":"100644","type":"blob","sha":"cba6597967fabc2923e0fa7abab1634d5be23fa8","size":122318,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/cba6597967fabc2923e0fa7abab1634d5be23fa8"},{"path":"plugins/citizen_labor/citizen_labor.ini","mode":"100644","type":"blob","sha":"85f4f8dae7035eefa8b45dbbfbf9a65f53cae01c","size":11623,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/85f4f8dae7035eefa8b45dbbfbf9a65f53cae01c"},{"path":"plugins/citizen_retail","mode":"040000","type":"tree","sha":"75ed29f70f236d03a49b2d928f7f6be7a746fe9a","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/75ed29f70f236d03a49b2d928f7f6be7a746fe9a"},{"path":"plugins/citizen_retail/citizen_retail.cpp","mode":"100644","type":"blob","sha":"10c5a97d97680dffd03b0d0cbbb8e45401a7887c","size":71202,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/10c5a97d97680dffd03b0d0cbbb8e45401a7887c"},{"path":"plugins/citizen_retail/citizen_retail.ini","mode":"100644","type":"blob","sha":"54e6cdc177adfeb28de04959a21d17ffa87abfb5","size":6046,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/54e6cdc177adfeb28de04959a21d17ffa87abfb5"},{"path":"plugins/currency","mode":"040000","type":"tree","sha":"9b4f5bf80e72170cb1718090b9f2f0f01649d2ea","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/9b4f5bf80e72170cb1718090b9f2f0f01649d2ea"},{"path":"plugins/currency/currency.cpp","mode":"100644","type":"blob","sha":"e356de01cf49a04d0f5f20431cba8facf35b44d9","size":21785,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/e356de01cf49a04d0f5f20431cba8facf35b44d9"},{"path":"plugins/currency/currency.ini","mode":"100644","type":"blob","sha":"d286f4159bae4c8ea5f9f73b0584cc636526fd8f","size":2430,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/d286f4159bae4c8ea5f9f73b0584cc636526fd8f"},{"path":"plugins/enterprise_base","mode":"040000","type":"tree","sha":"9976babb4292de71e0aeebac3b7c143c97b63eed","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/9976babb4292de71e0aeebac3b7c143c97b63eed"},{"path":"plugins/enterprise_base/enterprise_base.cpp","mode":"100644","type":"blob","sha":"e2f1d220e7ed5a9ac48b3a97b2d810030fecc377","size":207376,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/e2f1d220e7ed5a9ac48b3a97b2d810030fecc377"},{"path":"plugins/enterprise_base/enterprise_base.ini","mode":"100644","type":"blob","sha":"a4197b08b37f2787fe44835b5e4ae3a13cd09d16","size":17636,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/a4197b08b37f2787fe44835b5e4ae3a13cd09d16"},{"path":"plugins/map_expander","mode":"040000","type":"tree","sha":"399e99e452a223ea99c7505923fc78fa5957ec12","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/399e99e452a223ea99c7505923fc78fa5957ec12"},{"path":"plugins/map_expander/map_expander.cpp","mode":"100644","type":"blob","sha":"6defde82b8ad9838d8ae7c17d81372ddb4d81caa","size":8210,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/6defde82b8ad9838d8ae7c17d81372ddb4d81caa"},{"path":"plugins/map_expander/map_expander.ini","mode":"100644","type":"blob","sha":"89928fb49052ad94540d24e03b7716d328d997b0","size":995,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/89928fb49052ad94540d24e03b7716d328d997b0"},{"path":"plugins/persistence","mode":"040000","type":"tree","sha":"d1889b32c90e116cb09d0f7ebf4f97f01c225b46","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/d1889b32c90e116cb09d0f7ebf4f97f01c225b46"},{"path":"plugins/persistence/persistence.cpp","mode":"100644","type":"blob","sha":"c8080eabf25d1e57008523b6f55730c64e7b71d6","size":13096,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/c8080eabf25d1e57008523b6f55730c64e7b71d6"},{"path":"plugins/persistence/persistence.ini","mode":"100644","type":"blob","sha":"405c525d92152858485172d78e969ed744d8d189","size":1854,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/405c525d92152858485172d78e969ed744d8d189"},{"path":"plugins/private_construction","mode":"040000","type":"tree","sha":"ef015d323e3b9af7d9aee996de682b911d3987f8","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/ef015d323e3b9af7d9aee996de682b911d3987f8"},{"path":"plugins/private_construction/private_construction.cpp","mode":"100644","type":"blob","sha":"9d2c0c083c1d59d4b6efdcc4b0e818a0cbfc6082","size":2040,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/9d2c0c083c1d59d4b6efdcc4b0e818a0cbfc6082"},{"path":"plugins/private_construction/private_construction.ini","mode":"100644","type":"blob","sha":"5cb36269d0f3a1a0726bc46e871bcf0a01061f81","size":15700,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/5cb36269d0f3a1a0726bc46e871bcf0a01061f81"},{"path":"plugins/private_logistics","mode":"040000","type":"tree","sha":"dc6e137262f4ad9a1794c1dadcc502b1cd98b6b4","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/dc6e137262f4ad9a1794c1dadcc502b1cd98b6b4"},{"path":"plugins/private_logistics/GHIDRA_REQUEST.md","mode":"100644","type":"blob","sha":"a1adad2002e15a9209d07caed9b355f3a968bc94","size":4659,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/a1adad2002e15a9209d07caed9b355f3a968bc94"},{"path":"plugins/private_logistics/fuel_diagnostics.h","mode":"100644","type":"blob","sha":"e0a10dc62f2012df85440e954026aad3e949e05a","size":2823,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/e0a10dc62f2012df85440e954026aad3e949e05a"},{"path":"plugins/private_logistics/journey_tracker.h","mode":"100644","type":"blob","sha":"ad458821d731e908830d529459c44b29366a9b97","size":12132,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/ad458821d731e908830d529459c44b29366a9b97"},{"path":"plugins/private_logistics/panel_fuel_observer.h","mode":"100644","type":"blob","sha":"5f3fc51280c3256e2ec5c5e57afc91cdddaa95a3","size":6525,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/5f3fc51280c3256e2ec5c5e57afc91cdddaa95a3"},{"path":"plugins/private_logistics/panel_fuel_runtime.h","mode":"100644","type":"blob","sha":"8e08df9951c2d62481266b866640b83d619cf125","size":25327,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/8e08df9951c2d62481266b866640b83d619cf125"},{"path":"plugins/private_logistics/private_logistics.cpp","mode":"100644","type":"blob","sha":"407b9a44f6f3bd9dacd0d60b0dd4bc24bec89b0c","size":166885,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/407b9a44f6f3bd9dacd0d60b0dd4bc24bec89b0c"},{"path":"plugins/private_logistics/private_logistics.ini","mode":"100644","type":"blob","sha":"c5c63c8e47c119a151c6e476728f91ee446f0718","size":10210,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/c5c63c8e47c119a151c6e476728f91ee446f0718"},{"path":"plugins/private_logistics/schedule_assignment_ledger.h","mode":"100644","type":"blob","sha":"b783417ec0d2af07222d0acfc17091585b4a8beb","size":5768,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/b783417ec0d2af07222d0acfc17091585b4a8beb"},{"path":"plugins/private_logistics/schedule_observer.h","mode":"100644","type":"blob","sha":"24b69ee8456e1b323142ffcaab629b660bf9ad18","size":10489,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/24b69ee8456e1b323142ffcaab629b660bf9ad18"},{"path":"plugins/private_logistics/site_permissions.h","mode":"100644","type":"blob","sha":"ecb826f179157b1faa2f6e950efc7dd4be9c0198","size":5288,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/ecb826f179157b1faa2f6e950efc7dd4be9c0198"},{"path":"plugins/private_logistics/task_audit.h","mode":"100644","type":"blob","sha":"57ae11ff63cb8e7a291959c416a9b47ecfd1684b","size":1748,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/57ae11ff63cb8e7a291959c416a9b47ecfd1684b"},{"path":"plugins/private_logistics_probe","mode":"040000","type":"tree","sha":"625a77bbe390e888a71c24ff0725dceaed114acb","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/625a77bbe390e888a71c24ff0725dceaed114acb"},{"path":"plugins/private_logistics_probe/private_logistics_probe.cpp","mode":"100644","type":"blob","sha":"2575940564c6a1d9c41bfdd910346c13ced5ea93","size":47395,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/2575940564c6a1d9c41bfdd910346c13ced5ea93"},{"path":"plugins/private_logistics_probe/private_logistics_probe.ini","mode":"100644","type":"blob","sha":"8005bdd2a0ba428ddfddb8571861f211f5b4abd2","size":1781,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/8005bdd2a0ba428ddfddb8571861f211f5b4abd2"},{"path":"plugins/private_logistics_probe/snapshot_record.h","mode":"100644","type":"blob","sha":"5516e683b262371e15b1103e2178ab86dd91da40","size":2913,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/5516e683b262371e15b1103e2178ab86dd91da40"},{"path":"plugins/private_shops","mode":"040000","type":"tree","sha":"269b28b5fc34a9fb50ad58e43aff042b009565b0","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/269b28b5fc34a9fb50ad58e43aff042b009565b0"},{"path":"plugins/private_shops/private_shops.cpp","mode":"100644","type":"blob","sha":"b28fa578702459a005314abdeecc3285dc262f83","size":74037,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/b28fa578702459a005314abdeecc3285dc262f83"},{"path":"plugins/private_shops/private_shops.ini","mode":"100644","type":"blob","sha":"785ab2ff302ed122d074a2357de094dc879a51d4","size":10575,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/785ab2ff302ed122d074a2357de094dc879a51d4"},{"path":"plugins/resource_pricing","mode":"040000","type":"tree","sha":"0f72d92c855a62111a49a9b6fae83f89a98b5d50","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/0f72d92c855a62111a49a9b6fae83f89a98b5d50"},{"path":"plugins/resource_pricing/resource_pricing.cpp","mode":"100644","type":"blob","sha":"5264c51f292e940e8903d841ba44a3694a2ed544","size":28798,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/5264c51f292e940e8903d841ba44a3694a2ed544"},{"path":"plugins/resource_pricing/resource_pricing.ini","mode":"100644","type":"blob","sha":"a184a14d8d79dbcdc7e133e1c4708651e172575e","size":7684,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/a184a14d8d79dbcdc7e133e1c4708651e172575e"},{"path":"plugins/sim_clock","mode":"040000","type":"tree","sha":"9359700f7fd4dcadc6e6e7081ab9c59c7901d187","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/9359700f7fd4dcadc6e6e7081ab9c59c7901d187"},{"path":"plugins/sim_clock/sim_clock.cpp","mode":"100644","type":"blob","sha":"7c162aadbe6a0d8516d4cd480edf741277f661e5","size":14021,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/7c162aadbe6a0d8516d4cd480edf741277f661e5"},{"path":"plugins/sim_clock/sim_clock.ini","mode":"100644","type":"blob","sha":"9b72844930c1fcbd9eef04607e66bea258eaf105","size":1809,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/9b72844930c1fcbd9eef04607e66bea258eaf105"},{"path":"plugins/state_ledger","mode":"040000","type":"tree","sha":"168e3edbd4a4da2877abc517205227b1531b565c","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/168e3edbd4a4da2877abc517205227b1531b565c"},{"path":"plugins/state_ledger/state_ledger.cpp","mode":"100644","type":"blob","sha":"f18f8dc0d74d1e09a37a6f0efb115c1781930efc","size":17907,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/f18f8dc0d74d1e09a37a6f0efb115c1781930efc"},{"path":"plugins/state_ledger/state_ledger.ini","mode":"100644","type":"blob","sha":"2f3e5993af1f502e9deb3b89a1437a3e4929f60b","size":2450,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/2f3e5993af1f502e9deb3b89a1437a3e4929f60b"},{"path":"plugins/taxes","mode":"040000","type":"tree","sha":"fe18c1b43454d2bc1a07552961b430e68a081b4e","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/fe18c1b43454d2bc1a07552961b430e68a081b4e"},{"path":"plugins/taxes/taxes.cpp","mode":"100644","type":"blob","sha":"409317eff9c350b95d367728c64daf0202159abc","size":50248,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/409317eff9c350b95d367728c64daf0202159abc"},{"path":"plugins/taxes/taxes.ini","mode":"100644","type":"blob","sha":"38d3a0db06a05502613da6001a802a8ef7fd2170","size":7376,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/38d3a0db06a05502613da6001a802a8ef7fd2170"},{"path":"plugins/ui_overlay","mode":"040000","type":"tree","sha":"775e8f2106b69dcea9bac9552205eb4e9d73cbca","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/775e8f2106b69dcea9bac9552205eb4e9d73cbca"},{"path":"plugins/ui_overlay/ui_overlay.cpp","mode":"100644","type":"blob","sha":"e9dd3640ff8532163e65e624a6feefbeaf749730","size":8460,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/e9dd3640ff8532163e65e624a6feefbeaf749730"},{"path":"plugins/ui_overlay/ui_overlay.ini","mode":"100644","type":"blob","sha":"c047d4b4706a60a36a8f4e7e36395ee7cdb3dfed","size":2250,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/c047d4b4706a60a36a8f4e7e36395ee7cdb3dfed"},{"path":"plugins/ui_panels","mode":"040000","type":"tree","sha":"95211520baa0e539762fefd2a45df4e423aa7dac","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/95211520baa0e539762fefd2a45df4e423aa7dac"},{"path":"plugins/ui_panels/ui_panels.cpp","mode":"100644","type":"blob","sha":"4d3af87a1e996a6f0937d31b8b23518444660fba","size":168856,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/4d3af87a1e996a6f0937d31b8b23518444660fba"},{"path":"plugins/ui_panels/ui_panels.ini","mode":"100644","type":"blob","sha":"3a23e3b0faa42228ecf67f0b54b972caa17c5a1b","size":6317,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/3a23e3b0faa42228ecf67f0b54b972caa17c5a1b"},{"path":"scratch_clean","mode":"040000","type":"tree","sha":"e402b1043690a9fd385b83d57707ef94e2321d1a","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/e402b1043690a9fd385b83d57707ef94e2321d1a"},{"path":"scratch_clean/DecompAt.java","mode":"100644","type":"blob","sha":"c12311bd2cb08a08822012d0613c22a971f110af","size":3323,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/c12311bd2cb08a08822012d0613c22a971f110af"},{"path":"scratch_clean/DisasmMany.java","mode":"100644","type":"blob","sha":"040b5a31b0fe67ab57c5c944ad0e8ae64ad9d61d","size":3109,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/040b5a31b0fe67ab57c5c944ad0e8ae64ad9d61d"},{"path":"scratch_clean/FindDisp.java","mode":"100644","type":"blob","sha":"6e37054d6884e6503b56cf4af46959cb62f8f3a6","size":4752,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/6e37054d6884e6503b56cf4af46959cb62f8f3a6"},{"path":"scratch_clean/dump_all_strings.java","mode":"100644","type":"blob","sha":"05437675561cc232312cf19795038a6b68e22f7a","size":3370,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/05437675561cc232312cf19795038a6b68e22f7a"},{"path":"scratch_clean/dump_wide_strings.java","mode":"100644","type":"blob","sha":"b5f0dea5c44d60dd7efbfd464edb08dd797ceb53","size":2530,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/b5f0dea5c44d60dd7efbfd464edb08dd797ceb53"},{"path":"src","mode":"040000","type":"tree","sha":"e35d4bf1b7fac889d83ffe93ae6b0ee28cff4e96","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/e35d4bf1b7fac889d83ffe93ae6b0ee28cff4e96"},{"path":"src/citizen_labor_api.h","mode":"100644","type":"blob","sha":"363fc8786dcc78130977c9d7104ea778763da6bb","size":10853,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/363fc8786dcc78130977c9d7104ea778763da6bb"},{"path":"src/citizen_retail_api.h","mode":"100644","type":"blob","sha":"449cee70b5335918c7ef8df5cf319c40f6f3e718","size":5537,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/449cee70b5335918c7ef8df5cf319c40f6f3e718"},{"path":"src/currency_api.h","mode":"100644","type":"blob","sha":"20b90fd3f212cb57515aafc362aaf4d0784cb189","size":10769,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/20b90fd3f212cb57515aafc362aaf4d0784cb189"},{"path":"src/enterprise_base_api.h","mode":"100644","type":"blob","sha":"b7394e8653b5bee93b292537c231403969d15376","size":14257,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/b7394e8653b5bee93b292537c231403969d15376"},{"path":"src/game_world.h","mode":"100644","type":"blob","sha":"61d210eca37a0ff19d487c9611504a6a9a4ae10e","size":15128,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/61d210eca37a0ff19d487c9611504a6a9a4ae10e"},{"path":"src/persistence_api.h","mode":"100644","type":"blob","sha":"c4fca64cb657d0babb8728ec9d6c56997f5e928b","size":4362,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/c4fca64cb657d0babb8728ec9d6c56997f5e928b"},{"path":"src/resource_pricing_api.h","mode":"100644","type":"blob","sha":"9ba952bda7bce82a0a9b5ffe5e950c191255fd85","size":11015,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/9ba952bda7bce82a0a9b5ffe5e950c191255fd85"},{"path":"src/sim_clock_api.h","mode":"100644","type":"blob","sha":"1a679c9521c2bf6e9523dd30455f06669012f0fd","size":9222,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/1a679c9521c2bf6e9523dd30455f06669012f0fd"},{"path":"src/taxes_api.h","mode":"100644","type":"blob","sha":"0a2bc543649778c88cabbf37f42a901c7423a372","size":6734,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/0a2bc543649778c88cabbf37f42a901c7423a372"},{"path":"src/tesmio_api.h","mode":"100644","type":"blob","sha":"5cf28c5df03c74db4316a982f7018720e7bcd80e","size":13766,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/5cf28c5df03c74db4316a982f7018720e7bcd80e"},{"path":"src/tesmio_plugin.h","mode":"100644","type":"blob","sha":"7899ac8203f1add07476d2e46a947562268e8a8e","size":5042,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/7899ac8203f1add07476d2e46a947562268e8a8e"},{"path":"src/tesmiolauncher.cpp","mode":"100644","type":"blob","sha":"4356ce2c9846c76f64aef5eb327e32529f9e18a8","size":80671,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/4356ce2c9846c76f64aef5eb327e32529f9e18a8"},{"path":"src/tesmiolauncher.rc","mode":"100644","type":"blob","sha":"6df76fc9523efc7ceb2c19674d97f1bccb3aff1b","size":792,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/6df76fc9523efc7ceb2c19674d97f1bccb3aff1b"},{"path":"src/tesmioloader.cpp","mode":"100644","type":"blob","sha":"d256554a5950bd5041805b7bbaad6ff477330240","size":83098,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/d256554a5950bd5041805b7bbaad6ff477330240"},{"path":"src/ui_overlay_api.h","mode":"100644","type":"blob","sha":"6526cf7d1efdb4cf5fe33dba80eb4cba10a6d580","size":4631,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/6526cf7d1efdb4cf5fe33dba80eb4cba10a6d580"},{"path":"src/ui_panels_api.h","mode":"100644","type":"blob","sha":"4e0d3cd64b7fa4a820b2fec590dfcea0db14c755","size":17813,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/4e0d3cd64b7fa4a820b2fec590dfcea0db14c755"},{"path":"takeover1_1e5350_xrefs.txt","mode":"100644","type":"blob","sha":"1f54fa2d991a714ab04b8566905227d50edc7a46","size":118,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/1f54fa2d991a714ab04b8566905227d50edc7a46"},{"path":"takeover1_builder_decomp.c","mode":"100644","type":"blob","sha":"612a3b7fbf6cc38c65fd663b42b2c55c79596e36","size":19399,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/612a3b7fbf6cc38c65fd663b42b2c55c79596e36"},{"path":"telemetry_schema.json","mode":"100644","type":"blob","sha":"5f3c73b6f8b3806f3b125895922afb8e98ca76e9","size":1333,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/5f3c73b6f8b3806f3b125895922afb8e98ca76e9"},{"path":"tests","mode":"040000","type":"tree","sha":"308460b13c4a4e7e94ee068611b9eae15d597d12","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/308460b13c4a4e7e94ee068611b9eae15d597d12"},{"path":"tests/private_logistics","mode":"040000","type":"tree","sha":"a1f269d738ffe984ac603fd565bade44defaf6f6","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/a1f269d738ffe984ac603fd565bade44defaf6f6"},{"path":"tests/private_logistics/fuel_diagnostics_test.cpp","mode":"100644","type":"blob","sha":"502a49cfb9854e7fa10e187fc9ecdff41937df19","size":2508,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/502a49cfb9854e7fa10e187fc9ecdff41937df19"},{"path":"tests/private_logistics/journey_tracker_test.cpp","mode":"100644","type":"blob","sha":"723c2b6b11c84d4edc8774ab9af3f54dcb02c782","size":14903,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/723c2b6b11c84d4edc8774ab9af3f54dcb02c782"},{"path":"tests/private_logistics/panel_fuel_observer_test.cpp","mode":"100644","type":"blob","sha":"ee66335077f364aee21683b44fe2a9e385894c88","size":8780,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/ee66335077f364aee21683b44fe2a9e385894c88"},{"path":"tests/private_logistics/panel_fuel_runtime_test.cpp","mode":"100644","type":"blob","sha":"778e9943a615f35aee0bbc4e89e979f6d762152f","size":9535,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/778e9943a615f35aee0bbc4e89e979f6d762152f"},{"path":"tests/private_logistics/schedule_assignment_ledger_test.cpp","mode":"100644","type":"blob","sha":"81250a82170fa94cee25ed72ca7dd20f5b74adc0","size":11149,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/81250a82170fa94cee25ed72ca7dd20f5b74adc0"},{"path":"tests/private_logistics/schedule_observer_test.cpp","mode":"100644","type":"blob","sha":"81fcf948733a5c6302819cc02ac18e9400bde859","size":19615,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/81fcf948733a5c6302819cc02ac18e9400bde859"},{"path":"tests/private_logistics/schedule_runtime_test.cpp","mode":"100644","type":"blob","sha":"0218115a7d2fa46546481f7223af7236e3448664","size":13599,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/0218115a7d2fa46546481f7223af7236e3448664"},{"path":"tests/private_logistics/test_automatic_reconnection.py","mode":"100644","type":"blob","sha":"8c3f51e8a7f76c730dd6f929ce5b4c15774c7222","size":1499,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/8c3f51e8a7f76c730dd6f929ce5b4c15774c7222"},{"path":"tests/private_logistics/test_fuel_diagnostics.py","mode":"100644","type":"blob","sha":"b21fdc0d669e16cc61b9b47d3d4d10201f8522c7","size":6437,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/b21fdc0d669e16cc61b9b47d3d4d10201f8522c7"},{"path":"tests/private_logistics/test_journey_tracker.py","mode":"100644","type":"blob","sha":"240569fb47327ad600c0c6c762857c6f2162076e","size":3294,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/240569fb47327ad600c0c6c762857c6f2162076e"},{"path":"tests/private_logistics/test_panel_fuel_observer.py","mode":"100644","type":"blob","sha":"e598a24bd0a32336c2c090f50a05e3173ae2ec5d","size":6423,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/e598a24bd0a32336c2c090f50a05e3173ae2ec5d"},{"path":"tests/private_logistics/test_permission_test_defaults.py","mode":"100644","type":"blob","sha":"8fd0fcec75021a6c7d9617c35c0483dc58a7737d","size":3070,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/8fd0fcec75021a6c7d9617c35c0483dc58a7737d"},{"path":"tests/private_logistics/test_schedule_assignment_ledger.py","mode":"100644","type":"blob","sha":"d75e20a6a6e02ce96ce3ae9ce87bb00ed3eaf1b3","size":3315,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/d75e20a6a6e02ce96ce3ae9ce87bb00ed3eaf1b3"},{"path":"tests/private_logistics/test_schedule_observer.py","mode":"100644","type":"blob","sha":"11d15a2ca8d9c1c2ec5cb3d40251e5cff013a903","size":6370,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/11d15a2ca8d9c1c2ec5cb3d40251e5cff013a903"},{"path":"tests/private_logistics/test_site_permissions.py","mode":"100644","type":"blob","sha":"ff98bb9b05883bb83caf5250b3e80266682dd2ee","size":7921,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/ff98bb9b05883bb83caf5250b3e80266682dd2ee"},{"path":"tests/private_logistics/test_storage_checkbox.py","mode":"100644","type":"blob","sha":"ea73eaaee6c9864131d25e68fb28c895bad53d3f","size":4798,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/ea73eaaee6c9864131d25e68fb28c895bad53d3f"},{"path":"tests/private_logistics/test_task_audit.py","mode":"100644","type":"blob","sha":"002076a4e375c7270e1b57d303741d851818a276","size":9742,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/002076a4e375c7270e1b57d303741d851818a276"},{"path":"tests/private_logistics_probe","mode":"040000","type":"tree","sha":"4c3c8bce50fb141694aaca00b2e5991ea2a51a75","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/4c3c8bce50fb141694aaca00b2e5991ea2a51a75"},{"path":"tests/private_logistics_probe/README.md","mode":"100644","type":"blob","sha":"b99ae921320bb97e55225c9bd18ccf9b363697e9","size":65,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/b99ae921320bb97e55225c9bd18ccf9b363697e9"},{"path":"tests/private_logistics_probe/__init__.py","mode":"100644","type":"blob","sha":"e69de29bb2d1d6434b8b29ae775ad8c2e48c5391","size":0,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"},{"path":"tests/private_logistics_probe/checker.py","mode":"100644","type":"blob","sha":"21280880ac147fba4c40c835b765c30e3eb50673","size":29804,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/21280880ac147fba4c40c835b765c30e3eb50673"},{"path":"tests/private_logistics_probe/checker_cli.py","mode":"100644","type":"blob","sha":"70f7fe94176b7c59849af089e87e60a1cd45f570","size":3849,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/70f7fe94176b7c59849af089e87e60a1cd45f570"},{"path":"tests/private_logistics_probe/fixtures.py","mode":"100644","type":"blob","sha":"a8e3704dbfb6400366d46ae43040f64f5a8db19a","size":21887,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/a8e3704dbfb6400366d46ae43040f64f5a8db19a"},{"path":"tests/private_logistics_probe/parser.py","mode":"100644","type":"blob","sha":"9439baf484317060d5265ec782f043c95ced60ee","size":19249,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/9439baf484317060d5265ec782f043c95ced60ee"},{"path":"tests/private_logistics_probe/probe_checker.py","mode":"100644","type":"blob","sha":"a8068c5fa5521ccfde787a3a7c5ff472fb3f564f","size":52341,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/a8068c5fa5521ccfde787a3a7c5ff472fb3f564f"},{"path":"tests/private_logistics_probe/probe_fixtures.py","mode":"100644","type":"blob","sha":"7b073785d10367f70c15cfc2de918124e3471250","size":43022,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/7b073785d10367f70c15cfc2de918124e3471250"},{"path":"tests/private_logistics_probe/probe_parser.py","mode":"100644","type":"blob","sha":"e28378c5db73c5669cda187e734746e56d00c0e9","size":13963,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/e28378c5db73c5669cda187e734746e56d00c0e9"},{"path":"tests/private_logistics_probe/probe_schema.py","mode":"100644","type":"blob","sha":"73be834fb139271a7686b1573b0e4e8b6e482e0e","size":9324,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/73be834fb139271a7686b1573b0e4e8b6e482e0e"},{"path":"tests/private_logistics_probe/schema.py","mode":"100644","type":"blob","sha":"156ea67d60cd6df2a03499f46986ab217588a5b5","size":9928,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/156ea67d60cd6df2a03499f46986ab217588a5b5"},{"path":"tests/private_logistics_probe/snapshot_serialization_output.txt","mode":"100644","type":"blob","sha":"bec745314947fc1287e11fb3d102e0f75683cb23","size":1052,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/bec745314947fc1287e11fb3d102e0f75683cb23"},{"path":"tests/private_logistics_probe/snapshot_serialization_test.cpp","mode":"100644","type":"blob","sha":"363dbe83063e24f2e61453a54c498d3ee1f521ca","size":2311,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/363dbe83063e24f2e61453a54c498d3ee1f521ca"},{"path":"tests/private_logistics_probe/test_checker.py","mode":"100644","type":"blob","sha":"d962c6474479cc9d780c3f87143c9117312323fc","size":14000,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/d962c6474479cc9d780c3f87143c9117312323fc"},{"path":"tests/private_logistics_probe/test_default_config.py","mode":"100644","type":"blob","sha":"cb1ed336094f56b86bc41e1d43921e13311a135b","size":1051,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/cb1ed336094f56b86bc41e1d43921e13311a135b"},{"path":"tests/private_logistics_probe/test_native_snapshot.py","mode":"100644","type":"blob","sha":"d61f78e4ba8089b8cb996e3b195a2953e0142629","size":2052,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/d61f78e4ba8089b8cb996e3b195a2953e0142629"},{"path":"tests/private_logistics_probe/test_probe_checker.py","mode":"100644","type":"blob","sha":"07f703627492c77a86348955c95c4affc0176026","size":24268,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/07f703627492c77a86348955c95c4affc0176026"},{"path":"tests/private_logistics_v018_model","mode":"040000","type":"tree","sha":"87df2de6d84b5116b079e292609b6a4c192a47f1","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/87df2de6d84b5116b079e292609b6a4c192a47f1"},{"path":"tests/private_logistics_v018_model/MODEL_REVIEW_COMPLETE.md","mode":"100644","type":"blob","sha":"cfe9d079c5b29fb91a26552ad4fc439e70be8219","size":35893,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/cfe9d079c5b29fb91a26552ad4fc439e70be8219"},{"path":"tests/private_logistics_v018_model/README.md","mode":"100644","type":"blob","sha":"ec4df3c575733a18e9b347eda5efebf0e737ac5c","size":4619,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/ec4df3c575733a18e9b347eda5efebf0e737ac5c"},{"path":"tests/private_logistics_v018_model/__init__.py","mode":"100644","type":"blob","sha":"e69de29bb2d1d6434b8b29ae775ad8c2e48c5391","size":0,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"},{"path":"tests/private_logistics_v018_model/__pycache__","mode":"040000","type":"tree","sha":"4487aeb64ef87ee9fa80a477d30a186426c6be32","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/4487aeb64ef87ee9fa80a477d30a186426c6be32"},{"path":"tests/private_logistics_v018_model/__pycache__/__init__.cpython-314.pyc","mode":"100644","type":"blob","sha":"16099502482e4c738c554ec8ebbee87778209cac","size":221,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/16099502482e4c738c554ec8ebbee87778209cac"},{"path":"tests/private_logistics_v018_model/__pycache__/model.cpython-314.pyc","mode":"100644","type":"blob","sha":"09c369c57202db8b0b8992609f6f9c41b5d76948","size":37873,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/09c369c57202db8b0b8992609f6f9c41b5d76948"},{"path":"tests/private_logistics_v018_model/__pycache__/test_model.cpython-314.pyc","mode":"100644","type":"blob","sha":"1d672df334b6f3231c499415784a91ad4542d6a7","size":46227,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/1d672df334b6f3231c499415784a91ad4542d6a7"},{"path":"tests/private_logistics_v018_model/findings.md","mode":"100644","type":"blob","sha":"af088d47e541185ec4fe5404b4c6b7148134486b","size":11997,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/af088d47e541185ec4fe5404b4c6b7148134486b"},{"path":"tests/private_logistics_v018_model/model.py","mode":"100644","type":"blob","sha":"27acf8b1ef42044fa900aeee0400c7a3b42838b1","size":34534,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/27acf8b1ef42044fa900aeee0400c7a3b42838b1"},{"path":"tests/private_logistics_v018_model/test_model.py","mode":"100644","type":"blob","sha":"db5e39ab697f07f3fb97728b5f2d00860ae8140e","size":42837,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/db5e39ab697f07f3fb97728b5f2d00860ae8140e"},{"path":"tests/private_logistics_v018_model/transition.md","mode":"100644","type":"blob","sha":"fa94e6c5acb600f61e1eead26dc632be323bfe56","size":5900,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/fa94e6c5acb600f61e1eead26dc632be323bfe56"},{"path":"tests/private_shops","mode":"040000","type":"tree","sha":"21a1e82c26f50c2482e551e2076f1070825739f1","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/21a1e82c26f50c2482e551e2076f1070825739f1"},{"path":"tests/private_shops/test_restock_defaults.py","mode":"100644","type":"blob","sha":"37e0f9a524a2b4a7d3a1ead27d855de358564264","size":1019,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/37e0f9a524a2b4a7d3a1ead27d855de358564264"},{"path":"tests/private_shops/test_wholesale_debt.py","mode":"100644","type":"blob","sha":"38d3441b51403c4464b0943f6a74d91555ffad9e","size":4283,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/38d3441b51403c4464b0943f6a74d91555ffad9e"},{"path":"tests/vehicle_gauge_strings","mode":"040000","type":"tree","sha":"27351acded8747eca7f66e462364372284e19948","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/27351acded8747eca7f66e462364372284e19948"},{"path":"tests/vehicle_gauge_strings/test_scanner.py","mode":"100644","type":"blob","sha":"ecbdd8d0307de73163b07af84611a9328c9ce887","size":5725,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/ecbdd8d0307de73163b07af84611a9328c9ce887"},{"path":"tools","mode":"040000","type":"tree","sha":"a9d20f4b40be9a25a2bebc05cf1435ca798cabd8","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/a9d20f4b40be9a25a2bebc05cf1435ca798cabd8"},{"path":"tools/audit_vehicle_schedule_export.py","mode":"100644","type":"blob","sha":"b8295bde9127c6e63ecce1cea98ea853d94c5a89","size":4577,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/b8295bde9127c6e63ecce1cea98ea853d94c5a89"},{"path":"tools/peinfo.py","mode":"100644","type":"blob","sha":"cdc1a7b499f80eb90c77e57fef0d12f7d2c7496e","size":22729,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/cdc1a7b499f80eb90c77e57fef0d12f7d2c7496e"},{"path":"tools/vehicle_gauge_strings.py","mode":"100644","type":"blob","sha":"a9f3325e65b88ee19478b85f2ecb5be4b1ad42a8","size":8207,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/a9f3325e65b88ee19478b85f2ecb5be4b1ad42a8"},{"path":"xrefs_1406EE2A0.txt","mode":"100644","type":"blob","sha":"89740b758a5816a2007cd5465720d3b53ab38963","size":12585,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/89740b758a5816a2007cd5465720d3b53ab38963"}],"truncated":false}
+```
+
+### Fuel-input readiness complete final artifact — `.cache/fuel-input-old-re-tree.json`
+
+Bytes:30611;SHA256:`2377561f84a8611dd0caa0f0cb00e9572bf9a5360ec42ad815821b84501038ab`. Complete final source/actual output/input; no fabricated native evidence.
+
+```json
+{"sha":"80a4404d8d3fa5161bcaaf8de8cfd0a7fc7a72b7","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/80a4404d8d3fa5161bcaaf8de8cfd0a7fc7a72b7","tree":[{"path":".clinerules","mode":"100644","type":"blob","sha":"1180eb486b5fab4b095ea0610012f5baf10001a9","size":7790,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/1180eb486b5fab4b095ea0610012f5baf10001a9"},{"path":".gitattributes","mode":"100644","type":"blob","sha":"20b9355e649102708e8dd16a44e975cc10fc0c78","size":261,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/20b9355e649102708e8dd16a44e975cc10fc0c78"},{"path":".gitignore","mode":"100644","type":"blob","sha":"26ebb4fa66374b25d607236dd4c6615f074390d8","size":101,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/26ebb4fa66374b25d607236dd4c6615f074390d8"},{"path":".vscode","mode":"040000","type":"tree","sha":"b8b245f2ecb420e9155ecf097da22fab3e538348","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/b8b245f2ecb420e9155ecf097da22fab3e538348"},{"path":".vscode/c_cpp_properties.json","mode":"100644","type":"blob","sha":"bb8cbd12e5b4b3bc1b3facb06b76344d0c09c261","size":621,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/bb8cbd12e5b4b3bc1b3facb06b76344d0c09c261"},{"path":".vscode/tasks.json","mode":"100644","type":"blob","sha":"ce0e8f2fc2c2524d788a62cf60d49a51c335be99","size":1431,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/ce0e8f2fc2c2524d788a62cf60d49a51c335be99"},{"path":"INSTRUCTIONS.md","mode":"100644","type":"blob","sha":"1180eb486b5fab4b095ea0610012f5baf10001a9","size":7790,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/1180eb486b5fab4b095ea0610012f5baf10001a9"},{"path":"build.bat","mode":"100644","type":"blob","sha":"f3987976fe4e21d0f70411cd964c33b2faa5e270","size":5502,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/f3987976fe4e21d0f70411cd964c33b2faa5e270"},{"path":"clean.bat","mode":"100644","type":"blob","sha":"5597b2cdc9efcd09fd3b2bbc48ee5c8b8dfd7dc5","size":118,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/5597b2cdc9efcd09fd3b2bbc48ee5c8b8dfd7dc5"},{"path":"docs","mode":"040000","type":"tree","sha":"ffc7e9407833049f1e06e7dfcce93d3c4e6834dd","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/ffc7e9407833049f1e06e7dfcce93d3c4e6834dd"},{"path":"docs/AGENT_REPORT_private_industry.md","mode":"100644","type":"blob","sha":"d404031aabf8434fbbe1d671fc6040571c59ef21","size":23720,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/d404031aabf8434fbbe1d671fc6040571c59ef21"},{"path":"docs/Archive dont read","mode":"040000","type":"tree","sha":"4ca414bf473f5bf689af115e00d88cebba0ef586","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/4ca414bf473f5bf689af115e00d88cebba0ef586"},{"path":"docs/Archive dont read/17-ui-and-integration.md","mode":"100644","type":"blob","sha":"891d89b66c0d1c038375446c7a924fb2aed3862b","size":18823,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/891d89b66c0d1c038375446c7a924fb2aed3862b"},{"path":"docs/Archive dont read/18-ghidra-followup.md","mode":"100644","type":"blob","sha":"858d138f00e733887b477efd7a501a401c792d7a","size":4508,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/858d138f00e733887b477efd7a501a401c792d7a"},{"path":"docs/CPI_Survival_Basket_Investigation.md","mode":"100644","type":"blob","sha":"efcb0579b1b4783f877ffa4e8d66c8ec68854115","size":20316,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/efcb0579b1b4783f877ffa4e8d66c8ec68854115"},{"path":"docs/Citizen_Housing_Relocation.md","mode":"100644","type":"blob","sha":"c3ac1aa3e63615ac3335ccbc9284564d5d9293e0","size":10671,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/c3ac1aa3e63615ac3335ccbc9284564d5d9293e0"},{"path":"docs/Citizen_SoL_Investigation.md","mode":"100644","type":"blob","sha":"7e0ff4fe5a60e6be9d872e86856ac66773ea938e","size":3483,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/7e0ff4fe5a60e6be9d872e86856ac66773ea938e"},{"path":"docs/DEVELOPMENT_README.md","mode":"100644","type":"blob","sha":"6a0bf3364a63e1bc0a19aaad5b5ab0a7ce4c992d","size":23769,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/6a0bf3364a63e1bc0a19aaad5b5ab0a7ce4c992d"},{"path":"docs/FUEL PLAN","mode":"040000","type":"tree","sha":"e3183e43ca8fd250af1da5951e1dc6db98d2bf68","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/e3183e43ca8fd250af1da5951e1dc6db98d2bf68"},{"path":"docs/FUEL PLAN/association-investigation","mode":"040000","type":"tree","sha":"ff3559c78da092a108ee3d43c1ebba01a87f2474","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/ff3559c78da092a108ee3d43c1ebba01a87f2474"},{"path":"docs/FUEL PLAN/association-investigation/BINARY_INVESTIGATION_COMPLETE.md","mode":"100644","type":"blob","sha":"af3b56388cffb85a4acc6fc427f9ee7fa23bb645","size":68166,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/af3b56388cffb85a4acc6fc427f9ee7fa23bb645"},{"path":"docs/Labor_Mobility_Investigation.md","mode":"100644","type":"blob","sha":"b904326fc3d58a348ff982b929541861182e6b1b","size":15323,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/b904326fc3d58a348ff982b929541861182e6b1b"},{"path":"docs/Labor_and_Salary_Overhaul_Plan.md","mode":"100644","type":"blob","sha":"e7d12ea0e56c3d823d1940e23e594bf508ac30b8","size":11851,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/e7d12ea0e56c3d823d1940e23e594bf508ac30b8"},{"path":"docs/Map_Expander_Test.md","mode":"100644","type":"blob","sha":"17a292fea76f7dc24d7cb8c63e19c7d2c9122aa8","size":3701,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/17a292fea76f7dc24d7cb8c63e19c7d2c9122aa8"},{"path":"docs/Map_Size_Investigation.md","mode":"100644","type":"blob","sha":"e7ed6355f03a6a900b566f36f3f45cecad6222f7","size":8375,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/e7ed6355f03a6a900b566f36f3f45cecad6222f7"},{"path":"docs/README.md","mode":"100644","type":"blob","sha":"89a390a0ce65c7763f646b213f8ba12cf7ab8966","size":3893,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/89a390a0ce65c7763f646b213f8ba12cf7ab8966"},{"path":"docs/Rent_Housing_Task1_Investigation.md","mode":"100644","type":"blob","sha":"14a35d673ff71c93241d7c27c802b2969012c8d8","size":11490,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/14a35d673ff71c93241d7c27c802b2969012c8d8"},{"path":"docs/Retail_Purchase_Block_Investigation.md","mode":"100644","type":"blob","sha":"af6e1014a311fbeb627bb6e09aea620955f83165","size":15014,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/af6e1014a311fbeb627bb6e09aea620955f83165"},{"path":"docs/STAGING_README.md","mode":"100644","type":"blob","sha":"4cb1f3cc0a11a547044ae759f95fc3bc194578dd","size":2458,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/4cb1f3cc0a11a547044ae759f95fc3bc194578dd"},{"path":"docs/SUPERSEDED.md","mode":"100644","type":"blob","sha":"d1712e339a1669a89d7dab70c42bc4716b38c8df","size":1652,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/d1712e339a1669a89d7dab70c42bc4716b38c8df"},{"path":"docs/UI investigation.md","mode":"100644","type":"blob","sha":"76733b6350f1d2ed4bc0c306cbe4972e73ec3c48","size":73817,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/76733b6350f1d2ed4bc0c306cbe4972e73ec3c48"},{"path":"docs/WRSRE DESIGN DOC.md","mode":"100644","type":"blob","sha":"e71193eb825c5004e4cdb141f782fb61b38b06c7","size":29419,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/e71193eb825c5004e4cdb141f782fb61b38b06c7"},{"path":"docs/analysis-warehouse-checkbox-2026-10-23.md","mode":"100644","type":"blob","sha":"8258192d038ff2bf476bc0606cc03b609d5cb7ba","size":12347,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/8258192d038ff2bf476bc0606cc03b609d5cb7ba"},{"path":"docs/engine","mode":"040000","type":"tree","sha":"9d0abe5a0a61f397c07d07cb4158ea6028a3cffd","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/9d0abe5a0a61f397c07d07cb4158ea6028a3cffd"},{"path":"docs/engine/README.md","mode":"100644","type":"blob","sha":"cf6a1311deb8683533c86013a8434c6c86e80ab9","size":978,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/cf6a1311deb8683533c86013a8434c6c86e80ab9"},{"path":"docs/engine/building-vectors.md","mode":"100644","type":"blob","sha":"d682845f2a45eee285a10cc73abab00bc8aaff14","size":17323,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/d682845f2a45eee285a10cc73abab00bc8aaff14"},{"path":"docs/engine/local-markets.md","mode":"100644","type":"blob","sha":"53fac706cd2e12c450300d3c91dfac7094244f3b","size":13958,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/53fac706cd2e12c450300d3c91dfac7094244f3b"},{"path":"docs/engine/logistics.md","mode":"100644","type":"blob","sha":"c435ac35bdeee057d6e021cfd0fc6f5a33082ab7","size":10460,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/c435ac35bdeee057d6e021cfd0fc6f5a33082ab7"},{"path":"docs/engine/native-verification-results.md","mode":"100644","type":"blob","sha":"89a1274981ac435502b0c835506c7a32af14b279","size":16938,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/89a1274981ac435502b0c835506c7a32af14b279"},{"path":"docs/engine/private-industry-re.md","mode":"100644","type":"blob","sha":"e72ee5a4179b0fc8f6b3de36bc54727e239cb7e4","size":62950,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/e72ee5a4179b0fc8f6b3de36bc54727e239cb7e4"},{"path":"docs/engine/vehicle-fuel-system.md","mode":"100644","type":"blob","sha":"15b21180759df6dfd8fe1fe5c4915ed7bff97221","size":21101,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/15b21180759df6dfd8fe1fe5c4915ed7bff97221"},{"path":"docs/fix-plan-critical-high-2026-10-22.md","mode":"100644","type":"blob","sha":"935325a971264ae46c3191c0ba7e4f11f010c8f9","size":13549,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/935325a971264ae46c3191c0ba7e4f11f010c8f9"},{"path":"docs/ghidra-do-storage-findings.md","mode":"100644","type":"blob","sha":"50a8e1a24ed8cf675dd977f93ff0c045f201c399","size":11799,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/50a8e1a24ed8cf675dd977f93ff0c045f201c399"},{"path":"docs/ghidra-findings-warehouse-builder-2026-10-23.md","mode":"100644","type":"blob","sha":"b381063e1f8465d281c20e50685079cfe743ddd8","size":13078,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/b381063e1f8465d281c20e50685079cfe743ddd8"},{"path":"docs/ghidra-findings-warehouse-storage-v6.15.md","mode":"100644","type":"blob","sha":"37961cf6a4d2fc5a6f44be6c1cbe48a698ddcf4a","size":27023,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/37961cf6a4d2fc5a6f44be6c1cbe48a698ddcf4a"},{"path":"docs/ghidra-request-warehouse-builder-2026-10-23.md","mode":"100644","type":"blob","sha":"d1bff7e9313492ae1b88b6faf4f0b3961788f0a9","size":29494,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/d1bff7e9313492ae1b88b6faf4f0b3961788f0a9"},{"path":"docs/ghidra-request-warehouse-storage-v6.15.md","mode":"100644","type":"blob","sha":"0f14868d2902fb02003c3d64a2116239d5ce8dc0","size":13251,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/0f14868d2902fb02003c3d64a2116239d5ce8dc0"},{"path":"docs/implementation-plan-per-trip-fuel.md","mode":"100644","type":"blob","sha":"e164a8f8999fddfd528053334bbdcf61c7cba171","size":43094,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/e164a8f8999fddfd528053334bbdcf61c7cba171"},{"path":"docs/remaining-logic-bugs-audit-2026-10-22.md","mode":"100644","type":"blob","sha":"3ecbff85198ec7e4e61002c81b9ec1f448f73080","size":11501,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/3ecbff85198ec7e4e61002c81b9ec1f448f73080"},{"path":"docs/review-per-trip-fuel-plan.md","mode":"100644","type":"blob","sha":"86ec075ea8ae86f471ea6571cea53af7f789627d","size":40977,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/86ec075ea8ae86f471ea6571cea53af7f789627d"},{"path":"docs/tasks","mode":"040000","type":"tree","sha":"6e0155398c2d64fec91a98dde49abb1c258021c9","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/6e0155398c2d64fec91a98dde49abb1c258021c9"},{"path":"docs/tasks/README.md","mode":"100644","type":"blob","sha":"b9f5889a9175de11ec7666dfc2e2bdb326736a0c","size":325,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/b9f5889a9175de11ec7666dfc2e2bdb326736a0c"},{"path":"docs/tasks/active","mode":"040000","type":"tree","sha":"7b4e4755232e68bf04178f77578c466335f5364b","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/7b4e4755232e68bf04178f77578c466335f5364b"},{"path":"docs/tasks/active/2026-10-22-old-vs-new-analysis.md","mode":"100644","type":"blob","sha":"d389fb5515a90afb2372d907209d33bb6d58ea45","size":6257,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/d389fb5515a90afb2372d907209d33bb6d58ea45"},{"path":"docs/tasks/active/2026-10-22-regression-triage.md","mode":"100644","type":"blob","sha":"65841e88cd9eeaf1aa96e2f39977d6445b9d4c8a","size":7712,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/65841e88cd9eeaf1aa96e2f39977d6445b9d4c8a"},{"path":"docs/tasks/active/GHIDRA_REQUEST.md","mode":"100644","type":"blob","sha":"a1adad2002e15a9209d07caed9b355f3a968bc94","size":4659,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/a1adad2002e15a9209d07caed9b355f3a968bc94"},{"path":"docs/tasks/active/NEXT_PHASE.md","mode":"100644","type":"blob","sha":"c89a9aa58a405dde68104bddd47187b8befc53b2","size":7808,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/c89a9aa58a405dde68104bddd47187b8befc53b2"},{"path":"docs/tasks/active/current-task-state-storage.md","mode":"100644","type":"blob","sha":"46f93bbeb63c21de6276a8cca818d1e683481594","size":10217,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/46f93bbeb63c21de6276a8cca818d1e683481594"},{"path":"docs/visions","mode":"040000","type":"tree","sha":"fbb5c2fdd4be70506fe42f80522b6c54557e0dce","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/fbb5c2fdd4be70506fe42f80522b6c54557e0dce"},{"path":"docs/visions/README.md","mode":"100644","type":"blob","sha":"aab41d5f8d226749ef9c962aed3a5283590eed82","size":283,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/aab41d5f8d226749ef9c962aed3a5283590eed82"},{"path":"docs/visions/vision-private-logistics.md","mode":"100644","type":"blob","sha":"a9a2843923e8f59da71384a1415aa21eddf571e6","size":11707,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/a9a2843923e8f59da71384a1415aa21eddf571e6"},{"path":"docs/visions/vision-whole-mod.md","mode":"100644","type":"blob","sha":"d4f8254a160e20fd775ea7535fc06d87caa0198f","size":16767,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/d4f8254a160e20fd775ea7535fc06d87caa0198f"},{"path":"plugins","mode":"040000","type":"tree","sha":"3c2ee57482dce87f8208b6ffa25c514d7a4bdc90","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/3c2ee57482dce87f8208b6ffa25c514d7a4bdc90"},{"path":"plugins/citizen_labor","mode":"040000","type":"tree","sha":"811303d677525cf8d007bbac5f2cd0e2eaa97167","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/811303d677525cf8d007bbac5f2cd0e2eaa97167"},{"path":"plugins/citizen_labor/Labor_and_Salary_Overhaul_Specification.md","mode":"100644","type":"blob","sha":"733d86bf7384b116f14352a44fbe2dbc8f0c076c","size":16195,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/733d86bf7384b116f14352a44fbe2dbc8f0c076c"},{"path":"plugins/citizen_labor/citizen_labor.cpp","mode":"100644","type":"blob","sha":"cba6597967fabc2923e0fa7abab1634d5be23fa8","size":122318,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/cba6597967fabc2923e0fa7abab1634d5be23fa8"},{"path":"plugins/citizen_labor/citizen_labor.ini","mode":"100644","type":"blob","sha":"85f4f8dae7035eefa8b45dbbfbf9a65f53cae01c","size":11623,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/85f4f8dae7035eefa8b45dbbfbf9a65f53cae01c"},{"path":"plugins/citizen_retail","mode":"040000","type":"tree","sha":"75ed29f70f236d03a49b2d928f7f6be7a746fe9a","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/75ed29f70f236d03a49b2d928f7f6be7a746fe9a"},{"path":"plugins/citizen_retail/citizen_retail.cpp","mode":"100644","type":"blob","sha":"10c5a97d97680dffd03b0d0cbbb8e45401a7887c","size":71202,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/10c5a97d97680dffd03b0d0cbbb8e45401a7887c"},{"path":"plugins/citizen_retail/citizen_retail.ini","mode":"100644","type":"blob","sha":"54e6cdc177adfeb28de04959a21d17ffa87abfb5","size":6046,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/54e6cdc177adfeb28de04959a21d17ffa87abfb5"},{"path":"plugins/currency","mode":"040000","type":"tree","sha":"9b4f5bf80e72170cb1718090b9f2f0f01649d2ea","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/9b4f5bf80e72170cb1718090b9f2f0f01649d2ea"},{"path":"plugins/currency/currency.cpp","mode":"100644","type":"blob","sha":"e356de01cf49a04d0f5f20431cba8facf35b44d9","size":21785,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/e356de01cf49a04d0f5f20431cba8facf35b44d9"},{"path":"plugins/currency/currency.ini","mode":"100644","type":"blob","sha":"d286f4159bae4c8ea5f9f73b0584cc636526fd8f","size":2430,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/d286f4159bae4c8ea5f9f73b0584cc636526fd8f"},{"path":"plugins/enterprise_base","mode":"040000","type":"tree","sha":"9976babb4292de71e0aeebac3b7c143c97b63eed","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/9976babb4292de71e0aeebac3b7c143c97b63eed"},{"path":"plugins/enterprise_base/enterprise_base.cpp","mode":"100644","type":"blob","sha":"e2f1d220e7ed5a9ac48b3a97b2d810030fecc377","size":207376,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/e2f1d220e7ed5a9ac48b3a97b2d810030fecc377"},{"path":"plugins/enterprise_base/enterprise_base.ini","mode":"100644","type":"blob","sha":"a4197b08b37f2787fe44835b5e4ae3a13cd09d16","size":17636,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/a4197b08b37f2787fe44835b5e4ae3a13cd09d16"},{"path":"plugins/map_expander","mode":"040000","type":"tree","sha":"399e99e452a223ea99c7505923fc78fa5957ec12","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/399e99e452a223ea99c7505923fc78fa5957ec12"},{"path":"plugins/map_expander/map_expander.cpp","mode":"100644","type":"blob","sha":"6defde82b8ad9838d8ae7c17d81372ddb4d81caa","size":8210,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/6defde82b8ad9838d8ae7c17d81372ddb4d81caa"},{"path":"plugins/map_expander/map_expander.ini","mode":"100644","type":"blob","sha":"89928fb49052ad94540d24e03b7716d328d997b0","size":995,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/89928fb49052ad94540d24e03b7716d328d997b0"},{"path":"plugins/persistence","mode":"040000","type":"tree","sha":"d1889b32c90e116cb09d0f7ebf4f97f01c225b46","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/d1889b32c90e116cb09d0f7ebf4f97f01c225b46"},{"path":"plugins/persistence/persistence.cpp","mode":"100644","type":"blob","sha":"c8080eabf25d1e57008523b6f55730c64e7b71d6","size":13096,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/c8080eabf25d1e57008523b6f55730c64e7b71d6"},{"path":"plugins/persistence/persistence.ini","mode":"100644","type":"blob","sha":"405c525d92152858485172d78e969ed744d8d189","size":1854,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/405c525d92152858485172d78e969ed744d8d189"},{"path":"plugins/private_construction","mode":"040000","type":"tree","sha":"ef015d323e3b9af7d9aee996de682b911d3987f8","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/ef015d323e3b9af7d9aee996de682b911d3987f8"},{"path":"plugins/private_construction/private_construction.cpp","mode":"100644","type":"blob","sha":"9d2c0c083c1d59d4b6efdcc4b0e818a0cbfc6082","size":2040,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/9d2c0c083c1d59d4b6efdcc4b0e818a0cbfc6082"},{"path":"plugins/private_construction/private_construction.ini","mode":"100644","type":"blob","sha":"5cb36269d0f3a1a0726bc46e871bcf0a01061f81","size":15700,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/5cb36269d0f3a1a0726bc46e871bcf0a01061f81"},{"path":"plugins/private_logistics","mode":"040000","type":"tree","sha":"0009ba57012a1cf96a8f5917ccb03f58f56a60c7","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/0009ba57012a1cf96a8f5917ccb03f58f56a60c7"},{"path":"plugins/private_logistics/GHIDRA_REQUEST.md","mode":"100644","type":"blob","sha":"a1adad2002e15a9209d07caed9b355f3a968bc94","size":4659,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/a1adad2002e15a9209d07caed9b355f3a968bc94"},{"path":"plugins/private_logistics/private_logistics.cpp","mode":"100644","type":"blob","sha":"f2865375c13e646e31f06c5aba0c508874f59fc9","size":166422,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/f2865375c13e646e31f06c5aba0c508874f59fc9"},{"path":"plugins/private_logistics/private_logistics.ini","mode":"100644","type":"blob","sha":"48c566bd8ce3bfa7eeaf91728676a8e84aee419e","size":10202,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/48c566bd8ce3bfa7eeaf91728676a8e84aee419e"},{"path":"plugins/private_shops","mode":"040000","type":"tree","sha":"69f9b70285278afa0d6b759e62514f7b8f883c17","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/69f9b70285278afa0d6b759e62514f7b8f883c17"},{"path":"plugins/private_shops/private_shops.cpp","mode":"100644","type":"blob","sha":"d8a70ec71b55e3965ae2882b6d92be8dd3ad4878","size":74771,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/d8a70ec71b55e3965ae2882b6d92be8dd3ad4878"},{"path":"plugins/private_shops/private_shops.ini","mode":"100644","type":"blob","sha":"a17e5f045705eba6c27409274e3d9cebb6fdbb3d","size":10149,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/a17e5f045705eba6c27409274e3d9cebb6fdbb3d"},{"path":"plugins/resource_pricing","mode":"040000","type":"tree","sha":"0f72d92c855a62111a49a9b6fae83f89a98b5d50","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/0f72d92c855a62111a49a9b6fae83f89a98b5d50"},{"path":"plugins/resource_pricing/resource_pricing.cpp","mode":"100644","type":"blob","sha":"5264c51f292e940e8903d841ba44a3694a2ed544","size":28798,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/5264c51f292e940e8903d841ba44a3694a2ed544"},{"path":"plugins/resource_pricing/resource_pricing.ini","mode":"100644","type":"blob","sha":"a184a14d8d79dbcdc7e133e1c4708651e172575e","size":7684,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/a184a14d8d79dbcdc7e133e1c4708651e172575e"},{"path":"plugins/sim_clock","mode":"040000","type":"tree","sha":"9359700f7fd4dcadc6e6e7081ab9c59c7901d187","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/9359700f7fd4dcadc6e6e7081ab9c59c7901d187"},{"path":"plugins/sim_clock/sim_clock.cpp","mode":"100644","type":"blob","sha":"7c162aadbe6a0d8516d4cd480edf741277f661e5","size":14021,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/7c162aadbe6a0d8516d4cd480edf741277f661e5"},{"path":"plugins/sim_clock/sim_clock.ini","mode":"100644","type":"blob","sha":"9b72844930c1fcbd9eef04607e66bea258eaf105","size":1809,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/9b72844930c1fcbd9eef04607e66bea258eaf105"},{"path":"plugins/state_ledger","mode":"040000","type":"tree","sha":"168e3edbd4a4da2877abc517205227b1531b565c","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/168e3edbd4a4da2877abc517205227b1531b565c"},{"path":"plugins/state_ledger/state_ledger.cpp","mode":"100644","type":"blob","sha":"f18f8dc0d74d1e09a37a6f0efb115c1781930efc","size":17907,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/f18f8dc0d74d1e09a37a6f0efb115c1781930efc"},{"path":"plugins/state_ledger/state_ledger.ini","mode":"100644","type":"blob","sha":"2f3e5993af1f502e9deb3b89a1437a3e4929f60b","size":2450,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/2f3e5993af1f502e9deb3b89a1437a3e4929f60b"},{"path":"plugins/taxes","mode":"040000","type":"tree","sha":"fe18c1b43454d2bc1a07552961b430e68a081b4e","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/fe18c1b43454d2bc1a07552961b430e68a081b4e"},{"path":"plugins/taxes/taxes.cpp","mode":"100644","type":"blob","sha":"409317eff9c350b95d367728c64daf0202159abc","size":50248,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/409317eff9c350b95d367728c64daf0202159abc"},{"path":"plugins/taxes/taxes.ini","mode":"100644","type":"blob","sha":"38d3a0db06a05502613da6001a802a8ef7fd2170","size":7376,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/38d3a0db06a05502613da6001a802a8ef7fd2170"},{"path":"plugins/ui_overlay","mode":"040000","type":"tree","sha":"775e8f2106b69dcea9bac9552205eb4e9d73cbca","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/775e8f2106b69dcea9bac9552205eb4e9d73cbca"},{"path":"plugins/ui_overlay/ui_overlay.cpp","mode":"100644","type":"blob","sha":"e9dd3640ff8532163e65e624a6feefbeaf749730","size":8460,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/e9dd3640ff8532163e65e624a6feefbeaf749730"},{"path":"plugins/ui_overlay/ui_overlay.ini","mode":"100644","type":"blob","sha":"c047d4b4706a60a36a8f4e7e36395ee7cdb3dfed","size":2250,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/c047d4b4706a60a36a8f4e7e36395ee7cdb3dfed"},{"path":"plugins/ui_panels","mode":"040000","type":"tree","sha":"95211520baa0e539762fefd2a45df4e423aa7dac","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/95211520baa0e539762fefd2a45df4e423aa7dac"},{"path":"plugins/ui_panels/ui_panels.cpp","mode":"100644","type":"blob","sha":"4d3af87a1e996a6f0937d31b8b23518444660fba","size":168856,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/4d3af87a1e996a6f0937d31b8b23518444660fba"},{"path":"plugins/ui_panels/ui_panels.ini","mode":"100644","type":"blob","sha":"3a23e3b0faa42228ecf67f0b54b972caa17c5a1b","size":6317,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/3a23e3b0faa42228ecf67f0b54b972caa17c5a1b"},{"path":"src","mode":"040000","type":"tree","sha":"64dea778fa7a16461fb18b35da1fae8378412ab9","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/64dea778fa7a16461fb18b35da1fae8378412ab9"},{"path":"src/citizen_labor_api.h","mode":"100644","type":"blob","sha":"363fc8786dcc78130977c9d7104ea778763da6bb","size":10853,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/363fc8786dcc78130977c9d7104ea778763da6bb"},{"path":"src/citizen_retail_api.h","mode":"100644","type":"blob","sha":"449cee70b5335918c7ef8df5cf319c40f6f3e718","size":5537,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/449cee70b5335918c7ef8df5cf319c40f6f3e718"},{"path":"src/currency_api.h","mode":"100644","type":"blob","sha":"20b90fd3f212cb57515aafc362aaf4d0784cb189","size":10769,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/20b90fd3f212cb57515aafc362aaf4d0784cb189"},{"path":"src/enterprise_base_api.h","mode":"100644","type":"blob","sha":"b7394e8653b5bee93b292537c231403969d15376","size":14257,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/b7394e8653b5bee93b292537c231403969d15376"},{"path":"src/game_world.h","mode":"100644","type":"blob","sha":"61d210eca37a0ff19d487c9611504a6a9a4ae10e","size":15128,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/61d210eca37a0ff19d487c9611504a6a9a4ae10e"},{"path":"src/persistence_api.h","mode":"100644","type":"blob","sha":"c4fca64cb657d0babb8728ec9d6c56997f5e928b","size":4362,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/c4fca64cb657d0babb8728ec9d6c56997f5e928b"},{"path":"src/resource_pricing_api.h","mode":"100644","type":"blob","sha":"9ba952bda7bce82a0a9b5ffe5e950c191255fd85","size":11015,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/9ba952bda7bce82a0a9b5ffe5e950c191255fd85"},{"path":"src/sim_clock_api.h","mode":"100644","type":"blob","sha":"1a679c9521c2bf6e9523dd30455f06669012f0fd","size":9222,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/1a679c9521c2bf6e9523dd30455f06669012f0fd"},{"path":"src/taxes_api.h","mode":"100644","type":"blob","sha":"0a2bc543649778c88cabbf37f42a901c7423a372","size":6734,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/0a2bc543649778c88cabbf37f42a901c7423a372"},{"path":"src/tesmio_api.h","mode":"100644","type":"blob","sha":"5cf28c5df03c74db4316a982f7018720e7bcd80e","size":13766,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/5cf28c5df03c74db4316a982f7018720e7bcd80e"},{"path":"src/tesmio_plugin.h","mode":"100644","type":"blob","sha":"7899ac8203f1add07476d2e46a947562268e8a8e","size":5042,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/7899ac8203f1add07476d2e46a947562268e8a8e"},{"path":"src/tesmiolauncher.cpp","mode":"100644","type":"blob","sha":"4356ce2c9846c76f64aef5eb327e32529f9e18a8","size":80671,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/4356ce2c9846c76f64aef5eb327e32529f9e18a8"},{"path":"src/tesmiolauncher.rc","mode":"100644","type":"blob","sha":"6df76fc9523efc7ceb2c19674d97f1bccb3aff1b","size":792,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/6df76fc9523efc7ceb2c19674d97f1bccb3aff1b"},{"path":"src/tesmioloader.cpp","mode":"100644","type":"blob","sha":"d256554a5950bd5041805b7bbaad6ff477330240","size":83098,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/d256554a5950bd5041805b7bbaad6ff477330240"},{"path":"src/ui_overlay_api.h","mode":"100644","type":"blob","sha":"6526cf7d1efdb4cf5fe33dba80eb4cba10a6d580","size":4631,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/6526cf7d1efdb4cf5fe33dba80eb4cba10a6d580"},{"path":"src/ui_panels_api.h","mode":"100644","type":"blob","sha":"fdfb7cc9f2beb8ae5aec9a5f0facab5735905d7f","size":17509,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/fdfb7cc9f2beb8ae5aec9a5f0facab5735905d7f"},{"path":"telemetry_schema.json","mode":"100644","type":"blob","sha":"5f3c73b6f8b3806f3b125895922afb8e98ca76e9","size":1333,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/5f3c73b6f8b3806f3b125895922afb8e98ca76e9"},{"path":"tools","mode":"040000","type":"tree","sha":"5976576953dca3420b46a95d4a2551a0ac4665ec","url":"https://api.github.com/repos/Michu6636/WRSRE/git/trees/5976576953dca3420b46a95d4a2551a0ac4665ec"},{"path":"tools/peinfo.py","mode":"100644","type":"blob","sha":"cdc1a7b499f80eb90c77e57fef0d12f7d2c7496e","size":22729,"url":"https://api.github.com/repos/Michu6636/WRSRE/git/blobs/cdc1a7b499f80eb90c77e57fef0d12f7d2c7496e"}],"truncated":false}
+```
+
+### Fuel-input readiness complete final artifact — `docs/ghidra-index/16E3B0.md`
+
+Bytes:2465;SHA256:`a5725864f8f220ecfb3e60fb292648c044f2220271d75c90a415357cced01470`. Complete final source/actual output/input; no fabricated native evidence.
+
+```markdown
+# FUN_14016E3B0 — Building Upkeep (Fuel Burn + Refuel)
+
+> **Contested for the observed road truck; not a hook contract.** The historical
+> receiver/slot/unit claims below were not accepted for this vehicle. Current
+> evidence and the missing deduction/refill input are documented in the
+> [single cumulative handover](../private-logistics-runtime/VEHICLE_PANEL_FUEL_INVESTIGATION.md),
+> sections “2026-10-30 implementation checkpoint” and “Fuel-cost integration readiness”.
+> Preserve the raw historical observations; do not promote them to native fuel events.
+
+**RVA:** `0x16E3B0`
+**Signature:** `void FUN_14016e3b0(longlong game, longlong building, float tick_delta)` (RCX=game, RDX=building, XMM0=tick_delta)
+**Purpose:** Building upkeep, called once per building per tick. Iterates fleet at building+0xC70/+0xC78. Filters: vehicle+0x50C==0x42 (road truck), vehicle+0x448 ∈ {1,2}, vehicle+0x440==9. For each: finds fuel slot in cargo vector (vehicle+0x3B8/+0x3C0, stride 0x10) matching game+0xC3F0. Computes consumption (tonnes/tick): slot_rate from vehicle+0x1708+0x85E0+4+slot_index*0x10, base_rate (DAT_140909FD8 or DAT_140909E54), bld_divisor (building+0xE30), tick_scale (tick_delta/DAT_14090AA78), fVar24 (building-level). Burn deduction: SUBSS XMM0,XMM8 → MOVSS [RAX+0x8],XMM0 at 0x14016F6E0/0x14016F6E5. Empty-tank clamp: MOV [RAX+0x8],0 at 0x14016F794. Stochastic refuel after burn: COMISS XMM9,XMM8 at 0x14016F7E4 → CALL 0x140420350 at 0x14016F831 with home building (vehicle+0x4F8), mode 0, fuel resource (game+0xC330).
+**Callers:** Per-tick building upkeep loop
+**Data Refs:** `building+0xC70`, `building+0xC78`, `vehicle+0x50C`, `vehicle+0x448`, `vehicle+0x440`, `vehicle+0x3B8`, `vehicle+0x3C0`, `vehicle+0x1708`, `vehicle+0x4F8`, `game+0xC3F0`, `game+0xC330`, `building+0xE30`, `building+0xE68`, `building+0xE60`
+**Artifact:** `scratch/decomp_16e3b0.c`, `scratch/asm_burn_fuel.txt`, `scratch/asm_refuel.txt`, `scratch/xrefs_16e3b0.txt`
+**Notes:** Authoritative fuel store = cargo slot slot+0x08 (tonnes). Mirror at vehicle+0x5F0 written by FUN_140142430 (refuel) and FUN_14014B920 (burn adjustment) — NOT by burn loop; goes negative. Load does NOT affect burn (fVar24 building-level only). 1176 L/t conversion for panel display.
+**Status:** `contested` — road-truck receiver, authoritative fuel store/units and event coverage are not established; see cumulative handover. Historical instruction observations are retained above.
+```
+
+
+## Local Kilo native-fuel evidence request (2026-10-31)
+
+User cannot upload the executable and authorizes a local Kilo Code agent to obtain native evidence on the parent's behalf. The session connector lookup for kilo returned unsupported; no direct local-agent launch/control is exposed here and NO agent was started by the parent. Supplied one self-contained task for a local Code session, with serialized Ghidra access, existing-input reuse, bounded verified report writes, no plugin/INI/hook/payment changes and one owned Markdown returned for parent review. Only the report needs uploading; no EXE transfer or user offset interpretation. Native evidence and fuel-cost integration remain pending.
+
+### Complete ready-to-paste local-agent task
+
+Task bytes:6611;SHA256:`0be5cb7c82a5b9deb9048b9c8a093895941d1c4912162ec33ccf8ae7b4b979f7`. This is a request, not a completed native report.
+
+```text
+## Local Kilo task — road-truck native fuel evidence for the parent
+
+You are acting as the local native-evidence agent for a parent implementing fuel-cost accounting in WRSRE. Work in C:\Users\EricM\Downloads\WRSRE using the executable/project already on this PC. The user cannot upload the EXE. Return ONE self-contained Markdown artifact instead. Do not implement the plugin; the parent will inspect your raw evidence and integrate it.
+
+### Preflight and ownership
+
+Read AGENTS.md, INSTRUCTIONS.md and KILO_AGENT_WORKFLOW.md. Inspect git status; preserve all existing user work. Do not switch/create branches, commit, push or change plugin code/INI/build/deployment. Use one lead agent; no additional sessions/descendants are needed by default. You own the native extraction and your output report, not the parent's cumulative handover. Do not modify VEHICLE_PANEL_FUEL_INVESTIGATION.md or README. Follow required per-function ghidra-index updates only for functions actually queried, preserve conflicting evidence/status, and include their final entries in your single report.
+
+Target: SOVIET64.exe v1.1.1.9, PE timestamp0x6A3EB6AD. Previously recorded SHA256:296644A9F207D609031FC2AE73FED2DCB34619A1D55A35D1C7B51965CE6841B8. Verify actual file hash and analyzed-project provenance before reusing addresses; report discrepancies. The documented game location is C:\Workers Resources Soviet Republic. Discover the actual analyzed project/wrapper from the repo instructions; do not invent paths or a $ghidraRunner command. Use the existing Java tools and their actual argument contracts. Queries are read-only; no database renaming/retyping. Serialize Ghidra use and respect another owner's lock. Use preferred-image VA0x140000000+RVA for exports, RVAs for runtime proposals.
+
+### Established context — do not repeat completed investigations
+
+The selected truck is proven to be the panel window+0x240 root, matched to its candidate home's road-DO fleet. Its displayed gauge follows root+0x5F0 with display scale1000; this does NOT prove physical units or canonical tank authority. v0.18.11's selected-panel assignment ledger passes actual game tests: appearance opens a candidate; changed ordered targets/count replace it; removal closes it regardless of cargo/success; scalar/index edits retain it. Native job IDs/exact lifecycle are not this task.
+
+The first one-row home/Nothing phase is user-confirmed vehicle refuelling. Fuel use outside delivery assignments will be separate operating overhead; refill additions must not be counted as consumed fuel. Billing remains OFF. Do not infer actual burn from gauge subtraction, a requested deduction or generic transfer callbacks.
+
+IMPORTANT: the older16E3B0upkeep/slot/1176L-per-tonne interpretation is CONTESTED for this actual road truck, even if a stale local index says verified. Reconcile receiver provenance; do not accept or reject a path merely from its old name. The parent lacks the complete native writer exports. Read only relevant cumulative sections by heading/search, especially “2026-10-30 implementation checkpoint” and “Fuel-cost integration readiness”; do not load/rewrite the whole historical handover.
+
+### Required investigation
+
+1. Locate/reuse existing cached write_5f0 inventory and raw writer/caller exports first. If absent, obtain a targeted field-access inventory and distinguish actual writes from reads, address calculations and byte-pattern coincidences. No broad string/gauge search or repeat full renderer export.
+2. Check candidate writers142430,14B920,6B3B50,6C81D0and relevant inventory hits. These are leads, NOT accepted truck functions. Follow only necessary helpers/callers to prove the mutation receiver is the SAME road-truck object type. If5F0is only a mirror, follow the canonical storage/synchronization chain. Do not stop after finding a plausible subtraction.
+3. Establish actual consumption separately from refill, initialization, reset, UI mutation and synchronization. Show ordinary and insufficient-fuel/empty-tank branches, actual pre/post state, requested versus ACTUALLY deducted amount, clamp/negative behavior, and any linked-object aggregation. For refills show paired source/tank mutations, actual amount and whether burn/refill can occur in the same update and in which order.
+4. Establish quantity units/conversion from actual instructions/data/resource definitions, not UI scaling or configured density. Explain conversion to the existing fuel price API's units; mark unresolved physics/price-unit assumptions explicitly. No guessed1176or0.001density as proof.
+5. Propose the smallest safe event-observation sites: exact bytes and whole-instruction boundaries, ABI/receiver/arguments/float registers, pre/post capture points and relocation/control-flow hazards. Explain coverage of relevant branches/callers and identity/load/ordering limitations. No hook installation. Whole-update net change is not actual burn if a refill can mask it.
+
+### Deliverable and stopping rule
+
+Write one owned, collision-free file under scratch\out, suggested FUEL_NATIVE_INPUTS_20261031.md. Preserve an existing file; use a new suffix on collision. Include executable/project provenance, concise supported/contested/unresolved conclusions, complete relevant raw instructions with bytes and decompilation/caller definitions, exact commands and actual stdout/errors. Include full final source/results for any new extraction script and final required index entries. Bounded control-flow slices must identify their boundaries, reaching definitions and every relevant exit; do not omit the clamp/refill branch. Raw files referenced outside the report must be embedded so the parent receives the evidence, not inaccessible local paths.
+
+Preserve existing files. Write the report heading first and verify it, then append one coherent subsection at a time and read it back. Scripts are optional, not a mandatory assembly workaround. No arbitrary byte cap or evidence truncation. If a tool times out, inspect the actual file/output before retrying. Continue through consumption AND refill until supported or a precise hard blocker is demonstrated; do not declare completion from the inventory or an unsupported summary. Distinguish static evidence from unperformed runtime validation. No new game run, DLL build or payment changes.
+
+Return the report's exact path and a brief completion/blocker summary. The user will upload that Markdown file to the parent. No executable upload or Git commit is needed. Do not claim you launched another agent, transferred a file or proved native event coverage without evidence.
+
+```
+
+
+## Local fuel-agent summary received — actual report pending (2026-10-31)
+
+User supplied a completion summary referencing C:\WRSRE\scratch\out\FUEL_NATIVE_INPUTS_20261031.md (claimed326lines), exact matching EXE hash, serialized native queries and6updated index files, all uncommitted. No matching report attachment is available in this session; the local Windows path is not accessible here. These are agent-reported claims, not parent-verified native findings. No hook, producer, costing or payment is accepted or implemented from this summary.
+
+Provisional review: the claimed16E3B0cargo-slot consumption remains conditional for this observed truck because the agent itself reports an unresolved receiver link (local_178 entry+0x30 versus iterated RBX). Home-building fuel removal plus5F0mirror writes does not by itself establish how the consumption store is replenished; the actual destination/synchronization chain needs inspection in the report. tick_delta*slot_rate*25/60and constants25/60alone do not establish the quantity's physical units. The parent must review the exact raw bytes/definitions and ABI before accepting a runtime observation site. Do not install a hook at16F6E5solely from a named store address.
+
+Next action is DELIVERY ONLY: upload the completed Markdown (and complete final index entries in its appendix if not already embedded). No additional Ghidra queries or repeated game run requested before parent review. Ready-to-paste agent delivery request: “Do not run further native queries or change plugin/INI/build files. Return the complete existing FUEL_NATIVE_INPUTS_20261031.md, not another summary; report its byte length and SHA256. If the6final index entries are absent, append them as an appendix, preserving the report body and verifying each append. Attach the actual Markdown, or print it verbatim in clearly numbered parts if attachments are unavailable. No commit/push is needed.”
+
+
+## Local native-fuel report received — independent byte audit and recovery (2026-10-31)
+
+### Parent verdict and scope
+
+The full local-agent report has now been received in chat; the earlier “actual report pending” entry above is historical. Report sections1–3 were preserved in the available transcription and are embedded below. Selected byte/address claims retained in the session record are separately embedded as audit input, not misrepresented as a complete report or original raw export. No independent original-file byte length/hash is asserted. The reported executable identity is still agent-reported; neither the EXE nor the Ghidra project is available in this checkout. The report itself is not a substitute for its missing raw exports or six final index entries.
+
+Verdict: **useful candidate arithmetic/write excerpts, but NOT an accepted native road-truck fuel/refill contract; costing and hooks remain BLOCKED, payments OFF.** The claim that receiver identity is the single remaining blocker is rejected. No production files, native reads, hooks, defaults, DLL version, deployment or game run changed. Test8 remains PASS and is not repeated. Its first single-task phase is user-confirmed vehicle fuelling; this does not prove that the report's type-0x43 call is that truck's refill path.
+
+
+### Independently checked excerpt bytes — not executable validation
+
+The complete audit source and actual exit-0 output are embedded below. Python extracted 19 instruction rows at 17 unique starts from the explicitly labelled selected-byte audit input. GNU objdump decoded selected byte strings independently at their supplied preferred VAs. This checks the internal consistency of supplied strings only: it does not prove that they occur in SOVIET64.exe, that the supplied starts are genuine boundaries in that executable, or that their semantic labels/receivers are correct.
+
+Two incompatible instruction pairs occupy identical claimed addresses: 14016E426 has both MOV RSI,RDX and MOV R15,RCX; 14016F41A has both MOVAPS XMM11,XMM2 and the nine-byte DIVSS. Two alleged return/exit addresses are inside other instructions according to the retained byte claims: 14016F823 inside the seven-byte MOV starting14016F81D, and14016F83F inside the six-byte SUBSS starting14016F83E. The claimed14016E421 exit also needs reconciliation against actual function boundaries; no additional byte assertion is invented for it here. These are concrete report defects, not a guess about the missing executable.
+
+The supplied SUBSS at14016F6E0 and MOVSS store at14016F6E5 decode as stated; JBE at14016F6DA calculates target14016F790, followed by the stated register-copy/zeroing bytes. CALL rel32 at14016F831 calculates target140420350. The DIVSS displacement calculates the stated14090AA78 data address, but its floating value is not checked against an EXE here. COMISS/JBE can also take the unordered case; unconditional “actual=min(slot,request)” semantics require the relevant finite/nonnegative-value invariants, not just these excerpts.
+
+
+### Pointer, units and ABI corrections
+
+The slot-table operands encode [RDX+RCX*8] and [RAX+RCX*8+4]. Effective record stride16 is not impossible if the index advances by2, but that induction must be shown; neither stride16 nor stride8 should be promoted to a complete recovered layout from these instructions alone. MOV RDX,[R8+85E0] loads a table pointer. Flattening this into vehicle+1708+85E0 drops indirections. The prototype table's layout and the deducted cargo-vector layout also need independent proofs; a correction to one does not automatically correct the other. The local_178 producer425B10, entry+30 owner, entry+38 cargo and selected opened-truck identity remain untraced in the supplied material.
+
+After ADDSS XMM8,[RAX+8] at14016F7B9, XMM8 is prior aggregate plus event amount, not the isolated event amount. The synthetically checked float counterexample in the audit shows that the reported rounded operation sequence and an algebraically cancelled expression can differ even for ordinary positive finite numbers; it is arithmetic evidence only, not a native fuel model. Constants25/60, slot storage and an unverified “price per tonne” label do not establish physical units or an API conversion. PE raw offsets must be derived from section headers (PointerToRawData + RVA - section.VirtualAddress), not a universal RVA-1000 rule without the section map.
+
+0x14016F6E5 is a preferred VA at image base0x140000000; its runtime RVA is0x16F6E5. The shown subtraction/store pair totals10bytes and clamp pair11bytes. Neither is an accepted14-byte whole-instruction patch span. Exact live-register/flags/stack preservation, relocation and branch coverage remain unproved. A five-byte rel32 call and a short-prologue assertion likewise do not establish safe replacement reachability, trampoline or ABI. The historical index's XMM0 tick-argument label is not accepted: a third-position float conventionally uses XMM2 under Windows x64, consistent with one reported copy, but actual caller evidence is missing.
+
+
+### Refill and source-authority limits
+
+The report explicitly places14016F831 on type0x43 and says type0x42 jumps past it. Its bytes support the direct call target, not observed road-truck refill coverage. The argument setup can be mechanically decoded, but transfer direction, signed returned/rejected quantity, commit meaning, credited destination and synchronization require the actual420350 body and complete downstream flow. Likewise, summaries of142430/14B920/6B3B50/6C81D0 are not the promised raw writer exports. A reported reset-to-zero at a “full” threshold particularly needs context rather than an assumed fuel interpretation.
+
+No literal5F0 operand in16E3B0 does not prove that called helpers never synchronize it, that it is only a mirror, or that the cargo store is this truck's canonical tank. The table headed “Never written by”, the “must hook” instruction and the declaration “everything else byte-verified” exceed the evidence. Unknowns include receiver provenance, actual branch/caller coverage, units, refill destination/pairing/order, source authority and hook ABI—not merely one runtime equality check.
+
+
+### Bounded next action
+
+Recover and deliver existing raw exports plus all six complete final index entries in one new owned Markdown before further Ghidra queries. Preserve the original report; reconcile exact defects against existing files, explicitly mark missing files/unsaved console logs, and include any already-cached425B10/caller evidence. Do not reconstruct alleged stdout from memory or replace exports with another narrative. The full ready-to-paste recovery prompt is embedded below and delivered in chat. No hook, breakpoint/game test, new DLL or costing implementation is requested this pass.
+
+### Available report transcription — sections1–3 ONLY
+
+Source: `.cache/native-fuel-agent-paste.md`; bytes=9524; SHA256=1d1a4d63aca17d6803742fb5ce8a9341a9f96856e3d679cf73f0b1a304430cf2. These lengths/hashes identify the parent-local artifact only, not an authenticated Windows source file.
+
+````markdown
+# Fuel Native Inputs — Road-DO Truck Consumption & Refill Paths
+
+**Target:** SOVIET64.exe v1.1.1.9 (PE timestamp 0x6A3EB6AD)
+**Report path:** `scratch\out\FUEL_NATIVE_INPUTS_20261031.md`
+**Status:** Evidence complete for consumption + refill paths; one hard blocker remains (receiver identity not runtime-validated; billing OFF per task limit).
+**Author:** native-evidence agent (lead session). No plugin changes implemented. No hooks installed. No Git commit.
+
+---
+
+## 1. Executable / Project Provenance (verified)
+
+| Item | Value |
+|---|---|
+| Executable | `C:\Workers Resources Soviet Republic\SOVIET64.exe` |
+| File size | 10,308,608 bytes |
+| LastWriteTime | 2026-08-11 17:58:05 |
+| **SHA-256 (actual)** | `296644A9F207D609031FC2AE73FED2DCB34619A1D55A35D1C7B51965CE6841B8` |
+| **SHA-256 (recorded)** | `296644A9F207D609031FC2AE73FED2DCB34619A1D55A35D1C7B51965CE6841B8` |
+| Hash match | **YES — exact match** (verified with `Get-FileHash -Algorithm SHA256`) |
+| First 3 bytes | `77 90 144` (not a UTF-8 BOM `239 187 191`) |
+| Ghidra project | `C:\Users\EricM\Downloads\TesmioLoader-master\TesmioLoader-master\ghidra\proj\soviet` (process `SOVIET64.exe`) |
+| Wrapper | `C:\WRSRE\scratch\ghidra_run.bat` (JDK `C:\Program Files\Eclipse Adoptium\jdk-21.0.12.101-hotspot`) |
+| Image base used by project | `0x140000000` (all addresses below are RVAs; pass `0x140`+RVA to scripts) |
+| ASLR | ON at runtime — never hardcode live pointers; use RVAs |
+
+**Discrepancy report:** None. The actual executable SHA-256 equals the recorded hash exactly, so all previously recorded RVAs (0x16E3B0, 0x14016F6E0/6E5, 0x14016F794, 0x14016F831, 0x140420350, 0x694F40, 0x1B2898, 0x142430, 0x14B920, 0x6B3B50, 0x6C81D0) are valid for this build. The Ghidra project loads the file at base 0x140000000 with `-noanalysis` (pre-analyzed DB, read-only oracle).
+
+**Missing index artifacts noted:** The prior `docs\ghidra-index\16E3B0.md` listed artifact paths `scratch/decomp_16e3b0.c`, `scratch/asm_burn_fuel.txt`, `scratch/asm_refuel.txt`, `scratch/xrefs_16e3b0.txt`. None of these exist on disk. They have been replaced by the actual artifacts listed in §12 and the updated index entry at `docs\ghidra-index\16E3B0.md`.
+
+---
+
+## 2. Methodology
+
+- Read `AGENTS.md`, `INSTRUCTIONS.md`, `KILO_AGENT_WORKFLOW.md`; inspected `git status` (clean, branch `DO-fuel-cost-calculatotr`, no commit/branch/switch performed).
+- Verified EXE hash before reusing any address (§1).
+- Reused cached exports (`scratch\out\02ecd0_decomp.c`, `14066d530_decomp.c`, `1406bd6b0_decomp.c`, `scratch\write_5f0.txt`, `scratch\xrefs_420350.txt`, `scratch\xrefs_5f0_disp.txt`) before issuing new Ghidra queries.
+- Serialized all Ghidra queries (one `analyzeHeadless` at a time, exclusive project lock). Used the `.java` scripts (`DecompAt.java`, `DisasmMany.java`) with their actual argument contracts: `DecompAt.java <out_file.c> <0x140RVA>` and `DisasmMany.java <out.asm> <0x140start:0x140end>`.
+- After each query, updated `docs\ghidra-index\<RVA>.md` per the schema (preserved contradicting evidence with `Note:`; never silently overwrote).
+- Did not read/rewrite the full historical handover; consulted the cited sections by heading only.
+- No hooks installed, no runtime validation performed, no plugin/INI/build changes. All conclusions marked static vs. runtime-pending.
+
+---
+
+## 3. Conclusion Summary
+
+### 3.1 Supported (byte-verified from disassembly)
+
+1. **Actual consumption (clamped deduction):** `FUN_14016E3B0` (building upkeep, per building per tick). For vehicle type `0x42` (road-DO truck, `vehicle+0x50C==0x42`), fuel is deducted **directly from the vehicle cargo slot** `vehicle+0x3B8 + fuel_slot_index*0x10 + 0x8` (the slot amount field).
+   - Deduction write pair: `0x14016F6E0` `F3 41 0F 5C C0` (`SUBSS XMM0,XMM8`) / `0x14016F6E5` `F3 0F 11 40 08` (`MOVSS [RAX+0x8],XMM0`), where `RAX = &cargo_slot[slot_index] = vehicle+0x3B8 + slot_index*0x10`.
+   - Empty-tank clamp: `0x14016F790` `44 0F 28 C0` (`MOVAPS XMM8,XMM0`) / `0x14016F794` `C7 40 08 00 00 00 00` (`MOV [RAX+0x8],0`) — drains the slot to 0 when `slot_amount <= consumption`.
+   - **Actual deducted = min(consumption, slot_available).** If slot < consumption → slot = 0, actual = full slot amount. If slot > consumption → slot -= consumption, actual = full consumption.
+   - Consumption per tick `XMM8 = tick_delta * slot_rate * DAT_14090a968 / DAT_14090aa78`. For road trucks the building divisor (`building+0xE30`) and base rate cancel, leaving `tick_delta * slot_rate * 25 / 60` (constants read from PE `.rdata`: `DAT_14090a968=25` at file off `0x909968`, `DAT_14090aa78=60` at file off `0x909A78`).
+   - `slot_rate` read from `vehicle+0x1708 + 0x85E0 + fuel_slot_index*0x10 + 4` (prototype fuel-slot table, stride 0x10, `{type@0, rate@4}`; fuel slot = table entry where type==1).
+   - Actual deducted is also accumulated into `*FUN_140121d90()+0x8` (global accumulator, `R13=[RBP-0x58]`) via `0x14016F7B5` `MOV RAX,[R13]` / `0x14016F7B9` `ADDSS XMM8,[RAX+0x8]` / `0x14016F7BF` `MOVSS [RAX+0x8],XMM8`.
+
+2. **Refill (fuel added, NOT consumed):** Three static paths write `vehicle+0x5F0` (the gauge mirror) — none touch the cargo slot:
+   - `FUN_140142430` (discrete refuel): `vehicle+0x5F0 += amount drawn from home-building storage` (`vehicle+0x4F8`); compares `0x5F0` to `prototype+0x8684` (tank capacity).
+   - `FUN_14014B920` (per-tick refill tick): `vehicle+0x5F0 += PowerTime() * vehicle+0xDE0 * prototype+0x428`, clamped to 0 at full threshold.
+   - `FUN_1406B3B50` (per-frame): tops up then deducts `vehicle+0x5F0` per fleet member.
+   - `FUN_140420350` at `0x14016F831` (mode 0, NEGATIVE tons): removes fuel **from the home building** (`vehicle+0x4F8`, resource `game+0xC330`); actual moved = requested - rejected. Vehicle-side receipt is implicit, not a parameter of this call.
+
+3. **`0x5F0` is a mirror, separate from the cargo slot:** `FUN_14016E3B0` has **zero** references to `vehicle+0x5F0` (grep of full disassembly confirmed). Burn writes `cargo_slot+0x8`; refill writes `vehicle+0x5F0`. No sync between them found statically. The gauge follows `root+0x5F0` (established context) but that does NOT prove physical tank authority or that gauge movement equals consumption.
+
+4. **`FUN_140420350` semantics (mode 0):** negative tons = removal from source clamped at 0; positive tons = addition clamped at capacity; `*out` = rejected/overflow amount (actual moved = |requested| − *out*). Prologue < 14 bytes → inline hook not possible; call-site patch (`E8` rel32 to 0x420350) is the hook mechanism (used by private_logistics at 16 sites).
+
+### 3.2 Contested / contradicted (resolved by this session)
+
+- **Prior claim:** "stochastic refuel after burn: CALL 0x140420350 at 0x14016F831 ... road-truck refuel." **Contradicted.** Disassembly shows `0x14016F831` sits in the **type-0x43** branch; road trucks (`0x42`, `DIL=1`) jump over it at `0x14016F7C9` `JMP 0x14016F9CA` and burn the cargo slot directly. So in `FUN_14016E3B0`, the `0x140420350` refill call is NOT on the road-truck path. Updated `docs\ghidra-index\16E3B0.md` (status `partial`, contradiction noted).
+- **Prior claim:** `1176 L/tonne` / `0.001` density as physics for the burn. **Rejected as unverified.** Consumption formula derived from instructions is `tick_delta * slot_rate * 25 / 60`; `slot_rate` is a prototype table value whose physical unit is not established by static analysis. Do not assume `1176` or `0.001`.
+- **Prior claim:** `FUN_14014B920` is "burn adjustment." Disassembly shows it is a per-tick **refill top-up on 0x5F0**, not a burn deduction.
+
+### 3.3 Unresolved (runtime validation required)
+
+1. **Receiver identity of the deducted cargo slot.** `RAX = &cargo_slot[slot_index]` is computed from the `local_178` buffer populated by `FUN_140425b10(game, home_building=vehicle+0x4F8, &local_178, ...)`. Each `local_178` entry holds `{vehicle_ptr@+0x30, cargo_vector@+0x38, ...}`. It is **not statically proven** that `entry+0x30 == the observed road-DO truck (RBX)`; the buffer may contain the home building's fleet slots generally. This is the **single hard blocker**: the parent cannot confirm the burn deducts from the observed truck's own tank without a runtime check that `entry+0x30` equals the opened truck's base at the deduction site.
+
+2. **Physical unit of `slot_rate`** (and hence exact tonnes-per-tick). Formula is `tick_delta * slot_rate * 25 / 60`; `slot_rate` comes from `vehicle+0x1708+0x85E0+4+slot*0x10`. Static analysis cannot tell whether `slot_rate` is litres/km, tonnes/tick, or another rate. Read it at runtime from the vehicle prototype (and `media_soviet` building/vehicle definitions) to convert to the fuel-price API's per-tonne units. The cargo slot itself is the fuel store (tonnes per prior analysis); the price API converts `tonnes × price_per_tonne = cost`.
+
+3. **Who receives the refilled fuel.** `FUN_140420350` at `0x14016F831` only mutates the home building's slot (removal). The vehicle-side credit (to `0x5F0` via `142430`/`14B920`, or to cargo slot) is a separate static path; pairing source/tank mutations and ordering relative to consumption is not fully established statically.
+
+4. **Caller of `FUN_14016E3B0`** (the per-tick building upkeep loop) not traced to its caller — needed to confirm it runs once per building per tick for the observed truck's home. (Index entry records "per-tick building upkeep loop" but not the caller RVA.)
+
+5. Billing remains OFF (task limit); no payment/affordability-gate paths researched.
+
+---
+
+````
+
+### Selected reported byte claims — audit input, NOT raw export
+
+Source: `.cache/native-fuel-byte-claims.txt`; bytes=986; SHA256=f4cfd96902a1352b41df237791e2c8eaca7bbc53816529b55b0a7d11a28e0a9e. These lengths/hashes identify the parent-local artifact only, not an authenticated Windows source file.
+
+````text
+Selected reported byte/address claims retained in the session record.
+This is an audit input transcription, NOT a raw export or the full report.
+14016e426: 48 8B F2 MOV RSI,RDX
+14016e426: 4C 8B F9 MOV R15,RCX
+14016f345: 49 8B 90 E0 85 00 00 MOV RDX,[R8+85E0]
+14016f353: 83 3C CA 01 CMP [RDX+RCX*8],1
+14016f3d7: F3 0F 10 4C C8 04 MOVSS XMM1,[RAX+RCX*8+4]
+14016f41a: 44 0F 28 DA MOVAPS XMM11,XMM2
+14016f41a: F3 44 0F 5E 1D 55 B6 79 00 DIVSS XMM11,[14090AA78]
+14016f6d6: 41 0F 2F C0 COMISS XMM0,XMM8
+14016f6da: 0F 86 B0 00 00 00 JBE 14016F790
+14016f6e0: F3 41 0F 5C C0 SUBSS XMM0,XMM8
+14016f6e5: F3 0F 11 40 08 MOVSS [RAX+8],XMM0
+14016f790: 44 0F 28 C0 MOVAPS XMM8,XMM0
+14016f794: C7 40 08 00 00 00 00 MOV [RAX+8],0
+14016f7b5: 49 8B 45 00 MOV RAX,[R13]
+14016f7b9: F3 44 0F 58 40 08 ADDSS XMM8,[RAX+8]
+14016f7bf: F3 44 0F 11 40 08 MOVSS [RAX+8],XMM8
+14016f81d: 4D 8B 8F 30 C3 00 00 MOV R9,[R15+C330]
+14016f831: E8 1A 0B 2B 00 CALL 140420350
+14016f83e: F3 44 0F 5C 45 B0 SUBSS XMM8,[RBP-50]
+
+````
+
+### Complete independent byte-audit source
+
+Source: `.cache/audit_native_fuel_report.py`; bytes=5245; SHA256=0aedb605318d19a95aae621fe8575beb901028f3c6a88f5f3cd517be9a76435c. These lengths/hashes identify the parent-local artifact only, not an authenticated Windows source file.
+
+````python
+#!/usr/bin/env python3
+"""Audit ONLY the bytes in the user-pasted report, not the unavailable EXE.
+
+GNU objdump independently decodes excerpts. The arithmetic checks expose report
+inconsistency; they do not establish native receiver identity, units or coverage.
+"""
+from pathlib import Path
+import collections
+import hashlib
+import re
+import struct
+import subprocess
+
+report = Path('.cache/native-fuel-byte-claims.txt')
+text = report.read_text()
+rows = []
+for line in text.splitlines():
+    m = re.match(r'^([0-9a-fA-F]{9}):\s+((?:[0-9A-F]{2} )*[0-9A-F]{2})\s+(.+)$', line)
+    if m:
+        rows.append((int(m[1], 16), bytes.fromhex(m[2]), m[3]))
+by = collections.defaultdict(list)
+for address, data, label in rows:
+    by[address].append((data, label))
+duplicates = {a: r for a, r in by.items() if len({b for b, _ in r}) > 1}
+assert set(duplicates) == {0x14016E426, 0x14016F41A}
+print('INPUT: selected reported byte claims transcribed from session record; NOT raw export or full report')
+print('bytes=', report.stat().st_size, 'lines=', len(text.splitlines()),
+      'sha256=', hashlib.sha256(report.read_bytes()).hexdigest())
+print('Extracted instruction rows=', len(rows), 'unique start addresses=', len(by))
+for address, variants in sorted(duplicates.items()):
+    print(f'CONFLICT {address:#x}: same address has incompatible byte sequences')
+    for data, label in variants:
+        print(' ', data.hex(' '), label)
+
+selected = [0x14016E426, 0x14016F353, 0x14016F3D7, 0x14016F41A,
+            0x14016F6DA, 0x14016F6E0, 0x14016F6E5, 0x14016F790,
+            0x14016F794, 0x14016F7B9, 0x14016F81D, 0x14016F831, 0x14016F83E]
+path = Path('.cache/native-fuel-byte-snippet.bin')
+for address in selected:
+    for data, _ in by[address]:
+        path.write_bytes(data)
+        result = subprocess.run(['objdump', '-D', '-b', 'binary', '-m', 'i386:x86-64',
+                                 '-M', 'intel', '--insn-width=16',
+                                 f'--adjust-vma={address}', str(path)],
+                                text=True, capture_output=True, check=True)
+        print('DECODE', hex(address), data.hex(' '))
+        for line in result.stdout.splitlines():
+            if re.match(r'^\s*[0-9a-f]+:', line):
+                print(line.strip())
+
+# The claimed implicit-return addresses are not instruction boundaries according
+# to the report's OWN instruction byte ranges. These are not asserted EXE exits.
+for exit_address in [0x14016F823, 0x14016F83F]:
+    interiors = [(a, len(b)) for a, b, _ in rows if a < exit_address < a + len(b)]
+    assert interiors
+    print(f'BAD_EXIT {exit_address:#x}: inside reported instruction(s)',
+          [(hex(a), length) for a, length in interiors])
+
+call_address = 0x14016F831
+call_bytes = by[call_address][0][0]
+call_target = call_address + len(call_bytes) + struct.unpack('<i', call_bytes[1:])[0]
+assert call_target == 0x140420350
+print('CONSISTENT call rel32 target=', hex(call_target), '(does not prove refuel receiver/direction)')
+jump_address = 0x14016F6DA
+jump = by[jump_address][0][0]
+assert jump_address + len(jump) + struct.unpack('<i', jump[2:])[0] == 0x14016F790
+print('CONSISTENT reported JBE target=0x14016f790')
+div_address = 0x14016F41A
+div_bytes = next(b for b, _ in by[div_address] if len(b) == 9)
+rip_target = div_address + len(div_bytes) + struct.unpack('<i', div_bytes[-4:])[0]
+assert rip_target == 0x14090AA78
+print('CONSISTENT DIVSS RIP target=', hex(rip_target), '(float contents NOT verified here)')
+print('ADDRESS: preferred VA0x14016f6e5 -> RVA', hex(0x14016F6E5 - 0x140000000))
+print('PATCH: listed deduction pair length=', len(by[0x14016F6E0][0][0]) + len(by[0x14016F6E5][0][0]),
+      'listed clamp pair length=', len(by[0x14016F790][0][0]) + len(by[0x14016F794][0][0]),
+      '; both below14; no accepted complete patch span/ABI supplied')
+print('STRIDE: encoded RCX scale8 is NOT by itself effective stride16; index induction and loaded table pointers are missing')
+print('ACCUMULATOR: after ADDSS xmm8,[rax+8], xmm8 contains prior aggregate+event, not isolated event amount')
+f32 = lambda x: struct.unpack('<f', struct.pack('<f', x))[0]
+counterexample = None
+for tick in [0.016, 0.1, 1.0]:
+    for rate in [0.0001, 0.1, 0.25, 1.0]:
+        for divisor in [0.3, 1.0, 1.3, 10.0]:
+            t, r, d, base = map(f32, (tick, rate, divisor, 0.7))
+            a = f32(f32(d / base) * 25.0)
+            b = f32(f32(r / d) * base)
+            sequenced = f32(f32(f32(t / 60.0) * b) * a)
+            simplified = f32(f32(f32(t * r) * 25.0) / 60.0)
+            if sequenced != simplified:
+                counterexample = (t, r, d, sequenced, simplified)
+                break
+        if counterexample:
+            break
+    if counterexample:
+        break
+assert counterexample
+print('SYNTHETIC_FLOAT_COUNTEREXAMPLE tick,rate,divisor,sequenced,simplified=', counterexample)
+print('NOTE: float counterexample is arithmetic only, NOT a native consumption model or measured fuel')
+print('VERDICT: excerpt subtraction/clamp bytes are syntactically plausible; report is NOT an accepted road-truck fuel/refill/hook contract')
+print('NEXT: obtain the existing original raw exports, complete index entries and receiver/caller definitions; no hook/payment/test-run request')
+
+````
+
+### Actual independent byte-audit output — exit0
+
+Source: `.cache/audit_native_fuel_report.out`; bytes=3651; SHA256=80a1af15ecce89ca38b462c32e3b1d844b1530123034d40f90ce6a2adc394305. These lengths/hashes identify the parent-local artifact only, not an authenticated Windows source file.
+
+````text
+INPUT: selected reported byte claims transcribed from session record; NOT raw export or full report
+bytes= 986 lines= 21 sha256= f4cfd96902a1352b41df237791e2c8eaca7bbc53816529b55b0a7d11a28e0a9e
+Extracted instruction rows= 19 unique start addresses= 17
+CONFLICT 0x14016e426: same address has incompatible byte sequences
+  48 8b f2 MOV RSI,RDX
+  4c 8b f9 MOV R15,RCX
+CONFLICT 0x14016f41a: same address has incompatible byte sequences
+  44 0f 28 da MOVAPS XMM11,XMM2
+  f3 44 0f 5e 1d 55 b6 79 00 DIVSS XMM11,[14090AA78]
+DECODE 0x14016e426 48 8b f2
+14016e426:	48 8b f2                                        	mov    rsi,rdx
+DECODE 0x14016e426 4c 8b f9
+14016e426:	4c 8b f9                                        	mov    r15,rcx
+DECODE 0x14016f353 83 3c ca 01
+14016f353:	83 3c ca 01                                     	cmp    DWORD PTR [rdx+rcx*8],0x1
+DECODE 0x14016f3d7 f3 0f 10 4c c8 04
+14016f3d7:	f3 0f 10 4c c8 04                               	movss  xmm1,DWORD PTR [rax+rcx*8+0x4]
+DECODE 0x14016f41a 44 0f 28 da
+14016f41a:	44 0f 28 da                                     	movaps xmm11,xmm2
+DECODE 0x14016f41a f3 44 0f 5e 1d 55 b6 79 00
+14016f41a:	f3 44 0f 5e 1d 55 b6 79 00                      	divss  xmm11,DWORD PTR [rip+0x79b655]        # 0x14090aa78
+DECODE 0x14016f6da 0f 86 b0 00 00 00
+14016f6da:	0f 86 b0 00 00 00                               	jbe    0x14016f790
+DECODE 0x14016f6e0 f3 41 0f 5c c0
+14016f6e0:	f3 41 0f 5c c0                                  	subss  xmm0,xmm8
+DECODE 0x14016f6e5 f3 0f 11 40 08
+14016f6e5:	f3 0f 11 40 08                                  	movss  DWORD PTR [rax+0x8],xmm0
+DECODE 0x14016f790 44 0f 28 c0
+14016f790:	44 0f 28 c0                                     	movaps xmm8,xmm0
+DECODE 0x14016f794 c7 40 08 00 00 00 00
+14016f794:	c7 40 08 00 00 00 00                            	mov    DWORD PTR [rax+0x8],0x0
+DECODE 0x14016f7b9 f3 44 0f 58 40 08
+14016f7b9:	f3 44 0f 58 40 08                               	addss  xmm8,DWORD PTR [rax+0x8]
+DECODE 0x14016f81d 4d 8b 8f 30 c3 00 00
+14016f81d:	4d 8b 8f 30 c3 00 00                            	mov    r9,QWORD PTR [r15+0xc330]
+DECODE 0x14016f831 e8 1a 0b 2b 00
+14016f831:	e8 1a 0b 2b 00                                  	call   0x140420350
+DECODE 0x14016f83e f3 44 0f 5c 45 b0
+14016f83e:	f3 44 0f 5c 45 b0                               	subss  xmm8,DWORD PTR [rbp-0x50]
+BAD_EXIT 0x14016f823: inside reported instruction(s) [('0x14016f81d', 7)]
+BAD_EXIT 0x14016f83f: inside reported instruction(s) [('0x14016f83e', 6)]
+CONSISTENT call rel32 target= 0x140420350 (does not prove refuel receiver/direction)
+CONSISTENT reported JBE target=0x14016f790
+CONSISTENT DIVSS RIP target= 0x14090aa78 (float contents NOT verified here)
+ADDRESS: preferred VA0x14016f6e5 -> RVA 0x16f6e5
+PATCH: listed deduction pair length= 10 listed clamp pair length= 11 ; both below14; no accepted complete patch span/ABI supplied
+STRIDE: encoded RCX scale8 is NOT by itself effective stride16; index induction and loaded table pointers are missing
+ACCUMULATOR: after ADDSS xmm8,[rax+8], xmm8 contains prior aggregate+event, not isolated event amount
+SYNTHETIC_FLOAT_COUNTEREXAMPLE tick,rate,divisor,sequenced,simplified= (0.01600000075995922, 9.999999747378752e-05, 0.30000001192092896, 6.66666721826914e-07, 6.666666649834951e-07)
+NOTE: float counterexample is arithmetic only, NOT a native consumption model or measured fuel
+VERDICT: excerpt subtraction/clamp bytes are syntactically plausible; report is NOT an accepted road-truck fuel/refill/hook contract
+NEXT: obtain the existing original raw exports, complete index entries and receiver/caller definitions; no hook/payment/test-run request
+
+````
+
+### Ready-to-paste local-agent recovery task
+
+Source: `.cache/native-fuel-correction-prompt.md`; bytes=5620; SHA256=5425494e8045f138f3b13ec90f59f49827fc4b72d1f0eba423ebf27f7c4574cf. These lengths/hashes identify the parent-local artifact only, not an authenticated Windows source file.
+
+````text
+Read AGENTS.md, INSTRUCTIONS.md and KILO_AGENT_WORKFLOW.md. This is a focused evidence-recovery task, not a new fuel investigation or implementation task.
+
+Work in the existing C:\WRSRE checkout and its current authorized branch. Preserve all uncommitted work. Use PowerShell 5.1 commands prefixed with cd 'C:\WRSRE';. Do not change branches, commit/push, build/deploy, edit plugin/INI/settings, install hooks, enable payments or run the game. Do not run additional Ghidra queries in this pass; recover the artifacts you already generated first. No new agents are needed.
+
+The parent has received the complete 326-line FUEL_NATIVE_INPUTS_20261031.md. Do NOT return that narrative again as the missing evidence. The parent independently decoded its supplied hex with GNU objdump, without access to the EXE, and found:
+
+1. Preferred VA 0x14016E426 is assigned both 48 8B F2 (MOV RSI,RDX) and 4C 8B F9 (MOV R15,RCX). Preferred VA 0x14016F41A is assigned both 44 0F 28 DA (MOVAPS XMM11,XMM2) and F3 44 0F 5E 1D 55 B6 79 00 (DIVSS XMM11,[14090AA78]). They cannot both occupy the same address in one binary.
+2. Claimed return addresses 0x14016F823 and 0x14016F83F fall inside the reported instructions starting 0x14016F81D and 0x14016F83E respectively. Also reconcile the unsupported claimed exit 0x14016E421 against actual function boundaries.
+3. 83 3C CA 01 and F3 0F 10 4C C8 04 encode RCX*8, not RCX*16. Effective record stride needs the actual index induction and pointer definitions. [R8+85E0] loads a pointer; it is not automatically an embedded table at vehicle+1708+85E0.
+4. 0x14016F6E5 is a preferred VA; its RVA is0x16F6E5. Do not add the runtime base to a preferred VA.
+5. The call bytes at 0x14016F831 do target 0x140420350, but your report places that call on type 0x43 and says type 0x42 skips it. This is not demonstrated truck-refill coverage. Missing literal 5F0 references do not rule out indirect synchronization or prove which store is authoritative. Constants 25/60 do not prove tonnes. Algebraic cancellation need not preserve native single-precision rounding.
+6. After 0x14016F7B9, XMM8 includes the prior accumulator. Do not label it an isolated deduction. Listed deduction/clamp pairs are 10/11 bytes, not accepted 14-byte patch spans. No observation site is approved.
+
+Create one new collision-free Markdown under scratch\out, suggested FUEL_NATIVE_INPUTS_RECOVERY_20261031.md. Preserve the original report. The recovery report must be self-contained:
+
+A. Record actual full path, byte length, modification time and SHA256 for the original report and each recovered artifact. Distinguish local provenance from parent verification. Reuse existing EXE identity evidence, or perform an ordinary local file-hash read; do not claim the parent verified the executable.
+
+B. Embed COMPLETE, verbatim contents of existing:
+- scratch\out\14016e3b0_decomp.c
+- scratch\out\14016e3b0_140170000_disasm.asm
+- scratch\out\14016f6d0_14016f870_disasm.asm
+- scratch\out\140142430_decomp.c,14014b920_decomp.c,1406b3b50_decomp.c,1406c81d0_decomp.c,140420350_decomp.c
+- cached write_5f0.txt, xrefs_420350.txt and xrefs_5f0_disp.txt (check the reported scratch paths and existing out cache; state actual locations).
+Use separate labelled fenced blocks. No paraphrases, omitted bodies, ellipses, approximate instruction counts or inaccessible-path-only citations. If a file is missing/empty, explicitly record that fact; do not recreate its alleged output from memory.
+
+C. Embed the COMPLETE final current contents of docs\ghidra-index\16E3B0.md,142430.md,14B920.md,6B3B50.md,6C81D0.md and420350.md. Do not claim six updates are available merely by listing their names. Do not silently rewrite historical/index evidence during recovery.
+
+D. Reconcile each defect above against the recovered raw artifacts, with exact source lines/addresses and a clear distinction between transcription error, conflicting export and unresolved interpretation. Show actual pointer loads, index advancement, branch successors and function boundaries where available. Explain the local_178/entry+30 receiver chain only as far as the exports support it. Include any ALREADY EXISTING 425B10 or 16E3B0-caller export relevant to that chain; otherwise mark it missing without querying. Windows x64 float argument registers are positional; the third float argument would conventionally use XMM2, not XMM0, but the actual caller/signature still requires evidence.
+
+E. Include complete existing command stdout/stderr if retained. If the original console output was not saved, say so; 'all wrote successfully' is not actual stdout. Record exact recovery commands and their real outputs. Embed full final source and actual results for any new helper you choose to create; helpers are optional, not required.
+
+Write heading first, verify it, then append and verify one coherent subsection/artifact at a time. Preserve previous content; inspect actual disk state before retrying any timed-out write. Keep analytical depth and complete evidence; no arbitrary byte cap or truncation. Finish with supported/contested/unresolved conclusions, not 'everything byte-verified except one blocker'. Native truck identity, refill pairing/order, physical units and hook safety remain open unless directly evidenced.
+
+Return the actual completed recovery Markdown as an attachment, its exact path/byte length/SHA256, and a brief missing-artifact list. If attachment is unavailable, deliver its COMPLETE contents in numbered parts without replacing raw evidence with another summary. No new native queries or game tests before this recovery is delivered to the parent.
+
+````
+
+
+## Recovery-report completion summary received — actual attachment pending (2026-11-01)
+
+User relayed the local agent completion summary for C:\WRSRE\scratch\out\FUEL_NATIVE_INPUTS_RECOVERY_20261031.md. Reported size346897bytes,7015lines,18balanced fenced blocks, SHA25618D892E6682BEBCE2D4B8BCCF0F54AB257BD27E7BE274CE459758DF641736297. Original report reportedly preserved at27241bytes; all requested raw artifacts and six final index entries reportedly embedded, no new queries or production changes, local tracked status reportedly clean. These are agent-reported metadata, not parent-verified file contents. No matching recovery attachment was found under /tmp/arena-coding-uploads in this session. The Windows path is not accessible from this checkout.
+
+Provisional review: distinct real instruction addresses could resolve the original narrative double assignments as transcription errors, but that does not mean the original report had no conflict; inspect the actual corrected addresses/raw bytes. Encoded scale8 alone does not independently prove full effective record stride without index induction. Separate store addresses do not prove mirror-only authority or absence of indirect synchronization. Missing proof of a14-byte patch span is not proof that no such span exists and does not authorize a call-site patch, particularly on the reported type0x43/non-truck branch. Receiver, units, refill destination/pairing/order and hook safety remain open pending actual evidence. No new native investigation or game test is requested.
+
+Next action: upload the existing recovery Markdown, not another completion summary. Delivery-only ready-to-paste agent prompt: “Do not run additional queries or modify any files. Return the existing C:\WRSRE\scratch\out\FUEL_NATIVE_INPUTS_RECOVERY_20261031.md as an actual attachment/export, not its summary. Expected reported size346897bytes and SHA25618D892E6682BEBCE2D4B8BCCF0F54AB257BD27E7BE274CE459758DF641736297; report any mismatch rather than regenerate the file. If attachments are unsupported, tell the user to upload this existing file directly; do not repeat the investigation. No commit, hook, build or game run.”
+
+
+## Recovery raw exports reviewed — receiver/type/formula corrections (2026-11-01)
+
+### Receipt, scope and verdict
+
+The user has now pasted the recovery report including its raw decompilations/disassembly, caches and all six index entries. The prior “actual attachment pending” receipt is historical; do not ask for the same report again or repeat delivery-only work. Reported Windows file length346897bytes/SHA25618D892E6682BEBCE2D4B8BCCF0F54AB257BD27E7BE274CE459758DF641736297 remains local-agent provenance: a chat paste is not an independently authenticated file-byte transfer. The original EXE/Ghidra database remains unavailable here. The raw material is substantially more useful than the earlier narrative, but the recovery's semantic conclusions are NOT accepted. Native-cost integration and hook installation remain BLOCKED; payments OFF. Test8 remains PASS, with the user-confirmed first-task fuelling phase accepted. No production changes, DLL/build/deployment, game test, branch switch, commit or push.
+
+This appendix preserves the complete parent review, exact selected raw excerpts, complete new audit source/input/actual output, and next task. It does not claim to be a full byte-for-byte archive of the entire Windows recovery file. User-pasted B1a–B9/C1–C6/D–Conclusions is the source for this review. Selected excerpts are explicitly labelled, not fabricated missing artifacts or full exports.
+
+
+### 1. Original transcription conflicts resolved; parent decoder was not at fault
+
+B1b places MOV RSI,RDX at14016E423, MOV R15,RCX at14016E426, MOVAPS XMM11,XMM2 at14016F416 and DIVSS at14016F41A. That resolves the earlier report's conflicting address assignments as errors in that report. The parent had decoded the supplied strings at their explicitly supplied addresses; its objdump did not invent the duplicates or conflate alignment. D1's blame of the parent decoder is unsupported. The new raw lines also confirm all three claimed exits lie inside instructions: E421 inside E41F's MOVAPS, F823 inside F81D's MOV, F83F inside F83E's SUBSS. The supplied function reaches RET at14016FCCD; the range continues into another function at14016FCD0, so “full function disassembly” must not imply all range instructions belong to16E3B0. XMM2 is explicitly saved as the third incoming float argument at entry; XMM12 is reused later, contrary to C1's “tick_delta throughout” claim.
+
+
+### 2. Effective table stride is16, not the recovery's8
+
+This is now resolved directly, rather than inferred from the SIB scale. At14016F350 ADD RCX,RCX doubles the logical index before14016F353 uses RCX*8. After INC R9D,14016F36A restores ECX from the logical R9D count before the next doubling. The amount/rate lookup likewise uses MOVSXD RCX,R9D atF3CA and ADD RCX,RCX atF3CD beforeF3D7's scale8+4 access. Thus logical i selects table+16*i and rate+16*i+4. The end-begin SAR4 count and B1a decompilation corroborate16-byte records. The parent previously requested the missing induction precisely because scale8 alone did not settle this. D3's correction to actual stride8 is wrong. Its pointer-indirection correction IS right: prototype=[outer_vehicle+1708], table=[prototype+85E0]. Cargo slots also have16-byte entries here, but through a separate receiver chain.
+
+
+### 3. Cargo deduction receiver is not established as truck+3B8
+
+B1a and B1b show425B10 AND427340 populating/mutating local_178 from the outer vehicle's home-building context. The loop traverses0x68-byte entries, then entry+38/+40 arrays of pointers to storage-like objects with own+88/+90 classifications. It ranks candidates before choosing a nested vector; the final slot address is *(selected_storage)+16*resource_index, amount+8, after matching game+C3F0. The raw path does NOT derive that address from outer_truck+3B8. RBX is overwritten with a collector-entry address atF4F0/F4F4, so the original iterated vehicle is not RBX at the write. Entry+30 is used on one ranking path; that alone neither identifies a truck owner nor establishes a direct tank alias. This is a plausible building-upkeep inventory/resource debit, not proven driving fuel. Do not turn missing provenance into a mandatory runtime breakpoint or force this candidate to be the actual truck producer.
+
+
+### 4. 0x50C is mutable state here; the cancelled formula is unproved
+
+Calling50C values42/43 immutable vehicle types is not justified. B2 resets50C to0 and assigns1/2/3/4/5 in job/dispatch paths. The existing66D530 index instead dispatches vehicle kind through [vehicle+1708]+294 (historically kinds1/2 for road vehicles). Until classified through actual callers, label42/43 as state/discriminator branches, not a universal truck/non-truck class contract.
+
+A second reaching-definition error undermines the formula. XMM15 is loaded from DAT_14090AB70 at16EA25;16F205 divides the building quantity in XMM12 by THAT value. Only later,16F25E reloads XMM15 from DAT_140909E54 for the branch rate. In ideal real arithmetic, the shown road-state factor is tick/AA78 * rate/buildingE30 * DAT_140909E54 * (buildingE30/DAT_14090AB70 * DAT_14090A968), subject to branch gates and nonzero/finite inputs. That retains the ratio E54/AB70 unless equality is actually proved. It is not established as tick*rate*25/60. B1a's fVar10=DAT_14090AB70 corroborates the earlier denominator. Exact native floats are rounded at each operation regardless; physical units remain unproved. This corrects the old parent audit's explicitly synthetic arithmetic illustration: that example illustrated non-associativity only and was never native execution/formula validation.
+
+
+### 5. 6B3B50 is a stronger actual5F0 deduction candidate, without the alleged top-up
+
+In B4, fVar31 = tank + capacity*DAT_140909DDC updates a LOCAL weighting value, not *(vehicle+5F0). Related additions for attached members likewise sum locals. Actual writes in the flag8680==0 path are *(member+5F0) -= fVar22, then a possible floor assignment using capacity*DAT_14090B2D0. The cached operand listing locates the subtraction store at1406B44B7 and floor store at1406B44DA; C4's6B3F8F-area claim is not supported by that listing. C4's “tops up5F0” and conclusion that it is merely a mirror are not established. This function also has an alternative flag8680 path consuming pointed resource-like quantities, so applicability to this truck needs the caller/flag/metadata link. Do not call8680 diesel/electric or convert quantities into physical fuel units without evidence. Main object versus attached-object attribution, actual floating pre/post debit, floor adjustment, statistics request and refill credit must remain distinct.
+
+
+### 6. Three helper classifications are contradicted by their own decompilations
+
+B2/142430 does contain a genuine5F0 credit paired with a storage decrement in its early branch. But C2's blanket assertion that it does not touch3B8 cargo is false: later it takes puVar1=param_2+3B8, resets3C0, copies/pushes cargo entries and moves storage resources. These later cargo operations do not automatically prove fuel synchronization. Follow the specific resource and receiver instead of treating the entire function as a single refuel action.
+
+B3/14B920's param_2 has a fleet vector, workers, production fields and a model read through+318; it does not read its purported vehicle prototype through+1708 at the disputed5F0 write. The expression reads+428 from that model, follows+420/+1B0/+9C for a threshold, and resets5F0 to0. Taken with the production context, this strongly indicates a BUILDING production/progress field at the same numeric offset, not proof of vehicle refilling. Caller confirmation is still required; do not promote the exact building-purpose label beyond the available evidence. A matching displacement is not a matching object layout.
+
+B5/6C81D0 is a FILE*-taking reader/restorer: fread populates locals, IO_Vehicle_Read names appear in errors, local_170 restores5F0, and cargo entries are loaded from the file. Calling this a vehicle assignment/reset path or consumption event is misleading. A load/restoration boundary must not create billed burn or refill.
+
+
+### 7. Negative420350 transfer does not establish refill or direct home-tank pairing
+
+The type/state42 branch skips16F831; its negative transfer is on the other branch. B6 shows mode1's direct vehicle+3B8 path, but mode0 normally calls424430 and selects slot pointers from game+144A8 records. Owner equality to param_2 is conditional on param_8; the16F831 caller passes that flag0. Therefore “home building is the context” is supported; “the exact home-building slot is always the debited owner” needs the collection/selection proof. Most importantly, a negative inventory debit with no identified tank credit is not proved refilling at all; it may be another upkeep-resource consumption path. Do not use it as a truck refill hook. The two cached5F0 lists are byte-identical per the agent and do not provide independent corroboration; both also contain stack, unrelated-object and relative-branch false positives. C6's stack offsets apply immediately BEFORE CALL; a callee-entry capture has the return-address displacement as well. The AL return label, amount semantics and unknown physical conversion must not be confused.
+
+
+### 8. Hook arithmetic and control-flow safety — correction, not authorization
+
+F3 0F 11 40 08 is FIVE bytes, not six. The subtraction/store pair is10bytes and the clamp pair11bytes. D6's totals and interval endpoints are incorrect. More instructions exist: the deduction plus next MOV totals17bytes; clamp plus the merge's MOV totals15bytes. Consequently the report's “inline hooking is impossible, therefore patch16F831” does not follow. Neither longer span is approved: in particular, the unclamped branch JMP at16F78E lands at16F79B INSIDE the15-byte clamp candidate. Naively stealing that merge instruction would break an incoming edge. A whole-instruction length is only one requirement; receiver correctness, all incoming edges, relocations, live registers/flags/XMM/stack, runtime address translation and dual-path event coverage remain necessary. No hook/breakpoint/game run is requested now.
+
+
+### 9. Delivery quality and next action
+
+The recovery improved evidence delivery and candidly admitted that original command stdout was not retained. However it still omits the full append_block.ps1 helper source/results requested for added scripts, repeats the VA/RVA error in sectionA, and leaves index entries labelled verified despite false object/layout and write claims. These are interpretation/verification failures, not merely prose defects. For the user's model comparison: this is useful extraction work but not reliable autonomous reverse-engineering leadership; no model-specific ranking is possible without identities and comparable tasks.
+
+Next work should prioritize the actual6B3B50 tank-subtraction path and142430 credit path, using the already cached66D530 caller export first. Do not spend another broad pass forcing16E3B0/425B10 into the driving-fuel role. One local lead should deliver a bounded corrected contract, exact bytes/receiver reaching definitions/caller applicability/floor/refill ordering and an explicit unit-proof status. New queries may fill only those precise gaps, serialized and cache/index-aware. The full ready-to-paste prompt is embedded below. Accounting policy remains assignment appearance to removal/cancellation/replacement regardless success; outside-assignment consumption is separate operating overhead; unknown boundaries unallocated; refills cannot cancel burn; payments OFF.
+
+### Selected exact byte claims from received recovery
+
+Parent-local source `.cache/recovery-byte-claims-20261101.txt`; bytes=2036; SHA256=9bacc810f28a06d5f9666c1a1b529a4fd95fd6df26ba632e70f98b2cf3020b76. Input excerpts are explicitly partial; these hashes do not authenticate the Windows report or EXE.
+
+````text
+Selected exact instruction lines from the pasted recovery report B1b/B1c.
+This is an excerpt transcription, not the full Windows report or EXE.
+14016e41f: 44 0F 28 E2 MOVAPS XMM12,XMM2
+14016e423: 48 8B F2 MOV RSI,RDX
+14016e426: 4C 8B F9 MOV R15,RCX
+14016ea25: F3 44 0F 10 3D 42 C1 79 00 MOVSS XMM15,[14090AB70]
+14016f1fc: F3 44 0F 10 A6 30 0E 00 00 MOVSS XMM12,[RSI+E30]
+14016f205: F3 45 0F 5E E7 DIVSS XMM12,XMM15
+14016f20a: F3 44 0F 59 E7 MULSS XMM12,XMM7
+14016f25e: F3 44 0F 10 3D ED AB 79 00 MOVSS XMM15,[140909E54]
+14016f350: 48 03 C9 ADD RCX,RCX
+14016f353: 83 3C CA 01 CMP [RDX+RCX*8],1
+14016f359: 41 FF C1 INC R9D
+14016f36a: 41 8B C9 MOV ECX,R9D
+14016f3ca: 49 63 C9 MOVSXD RCX,R9D
+14016f3cd: 48 03 C9 ADD RCX,RCX
+14016f3d0: 49 8B 80 E0 85 00 00 MOV RAX,[R8+85E0]
+14016f3d7: F3 0F 10 4C C8 04 MOVSS XMM1,[RAX+RCX*8+4]
+14016f416: 44 0F 28 DA MOVAPS XMM11,XMM2
+14016f41a: F3 44 0F 5E 1D 55 B6 79 00 DIVSS XMM11,[14090AA78]
+14016f45a: 45 0F 28 C3 MOVAPS XMM8,XMM11
+14016f4f0: 48 6B D8 68 IMUL RBX,RAX,68
+14016f4f4: 49 03 D8 ADD RBX,R8
+14016f510: 48 8B 43 38 MOV RAX,[RBX+38]
+14016f514: 48 8B 0C C8 MOV RCX,[RAX+RCX*8]
+14016f538: 83 B9 88 00 00 00 09 CMP [RCX+88],9
+14016f541: 48 8B 53 30 MOV RDX,[RBX+30]
+14016f66e: 48 6B C0 68 IMUL RAX,RAX,68
+14016f675: 4A 8B 44 00 38 MOV RAX,[RAX+R8+38]
+14016f67a: 4C 8B 04 C8 MOV R8,[RAX+RCX*8]
+14016f689: 49 8B 50 08 MOV RDX,[R8+8]
+14016f68d: 49 2B 10 SUB RDX,[R8]
+14016f690: 48 C1 FA 04 SAR RDX,4
+14016f69d: 4D 8B 08 MOV R9,[R8]
+14016f6b0: 48 C1 E0 04 SHL RAX,4
+14016f6b4: 49 03 C1 ADD RAX,R9
+14016f6e0: F3 41 0F 5C C0 SUBSS XMM0,XMM8
+14016f6e5: F3 0F 11 40 08 MOVSS [RAX+8],XMM0
+14016f6ea: 49 8B 87 F0 C3 00 00 MOV RAX,[R15+C3F0]
+14016f78e: EB 0B JMP 14016F79B
+14016f790: 44 0F 28 C0 MOVAPS XMM8,XMM0
+14016f794: C7 40 08 00 00 00 00 MOV [RAX+8],0
+14016f79b: 4C 8B 6D A8 MOV R13,[RBP-58]
+14016f7b9: F3 44 0F 58 40 08 ADDSS XMM8,[RAX+8]
+14016f81d: 4D 8B 8F 30 C3 00 00 MOV R9,[R15+C330]
+14016f831: E8 1A 0B 2B 00 CALL 140420350
+14016f83e: F3 44 0F 5C 45 B0 SUBSS XMM8,[RBP-50]
+14016fccd: C3 RET
+
+````
+
+### Selected semantic excerpts from received recovery
+
+Parent-local source `.cache/recovery-semantic-excerpts-20261101.md`; bytes=5607; SHA256=8d672478036f00d1bcbf79d1460d342a2aa98668402bf0f44e5aad7c9c241c34. Input excerpts are explicitly partial; these hashes do not authenticate the Windows report or EXE.
+
+````markdown
+# Selected exact semantic excerpts from the user-pasted recovery
+
+These are explicitly selected excerpts, not complete source files or a byte-authenticated copy of the346897-byte Windows report. B-labels refer to the user's pasted recovery sections. The complete report was received in chat; no second delivery is requested for this review.
+
+## B4 — 6B3B50: local weighting values, actual subtraction, floor
+
+```c
+  fVar22 = *(float *)(lVar14 + 0x8684);
+  fVar30 = *(float *)(lVar14 + 0x8688);
+  fVar31 = *(float *)(param_1 + 0x5f0);
+  if (lVar14 != 0) {
+    fVar31 = fVar31 + fVar22 * DAT_140909ddc;
+  }
+```
+
+```c
+        fVar27 = ((fVar28 * fVar21 + *(float *)(lVar15 + 0x5f0)) / fVar31) * fVar30;
+        if (0.0 < fVar27) {
+          fVar22 = C3D_TIMER::PowerTime((C3D_TIMER *)&DAT_1409d4ee0,fVar20,false,false);
+          if (param_3 != '\0') {
+            fVar22 = C3D_TIMER::PowerTime((C3D_TIMER *)&DAT_1409d4ee0,fVar20,true,true);
+          }
+          fVar22 = fVar22 * fVar27 * param_2;
+          if (*(float *)(lVar15 + 0x5f0) - fVar22 < fVar28 * DAT_14090b2d0) {
+            fVar22 = fVar28 * fVar21 + *(float *)(lVar15 + 0x5f0);
+          }
+          local_100 = DAT_1409e11f0;
+          lVar4 = *(longlong *)(lVar15 + 0x1708);
+          puVar8 = DAT_1409e1208;
+          if (((*(char *)(lVar4 + 0x8682) != '\0') ||
+              ((*(longlong *)(lVar4 + 0x7c80) - *(longlong *)(lVar4 + 0x7c78)) / 0x110 != 0)) ||
+             ((0.0 < *(float *)(lVar4 + 0x7c70) ||
+              (puVar8 = DAT_1409e11f8, *(char *)(lVar4 + 0x8681) != '\0')))) {
+            local_100 = puVar8;
+          }
+          local_e8 = local_100;
+          puStack_e0 = (undefined8 *)(ulonglong)(uint)fVar22;
+          FUN_1402fdb00(&DAT_1409d4f10,&local_e8,&DAT_1409e6348,0,0,DAT_140909f58,0);
+          *(float *)(lVar15 + 0x5f0) = *(float *)(lVar15 + 0x5f0) - fVar22;
+          fVar22 = DAT_14090b22c;
+        }
+        fVar28 = fVar28 * DAT_14090b2d0;
+        if (*(float *)(lVar15 + 0x5f0) <= fVar28 && fVar28 != *(float *)(lVar15 + 0x5f0)) {
+          *(float *)(lVar15 + 0x5f0) = fVar28;
+        }
+```
+
+## B2 — 142430: same function has a real5F0 credit AND cargo-vector work
+
+```c
+          *pfVar21 = fVar27 - in_XMM0_Da;
+          in_XMM0_Da = in_XMM0_Da + *(float *)(param_2 + 0x5f0);
+          *(float *)(param_2 + 0x5f0) = in_XMM0_Da;
+```
+
+```c
+    puVar1 = (ulonglong *)(param_2 + 0x3b8);
+```
+
+```c
+                  *(ulonglong *)(param_2 + 0x3c0) = *puVar1;
+```
+
+```c
+                  *(undefined4 *)(param_2 + 0x50c) = 1;
+                  uVar25 = 4;
+```
+
+These last short excerpts are deliberately not a contiguous slice. The full pasted B2 also contains pushes/copies into the cargo vector and resource transfers. The excerpt here is sufficient to contradict the index's blanket “does not touch3B8” assertion; it does not prove a cargo/fuel synchronization relationship.
+
+## B3 — 14B920: receiver's fleet/workers, production and building-model pointer
+
+```c
+    if ((*(longlong *)(param_2 + 0xc78) - *(longlong *)(param_2 + 0xc70) >> 3 != 0) &&
+       (*(longlong *)(param_2 + 0xbc8) - *(longlong *)(param_2 + 0xbc0) >> 3 != 0)) {
+```
+
+```c
+  lVar10 = *(longlong *)(param_2 + 0x318);
+  if (((lVar10 != 0) && (*(longlong *)(lVar10 + 0x420) != 0)) &&
+     (fVar25 = fVar24 * *(float *)(param_2 + 0xde0) * *(float *)(lVar10 + 0x428) +
+               *(float *)(param_2 + 0x5f0), *(float *)(param_2 + 0x5f0) = fVar25,
+     (float)*(int *)(*(longlong *)(*(longlong *)(lVar10 + 0x420) + 0x1b0) + 0x9c) <= fVar25)) {
+    *(undefined4 *)(param_2 + 0x5f0) = 0;
+  }
+```
+
+## B5 — 6C81D0: file reader/restorer, not evidence of assignment mutation
+
+```c
+void FUN_1406c81d0(longlong param_1,FILE *param_2)
+```
+
+```c
+  fread(&local_928,0x7e8,1,param_2);
+```
+
+```c
+  *(undefined4 *)(param_1 + 0x5f0) = local_170;
+```
+
+```c
+    C3DLog_PrintError("IO_Vehicle_Read m_Type is NULL (type %s)",local_200);
+```
+
+## B1a — 16E3B0: slot selected from collector entries, not truck+3B8
+
+```c
+                FUN_140425b10(param_1,*(undefined8 *)(lVar13 + 0x4f8),&local_178,0,
+                              in_stack_fffffffffffffe28,1,in_stack_fffffffffffffe38,
+                              in_stack_fffffffffffffe40);
+                FUN_140427340(param_1,*(undefined8 *)(lVar13 + 0x4f8),&local_178);
+```
+
+```c
+                  if ((-1 < iVar16) &&
+                     (plVar4 = *(longlong **)
+                                (*(longlong *)((longlong)iVar16 * 0x68 + 0x38 + lVar13) +
+                                (longlong)iVar12 * 8), plVar4 != (longlong *)0x0)) {
+                    uVar18 = 0;
+                    uVar19 = plVar4[1] - *plVar4 >> 4;
+                    if (uVar19 != 0) {
+                      do {
+                        plVar15 = (longlong *)(uVar18 * 0x10 + *plVar4);
+                        if ((*plVar15 == *(longlong *)(param_1 + 0xc3f0)) &&
+                           (fVar28 = *(float *)(plVar15 + 1), 0.0 < fVar28)) {
+                          if (fVar28 <= fVar32) {
+                            *(undefined4 *)(plVar15 + 1) = 0;
+                          }
+```
+
+## B6 — 420350: mode0 collection and optional owner filtering
+
+```c
+  FUN_140424430(param_1,param_2,param_4,param_5,0,0,0);
+```
+
+```c
+    if ((param_8 == '\0') ||
+       (*(longlong *)(uVar13 * 0x68 + 0x30 + *(longlong *)(param_1 + 0x144a8)) == param_2)) {
+```
+
+The full pasted mode0 body selects pfVar19 through game+144A8 records and their slot-pointer list, after calling424430. It must not be conflated with mode1's direct param_2+3B8 path. Likewise, negative transfer alone proves no destination/tank credit.
+
+````
+
+### Complete recovery-audit source
+
+Parent-local source `.cache/audit_recovery_20261101.py`; bytes=4107; SHA256=c9db476399b4e7b8aacc27297f509d2699587c0dcab2eccbf4a8daeb55dbec9e. Input excerpts are explicitly partial; these hashes do not authenticate the Windows report or EXE.
+
+````python
+#!/usr/bin/env python3
+"""Check selected byte claims in the pasted recovery, NOT the original EXE.
+
+Inputs and full output are embedded with this source in the cumulative Markdown.
+Semantic conclusions still require receiver, branch, caller and unit evidence.
+"""
+from pathlib import Path
+import hashlib
+import re
+import struct
+import subprocess
+
+source = Path('.cache/recovery-byte-claims-20261101.txt')
+raw = source.read_bytes()
+rows = []
+for line in raw.decode().splitlines():
+    m = re.match(r'^([0-9a-f]{9}):\s+((?:[0-9A-F]{2} )*[0-9A-F]{2})\s+(.+)$', line)
+    if m:
+        rows.append((int(m[1], 16), bytes.fromhex(m[2]), m[3]))
+by = {a: b for a, b, _ in rows}
+assert len(by) == len(rows)
+print('SCOPE: excerpt transcription from recovery B1b/B1c; NOT original-file/EXE authentication')
+print('INPUT bytes', len(raw), 'sha256', hashlib.sha256(raw).hexdigest())
+print('Instruction rows', len(rows), 'unique starts', len(by))
+path = Path('.cache/recovery-byte-snippet.bin')
+for address, data, _ in rows:
+    path.write_bytes(data)
+    command = ['objdump', '-D', '-b', 'binary', '-m', 'i386:x86-64', '-M', 'intel',
+               '--insn-width=16', f'--adjust-vma={address}', str(path)]
+    result = subprocess.run(command, text=True, capture_output=True, check=True)
+    for line in result.stdout.splitlines():
+        if re.match(r'^\s*[0-9a-f]+:', line):
+            print(line.strip())
+print('CORRECTED transcription starts: RSI copy0x14016e423; R15 copy0x14016e426; XMM11 copy0x14016f416; DIVSS0x14016f41a')
+for claimed_exit in [0x14016E421, 0x14016F823, 0x14016F83F]:
+    ranges = [(hex(a), len(b)) for a, b, _ in rows if a < claimed_exit < a + len(b)]
+    assert ranges
+    print('INVALID EXIT', hex(claimed_exit), 'inside', ranges)
+assert by[0x14016FCCD] == b'\xc3'
+print('Supplied function RET=0x14016fccd; range continues into next function after this')
+# Recover RIP-relative load targets; original binary constant values are absent.
+for a in [0x14016EA25, 0x14016F25E]:
+    b = by[a]
+    target = a + len(b) + struct.unpack('<i', b[-4:])[0]
+    print('XMM15 LOAD', hex(a), 'RIP target', hex(target))
+    assert target == {0x14016EA25: 0x14090AB70, 0x14016F25E: 0x140909E54}[a]
+print('FORMULA: XMM12 is divided before XMM15 reload; cannot cancel DAT_14090ab70 against DAT_140909e54 without evidence')
+# The original index is copied back each loop, then doubled, then scale8 applied.
+assert by[0x14016F350] == bytes.fromhex('48 03 C9')
+assert by[0x14016F36A] == bytes.fromhex('41 8B C9')
+assert by[0x14016F3CD] == bytes.fromhex('48 03 C9')
+print('TABLE: logical indices0,1,2 -> RCX0,2,4 -> byte offsets', [2*i*8 for i in range(3)])
+print('TABLE: effective record stride16; rate offset16*i+4; scale8-only correction in recovery is WRONG')
+# Exact listed instruction lengths, then longer whole-instruction candidates.
+assert len(by[0x14016F6E5]) == 5
+for name, starts in [('deduction pair', [0x14016F6E0, 0x14016F6E5]),
+                     ('clamp pair', [0x14016F790, 0x14016F794]),
+                     ('deduction+next instruction CANDIDATE', [0x14016F6E0, 0x14016F6E5, 0x14016F6EA]),
+                     ('clamp+merge instruction CANDIDATE', [0x14016F790, 0x14016F794, 0x14016F79B])]:
+    for x, y in zip(starts, starts[1:]):
+        assert x + len(by[x]) == y
+    print('SPAN', name, sum(len(by[a]) for a in starts), 'bytes',
+          hex(starts[0]), 'to exclusive', hex(starts[-1] + len(by[starts[-1]])))
+b = by[0x14016F78E]
+target = 0x14016F78E + len(b) + struct.unpack('<b', b[1:])[0]
+assert target == 0x14016F79B
+assert 0x14016F790 < target < 0x14016F79F
+print('HOOK HAZARD: unclamped path JMP0x14016f78e enters0x14016f79b INSIDE15-byte clamp candidate; naive stealing is unsafe')
+print('NO HOOK APPROVAL: instruction-span length alone proves neither safe relocation nor correct fuel-event coverage')
+print('RECEIVER: RBX is overwritten with local_178 entry before selecting nested storage and slot; RBX at write is NOT preserved outer truck')
+print('VERDICT: recovery fixes original address transcription but introduces stride/count/hook errors; semantic review still required')
+
+````
+
+### Actual recovery-audit stdout — exit0
+
+Parent-local source `.cache/audit_recovery_20261101.out`; bytes=5678; SHA256=506640ce538f70eddb78e7c4f68f8412207506f221970a5d1b780edd55a6f67b. Input excerpts are explicitly partial; these hashes do not authenticate the Windows report or EXE.
+
+````text
+SCOPE: excerpt transcription from recovery B1b/B1c; NOT original-file/EXE authentication
+INPUT bytes 2036 sha256 9bacc810f28a06d5f9666c1a1b529a4fd95fd6df26ba632e70f98b2cf3020b76
+Instruction rows 46 unique starts 46
+14016e41f:	44 0f 28 e2                                     	movaps xmm12,xmm2
+14016e423:	48 8b f2                                        	mov    rsi,rdx
+14016e426:	4c 8b f9                                        	mov    r15,rcx
+14016ea25:	f3 44 0f 10 3d 42 c1 79 00                      	movss  xmm15,DWORD PTR [rip+0x79c142]        # 0x14090ab70
+14016f1fc:	f3 44 0f 10 a6 30 0e 00 00                      	movss  xmm12,DWORD PTR [rsi+0xe30]
+14016f205:	f3 45 0f 5e e7                                  	divss  xmm12,xmm15
+14016f20a:	f3 44 0f 59 e7                                  	mulss  xmm12,xmm7
+14016f25e:	f3 44 0f 10 3d ed ab 79 00                      	movss  xmm15,DWORD PTR [rip+0x79abed]        # 0x140909e54
+14016f350:	48 03 c9                                        	add    rcx,rcx
+14016f353:	83 3c ca 01                                     	cmp    DWORD PTR [rdx+rcx*8],0x1
+14016f359:	41 ff c1                                        	inc    r9d
+14016f36a:	41 8b c9                                        	mov    ecx,r9d
+14016f3ca:	49 63 c9                                        	movsxd rcx,r9d
+14016f3cd:	48 03 c9                                        	add    rcx,rcx
+14016f3d0:	49 8b 80 e0 85 00 00                            	mov    rax,QWORD PTR [r8+0x85e0]
+14016f3d7:	f3 0f 10 4c c8 04                               	movss  xmm1,DWORD PTR [rax+rcx*8+0x4]
+14016f416:	44 0f 28 da                                     	movaps xmm11,xmm2
+14016f41a:	f3 44 0f 5e 1d 55 b6 79 00                      	divss  xmm11,DWORD PTR [rip+0x79b655]        # 0x14090aa78
+14016f45a:	45 0f 28 c3                                     	movaps xmm8,xmm11
+14016f4f0:	48 6b d8 68                                     	imul   rbx,rax,0x68
+14016f4f4:	49 03 d8                                        	add    rbx,r8
+14016f510:	48 8b 43 38                                     	mov    rax,QWORD PTR [rbx+0x38]
+14016f514:	48 8b 0c c8                                     	mov    rcx,QWORD PTR [rax+rcx*8]
+14016f538:	83 b9 88 00 00 00 09                            	cmp    DWORD PTR [rcx+0x88],0x9
+14016f541:	48 8b 53 30                                     	mov    rdx,QWORD PTR [rbx+0x30]
+14016f66e:	48 6b c0 68                                     	imul   rax,rax,0x68
+14016f675:	4a 8b 44 00 38                                  	mov    rax,QWORD PTR [rax+r8*1+0x38]
+14016f67a:	4c 8b 04 c8                                     	mov    r8,QWORD PTR [rax+rcx*8]
+14016f689:	49 8b 50 08                                     	mov    rdx,QWORD PTR [r8+0x8]
+14016f68d:	49 2b 10                                        	sub    rdx,QWORD PTR [r8]
+14016f690:	48 c1 fa 04                                     	sar    rdx,0x4
+14016f69d:	4d 8b 08                                        	mov    r9,QWORD PTR [r8]
+14016f6b0:	48 c1 e0 04                                     	shl    rax,0x4
+14016f6b4:	49 03 c1                                        	add    rax,r9
+14016f6e0:	f3 41 0f 5c c0                                  	subss  xmm0,xmm8
+14016f6e5:	f3 0f 11 40 08                                  	movss  DWORD PTR [rax+0x8],xmm0
+14016f6ea:	49 8b 87 f0 c3 00 00                            	mov    rax,QWORD PTR [r15+0xc3f0]
+14016f78e:	eb 0b                                           	jmp    0x14016f79b
+14016f790:	44 0f 28 c0                                     	movaps xmm8,xmm0
+14016f794:	c7 40 08 00 00 00 00                            	mov    DWORD PTR [rax+0x8],0x0
+14016f79b:	4c 8b 6d a8                                     	mov    r13,QWORD PTR [rbp-0x58]
+14016f7b9:	f3 44 0f 58 40 08                               	addss  xmm8,DWORD PTR [rax+0x8]
+14016f81d:	4d 8b 8f 30 c3 00 00                            	mov    r9,QWORD PTR [r15+0xc330]
+14016f831:	e8 1a 0b 2b 00                                  	call   0x140420350
+14016f83e:	f3 44 0f 5c 45 b0                               	subss  xmm8,DWORD PTR [rbp-0x50]
+14016fccd:	c3                                              	ret
+CORRECTED transcription starts: RSI copy0x14016e423; R15 copy0x14016e426; XMM11 copy0x14016f416; DIVSS0x14016f41a
+INVALID EXIT 0x14016e421 inside [('0x14016e41f', 4)]
+INVALID EXIT 0x14016f823 inside [('0x14016f81d', 7)]
+INVALID EXIT 0x14016f83f inside [('0x14016f83e', 6)]
+Supplied function RET=0x14016fccd; range continues into next function after this
+XMM15 LOAD 0x14016ea25 RIP target 0x14090ab70
+XMM15 LOAD 0x14016f25e RIP target 0x140909e54
+FORMULA: XMM12 is divided before XMM15 reload; cannot cancel DAT_14090ab70 against DAT_140909e54 without evidence
+TABLE: logical indices0,1,2 -> RCX0,2,4 -> byte offsets [0, 16, 32]
+TABLE: effective record stride16; rate offset16*i+4; scale8-only correction in recovery is WRONG
+SPAN deduction pair 10 bytes 0x14016f6e0 to exclusive 0x14016f6ea
+SPAN clamp pair 11 bytes 0x14016f790 to exclusive 0x14016f79b
+SPAN deduction+next instruction CANDIDATE 17 bytes 0x14016f6e0 to exclusive 0x14016f6f1
+SPAN clamp+merge instruction CANDIDATE 15 bytes 0x14016f790 to exclusive 0x14016f79f
+HOOK HAZARD: unclamped path JMP0x14016f78e enters0x14016f79b INSIDE15-byte clamp candidate; naive stealing is unsafe
+NO HOOK APPROVAL: instruction-span length alone proves neither safe relocation nor correct fuel-event coverage
+RECEIVER: RBX is overwritten with local_178 entry before selecting nested storage and slot; RBX at write is NOT preserved outer truck
+VERDICT: recovery fixes original address transcription but introduces stride/count/hook errors; semantic review still required
+
+````
+
+### Ready-to-paste targeted fuel-producer correction task
+
+Parent-local source `.cache/fuel-producer-correction-task-20261101.md`; bytes=6314; SHA256=5b81434c15a649bef88bfb42df359da37bbadea97cefdc4fe72d34bdd5ae2077. Input excerpts are explicitly partial; these hashes do not authenticate the Windows report or EXE.
+
+````text
+Read AGENTS.md, INSTRUCTIONS.md and KILO_AGENT_WORKFLOW.md. Act as one local lead in the existing C:\WRSRE checkout/current authorized branch. Preserve all work and both fuel reports. PowerShell5.1 commands start with cd 'C:\WRSRE';. No branch switch, commit/push, plugin/INI/settings changes, build/deployment, hooks/breakpoints, game run or payments. Only you operate Ghidra and update the relevant index; do not create other sessions. Do not rewrite the shared cumulative handover.
+
+The parent has received and reviewed the recovery's actual pasted exports; do NOT repeat delivery-only work or ask for the EXE. Raw recovery evidence is useful, but several interpretations are demonstrably wrong:
+
+- B1b has ADD RCX,RCX at16F350 and16F3CD before scale8 accesses. R9D is the logical index; effective table stride is16, rate+4. Pointer indirection remains required. D3's stride8 correction is false.
+- Original duplicate-address errors belong to the original narrative, not the parent's objdump. Correct starts are16E423/16E426 and16F416/16F41A. RET is16FCCD; the range continues into another function.
+- At16F205 XMM15 still holds DAT_14090AB70 (loaded16EA25); only16F25E reloads DAT_140909E54. The cancelled tick*rate*25/60 formula is not established. Keep exact rounded arithmetic and units separate.
+- The16E3B0 write selects a nested storage through local_178 entries filled by425B10 AND427340. It is not shown to be outer_truck+3B8. RBX has been overwritten with a collector entry. State50C is mutable (142430 resets it and assigns multiple job states), not established as immutable vehicle kind. Do not force this upkeep resource debit into the truck-tank role.
+- In6B3B50, fVar31 += capacity*0.5 changes a LOCAL weighting total, not5F0. Actual5F0 writes are the subtraction and floor assignment in the flag8680==0 path. Cached store VAs are1406B44B7/1406B44DA. This is the stronger tank-consumption candidate. Do not assert the flag's physical meaning yet.
+- 142430 really credits5F0 in its early branch, but also changes3B8/3C0 cargo later. 14B920's production/fleet/workers/+318-model context is not a proved vehicle refill; likely an unrelated building5F0 progress field. 6C81D0 is a FILE* reader restoring state, not assignment/burn.
+- 420350 mode0 selects through424430/game+144A8 records; do not conflate with mode1's direct cargo layout. A negative debit without a paired tank credit is not proved refill.
+- MOVSS F3 0F 11 40 08 is5bytes; deduction pair10, clamp11. Longer17/15-byte instruction spans exist, but the unclamped JMP16F78E enters16F79B inside the15-byte clamp candidate. No inline/call-site patch is approved.
+
+Goal: obtain the smallest defensible native input contract for the observed road truck's ACTUAL5F0 consumption and refill, not another summary defending16E3B0. Work from existing artifacts before narrowly filling missing native evidence.
+
+1. Read the existing recovery, six index entries, relevant vehicle-fuel documentation and cached scratch\out\14066d530_decomp.c. Reconcile the points above against actual source. Preserve historical notes; correct or mark the affected six index entries contested/partial where semantics were overstated. Do not label an interpretation verified merely because operand bytes exist.
+
+2. Trace the cached66D530 call to6B3B50: exact call VA/RVA, receiver/root versus attached members, float-factor/flag arguments, state/metadata gates and whether the tested road truck reaches flag8680==0. Include complete relevant cached caller definitions and all exits for the selected slice. Do not redecompile the large caller when cache or a targeted call-site disassembly suffices.
+
+3. Export exact6B3B50 instruction bytes/flow for its subtraction AND floor paths, with receiver reaching definitions and safe pre/post event boundaries. Follow the actual member pointer, not an outer register assumed unchanged. Distinguish requested subtraction, actual rounded store difference, floor correction and statistics. Inspect alternate8680 branch enough to delimit coverage. No hook implementation or blanket patchability claim.
+
+4. Pair142430's early storage debit and5F0 credit on the SAME concrete receiver/resource. Establish its caller applicability to the road truck, partial/empty-source/headroom branches and ordering versus6B3B50 where supported. Reuse cached callers/xrefs; query only the specific missing caller/body slice. Other5F0 writers must be classified by object type and lifecycle, not matching displacement alone. Stop at the exact missing edge instead of claiming complete refill coverage.
+
+5. Establish units only from direct configuration/parser/consumer evidence. Record relevant prototype fields8684/8688, factor arguments and reserve constants without inventing litres/tonnes. If reading PE constants, include section headers, RVA-to-file mapping, raw bytes and decoded values. If unit mapping cannot be established within these targeted paths, mark it unresolved rather than substituting1176/0.001. Do not broaden into renderer/string/gauge searches or general425B10 research.
+
+Before each new Ghidra call, follow index/cache checks and exclusive ownership/lock rules. Query serially, read-only. Existing complete evidence needs no re-query. Log exact commands and actual outputs/errors; update the required index after queries. No unexplained hand-picked slice boundaries or omitted branch/receiver definitions.
+
+Write one new collision-free owned scratch\out\FUEL_TANK_CONTRACT_20261101.md. Embed all relevant raw evidence and final changed index entries, not just paths. Include full final source/results for any added helper, including the prior append_block.ps1 if available; explicitly mark missing historical stdout/source. Scripts are optional. Preserve files; heading first, then one coherent subsection/artifact append with readback verification. Inspect disk before retrying a timeout; no arbitrary byte limit or truncated evidence.
+
+End with supported/contested/unresolved findings and exact remaining blockers. No runtime proof is claimed. Payments stay OFF; refills cannot net away burn, assignment closures include cancellation/removal/replacement, outside-assignment burn is separate operating overhead and uncertain boundaries stay unallocated. Return the actual Markdown, not merely another completion summary.
+
+````
+
+
+## Tank-contract completion summary received — raw contract pending (2026-11-01)
+
+User supplied the completion summary for C:\WRSRE\scratch\out\FUEL_TANK_CONTRACT_20261101.md; reported length28570bytes and SHA256F6C4190E8C884FDE66E033977C3DACF1897AF15897E1EB430F8651D6B9C80A75. The actual contract was not attached/found in the upload directory. The earlier recovery HAS already been received and reviewed; this request concerns only the NEW tank-contract report. Six local index changes are reported, with no commit/branch/runtime changes; these claims and file hash are not parent-verified.
+
+Independent decode of the two supplied summary byte strings:1406B44B7 F3 0F 11 87 F0 05 00 00 is8bytes, not10;1406B44DA F3 44 0F 11 87 F0 05 00 00 is9bytes, not11. Neither instruction length alone determines the available complete stolen span. Existing66D530 index explicitly warns that its decompilation uses float* indexing:0x13C*4=0x4F0. Therefore claimed byte gates+13C/+145 need actual operand verification; they are not accepted or automatically multiplied without seeing exact casts/expressions. The reported requested expression is a weighting/rate component in the previously supplied6B3B50 body, before PowerTime*param_2 and possible reserve handling. For this5F0 path, receiver proof must establish RDI/main-or-attached member/observed-root ownership; equality to outer_truck+3B8 is not the appropriate requirement. No hooks, costing or payments are accepted from the summary.
+
+Delivery-only prompt: “Read AGENTS.md, INSTRUCTIONS.md and KILO_AGENT_WORKFLOW.md. Preserve all existing work and index edits. Do not run new native queries, modify reports/code/settings, change branches, commit/push, install hooks, build or run the game. Deliver the COMPLETE existing C:\WRSRE\scratch\out\FUEL_TANK_CONTRACT_20261101.md as an attachment, not another completion summary. Expected reported length28570bytes/SHA256F6C4190E8C884FDE66E033977C3DACF1897AF15897E1EB430F8651D6B9C80A75. Report any mismatch without regenerating it. If attachments are unsupported, print its complete verbatim contents in numbered parts for the user to paste. Do not repeat the already-delivered recovery report.”
+
+### Complete tank-summary byte-check check_tank_summary_bytes_20261101.py
+
+SHA256=63a296465d48ad7fde54a511fe6bf26570eb58e69b5b01a6bf98bd8f92c4e3d4; output command: `python .cache/check_tank_summary_bytes_20261101.py` (exit0). No EXE/runtime validation.
+
+````python
+#!/usr/bin/env python3
+"""Decode only the two byte strings in the tank-contract completion summary."""
+from pathlib import Path
+import subprocess
+
+for address, hex_bytes in [
+    (0x1406B44B7, 'F3 0F 11 87 F0 05 00 00'),
+    (0x1406B44DA, 'F3 44 0F 11 87 F0 05 00 00'),
+]:
+    data = bytes.fromhex(hex_bytes)
+    path = Path('.cache/tank-summary-instruction.bin')
+    path.write_bytes(data)
+    print(f'SUMMARY EXCERPT {address:#x}: {len(data)} bytes; end-exclusive {address + len(data):#x}')
+    result = subprocess.run(['objdump', '-D', '-b', 'binary', '-m', 'i386:x86-64',
+                             '-M', 'intel', '--insn-width=16',
+                             f'--adjust-vma={address}', str(path)],
+                            capture_output=True, text=True, check=True)
+    for line in result.stdout.splitlines():
+        if ':' in line and line.strip().startswith(f'{address:x}:'):
+            print(line.strip())
+print('NOT executable verification, complete stolen-span proof, receiver proof or hook approval.')
+
+````
+
+### Complete tank-summary byte-check check_tank_summary_bytes_20261101.out
+
+SHA256=0d4cc39c95eb4886e5f2aa0325dfada6c5e288451a5201eee64d9d56c028a0ff; output command: `python .cache/check_tank_summary_bytes_20261101.py` (exit0). No EXE/runtime validation.
+
+````text
+SUMMARY EXCERPT 0x1406b44b7: 8 bytes; end-exclusive 0x1406b44bf
+1406b44b7:	f3 0f 11 87 f0 05 00 00                         	movss  DWORD PTR [rdi+0x5f0],xmm0
+SUMMARY EXCERPT 0x1406b44da: 9 bytes; end-exclusive 0x1406b44e3
+1406b44da:	f3 44 0f 11 87 f0 05 00 00                      	movss  DWORD PTR [rdi+0x5f0],xmm8
+NOT executable verification, complete stolen-span proof, receiver proof or hook approval.
+
+````
+
+## Repeated report contradictions — explanation and workflow repair (2026-11-01)
+
+### What this means, and what it does not mean
+
+Repeated errors in reviewed reports mean their interpretation layer cannot be treated as implementation-ready. They do not show that every raw export is wrong, the native binary is inconsistent, or all previous runtime tests are invalid. Retain source facts and accepted test results; attach confidence to individual claims rather than accepting/rejecting an entire report. The NEW tank-contract actual report remains undelivered here; summary errors do not prove the whole unseen report is wrong.
+
+### Why this can happen
+
+Observed failure modes include treating decompiler-inferred types/names as facts, missing register/index definitions, confusing local arithmetic with stores and transferring field meanings between object types. Plausible causal contributors are anchoring on a fuel hypothesis or prior summary and compressing proof into fluent conclusions; we cannot inspect an agent's internal reasoning or assign a proven provider/model cause. Corrections that repair only the challenged sentence can leave dependent conclusions wrong. More report text or model agreement does not repair missing evidence. The parent is also accountable: an earlier reconstruction of unavailable report content was erroneous and withdrawn; unavailable text must never be invented.
+
+### How a correction can be checked
+
+The supplied tank-store strings contain8/9byte tokens and independently decode to8/9byte MOVSS instructions, not the claimed10/11. This checks supplied strings, not the unavailable original PE. ADD index,index before scale8 proves effective stride16 for that path. A float* array index scales by4 unless casts change the expression, so the new summary gates are unaccepted pending actual operands, not declared wrong by assumption. Local-only capacity weighting does not write the tank. Receiver semantics need traced object selection/caller evidence; matching5F0 displacements alone do not establish matching objects or units. These distinctions separate demonstrated contradictions from unresolved hypotheses.
+
+### Guidance defects repaired
+
+Updated AGENTS.md, INSTRUCTIONS.md, KILO_AGENT_WORKFLOW.md and docs/ghidra-index/README.md. Prior guidance itself confused address domains, allowed an entry-wide verified label to appear broader than its evidence, required fresh queries for contested interpretations and automatically suggested caller patching for a short inline prologue. Those are documented workflow defects; influence on any particular agent error is not proven. Guidance now distinguishes claim-level evidence, caches before queries, exact address/pointer arithmetic, data-flow/receiver/unit proof, adversarial parent review, dependent-claim repair and actual artifact delivery. Hook feasibility is distinct from semantics and authorization; speculative disabled hooks are not an automatic fallback. No model/settings/runtime/code changes were made. This checkout is not automatically synchronized to the Windows operator.
+
+### Ready-to-paste acceptance supplement
+
+SHA256=b144ae565b4b936a4729ea5365ef41169a0857bc23b134552248c8484221dd7a; complete prompt below.
+
+````text
+Read AGENTS.md, INSTRUCTIONS.md and KILO_AGENT_WORKFLOW.md. Apply the following acceptance rules to the existing fuel-tank investigation. Preserve all evidence and history. No branch/settings/code/INI changes, commits, hooks, build/deployment, game run or payments. Do not repeat native queries; use existing exports first and report any exact missing edge before proposing a new query.
+
+For every consequential contract claim, provide: claim ID and precise statement; raw artifact plus address/line; derivation; supported/contested/unresolved status; applicability limit and exact missing evidence. Separate decoded bytes, static data flow, physical meaning, observed runtime applicability and implementation readiness.
+
+Mechanically check byte counts and instruction boundaries. Distinguish RVA, preferred VA, runtime VA and file offset. Preserve pointer types/casts and show byte-offset arithmetic. Trace receiver selection, overwritten registers, branch guards, float argument/factor definitions and local arithmetic versus memory writes. Do not cancel distinct constants, guess units or infer object type from a matching offset.
+
+Challenge the preferred explanation using the same raw evidence: could this be an attached member, another object type, a local-only calculation, save restore, refill or floor correction rather than propulsion burn? Identify the specific evidence deciding each issue. If an earlier claim changes, review its dependent conclusions rather than just changing one sentence.
+
+Do not promote an index label, another agent's agreement, script PASS or reported SHA into semantic proof. State whether binary identity was measured locally or merely reported. Selected excerpts stay labelled partial. Do not claim runtime validation from static exports.
+
+Keep checks and complete final helper source/actual results in the existing owned Markdown; use bounded verified writes and preserve history. No new helper script is required. Stop at scoped completion or a precise blocker, not another broad investigation. Deliver the actual complete Markdown, not only a completion summary. Do not reconstruct unavailable contents. If the report has not reached the parent, deliver its existing version unchanged first; a separate audit must not silently replace it.
+
+````
+
+## Actual tank-contract reviewed — typed offsets, ABI and completed-debit corrections (2026-11-01)
+
+### Receipt and verdict
+
+The actual tank-contract text has now been supplied in chat. The prior delivery-only blocker is superseded; do NOT request this report again. Windows file provenance remains reported28570bytes/SHA256F6C4190E8C884FDE66E033977C3DACF1897AF15897E1EB430F8651D6B9C80A75, not independently measured by the parent. The received text is useful but is NOT an accepted observed-road-truck consumption/refill contract. It contains contradictions inside its own quoted evidence, and cites native artifacts without embedding the complete slices it claims. Selected excerpts/29 byte rows are preserved below, explicitly not a reconstructed original file.
+
+
+### 1. Typed caller offsets are now decidable, not merely suspicious
+
+Section2.1 supplies float *param_1 and the exact expressions. Both casts occur AFTER the pointer addition: *(longlong *)(param_1+0x13C) reads at root+0x4F0; *(char *)(param_1+0x145) reads a byte at root+0x514. This is no longer an unresolved scaling question. The report's root+0x13C/root+0x145 descriptions are wrong for its own supplied source. The corrected addresses do not establish either field's physical meaning or whether this particular road truck reaches the call. Nor do two local if-statements prove the complete caller reachability; preceding exits and kind gates still matter.
+
+Section4.4 contains another independent base/type error: with longlong *param_1, (int)param_1[0xB6] accesses byte offset0x5B0 on param_1. Casting the loaded element to int does not change pointer stride. It is NOT a state at param_2+0xB6. Identify what param_1 points to before assigning that state to the vehicle.
+
+
+### 2. Root exclusion and attached-member addressing contradict the quoted loop
+
+Sections2.1/3.1/3.2 assert the root5F0 is never written. But the quoted loop starts with index-1 and lVar15=param_1, then uses the same eligible lVar15 store. Thus the root is an eligible write receiver, subject to gates, as well as attached members. Static eligibility is not a claim that the observed root actually reached it.
+
+Section3.2 line95 computes vectorBase+8*i (entry address) without loading its pointer, while section8.7 describes MOV RDI,[RAX+RSI*8] (entry contents). Those are not equivalent. If section8.7 is accurate, member=*(uint64_t *)(vectorBase+8*i); do not treat the slot's address as the vehicle object. The native predecessor slice is needed to settle the transcription, not another broad investigation. Equality to outer_truck+3B8 is irrelevant as a goal for this5F0 writer; prove root/member ownership instead.
+
+
+### 3. Mechanical audit: four bad lengths and one byte/mnemonic contradiction
+
+All29 supplied instruction rows in sections8.1-8.6 were independently decoded with GNU objdump. The input is782bytes/SHA256cc23ff9c21a9be7564dcfc56c9ded8df1331ffbfb46f55708dd96420505a268c. Actual successful source/output are embedded below. This authenticates neither the original PE nor the Windows report hash.
+
+Correct lengths:1406B44AB load8 (report9);1406B44B7 store8 (report10);1406B44C7 floor MULSS9 (report8);1406B44DA floor store9 (report11). The subtraction+store range is[1406B44B3,1406B44BF),12bytes, NOT14. Including the preceding load gives20bytes. Compare+conditional branch+floor store[1406B44D0,1406B44E3) really is19bytes, but includes a branch rather than merely two instructions. None is hook approval; relocation, incoming edges and event semantics remain separate.
+
+New decisive conflict:1406B43CA's supplied0F28C0 decodes MOVAPS XMM0,XMM0, NOT MOVAPS XMM0,XMM8. Its3bytes end43CD; the next row starts43CE. A missing REX prefix could explain text and spacing, but that is ONLY a hypothesis; do not silently insert one. Retrieve the original cached contiguous slice to decide which transcription is wrong. RIP-relative targets at43CE and44C7 both compute14090B2D0, but that proves no constant value or unit.
+
+
+### 4. Caller ABI is missing; decompiler argument counts are not defaults
+
+The callee is described as (root, float param_2, char param_3), yet the caller is shown as a one-argument decompiled call. Section8.7's claim that param_2/param_3 default is unsupported. Native omitted-looking decompiler arguments do not establish source-language defaults. Under the reported ordinary Windows x64 signature, inspect RCX, XMM1 and R8B at the actual call, plus their use/copies in the callee prologue. A different recovered convention also requires native evidence. The report supplies no exact call-site instructions or reaching definitions for these inputs. XMM6 being an internal amount register does not establish the call ABI.
+
+
+### 5. Requested rate, subtraction operand and completed tank loss must remain distinct
+
+fVar27 is a weighted rate/component, not the final requested debit. The report itself next multiplies PowerTime()*fVar27*param_2, then conditionally replaces the subtraction operand. The root scaling omitted as comments can also change a factor; do not replace every fVar21 occurrence with a globally fixed0.5 without tracing that path.
+
+The claim actual store difference equals fVar22 is not generally exact for floating-point: storedAfter=round_float(storedBefore-d), and the observed difference need not equal d. More importantly, the quoted insufficient-amount branch replaces d with capacity*fVar21+current, subtracts it, then may restore the result to a floor. Counting the raw subtraction operand as all propulsion burn while ignoring that same-operation floor can count an artificial undershoot as fuel use. A floor correction is not automatically an external refill.
+
+Therefore the report's whole-update net change is not actual consumption rule does not follow merely from the existence of a floor write. Prove the semantic pre/post boundary of this member's deduction-plus-floor operation, and separately identify actual refills. Conversely do not assume a broad sampled/function-wide net is safe when unrelated burn/refill writers can intervene. Requested amount, native statistics payload, rounded intermediate change and completed tank loss need separate labels; physical units still unresolved. Accepted policy remains that REAL refills cannot net away burn.
+
+
+### 6. Refill pairing is directed at the wrong stores
+
+Pairing a5F0 credit with later3B8/3C0 cargo-vector bookkeeping is not required to establish fuel transfer. The relevant pair is the fuel-resource SOURCE amount decrement and the same transaction's DESTINATION5F0 increase. Earlier received recovery B2 already places *pfVar21=fVar27-in_XMM0_Da immediately before addition to param_2+5F0. That supports one local debit/credit pair; what remains is proof of source ownership/resource selection, amount limits, other branch behavior and applicability to this road truck. Do not reset that local progress to wholly unproved merely because later cargo writes are unrelated.
+
+The report's own state-gate base error further blocks its caller applicability claim. Null/headroom/source/order alternatives require exact flow, not abbreviated line ranges. Matching source/credit amounts with resource identity matters; unrelated cargo storage can remain unrelated.
+
+
+### 7. Address domain, constants and provenance claims remain overstated
+
+Section8 calls1406B44B7 an RVA. It is a preferred-image VA; with image base140000000 its RVA is6B44B7. Runtime address is liveBase+6B44B7, NOT liveBase+1406B44B7. The same correction applies to the other140... table entries.
+
+PE.rdata read claims lack section-header mapping/raw bytes/actual command output; the0.5 value remains externally reported, not parent-authenticated. Physical unit conversion is unresolved, but not inherently runtime-only: configuration/parser/consumer evidence may settle it statically. Do not authorize a breakpoint simply by calling every unresolved item runtime required.
+
+The report does not embed the claimed complete538-line disassembly, complete caller definitions, actual query outputs, six final changed index contents/diffs or missing historical helper source. Section1.3 and9.4 also disagree about index statuses. Do not treat the claimed six updates as inspected here; relevant local142430/6B3B50 index files are absent in this checkout. Existing historical conclusions remain preserved/contested, not overwritten with this report's verified label.
+
+
+### 8. Accepted progress and smallest next step
+
+Retain the explicit subtraction/floor operand encodings as evidence about supplied strings, the prototype/active tests where actually supplied, and the local142430 credit/source-debit lead. Correct the typed offsets/root eligibility/lengths directly now. Observed-road-truck path, actual float/flag ABI, completed-debit accounting boundary, source resource/refill coverage and physical/price conversion are not ready for implementation.
+
+Next local task must obtain narrowly missing evidence from existing caches: actual66D530 call-site argument setup/preceding branch gates; the unedited contiguous6B3B50 prefix/selection/floor slices resolving the byte disagreement and root/member flow; matched142430 source/resource/credit definitions and new index diff. Do not request the already-pasted contract or repeat the prior broad exports. No implementation/hook/build/game run/payments. The report predates the new workflow being available on Windows; do not assume it followed the newly edited local guidance. Parent must audit the returned raw evidence under the same gates.
+
+### Selected exact byte rows from the received tank contract
+
+Parent-local source `.cache/tank-contract-selected-bytes-20261101.txt`; bytes=782; SHA256=cc23ff9c21a9be7564dcfc56c9ded8df1331ffbfb46f55708dd96420505a268c. These are parent artifacts/selected transcript, not authenticated original Windows files.
+
+````text
+1406B4263 F3 44 0F 10 80 84 86 00 00
+1406B426C 45 0F 2F C8
+1406B4270 0F 83 6D 02 00 00
+1406B4276 80 B8 80 86 00 00 00
+1406B427D 0F 85 60 02 00 00
+1406B4283 83 BF 94 17 00 00 00
+1406B428A 0F 85 53 02 00 00
+1406B434A F3 45 0F 59 D7
+1406B4353 F3 0F 58 BF F0 05 00 00
+1406B435B F3 41 0F 5E FC
+1406B4360 F3 41 0F 59 FB
+1406B4389 F3 0F 59 F7
+1406B438D F3 41 0F 59 F5
+1406B43BB F3 0F 10 97 F0 05 00 00
+1406B43C3 0F 28 CA
+1406B43C6 F3 0F 5C CE
+1406B43CA 0F 28 C0
+1406B43CE F3 0F 59 05 FA 6E 25 00
+1406B43D6 0F 2F C1
+1406B43D9 76 08
+1406B43DB 41 0F 28 F2
+1406B43DF F3 0F 58 F2
+1406B44AB F3 0F 10 87 F0 05 00 00
+1406B44B3 F3 0F 5C C6
+1406B44B7 F3 0F 11 87 F0 05 00 00
+1406B44C7 F3 44 0F 59 05 00 6E 25 00
+1406B44D0 44 0F 2F 87 F0 05 00 00
+1406B44D8 76 09
+1406B44DA F3 44 0F 11 87 F0 05 00 00
+
+````
+
+### Selected received-text excerpts, not a reconstruction
+
+Parent-local source `.cache/tank-contract-selected-excerpts-20261101.md`; bytes=3272; SHA256=c5a02c538e315c1d20dadfe14412c2b596d6b9331f5339e335e6b7657d96e852. These are parent artifacts/selected transcript, not authenticated original Windows files.
+
+````markdown
+# Selected exact excerpts from the user's pasted tank-contract report
+
+These are selected excerpts, NOT a reconstruction of the complete report or a byte-authenticated Windows file. The complete report text was supplied in chat. Reported Windows path: C:\WRSRE\scratch\out\FUEL_TANK_CONTRACT_20261101.md; reported28570bytes/SHA256F6C4190E8C884FDE66E033977C3DACF1897AF15897E1EB430F8651D6B9C80A75. The parent has not measured that file. Section references below identify the received report, not local exports.
+
+## Section2.1: caller and typed gate expressions
+
+`FUN_14066d530(float *param_1)` at RVA `0x66D530`.
+
+```
+422:   lVar8 = *(longlong *)(param_1 + 0x13c);
+423:   if (lVar8 != 0) {
+424:     if (*(char *)(param_1 + 0x145) != '\0') {
+425:       FUN_1406b3b50(param_1);
+426:       FUN_14067e6b0(param_1);
+427:       param_1[0x5df] = 0.0;
+428:       param_1[0x5e3] = 0.0;
+429:       FUN_1406687b0(param_1);
+430:       FUN_1406c1bd0(param_1,0);
+431:       return;
+432:     }
+```
+
+> The root's `0x5F0` is read only into the LOCAL `fVar31` weighting total (line 53), never written.
+
+## Section3.2: loop receiver, requested change and floor
+
+```
+90:     lVar14 = -1;                                   // fleet index = -1 means root
+91:     fVar22 = DAT_14090b22c;
+92:     do {
+93:       lVar15 = param_1;                             // root when index == -1
+94:       if (-1 &lt; lVar14) {                            // else fleet member
+95:         lVar15 = *(longlong *)(param_1 + 0x3a0) + lVar14 * 8;
+96:       }
+97:       lVar4 = *(longlong *)(lVar15 + 0x1708);       // prototype of root or member
+```
+
+```
+117:        fVar27 = ((fVar28 * fVar21 + *(float *)(lVar15 + 0x5f0)) / fVar31) * fVar30;
+```
+
+> Actual store difference = `fVar22` (post-clamp). Floor correction at lines 142-145 is a separate write.
+
+## Section4.4: refill state gate misattribution
+
+> `param_1[0xb6] == 2` (state gate at `param_2 + 0xB6`)
+
+Section4.1 declares `param_1` as `longlong *` and `param_2` as `longlong` vehicle pointer. Section4.3 discusses unrelated later3B8/3C0 vector writes; the report repeatedly uses their lack of pairing with5F0 as the refill-pairing blocker.
+
+## Section8.4: byte/mnemonic disagreement
+
+| RVA | Bytes | Instruction | Role |
+|---|---|---|---|
+| `0x1406B43CA` | `0F 28 C0` | `MOVAPS XMM0,XMM8` | `XMM0 = capacity` |
+
+## Section8.7: member indirection and invented argument defaults
+
+| **Member pointer source** | `RDI = [RAX + RSI*0x8]` where `RAX = [RBX + 0x3A0]` | Line 397: `MOV RDI,qword ptr [RAX + RSI*0x8]` |
+| **Caller ABI** | `66D530` calls `FUN_1406b3b50(param_1)` — root vehicle as first arg; param_2/param_3 defaults | `14066d530_decomp.c` lines 425-426 |
+
+## Section8.8: address-domain and accounting claims
+
+> **ASLR ON:** All addresses are RVAs; add live module base at runtime. Never hardcode `0x1406B44B7` as absolute.
+
+> **Whole-update net change is not actual consumption:** The floor assignment at `0x1406B44DA` can raise 5F0 after subtraction, masking consumption in a sampled delta.
+
+Section8.5 claims the subtraction pair14bytes; section8.6 claims the compare/branch/floor-store span19bytes. All29 exact byte strings from sections8.1-8.6 are separately preserved in the audit input, without the report's size or mnemonic interpretation.
+
+````
+
+### Complete final tank-contract audit source
+
+Parent-local source `.cache/audit_tank_contract_20261101.py`; bytes=3567; SHA256=4fe71bba9434f9643f2d31057efc7b922583cbd73f912a391b00e88ee7f4a962. These are parent artifacts/selected transcript, not authenticated original Windows files.
+
+````python
+#!/usr/bin/env python3
+"""Audit all 29 byte rows transcribed from sections 8.1-8.6 of the pasted contract.
+This does NOT authenticate the PE, report hash, caller ABI or runtime semantics.
+"""
+from pathlib import Path
+import hashlib
+import re
+import subprocess
+
+source = Path('.cache/tank-contract-selected-bytes-20261101.txt')
+raw = source.read_bytes()
+rows = []
+for line in raw.decode().splitlines():
+    address, hex_bytes = line.split(' ', 1)
+    rows.append((int(address, 16), bytes.fromhex(hex_bytes)))
+assert len(rows) == len(dict(rows)) == 29
+print(f'INPUT: {len(raw)} bytes; SHA256={hashlib.sha256(raw).hexdigest()}')
+print('29 selected instruction rows, NOT the cited complete 538-line disassembly.')
+by_address = dict(rows)
+decoded_by_address = {}
+for address, data in rows:
+    scratch = Path('.cache/tank-contract-selected-instruction.bin')
+    scratch.write_bytes(data)
+    result = subprocess.run(['objdump', '-D', '-b', 'binary', '-m', 'i386:x86-64',
+                             '-M', 'intel', '--insn-width=16',
+                             f'--adjust-vma={address}', str(scratch)],
+                            text=True, capture_output=True, check=True)
+    decoded = [line.strip() for line in result.stdout.splitlines()
+               if re.match(r'^\s*[0-9a-f]+:\s', line)]
+    assert len(decoded) == 1, (address, decoded)
+    fields = decoded[0].split('\t')
+    assert len(bytes.fromhex(fields[1].strip())) == len(data), decoded
+    decoded_by_address[address] = fields[-1].strip()
+    print(f'{address:#x}: length={len(data)} end={address+len(data):#x} | {fields[-1].strip()}')
+
+print('\nBYTE/MNEMONIC CONTRADICTION AT 0x1406B43CA:')
+assert by_address[0x1406B43CA] == bytes.fromhex('0F 28 C0')
+assert decoded_by_address[0x1406B43CA].split() == ['movaps', 'xmm0,xmm0']
+print('Report says MOVAPS XMM0,XMM8; supplied bytes decode MOVAPS XMM0,XMM0.')
+print('These 3 bytes end at 0x1406B43CD; next supplied row starts 0x1406B43CE.')
+print('Possible omitted prefix is a hypothesis only: do NOT silently repair the source.')
+
+print('\nSIZE/SPAN CORRECTIONS (end-exclusive):')
+for address, claimed in [(0x1406B44AB, 9), (0x1406B44B7, 10),
+                         (0x1406B44C7, 8), (0x1406B44DA, 11)]:
+    actual = len(by_address[address])
+    print(f'{address:#x}: report={claimed}, supplied encoding={actual}')
+assert len(by_address[0x1406B44B7]) == 8
+assert len(by_address[0x1406B44DA]) == 9
+for title, addresses in [
+    ('subtraction + store', [0x1406B44B3, 0x1406B44B7]),
+    ('load + subtraction + store', [0x1406B44AB, 0x1406B44B3, 0x1406B44B7]),
+    ('floor compare + conditional branch + store', [0x1406B44D0, 0x1406B44D8, 0x1406B44DA]),
+]:
+    for a, b in zip(addresses, addresses[1:]):
+        assert a + len(by_address[a]) == b
+    end = addresses[-1] + len(by_address[addresses[-1]])
+    print(f'{title}: [{addresses[0]:#x}, {end:#x}) = {end-addresses[0]} bytes')
+
+print('\nRIP-RELATIVE CONSTANT TARGETS:')
+for address in [0x1406B43CE, 0x1406B44C7]:
+    data = by_address[address]
+    target = address + len(data) + int.from_bytes(data[-4:], 'little', signed=True)
+    assert target == 0x14090B2D0
+    print(f'{address:#x} -> {target:#x} (value/units not established)')
+print('\nTYPED EXPRESSIONS AS PASTED (not runtime memory reads):')
+print(f'float* param_1 + 0x13C -> byte offset {0x13c*4:#x}')
+print(f'float* param_1 + 0x145 -> byte offset {0x145*4:#x}')
+print(f'longlong* param_1[0xB6] -> byte offset {0xb6*8:#x} on param_1, NOT param_2')
+print('PASS: mechanical checks of supplied strings/typed expressions only; NO hook approval.')
+
+````
+
+### Actual tank-contract audit stdout, exit0
+
+Parent-local source `.cache/audit_tank_contract_20261101.out`; bytes=3204; SHA256=59787ab695a4c84de4fd2adbaf071552adf9a7f791fd8db98f6dfafbecc566b2. These are parent artifacts/selected transcript, not authenticated original Windows files.
+
+````text
+INPUT: 782 bytes; SHA256=cc23ff9c21a9be7564dcfc56c9ded8df1331ffbfb46f55708dd96420505a268c
+29 selected instruction rows, NOT the cited complete 538-line disassembly.
+0x1406b4263: length=9 end=0x1406b426c | movss  xmm8,DWORD PTR [rax+0x8684]
+0x1406b426c: length=4 end=0x1406b4270 | comiss xmm9,xmm8
+0x1406b4270: length=6 end=0x1406b4276 | jae    0x1406b44e3
+0x1406b4276: length=7 end=0x1406b427d | cmp    BYTE PTR [rax+0x8680],0x0
+0x1406b427d: length=6 end=0x1406b4283 | jne    0x1406b44e3
+0x1406b4283: length=7 end=0x1406b428a | cmp    DWORD PTR [rdi+0x1794],0x0
+0x1406b428a: length=6 end=0x1406b4290 | jne    0x1406b44e3
+0x1406b434a: length=5 end=0x1406b434f | mulss  xmm10,xmm15
+0x1406b4353: length=8 end=0x1406b435b | addss  xmm7,DWORD PTR [rdi+0x5f0]
+0x1406b435b: length=5 end=0x1406b4360 | divss  xmm7,xmm12
+0x1406b4360: length=5 end=0x1406b4365 | mulss  xmm7,xmm11
+0x1406b4389: length=4 end=0x1406b438d | mulss  xmm6,xmm7
+0x1406b438d: length=5 end=0x1406b4392 | mulss  xmm6,xmm13
+0x1406b43bb: length=8 end=0x1406b43c3 | movss  xmm2,DWORD PTR [rdi+0x5f0]
+0x1406b43c3: length=3 end=0x1406b43c6 | movaps xmm1,xmm2
+0x1406b43c6: length=4 end=0x1406b43ca | subss  xmm1,xmm6
+0x1406b43ca: length=3 end=0x1406b43cd | movaps xmm0,xmm0
+0x1406b43ce: length=8 end=0x1406b43d6 | mulss  xmm0,DWORD PTR [rip+0x256efa]        # 0x14090b2d0
+0x1406b43d6: length=3 end=0x1406b43d9 | comiss xmm0,xmm1
+0x1406b43d9: length=2 end=0x1406b43db | jbe    0x1406b43e3
+0x1406b43db: length=4 end=0x1406b43df | movaps xmm6,xmm10
+0x1406b43df: length=4 end=0x1406b43e3 | addss  xmm6,xmm2
+0x1406b44ab: length=8 end=0x1406b44b3 | movss  xmm0,DWORD PTR [rdi+0x5f0]
+0x1406b44b3: length=4 end=0x1406b44b7 | subss  xmm0,xmm6
+0x1406b44b7: length=8 end=0x1406b44bf | movss  DWORD PTR [rdi+0x5f0],xmm0
+0x1406b44c7: length=9 end=0x1406b44d0 | mulss  xmm8,DWORD PTR [rip+0x256e00]        # 0x14090b2d0
+0x1406b44d0: length=8 end=0x1406b44d8 | comiss xmm8,DWORD PTR [rdi+0x5f0]
+0x1406b44d8: length=2 end=0x1406b44da | jbe    0x1406b44e3
+0x1406b44da: length=9 end=0x1406b44e3 | movss  DWORD PTR [rdi+0x5f0],xmm8
+
+BYTE/MNEMONIC CONTRADICTION AT 0x1406B43CA:
+Report says MOVAPS XMM0,XMM8; supplied bytes decode MOVAPS XMM0,XMM0.
+These 3 bytes end at 0x1406B43CD; next supplied row starts 0x1406B43CE.
+Possible omitted prefix is a hypothesis only: do NOT silently repair the source.
+
+SIZE/SPAN CORRECTIONS (end-exclusive):
+0x1406b44ab: report=9, supplied encoding=8
+0x1406b44b7: report=10, supplied encoding=8
+0x1406b44c7: report=8, supplied encoding=9
+0x1406b44da: report=11, supplied encoding=9
+subtraction + store: [0x1406b44b3, 0x1406b44bf) = 12 bytes
+load + subtraction + store: [0x1406b44ab, 0x1406b44bf) = 20 bytes
+floor compare + conditional branch + store: [0x1406b44d0, 0x1406b44e3) = 19 bytes
+
+RIP-RELATIVE CONSTANT TARGETS:
+0x1406b43ce -> 0x14090b2d0 (value/units not established)
+0x1406b44c7 -> 0x14090b2d0 (value/units not established)
+
+TYPED EXPRESSIONS AS PASTED (not runtime memory reads):
+float* param_1 + 0x13C -> byte offset 0x4f0
+float* param_1 + 0x145 -> byte offset 0x514
+longlong* param_1[0xB6] -> byte offset 0x5b0 on param_1, NOT param_2
+PASS: mechanical checks of supplied strings/typed expressions only; NO hook approval.
+
+````
+
+### Ready-to-paste narrowly missing evidence task
+
+Parent-local source `.cache/tank-contract-evidence-gap-task-20261101.md`; bytes=4559; SHA256=64a372d73dda9f6c3bc16d191f12af2104537cb99ae3eebde66b401ae41b4874. These are parent artifacts/selected transcript, not authenticated original Windows files.
+
+````text
+Read AGENTS.md, INSTRUCTIONS.md and KILO_AGENT_WORKFLOW.md. Continue as the one authorized local native operator in C:\WRSRE, preserving the current branch and all work. PowerShell5.1 commands start with cd 'C:\WRSRE';. No new sessions, commits/push, plugin/INI/settings changes, hooks/breakpoints, builds/deployment, game run or payments. Only the parent here writes the shared cumulative handover.
+
+The parent HAS RECEIVED the complete pasted FUEL_TANK_CONTRACT_20261101.md. Do not resend it or repeat the older recovery exports. Preserve both reports unchanged. We need a narrowly missing RAW evidence packet, not another prose contract.
+
+Corrections already decided from the report's own text/bytes:
+- Given float *param_1, *(longlong *)(param_1+0x13C) is at byte+0x4F0; *(char *)(param_1+0x145) is at byte+0x514. Casts occur after addition.
+- (int)param_1[0xB6], with longlong *param_1, is at param_1+0x5B0, NOT param_2+0xB6. Its owner's identity needs tracing.
+- The index-1 loop receiver is the root, so the root is eligible for writing under the gates. Never-written is false. Slot address vectorBase+8*i is not the pointer loaded from that slot.
+- Supplied load44AB/store44B7/MULSS44C7/store44DA lengths are8/8/9/9. Subtract+store is12bytes. No hook is approved by any length.
+- Supplied0F28C0 at1406B43CA encodes MOVAPS XMM0,XMM0, not XMM0,XMM8. Do NOT invent a prefix to fix it.
+- Decompiled omitted arguments do not prove defaults. A requested operand is not necessarily the rounded store difference or completed debit after floor correction. Floor restoration is not automatically an external refill.
+- Refill pairing concerns source FUEL RESOURCE decrease and destination5F0 increase, not later cargo-vector bookkeeping. Physical units remain unresolved, not inherently runtime-only.
+
+Deliver ONLY these remaining evidence gaps, caches first:
+
+1. Actual66D530->6B3B50 call VA/RVA and raw call-site instructions with reaching definitions for RCX, XMM1 and R8B under the reported Windows x64 signature (or evidence of a different convention). Include preceding branch/kind gates needed for reachability and callee entry copies/use of these arguments. A one-argument decompiled call is insufficient. Do not guess flag meanings or claim the observed truck reaches this path.
+
+2. Unedited contiguous cached disassembly around1406B43BB-1406B43E3 resolving the0F28C0/mnemonic conflict; exact root-versus-member selection definitions feeding RDI and its loop back-edge; complete per-member subtraction-through-floor control flow including omitted instructions. Show source provenance. Use existing cached instruction text rather than manually rebuilding a table. Keep factor/scaling definitions needed to understand this operation, including any changes to fVar21. Distinguish native statistics amount from tank pre/post change without asserting either is billable fuel.
+
+3. From142430, only the definitions/branches still needed to link the known local source debit and5F0 credit: param_1 owner, resource selector, source amount/limits and credited param_2 object for each early branch. Show why partial/empty/headroom paths select those amounts. Do NOT investigate later3B8/3C0 cargo to prove fuel transfer. Stop at an exact unresolved edge if the cached evidence does not establish it.
+
+4. Include the actual diff for the six index files changed by your prior task, preserving historical claims and marking claim-level uncertainty. Do not silently rewrite history. Explain each correction using raw references; do not label the whole function verified from a store encoding.
+
+No new broad investigation, whole66D530 decompilation, renderer/string/gauge work or runtime experiment. Existing complete evidence needs no query. If essential call-site/native instructions are genuinely absent from cache, only narrowly bounded read-only xref/disassembly queries for those gaps are allowed under sole Ghidra ownership, index checks and serialization. Log exact commands and actual outputs/errors; update the required index. Do not re-query an already available slice to repair interpretation.
+
+Create one collision-free owned scratch\out\FUEL_TANK_EVIDENCE_GAPS_20261101.md. Embed raw slices, query provenance, actual index diff and precise unresolved edges. Existing reports stay unchanged. If any helper is added, embed its complete final source and actual results; helpers are optional. Bounded writes with readback; inspect disk before retrying timeouts. Return the actual Markdown, not a completion summary. No billing/implementation readiness claim.
+
+````
+
+## Evidence-gaps packet reviewed — standard ABI resolved, raw closure still needed (2026-11-01)
+
+### Receipt and verdict
+
+The complete evidence-gaps report text was received in chat; do NOT request it again. Reported Windows identity: C:\WRSRE\scratch\out\FUEL_TANK_EVIDENCE_GAPS_20261101.md,26960bytes/385lines/SHA2565207B0ECF0B95DCAA293953E866E172D03F00DD37A48E30135420923D422A0CE. File measurement is externally reported, not parent-authenticated. Prior reports reportedly unchanged. This review archives selected raw input and decisive report excerpts, not a reconstructed full Windows file.
+
+The packet adds real useful evidence: exact call site/argument setup, callee copies, restored REX prefix, root/member pointer selection, root-specific scaling and refill-entry operands. It also repeats earlier errors and invents an ABI discrepancy. Extraction progress is accepted per claim; the prose is not an implementation contract. No new native query, game run, hook, build, production change or payment was performed by the parent.
+
+
+### 1. Actual caller ABI is standard and this blocker is resolved
+
+At preferred VA14066E20B, E840590400 calls1406B3B50. RCX=RBX, XMM1=the float loaded from14090A618 and R8B=1. Callee45 0F B6 F8 copies R8B to R15D;44 0F 28 E9 copies XMM1 to XMM13. These match the reported (longlong,float,char) signature under ordinary Windows x64 ABI. Register slots are chosen by overall ARGUMENT POSITION, not separate integer/floating-point counters: first integer/pointer RCX, second float XMM1, third char R8B. No hidden leading parameter or nonstandard convention is required by these bytes. The previous default-argument claim is also rejected. The scale value itself and observed-root applicability remain unresolved.
+
+Parent checked Microsoft's own cpp-docs source via GitHub; the mixed-argument example explicitly maps int,double,int,float to RCX,XMM1,R8,XMM3. Source/provenance and a short exact excerpt are embedded below. This resolves the ABI dispute rather than carrying it as runtime-required.
+
+
+### 2. Missing prefix is resolved as a transcription correction
+
+The new contiguous slice supplies41 0F 28 C0 at1406B43CA, correctly decoding MOVAPS XMM0,XMM8 in4bytes and ending at43CE. The older report supplied0F28C0, which really decoded XMM0,XMM0. The change confirms a missing-prefix transcription; it does not discredit the earlier decode. Preserve both versions and their different input bytes.
+
+Root/member selection is now directly supported: RDI=RBX for negativeRSI (reported initialization-1), else RDI=*(uint64_t *)(*(uint64_t *)(RBX+3A0)+8*RSI). Root eligibility and member-slot dereference are accepted. Full initialization/back-edge details are still only selected: supplied back-edge jumps to4240, but intervening counter definitions are omitted. Do not elevate selected rows to a whole-function CFG proof.
+
+
+### 3. Caller branch necessity is overstated
+
+The packet incorrectly says SIL!=0 is required. Its own74 2F atE168 takes SIL==0 directly toE199. The shown nonzero path also jumps toE199 atE17C. Both rejoin before the later call-site gates. Therefore this fragment does NOT establish SIL!=0 as necessary. R14B==0 jumps to omittedE17E; without that block, its asserted necessity is unproved.
+
+The actual E1F4 operand is root+514, not root+145. The branch compares with R15B; express it as equality/inequality to R15B unless that register's zero definition is supplied. Root+4F0's MOV R11 load is present, but intervening tests/branches are elided; a load alone does not prove a non-null call gate. The packet's final unresolved section repeats the old13C/145 byte offsets despite correcting them in1.4c. Calls to6B4570/67CDE0/6C2C00 are not proved unrelated merely because they have different targets; no broader investigation of them is authorized by this observation.
+
+
+### 4. Four length errors persist; the corrected12-byte span has a wrong endpoint
+
+Independent GNU objdump audit checks all selected unique byte rows below, including new call/branch targets and old historical-stride citations. The actual MOVSS load44AB/store44B7/MULSS44C7/store44DA lengths remain8/8/9/9. The packet still labels them9/10/8/11 and repeatedly calls the stores10/11bytes. Its subtraction/store span is12bytes, but the correct end-exclusive boundary is44BF, NOT44C0. Including the preceding load gives20bytes; comparison/branch/floor store is19bytes. Neither instruction length nor these spans establish hook safety or authorize implementation.
+
+Historical citation83 3C CA 01 also decodes CMP dword ptr[RDX+RCX*8],1, NOT the packet's[RAX+R9*8]. Effective stride16 remains supported by the earlier doubled-index evidence, not this newly misdescribed operand. No broad return to16E3B0 is needed.
+
+
+### 5. Factor identities and completed-debit boundary
+
+The new root path explicitly multiplies XMM8 and XMM11 by a ratio. Thus root-path XMM8 is an adjusted quantity, not necessarily the original prototype capacity, and it feeds both the weighting and floor calculations. Common XMM10=XMM8*XMM15; XMM13 holds caller param_2. The packet's fVar21=XMM13 note conflates that time scale with the coefficient in the earlier decompiled capacity*fVar21 expression, which the common native block instead feeds from XMM15. Name values by their actual definitions, not unstable decompiler local names. Root ratio definitions and factor initializations remain abbreviated.
+
+The packet now correctly distinguishes native statistics from tank writes and says floor restoration is not an external refill. Retain that correction. It still does not prove the completed per-member operation's true tank loss equals the subtraction operand or statistics amount. The intermediate undershoot/floor issue from the prior parent review remains; no billable amount is accepted. Real refills must still be separately identified and cannot cancel burn. Unknown physical/price units stay unresolved.
+
+
+### 6. Refill entry is useful; actual credit path is still missing
+
+New bytes confirm RDX->RBX (destination object), RCX->RSI (other owner argument), R13=[RDX+4F8], a DWORD state comparison at[RCX+5B0]==2 and headroom versus prototype8684. The state is a32-bit field at that byte displacement, not a byte-valued field. Vehicle50C is reset; calling that a type reset is unproved and should remain neutral state wording.
+
+Conditional paths to14269C are alternative control flow, not necessarily skipping all credit. Branch A/B amount-limiting assertions are not established by the entry slice, which omits the actual selections and credit stores. The same receiver for home source and vehicle destination wording is also wrong: they are different objects whose transaction must be linked. Different pointers do not prevent pairing; actual shared resource/amount/flow evidence is needed.
+
+The deliberate query stopped at142530, before the requested mutations. That is an evidence gap, not a reason to demand a game run. A specific bounded continuation142530-14275A follows the reported early-credit region and its documented exits, without opening the later cargo block. Reuse any matching cached bytes/writer inventory first. The already-received decompilation remains useful; do not request it again. Raw instructions for the missing early mutations, with resource and amount definitions, are the finite next native extraction.
+
+
+### 7. Empty git diff is not a native or Git contradiction
+
+The report says diff/status are empty for six tracked entries. This means those commands found no visible changes relative to that HEAD; it does not prove that edits occurred and then disappeared, or independently verify the claimed current contents. Possibilities include content already in HEAD, ineffective/no-op writes, different checkout or index flags; these are alternatives, not a diagnosis. Compare actual HEAD/worktree content and normalized blob IDs, and inspect repository identity/index flags read-only. Do not reset/stage/clear flags or silently modify history. This is report provenance, not a blocker to decoding the fuel bytes.
+
+No actual six-file diff or complete current index contents are supplied; a semantic summary is not a substitute. Do not import those asserted verified statuses into this checkout.
+
+
+### 8. Finite next step and retained acceptance
+
+Accept ordinary ABI/call target, prefix repair, root/member selection, adjusted-root-factor evidence and refill-entry layout facts at the scope supported. Retire the false ABI discrepancy and repeated byte/offset claims. Keep observed-road-truck path, actual numeric scale/floor factors, complete member transaction boundary, refill source resource/credit pairing and unit-to-price conversion unresolved.
+
+Next local task should export existing caller136lines and relevant cached loop control without editorial reconstruction, fill only142530-14275A where missing, read the three implicated constants with PE section/raw-byte provenance, and inspect HEAD/current index content read-only. No new long narrative, report rewrite, unrelated collector/cargo investigation, hook or game test. Parent receives actual unedited evidence and integrates it under the same evidence gates.
+
+### Selected unique byte rows from the received evidence-gaps packet
+
+Parent-local artifact `.cache/gaps-selected-bytes-20261101.txt`; bytes=2964; SHA256=f9917cc293ab5f1e94504f74aef7ed0ddfa313d383dbe84d5edfec222b768b0b. Transcript hashes authenticate only these selected parent-local artifacts, not the Windows files or PE.
+
+````text
+14066e1f4 44 38 BB 14 05 00 00
+14066e1fb 74 43
+14066e1fd F3 0F 10 0D 13 C4 29 00
+14066e205 41 B0 01
+14066e208 48 8B CB
+14066e20b E8 40 59 04 00
+14066e210 0F 28 DF
+14066e141 48 8B 5D 67
+14066e145 45 84 F6
+14066e148 74 34
+14066e14a 4C 8D A3 60 0D 00 00
+14066e165 40 84 F6
+14066e168 74 2F
+14066e16a 48 8B 45 6F
+14066e16e 48 89 83 E8 05 00 00
+14066e175 C6 83 3A 0D 00 00 01
+14066e17c EB 1B
+14066e199 48 8B CB
+14066e19c E8 CF 63 04 00
+14066e1a1 48 8B CB
+14066e1a4 E8 37 EC 00 00
+14066e1a9 48 8B CB
+14066e1ac E8 4F 4A 05 00
+14066e1b1 8B 83 94 17 00 00
+1406b3bbb 45 0F B6 F8
+1406b3bbf 44 0F 28 E9
+14066e1e4 4C 8B 9B F0 04 00 00
+1406b43bb F3 0F 10 97 F0 05 00 00
+1406b43c3 0F 28 CA
+1406b43c6 F3 0F 5C CE
+1406b43ca 41 0F 28 C0
+1406b43ce F3 0F 59 05 FA 6E 25 00
+1406b43d6 0F 2F C1
+1406b43d9 76 08
+1406b43db 41 0F 28 F2
+1406b43df F3 0F 58 F2
+1406b43e3 48 8B 05 06 CE 32 00
+1406b4240 48 8B FB
+1406b4243 48 85 F6
+1406b4246 78 0B
+1406b4248 48 8B 83 A0 03 00 00
+1406b424f 48 8B 3C F0
+1406b4253 48 8B 87 08 17 00 00
+1406b44fb 44 3B F0
+1406b44fe 0F 8C 3C FD FF FF
+1406b44e6 48 FF C6
+1406b4263 F3 44 0F 10 80 84 86 00 00
+1406b426c 45 0F 2F C8
+1406b4270 0F 83 6D 02 00 00
+1406b4276 80 B8 80 86 00 00 00
+1406b427d 0F 85 60 02 00 00
+1406b4283 83 BF 94 17 00 00 00
+1406b428a 0F 85 53 02 00 00
+1406b4290 48 83 FE FF
+1406b4294 0F 85 AC 00 00 00
+1406b429a 4C 8B 83 08 17 00 00
+1406b4338 F3 0F 5E C1
+1406b433c F3 44 0F 59 C0
+1406b4341 F3 44 0F 59 D8
+1406b4346 45 0F 28 D0
+1406b434a F3 45 0F 59 D7
+1406b434f 41 0F 28 FA
+1406b4353 F3 0F 58 BF F0 05 00 00
+1406b435b F3 41 0F 5E FC
+1406b4360 F3 41 0F 59 FB
+1406b4365 41 0F 2F F9
+1406b4369 0F 86 58 01 00 00
+1406b4389 F3 0F 59 F7
+1406b438d F3 41 0F 59 F5
+1406b44ab F3 0F 10 87 F0 05 00 00
+1406b44b3 F3 0F 5C C6
+1406b44b7 F3 0F 11 87 F0 05 00 00
+1406b44c7 F3 44 0F 59 05 00 6E 25 00
+1406b44d0 44 0F 2F 87 F0 05 00 00
+1406b44d8 76 09
+1406b44da F3 44 0F 11 87 F0 05 00 00
+140142430 48 89 54 24 10
+140142435 48 89 4C 24 08
+140142447 4C 8B AA F8 04 00 00
+14014244e 48 8B DA
+14014245a 48 8B F1
+14014245d C7 82 0C 05 00 00 00 00 00 00
+140142471 83 B9 B0 05 00 00 02
+140142478 45 0F 57 C9
+14014247c 44 0F 29 94 24 C0 00 00 00
+140142485 F3 44 0F 10 15 CA 7A 7C 00
+14014248e 0F 85 C6 02 00 00
+140142494 48 8B 82 08 17 00 00
+14014249b F3 0F 10 82 F0 05 00 00
+1401424a3 F3 0F 10 98 84 86 00 00
+1401424ab 0F 2F D8
+1401424ae 0F 86 98 02 00 00
+1401424b4 F3 0F 5C D8
+1401424b8 41 0F 2F D9
+1401424bc 0F 86 8A 02 00 00
+1401424c2 48 85 C0
+1401424c5 0F 84 D1 01 00 00
+1401424cb 80 B8 81 86 00 00 00
+1401424d2 0F 84 C4 01 00 00
+1401424d8 4D 85 ED
+1401424db 0F 84 BB 01 00 00
+1401424e1 49 8B 85 18 03 00 00
+1401424e8 80 B8 4A 07 00 00 00
+1401424ef 0F 84 A7 01 00 00
+1401424f5 49 8B 8D 78 09 00 00
+1401424fc 48 8B C5
+1401424ff 49 2B 8D 70 09 00 00
+140142506 33 FF
+140142508 48 F7 E9
+14014250b 41 0F 28 C9
+14014250f 41 83 CB FF
+140142513 45 33 C0
+140142516 48 C1 FA 06
+14016e6ea 83 3C CA 01
+14016ec29 83 3C CA 01
+14016e5e2 F3 0F 10 4C C8 04
+14016ec3d F3 0F 10 4C C8 04
+
+````
+
+### Selected report excerpts, explicitly not a full-file reconstruction
+
+Parent-local artifact `.cache/gaps-selected-excerpts-20261101.md`; bytes=2818; SHA256=33c04fbf4d3ee8839aa9608f2f1675921e85cfd8b420aa8fb74adba49fb553ee. Transcript hashes authenticate only these selected parent-local artifacts, not the Windows files or PE.
+
+````markdown
+# Selected exact received evidence-gaps prose, not a full-file reconstruction
+
+Reported Windows file: C:\WRSRE\scratch\out\FUEL_TANK_EVIDENCE_GAPS_20261101.md,26960bytes/385lines/SHA2565207B0ECF0B95DCAA293953E866E172D03F00DD37A48E30135420923D422A0CE. Complete text received in chat; parent has not measured the Windows file. Exact selected instruction byte rows are separately archived in gaps-selected-bytes-20261101.txt. The following selected prose quotes identify the contested claims; they are NOT accepted findings.
+
+## Gap1.5 false calling-convention discrepancy
+
+> The decompiled signature `float FUN_1406b3b50(longlong param_1, float param_2, char param_3)` implies standard Windows x64 register assignment: RCX (1st integer), XMM0 (1st float), RDX (2nd integer).
+
+> Either the decompiled signature omits a leading parameter (XMM0/RDX may carry earlier args Ghidra did not recover), or the convention is non-standard.
+
+## Gap1.4 branch necessity
+
+> **Call condition:** `root+0x145 != 0` (R15B = 0, `CMP`/`JZ` skips when equal). Also requires `R14B != 0` and `SIL != 0` from earlier gates. The observed road-DO truck reaching this path is NOT established statically.
+
+## Gap2.2 corrected instruction input
+
+```
+1406b43ca:  41 0F 28 C0              MOVAPS XMM0,XMM8
+```
+
+## Gap2.5 factor and length claims
+
+> **fVar21 note:** `fVar21` (XMM13, loaded from callee-entry XMM1 = `DAT_14090a618`) is constant within the loop; used at `1406b438d` and `1406b43b6` as the time multiplier. It does not change per iteration.
+
+> **Instruction lengths (per report correction):** `MOVSS [RDI+0x5F0]` at `0x1406B44B7` = 10 bytes (`F3 0F 11 87 F0 05 00 00`). `MOVSS [RDI+0x5F0]` at `0x1406B44DA` = 11 bytes (`F3 44 0F 11 87 F0 05 00 00`). Subtraction + store span `0x1406B44B3`–`0x1406B44C0` = 12 bytes total. **No hook is approved by any length.**
+
+> Floor restoration is NOT automatically an external refill — it is an in-function clamp, not a paired credit from another source.
+
+## Gap3.6 transaction wording
+
+> Same receiver for debit source (home building) and credit destination (vehicle) — different objects, pairing not proved as one refill.
+
+## Gap4.1 git result claim
+
+> Returns **no output** — `git diff` does not report changes for the six index files. `git status --porcelain` also returns empty for these paths. `git ls-files docs/ghidra-index/` confirms all six are tracked.
+
+## Gap4.3 historical operand claim
+
+> `83 3C CA 01` at `14016E6EA`/`14016EC29` encodes `[RAX + R9*0x8]` (scale 8)
+
+The packet reports these two new read-only queries; actual process stdout is not embedded:
+
+```
+scratch\ghidra_run.bat DisasmMany.java scratch/out/14066e000_14066e250_disasm.asm 0x14066E000:0x14066E250
+scratch\ghidra_run.bat DisasmMany.java scratch/out/140142430_140142530_disasm.asm 0x140142430:0x140142530
+```
+
+````
+
+### Complete final evidence-gaps audit source
+
+Parent-local artifact `.cache/audit_gaps_packet_20261101.py`; bytes=3330; SHA256=f23886d0e53e9e79b1ac9a77dc1eb35981298e3a83734c9f1df35d9e669a97b2. Transcript hashes authenticate only these selected parent-local artifacts, not the Windows files or PE.
+
+````python
+#!/usr/bin/env python3
+"""Decode the selected unique byte strings from the user's evidence-gaps packet.
+Input is a labelled transcript, not original executable or authenticated report.
+"""
+from pathlib import Path
+import hashlib
+import re
+import subprocess
+
+src = Path('.cache/gaps-selected-bytes-20261101.txt')
+raw = src.read_bytes()
+rows = []
+for line in raw.decode().splitlines():
+    addr, value = line.split(' ', 1)
+    rows.append((int(addr, 16), bytes.fromhex(value)))
+assert len(rows) == len(dict(rows)), 'duplicate selected starts'
+by = dict(rows)
+decoded = {}
+print(f'INPUT bytes={len(raw)} SHA256={hashlib.sha256(raw).hexdigest()}')
+print(f'{len(rows)} selected unique starts; NOT complete original exports or PE authentication.')
+for addr, data in rows:
+    tmp = Path('.cache/gaps-selected-instruction.bin')
+    tmp.write_bytes(data)
+    result = subprocess.run(['objdump', '-D', '-b', 'binary', '-m', 'i386:x86-64',
+                             '-M', 'intel', '--insn-width=16',
+                             f'--adjust-vma={addr}', str(tmp)],
+                            capture_output=True, text=True, check=True)
+    lines = [line.strip() for line in result.stdout.splitlines()
+             if re.match(r'^\s*[0-9a-f]+:\s', line)]
+    assert len(lines) == 1, (addr, lines)
+    fields = lines[0].split('\t')
+    assert len(bytes.fromhex(fields[1].strip())) == len(data)
+    decoded[addr] = fields[-1].strip()
+    print(f'{addr:#x} len={len(data)} end={addr+len(data):#x} | {decoded[addr]}')
+
+print('\nCALL AND PARAMETER SOURCE:')
+a = 0x14066E20B
+target = a + len(by[a]) + int.from_bytes(by[a][1:], 'little', signed=True)
+assert target == 0x1406B3B50
+print(f'CALL {a:#x} -> {target:#x}')
+a = 0x14066E1FD
+target = a + len(by[a]) + int.from_bytes(by[a][-4:], 'little', signed=True)
+assert target == 0x14090A618
+print(f'XMM1 load -> {target:#x}; float value not supplied')
+assert decoded[0x1406B43CA].split() == ['movaps', 'xmm0,xmm8']
+print('New 41 0F 28 C0 decodes XMM0<-XMM8; previous 0F 28 C0 decoded XMM0<-XMM0.')
+print('Changed input resolves missing-prefix transcription; no prior decoder error.')
+for addr, expected in [(0x1406B44AB, 8), (0x1406B44B7, 8),
+                       (0x1406B44C7, 9), (0x1406B44DA, 9)]:
+    assert len(by[addr]) == expected
+    print(f'Repeated incorrect prose length: {addr:#x} supplied bytes={expected}')
+print('Subtraction+store [0x1406B44B3,0x1406B44BF) = 12 bytes, not endpoint0x1406B44C0.')
+
+print('\nSELECTED CONTROL-FLOW TARGETS:')
+for addr in [0x14066E148, 0x14066E168, 0x14066E17C, 0x14066E1FB,
+             0x1406B4246, 0x1406B4294, 0x1406B4369, 0x1406B44FE,
+             0x14014248E, 0x1401424AE, 0x1401424BC]:
+    data = by[addr]
+    displacement = data[2:] if data[:1] == b'\x0f' else data[1:]
+    target = addr + len(data) + int.from_bytes(displacement, 'little', signed=True)
+    print(f'{addr:#x} -> {target:#x}')
+assert 0x14066E168 + 2 + 0x2F == 0x14066E199
+assert 0x14066E17C + 2 + 0x1B == 0x14066E199
+print('SIL==0 jumps toE199; shown SIL!=0 block also jumps toE199. SIL!=0 not established necessary.')
+print('R14B==0 targets omittedE17E; necessity of R14B!=0 is unresolved, not proven.')
+print('Historical 83 3C CA 01 decodes CMP [RDX+RCX*8],1, NOT [RAX+R9*8].')
+print('PASS: mechanical checks only; no runtime, unit, hook, billing or PE-identity validation.')
+
+````
+
+### Actual evidence-gaps audit stdout, exit0
+
+Parent-local artifact `.cache/audit_gaps_packet_20261101.out`; bytes=8487; SHA256=61bf0a14c4af5ee912f3ce839b9d967f4f95e84600cea01d09f6c556bfd6a35c. Transcript hashes authenticate only these selected parent-local artifacts, not the Windows files or PE.
+
+````text
+INPUT bytes=2964 SHA256=f9917cc293ab5f1e94504f74aef7ed0ddfa313d383dbe84d5edfec222b768b0b
+117 selected unique starts; NOT complete original exports or PE authentication.
+0x14066e1f4 len=7 end=0x14066e1fb | cmp    BYTE PTR [rbx+0x514],r15b
+0x14066e1fb len=2 end=0x14066e1fd | je     0x14066e240
+0x14066e1fd len=8 end=0x14066e205 | movss  xmm1,DWORD PTR [rip+0x29c413]        # 0x14090a618
+0x14066e205 len=3 end=0x14066e208 | mov    r8b,0x1
+0x14066e208 len=3 end=0x14066e20b | mov    rcx,rbx
+0x14066e20b len=5 end=0x14066e210 | call   0x1406b3b50
+0x14066e210 len=3 end=0x14066e213 | movaps xmm3,xmm7
+0x14066e141 len=4 end=0x14066e145 | mov    rbx,QWORD PTR [rbp+0x67]
+0x14066e145 len=3 end=0x14066e148 | test   r14b,r14b
+0x14066e148 len=2 end=0x14066e14a | je     0x14066e17e
+0x14066e14a len=7 end=0x14066e151 | lea    r12,[rbx+0xd60]
+0x14066e165 len=3 end=0x14066e168 | test   sil,sil
+0x14066e168 len=2 end=0x14066e16a | je     0x14066e199
+0x14066e16a len=4 end=0x14066e16e | mov    rax,QWORD PTR [rbp+0x6f]
+0x14066e16e len=7 end=0x14066e175 | mov    QWORD PTR [rbx+0x5e8],rax
+0x14066e175 len=7 end=0x14066e17c | mov    BYTE PTR [rbx+0xd3a],0x1
+0x14066e17c len=2 end=0x14066e17e | jmp    0x14066e199
+0x14066e199 len=3 end=0x14066e19c | mov    rcx,rbx
+0x14066e19c len=5 end=0x14066e1a1 | call   0x1406b4570
+0x14066e1a1 len=3 end=0x14066e1a4 | mov    rcx,rbx
+0x14066e1a4 len=5 end=0x14066e1a9 | call   0x14067cde0
+0x14066e1a9 len=3 end=0x14066e1ac | mov    rcx,rbx
+0x14066e1ac len=5 end=0x14066e1b1 | call   0x1406c2c00
+0x14066e1b1 len=6 end=0x14066e1b7 | mov    eax,DWORD PTR [rbx+0x1794]
+0x1406b3bbb len=4 end=0x1406b3bbf | movzx  r15d,r8b
+0x1406b3bbf len=4 end=0x1406b3bc3 | movaps xmm13,xmm1
+0x14066e1e4 len=7 end=0x14066e1eb | mov    r11,QWORD PTR [rbx+0x4f0]
+0x1406b43bb len=8 end=0x1406b43c3 | movss  xmm2,DWORD PTR [rdi+0x5f0]
+0x1406b43c3 len=3 end=0x1406b43c6 | movaps xmm1,xmm2
+0x1406b43c6 len=4 end=0x1406b43ca | subss  xmm1,xmm6
+0x1406b43ca len=4 end=0x1406b43ce | movaps xmm0,xmm8
+0x1406b43ce len=8 end=0x1406b43d6 | mulss  xmm0,DWORD PTR [rip+0x256efa]        # 0x14090b2d0
+0x1406b43d6 len=3 end=0x1406b43d9 | comiss xmm0,xmm1
+0x1406b43d9 len=2 end=0x1406b43db | jbe    0x1406b43e3
+0x1406b43db len=4 end=0x1406b43df | movaps xmm6,xmm10
+0x1406b43df len=4 end=0x1406b43e3 | addss  xmm6,xmm2
+0x1406b43e3 len=7 end=0x1406b43ea | mov    rax,QWORD PTR [rip+0x32ce06]        # 0x1409e11f0
+0x1406b4240 len=3 end=0x1406b4243 | mov    rdi,rbx
+0x1406b4243 len=3 end=0x1406b4246 | test   rsi,rsi
+0x1406b4246 len=2 end=0x1406b4248 | js     0x1406b4253
+0x1406b4248 len=7 end=0x1406b424f | mov    rax,QWORD PTR [rbx+0x3a0]
+0x1406b424f len=4 end=0x1406b4253 | mov    rdi,QWORD PTR [rax+rsi*8]
+0x1406b4253 len=7 end=0x1406b425a | mov    rax,QWORD PTR [rdi+0x1708]
+0x1406b44fb len=3 end=0x1406b44fe | cmp    r14d,eax
+0x1406b44fe len=6 end=0x1406b4504 | jl     0x1406b4240
+0x1406b44e6 len=3 end=0x1406b44e9 | inc    rsi
+0x1406b4263 len=9 end=0x1406b426c | movss  xmm8,DWORD PTR [rax+0x8684]
+0x1406b426c len=4 end=0x1406b4270 | comiss xmm9,xmm8
+0x1406b4270 len=6 end=0x1406b4276 | jae    0x1406b44e3
+0x1406b4276 len=7 end=0x1406b427d | cmp    BYTE PTR [rax+0x8680],0x0
+0x1406b427d len=6 end=0x1406b4283 | jne    0x1406b44e3
+0x1406b4283 len=7 end=0x1406b428a | cmp    DWORD PTR [rdi+0x1794],0x0
+0x1406b428a len=6 end=0x1406b4290 | jne    0x1406b44e3
+0x1406b4290 len=4 end=0x1406b4294 | cmp    rsi,0xffffffffffffffff
+0x1406b4294 len=6 end=0x1406b429a | jne    0x1406b4346
+0x1406b429a len=7 end=0x1406b42a1 | mov    r8,QWORD PTR [rbx+0x1708]
+0x1406b4338 len=4 end=0x1406b433c | divss  xmm0,xmm1
+0x1406b433c len=5 end=0x1406b4341 | mulss  xmm8,xmm0
+0x1406b4341 len=5 end=0x1406b4346 | mulss  xmm11,xmm0
+0x1406b4346 len=4 end=0x1406b434a | movaps xmm10,xmm8
+0x1406b434a len=5 end=0x1406b434f | mulss  xmm10,xmm15
+0x1406b434f len=4 end=0x1406b4353 | movaps xmm7,xmm10
+0x1406b4353 len=8 end=0x1406b435b | addss  xmm7,DWORD PTR [rdi+0x5f0]
+0x1406b435b len=5 end=0x1406b4360 | divss  xmm7,xmm12
+0x1406b4360 len=5 end=0x1406b4365 | mulss  xmm7,xmm11
+0x1406b4365 len=4 end=0x1406b4369 | comiss xmm7,xmm9
+0x1406b4369 len=6 end=0x1406b436f | jbe    0x1406b44c7
+0x1406b4389 len=4 end=0x1406b438d | mulss  xmm6,xmm7
+0x1406b438d len=5 end=0x1406b4392 | mulss  xmm6,xmm13
+0x1406b44ab len=8 end=0x1406b44b3 | movss  xmm0,DWORD PTR [rdi+0x5f0]
+0x1406b44b3 len=4 end=0x1406b44b7 | subss  xmm0,xmm6
+0x1406b44b7 len=8 end=0x1406b44bf | movss  DWORD PTR [rdi+0x5f0],xmm0
+0x1406b44c7 len=9 end=0x1406b44d0 | mulss  xmm8,DWORD PTR [rip+0x256e00]        # 0x14090b2d0
+0x1406b44d0 len=8 end=0x1406b44d8 | comiss xmm8,DWORD PTR [rdi+0x5f0]
+0x1406b44d8 len=2 end=0x1406b44da | jbe    0x1406b44e3
+0x1406b44da len=9 end=0x1406b44e3 | movss  DWORD PTR [rdi+0x5f0],xmm8
+0x140142430 len=5 end=0x140142435 | mov    QWORD PTR [rsp+0x10],rdx
+0x140142435 len=5 end=0x14014243a | mov    QWORD PTR [rsp+0x8],rcx
+0x140142447 len=7 end=0x14014244e | mov    r13,QWORD PTR [rdx+0x4f8]
+0x14014244e len=3 end=0x140142451 | mov    rbx,rdx
+0x14014245a len=3 end=0x14014245d | mov    rsi,rcx
+0x14014245d len=10 end=0x140142467 | mov    DWORD PTR [rdx+0x50c],0x0
+0x140142471 len=7 end=0x140142478 | cmp    DWORD PTR [rcx+0x5b0],0x2
+0x140142478 len=4 end=0x14014247c | xorps  xmm9,xmm9
+0x14014247c len=9 end=0x140142485 | movaps XMMWORD PTR [rsp+0xc0],xmm10
+0x140142485 len=9 end=0x14014248e | movss  xmm10,DWORD PTR [rip+0x7c7aca]        # 0x140909f58
+0x14014248e len=6 end=0x140142494 | jne    0x14014275a
+0x140142494 len=7 end=0x14014249b | mov    rax,QWORD PTR [rdx+0x1708]
+0x14014249b len=8 end=0x1401424a3 | movss  xmm0,DWORD PTR [rdx+0x5f0]
+0x1401424a3 len=8 end=0x1401424ab | movss  xmm3,DWORD PTR [rax+0x8684]
+0x1401424ab len=3 end=0x1401424ae | comiss xmm3,xmm0
+0x1401424ae len=6 end=0x1401424b4 | jbe    0x14014274c
+0x1401424b4 len=4 end=0x1401424b8 | subss  xmm3,xmm0
+0x1401424b8 len=4 end=0x1401424bc | comiss xmm3,xmm9
+0x1401424bc len=6 end=0x1401424c2 | jbe    0x14014274c
+0x1401424c2 len=3 end=0x1401424c5 | test   rax,rax
+0x1401424c5 len=6 end=0x1401424cb | je     0x14014269c
+0x1401424cb len=7 end=0x1401424d2 | cmp    BYTE PTR [rax+0x8681],0x0
+0x1401424d2 len=6 end=0x1401424d8 | je     0x14014269c
+0x1401424d8 len=3 end=0x1401424db | test   r13,r13
+0x1401424db len=6 end=0x1401424e1 | je     0x14014269c
+0x1401424e1 len=7 end=0x1401424e8 | mov    rax,QWORD PTR [r13+0x318]
+0x1401424e8 len=7 end=0x1401424ef | cmp    BYTE PTR [rax+0x74a],0x0
+0x1401424ef len=6 end=0x1401424f5 | je     0x14014269c
+0x1401424f5 len=7 end=0x1401424fc | mov    rcx,QWORD PTR [r13+0x978]
+0x1401424fc len=3 end=0x1401424ff | mov    rax,rbp
+0x1401424ff len=7 end=0x140142506 | sub    rcx,QWORD PTR [r13+0x970]
+0x140142506 len=2 end=0x140142508 | xor    edi,edi
+0x140142508 len=3 end=0x14014250b | imul   rcx
+0x14014250b len=4 end=0x14014250f | movaps xmm1,xmm9
+0x14014250f len=4 end=0x140142513 | or     r11d,0xffffffff
+0x140142513 len=3 end=0x140142516 | xor    r8d,r8d
+0x140142516 len=4 end=0x14014251a | sar    rdx,0x6
+0x14016e6ea len=4 end=0x14016e6ee | cmp    DWORD PTR [rdx+rcx*8],0x1
+0x14016ec29 len=4 end=0x14016ec2d | cmp    DWORD PTR [rdx+rcx*8],0x1
+0x14016e5e2 len=6 end=0x14016e5e8 | movss  xmm1,DWORD PTR [rax+rcx*8+0x4]
+0x14016ec3d len=6 end=0x14016ec43 | movss  xmm1,DWORD PTR [rax+rcx*8+0x4]
+
+CALL AND PARAMETER SOURCE:
+CALL 0x14066e20b -> 0x1406b3b50
+XMM1 load -> 0x14090a618; float value not supplied
+New 41 0F 28 C0 decodes XMM0<-XMM8; previous 0F 28 C0 decoded XMM0<-XMM0.
+Changed input resolves missing-prefix transcription; no prior decoder error.
+Repeated incorrect prose length: 0x1406b44ab supplied bytes=8
+Repeated incorrect prose length: 0x1406b44b7 supplied bytes=8
+Repeated incorrect prose length: 0x1406b44c7 supplied bytes=9
+Repeated incorrect prose length: 0x1406b44da supplied bytes=9
+Subtraction+store [0x1406B44B3,0x1406B44BF) = 12 bytes, not endpoint0x1406B44C0.
+
+SELECTED CONTROL-FLOW TARGETS:
+0x14066e148 -> 0x14066e17e
+0x14066e168 -> 0x14066e199
+0x14066e17c -> 0x14066e199
+0x14066e1fb -> 0x14066e240
+0x1406b4246 -> 0x1406b4253
+0x1406b4294 -> 0x1406b4346
+0x1406b4369 -> 0x1406b44c7
+0x1406b44fe -> 0x1406b4240
+0x14014248e -> 0x14014275a
+0x1401424ae -> 0x14014274c
+0x1401424bc -> 0x14014274c
+SIL==0 jumps toE199; shown SIL!=0 block also jumps toE199. SIL!=0 not established necessary.
+R14B==0 targets omittedE17E; necessity of R14B!=0 is unresolved, not proven.
+Historical 83 3C CA 01 decodes CMP [RDX+RCX*8],1, NOT [RAX+R9*8].
+PASS: mechanical checks only; no runtime, unit, hook, billing or PE-identity validation.
+
+````
+
+### Microsoft ABI reference, retrieval provenance and short exact example
+
+Parent-local artifact `.cache/ms-x64-abi-selected-20261101.md`; bytes=628; SHA256=75400a7c360c6632e8c4f034e35d3d48dba470814038b9cf0d4b382d6180c89a. Transcript hashes authenticate only these selected parent-local artifacts, not the Windows files or PE.
+
+````markdown
+Microsoft official cpp-docs source, retrieved with:
+
+`gh api repos/MicrosoftDocs/cpp-docs/contents/docs/build/x64-calling-convention.md`
+
+URL: https://github.com/MicrosoftDocs/cpp-docs/blob/main/docs/build/x64-calling-convention.md
+Git blob SHA: a1265ca7cfc08272ce0373d7e9c00aea4a2ba1b5
+
+Parent conclusion: the register slot depends on total parameter position and type, not separate counters per type. Exact short source example:
+
+### Example of argument passing 3 - mixed ints and floats
+
+```cpp
+func3(int a, double b, int c, float d, int e, float f);
+// a in RCX, b in XMM1, c in R8, d in XMM3, f then e passed on stack
+```
+
+
+````
+
+### Ready-to-paste finite raw-extraction task
+
+Parent-local artifact `.cache/gaps-next-raw-extraction-task-20261101.md`; bytes=4199; SHA256=d4e2fff5e94b2e9debf71a125285b3dd5d6664ac73fbda4e0943f0458d104616. Transcript hashes authenticate only these selected parent-local artifacts, not the Windows files or PE.
+
+````text
+Read AGENTS.md, INSTRUCTIONS.md and KILO_AGENT_WORKFLOW.md. Continue as the sole authorized local Ghidra operator in C:\WRSRE/current branch. PowerShell5.1 commands start with cd 'C:\WRSRE';. Preserve all reports/work. No new sessions, branch/settings/code/INI changes, commit/push, hooks/breakpoints, build/deployment, game run or payments. Do not write the shared cumulative handover.
+
+The parent received and audited the complete FUEL_TANK_EVIDENCE_GAPS_20261101.md. No resend or prose reconciliation is needed. Your role now is RAW EXTRACTION, not contract interpretation. Do not manually retype native rows, add annotations to raw exports or regenerate old reports. Use original file reads/attachments or exact mechanical copying. If a packaging helper is used, include its complete final source and actual stdout; a helper is optional.
+
+Corrections are settled: RCX/XMM1/R8B is NORMAL Windows x64 for (longlong,float,char), because slots follow total argument position. There is no demonstrated ABI discrepancy. 41 0F28C0 resolves the missing prefix; old0F28C0 was different input. Store lengths remain8/9, not10/11. SIL==0 jumps toE199, which the shown nonzero path also reaches; do not call SIL!=0 necessary. Use byte offsets4F0/514, not13C/145. Do not relabel XMM13's caller scale as the XMM15 capacity coefficient.
+
+Return only these finite evidence items:
+
+1. Embed the COMPLETE original cached scratch\out\14066e000_14066e250_disasm.asm (136 lines) and scratch\out\1406b3b50_1406b4500_disasm.asm (538 lines). These full raw files have not been delivered, only edited/selected snippets. No re-query. This provides omitted branch merges, factor/prologue definitions, root ratio operands and member/floor loop control. If a required predecessor such as R15B's zero definition is outside these files, identify the exact missing definition; do not guess or launch a large caller export.
+
+2. For142430, reuse any cache covering early credit writes. If missing as reported, issue ONE serialized read-only DisasmMany.java continuation for0x140142530:0x14014275A, with normal index/cache/ownership checks. This is the bounded early-credit region through the already-reported state/headroom exits, not later cargo processing. Return its COMPLETE original output with actual command/stdout/error. Preserve source/resource selectors, amount/headroom limits, source decrement and destination5F0 stores. If flow requires an outside helper, name the exact edge and stop; no broad expansion. Do not substitute old decompiler summaries for missing instructions.
+
+3. Read static PE constants at preferred VAs14090A618,140909DDC and14090B2D0 from the matching local EXE. Return binary identity, relevant section-header values, RVA-to-file-offset arithmetic, each exact4byte little-endian string and decoded float32. Include the native load references from the cached files where present. No inferred physical units or runtime experiment. Do not repeat a completed binary query if the exact raw proof is already cached; include that proof instead.
+
+4. Read-only repository provenance for the six index entries: checkout root, current branch, HEAD; actual current contents; normalized worktree blob IDs versus HEAD blob IDs, plus index flags. Use git hash-object --path=<path> <path> and git rev-parse HEAD:<path> with real paths, and git ls-files -v. Empty diff alone is not a Git contradiction. Do not clear flags, reset, stage or change Git index/config settings. If contents already match HEAD, simply report that. This provenance issue must not block returning native evidence.
+
+Write one collision-free owned scratch\out\FUEL_NATIVE_RAW_CLOSURE_20261101.md. Put raw artifacts in separate labelled fences with source path/size/hash and no editorial annotations. Preserve all prior reports and index history; follow required post-query index updates without promoting whole-function semantics. Use bounded verified writes; inspect disk before retrying a timeout. Actual artifacts/errors and precise missing edges only, no new supported-contract narrative. Return the actual Markdown, preferably as an attachment to avoid chat transcription; never send only a completion summary. No EXE upload is needed.
+
+````
+
+## Mandatory small-chunk rule and raw-closure completion receipt (2026-11-01)
+
+User explicitly requires small writes whenever EITHER the proposed content OR the destination file is long. Added a prominent mandatory rule to INSTRUCTIONS.md, the reliable-write section and reusable prompt in KILO_AGENT_WORKFLOW.md. It covers all file types, targeted edits to long files, chunked additions to new files, per-write readback and timeout recovery. It preserves analytical completeness, requires no assembly script or arbitrary byte cap, and does not impose artificial splitting on short writes to short files. Existing content preserved; edits read back after writing.
+
+Raw-closure completion summary received: C:\WRSRE\scratch\out\FUEL_NATIVE_RAW_CLOSURE_20261101.md, reported65056bytes/1078lines/SHA256188D659567E2C06AAF1009480E46372EFE9F231BBA50C7ADA399D214FCACF206. Reportedly contains cached136/538-line exports, new133-line refill continuation, PE constant proof, six indices/HEAD comparisons and remaining edges. The current parent message supplies the contents list, not the raw sections; no matching uploaded file was found. File hash, Windows clean status and native conclusions are externally reported, not parent-verified. Existing prior reviews stand; no native findings are accepted solely from this summary. No new query, hook, build, game run or payment is requested.
+
+## Actual raw-closure attachment reviewed — signed floor and paired refills (2026-11-01)
+
+### Actual attachment authenticated; delivery phase closed
+
+The parent received the actual attachment FUEL_NATIVE_RAW_CLOSURE_20261101.md. Measured size65056bytes,1078LF characters, SHA256188d659567e2c06aaf1009480e46372efe9f231bba50c7ada399d214fcacf206 match the user's reported file identity. This authenticates the supplied report file, NOT its source SOVIET64.exe or all semantic claims. No more delivery-only request, copied report or repeated native export is needed. The exact original file is preserved losslessly as base64 below, including mixed line endings, malformed fences, mojibake and stale prose; the original is not silently repaired.
+
+### 1. Complete supplied instruction ranges pass mechanical checks
+
+The new audit parses801unique instruction rows in3contiguous segments:142531-142761exclusive (131instructions/560bytes),66E005-66E257exclusive (134/594),6B3B50-6B4504exclusive (536/2484). GNU objdump independently recovers the same instruction boundaries for every supplied byte. Of139direct branch/call targets,113fall within these supplied segments and all land at instruction starts;26are outside, explicitly listed in actual output. Complete cached ranges are not complete functions: the6B3B50 epilogue/returns at4504/450C are outside its range, and the caller/prologue precedes66E005. Those are scope limits, not decode failures.
+
+Standard Windows x64 ABI and the call target remain resolved:14066E20B->1406B3B50, RCX=root, XMM1=the value loaded at14090A618, R8B=1, copied by the callee intoRBX/XMM13/R15D. Root/member selection and the41prefix repair remain supported. Both SIL outcomes and R14B's shown alternative merge at66E199 before the call checks, so neither earlier flag is a proved necessary call condition. The actual local gates include root+4F0 non-null and root+514 differing from callerR15B; its zero initialization is not in the caller slice. Do not revert to13C/145 byte offsets.
+
+### 2. Three constant values now have raw-byte/mapping evidence
+
+Given the supplied.rdata header (RVA86C000, raw pointer86B000), all3RVA-to-file mappings independently recompute correctly:
+
+| Preferred VA | File offset | Supplied little-endian float bytes | Decoded float32 |
+| --- | --- | --- | --- |
+| 14090A618 | 909618 | 00 00 80 40 | 4.0 |
+| 140909DDC | 908DDC | 00 00 00 3F | +0.5 |
+| 14090B2D0 | 90A2D0 | 00 00 00 BF | -0.5 |
+
+These decodes and arithmetic are parent-reproduced. The bytes being read from the identity-matching EXE remain externally reported; no EXE is present here. The4.0 is a MULTIPLIER in this call path (MULSS withXMM13), not the report's claimed divisor. These values are not litres/tonnes conversion proof. Other PE section delta columns contain arithmetic mistakes (.pdata and the final4sections); they do not invalidate the correctly recomputed.rdata mapping. See actual audit output for exact corrected deltas.
+
+### 3. Negative floor resolves the earlier artificial-undershoot hypothesis
+
+Let S be the selected receiver's signed5F0 value, Ceff the per-iteration XMM8 after any root ratio, W=XMM12, B=XMM11 after its applicable root ratio, A=0.5 and M=caller scale4. In native rounded operation order: XMM10=fl(Ceff*A); Q=fl(fl(fl(XMM10+S)/W)*B). If Q>0, PowerTime output is multiplied byQ andM; with this caller's flag1, the alternate true/true timer path supplies the final requested operand D. The actual native code calls through the timer import; this audit does not claim timer units. W is accumulated before the write loop and is not recomputed after each receiver's deduction. The shown root multiplication ofXMM11 persists into later member iterations; do not reset it to its original value in a reconstructed per-member formula.
+
+The lower threshold is F=fl(Ceff*(-0.5)). If fl(S-D)<F, the subtraction operand is replaced by fl(fl(Ceff*0.5)+S). In real arithmetic this puts the result at -Ceff/2, the SAME negative threshold, not a large unrelated undershoot followed by a positive reserve refill. The following floor store catches an amount below the threshold; it may also run when the requested-rate branch was skipped. Actual completed differences still depend on float rounding and initial validity. Do not reconstruct a billable value from the statistics operand without the native pre/post boundary.
+
+Parent correction: the prior warning that this specific clamp necessarily creates an artificial large debit restored by a separate floor was a conditional hypothesis while the floor value was unknown. With the supplied negative0.5 it is not supported for ordinary valid inputs; that worry is retired, rather than carried forward as another blocker. A floor adjustment remains distinct from an external refill. Signed negative5F0 is permitted by this native path; zero-clipping the display snapshot cannot be used as an exact burn producer. None of this proves the physical meaning of negative stock or a physical unit.
+
+The audit includes4explicitly synthetic float32 clamp examples with ordinary raw-unit values; they validate only this arithmetic illustration, not the game's runtime, offsets or lifecycle. For Ceff10,S2 and requested20, native-limited operand7lands directly at-5. For S-4,requested3 the operand1lands at-5; at S-5 it is0. This resolves the previously missing sign question without a game run.
+
+### 4. Two actual source-debit/destination-credit pairs are now present
+
+Do not retain the report's final claim that credit bytes beyond142530 are missing. They are in Section3:
+
+- First path: source float atRDI is reduced byXMM5 at142612/142616; the sameXMM5 is added to[RBX+5F0] at142687/14268F. Before that, XMM5 is limited by source availability and headroom, with possible extra limits from a type0xF auxiliary order. There are additional debits at142674/142682 on that auxiliary record. Do not call those extra resource quantities diesel or invent their physical units.
+- Fallback path: source float atR11 is limited by headroom inXMM3, decremented at142733/142737 and the same selected operand is added to[RBX+5F0] at14273C/142744. This is a direct local one-to-one quantity pairing, subject to float rounding. Later vehicle cargo-vector bookkeeping is not required for this proof.
+
+Source selectors are concrete now. The first scan selects order type2 with payload resource pointer equal to[owner+0xC2E8]. The fallback scan selects order type3 with payload resource pointer equal to[owner+0xC2E0]. Both use records from the reported home+970/+978 vector with0xE0stride and payload amount at+8. The exact human-readable identities and price-unit conventions of these two keys remain to be established. RBX is restored from a saved stack slot before the first credit; destination attribution to param_2 is corroborated by the earlier entry/decompilation, but the full entry spill/restore frame is not embedded in this closure. Observed-truck pointer identity is still not established by these static sequences.
+
+This is materially stronger than wholly unproved refill pairing: LOCAL pairing is supported; named-resource identity, transaction applicability, complete coverage and units remain bounded unknowns. No external refills may cancel burn. Do not conflate different source/destination pointers with a failure to pair their transaction.
+
+### 5. Existing Test8 and plugin source narrow, but do not complete, applicability
+
+Reused the actual tesmioloader-8.log, not a new run. Its already-accepted sample1 shows root000001A098189AE0,links0,mode2,metadata_kind1,flag8681=0,flag8682=0,adjustment_needed0. User confirmed the first phase is vehicle fuelling. This supports prioritizing the fallback142430 branch for that recorded configuration IF the same metadata/context is used; it does not prove execution of either native store or a universal refuelling-job discriminator. The diagnostic does not capture prototype8680/root514/member1794/global1409D54C0, so do not retroactively claim those gates were observed.
+
+The current panel_fuel_observer.h sums only positive raw amounts and multiplies by1000 for the UI candidate; the assignment ledger likewise requires nonnegative candidate litres. That remains appropriate only as the already-labelled display/ledger diagnostic, not an exact signed native burn input. Do not silently rewire or reinterpret that accepted tracker. No production changes were made.
+
+The price API is resource_pricing, NOT currency_api: src/resource_pricing_api.h documents getPrice as price per ton; existing FuelUnitPrice() in private_logistics.cpp resolves configured resource name fuel through that API. The missing bridge is the selected native resource payload quantity's identity/unit versus that priced resource. If native source stock is proved to be that same per-ton fuel amount, the fallback's one-to-one transfer may supply a direct raw-to-priced-quantity mapping; do not insert0.001 or1176 merely because the display multiplies1000. Refills prove quantity linkage but are not consumption events to bill.
+
+### 6. Index and report packaging are not repaired proof
+
+Section5 retains false root-never-written, byte-offset13C/145, store-size and hook-impossibility claims. Section6 repeats the retired ABI dispute and asserts credit instructions are absent despite Section3 containing them. Its duplicated/truncated headings, broken command fragment cd and mojibake are preserved in the exact attachment, not treated as native evidence. No complete extraction/helper source or actual process stdout for the PE reads is embedded; no claim of executing that omitted helper is made here.
+
+The Git comparison labels40hex HEAD object IDs as SHA256 while comparing them to64hex worktree SHA256. That is not like-for-like and cannot establish DIFFER by itself. New claims that git diff confirms changes conflict with earlier clean/no-diff summaries; no exact git outputs/HEAD revision/index flags settle the discrepancy. Local parent HEAD16E3B0 blob isf0f82d8b64d96be435de193e6dbf007e2d151879, not the reported table'sec6fc0...; this is a different checkout, not evidence the Windows claim is false. Do not blame absent remote artifacts when commits were forbidden. Git provenance is not a new native-fuel blocker; no reset/stage/index-flag cleanup is authorized.
+
+### 7. Readiness and next task
+
+Delivery and repeat raw-export recovery are CLOSED. Source facts for the call inputs, root/member selection, native signed clamp and two local refill pairs are accepted at the supplied-byte scope. Observed native producer execution, live gate meanings/coverage, resource identity and physical/price-unit bridge are the remaining consequential gaps. No new hook, build, runtime test or billing is authorized by this report. Payments stayOFF; outside-assignment consumption remains separate operating overhead and uncertain intervals unallocated.
+
+Next local work should target resource identity/unit provenance and static applicability only, starting with existing source/config/cache evidence for owner+C2E0/C2E8 and prototype8680/8684/8688. No new copied report, old disassembly export, general collector/gauge research or unchanged game test. Parent must keep applying the same evidence gates and distinguish supplied-byte deductions from original-PE/runtime proof.
+
+
+### Complete final audit source
+
+Source `.cache/audit_raw_closure_20261101.py`; bytes=6124; SHA256=b6eeb8b096876512298e6eff62ef0070ab80fb7dba6ea37894f4e1502fca069d. Actual attachment is preserved in full below.
+
+````python
+#!/usr/bin/env python3
+"""Audit the actual uploaded report. This is not authentication of its source PE.
+Checks instruction encodings/range continuity, branch targets, PE table arithmetic
+and the three reported float32 strings; includes synthetic rounded-clamp examples.
+"""
+from pathlib import Path
+import hashlib
+import re
+import struct
+import subprocess
+import sys
+
+PATH = Path(sys.argv[1]) if len(sys.argv) > 1 else Path('/tmp/arena-coding-uploads/FUEL_NATIVE_RAW_CLOSURE_20261101.md')
+raw = PATH.read_bytes()
+expected = '188d659567e2c06aaf1009480e46372efe9f231bba50c7ada399d214fcacf206'
+assert len(raw) == 65056 and hashlib.sha256(raw).hexdigest() == expected
+print(f'ATTACHMENT PASS: bytes={len(raw)} LF_count={raw.count(bytes([10]))} SHA256={expected}')
+text = raw.decode('utf-8')
+pattern = re.compile(r'^\s*(?:\d+:\s*)?([0-9a-fA-F]{9,16}):\s+((?:[0-9A-Fa-f]{2}[ \t]+)+)(.*)$')
+rows = []
+for line_number, line in enumerate(text.splitlines(), 1):
+    match = pattern.match(line)
+    if match:
+        address, encoded, printed = match.groups()
+        rows.append((int(address, 16), bytes.fromhex(encoded), printed, line_number))
+assert rows
+by = {}
+for a, b, printed, line in rows:
+    assert a not in by, f'duplicate instruction start {a:#x}'
+    by[a] = b
+segments = []
+for row in sorted(rows):
+    if segments and segments[-1][-1][0] + len(segments[-1][-1][1]) == row[0]:
+        segments[-1].append(row)
+    else:
+        segments.append([row])
+print(f'INSTRUCTION INPUT: {len(rows)} unique rows; {len(segments)} contiguous segments')
+decoded = {}
+for index, segment in enumerate(segments):
+    start = segment[0][0]
+    blob = b''.join(row[1] for row in segment)
+    p = Path(f'.cache/raw-closure-segment-{index}.bin')
+    p.write_bytes(blob)
+    result = subprocess.run(['objdump', '-D', '-b', 'binary', '-m', 'i386:x86-64',
+                             '-M', 'intel', '--insn-width=16', f'--adjust-vma={start}', str(p)],
+                            check=True, capture_output=True, text=True)
+    parsed = []
+    for line in result.stdout.splitlines():
+        if re.match(r'^\s*[0-9a-f]+:\s', line):
+            parts = line.strip().split('\t')
+            a = int(parts[0][:-1], 16)
+            b = bytes.fromhex(parts[1].strip())
+            parsed.append((a, b))
+            decoded[a] = parts[-1].strip()
+    assert parsed == [(a, b) for a, b, _, _ in segment], f'decoder boundary mismatch segment{index}'
+    end = start + len(blob)
+    print(f'RANGE {start:#x}..{end:#x} exclusive: {len(segment)} instructions/{len(blob)} bytes; boundary PASS')
+
+branches = []
+external = []
+for address, data in by.items():
+    n = len(data)
+    if data[0] in [0xE8, 0xE9]:
+        offset = int.from_bytes(data[1:], 'little', signed=True)
+    elif data[0] == 0xEB or 0x70 <= data[0] <= 0x7F:
+        offset = int.from_bytes(data[1:], 'little', signed=True)
+    elif len(data) >= 2 and data[0] == 0x0F and 0x80 <= data[1] <= 0x8F:
+        offset = int.from_bytes(data[2:], 'little', signed=True)
+    else:
+        continue
+    target = address + n + offset
+    within = any(s[0][0] <= target < s[-1][0] + len(s[-1][1]) for s in segments)
+    if within:
+        assert target in by, f'branch into instruction interior {address:#x}->{target:#x}'
+    else:
+        external.append((address, target))
+    branches.append((address, target, within))
+print(f'CONTROL FLOW PASS: {len(branches)} direct branch/call targets; {sum(x[2] for x in branches)} inside supplied segments land on instruction starts')
+print('Outside-slice targets (not disproved; source coverage remains bounded):')
+for a, b in external:
+    print(f'  {a:#x} -> {b:#x}')
+for a in [0x14066E20B, 0x1406B43CA, 0x1406B44B7, 0x1406B44DA,
+          0x140142616, 0x14014268F, 0x140142737, 0x140142744]:
+    print(f'KEY {a:#x}: {by[a].hex(" ")} len={len(by[a])} | {decoded[a]}')
+
+print('CONSTANT TABLE: reported source PE is not locally available/authenticated')
+float_rows = re.findall(r'^\| (0x140[0-9A-F]+) \| (0x[0-9A-F]+) \| (0x[0-9A-F]+) \| `([0-9A-F ]+)` \| `([-0-9.]+)` \|', text, re.M)
+assert len(float_rows) == 3
+values = {}
+for va, rva, offset, encoded, value in float_rows:
+    va, rva, offset = int(va, 16), int(rva, 16), int(offset, 16)
+    data = bytes.fromhex(encoded)
+    assert va - 0x140000000 == rva
+    assert 0x86C000 <= rva and rva+len(data) <= 0x86C000+0x125C62
+    assert offset == 0x86B000 + rva - 0x86C000
+    decoded_float = struct.unpack('<f', data)[0]
+    assert decoded_float == float(value)
+    values[va] = decoded_float
+    print(f'  VA={va:#x} RVA={rva:#x} file={offset:#x} {data.hex(" ")} -> {decoded_float}')
+assert values == {0x14090A618: 4.0, 0x140909DDC: 0.5, 0x14090B2D0: -0.5}
+print('NEGATIVE FLOOR: same 0.5 coefficient with opposite sign, not a positive reserve floor.')
+
+print('SECTION DELTA TABLE:')
+for name, rva, size, raw_ptr, raw_size, delta in re.findall(
+    r'^\| \d \| (\.[a-z]+) \| (0x[0-9A-F]+) \| (0x[0-9A-F]+) \| (0x[0-9A-F]+) \| (0x[0-9A-F]+) \| (0x[0-9A-F]+) \|', text, re.M):
+    actual = int(rva, 16)-int(raw_ptr, 16)
+    if actual != int(delta, 16):
+        print(f'  WRONG {name}: table={delta}; arithmetic={actual:#x} (not used for the three .rdata mappings)')
+print('GIT TABLE: alleged HEAD SHA256 fields have40hex digits, worktree SHA256 fields64; not like-for-like object comparison.')
+
+f32 = lambda x: struct.unpack('<f', struct.pack('<f', x))[0]
+print('SYNTHETIC CLAMP CASES (raw units; NOT game tests or unit validation):')
+for c, s, requested in [(10.0, 2.0, 20.0), (10.0, -4.0, 3.0), (10.0, -5.0, 1.0), (10.0, 2.0, 1.0)]:
+    c,s,requested=map(f32,(c,s,requested))
+    half=f32(c*0.5); floor=f32(c*-0.5)
+    operand=f32(half+s) if f32(s-requested)<floor else requested
+    intermediate=f32(s-operand)
+    after=floor if intermediate<floor else intermediate
+    print(f'  C={c}, before={s}, requested={requested}, operand={operand}, intermediate={intermediate}, after={after}, completed_loss={s-after}')
+print('PASS: report bytes, supplied instruction boundaries/targets, mapping arithmetic and supplied float strings. No PE authentication, runtime, unit, price, hook or billing validation.')
+
+````
+
+### Actual complete audit stdout — exit0
+
+Source `.cache/audit_raw_closure_20261101.out`; bytes=3549; SHA256=24ba256dbcd6d5fc5ed4945ab8b32554812f6d75a690270d2e74f929655ae0f5. Actual attachment is preserved in full below.
+
+````text
+ATTACHMENT PASS: bytes=65056 LF_count=1078 SHA256=188d659567e2c06aaf1009480e46372efe9f231bba50c7ada399d214fcacf206
+INSTRUCTION INPUT: 801 unique rows; 3 contiguous segments
+RANGE 0x140142531..0x140142761 exclusive: 131 instructions/560 bytes; boundary PASS
+RANGE 0x14066e005..0x14066e257 exclusive: 134 instructions/594 bytes; boundary PASS
+RANGE 0x1406b3b50..0x1406b4504 exclusive: 536 instructions/2484 bytes; boundary PASS
+CONTROL FLOW PASS: 139 direct branch/call targets; 113 inside supplied segments land on instruction starts
+Outside-slice targets (not disproved; source coverage remains bounded):
+  0x14066e19c -> 0x1406b4570
+  0x14066e1a4 -> 0x14067cde0
+  0x14066e1ac -> 0x1406c2c00
+  0x14066e1ee -> 0x14066e737
+  0x14066e216 -> 0x14067e6b0
+  0x14066e22c -> 0x1406687b0
+  0x14066e236 -> 0x1406c1bd0
+  0x14066e23b -> 0x14066ed86
+  0x14066e24a -> 0x14066e3d0
+  0x1406b3bcd -> 0x1406b4504
+  0x1406b3c93 -> 0x1406b4504
+  0x1406b3cac -> 0x1406b4504
+  0x1406b3d18 -> 0x1406b4504
+  0x1406b3d25 -> 0x1406b4504
+  0x1406b3d32 -> 0x1406b4504
+  0x1406b3d3c -> 0x1406b450c
+  0x1406b3e84 -> 0x1406b4504
+  0x1406b3ee5 -> 0x1401bbfe0
+  0x1406b3f0e -> 0x1400b1700
+  0x1406b3f3c -> 0x1400b1700
+  0x1406b41f4 -> 0x140001a50
+  0x1406b41fd -> 0x1406b450c
+  0x1406b4206 -> 0x1406b4504
+  0x1406b4225 -> 0x1406b4504
+  0x1406b44a6 -> 0x1402fdb00
+  0x140142754 -> 0x140143335
+KEY 0x14066e20b: e8 40 59 04 00 len=5 | call   0x1406b3b50
+KEY 0x1406b43ca: 41 0f 28 c0 len=4 | movaps xmm0,xmm8
+KEY 0x1406b44b7: f3 0f 11 87 f0 05 00 00 len=8 | movss  DWORD PTR [rdi+0x5f0],xmm0
+KEY 0x1406b44da: f3 44 0f 11 87 f0 05 00 00 len=9 | movss  DWORD PTR [rdi+0x5f0],xmm8
+KEY 0x140142616: f3 0f 11 17 len=4 | movss  DWORD PTR [rdi],xmm2
+KEY 0x14014268f: f3 0f 11 ab f0 05 00 00 len=8 | movss  DWORD PTR [rbx+0x5f0],xmm5
+KEY 0x140142737: f3 41 0f 11 0b len=5 | movss  DWORD PTR [r11],xmm1
+KEY 0x140142744: f3 0f 11 83 f0 05 00 00 len=8 | movss  DWORD PTR [rbx+0x5f0],xmm0
+CONSTANT TABLE: reported source PE is not locally available/authenticated
+  VA=0x14090a618 RVA=0x90a618 file=0x909618 00 00 80 40 -> 4.0
+  VA=0x140909ddc RVA=0x909ddc file=0x908ddc 00 00 00 3f -> 0.5
+  VA=0x14090b2d0 RVA=0x90b2d0 file=0x90a2d0 00 00 00 bf -> -0.5
+NEGATIVE FLOOR: same 0.5 coefficient with opposite sign, not a positive reserve floor.
+SECTION DELTA TABLE:
+  WRONG .pdata: table=0x00014C00; arithmetic=0xc4c00 (not used for the three .rdata mappings)
+  WRONG .gfids: table=0x00000000; arithmetic=0xc5200 (not used for the three .rdata mappings)
+  WRONG .tls: table=0x00000000; arithmetic=0xc6000 (not used for the three .rdata mappings)
+  WRONG .rsrc: table=0x00000000; arithmetic=0xc6e00 (not used for the three .rdata mappings)
+  WRONG .reloc: table=0x00000000; arithmetic=0xc7a00 (not used for the three .rdata mappings)
+GIT TABLE: alleged HEAD SHA256 fields have40hex digits, worktree SHA256 fields64; not like-for-like object comparison.
+SYNTHETIC CLAMP CASES (raw units; NOT game tests or unit validation):
+  C=10.0, before=2.0, requested=20.0, operand=7.0, intermediate=-5.0, after=-5.0, completed_loss=7.0
+  C=10.0, before=-4.0, requested=3.0, operand=1.0, intermediate=-5.0, after=-5.0, completed_loss=1.0
+  C=10.0, before=-5.0, requested=1.0, operand=0.0, intermediate=-5.0, after=-5.0, completed_loss=0.0
+  C=10.0, before=2.0, requested=1.0, operand=1.0, intermediate=1.0, after=1.0, completed_loss=1.0
+PASS: report bytes, supplied instruction boundaries/targets, mapping arithmetic and supplied float strings. No PE authentication, runtime, unit, price, hook or billing validation.
+
+````
+
+### New scoped partial index — 6B3B50
+
+Source `docs/ghidra-index/6B3B50.md`; bytes=1741; SHA256=7d1144cf6645daeadc3082a399c5b7c4ad2469ca2f7a49b390d4d172934dc7cd. Actual attachment is preserved in full below.
+
+````markdown
+# FUN_1406B3B50 — signed 5F0 deduction and alternate resource path
+
+**RVA:** `0x6B3B50`
+**Signature:** Entry arguments supported: RCX=root, XMM1=float scale, R8B=flag (ordinary Windows x64). Recovered float return is outside the supplied epilogue range.
+**Purpose:** On prototype flag8680==0, iterates root and linked objects and conditionally subtracts from selected+5F0 with a negative half-capacity floor. Other branch mutates pointed resource quantities; not a universal proved truck-fuel event.
+**Callers:** `66D530`, call RVA `66E20B`: root inRCX, scale4.0 inXMM1, flag1 inR8B. Local gates: root+4F0 non-null and byte+514 differs from callerR15B (zero definition outside slice).
+**Data Refs:** root+1708,3A0/3A8,5F0,19E0/19E8; prototype+8680/8684/8688,7C78/7C80; selected+1794/5F0; global RVA9D54C0.
+**Artifact:** Windows cached `scratch/out/1406b3b50_1406b4500_disasm.asm`; actual uploaded `FUEL_NATIVE_RAW_CLOSURE_20261101.md`, SHA256188d659567e2c06aaf1009480e46372efe9f231bba50c7ada399d214fcacf206. Complete lossless attachment, audit source/results and review in `../private-logistics-runtime/VEHICLE_PANEL_FUEL_INVESTIGATION.md`.
+**Notes:** Parent decoded supplied bytes, not original PE. Historical Windows claims of root-never-written, default arguments, 10/11-byte stores and caller byte offsets13C/145 are rejected. Root ratio adjusts XMM8 andXMM11; XMM11 persists into later members. WeightXMM12 is accumulated before deductions. Constants supplied:+0.5 weighting,-0.5 floor; this is not a positive reserve refill. Stores at RVAs6B44B7/6B44DA are8/9bytes; no hook approval. Physical/price units, live gates/receiver and complete coverage unresolved. Cumulative review preserves old claims and evidence.
+**Status:** partial
+
+````
+
+### New scoped partial index — 142430
+
+Source `docs/ghidra-index/142430.md`; bytes=1673; SHA256=a6e504e94f1cfd55e5f536a5201a696275316af21d34e0749b49954e50182d4d. Actual attachment is preserved in full below.
+
+````markdown
+# FUN_140142430 — paired source decrements and 5F0 credits
+
+**RVA:** `0x142430`
+**Signature:** Recovered (longlong *owner, longlong destination, longlong *other); entry mapping RCX=owner,RDX=destination supported by earlier supplied entry, not a runtime identity check.
+**Purpose:** Early state/headroom branch transfers a selected source quantity into destination+5F0. Two local pairs are now supported; later3B8/3C0 vector work is separate and is not required to prove these pairs.
+**Callers:** Not resolved for the observed road truck.
+**Data Refs:** owner+5B0 (DWORD compared with2),C2E0/C2E8 resource keys; destination+4F8/1708/5F0/50C; prototype+8681/8684; home+970/978,0xE0-stride records.
+**Artifact:** Uploaded `FUEL_NATIVE_RAW_CLOSURE_20261101.md`, Section3, supplied range142531-142761exclusive. Complete lossless attachment/audit/review in `../private-logistics-runtime/VEHICLE_PANEL_FUEL_INVESTIGATION.md`.
+**Notes:** Source/credit pair RVAs142616->14268F usesXMM5 and type2 payload matching owner+C2E8, with optional type0xF auxiliary limits/debits. Fallback pair142737->142744 uses selected min(source,headroom) operand and type3 payload matching owner+C2E0. Float source/destination deltas need not exactly equal the operand after rounding. Resource names, units and observed-truck applicability remain unresolved. Historical claims that all pairing is unproved, credit bytes are absent or cargo-vector writes must pair with the credit are superseded; old reports are preserved in the cumulative. Parent decoded supplied bytes, not original PE. The full entry/spill frame is not present in this closure. No hook/runtime/billing proof.
+**Status:** partial
+
+````
+
+### Ready-to-paste finite unit/eligibility task
+
+Source `.cache/fuel-unit-bridge-next-task-20261101.md`; bytes=3955; SHA256=d4f5ead88a72bc1c822586bf4bfcb3093b2f4622decb353e390487b36f9ea3a5. Actual attachment is preserved in full below.
+
+````text
+Read AGENTS.md, INSTRUCTIONS.md and KILO_AGENT_WORKFLOW.md. Continue as one authorized local operator in C:\WRSRE/current branch. PowerShell5.1 commands start with cd 'C:\WRSRE';. Preserve reports/history. No new sessions, branch/settings/plugin/INI changes, commit/push, hooks/breakpoints, builds/deployment, game run or payments. The parent owns shared handover writing.
+
+The actual65056-byte FUEL_NATIVE_RAW_CLOSURE_20261101.md attachment was received and its SHA256 independently matched. Delivery/raw-closure is CLOSED. Do not resend it or repeat its exports. The parent audited801instruction rows and accepted the ordinary RCX/XMM1/R8B ABI,4.0caller multiplier,+0.5weight/-0.5floor, root/member loop and two local refill pairs. Do not reopen the stale final section's false ABI/missing-credit blockers. Do not spend this task repairing Git state or old collector interpretations.
+
+ONLY REMAINING STATIC QUESTIONS FOR THIS TASK:
+
+1. Identify the actual resource and unit bridge for the fallback142430 refill:
+   - scan type3 records, compare payload's resource pointer with[owner+0xC2E0];
+   - amount at payload+8 is reduced at140142737;
+   - the same selected quantity is added to destination+5F0 at140142744.
+   The other branch uses type2/[owner+0xC2E8], source142616 and credit14268F,
+   plus optional type0xF auxiliary resource debits. Keep these branches distinct.
+
+   Establish owner identity from actual cached caller definitions and trace the
+   resource-key initialization/name binding. Establish whether the source amount
+   is the standard per-ton resource quantity consumed by resource_pricing's
+   getPrice(getByName("fuel"),currency), or show the actual conversion. API units
+   are documented in src/resource_pricing_api.h; existing FuelUnitPrice() already
+   resolves configured fuel. Matching offsets or UI*1000 are not unit proof.
+   No1176/0.001/density assumption and no invented human-readable resource name.
+
+2. Narrow static applicability for the recorded road-truck configuration:
+   existing Test8 evidence has metadata_kind1,links0,flag8681=0,flag8682=0,
+   adjustment_needed0,context mode2. It did NOT record prototype8680/root514/
+   member1794/global1409D54C0 or native producer execution. Use existing model
+   loader/config/caller evidence to identify what those gating values mean and
+   which ones can be established statically. Preserve distinctions between owner
+   state+5B0 and destination vehicle state. Do not claim static facts prove this
+   live truck executed a store or request an unchanged test.
+
+Use existing source/config/index/caches first. Only narrowly targeted read-only
+native lookups for the specific owner/resource binding or metadata-field writer
+are allowed when essential evidence is genuinely missing. Serialize Ghidra,
+follow ownership/cache checks, log exact commands and actual outputs/errors,
+and make required claim-level index updates without erasing history. No whole
+world/renderer/collector exports or broad gauge/string hunting. If the relevant
+binding cannot be located within this scope, return its precise missing edge,
+not another universal verification claim or automatic runtime task.
+
+Return one collision-free owned scratch\out\FUEL_PRICE_UNIT_BRIDGE_20261101.md:
+original relevant source/instruction/config slices, commands/results, and a small
+claim->evidence->supported/contested/unresolved table. Do not rewrite old reports.
+Parent decides interpretation. Include complete final helper source and actual
+results if a helper is added; none is required. No report-assembly script is
+required. Write only in small verified chunks whenever the output or destination
+is long. Return the actual Markdown attachment, not another completion summary.
+Payments remainOFF; accounting remains assignment through removal/cancellation/
+replacement, external real refills separate, outside-assignment burn overhead,
+uncertain boundaries unallocated. No implementation readiness claim.
+
+````
+
+
+### Complete original raw-closure attachment — lossless base64
+
+Exact attached bytes=65056; SHA256=188d659567e2c06aaf1009480e46372efe9f231bba50c7ada399d214fcacf206. Decode the following base64 block to recover the UNMODIFIED report. Raw text contains stale claims and formatting defects; see the parent review above.
+
+````base64
+IyBGdWVsIFRhbmsgUmF3IENsb3N1cmUg4oCUIE5hdGl2ZSBFdmlkZW5jZSBQYWNrZXQKCioqUmVw
+b3J0IHBhdGg6KiogYEM6XFdSU1JFXHNjcmF0Y2hcb3V0XEZVRUxfTkFUSVZFX1JBV19DTE9TVVJF
+XzIwMjYxMTAxLm1kYAoqKlB1cnBvc2U6KiogUmF3IGV2aWRlbmNlIHBhY2tldCBmb3IgdGhlIHRh
+bmsgY29uc3VtcHRpb24vcmVmaWxsIGludmVzdGlnYXRpb24uIEVtYmVkcyBjb21wbGV0ZSB2ZXJi
+YXRpbSBjYWNoZWQgZXhwb3J0cywgb25lIGF1dGhvcml6ZWQgbmV3IEdoaWRyYSBkaXNhc3NlbWJs
+eSBxdWVyeSwgUEUgcmF3IGJ5dGVzIHdpdGggc2VjdGlvbiBtYXBwaW5nIGFuZCBmbG9hdDMyIHZh
+bHVlcywgYW5kIGFsbCBzaXggY3VycmVudCBpbmRleCBlbnRyaWVzIHdpdGggSEVBRC93b3JrdHJl
+ZSBjb21wYXJpc29uLiBObyBlZGl0b3JpYWwgYW5ub3RhdGlvbnMgb24gcmF3IGFydGlmYWN0IGNv
+bnRlbnRzLiBObyBpbXBsZW1lbnRhdGlvbiwgbm8gaG9va3MsIG5vIGdhbWUgcnVuLCBubyBwYXlt
+ZW50cy4KKipQcmVzZXJ2YXRpb246KiogYEZVRUxfTkFUSVZFX0lOUFVUU19SRUNPVkVSWV8yMDI2
+MTAzMS5tZGAgYW5kIGBGVUVMX1RBTktfQ09OVFJBQ1RfMjAyNjExMDEubWRgIHByZXNlcnZlZCB1
+bmNoYW5nZWQuCioqV29ya3RyZWU6KiogYEM6XFdSU1JFYCwgYnJhbmNoIGBETy1mdWVsLWNvc3Qt
+Y2FsY3VsYXRvdHJgIChubyBicmFuY2ggc3dpdGNoLCBjb21taXQsIHB1c2gsIGJ1aWxkLCBob29r
+LCBicmVha3BvaW50LCBnYW1lIHJ1biwgb3IgcGF5bWVudCkuCioqU2hlbGw6KiogV2luZG93cyBQ
+b3dlclNoZWxsIDUuMSwgY29tbWFuZHMgcHJlZml4ZWQgd2l0aCBgY2QgJ0M6XFdSU1JFJztgLgoq
+KkdoaWRyYToqKiBRdWVyaWVzIHJlYWQtb25seSwgc2VyaWFsaXplZC4gT25lIG5ldyBkaXNhc3Nl
+bWJseSBleHBvcnQgKFNlY3Rpb24gMyk7IGV4aXN0aW5nIGNhY2hlZCBleHBvcnRzIHJldXNlZCB3
+aXRob3V0IHJlLXF1ZXJ5IChTZWN0aW9ucyAx4oCTMikuCgotLS0KCiMjIFNlY3Rpb24gMSDigJQg
+Q2FjaGVkIEZpbGU6IHNjcmF0Y2hcb3V0XDE0MDY2ZTAwMF8xNDA2NmUyNTBfZGlzYXNtLmFzbQoK
+KipTb3VyY2U6KiogYHNjcmF0Y2hcb3V0XDE0MDY2ZTAwMF8xNDA2NmUyNTBfZGlzYXNtLmFzbWAg
+KHByZS1leGlzdGluZyBjYWNoZWQgZXhwb3J0LCByYW5nZSBgMHgxNDA2NkUwMDBg4oCTYDB4MTQw
+NjZFMjUwYCwgMTM2IGxpbmVzKS4gTm90IHJlLXF1ZXJpZWQuIENvbnRhaW5zIHRoZSBgRlVOXzE0
+MDY2ZDUzMGAg4oaSIGBGVU5fMTQwNmIzYjUwYCBjYWxsIHNpdGUgYXQgVkEgYDB4MTQwNjZFMjBC
+YC4KCgpgYGAKCgpgYGAKOyBSYW5nZTogMHgxNDA2NkUwMDAgdG8gMHgxNDA2NkUyNTAKMTQwNjZl
+MDA1OiAgNEMgODkgQTMgRTggMDUgMDAgMDAgICAgIE1PViBxd29yZCBwdHIgW1JCWCArIDB4NWU4
+XSxSMTIKMTQwNjZlMDBjOiAgRTkgODEgMDEgMDAgMDAgICAgICAgICAgIEpNUCAweDE0MDY2ZTE5
+MgoxNDA2NmUwMTE6ICA0OSA4QiA4QyAyNCA3OCAwOSAwMCAwMCAgTU9WIFJDWCxxd29yZCBwdHIg
+W1IxMiArIDB4OTc4XQoxNDA2NmUwMTk6ICAzMiBDMCAgICAgICAgICAgICAgICAgICAgWE9SIEFM
+LEFMCjE0MDY2ZTAxYjogIDBGIEI2IEYwICAgICAgICAgICAgICAgICBNT1ZaWCBFU0ksQUwKMTQw
+NjZlMDFlOiAgNDUgMzIgRjYgICAgICAgICAgICAgICAgIFhPUiBSMTRCLFIxNEIKMTQwNjZlMDIx
+OiAgNDQgMzkgM0QgOUMgNzQgMzYgMDAgICAgIENNUCBkd29yZCBwdHIgWzB4MTQwOWQ1NGM0XSxS
+MTVECjE0MDY2ZTAyODogIDQ4IEI4IDI1IDQ5IDkyIDI0IDQ5IDkyIDI0IDQ5IE1PViBSQVgsMHg0
+OTI0OTI0OTI0OTI0OTI1CjE0MDY2ZTAzMjogIDQ1IDhCIEVGICAgICAgICAgICAgICAgICBNT1Yg
+UjEzRCxSMTVECjE0MDY2ZTAzNTogIDBGIDQ0IEY3ICAgICAgICAgICAgICAgICBDTU9WWiBFU0ks
+RURJCjE0MDY2ZTAzODogIDQ5IDJCIDhDIDI0IDcwIDA5IDAwIDAwICBTVUIgUkNYLHF3b3JkIHB0
+ciBbUjEyICsgMHg5NzBdCjE0MDY2ZTA0MDogIDQ4IEY3IEU5ICAgICAgICAgICAgICAgICBJTVVM
+IFJDWAoxNDA2NmUwNDM6ICA0OCBDMSBGQSAwNiAgICAgICAgICAgICAgU0FSIFJEWCwweDYKMTQw
+NjZlMDQ3OiAgNDggOEIgQzIgICAgICAgICAgICAgICAgIE1PViBSQVgsUkRYCjE0MDY2ZTA0YTog
+IDQ4IEMxIEU4IDNGICAgICAgICAgICAgICBTSFIgUkFYLDB4M2YKMTQwNjZlMDRlOiAgNDggMDMg
+RDAgICAgICAgICAgICAgICAgIEFERCBSRFgsUkFYCjE0MDY2ZTA1MTogIDBGIDg0IDI3IDAxIDAw
+IDAwICAgICAgICBKWiAweDE0MDY2ZTE3ZQoxNDA2NmUwNTc6ICA0RCA4QiA4QyAyNCA3MCAwOSAw
+MCAwMCAgTU9WIFI5LHF3b3JkIHB0ciBbUjEyICsgMHg5NzBdCjE0MDY2ZTA1ZjogIDREIDhCIEM3
+ICAgICAgICAgICAgICAgICBNT1YgUjgsUjE1CjE0MDY2ZTA2MjogIDRDIDhCIDFEIDJGIDMyIDM3
+IDAwICAgICBNT1YgUjExLHF3b3JkIHB0ciBbMHgxNDA5ZTEyOThdCjE0MDY2ZTA2OTogIDQ4IDhC
+IDNEIDg4IDMxIDM3IDAwICAgICBNT1YgUkRJLHF3b3JkIHB0ciBbMHgxNDA5ZTExZjhdCjE0MDY2
+ZTA3MDogIDQ4IDhCIDVEIDZGICAgICAgICAgICAgICBNT1YgUkJYLHF3b3JkIHB0ciBbUkJQICsg
+MHg2Zl0KMTQwNjZlMDc0OiAgNEQgOEQgNjEgMDggICAgICAgICAgICAgIExFQSBSMTIsW1I5ICsg
+MHg4XQoxNDA2NmUwNzg6ICAwRiAxRiA4NCAwMCAwMCAwMCAwMCAwMCAgTk9QIGR3b3JkIHB0ciBb
+UkFYICsgUkFYKjB4MV0KMTQwNjZlMDgwOiAgNDkgOEIgMDQgMjQgICAgICAgICAgICAgIE1PViBS
+QVgscXdvcmQgcHRyIFtSMTJdCjE0MDY2ZTA4NDogIDQ1IDhCIEQ3ICAgICAgICAgICAgICAgICBN
+T1YgUjEwRCxSMTVECjE0MDY2ZTA4NzogIDRCIDJCIDA0IDA4ICAgICAgICAgICAgICBTVUIgUkFY
+LHF3b3JkIHB0ciBbUjggKyBSOSoweDFdCjE0MDY2ZTA4YjogIDQ4IEMxIEY4IDA0ICAgICAgICAg
+ICAgICBTQVIgUkFYLDB4NAoxNDA2NmUwOGY6ICA0OCA4NSBDMCAgICAgICAgICAgICAgICAgVEVT
+VCBSQVgsUkFYCjE0MDY2ZTA5MjogIDc0IDVEICAgICAgICAgICAgICAgICAgICBKWiAweDE0MDY2
+ZTBmMQoxNDA2NmUwOTQ6ICA0QiA4QiAxNCAwOCAgICAgICAgICAgICAgTU9WIFJEWCxxd29yZCBw
+dHIgW1I4ICsgUjkqMHgxXQoxNDA2NmUwOTg6ICA0OCA4MyBDMiAwOCAgICAgICAgICAgICAgQURE
+IFJEWCwweDgKMTQwNjZlMDljOiAgMEYgMUYgNDAgMDAgICAgICAgICAgICAgIE5PUCBkd29yZCBw
+dHIgW1JBWF0KMTQwNjZlMGEwOiAgNDggOEIgNDIgRjggICAgICAgICAgICAgIE1PViBSQVgscXdv
+cmQgcHRyIFtSRFggKyAtMHg4XQoxNDA2NmUwYTQ6ICA0OCAzQiBGOCAgICAgICAgICAgICAgICAg
+Q01QIFJESSxSQVgKMTQwNjZlMGE3OiAgNzUgMDkgICAgICAgICAgICAgICAgICAgIEpOWiAweDE0
+MDY2ZTBiMgoxNDA2NmUwYTk6ICBGMyAwRiAxMCAwMiAgICAgICAgICAgICAgTU9WU1MgWE1NMCxk
+d29yZCBwdHIgW1JEWF0KMTQwNjZlMGFkOiAgMEYgMkYgQzcgICAgICAgICAgICAgICAgIENPTUlT
+UyBYTU0wLFhNTTcKMTQwNjZlMGIwOiAgNzcgMzcgICAgICAgICAgICAgICAgICAgIEpBIDB4MTQw
+NjZlMGU5CjE0MDY2ZTBiMjogIDRDIDNCIEQ4ICAgICAgICAgICAgICAgICBDTVAgUjExLFJBWAox
+NDA2NmUwYjU6ICA3NSAxNCAgICAgICAgICAgICAgICAgICAgSk5aIDB4MTQwNjZlMGNiCjE0MDY2
+ZTBiNzogIDQzIDgzIEJDIDA4IDg4IDAwIDAwIDAwIEZGIENNUCBkd29yZCBwdHIgW1I4ICsgUjkq
+MHgxICsgMHg4OF0sLTB4MQoxNDA2NmUwYzA6ICA3NSAwOSAgICAgICAgICAgICAgICAgICAgSk5a
+IDB4MTQwNjZlMGNiCjE0MDY2ZTBjMjogIEYzIDBGIDEwIDAyICAgICAgICAgICAgICBNT1ZTUyBY
+TU0wLGR3b3JkIHB0ciBbUkRYXQoxNDA2NmUwYzY6ICAwRiAyRiBDNyAgICAgICAgICAgICAgICAg
+Q09NSVNTIFhNTTAsWE1NNwoxNDA2NmUwYzk6ICA3NyAyMyAgICAgICAgICAgICAgICAgICAgSkEg
+MHgxNDA2NmUwZWUKMTQwNjZlMGNiOiAgNEIgOEIgNEMgMDggMDggICAgICAgICAgIE1PViBSQ1gs
+cXdvcmQgcHRyIFtSOCArIFI5KjB4MSArIDB4OF0KMTQwNjZlMGQwOiAgNDEgRkYgQzIgICAgICAg
+ICAgICAgICAgIElOQyBSMTBECjE0MDY2ZTBkMzogIDRCIDJCIDBDIDA4ICAgICAgICAgICAgICBT
+VUIgUkNYLHF3b3JkIHB0ciBbUjggKyBSOSoweDFdCjE0MDY2ZTBkNzogIDQ4IDgzIEMyIDEwICAg
+ICAgICAgICAgICBBREQgUkRYLDB4MTAKMTQwNjZlMGRiOiAgNDggQzEgRjkgMDQgICAgICAgICAg
+ICAgIFNBUiBSQ1gsMHg0CjE0MDY2ZTBkZjogIDQ5IDYzIEMyICAgICAgICAgICAgICAgICBNT1ZT
+WEQgUkFYLFIxMEQKMTQwNjZlMGUyOiAgNDggM0IgQzEgICAgICAgICAgICAgICAgIENNUCBSQVgs
+UkNYCjE0MDY2ZTBlNTogIDcyIEI5ICAgICAgICAgICAgICAgICAgICBKQyAweDE0MDY2ZTBhMAox
+NDA2NmUwZTc6ICBFQiAwOCAgICAgICAgICAgICAgICAgICAgSk1QIDB4MTQwNjZlMGYxCjE0MDY2
+ZTBlOTogIDQxIEI2IDAxICAgICAgICAgICAgICAgICBNT1YgUjE0QiwweDEKMTQwNjZlMGVjOiAg
+RUIgMDggICAgICAgICAgICAgICAgICAgIEpNUCAweDE0MDY2ZTBmNgoxNDA2NmUwZWU6ICA0MCBC
+NiAwMSAgICAgICAgICAgICAgICAgTU9WIFNJTCwweDEKMTQwNjZlMGYxOiAgNDUgODQgRjYgICAg
+ICAgICAgICAgICAgIFRFU1QgUjE0QixSMTRCCjE0MDY2ZTBmNDogIDc0IDA1ICAgICAgICAgICAg
+ICAgICAgICBKWiAweDE0MDY2ZTBmYgoxNDA2NmUwZjY6ICA0MCA4NCBGNiAgICAgICAgICAgICAg
+ICAgVEVTVCBTSUwsU0lMCjE0MDY2ZTBmOTogIDc1IDQ2ICAgICAgICAgICAgICAgICAgICBKTlog
+MHgxNDA2NmUxNDEKMTQwNjZlMGZiOiAgNDggOEIgOEIgNzggMDkgMDAgMDAgICAgIE1PViBSQ1gs
+cXdvcmQgcHRyIFtSQlggKyAweDk3OF0KMTQwNjZlMTAyOiAgNDEgRkYgQzUgICAgICAgICAgICAg
+ICAgIElOQyBSMTNECjE0MDY2ZTEwNTogIDQ4IDJCIDhCIDcwIDA5IDAwIDAwICAgICBTVUIgUkNY
+LHF3b3JkIHB0ciBbUkJYICsgMHg5NzBdCjE0MDY2ZTEwYzogIDQ4IEI4IDI1IDQ5IDkyIDI0IDQ5
+IDkyIDI0IDQ5IE1PViBSQVgsMHg0OTI0OTI0OTI0OTI0OTI1CjE0MDY2ZTExNjogIDQ4IEY3IEU5
+ICAgICAgICAgICAgICAgICBJTVVMIFJDWAoxNDA2NmUxMTk6ICA0OSA4MSBDMCBFMCAwMCAwMCAw
+MCAgICAgQUREIFI4LDB4ZTAKMTQwNjZlMTIwOiAgNDkgODEgQzQgRTAgMDAgMDAgMDAgICAgIEFE
+RCBSMTIsMHhlMAoxNDA2NmUxMjc6ICA0OCBDMSBGQSAwNiAgICAgICAgICAgICAgU0FSIFJEWCww
+eDYKMTQwNjZlMTJiOiAgNDggOEIgQzIgICAgICAgICAgICAgICAgIE1PViBSQVgsUkRYCjE0MDY2
+ZTEyZTogIDQ4IEMxIEU4IDNGICAgICAgICAgICAgICBTSFIgUkFYLDB4M2YKMTQwNjZlMTMyOiAg
+NDggMDMgRDAgICAgICAgICAgICAgICAgIEFERCBSRFgsUkFYCjE0MDY2ZTEzNTogIDQ5IDYzIEM1
+ICAgICAgICAgICAgICAgICBNT1ZTWEQgUkFYLFIxM0QKMTQwNjZlMTM4OiAgNDggM0IgQzIgICAg
+ICAgICAgICAgICAgIENNUCBSQVgsUkRYCjE0MDY2ZTEzYjogIDBGIDgyIDNGIEZGIEZGIEZGICAg
+ICAgICBKQyAweDE0MDY2ZTA4MAoxNDA2NmUxNDE6ICA0OCA4QiA1RCA2NyAgICAgICAgICAgICAg
+TU9WIFJCWCxxd29yZCBwdHIgW1JCUCArIDB4NjddCjE0MDY2ZTE0NTogIDQ1IDg0IEY2ICAgICAg
+ICAgICAgICAgICBURVNUIFIxNEIsUjE0QgoxNDA2NmUxNDg6ICA3NCAzNCAgICAgICAgICAgICAg
+ICAgICAgSlogMHgxNDA2NmUxN2UKMTQwNjZlMTRhOiAgNEMgOEQgQTMgNjAgMEQgMDAgMDAgICAg
+IExFQSBSMTIsW1JCWCArIDB4ZDYwXQoxNDA2NmUxNTE6ICA0OSBCRCAyNSA0OSA5MiAyNCA0OSA5
+MiAyNCA0OSBNT1YgUjEzLDB4NDkyNDkyNDkyNDkyNDkyNQoxNDA2NmUxNWI6ICA0OSBCRSBBQiBB
+QSBBQSBBQSBBQSBBQSBBQSAyQSBNT1YgUjE0LDB4MmFhYWFhYWFhYWFhYWFhYgoxNDA2NmUxNjU6
+ICA0MCA4NCBGNiAgICAgICAgICAgICAgICAgVEVTVCBTSUwsU0lMCjE0MDY2ZTE2ODogIDc0IDJG
+ICAgICAgICAgICAgICAgICAgICBKWiAweDE0MDY2ZTE5OQoxNDA2NmUxNmE6ICA0OCA4QiA0NSA2
+RiAgICAgICAgICAgICAgTU9WIFJBWCxxd29yZCBwdHIgW1JCUCArIDB4NmZdCjE0MDY2ZTE2ZTog
+IDQ4IDg5IDgzIEU4IDA1IDAwIDAwICAgICBNT1YgcXdvcmQgcHRyIFtSQlggKyAweDVlOF0sUkFY
+CjE0MDY2ZTE3NTogIEM2IDgzIDNBIDBEIDAwIDAwIDAxICAgICBNT1YgYnl0ZSBwdHIgW1JCWCAr
+IDB4ZDNhXSwweDEKMTQwNjZlMTdjOiAgRUIgMUIgICAgICAgICAgICAgICAgICAgIEpNUCAweDE0
+MDY2ZTE5OQoxNDA2NmUxN2U6ICA0OSBCRSBBQiBBQSBBQSBBQSBBQSBBQSBBQSAyQSBNT1YgUjE0
+LDB4MmFhYWFhYWFhYWFhYWFhYgoxNDA2NmUxODg6ICA0OSBCRCAyNSA0OSA5MiAyNCA0OSA5MiAy
+NCA0OSBNT1YgUjEzLDB4NDkyNDkyNDkyNDkyNDkyNQoxNDA2NmUxOTI6ICA0QyA4RCBBMyA2MCAw
+RCAwMCAwMCAgICAgTEVBIFIxMixbUkJYICsgMHhkNjBdCjE0MDY2ZTE5OTogIDQ4IDhCIENCICAg
+ICAgICAgICAgICAgICBNT1YgUkNYLFJCWAoxNDA2NmUxOWM6ICBFOCBDRiA2MyAwNCAwMCAgICAg
+ICAgICAgQ0FMTCAweDE0MDZiNDU3MAoxNDA2NmUxYTE6ICA0OCA4QiBDQiAgICAgICAgICAgICAg
+ICAgTU9WIFJDWCxSQlgKMTQwNjZlMWE0OiAgRTggMzcgRUMgMDAgMDAgICAgICAgICAgIENBTEwg
+MHgxNDA2N2NkZTAKMTQwNjZlMWE5OiAgNDggOEIgQ0IgICAgICAgICAgICAgICAgIE1PViBSQ1gs
+UkJYCjE0MDY2ZTFhYzogIEU4IDRGIDRBIDA1IDAwICAgICAgICAgICBDQUxMIDB4MTQwNmMyYzAw
+CjE0MDY2ZTFiMTogIDhCIDgzIDk0IDE3IDAwIDAwICAgICAgICBNT1YgRUFYLGR3b3JkIHB0ciBb
+UkJYICsgMHgxNzk0XQoxNDA2NmUxYjc6ICA4MyBDRiBGRiAgICAgICAgICAgICAgICAgT1IgRURJ
+LDB4ZmZmZmZmZmYKMTQwNjZlMWJhOiAgQzYgODMgRDggMTMgMDAgMDAgMDEgICAgIE1PViBieXRl
+IHB0ciBbUkJYICsgMHgxM2Q4XSwweDEKMTQwNjZlMWMxOiAgNDQgODggQkIgRTggMTMgMDAgMDAg
+ICAgIE1PViBieXRlIHB0ciBbUkJYICsgMHgxM2U4XSxSMTVCCjE0MDY2ZTFjODogIDg5IEJCIDE0
+IDEzIDAwIDAwICAgICAgICBNT1YgZHdvcmQgcHRyIFtSQlggKyAweDEzMTRdLEVESQoxNDA2NmUx
+Y2U6ICA4MyBGOCAwMSAgICAgICAgICAgICAgICAgQ01QIEVBWCwweDEKMTQwNjZlMWQxOiAgN0Ug
+MDUgICAgICAgICAgICAgICAgICAgIEpMRSAweDE0MDY2ZTFkOAoxNDA2NmUxZDM6ICA4RCA3OCBG
+RSAgICAgICAgICAgICAgICAgTEVBIEVESSxbUkFYICsgLTB4Ml0KMTQwNjZlMWQ2OiAgRUIgMEMg
+ICAgICAgICAgICAgICAgICAgIEpNUCAweDE0MDY2ZTFlNAoxNDA2NmUxZDg6ICA4MyBGOCBGNiAg
+ICAgICAgICAgICAgICAgQ01QIEVBWCwtMHhhCjE0MDY2ZTFkYjogIDdGIDA3ICAgICAgICAgICAg
+ICAgICAgICBKRyAweDE0MDY2ZTFlNAoxNDA2NmUxZGQ6ICBCRiBGNiBGRiBGRiBGRiAgICAgICAg
+ICAgTU9WIEVESSwweGZmZmZmZmY2CjE0MDY2ZTFlMjogIDJCIEY4ICAgICAgICAgICAgICAgICAg
+ICBTVUIgRURJLEVBWAoxNDA2NmUxZTQ6ICA0QyA4QiA5QiBGMCAwNCAwMCAwMCAgICAgTU9WIFIx
+MSxxd29yZCBwdHIgW1JCWCArIDB4NGYwXQoxNDA2NmUxZWI6ICA0RCA4NSBEQiAgICAgICAgICAg
+ICAgICAgVEVTVCBSMTEsUjExCjE0MDY2ZTFlZTogIDBGIDg0IDQzIDA1IDAwIDAwICAgICAgICBK
+WiAweDE0MDY2ZTczNwoxNDA2NmUxZjQ6ICA0NCAzOCBCQiAxNCAwNSAwMCAwMCAgICAgQ01QIGJ5
+dGUgcHRyIFtSQlggKyAweDUxNF0sUjE1QgoxNDA2NmUxZmI6ICA3NCA0MyAgICAgICAgICAgICAg
+ICAgICAgSlogMHgxNDA2NmUyNDAKMTQwNjZlMWZkOiAgRjMgMEYgMTAgMEQgMTMgQzQgMjkgMDAg
+IE1PVlNTIFhNTTEsZHdvcmQgcHRyIFsweDE0MDkwYTYxOF0KMTQwNjZlMjA1OiAgNDEgQjAgMDEg
+ICAgICAgICAgICAgICAgIE1PViBSOEIsMHgxCjE0MDY2ZTIwODogIDQ4IDhCIENCICAgICAgICAg
+ICAgICAgICBNT1YgUkNYLFJCWAoxNDA2NmUyMGI6ICBFOCA0MCA1OSAwNCAwMCAgICAgICAgICAg
+Q0FMTCAweDE0MDZiM2I1MAoxNDA2NmUyMTA6ICAwRiAyOCBERiAgICAgICAgICAgICAgICAgTU9W
+QVBTIFhNTTMsWE1NNwoxNDA2NmUyMTM6ICA0OCA4QiBDQiAgICAgICAgICAgICAgICAgTU9WIFJD
+WCxSQlgKMTQwNjZlMjE2OiAgRTggOTUgMDQgMDEgMDAgICAgICAgICAgIENBTEwgMHgxNDA2N2U2
+YjAKMTQwNjZlMjFiOiAgNDggOEIgQ0IgICAgICAgICAgICAgICAgIE1PViBSQ1gsUkJYCjE0MDY2
+ZTIxZTogIDQ0IDg5IEJCIDdDIDE3IDAwIDAwICAgICBNT1YgZHdvcmQgcHRyIFtSQlggKyAweDE3
+N2NdLFIxNUQKMTQwNjZlMjI1OiAgNDQgODkgQkIgOEMgMTcgMDAgMDAgICAgIE1PViBkd29yZCBw
+dHIgW1JCWCArIDB4MTc4Y10sUjE1RAoxNDA2NmUyMmM6ICBFOCA3RiBBNSBGRiBGRiAgICAgICAg
+ICAgQ0FMTCAweDE0MDY2ODdiMAoxNDA2NmUyMzE6ICAzMyBEMiAgICAgICAgICAgICAgICAgICAg
+WE9SIEVEWCxFRFgKMTQwNjZlMjMzOiAgNDggOEIgQ0IgICAgICAgICAgICAgICAgIE1PViBSQ1gs
+UkJYCjE0MDY2ZTIzNjogIEU4IDk1IDM5IDA1IDAwICAgICAgICAgICBDQUxMIDB4MTQwNmMxYmQw
+CjE0MDY2ZTIzYjogIEU5IDQ2IDBCIDAwIDAwICAgICAgICAgICBKTVAgMHgxNDA2NmVkODYKMTQw
+NjZlMjQwOiAgNDkgOEIgQjMgMTggMDMgMDAgMDAgICAgIE1PViBSU0kscXdvcmQgcHRyIFtSMTEg
+KyAweDMxOF0KMTQwNjZlMjQ3OiAgNDggODUgRjYgICAgICAgICAgICAgICAgIFRFU1QgUlNJLFJT
+SQoxNDA2NmUyNGE6ICAwRiA4NSA4MCAwMSAwMCAwMCAgICAgICAgSk5aIDB4MTQwNjZlM2QwCjE0
+MDY2ZTI1MDogIDQ4IDhCIDgzIDA4IDE3IDAwIDAwICAgICBNT1YgUkFYLHF3b3JkIHB0ciBbUkJY
+ICsgMHgxNzA4XQoKYGBgCgoNCgoKIyMgU2VjdGlvbiAyIOKAlCBDYWNoZWQgRmlsZTogc2NyYXRj
+aFxvdXRcMTQwNmIzYjUwXzE0MDZiNDUwMF9kaXNhc20uYXNtIChjaHVuayAxLzQpCgoKYGBgCjE6
+IDsgUmFuZ2U6IDB4MTQwNkIzQjUwIHRvIDB4MTQwNkI0NTAwCjI6IDE0MDZiM2I1MDogIDQ4IDhC
+IEM0ICAgICAgICAgICAgICAgICBNT1YgUkFYLFJTUAozOiAxNDA2YjNiNTM6ICA1NSAgICAgICAg
+ICAgICAgICAgICAgICAgUFVTSCBSQlAKNDogMTQwNmIzYjU0OiAgNDEgNTQgICAgICAgICAgICAg
+ICAgICAgIFBVU0ggUjEyCjU6IDE0MDZiM2I1NjogIDQxIDU1ICAgICAgICAgICAgICAgICAgICBQ
+VVNIIFIxMwo2OiAxNDA2YjNiNTg6ICA0MSA1NiAgICAgICAgICAgICAgICAgICAgUFVTSCBSMTQK
+NzogMTQwNmIzYjVhOiAgNDEgNTcgICAgICAgICAgICAgICAgICAgIFBVU0ggUjE1Cjg6IDE0MDZi
+M2I1YzogIDQ4IDhEIDY4IEI4ICAgICAgICAgICAgICBMRUEgUkJQLFtSQVggKyAtMHg0OF0KOTog
+MTQwNmIzYjYwOiAgNDggODEgRUMgMjAgMDEgMDAgMDAgICAgIFNVQiBSU1AsMHgxMjAKMTA6IDE0
+MDZiM2I2NzogIDQ4IEM3IDQ0IDI0IDQwIEZFIEZGIEZGIEZGIE1PViBxd29yZCBwdHIgW1JTUCAr
+IDB4NDBdLC0weDIKMTE6IDE0MDZiM2I3MDogIDQ4IDg5IDU4IDA4ICAgICAgICAgICAgICBNT1Yg
+cXdvcmQgcHRyIFtSQVggKyAweDhdLFJCWAoxMjogMTQwNmIzYjc0OiAgNDggODkgNzAgMTAgICAg
+ICAgICAgICAgIE1PViBxd29yZCBwdHIgW1JBWCArIDB4MTBdLFJTSQoxMzogMTQwNmIzYjc4OiAg
+NDggODkgNzggMTggICAgICAgICAgICAgIE1PViBxd29yZCBwdHIgW1JBWCArIDB4MThdLFJESQox
+NDogMTQwNmIzYjdjOiAgMEYgMjkgNzAgQzggICAgICAgICAgICAgIE1PVkFQUyB4bW13b3JkIHB0
+ciBbUkFYICsgLTB4MzhdLFhNTTYKMTU6IDE0MDZiM2I4MDogIDBGIDI5IDc4IEI4ICAgICAgICAg
+ICAgICBNT1ZBUFMgeG1td29yZCBwdHIgW1JBWCArIC0weDQ4XSxYTU03CjE2OiAxNDA2YjNiODQ6
+ICA0NCAwRiAyOSA0MCBBOCAgICAgICAgICAgTU9WQVBTIHhtbXdvcmQgcHRyIFtSQVggKyAtMHg1
+OF0sWE1NOAoxNzogMTQwNmIzYjg5OiAgNDQgMEYgMjkgNDggOTggICAgICAgICAgIE1PVkFQUyB4
+bW13b3JkIHB0ciBbUkFYICsgLTB4NjhdLFhNTTkKMTg6IDE0MDZiM2I4ZTogIDQ0IDBGIDI5IDUw
+IDg4ICAgICAgICAgICBNT1ZBUFMgeG1td29yZCBwdHIgW1JBWCArIC0weDc4XSxYTU0xMAoxOTog
+MTQwNmIzYjkzOiAgNDQgMEYgMjkgOTggNzggRkYgRkYgRkYgIE1PVkFQUyB4bW13b3JkIHB0ciBb
+UkFYICsgLTB4ODhdLFhNTTExCjIwOiAxNDA2YjNiOWI6ICA0NCAwRiAyOSBBMCA2OCBGRiBGRiBG
+RiAgTU9WQVBTIHhtbXdvcmQgcHRyIFtSQVggKyAtMHg5OF0sWE1NMTIKMjE6IDE0MDZiM2JhMzog
+IDQ0IDBGIDI5IEE4IDU4IEZGIEZGIEZGICBNT1ZBUFMgeG1td29yZCBwdHIgW1JBWCArIC0weGE4
+XSxYTU0xMwoyMjogMTQwNmIzYmFiOiAgNDQgMEYgMjkgQjAgNDggRkYgRkYgRkYgIE1PVkFQUyB4
+bW13b3JkIHB0ciBbUkFYICsgLTB4YjhdLFhNTTE0CjIzOiAxNDA2YjNiYjM6ICA0NCAwRiAyOSBC
+OCAzOCBGRiBGRiBGRiAgTU9WQVBTIHhtbXdvcmQgcHRyIFtSQVggKyAtMHhjOF0sWE1NMTUKMjQ6
+IDE0MDZiM2JiYjogIDQ1IDBGIEI2IEY4ICAgICAgICAgICAgICBNT1ZaWCBSMTVELFI4QgoyNTog
+MTQwNmIzYmJmOiAgNDQgMEYgMjggRTkgICAgICAgICAgICAgIE1PVkFQUyBYTU0xMyxYTU0xCjI2
+OiAxNDA2YjNiYzM6ICA0OCA4QiBEOSAgICAgICAgICAgICAgICAgTU9WIFJCWCxSQ1gKMjc6IDE0
+MDZiM2JjNjogIDgzIDNEIEYzIDE4IDMyIDAwIDAyICAgICBDTVAgZHdvcmQgcHRyIFsweDE0MDlk
+NTRjMF0sMHgyCjI4OiAxNDA2YjNiY2Q6ICAwRiA4QyAzMSAwOSAwMCAwMCAgICAgICAgSkwgMHgx
+NDA2YjQ1MDQKMjk6IDE0MDZiM2JkMzogIDRDIDhCIDg5IDA4IDE3IDAwIDAwICAgICBNT1YgUjks
+cXdvcmQgcHRyIFtSQ1ggKyAweDE3MDhdCjMwOiAxNDA2YjNiZGE6ICBGMyA0MSAwRiAxMCA4OSA4
+NCA4NiAwMCAwMCBNT1ZTUyBYTU0xLGR3b3JkIHB0ciBbUjkgKyAweDg2ODRdCjMxOiAxNDA2YjNi
+ZTM6ICBGMyA0NSAwRiAxMCA5OSA4OCA4NiAwMCAwMCBNT1ZTUyBYTU0xMSxkd29yZCBwdHIgW1I5
+ICsgMHg4Njg4XQozMjogMTQwNmIzYmVjOiAgRjMgNDQgMEYgMTAgQTEgRjAgMDUgMDAgMDAgTU9W
+U1MgWE1NMTIsZHdvcmQgcHRyIFtSQ1ggKyAweDVmMF0KMzM6IDE0MDZiM2JmNTogIEYzIDQ0IDBG
+IDEwIDNEIERFIDYxIDI1IDAwIE1PVlNTIFhNTTE1LGR3b3JkIHB0ciBbMHgxNDA5MDlkZGNdCjM0
+OiAxNDA2YjNiZmU6ICA0RCA4NSBDOSAgICAgICAgICAgICAgICAgVEVTVCBSOSxSOQozNTogMTQw
+NmIzYzAxOiAgNzQgMEQgICAgICAgICAgICAgICAgICAgIEpaIDB4MTQwNmIzYzEwCjM2OiAxNDA2
+YjNjMDM6ICAwRiAyOCBDMSAgICAgICAgICAgICAgICAgTU9WQVBTIFhNTTAsWE1NMQozNzogMTQw
+NmIzYzA2OiAgRjMgNDEgMEYgNTkgQzcgICAgICAgICAgIE1VTFNTIFhNTTAsWE1NMTUKMzg6IDE0
+MDZiM2MwYjogIEYzIDQ0IDBGIDU4IEUwICAgICAgICAgICBBRERTUyBYTU0xMixYTU0wCjM5OiAx
+NDA2YjNjMTA6ICA0NSAzMyBFNCAgICAgICAgICAgICAgICAgWE9SIFIxMkQsUjEyRAo0MDogMTQw
+NmIzYzEzOiAgNDUgOEIgQzQgICAgICAgICAgICAgICAgIE1PViBSOEQsUjEyRAo0MTogMTQwNmIz
+YzE2OiAgNDggOEIgODEgQTggMDMgMDAgMDAgICAgIE1PViBSQVgscXdvcmQgcHRyIFtSQ1ggKyAw
+eDNhOF0KNDI6IDE0MDZiM2MxZDogIDQ4IDJCIDgxIEEwIDAzIDAwIDAwICAgICBTVUIgUkFYLHF3
+b3JkIHB0ciBbUkNYICsgMHgzYTBdCjQzOiAxNDA2YjNjMjQ6ICA0OCBDMSBGOCAwMyAgICAgICAg
+ICAgICAgU0FSIFJBWCwweDMKNDQ6IDE0MDZiM2MyODogIDg1IEMwICAgICAgICAgICAgICAgICAg
+ICBURVNUIEVBWCxFQVgKNDU6IDE0MDZiM2MyYTogIDdFIDVGICAgICAgICAgICAgICAgICAgICBK
+TEUgMHgxNDA2YjNjOGIKNDY6IDE0MDZiM2MyYzogIDQ4IDhCIDkxIEEwIDAzIDAwIDAwICAgICBN
+T1YgUkRYLHF3b3JkIHB0ciBbUkNYICsgMHgzYTBdCjQ3OiAxNDA2YjNjMzM6ICA0OCA4QiAwQSAg
+ICAgICAgICAgICAgICAgTU9WIFJDWCxxd29yZCBwdHIgW1JEWF0KNDg6IDE0MDZiM2MzNjogIDQ0
+IDM5IEExIDk0IDE3IDAwIDAwICAgICBDTVAgZHdvcmQgcHRyIFtSQ1ggKyAweDE3OTRdLFIxMkQK
+NDk6IDE0MDZiM2MzZDogIDc1IDJFICAgICAgICAgICAgICAgICAgICBKTlogMHgxNDA2YjNjNmQK
+NTA6IDE0MDZiM2MzZjogIDQ4IDhCIDgxIDA4IDE3IDAwIDAwICAgICBNT1YgUkFYLHF3b3JkIHB0
+ciBbUkNYICsgMHgxNzA4XQo1MTogMTQwNmIzYzQ2OiAgRjMgMEYgMTAgODAgODQgODYgMDAgMDAg
+IE1PVlNTIFhNTTAsZHdvcmQgcHRyIFtSQVggKyAweDg2ODRdCjUyOiAxNDA2YjNjNGU6ICBGMyAw
+RiA1OCBDOCAgICAgICAgICAgICAgQUREU1MgWE1NMSxYTU0wCjUzOiAxNDA2YjNjNTI6ICBGMyA0
+NCAwRiA1OCA5OCA4OCA4NiAwMCAwMCBBRERTUyBYTU0xMSxkd29yZCBwdHIgW1JBWCArIDB4ODY4
+OF0KNTQ6IDE0MDZiM2M1YjogIEYzIDQxIDBGIDU5IEM3ICAgICAgICAgICBNVUxTUyBYTU0wLFhN
+TTE1CjU1OiAxNDA2YjNjNjA6ICBGMyAwRiA1OCA4MSBGMCAwNSAwMCAwMCAgQUREU1MgWE1NMCxk
+d29yZCBwdHIgW1JDWCArIDB4NWYwXQo1NjogMTQwNmIzYzY4OiAgRjMgNDQgMEYgNTggRTAgICAg
+ICAgICAgIEFERFNTIFhNTTEyLFhNTTAKNTc6IDE0MDZiM2M2ZDogIDQxIEZGIEMwICAgICAgICAg
+ICAgICAgICBJTkMgUjhECjU4OiAxNDA2YjNjNzA6ICA0OCA4MyBDMiAwOCAgICAgICAgICAgICAg
+QUREIFJEWCwweDgKNTk6IDE0MDZiM2M3NDogIDQ4IDhCIDgzIEE4IDAzIDAwIDAwICAgICBNT1Yg
+UkFYLHF3b3JkIHB0ciBbUkJYICsgMHgzYThdCjYwOiAxNDA2YjNjN2I6ICA0OCAyQiA4MyBBMCAw
+MyAwMCAwMCAgICAgU1VCIFJBWCxxd29yZCBwdHIgW1JCWCArIDB4M2EwXQo2MTogMTQwNmIzYzgy
+OiAgNDggQzEgRjggMDMgICAgICAgICAgICAgIFNBUiBSQVgsMHgzCjYyOiAxNDA2YjNjODY6ICA0
+NCAzQiBDMCAgICAgICAgICAgICAgICAgQ01QIFI4RCxFQVgKNjM6IDE0MDZiM2M4OTogIDdDIEE4
+ICAgICAgICAgICAgICAgICAgICBKTCAweDE0MDZiM2MzMwo2NDogMTQwNmIzYzhiOiAgNDUgMEYg
+NTcgQzkgICAgICAgICAgICAgIFhPUlBTIFhNTTksWE1NOQo2NTogMTQwNmIzYzhmOiAgNDUgMEYg
+MkYgQ0IgICAgICAgICAgICAgIENPTUlTUyBYTU05LFhNTTExCjY2OiAxNDA2YjNjOTM6ICAwRiA4
+MyA2QiAwOCAwMCAwMCAgICAgICAgSk5DIDB4MTQwNmI0NTA0CjY3OiAxNDA2YjNjOTk6ICBGMyA0
+NCAwRiAxMCAzNSA1QSA1RSAyNSAwMCBNT1ZTUyBYTU0xNCxkd29yZCBwdHIgWzB4MTQwOTA5YWZj
+XQo2ODogMTQwNmIzY2EyOiAgNDUgMEYgMkYgRjUgICAgICAgICAgICAgIENPTUlTUyBYTU0xNCxY
+TU0xMwo2OTogMTQwNmIzY2E2OiAgNzYgMEEgICAgICAgICAgICAgICAgICAgIEpCZSAweDE0MDZi
+M2NiMgo3MDogMTQwNmIzY2E4OiAgNDEgMEYgMkYgQzkgICAgICAgICAgICAgIENPTUlTUyBYTU0x
+LFhNTTkKNzE6IDE0MDZiM2NhYzogIDBGIDg3IDUyIDA4IDAwIDAwICAgICAgICBKQSAweDE0MDZi
+NDUwNAo3MjogMTQwNmIzY2IyOiAgNDUgMzggQTEgODAgODYgMDAgMDAgICAgIENNUCBieXRlIHB0
+ciBbUjkgKyAweDg2ODBdLFIxMkIKNzM6IDE0MDZiM2NiOTogIDBGIDg0IDQzIDA1IDAwIDAwICAg
+ICAgICBKWiAweDE0MDZiNDIwMgo3NDogMTQwNmIzY2JmOiAgNDUgMzMgQzkgICAgICAgICAgICAg
+ICAgIFhPUiBSOUQsUjlECjc1OiAxNDA2YjNjYzI6ICA0NSAzMyBDMCAgICAgICAgICAgICAgICAg
+WE9SIFI4RCxSOEQKNzY6IDE0MDZiM2NjNTogIDQxIDBGIDI4IENFICAgICAgICAgICAgICBNT1ZB
+UFMgWE1NMSxYTU0xNAo3NzogMTQwNmIzY2M5OiAgNDggOEQgMEQgMTAgMTIgMzIgMDAgICAgIExF
+QSBSQ1gsWzB4MTQwOWQ0ZWUwXQo3ODogMTQwNmIzY2QwOiAgRkYgMTUgNTIgODMgMUIgMDAgICAg
+ICAgIENBTEwgcXdvcmQgcHRyIFsweDE0MDg2YzAyOF0KNzk6IDE0MDZiM2NkNjogIDBGIDI4IEYw
+ICAgICAgICAgICAgICAgICBNT1ZBUFMgWE1NNixYTU0wCjgwOiAxNDA2YjNjZDk6ICBGMyA0MSAw
+RiA1OSBGMyAgICAgICAgICAgTVVMU1MgWE1NNixYTU0xMQo4MTogMTQwNmIzY2RlOiAgRjMgNDEg
+MEYgNTkgRjUgICAgICAgICAgIE1VTFNTIFhNTTYsWE1NMTMKODI6IDE0MDZiM2NlMzogIEYzIDQ1
+IDBGIDU5IEREICAgICAgICAgICBNVUxTUyBYTU0xMSxYTU0xMwo4MzogMTQwNmIzY2U4OiAgNEMg
+OEIgQjMgOTggMDcgMDAgMDAgICAgIE1PViBSMTQscXdvcmQgcHRyIFtSQlggKyAweDc5OF0KODQ6
+IDE0MDZiM2NlZjogIDREIDg1IEY2ICAgICAgICAgICAgICAgICBURVNUIFIxNCxSMTQKODU6IDE0
+MDZiM2NmMjogIDc1IDREICAgICAgICAgICAgICAgICAgICBKTlogMHgxNDA2YjNkNDEKODY6IDE0
+MDZiM2NmNDogIDQ4IDhCIDgzIDA4IDE3IDAwIDAwICAgICBNT1YgUkFYLHF3b3JkIHB0ciBbUkJY
+ICsgMHgxNzA4XQo4NzogMTQwNmIzY2ZiOiAgODMgQjggOTQgMDIgMDAgMDAgMDEgICAgIENNUCBk
+d29yZCBwdHIgW1JBWCArIDB4Mjk0XSwweDEKODg6IDE0MDZiM2QwMjogIDc0IDBEICAgICAgICAg
+ICAgICAgICAgICBKWiAweDE0MDZiM2QxMQo4OTogMTQwNmIzZDA0OiAgNDQgMzggQTMgN0QgMDYg
+MDAgMDAgICAgIENNUCBieXRlIHB0ciBbUkJYICsgMHg2N2RdLFIxMkIKOTA6IDE0MDZiM2QwYjog
+IDBGIDg0IEU4IDA0IDAwIDAwICAgICAgICBKWiAweDE0MDZiNDFmOQo5MTogMTQwNmIzZDExOiAg
+NEMgMzkgQTMgODAgMEMgMDAgMDAgICAgIENNUCBxd29yZCBwdHIgW1JCWCArIDB4YzgwXSxSMTIK
+OTI6IDE0MDZiM2QxODogIDBGIDg1IEU2IDA3IDAwIDAwICAgICAgICBKTlogMHgxNDA2YjQ1MDQK
+OTM6IDE0MDZiM2QxZTogIDRDIDM5IEEzIDI4IDA1IDAwIDAwICAgICBDTVAgcXdvcmQgcHRyIFtS
+QlggKyAweDUyOF0sUjEyCjk0OiAxNDA2YjNkMjU6ICAwRiA4NSBEOSAwNyAwMCAwMCAgICAgICAg
+Sk5aIDB4MTQwNmI0NTA0Cjk1OiAxNDA2YjNkMmI6ICA0QyAzOSBBMyBGMCAwNCAwMCAwMCAgICAg
+Q01QIHF3b3JkIHB0ciBbUkJYICsgMHg0ZjBdLFIxMgo5NjogMTQwNmIzZDMyOiAgMEYgODUgQ0Mg
+MDcgMDAgMDAgICAgICAgIEpOWiAweDE0MDZiNDUwNAo5NzogMTQwNmIzZDM4OiAgNDEgMEYgMjgg
+QzEgICAgICAgICAgICAgIE1PVkFQUyBYTU0wLFhNTTkKOTg6IDE0MDZiM2QzYzogIEU5IENCIDA3
+IDAwIDAwICAgICAgICAgICBKTVAgMHgxNDA2YjQ1MGMKOTk6IDE0MDZiM2Q0MTogIDQxIDhCIDg2
+IDJDIDAxIDAwIDAwICAgICBNT1YgRUFYLGR3b3JkIHB0ciBbUjE0ICsgMHgxMmNdCjEwMDogMTQw
+NmIzZDQ4OiAgODMgRTggMDIgICAgICAgICAgICAgICAgIFNVQiBFQVgsMHgyCjEwMTogMTQwNmIz
+ZDRiOiAgODMgRjggMDEgICAgICAgICAgICAgICAgIENNUCBFQVgsMHgxCjEwMjogMTQwNmIzZDRl
+OiAgMEYgODcgMzUgMDEgMDAgMDAgICAgICAgIEpBIDB4MTQwNmIzZTg5CjEwMzogMTQwNmIzZDU0
+OiAgNDggNjMgOTMgMDAgMDcgMDAgMDAgICAgIE1PVlNYRCBSRFgsZHdvcmQgcHRyIFtSQlggKyAw
+eDcwMF0KMTA0OiAxNDA2YjNkNWI6ICA4NSBEMiAgICAgICAgICAgICAgICAgICAgVEVTVCBFRFgs
+RURYCjEwNTogMTQwNmIzZDVkOiAgNzggNUUgICAgICAgICAgICAgICAgICAgIEpTIDB4MTQwNmIz
+ZGJkCjEwNjogMTQwNmIzZDVmOiAgNDggOEIgODMgQTggMDYgMDAgMDAgICAgIE1PViBSQVgscXdv
+cmQgcHRyIFtSQlggKyAweDZhOF0KMTA3OiAxNDA2YjNkNjY6ICA0OCAyQiA4MyBBMCAwNiAwMCAw
+MCAgICAgU1VCIFJBWCxxd29yZCBwdHIgW1JCWCArIDB4NmEwXQoxMDg6IDE0MDZiM2Q2ZDogIDQ4
+IEMxIEY4IDAzICAgICAgICAgICAgICBTQVIgUkFYLDB4MwoxMDk6IDE0MDZiM2Q3MTogIDNCIEQw
+ICAgICAgICAgICAgICAgICAgICBDTVAgRURYLEVBWAoxMTA6IDE0MDZiM2Q3MzogIDdEIDQ2ICAg
+ICAgICAgICAgICAgICAgICBKR0UgMHgxNDA2YjNkYmIKMTExOiAxNDA2YjNkNzU6ICA0QyA4QiA4
+MyBBMCAwNiAwMCAwMCAgICAgTU9WIFI4LHF3b3JkIHB0ciBbUkJYICsgMHg2YTBdCjExMjogMTQw
+NmIzZDdjOiAgNEQgMzkgMjQgRDAgICAgICAgICAgICAgIENNUCBxd29yZCBwdHIgW1I4ICsgUkRY
+KjB4OF0sUjEyCjExMzogMTQwNmIzZDgwOiAgNzQgMzkgICAgICAgICAgICAgICAgICAgIEpaIDB4
+MTQwNmIzZGJiCjExNDogMTQwNmIzZDgyOiAgNDkgOEIgMDQgRDAgICAgICAgICAgICAgIE1PViBS
+QVgscXdvcmQgcHRyIFtSOCArIFJEWCoweDhdCjExNTogMTQwNmIzZDg2OiAgNDggOEIgNDggMzAg
+ICAgICAgICAgICAgIE1PViBSQ1gscXdvcmQgcHRyIFtSQVggKyAweDMwXQoxMTY6IDE0MDZiM2Q4
+YTogIDQ4IDJCIDQ4IDI4ICAgICAgICAgICAgICBTVUIgUkNYLHF3b3JkIHB0ciBbUkFYICsgMHgy
+OF0KMTE3OiAxNDA2YjNkOGU6ICA0OCBDMSBGOSAwMyAgICAgICAgICAgICAgU0FSIFJDWCwweDMK
+MTE4OiAxNDA2YjNkOTI6ICA0OCA4NSBDOSAgICAgICAgICAgICAgICAgVEVTVCBSQ1gsUkNYCjEx
+OTogMTQwNmIzZDk1OiAgNzQgMjQgICAgICAgICAgICAgICAgICAgIEpaIDB4MTQwNmIzZGJiCjEy
+MDogMTQwNmIzZDk3OiAgNDggOEIgNDAgMjggICAgICAgICAgICAgIE1PViBSQVgscXdvcmQgcHRy
+IFtSQVggKyAweDI4XQoxMjE6IDE0MDZiM2Q5YjogIDRDIDhCIDMwICAgICAgICAgICAgICAgICBN
+T1YgUjE0LHF3b3JkIHB0ciBbUkFYXQoxMjI6IDE0MDZiM2Q5ZTogIDQ5IDhCIDg2IEE4IDAxIDAw
+IDAwICAgICBNT1YgUkFYLHF3b3JkIHB0ciBbUjE0ICsgMHgxYThdCjEyMzogMTQwNmIzZGE1OiAg
+NDkgMkIgODYgQTAgMDEgMDAgMDAgICAgIFNVQiBSQVgscXdvcmQgcHRyIFtSMTQgKyAweDFhMF0K
+MTI0OiAxNDA2YjNkYWM6ICA0OCA4MyBGOCAwOCAgICAgICAgICAgICAgQ01QIFJBWCwweDgKMTI1
+OiAxNDA2YjNkYjA6ICA3MiAwOSAgICAgICAgICAgICAgICAgICAgSkMgMHgxNDA2YjNkYmIKMTI2
+OiAxNDA2YjNkYjI6ICA0RCA4NSBGNiAgICAgICAgICAgICAgICAgVEVTVCBSMTQsUjE0CjEyNzog
+MTQwNmIzZGI1OiAgMEYgODUgQ0UgMDAgMDAgMDAgICAgICAgIEpOWiAweDE0MDZiM2U4OQoxMjg6
+IDE0MDZiM2RiYjogIDg1IEQyICAgICAgICAgICAgICAgICAgICBURVNUIEVEWCxFRFgKMTI5OiAx
+NDA2YjNkYmQ6ICA3RSA1RSAgICAgICAgICAgICAgICAgICAgSkxFIDB4MTQwNmIzZTFkCjEzMDog
+MTQwNmIzZGJmOiAgNDggOEIgODMgQTggMDYgMDAgMDAgICAgIE1PViBSQVgscXdvcmQgcHRyIFtS
+QlggKyAweDZhOF0KMTMxOiAxNDA2YjNkYzY6ICA0OCAyQiA4MyBBMCAwNiAwMCAwMCAgICAgU1VC
+IFJBWCxxd29yZCBwdHIgW1JCWCArIDB4NmEwXQoxMzI6IDE0MDZiM2RjZDogIDQ4IEMxIEY4IDAz
+ICAgICAgICAgICAgICBTQVIgUkFYLDB4MwoxMzM6IDE0MDZiM2RkMTogIDhEIDRBIEZGICAgICAg
+ICAgICAgICAgICBMRUEgRUNYLFtSRFggKyAtMHgxXQoxMzQ6IDE0MDZiM2RkNDogIDNCIEM4ICAg
+ICAgICAgICAgICAgICAgICBDTVAgRUNYLEVBWAoxMzU6IDE0MDZiM2RkNjogIDdEIDQ1ICAgICAg
+ICAgICAgICAgICAgICBKR0UgMHgxNDA2YjNlMWQKMTM2OiAxNDA2YjNkZDg6ICA0QyA2MyBDOSAg
+ICAgICAgICAgICAgICAgTU9WU1hEIFI5LEVDWAoxMzc6IDE0MDZiM2RkYjogIDRDIDhCIDgzIEEw
+IDA2IDAwIDAwICAgICBNT1YgUjgscXdvcmQgcHRyIFtSQlggKyAweDZhMF0KMTM4OiAxNDA2YjNk
+ZTI6ICA0RiAzOSAyNCBDOCAgICAgICAgICAgICAgQ01QIHF3b3JkIHB0ciBbUjggKyBSOSoweDhd
+LFIxMgoxMzk6IDE0MDZiM2RlNjogIDc0IDM1ICAgICAgICAgICAgICAgICAgICBKWiAweDE0MDZi
+M2UxZAoxNDA6IDE0MDZiM2RlODogIDRCIDhCIDA0IEM4ICAgICAgICAgICAgICBNT1YgUkFYLHF3
+b3JkIHB0ciBbUjggKyBSOSoweDhdCjE0MTogMTQwNmIzZGVjOiAgNDggOEIgNDggMzAgICAgICAg
+ICAgICAgIE1PViBSQ1gscXdvcmQgcHRyIFtSQVggKyAweDMwXQoxNDI6IDE0MDZiM2RmMDogIDQ4
+IDJCIDQ4IDI4ICAgICAgICAgICAgICBTVUIgUkNYLHF3b3JkIHB0ciBbUkFYICsgMHgyOF0KMTQz
+OiAxNDA2YjNkZjQ6ICA0OCBDMSBGOSAwMyAgICAgICAgICAgICAgU0FSIFJDWCwweDMKMTQ0OiAx
+NDA2YjNkZjg6ICA0OCA4NSBDOSAgICAgICAgICAgICAgICAgVEVTVCBSQ1gsUkNYCjE0NTogMTQw
+NmIzZGZiOiAgNzQgMjAgICAgICAgICAgICAgICAgICAgIEpaIDB4MTQwNmIzZTFkCjE0NjogMTQw
+NmIzZGZkOiAgNDggOEIgNDAgMjggICAgICAgICAgICAgIE1PViBSQVgscXdvcmQgcHRyIFtSQVgg
+KyAweDI4XQoxNDc6IDE0MDZiM2UwMTogIDRDIDhCIDMwICAgICAgICAgICAgICAgICBNT1YgUjE0
+LHF3b3JkIHB0ciBbUkFYXQoxNDg6IDE0MDZiM2UwNDogIDQ5IDhCIDg2IEE4IDAxIDAwIDAwICAg
+ICBNT1YgUkFYLHF3b3JkIHB0ciBbUjE0ICsgMHgxYThdCjE0OTogMTQwNmIzZTBiOiAgNDkgMkIg
+ODYgQTAgMDEgMDAgMDAgICAgIFNVQiBSQVgscXdvcmQgcHRyIFtSMTQgKyAweDFhMF0KMTUwOiAx
+NDA2YjNlMTI6ICA0OCA4MyBGOCAwOCAgICAgICAgICAgICAgQ01QIFJBWCwweDgKCmBgYAoKDQoK
+CiMjIyBTZWN0aW9uIDIg4oCUIGNodW5rIDIvNCAobGluZXMgMTUxLTMwMCkKCgpgYGAKMTUxOiAx
+NDA2YjNlMTY6ICA3MiAwNSAgICAgICAgICAgICAgICAgICAgSkMgMHgxNDA2YjNlMWQKMTUyOiAx
+NDA2YjNlMTg6ICA0RCA4NSBGNiAgICAgICAgICAgICAgICAgVEVTVCBSMTQsUjE0CjE1MzogMTQw
+NmIzZTFiOiAgNzUgNkMgICAgICAgICAgICAgICAgICAgIEpOWiAweDE0MDZiM2U4OQoxNTQ6IDE0
+MDZiM2UxZDogIDgzIEMyIEZFICAgICAgICAgICAgICAgICBBREQgRURYLC0weDIKMTU1OiAxNDA2
+YjNlMjA6ICA3OCA1QiAgICAgICAgICAgICAgICAgICAgSlMgMHgxNDA2YjNlN2QKMTU2OiAxNDA2
+YjNlMjI6ICA0OCA4QiA4MyBBOCAwNiAwMCAwMCAgICAgTU9WIFJBWCxxd29yZCBwdHIgW1JCWCAr
+IDB4NmE4XQoxNTc6IDE0MDZiM2UyOTogIDQ4IDJCIDgzIEEwIDA2IDAwIDAwICAgICBTVUIgUkFY
+LHF3b3JkIHB0ciBbUkJYICsgMHg2YTBdCjE1ODogMTQwNmIzZTMwOiAgNDggQzEgRjggMDMgICAg
+ICAgICAgICAgIFNBUiBSQVgsMHgzCjE1OTogMTQwNmIzZTM0OiAgM0IgRDAgICAgICAgICAgICAg
+ICAgICAgIENNUCBFRFgsRUFYCjE2MDogMTQwNmIzZTM2OiAgN0QgNDUgICAgICAgICAgICAgICAg
+ICAgIEpHRSAweDE0MDZiM2U3ZAoxNjE6IDE0MDZiM2UzODogIDRDIDYzIEMyICAgICAgICAgICAg
+ICAgICBNT1ZTWEQgUjgsRURYCjE2MjogMTQwNmIzZTNiOiAgNDggOEIgOTMgQTAgMDYgMDAgMDAg
+ICAgIE1PViBSRFgscXdvcmQgcHRyIFtSQlggKyAweDZhMF0KMTYzOiAxNDA2YjNlNDI6ICA0RSAz
+OSAyNCBDMiAgICAgICAgICAgICAgQ01QIHF3b3JkIHB0ciBbUkRYICsgUjgqMHg4XSxSMTIKMTY0
+OiAxNDA2YjNlNDY6ICA3NCAzNSAgICAgICAgICAgICAgICAgICAgSlogMHgxNDA2YjNlN2QKMTY1
+OiAxNDA2YjNlNDg6ICA0QSA4QiAwNCBDMiAgICAgICAgICAgICAgTU9WIFJBWCxxd29yZCBwdHIg
+W1JEWCArIFI4KjB4OF0KMTY2OiAxNDA2YjNlNGM6ICA0OCA4QiA0OCAzMCAgICAgICAgICAgICAg
+TU9WIFJDWCxxd29yZCBwdHIgW1JBWCArIDB4MzBdCjE2NzogMTQwNmIzZTUwOiAgNDggMkIgNDgg
+MjggICAgICAgICAgICAgIFNVQiBSQ1gscXdvcmQgcHRyIFtSQVggKyAweDI4XQoxNjg6IDE0MDZi
+M2U1NDogIDQ4IEMxIEY5IDAzICAgICAgICAgICAgICBTQVIgUkNYLDB4MwoxNjk6IDE0MDZiM2U1
+ODogIDQ4IDg1IEM5ICAgICAgICAgICAgICAgICBURVNUIFJDWCxSQ1gKMTcwOiAxNDA2YjNlNWI6
+ICA3NCAyMCAgICAgICAgICAgICAgICAgICAgSlogMHgxNDA2YjNlN2QKMTcxOiAxNDA2YjNlNWQ6
+ICA0OCA4QiA0MCAyOCAgICAgICAgICAgICAgTU9WIFJBWCxxd29yZCBwdHIgW1JBWCArIDB4Mjhd
+CjE3MjogMTQwNmIzZTYxOiAgNEMgOEIgMzAgICAgICAgICAgICAgICAgIE1PViBSMTQscXdvcmQg
+cHRyIFtSQVhdCjE3MzogMTQwNmIzZTY0OiAgNDkgOEIgODYgQTggMDEgMDAgMDAgICAgIE1PViBS
+QVgscXdvcmQgcHRyIFtSMTQgKyAweDFhOF0KMTc0OiAxNDA2YjNlNmI6ICA0OSAyQiA4NiBBMCAw
+MSAwMCAwMCAgICAgU1VCIFJBWCxxd29yZCBwdHIgW1IxNCArIDB4MWEwXQoxNzU6IDE0MDZiM2U3
+MjogIDQ4IDgzIEY4IDA4ICAgICAgICAgICAgICBDTVAgUkFYLDB4OAoxNzY6IDE0MDZiM2U3Njog
+IDcyIDA1ICAgICAgICAgICAgICAgICAgICBKQyAweDE0MDZiM2U3ZAoxNzc6IDE0MDZiM2U3ODog
+IDREIDg1IEY2ICAgICAgICAgICAgICAgICBURVNUIFIxNCxSMTQKMTc4OiAxNDA2YjNlN2I6ICA3
+NSAwQyAgICAgICAgICAgICAgICAgICAgSk5aIDB4MTQwNmIzZTg5CjE3OTogMTQwNmIzZTdkOiAg
+NDQgODkgQTMgODQgMTcgMDAgMDAgICAgIE1PViBkd29yZCBwdHIgW1JCWCArIDB4MTc4NF0sUjEy
+RAoxODA6IDE0MDZiM2U4NDogIEU5IDdCIDA2IDAwIDAwICAgICAgICAgICBKTVAgMHgxNDA2YjQ1
+MDQKMTgxOiAxNDA2YjNlODk6ICAwRiA1NyBDMCAgICAgICAgICAgICAgICAgWE9SUFMgWE1NMCxY
+TU0wCjE4MjogMTQwNmIzZThjOiAgRjMgMEYgN0YgNDQgMjQgNjAgICAgICAgIE1PVkRRVSB4bW13
+b3JkIHB0ciBbUlNQICsgMHg2MF0sWE1NMAoxODM6IDE0MDZiM2U5MjogIDREIDhCIEZDICAgICAg
+ICAgICAgICAgICBNT1YgUjE1LFIxMgoxODQ6IDE0MDZiM2U5NTogIDRDIDg5IDY0IDI0IDcwICAg
+ICAgICAgICBNT1YgcXdvcmQgcHRyIFtSU1AgKyAweDcwXSxSMTIKMTg1OiAxNDA2YjNlOWE6ICA0
+NSA4QiBFQyAgICAgICAgICAgICAgICAgTU9WIFIxM0QsUjEyRAoxODY6IDE0MDZiM2U5ZDogIDQ5
+IDhCIDg2IEE4IDAxIDAwIDAwICAgICBNT1YgUkFYLHF3b3JkIHB0ciBbUjE0ICsgMHgxYThdCjE4
+NzogMTQwNmIzZWE0OiAgNDkgMkIgODYgQTAgMDEgMDAgMDAgICAgIFNVQiBSQVgscXdvcmQgcHRy
+IFtSMTQgKyAweDFhMF0KMTg4OiAxNDA2YjNlYWI6ICA0OCBDMSBGOCAwMyAgICAgICAgICAgICAg
+U0FSIFJBWCwweDMKMTg5OiAxNDA2YjNlYWY6ICA0QyA4QiA1NCAyNCA2OCAgICAgICAgICAgTU9W
+IFIxMCxxd29yZCBwdHIgW1JTUCArIDB4NjhdCjE5MDogMTQwNmIzZWI0OiAgNDggOEIgNzQgMjQg
+NjAgICAgICAgICAgIE1PViBSU0kscXdvcmQgcHRyIFtSU1AgKyAweDYwXQoxOTE6IDE0MDZiM2Vi
+OTogIDQ4IDg1IEMwICAgICAgICAgICAgICAgICBURVNUIFJBWCxSQVgKMTkyOiAxNDA2YjNlYmM6
+ICAwRiA4NCBDMyAwMCAwMCAwMCAgICAgICAgSlogMHgxNDA2YjNmODUKMTkzOiAxNDA2YjNlYzI6
+ICA0OSA4QiBDQyAgICAgICAgICAgICAgICAgTU9WIFJDWCxSMTIKMTk0OiAxNDA2YjNlYzU6ICA2
+NiA2NiA2NiAwRiAxRiA4NCAwMCAwMCAwMCAwMCAwMCBOT1Agd29yZCBwdHIgW1JBWCArIFJBWCow
+eDFdCjE5NTogMTQwNmIzZWQwOiAgNDkgOEIgODYgQTAgMDEgMDAgMDAgICAgIE1PViBSQVgscXdv
+cmQgcHRyIFtSMTQgKyAweDFhMF0KMTk2OiAxNDA2YjNlZDc6ICA0OCA4RCAzQyBDOCAgICAgICAg
+ICAgICAgTEVBIFJESSxbUkFYICsgUkNYKjB4OF0KMTk3OiAxNDA2YjNlZGI6ICA0OCA4QiAxNyAg
+ICAgICAgICAgICAgICAgTU9WIFJEWCxxd29yZCBwdHIgW1JESV0KMTk4OiAxNDA2YjNlZGU6ICA0
+OCA4RCAwRCAyQiAxMCAzMiAwMCAgICAgTEVBIFJDWCxbMHgxNDA5ZDRmMTBdCjE5OTogMTQwNmIz
+ZWU1OiAgRTggRjYgODAgQjAgRkYgICAgICAgICAgIENBTEwgMHgxNDAxYmJmZTAKMjAwOiAxNDA2
+YjNlZWE6ICA4NCBDMCAgICAgICAgICAgICAgICAgICAgVEVTVCBBTCxBTAoyMDE6IDE0MDZiM2Vl
+YzogIDc1IDc2ICAgICAgICAgICAgICAgICAgICBKTlogMHgxNDA2YjNmNjQKMjAyOiAxNDA2YjNl
+ZWU6ICA0OSAzQiBGQSAgICAgICAgICAgICAgICAgQ01QIFJESSxSMTAKMjAzOiAxNDA2YjNlZjE6
+ICA3MyAzQSAgICAgICAgICAgICAgICAgICAgSk5DIDB4MTQwNmIzZjJkCjIwNDogMTQwNmIzZWYz
+OiAgNDggM0IgRjcgICAgICAgICAgICAgICAgIENNUCBSU0ksUkRJCjIwNTogMTQwNmIzZWY2OiAg
+NzcgMzUgICAgICAgICAgICAgICAgICAgIEpBIDB4MTQwNmIzZjJkCjIwNjogMTQwNmIzZWY4OiAg
+NDggMkIgRkUgICAgICAgICAgICAgICAgIFNVQiBSREksUlNJCjIwNzogMTQwNmIzZWZiOiAgNDgg
+QzEgRkYgMDMgICAgICAgICAgICAgIFNBUiBSREksMHgzCjIwODogMTQwNmIzZWZmOiAgNEQgM0Ig
+RDcgICAgICAgICAgICAgICAgIENNUCBSMTAsUjE1CjIwOTogMTQwNmIzZjAyOiAgNzUgMUUgICAg
+ICAgICAgICAgICAgICAgIEpOWiAweDE0MDZiM2YyMgoyMTA6IDE0MDZiM2YwNDogIEJBIDAxIDAw
+IDAwIDAwICAgICAgICAgICBNT1YgRURYLDB4MQoyMTE6IDE0MDZiM2YwOTogIDQ4IDhEIDRDIDI0
+IDYwICAgICAgICAgICBMRUEgUkNYLFtSU1AgKyAweDYwXQoyMTI6IDE0MDZiM2YwZTogIEU4IEVE
+IEQ3IDlGIEZGICAgICAgICAgICBDQUxMIDB4MTQwMGIxNzAwCjIxMzogMTQwNmIzZjEzOiAgNEMg
+OEIgN0MgMjQgNzAgICAgICAgICAgIE1PViBSMTUscXdvcmQgcHRyIFtSU1AgKyAweDcwXQoyMTQ6
+IDE0MDZiM2YxODogIDRDIDhCIDU0IDI0IDY4ICAgICAgICAgICBNT1YgUjEwLHF3b3JkIHB0ciBb
+UlNQICsgMHg2OF0KMjE1OiAxNDA2YjNmMWQ6ICA0OCA4QiA3NCAyNCA2MCAgICAgICAgICAgTU9W
+IFJTSSxxd29yZCBwdHIgW1JTUCArIDB4NjBdCjIxNjogMTQwNmIzZjIyOiAgNEQgODUgRDIgICAg
+ICAgICAgICAgICAgIFRFU1QgUjEwLFIxMAoyMTc6IDE0MDZiM2YyNTogIDc0IDM0ICAgICAgICAg
+ICAgICAgICAgICBKWiAweDE0MDZiM2Y1YgoyMTg6IDE0MDZiM2YyNzogIDQ4IDhCIDA0IEZFICAg
+ICAgICAgICAgICBNT1YgUkFYLHF3b3JkIHB0ciBbUlNJICsgUkRJKjB4OF0KMjE5OiAxNDA2YjNm
+MmI6ICBFQiAyQiAgICAgICAgICAgICAgICAgICAgSk1QIDB4MTQwNmIzZjU4CjIyMDogMTQwNmIz
+ZjJkOiAgNEQgM0IgRDcgICAgICAgICAgICAgICAgIENNUCBSMTAsUjE1CjIyMTogMTQwNmIzZjMw
+OiAgNzUgMUUgICAgICAgICAgICAgICAgICAgIEpOWiAweDE0MDZiM2Y1MAoyMjI6IDE0MDZiM2Yz
+MjogIEJBIDAxIDAwIDAwIDAwICAgICAgICAgICBNT1YgRURYLDB4MQoyMjM6IDE0MDZiM2YzNzog
+IDQ4IDhEIDRDIDI0IDYwICAgICAgICAgICBMRUEgUkNYLFtSU1AgKyAweDYwXQoyMjQ6IDE0MDZi
+M2YzYzogIEU4IEJGIEQ3IDlGIEZGICAgICAgICAgICBDQUxMIDB4MTQwMGIxNzAwCjIyNTogMTQw
+NmIzZjQxOiAgNEMgOEIgN0MgMjQgNzAgICAgICAgICAgIE1PViBSMTUscXdvcmQgcHRyIFtSU1Ag
+KyAweDcwXQoyMjY6IDE0MDZiM2Y0NjogIDRDIDhCIDU0IDI0IDY4ICAgICAgICAgICBNT1YgUjEw
+LHF3b3JkIHB0ciBbUlNQICsgMHg2OF0KMjI3OiAxNDA2YjNmNGI6ICA0OCA4QiA3NCAyNCA2MCAg
+ICAgICAgICAgTU9WIFJTSSxxd29yZCBwdHIgW1JTUCArIDB4NjBdCjIyODogMTQwNmIzZjUwOiAg
+NEQgODUgRDIgICAgICAgICAgICAgICAgIFRFU1QgUjEwLFIxMAoyMjk6IDE0MDZiM2Y1MzogIDc0
+IDA2ICAgICAgICAgICAgICAgICAgICBKWiAweDE0MDZiM2Y1YgoyMzA6IDE0MDZiM2Y1NTogIDQ4
+IDhCIDA3ICAgICAgICAgICAgICAgICBNT1YgUkFYLHF3b3JkIHB0ciBbUkRJXQoyMzE6IDE0MDZi
+M2Y1ODogIDQ5IDg5IDAyICAgICAgICAgICAgICAgICBNT1YgcXdvcmQgcHRyIFtSMTBdLFJBWAoy
+MzI6IDE0MDZiM2Y1YjogIDQ5IDgzIEMyIDA4ICAgICAgICAgICAgICBBREQgUjEwLDB4OAoyMzM6
+IDE0MDZiM2Y1ZjogIDRDIDg5IDU0IDI0IDY4ICAgICAgICAgICBNT1YgcXdvcmQgcHRyIFtSU1Ag
+KyAweDY4XSxSMTAKMjM0OiAxNDA2YjNmNjQ6ICA0MSBGRiBDNSAgICAgICAgICAgICAgICAgSU5D
+IFIxM0QKMjM1OiAxNDA2YjNmNjc6ICA0OSA4QiA4NiBBOCAwMSAwMCAwMCAgICAgTU9WIFJBWCxx
+d29yZCBwdHIgW1IxNCArIDB4MWE4XQoyMzY6IDE0MDZiM2Y2ZTogIDQ5IDJCIDg2IEEwIDAxIDAw
+IDAwICAgICBTVUIgUkFYLHF3b3JkIHB0ciBbUjE0ICsgMHgxYTBdCjIzNzogMTQwNmIzZjc1OiAg
+NDggQzEgRjggMDMgICAgICAgICAgICAgIFNBUiBSQVgsMHgzCjIzODogMTQwNmIzZjc5OiAgNDEg
+OEIgQ0QgICAgICAgICAgICAgICAgIE1PViBFQ1gsUjEzRAoyMzk6IDE0MDZiM2Y3YzogIDQ4IDNC
+IEM4ICAgICAgICAgICAgICAgICBDTVAgUkNYLFJBWAoyNDA6IDE0MDZiM2Y3ZjogIDBGIDgyIDRC
+IEZGIEZGIEZGICAgICAgICBKQyAweDE0MDZiM2VkMAoyNDE6IDE0MDZiM2Y4NTogIDRDIDJCIEQ2
+ICAgICAgICAgICAgICAgICBTVUIgUjEwLFJTSQoyNDI6IDE0MDZiM2Y4ODogIDQ5IDgzIEZBIDA4
+ICAgICAgICAgICAgICBDTVAgUjEwLDB4OAoyNDM6IDE0MDZiM2Y4YzogIDczIDBDICAgICAgICAg
+ICAgICAgICAgICBKTkMgMHgxNDA2YjNmOWEKMjQ0OiAxNDA2YjNmOGU6ICA0QyA4OSBBMyA4MCAx
+NyAwMCAwMCAgICAgTU9WIHF3b3JkIHB0ciBbUkJYICsgMHgxNzgwXSxSMTIKMjQ1OiAxNDA2YjNm
+OTU6ICBFOSA0MiAwMiAwMCAwMCAgICAgICAgICAgSk1QIDB4MTQwNmI0MWRjCjI0NjogMTQwNmIz
+ZjlhOiAgNDkgQzEgRkEgMDMgICAgICAgICAgICAgIFNBUiBSMTAsMHgzCjI0NzogMTQwNmIzZjll
+OiAgMEYgNTcgQzAgICAgICAgICAgICAgICAgIFhPUlBTIFhNTTAsWE1NMAoyNDg6IDE0MDZiM2Zh
+MTogIEYzIDQ5IDBGIDJBIEMyICAgICAgICAgICBDVlRTSTJTUyBYTU0wLFIxMAoyNDk6IDE0MDZi
+M2ZhNjogIDREIDg1IEQyICAgICAgICAgICAgICAgICBURVNUIFIxMCxSMTAKMjUwOiAxNDA2YjNm
+YTk6ICA3OSAwOCAgICAgICAgICAgICAgICAgICAgSk5TIDB4MTQwNmIzZmIzCjI1MTogMTQwNmIz
+ZmFiOiAgRjMgMEYgNTggMDUgNzkgNzIgMjUgMDAgIEFERFNTIFhNTTAsZHdvcmQgcHRyIFsweDE0
+MDkwYjIyY10KMjUyOiAxNDA2YjNmYjM6ICBGMyAwRiAxMCAzRCA5RCA1RiAyNSAwMCAgTU9WU1Mg
+WE1NNyxkd29yZCBwdHIgWzB4MTQwOTA5ZjU4XQoyNTM6IDE0MDZiM2ZiYjogIDBGIDI4IEVGICAg
+ICAgICAgICAgICAgICBNT1ZBUFMgWE1NNSxYTU03CjI1NDogMTQwNmIzZmJlOiAgRjMgMEYgNUUg
+RTggICAgICAgICAgICAgIERJVlNTIFhNTTUsWE1NMAoyNTU6IDE0MDZiM2ZjMjogIDQ1IDBGIDI4
+IEMxICAgICAgICAgICAgICBNT1ZBUFMgWE1NOCxYTU05CjI1NjogMTQwNmIzZmM2OiAgNDUgMEYg
+MjggRDEgICAgICAgICAgICAgIE1PVkFQUyBYTU0xMCxYTU05CjI1NzogMTQwNmIzZmNhOiAgNDUg
+MEYgMjggRTEgICAgICAgICAgICAgIE1PVkFQUyBYTU0xMixYTU05CjI1ODogMTQwNmIzZmNlOiAg
+RjMgNDQgMEYgMTAgMkQgQTEgNUMgMjUgMDAgTU9WU1MgWE1NMTMsZHdvcmQgcHRyIFsweDE0MDkw
+OWM3OF0KMjU5OiAxNDA2YjNmZDc6ICA0RCA4NSBEMiAgICAgICAgICAgICAgICAgVEVTVCBSMTAs
+UjEwCjI2MDogMTQwNmIzZmRhOiAgMEYgODQgRkYgMDAgMDAgMDAgICAgICAgIEpaIDB4MTQwNmI0
+MGRmCjI2MTogMTQwNmIzZmUwOiAgNDkgOEIgQzQgICAgICAgICAgICAgICAgIE1PViBSQVgsUjEy
+CjI2MjogMTQwNmIzZmUzOiAgMEYgMUYgNDAgMDAgICAgICAgICAgICAgIE5PUCBkd29yZCBwdHIg
+W1JBWF0KMjYzOiAxNDA2YjNmZTc6ICA2NiAwRiAxRiA4NCAwMCAwMCAwMCAwMCAwMCBOT1Agd29y
+ZCBwdHIgW1JBWCArIFJBWCoweDFdCjI2NDogMTQwNmIzZmYwOiAgNDggOEIgMEMgQzYgICAgICAg
+ICAgICAgIE1PViBSQ1gscXdvcmQgcHRyIFtSU0kgKyBSQVgqMHg4XQoyNjU6IDE0MDZiM2ZmNDog
+IDQ4IDhCIDgxIEY4IDEwIDAwIDAwICAgICBNT1YgUkFYLHF3b3JkIHB0ciBbUkNYICsgMHgxMGY4
+XQoyNjY6IDE0MDZiM2ZmYjogIEYzIDBGIDEwIDA4ICAgICAgICAgICAgICBNT1ZTUyBYTU0xLGR3
+b3JkIHB0ciBbUkFYXQoyNjc6IDE0MDZiM2ZmZjogIDQ4IDhCIDgxIEUwIDEwIDAwIDAwICAgICBN
+T1YgUkFYLHF3b3JkIHB0ciBbUkNYICsgMHgxMGUwXQoyNjg6IDE0MDZiNDAwNjogIEYzIDBGIDEw
+IDAwICAgICAgICAgICAgICBNT1ZTUyBYTU0wLGR3b3JkIHB0ciBbUkFYXQoyNjk6IDE0MDZiNDAw
+YTogIEYzIDBGIDVFIEMxICAgICAgICAgICAgICBESVZTUyBYTU0wLFhNTTEKMjcwOiAxNDA2YjQw
+MGU6ICBGMyAwRiA1OSBDNSAgICAgICAgICAgICAgTVVMU1MgWE1NMCxYTU01CjI3MTogMTQwNmI0
+MDEyOiAgNDggOEIgODEgRTggMTAgMDAgMDAgICAgIE1PViBSQVgscXdvcmQgcHRyIFtSQ1ggKyAw
+eDEwZThdCjI3MjogMTQwNmI0MDE5OiAgRjMgMEYgNTkgMDAgICAgICAgICAgICAgIE1VTFNTIFhN
+TTAsZHdvcmQgcHRyIFtSQVhdCjI3MzogMTQwNmI0MDFkOiAgRjMgNDQgMEYgNTggQzAgICAgICAg
+ICAgIEFERFNTIFhNTTgsWE1NMAoyNzQ6IDE0MDZiNDAyMjogIEYzIDBGIDEwIEExIDAwIDExIDAw
+IDAwICBNT1ZTUyBYTU00LGR3b3JkIHB0ciBbUkNYICsgMHgxMTAwXQoyNzU6IDE0MDZiNDAyYTog
+IEYzIDBGIDVFIEUxICAgICAgICAgICAgICBESVZTUyBYTU00LFhNTTEKMjc2OiAxNDA2YjQwMmU6
+ICBGMyAwRiA1OSBGNCAgICAgICAgICAgICAgTVVMU1MgWE1NNixYTU00CjI3NzogMTQwNmI0MDMy
+OiAgMEYgMjggRDUgICAgICAgICAgICAgICAgIE1PVkFQUyBYTU0yLFhNTTUKMjc4OiAxNDA2YjQw
+MzU6ICBGMyAwRiA1OSBENiAgICAgICAgICAgICAgTVVMU1MgWE1NMixYTU02CjI3OTogMTQwNmI0
+MDM5OiAgNDggOEIgOTEgRTAgMTAgMDAgMDAgICAgIE1PViBSRFgscXdvcmQgcHRyIFtSQ1ggKyAw
+eDEwZTBdCjI4MDogMTQwNmI0MDQwOiAgNDggODUgRDIgICAgICAgICAgICAgICAgIFRFU1QgUkRY
+LFJEWAoyODE6IDE0MDZiNDA0MzogIDc0IDY2ICAgICAgICAgICAgICAgICAgICBKWiAweDE0MDZi
+NDBhYgoyODI6IDE0MDZiNDA0NTogIEYzIDBGIDEwIDA4ICAgICAgICAgICAgICBNT1ZTUyBYTU0x
+LGR3b3JkIHB0ciBbUkFYXQoyODM6IDE0MDZiNDA0OTogIDQ0IDBGIDJGIEU5ICAgICAgICAgICAg
+ICBDT01JU1MgWE1NMTMsWE1NMQoyODQ6IDE0MDZiNDA0ZDogIDc2IDA2ICAgICAgICAgICAgICAg
+ICAgICBKQmUgMHgxNDA2YjQwNTUKMjg1OiAxNDA2YjQwNGY6ICA0MSAwRiAyOCBDOSAgICAgICAg
+ICAgICAgTU9WQVBTIFhNTTEsWE1NOQoyODY6IDE0MDZiNDA1MzogIEVCIDU5ICAgICAgICAgICAg
+ICAgICAgICBKTVAgMHgxNDA2YjQwYWUKMjg3OiAxNDA2YjQwNTU6ICBGMyAwRiAxMCAwMiAgICAg
+ICAgICAgICAgTU9WU1MgWE1NMCxkd29yZCBwdHIgW1JEWF0KMjg4OiAxNDA2YjQwNTk6ICA0NCAw
+RiAyRiBDOCAgICAgICAgICAgICAgQ09NSVNTIFhNTTksWE1NMAoyODk6IDE0MDZiNDA1ZDogIDcy
+IDA2ICAgICAgICAgICAgICAgICAgICBKQyAweDE0MDZiNDA2NQoyOTA6IDE0MDZiNDA1ZjogIDQx
+IDBGIDI4IEM5ICAgICAgICAgICAgICBNT1ZBUFMgWE1NMSxYTU05CjI5MTogMTQwNmI0MDYzOiAg
+RUIgNDkgICAgICAgICAgICAgICAgICAgIEpNUCAweDE0MDZiNDBhZQoyOTI6IDE0MDZiNDA2NTog
+IDBGIDI4IEQ4ICAgICAgICAgICAgICAgICBNT1ZBUFMgWE1NMyxYTU0wCjI5MzogMTQwNmI0MDY4
+OiAgRjMgMEYgNTkgRDkgICAgICAgICAgICAgIE1VTFNTIFhNTTMsWE1NMQoyOTQ6IDE0MDZiNDA2
+YzogIDBGIDI4IENGICAgICAgICAgICAgICAgICBNT1ZBUFMgWE1NMSxYTU03CjI5NTogMTQwNmI0
+MDZmOiAgMEYgMkYgRDMgICAgICAgICAgICAgICAgIENPTUlTUyBYTU0yLFhNTTMKMjk2OiAxNDA2
+YjQwNzI6ICA3NiAwQiAgICAgICAgICAgICAgICAgICAgSkJFIDB4MTQwNmI0MDdmCjI5NzogMTQw
+NmI0MDc0OiAgMEYgMjggQ0IgICAgICAgICAgICAgICAgIE1PVkFQUyBYTU0xLFhNTTMKMjk4OiAx
+NDA2YjQwNzc6ICBGMyAwRiA1RSBDQSAgICAgICAgICAgICAgRElWU1MgWE1NMSxYTU0yCjI5OTog
+MTQwNmI0MDdiOiAgRjMgMEYgNTkgRDEgICAgICAgICAgICAgIE1VTFNTIFhNTTIsWE1NMQozMDA6
+IDE0MDZiNDA3ZjogIEYzIDBGIDVDIEMyICAgICAgICAgICAgICBTVUJTUyBYTU0wLFhNTTIKCmBg
+YAoKDQoKCiMjIyBTZWN0aW9uIDIg4oCUIGNodW5rIDMvNCAobGluZXMgMzAxLTQ1MCkKCgpgYGAK
+MzAxOiAxNDA2YjQwODM6ICBGMyAwRiAxMSAwMiAgICAgICAgICAgICAgTU9WU1MgZHdvcmQgcHRy
+IFtSRFhdLFhNTTAKMzAyOiAxNDA2YjQwODc6ICA0OCA4QiA4MSBGMCAxMCAwMCAwMCAgICAgTU9W
+IFJBWCxxd29yZCBwdHIgW1JDWCArIDB4MTBmMF0KMzAzOiAxNDA2YjQwOGU6ICAwRiAyOCBDMiAg
+ICAgICAgICAgICAgICAgTU9WQVBTIFhNTTAsWE1NMgozMDQ6IDE0MDZiNDA5MTogIEYzIDBGIDU4
+IDAwICAgICAgICAgICAgICBBRERTUyBYTU0wLGR3b3JkIHB0ciBbUkFYXQozMDU6IDE0MDZiNDA5
+NTogIEYzIDBGIDExIDAwICAgICAgICAgICAgICBNT1ZTUyBkd29yZCBwdHIgW1JBWF0sWE1NMAoz
+MDY6IDE0MDZiNDA5OTogIEYzIDBGIDU4IDkxIDJDIDExIDAwIDAwICBBRERTUyBYTU0yLGR3b3Jk
+IHB0ciBbUkNYICsgMHgxMTJjXQozMDc6IDE0MDZiNDBhMTogIEYzIDBGIDExIDkxIDJDIDExIDAw
+IDAwICBNT1ZTUyBkd29yZCBwdHIgW1JDWCArIDB4MTEyY10sWE1NMgozMDg6IDE0MDZiNDBhOTog
+IEVCIDAzICAgICAgICAgICAgICAgICAgICBKTVAgMHgxNDA2YjQwYWUKMzA5OiAxNDA2YjQwYWI6
+ICAwRiAyOCBDRiAgICAgICAgICAgICAgICAgTU9WQVBTIFhNTTEsWE1NNwozMTA6IDE0MDZiNDBh
+ZTogIDBGIDI4IEMxICAgICAgICAgICAgICAgICBNT1ZBUFMgWE1NMCxYTU0xCjMxMTogMTQwNmI0
+MGIxOiAgRjMgMEYgNTkgQzUgICAgICAgICAgICAgIE1VTFNTIFhNTTAsWE1NNQozMTI6IDE0MDZi
+NDBiNTogIEYzIDBGIDU5IEM0ICAgICAgICAgICAgICBNVUxTUyBYTU0wLFhNTTQKMzEzOiAxNDA2
+YjQwYjk6ICBGMyA0NCAwRiA1OCBFMCAgICAgICAgICAgQUREU1MgWE1NMTIsWE1NMAozMTQ6IDE0
+MDZiNDBiZTogIEYzIDQxIDBGIDU5IENCICAgICAgICAgICBNVUxTUyBYTU0xLFhNTTExCjMxNTog
+MTQwNmI0MGMzOiAgRjMgMEYgNTkgQ0QgICAgICAgICAgICAgIE1VTFNTIFhNTTEsWE1NNQozMTY6
+IDE0MDZiNDBjNzogIEYzIDBGIDU5IENDICAgICAgICAgICAgICBNVUxTUyBYTU0xLFhNTTQKMzE3
+OiAxNDA2YjQwY2I6ICBGMyA0NCAwRiA1OCBEMSAgICAgICAgICAgQUREU1MgWE1NMTAsWE1NMQoz
+MTg6IDE0MDZiNDBkMDogIDQxIEZGIEM0ICAgICAgICAgICAgICAgICBJTkMgUjEyRAozMTk6IDE0
+MDZiNDBkMzogIDQxIDhCIEM0ICAgICAgICAgICAgICAgICBNT1YgRUFYLFIxMkQKMzIwOiAxNDA2
+YjQwZDY6ICA0OSAzQiBDMiAgICAgICAgICAgICAgICAgQ01QIFJBWCxSMTAKMzIxOiAxNDA2YjQw
+ZDk6ICAwRiA4MiAxMSBGRiBGRiBGRiAgICAgICAgSkMgMHgxNDA2YjNmZjAKMzIyOiAxNDA2YjQw
+ZGY6ICA0NSAzMyBDOSAgICAgICAgICAgICAgICAgWE9SIFI5RCxSOUQKMzIzOiAxNDA2YjQwZTI6
+ICA0NSAzMyBDMCAgICAgICAgICAgICAgICAgWE9SIFI4RCxSOEQKMzI0OiAxNDA2YjQwZTU6ICA0
+MSAwRiAyOCBDRCAgICAgICAgICAgICAgTU9WQVBTIFhNTTEsWE1NMTMKMzI1OiAxNDA2YjQwZTk6
+ICA0OCA4RCAwRCBGMCAwRCAzMiAwMCAgICAgTEVBIFJDWCxbMHgxNDA5ZDRlZTBdCjMyNjogMTQw
+NmI0MGYwOiAgRkYgMTUgM0EgN0YgMUIgMDAgICAgICAgIENBTEwgcXdvcmQgcHRyIFsweDE0MDg2
+YzAzMF0KMzI3OiAxNDA2YjQwZjY6ICAwRiAyOCBGMCAgICAgICAgICAgICAgICAgTU9WQVBTIFhN
+TTYsWE1NMAozMjg6IDE0MDZiNDBmOTogIEYzIDQ0IDBGIDVDIDgzIDgwIDE3IDAwIDAwIFNVQlNT
+IFhNTTgsZHdvcmQgcHRyIFtSQlggKyAweDE3ODBdCjMyOTogMTQwNmI0MTAyOiAgRjMgNDEgMEYg
+NTkgRjAgICAgICAgICAgIE1VTFNTIFhNTTYsWE1NOAozMzA6IDE0MDZiNDEwNzogIDQ1IDMzIEM5
+ICAgICAgICAgICAgICAgICBYT1IgUjlELFI5RAozMzE6IDE0MDZiNDEwYTogIDQ1IDMzIEMwICAg
+ICAgICAgICAgICAgICBYT1IgUjhELFI4RAozMzI6IDE0MDZiNDEwZDogIEYzIDQ0IDBGIDEwIDBE
+IDEyIDVDIDI1IDAwIE1PVlNTIFhNTTksZHdvcmQgcHRyIFsweDE0MDkwOWQyOF0KMzMzOiAxNDA2
+YjQxMTY6ICA0MSAwRiAyOCBDOSAgICAgICAgICAgICAgTU9WQVBTIFhNTTEsWE1NOQozMzQ6IDE0
+MDZiNDExYTogIDQ4IDhEIDBEIEJGIDBEIDMyIDAwICAgICBMRUEgUkNYLFsweDE0MDlkNGVlMF0K
+MzM1OiAxNDA2YjQxMjE6ICBGRiAxNSAwOSA3RiAxQiAwMCAgICAgICAgQ0FMTCBxd29yZCBwdHIg
+WzB4MTQwODZjMDMwXQozMzY6IDE0MDZiNDEyNzogIDBGIDI4IEY4ICAgICAgICAgICAgICAgICBN
+T1ZBUFMgWE1NNyxYTU0wCjMzNzogMTQwNmI0MTJhOiAgRjMgMEYgNUQgRkUgICAgICAgICAgICAg
+IE1JTlNTIFhNTTcsWE1NNgozMzg6IDE0MDZiNDEyZTogIDQ1IDMzIEM5ICAgICAgICAgICAgICAg
+ICBYT1IgUjlELFI5RAozMzk6IDE0MDZiNDEzMTogIDQ1IDMzIEMwICAgICAgICAgICAgICAgICBY
+T1IgUjhELFI4RAozNDA6IDE0MDZiNDEzNDogIDQxIDBGIDI4IEM5ICAgICAgICAgICAgICBNT1ZB
+UFMgWE1NMSxYTU05CjM0MTogMTQwNmI0MTM4OiAgNDggOEQgMEQgQTEgMEQgMzIgMDAgICAgIExF
+QSBSQ1gsWzB4MTQwOWQ0ZWUwXQozNDI6IDE0MDZiNDEzZjogIEZGIDE1IEVCIDdFIDFCIDAwICAg
+ICAgICBDQUxMIHF3b3JkIHB0ciBbMHgxNDA4NmMwMzBdCjM0MzogMTQwNmI0MTQ1OiAgMEYgNTcg
+MDUgRDQgODUgMjUgMDAgICAgIFhPUlBTIFhNTTAseG1td29yZCBwdHIgWzB4MTQwOTBjNzIwXQoz
+NDQ6IDE0MDZiNDE0YzogIEYzIDBGIDVGIEM3ICAgICAgICAgICAgICBNQVhTUyBYTU0wLFhNTTcK
+MzQ1OiAxNDA2YjQxNTA6ICBGMyAwRiA1OCA4MyA4MCAxNyAwMCAwMCAgQUREU1MgWE1NMCxkd29y
+ZCBwdHIgW1JCWCArIDB4MTc4MF0KMzQ2OiAxNDA2YjQxNTg6ICBGMyAwRiAxMSA4MyA4MCAxNyAw
+MCAwMCAgTU9WU1MgZHdvcmQgcHRyIFtSQlggKyAweDE3ODBdLFhNTTAKMzQ3OiAxNDA2YjQxNjA6
+ICA0NSAzMyBDOSAgICAgICAgICAgICAgICAgWE9SIFI5RCxSOUQKMzQ4OiAxNDA2YjQxNjM6ICA0
+NSAzMyBDMCAgICAgICAgICAgICAgICAgWE9SIFI4RCxSOEQKMzQ5OiAxNDA2YjQxNjY6ICA0MSAw
+RiAyOCBDRCAgICAgICAgICAgICAgTU9WQVBTIFhNTTEsWE1NMTMKMzUwOiAxNDA2YjQxNmE6ICA0
+OCA4RCAwRCA2RiAwRCAzMiAwMCAgICAgTEVBIFJDWCxbMHgxNDA5ZDRlZTBdCjM1MTogMTQwNmI0
+MTcxOiAgRkYgMTUgQjkgN0UgMUIgMDAgICAgICAgIENBTEwgcXdvcmQgcHRyIFsweDE0MDg2YzAz
+MF0KMzUyOiAxNDA2YjQxNzc6ICAwRiAyOCBGMCAgICAgICAgICAgICAgICAgTU9WQVBTIFhNTTYs
+WE1NMAozNTM6IDE0MDZiNDE3YTogIEYzIDQ0IDBGIDVDIDkzIDg0IDE3IDAwIDAwIFNVQlNTIFhN
+TTEwLGR3b3JkIHB0ciBbUkJYICsgMHgxNzg0XQozNTQ6IDE0MDZiNDE4MzogIEYzIDQxIDBGIDU5
+IEYyICAgICAgICAgICBNVUxTUyBYTU02LFhNTTEwCjM1NTogMTQwNmI0MTg4OiAgNDUgMzMgQzkg
+ICAgICAgICAgICAgICAgIFhPUiBSOUQsUjlECjM1NjogMTQwNmI0MThiOiAgNDUgMzMgQzAgICAg
+ICAgICAgICAgICAgIFhPUiBSOEQsUjhECjM1NzogMTQwNmI0MThlOiAgNDEgMEYgMjggQzkgICAg
+ICAgICAgICAgIE1PVkFQUyBYTU0xLFhNTTkKMzU4OiAxNDA2YjQxOTI6ICA0OCA4RCAwRCA0NyAw
+RCAzMiAwMCAgICAgTEVBIFJDWCxbMHgxNDA5ZDRlZTBdCjM1OTogMTQwNmI0MTk5OiAgRkYgMTUg
+OTEgN0UgMUIgMDAgICAgICAgIENBTEwgcXdvcmQgcHRyIFsweDE0MDg2YzAzMF0KMzYwOiAxNDA2
+YjQxOWY6ICAwRiAyOCBGOCAgICAgICAgICAgICAgICAgTU9WQVBTIFhNTTcsWE1NMAozNjE6IDE0
+MDZiNDFhMjogIEYzIDBGIDVEIEZFICAgICAgICAgICAgICBNSU5TUyBYTU03LFhNTTYKMzYyOiAx
+NDA2YjQxYTY6ICA0NSAzMyBDOSAgICAgICAgICAgICAgICAgWE9SIFI5RCxSOUQKMzYzOiAxNDA2
+YjQxYTk6ICA0NSAzMyBDMCAgICAgICAgICAgICAgICAgWE9SIFI4RCxSOEQKMzY0OiAxNDA2YjQx
+YWM6ICA0MSAwRiAyOCBDOSAgICAgICAgICAgICAgTU9WQVBTIFhNTTEsWE1NOQozNjU6IDE0MDZi
+NDFiMDogIDQ4IDhEIDBEIDI5IDBEIDMyIDAwICAgICBMRUEgUkNYLFsweDE0MDlkNGVlMF0KMzY2
+OiAxNDA2YjQxYjc6ICBGRiAxNSA3MyA3RSAxQiAwMCAgICAgICAgQ0FMTCBxd29yZCBwdHIgWzB4
+MTQwODZjMDMwXQozNjc6IDE0MDZiNDFiZDogIDBGIDU3IDA1IDVDIDg1IDI1IDAwICAgICBYT1JQ
+UyBYTU0wLHhtbXdvcmQgcHRyIFsweDE0MDkwYzcyMF0KMzY4OiAxNDA2YjQxYzQ6ICBGMyAwRiA1
+RiBDNyAgICAgICAgICAgICAgTUFYU1MgWE1NMCxYTU03CjM2OTogMTQwNmI0MWM4OiAgRjMgMEYg
+NTggODMgODQgMTcgMDAgMDAgIEFERFNTIFhNTTAsZHdvcmQgcHRyIFtSQlggKyAweDE3ODRdCjM3
+MDogMTQwNmI0MWQwOiAgRjMgMEYgMTEgODMgODQgMTcgMDAgMDAgIE1PVlNTIGR3b3JkIHB0ciBb
+UkJYICsgMHgxNzg0XSxYTU0wCjM3MTogMTQwNmI0MWQ4OiAgNDUgMEYgMjggQ0MgICAgICAgICAg
+ICAgIE1PVkFQUyBYTU05LFhNTTEyCjM3MjogMTQwNmI0MWRjOiAgNDggODUgRjYgICAgICAgICAg
+ICAgICAgIFRFU1QgUlNJLFJTSQozNzM6IDE0MDZiNDFkZjogIDc0IDE4ICAgICAgICAgICAgICAg
+ICAgICBKWiAweDE0MDZiNDFmOQozNzQ6IDE0MDZiNDFlMTogIDRDIDJCIEZFICAgICAgICAgICAg
+ICAgICBTVUIgUjE1LFJTSQozNzU6IDE0MDZiNDFlNDogIDQ5IEMxIEZGIDAzICAgICAgICAgICAg
+ICBTQVIgUjE1LDB4MwozNzY6IDE0MDZiNDFlODogIDQxIEI4IDA4IDAwIDAwIDAwICAgICAgICBN
+T1YgUjhELDB4OAozNzc6IDE0MDZiNDFlZTogIDQ5IDhCIEQ3ICAgICAgICAgICAgICAgICBNT1Yg
+UkRYLFIxNQozNzg6IDE0MDZiNDFmMTogIDQ4IDhCIENFICAgICAgICAgICAgICAgICBNT1YgUkNY
+LFJTSQozNzk6IDE0MDZiNDFmNDogIEU4IDU3IEQ4IDk0IEZGICAgICAgICAgICBDQUxMIDB4MTQw
+MDAxYTUwCjM4MDogMTQwNmI0MWY5OiAgNDEgMEYgMjggQzEgICAgICAgICAgICAgIE1PVkFQUyBY
+TU0wLFhNTTkKMzgxOiAxNDA2YjQxZmQ6ICBFOSAwQSAwMyAwMCAwMCAgICAgICAgICAgSk1QIDB4
+MTQwNmI0NTBjCjM4MjogMTQwNmI0MjAyOiAgNDEgMEYgMkYgQzkgICAgICAgICAgICAgIENPTUlT
+UyBYTU0xLFhNTTkKMzgzOiAxNDA2YjQyMDY6ICAwRiA4NiBGOCAwMiAwMCAwMCAgICAgICAgSkJF
+IDB4MTQwNmI0NTA0CjM4NDogMTQwNmI0MjBjOiAgNDkgODMgQ0UgRkYgICAgICAgICAgICAgIE9S
+IFIxNCwtMHgxCjM4NTogMTQwNmI0MjEwOiAgNDggOEIgODMgQTggMDMgMDAgMDAgICAgIE1PViBS
+QVgscXdvcmQgcHRyIFtSQlggKyAweDNhOF0KMzg2OiAxNDA2YjQyMTc6ICA0OCAyQiA4MyBBMCAw
+MyAwMCAwMCAgICAgU1VCIFJBWCxxd29yZCBwdHIgW1JCWCArIDB4M2EwXQozODc6IDE0MDZiNDIx
+ZTogIDQ4IEMxIEY4IDAzICAgICAgICAgICAgICBTQVIgUkFYLDB4MwozODg6IDE0MDZiNDIyMjog
+IDQxIDNCIEM2ICAgICAgICAgICAgICAgICBDTVAgRUFYLFIxNEQKMzg5OiAxNDA2YjQyMjU6ICAw
+RiA4RSBEOSAwMiAwMCAwMCAgICAgICAgSkxFIDB4MTQwNmI0NTA0CjM5MDogMTQwNmI0MjJiOiAg
+NDkgOEIgRjYgICAgICAgICAgICAgICAgIE1PViBSU0ksUjE0CjM5MTogMTQwNmI0MjJlOiAgNDkg
+QkMgNzkgNzggNzggNzggNzggNzggNzggNzggTU9WIFIxMiwweDc4Nzg3ODc4Nzg3ODc4NzkKMzky
+OiAxNDA2YjQyMzg6ICBGMyAwRiAxMCAxNSBFQyA2RiAyNSAwMCAgTU9WU1MgWE1NMixkd29yZCBw
+dHIgWzB4MTQwOTBiMjJjXQozOTM6IDE0MDZiNDI0MDogIDQ4IDhCIEZCICAgICAgICAgICAgICAg
+ICBNT1YgUkRJLFJCWAozOTQ6IDE0MDZiNDI0MzogIDQ4IDg1IEY2ICAgICAgICAgICAgICAgICBU
+RVNUIFJTSSxSU0kKMzk1OiAxNDA2YjQyNDY6ICA3OCAwQiAgICAgICAgICAgICAgICAgICAgSlMg
+MHgxNDA2YjQyNTMKMzk2OiAxNDA2YjQyNDg6ICA0OCA4QiA4MyBBMCAwMyAwMCAwMCAgICAgTU9W
+IFJBWCxxd29yZCBwdHIgW1JCWCArIDB4M2EwXQozOTc6IDE0MDZiNDI0ZjogIDQ4IDhCIDNDIEYw
+ICAgICAgICAgICAgICBNT1YgUkRJLHF3b3JkIHB0ciBbUkFYICsgUlNJKjB4OF0KMzk4OiAxNDA2
+YjQyNTM6ICA0OCA4QiA4NyAwOCAxNyAwMCAwMCAgICAgTU9WIFJBWCxxd29yZCBwdHIgW1JESSAr
+IDB4MTcwOF0KMzk5OiAxNDA2YjQyNWE6ICA0OCA4NSBDMCAgICAgICAgICAgICAgICAgVEVTVCBS
+QVgsUkFYCjQwMDogMTQwNmI0MjVkOiAgMEYgODQgODAgMDIgMDAgMDAgICAgICAgIEpaIDB4MTQw
+NmI0NGUzCjQwMTogMTQwNmI0MjYzOiAgRjMgNDQgMEYgMTAgODAgODQgODYgMDAgMDAgTU9WU1Mg
+WE1NOCxkd29yZCBwdHIgW1JBWCArIDB4ODY4NF0KNDAyOiAxNDA2YjQyNmM6ICA0NSAwRiAyRiBD
+OCAgICAgICAgICAgICAgQ09NSVNTIFhNTTksWE1NOAo0MDM6IDE0MDZiNDI3MDogIDBGIDgzIDZE
+IDAyIDAwIDAwICAgICAgICBKTkMgMHgxNDA2YjQ0ZTMKNDA0OiAxNDA2YjQyNzY6ICA4MCBCOCA4
+MCA4NiAwMCAwMCAwMCAgICAgQ01QIGJ5dGUgcHRyIFtSQVggKyAweDg2ODBdLDB4MAo0MDU6IDE0
+MDZiNDI3ZDogIDBGIDg1IDYwIDAyIDAwIDAwICAgICAgICBKTlogMHgxNDA2YjQ0ZTMKNDA2OiAx
+NDA2YjQyODM6ICA4MyBCRiA5NCAxNyAwMCAwMCAwMCAgICAgQ01QIGR3b3JkIHB0ciBbUkRJICsg
+MHgxNzk0XSwweDAKNDA3OiAxNDA2YjQyOGE6ICAwRiA4NSA1MyAwMiAwMCAwMCAgICAgICAgSk5a
+IDB4MTQwNmI0NGUzCjQwODogMTQwNmI0MjkwOiAgNDggODMgRkUgRkYgICAgICAgICAgICAgIENN
+UCBSU0ksLTB4MQo0MDk6IDE0MDZiNDI5NDogIDBGIDg1IEFDIDAwIDAwIDAwICAgICAgICBKTlog
+MHgxNDA2YjQzNDYKNDEwOiAxNDA2YjQyOWE6ICA0QyA4QiA4MyAwOCAxNyAwMCAwMCAgICAgTU9W
+IFI4LHF3b3JkIHB0ciBbUkJYICsgMHgxNzA4XQo0MTE6IDE0MDZiNDJhMTogIDREIDg1IEMwICAg
+ICAgICAgICAgICAgICBURVNUIFI4LFI4CjQxMjogMTQwNmI0MmE0OiAgMEYgODQgOUMgMDAgMDAg
+MDAgICAgICAgIEpaIDB4MTQwNmI0MzQ2CjQxMzogMTQwNmI0MmFhOiAgNDkgOEIgODggODAgN0Mg
+MDAgMDAgICAgIE1PViBSQ1gscXdvcmQgcHRyIFtSOCArIDB4N2M4MF0KNDE0OiAxNDA2YjQyYjE6
+ICA0OSAyQiA4OCA3OCA3QyAwMCAwMCAgICAgU1VCIFJDWCxxd29yZCBwdHIgW1I4ICsgMHg3Yzc4
+XQo0MTU6IDE0MDZiNDJiODogIDQ5IDhCIEM0ICAgICAgICAgICAgICAgICBNT1YgUkFYLFIxMgo0
+MTY6IDE0MDZiNDJiYjogIDQ4IEY3IEU5ICAgICAgICAgICAgICAgICBJTVVMIFJDWAo0MTc6IDE0
+MDZiNDJiZTogIDQ4IEMxIEZBIDA3ICAgICAgICAgICAgICBTQVIgUkRYLDB4Nwo0MTg6IDE0MDZi
+NDJjMjogIDQ4IDhCIEMyICAgICAgICAgICAgICAgICBNT1YgUkFYLFJEWAo0MTk6IDE0MDZiNDJj
+NTogIDQ4IEMxIEU4IDNGICAgICAgICAgICAgICBTSFIgUkFYLDB4M2YKNDIwOiAxNDA2YjQyYzk6
+ICA0OCAwMyBEMCAgICAgICAgICAgICAgICAgQUREIFJEWCxSQVgKNDIxOiAxNDA2YjQyY2M6ICA3
+NCA3OCAgICAgICAgICAgICAgICAgICAgSlogMHgxNDA2YjQzNDYKNDIyOiAxNDA2YjQyY2U6ICA0
+OCA4QiA4MyBFOCAxOSAwMCAwMCAgICAgTU9WIFJBWCxxd29yZCBwdHIgW1JCWCArIDB4MTllOF0K
+NDIzOiAxNDA2YjQyZDU6ICA0OCAyQiA4MyBFMCAxOSAwMCAwMCAgICAgU1VCIFJBWCxxd29yZCBw
+dHIgW1JCWCArIDB4MTllMF0KNDI0OiAxNDA2YjQyZGM6ICA0OCBDMSBGOCAwMyAgICAgICAgICAg
+ICAgU0FSIFJBWCwweDMKNDI1OiAxNDA2YjQyZTA6ICA0OCA4NSBDMCAgICAgICAgICAgICAgICAg
+VEVTVCBSQVgsUkFYCjQyNjogMTQwNmI0MmUzOiAgNzQgNjEgICAgICAgICAgICAgICAgICAgIEpa
+IDB4MTQwNmI0MzQ2CjQyNzogMTQwNmI0MmU1OiAgNDggOEIgODMgRTggMTkgMDAgMDAgICAgIE1P
+ViBSQVgscXdvcmQgcHRyIFtSQlggKyAweDE5ZThdCjQyODogMTQwNmI0MmVjOiAgNDggMkIgODMg
+RTAgMTkgMDAgMDAgICAgIFNVQiBSQVgscXdvcmQgcHRyIFtSQlggKyAweDE5ZTBdCjQyOTogMTQw
+NmI0MmYzOiAgNDggQzEgRjggMDMgICAgICAgICAgICAgIFNBUiBSQVgsMHgzCjQzMDogMTQwNmI0
+MmY3OiAgMEYgNTcgQzAgICAgICAgICAgICAgICAgIFhPUlBTIFhNTTAsWE1NMAo0MzE6IDE0MDZi
+NDJmYTogIEYzIDQ4IDBGIDJBIEMwICAgICAgICAgICBDVlRTSTJTUyBYTU0wLFJBWAo0MzI6IDE0
+MDZiNDJmZjogIDQ4IDg1IEMwICAgICAgICAgICAgICAgICBURVNUIFJBWCxSQVgKNDMzOiAxNDA2
+YjQzMDI6ICA3OSAwNCAgICAgICAgICAgICAgICAgICAgSk5TIDB4MTQwNmI0MzA4CjQzNDogMTQw
+NmI0MzA0OiAgRjMgMEYgNTggQzIgICAgICAgICAgICAgIEFERFNTIFhNTTAsWE1NMgo0MzU6IDE0
+MDZiNDMwODogIDQ5IDhCIDg4IDgwIDdDIDAwIDAwICAgICBNT1YgUkNYLHF3b3JkIHB0ciBbUjgg
+KyAweDdjODBdCjQzNjogMTQwNmI0MzBmOiAgNDkgMkIgODggNzggN0MgMDAgMDAgICAgIFNVQiBS
+Q1gscXdvcmQgcHRyIFtSOCArIDB4N2M3OF0KNDM3OiAxNDA2YjQzMTY6ICA0OSA4QiBDNCAgICAg
+ICAgICAgICAgICAgTU9WIFJBWCxSMTIKNDM4OiAxNDA2YjQzMTk6ICA0OCBGNyBFOSAgICAgICAg
+ICAgICAgICAgSU1VTCBSQ1gKNDM5OiAxNDA2YjQzMWM6ICA0OCBDMSBGQSAwNyAgICAgICAgICAg
+ICAgU0FSIFJEWCwweDcKNDQwOiAxNDA2YjQzMjA6ICA0OCA4QiBDMiAgICAgICAgICAgICAgICAg
+TU9WIFJBWCxSRFgKNDQxOiAxNDA2YjQzMjM6ICA0OCBDMSBFOCAzRiAgICAgICAgICAgICAgU0hS
+IFJBWCwweDNmCjQ0MjogMTQwNmI0MzI3OiAgNDggMDMgRDAgICAgICAgICAgICAgICAgIEFERCBS
+RFgsUkFYCjQ0MzogMTQwNmI0MzJhOiAgMEYgNTcgQzkgICAgICAgICAgICAgICAgIFhPUlBTIFhN
+TTEsWE1NMQo0NDQ6IDE0MDZiNDMyZDogIEYzIDQ4IDBGIDJBIENBICAgICAgICAgICBDVlRTSTJT
+UyBYTU0xLFJEWAo0NDU6IDE0MDZiNDMzMjogIDc5IDA0ICAgICAgICAgICAgICAgICAgICBKTlMg
+MHgxNDA2YjQzMzgKNDQ2OiAxNDA2YjQzMzQ6ICBGMyAwRiA1OCBDQSAgICAgICAgICAgICAgQURE
+U1MgWE1NMSxYTU0yCjQ0NzogMTQwNmI0MzM4OiAgRjMgMEYgNUUgQzEgICAgICAgICAgICAgIERJ
+VlNTIFhNTTAsWE1NMQo0NDg6IDE0MDZiNDMzYzogIEYzIDQ0IDBGIDU5IEMwICAgICAgICAgICBN
+VUxTUyBYTU04LFhNTTAKNDQ5OiAxNDA2YjQzNDE6ICBGMyA0NCAwRiA1OSBEOCAgICAgICAgICAg
+TVVMU1MgWE1NMTEsWE1NMAo0NTA6IDE0MDZiNDM0NjogIDQ1IDBGIDI4IEQwICAgICAgICAgICAg
+ICBNT1ZBUFMgWE1NMTAsWE1NOAoKYGBgCgoNCgoKIyMjIFNlY3Rpb24gMiDigJQgY2h1bmsgNC80
+IChsaW5lcyA0NTEtNTM4KQoKCmBgYAo0NTE6IDE0MDZiNDM0YTogIEYzIDQ1IDBGIDU5IEQ3ICAg
+ICAgICAgICBNVUxTUyBYTU0xMCxYTU0xNQo0NTI6IDE0MDZiNDM0ZjogIDQxIDBGIDI4IEZBICAg
+ICAgICAgICAgICBNT1ZBUFMgWE1NNyxYTU0xMAo0NTM6IDE0MDZiNDM1MzogIEYzIDBGIDU4IEJG
+IEYwIDA1IDAwIDAwICBBRERTUyBYTU03LGR3b3JkIHB0ciBbUkRJICsgMHg1ZjBdCjQ1NDogMTQw
+NmI0MzViOiAgRjMgNDEgMEYgNUUgRkMgICAgICAgICAgIERJVlNTIFhNTTcsWE1NMTIKNDU1OiAx
+NDA2YjQzNjA6ICBGMyA0MSAwRiA1OSBGQiAgICAgICAgICAgTVVMU1MgWE1NNyxYTU0xMQo0NTY6
+IDE0MDZiNDM2NTogIDQxIDBGIDJGIEY5ICAgICAgICAgICAgICBDT01JU1MgWE1NNyxYTU05CjQ1
+NzogMTQwNmI0MzY5OiAgMEYgODYgNTggMDEgMDAgMDAgICAgICAgIEpCRSAweDE0MDZiNDRjNwo0
+NTg6IDE0MDZiNDM2ZjogIDQ1IDMzIEM5ICAgICAgICAgICAgICAgICBYT1IgUjlELFI5RAo0NTk6
+IDE0MDZiNDM3MjogIDQ1IDMzIEMwICAgICAgICAgICAgICAgICBYT1IgUjhELFI4RAo0NjA6IDE0
+MDZiNDM3NTogIDQxIDBGIDI4IENFICAgICAgICAgICAgICBNT1ZBUFMgWE1NMSxYTU0xNAo0NjE6
+IDE0MDZiNDM3OTogIDQ4IDhEIDBEIDYwIDBCIDMyIDAwICAgICBMRUEgUkNYLFsweDE0MDlkNGVl
+MF0KNDYyOiAxNDA2YjQzODA6ICBGRiAxNSBBMiA3QyAxQiAwMCAgICAgICAgQ0FMTCBxd29yZCBw
+dHIgWzB4MTQwODZjMDI4XQo0NjM6IDE0MDZiNDM4NjogIDBGIDI4IEYwICAgICAgICAgICAgICAg
+ICBNT1ZBUFMgWE1NNixYTU0wCjQ2NDogMTQwNmI0Mzg5OiAgRjMgMEYgNTkgRjcgICAgICAgICAg
+ICAgIE1VTFNTIFhNTTYsWE1NNwo0NjU6IDE0MDZiNDM4ZDogIEYzIDQxIDBGIDU5IEY1ICAgICAg
+ICAgICBNVUxTUyBYTU02LFhNTTEzCjQ2NjogMTQwNmI0MzkyOiAgNDUgODQgRkYgICAgICAgICAg
+ICAgICAgIFRFU1QgUjE1QixSMTVCCjQ2NzogMTQwNmI0Mzk1OiAgNzQgMjQgICAgICAgICAgICAg
+ICAgICAgIEpaIDB4MTQwNmI0M2JiCjQ2ODogMTQwNmI0Mzk3OiAgNDEgQjEgMDEgICAgICAgICAg
+ICAgICAgIE1PViBSOUIsMHgxCjQ2OTogMTQwNmI0MzlhOiAgNDUgMEYgQjYgQzEgICAgICAgICAg
+ICAgIE1PVlpYIFI4RCxSOUIKNDcwOiAxNDA2YjQzOWU6ICA0MSAwRiAyOCBDRSAgICAgICAgICAg
+ICAgTU9WQVBTIFhNTTEsWE1NMTQKNDcxOiAxNDA2YjQzYTI6ICA0OCA4RCAwRCAzNyAwQiAzMiAw
+MCAgICAgTEVBIFJDWCxbMHgxNDA5ZDRlZTBdCjQ3MjogMTQwNmI0M2E5OiAgRkYgMTUgNzkgN0Mg
+MUIgMDAgICAgICAgIENBTEwgcXdvcmQgcHRyIFsweDE0MDg2YzAyOF0KNDczOiAxNDA2YjQzYWY6
+ICAwRiAyOCBGMCAgICAgICAgICAgICAgICAgTU9WQVBTIFhNTTYsWE1NMAo0NzQ6IDE0MDZiNDNi
+MjogIEYzIDBGIDU5IEY3ICAgICAgICAgICAgICBNVUxTUyBYTU02LFhNTTcKNDc1OiAxNDA2YjQz
+YjY6ICBGMyA0MSAwRiA1OSBGNSAgICAgICAgICAgTVVMU1MgWE1NNixYTU0xMwo0NzY6IDE0MDZi
+NDNiYjogIEYzIDBGIDEwIDk3IEYwIDA1IDAwIDAwICBNT1ZTUyBYTU0yLGR3b3JkIHB0ciBbUkRJ
+ICsgMHg1ZjBdCjQ3NzogMTQwNmI0M2MzOiAgMEYgMjggQ0EgICAgICAgICAgICAgICAgIE1PVkFQ
+UyBYTU0xLFhNTTIKNDc4OiAxNDA2YjQzYzY6ICBGMyAwRiA1QyBDRSAgICAgICAgICAgICAgU1VC
+U1MgWE1NMSxYTU02CjQ3OTogMTQwNmI0M2NhOiAgNDEgMEYgMjggQzAgICAgICAgICAgICAgIE1P
+VkFQUyBYTU0wLFhNTTgKNDgwOiAxNDA2YjQzY2U6ICBGMyAwRiA1OSAwNSBGQSA2RSAyNSAwMCAg
+TVVMU1MgWE1NMCxkd29yZCBwdHIgWzB4MTQwOTBiMmQwXQo0ODE6IDE0MDZiNDNkNjogIDBGIDJG
+IEMxICAgICAgICAgICAgICAgICBDT01JU1MgWE1NMCxYTU0xCjQ4MjogMTQwNmI0M2Q5OiAgNzYg
+MDggICAgICAgICAgICAgICAgICAgIEpCZSAweDE0MDZiNDNlMwo0ODM6IDE0MDZiNDNkYjogIDQx
+IDBGIDI4IEYyICAgICAgICAgICAgICBNT1ZBUFMgWE1NNixYTU0xMAo0ODQ6IDE0MDZiNDNkZjog
+IEYzIDBGIDU4IEYyICAgICAgICAgICAgICBBRERTUyBYTU02LFhNTTIKNDg1OiAxNDA2YjQzZTM6
+ICA0OCA4QiAwNSAwNiBDRSAzMiAwMCAgICAgTU9WIFJBWCxxd29yZCBwdHIgWzB4MTQwOWUxMWYw
+XQo0ODY6IDE0MDZiNDNlYTogIDQ4IDg5IDQ0IDI0IDQ4ICAgICAgICAgICBNT1YgcXdvcmQgcHRy
+IFtSU1AgKyAweDQ4XSxSQVgKNDg3OiAxNDA2YjQzZWY6ICA0QyA4QiA4NyAwOCAxNyAwMCAwMCAg
+ICAgTU9WIFI4LHF3b3JkIHB0ciBbUkRJICsgMHgxNzA4XQo0ODg6IDE0MDZiNDNmNjogIDQxIDgw
+IEI4IDgyIDg2IDAwIDAwIDAwICBDTVAgYnl0ZSBwdHIgW1I4ICsgMHg4NjgyXSwweDAKNDg5OiAx
+NDA2YjQzZmU6ICA3NSA0NSAgICAgICAgICAgICAgICAgICAgSk5aIDB4MTQwNmI0NDQ1CjQ5MDog
+MTQwNmI0NDAwOiAgNDkgOEIgODggODAgN0MgMDAgMDAgICAgIE1PViBSQ1gscXdvcmQgcHRyIFtS
+OCArIDB4N2M4MF0KNDkxOiAxNDA2YjQ0MDc6ICA0OSAyQiA4OCA3OCA3QyAwMCAwMCAgICAgU1VC
+IFJDWCxxd29yZCBwdHIgW1I4ICsgMHg3Yzc4XQo0OTI6IDE0MDZiNDQwZTogIDQ5IDhCIEM0ICAg
+ICAgICAgICAgICAgICBNT1YgUkFYLFIxMgo0OTM6IDE0MDZiNDQxMTogIDQ4IEY3IEU5ICAgICAg
+ICAgICAgICAgICBJTVVMIFJDWAo0OTQ6IDE0MDZiNDQxNDogIDQ4IEMxIEZBIDA3ICAgICAgICAg
+ICAgICBTQVIgUkRYLDB4Nwo0OTU6IDE0MDZiNDQxODogIDQ4IDhCIEMyICAgICAgICAgICAgICAg
+ICBNT1YgUkFYLFJEWAo0OTY6IDE0MDZiNDQxYjogIDQ4IEMxIEU4IDNGICAgICAgICAgICAgICBT
+SFIgUkFYLDB4M2YKNDk3OiAxNDA2YjQ0MWY6ICA0OCAwMyBEMCAgICAgICAgICAgICAgICAgQURE
+IFJEWCxSQVgKNDk4OiAxNDA2YjQ0MjI6ICA3NSAyMSAgICAgICAgICAgICAgICAgICAgSk5aIDB4
+MTQwNmI0NDQ1CjQ5OTogMTQwNmI0NDI0OiAgRjMgNDEgMEYgMTAgODAgNzAgN0MgMDAgMDAgTU9W
+U1MgWE1NMCxkd29yZCBwdHIgW1I4ICsgMHg3YzcwXQo1MDA6IDE0MDZiNDQyZDogIDQxIDBGIDJG
+IEMxICAgICAgICAgICAgICBDT01JU1MgWE1NMCxYTU05CjUwMTogMTQwNmI0NDMxOiAgNzcgMTIg
+ICAgICAgICAgICAgICAgICAgIEpBIDB4MTQwNmI0NDQ1CjUwMjogMTQwNmI0NDMzOiAgNDEgMzgg
+OTAgODEgODYgMDAgMDAgICAgIENNUCBieXRlIHB0ciBbUjggKyAweDg2ODFdLERMCjUwMzogMTQw
+NmI0NDNhOiAgNzQgMTUgICAgICAgICAgICAgICAgICAgIEpaIDB4MTQwNmI0NDUxCjUwNDogMTQw
+NmI0NDNjOiAgNDggOEIgMDUgQjUgQ0QgMzIgMDAgICAgIE1PViBSQVgscXdvcmQgcHRyIFsweDE0
+MDllMTFmOF0KNTA1OiAxNDA2YjQ0NDM6ICBFQiAwNyAgICAgICAgICAgICAgICAgICAgSk1QIDB4
+MTQwNmI0NDRjCjUwNjogMTQwNmI0NDQ1OiAgNDggOEIgMDUgQkMgQ0QgMzIgMDAgICAgIE1PViBS
+QVgscXdvcmQgcHRyIFsweDE0MDllMTIwOF0KNTA3OiAxNDA2YjQ0NGM6ICA0OCA4OSA0NCAyNCA0
+OCAgICAgICAgICAgTU9WIHF3b3JkIHB0ciBbUlNQICsgMHg0OF0sUkFYCjUwODogMTQwNmI0NDUx
+OiAgRjMgMEYgMTAgNDQgMjQgNDggICAgICAgIE1PVlNTIFhNTTAsZHdvcmQgcHRyIFtSU1AgKyAw
+eDQ4XQo1MDk6IDE0MDZiNDQ1NzogIEYzIDBGIDExIDQ0IDI0IDYwICAgICAgICBNT1ZTUyBkd29y
+ZCBwdHIgW1JTUCArIDB4NjBdLFhNTTAKNTEwOiAxNDA2YjQ0NWQ6ICBGMyAwRiAxMCA0QyAyNCA0
+QyAgICAgICAgTU9WU1MgWE1NMSxkd29yZCBwdHIgW1JTUCArIDB4NGNdCjUxMTogMTQwNmI0NDYz
+OiAgRjMgMEYgMTEgNEMgMjQgNjQgICAgICAgIE1PVlNTIGR3b3JkIHB0ciBbUlNQICsgMHg2NF0s
+WE1NMQo1MTI6IDE0MDZiNDQ2OTogIEYzIDBGIDExIDc0IDI0IDY4ICAgICAgICBNT1ZTUyBkd29y
+ZCBwdHIgW1JTUCArIDB4NjhdLFhNTTYKNTEzOiAxNDA2YjQ0NmY6ICBDNyA0NCAyNCA2QyAwMCAw
+MCAwMCAwMCAgTU9WIGR3b3JkIHB0ciBbUlNQICsgMHg2Y10sMHgwCjUxNDogMTQwNmI0NDc3OiAg
+QzYgNDQgMjQgMzAgMDAgICAgICAgICAgIE1PViBieXRlIHB0ciBbUlNQICsgMHgzMF0sMHgwCjUx
+NTogMTQwNmI0NDdjOiAgRjMgMEYgMTAgMDUgRDQgNUEgMjUgMDAgIE1PVlNTIFhNTTAsZHdvcmQg
+cHRyIFsweDE0MDkwOWY1OF0KNTE2OiAxNDA2YjQ0ODQ6ICBGMyAwRiAxMSA0NCAyNCAyOCAgICAg
+ICAgTU9WU1MgZHdvcmQgcHRyIFtSU1AgKyAweDI4XSxYTU0wCjUxNzogMTQwNmI0NDhhOiAgQzYg
+NDQgMjQgMjAgMDAgICAgICAgICAgIE1PViBieXRlIHB0ciBbUlNQICsgMHgyMF0sMHgwCjUxODog
+MTQwNmI0NDhmOiAgNDEgMEYgMjggRDkgICAgICAgICAgICAgIE1PVkFQUyBYTU0zLFhNTTkKNTE5
+OiAxNDA2YjQ0OTM6ICA0QyA4RCAwNSBBRSAxRSAzMyAwMCAgICAgTEVBIFI4LFsweDE0MDllNjM0
+OF0KNTIwOiAxNDA2YjQ0OWE6ICA0OCA4RCA1NCAyNCA2MCAgICAgICAgICAgTEVBIFJEWCxbUlNQ
+ICsgMHg2MF0KNTIxOiAxNDA2YjQ0OWY6ICA0OCA4RCAwRCA2QSAwQSAzMiAwMCAgICAgTEVBIFJD
+WCxbMHgxNDA5ZDRmMTBdCjUyMjogMTQwNmI0NGE2OiAgRTggNTUgOTYgQzQgRkYgICAgICAgICAg
+IENBTEwgMHgxNDAyZmRiMDAKNTIzOiAxNDA2YjQ0YWI6ICBGMyAwRiAxMCA4NyBGMCAwNSAwMCAw
+MCAgTU9WU1MgWE1NMCxkd29yZCBwdHIgW1JESSArIDB4NWYwXQo1MjQ6IDE0MDZiNDRiMzogIEYz
+IDBGIDVDIEM2ICAgICAgICAgICAgICBTVUJTUyBYTU0wLFhNTTYKNTI1OiAxNDA2YjQ0Yjc6ICBG
+MyAwRiAxMSA4NyBGMCAwNSAwMCAwMCAgTU9WU1MgZHdvcmQgcHRyIFtSREkgKyAweDVmMF0sWE1N
+MAo1MjY6IDE0MDZiNDRiZjogIEYzIDBGIDEwIDE1IDY1IDZEIDI1IDAwICBNT1ZTUyBYTU0yLGR3
+b3JkIHB0ciBbMHgxNDA5MGIyMmNdCjUyNzogMTQwNmI0NGM3OiAgRjMgNDQgMEYgNTkgMDUgMDAg
+NkUgMjUgMDAgTVVMU1MgWE1NOCxkd29yZCBwdHIgWzB4MTQwOTBiMmQwXQo1Mjg6IDE0MDZiNDRk
+MDogIDQ0IDBGIDJGIDg3IEYwIDA1IDAwIDAwICBDT01JU1MgWE1NOCxkd29yZCBwdHIgW1JESSAr
+IDB4NWYwXQo1Mjk6IDE0MDZiNDRkODogIDc2IDA5ICAgICAgICAgICAgICAgICAgICBKQmUgMHgx
+NDA2YjQ0ZTMKNTMwOiAxNDA2YjQ0ZGE6ICBGMyA0NCAwRiAxMSA4NyBGMCAwNSAwMCAwMCBNT1ZT
+UyBkd29yZCBwdHIgW1JESSArIDB4NWYwXSxYTU04CjUzMTogMTQwNmI0NGUzOiAgNDEgRkYgQzYg
+ICAgICAgICAgICAgICAgIElOQyBSMTRECjUzMjogMTQwNmI0NGU2OiAgNDggRkYgQzYgICAgICAg
+ICAgICAgICAgIElOQyBSU0kKNTMzOiAxNDA2YjQ0ZTk6ICA0OCA4QiA4MyBBOCAwMyAwMCAwMCAg
+ICAgTU9WIFJBWCxxd29yZCBwdHIgW1JCWCArIDB4M2E4XQo1MzQ6IDE0MDZiNDRmMDogIDQ4IDJC
+IDgzIEEwIDAzIDAwIDAwICAgICBTVUIgUkFYLHF3b3JkIHB0ciBbUkJYICsgMHgzYTBdCjUzNTog
+MTQwNmI0NGY3OiAgNDggQzEgRjggMDMgICAgICAgICAgICAgIFNBUiBSQVgsMHgzCjUzNjogMTQw
+NmI0NGZiOiAgNDQgM0IgRjAgICAgICAgICAgICAgICAgIENNUCBSMTRELEVBWAo1Mzc6IDE0MDZi
+NDRmZTogIDBGIDhDIDNDIEZEIEZGIEZGICAgICAgICBKTCAweDE0MDZiNDI0MAoKYGBgCgoNCgoK
+IyMgU2VjdGlvbiAzIOKAlCBOZXcgR2hpZHJhIFF1ZXJ5OiBzY3JhdGNoXG91dFwxNDAxNDI1MzBf
+MTQwMTQyNzVhX2Rpc2FzbS5hc20KCioqU291cmNlOioqIE5ldyBHaGlkcmEgYERpc2FzbU1hbnku
+amF2YWAgcXVlcnksIHJhbmdlIGAweDE0MDE0MjUzMGDigJNgMHgxNDAxNDI3NUFgICgxMzMgbGlu
+ZXMpLiBBdXRob3JpemVkIHNlcmlhbGl6ZWQgcXVlcnk7IG5vIHByaW9yIGNhY2hlIGV4aXN0ZWQg
+Zm9yIHRoaXMgcmFuZ2UuCgpDb21tYW5kIHJ1bjoKYGBgCmNkIAoKCmBgYAo7IFJhbmdlOiAweDE0
+MDE0MjUzMCB0byAweDE0MDE0Mjc1QQoxNDAxNDI1MzE6ICA0OCA4QiBDNSAgICAgICAgICAgICAg
+ICAgTU9WIFJBWCxSQlAKMTQwMTQyNTM0OiAgNDkgOEIgOEQgNzggMDkgMDAgMDAgICAgIE1PViBS
+Q1gscXdvcmQgcHRyIFtSMTMgKyAweDk3OF0KMTQwMTQyNTNiOiAgNDUgMzMgQzkgICAgICAgICAg
+ICAgICAgIFhPUiBSOUQsUjlECjE0MDE0MjUzZTogIDQ5IDJCIENBICAgICAgICAgICAgICAgICBT
+VUIgUkNYLFIxMAoxNDAxNDI1NDE6ICA0OCBGNyBFOSAgICAgICAgICAgICAgICAgSU1VTCBSQ1gK
+MTQwMTQyNTQ0OiAgNDggOEIgREEgICAgICAgICAgICAgICAgIE1PViBSQlgsUkRYCjE0MDE0MjU0
+NzogIDQ4IEMxIEZCIDA2ICAgICAgICAgICAgICBTQVIgUkJYLDB4NgoxNDAxNDI1NGI6ICA0OCA4
+QiBDMyAgICAgICAgICAgICAgICAgTU9WIFJBWCxSQlgKMTQwMTQyNTRlOiAgNDggQzEgRTggM0Yg
+ICAgICAgICAgICAgIFNIUiBSQVgsMHgzZgoxNDAxNDI1NTI6ICA0OCAwMyBEOCAgICAgICAgICAg
+ICAgICAgQUREIFJCWCxSQVgKMTQwMTQyNTU1OiAgNjYgNjYgNjYgMEYgMUYgODQgMDAgMDAgMDAg
+MDAgMDAgTk9QIHdvcmQgcHRyIFtSQVggKyBSQVgqMHgxXQoxNDAxNDI1NjA6ICA0OSA2OSBDOSBF
+MCAwMCAwMCAwMCAgICAgSU1VTCBSQ1gsUjksMHhlMAoxNDAxNDI1Njc6ICA0NiA4QiA4QyAxMSA5
+MCAwMCAwMCAwMCAgTU9WIFI5RCxkd29yZCBwdHIgW1JDWCArIFIxMCoweDEgKyAweDkwXQoxNDAx
+NDI1NmY6ICA0MSA4MyBGOSAwMiAgICAgICAgICAgICAgQ01QIFI5RCwweDIKMTQwMTQyNTczOiAg
+NzUgMTQgICAgICAgICAgICAgICAgICAgIEpOWiAweDE0MDE0MjU4OQoxNDAxNDI1NzU6ICA0QSA4
+QiAxNCAxMSAgICAgICAgICAgICAgTU9WIFJEWCxxd29yZCBwdHIgW1JDWCArIFIxMCoweDFdCjE0
+MDE0MjU3OTogIDQ4IDhCIDg2IEU4IEMyIDAwIDAwICAgICBNT1YgUkFYLHF3b3JkIHB0ciBbUlNJ
+ICsgMHhjMmU4XQoxNDAxNDI1ODA6ICA0OCAzOSAwMiAgICAgICAgICAgICAgICAgQ01QIHF3b3Jk
+IHB0ciBbUkRYXSxSQVgKMTQwMTQyNTgzOiAgNzUgMDQgICAgICAgICAgICAgICAgICAgIEpOWiAw
+eDE0MDE0MjU4OQoxNDAxNDI1ODU6ICA0OCA4RCA3QSAwOCAgICAgICAgICAgICAgTEVBIFJESSxb
+UkRYICsgMHg4XQoxNDAxNDI1ODk6ICA0MSA4MyBGQiBGRiAgICAgICAgICAgICAgQ01QIFIxMUQs
+LTB4MQoxNDAxNDI1OGQ6ICA3NSAyMCAgICAgICAgICAgICAgICAgICAgSk5aIDB4MTQwMTQyNWFm
+CjE0MDE0MjU4ZjogIDgzIEJFIEI0IDA1IDAwIDAwIDAwICAgICBDTVAgZHdvcmQgcHRyIFtSU0kg
+KyAweDViNF0sMHgwCjE0MDE0MjU5NjogIDc0IDE3ICAgICAgICAgICAgICAgICAgICBKWiAweDE0
+MDE0MjVhZgoxNDAxNDI1OTg6ICA0MSA4MyBGOSAwRiAgICAgICAgICAgICAgQ01QIFI5RCwweGYK
+MTQwMTQyNTljOiAgNzUgMTEgICAgICAgICAgICAgICAgICAgIEpOWiAweDE0MDE0MjVhZgoxNDAx
+NDI1OWU6ICA0QSA4QiAwNCAxMSAgICAgICAgICAgICAgTU9WIFJBWCxxd29yZCBwdHIgW1JDWCAr
+IFIxMCoweDFdCjE0MDE0MjVhMjogIDQ1IDhCIEQ4ICAgICAgICAgICAgICAgICBNT1YgUjExRCxS
+OEQKMTQwMTQyNWE1OiAgRjMgMEYgNTggNDggMDggICAgICAgICAgIEFERFNTIFhNTTEsZHdvcmQg
+cHRyIFtSQVggKyAweDhdCjE0MDE0MjVhYTogIEYzIDBGIDU4IDQ4IDE4ICAgICAgICAgICBBRERT
+UyBYTU0xLGR3b3JkIHB0ciBbUkFYICsgMHgxOF0KMTQwMTQyNWFmOiAgNDEgRkYgQzAgICAgICAg
+ICAgICAgICAgIElOQyBSOEQKMTQwMTQyNWIyOiAgNDUgOEIgQzggICAgICAgICAgICAgICAgIE1P
+ViBSOUQsUjhECjE0MDE0MjViNTogIDRDIDNCIENCICAgICAgICAgICAgICAgICBDTVAgUjksUkJY
+CjE0MDE0MjViODogIDcyIEE2ICAgICAgICAgICAgICAgICAgICBKQyAweDE0MDE0MjU2MAoxNDAx
+NDI1YmE6ICA0OCA4QiA5QyAyNCA2OCAwMSAwMCAwMCAgTU9WIFJCWCxxd29yZCBwdHIgW1JTUCAr
+IDB4MTY4XQoxNDAxNDI1YzI6ICBGMyAwRiAxMCAxNyAgICAgICAgICAgICAgTU9WU1MgWE1NMixk
+d29yZCBwdHIgW1JESV0KMTQwMTQyNWM2OiAgNDEgMEYgMkYgRDEgICAgICAgICAgICAgIENPTUlT
+UyBYTU0yLFhNTTkKMTQwMTQyNWNhOiAgMEYgODYgN0MgMDEgMDAgMDAgICAgICAgIEpCRSAweDE0
+MDE0Mjc0YwoxNDAxNDI1ZDA6ICA4MyBCRSBCNCAwNSAwMCAwMCAwMCAgICAgQ01QIGR3b3JkIHB0
+ciBbUlNJICsgMHg1YjRdLDB4MAoxNDAxNDI1ZDc6ICA3NCAwOSAgICAgICAgICAgICAgICAgICAg
+SlogMHgxNDAxNDI1ZTIKMTQwMTQyNWQ5OiAgNDUgODUgREIgICAgICAgICAgICAgICAgIFRFU1Qg
+UjExRCxSMTFECjE0MDE0MjVkYzogIDBGIDg4IDZBIDAxIDAwIDAwICAgICAgICBKUyAweDE0MDE0
+Mjc0YwoxNDAxNDI1ZTI6ICAwRiAyOCBFQSAgICAgICAgICAgICAgICAgTU9WQVBTIFhNTTUsWE1N
+MgoxNDAxNDI1ZTU6ICBGMyAwRiA1RCBFQiAgICAgICAgICAgICAgTUlOU1MgWE1NNSxYTU0zCjE0
+MDE0MjVlOTogIDQ1IDg1IERCICAgICAgICAgICAgICAgICBURVNUIFIxMUQsUjExRAoxNDAxNDI1
+ZWM6ICA3OCAxNyAgICAgICAgICAgICAgICAgICAgSlMgMHgxNDAxNDI2MDUKMTQwMTQyNWVlOiAg
+MEYgMjggQzUgICAgICAgICAgICAgICAgIE1PVkFQUyBYTU0wLFhNTTUKMTQwMTQyNWYxOiAgRjMg
+MEYgNTggQzUgICAgICAgICAgICAgIEFERFNTIFhNTTAsWE1NNQoxNDAxNDI1ZjU6ICAwRiAyRiBD
+MSAgICAgICAgICAgICAgICAgQ09NSVNTIFhNTTAsWE1NMQoxNDAxNDI1Zjg6ICA3NiAwQiAgICAg
+ICAgICAgICAgICAgICAgSkJlIDB4MTQwMTQyNjA1CjE0MDE0MjVmYTogIDBGIDI4IEU5ICAgICAg
+ICAgICAgICAgICBNT1ZBUFMgWE1NNSxYTU0xCjE0MDE0MjVmZDogIEYzIDBGIDU5IDJEIEQ3IDc3
+IDdDIDAwICBNVUxTUyBYTU01LGR3b3JkIHB0ciBbMHgxNDA5MDlkZGNdCjE0MDE0MjYwNTogIDBG
+IDJGIDJEIDZDIDc2IDdDIDAwICAgICBDT01JU1MgWE1NNSxkd29yZCBwdHIgWzB4MTQwOTA5Yzc4
+XQoxNDAxNDI2MGM6ICAwRiA4NiAzQSAwMSAwMCAwMCAgICAgICAgSkJFIDB4MTQwMTQyNzRjCjE0
+MDE0MjYxMjogIEYzIDBGIDVDIEQ1ICAgICAgICAgICAgICBTVUJTUyBYTU0yLFhNTTUKMTQwMTQy
+NjE2OiAgRjMgMEYgMTEgMTcgICAgICAgICAgICAgIE1PVlNTIGR3b3JkIHB0ciBbUkRJXSxYTU0y
+CjE0MDE0MjYxYTogIDQ1IDg1IERCICAgICAgICAgICAgICAgICBURVNUIFIxMUQsUjExRAoxNDAx
+NDI2MWQ6ICA3OCA2OCAgICAgICAgICAgICAgICAgICAgSlMgMHgxNDAxNDI2ODcKMTQwMTQyNjFm
+OiAgNDkgNjMgQzMgICAgICAgICAgICAgICAgIE1PVlNYRCBSQVgsUjExRAoxNDAxNDI2MjI6ICAw
+RiAyOCBDRCAgICAgICAgICAgICAgICAgTU9WQVBTIFhNTTEsWE1NNQoxNDAxNDI2MjU6ICA0OCA2
+OSBDOCBFMCAwMCAwMCAwMCAgICAgSU1VTCBSQ1gsUkFYLDB4ZTAKMTQwMTQyNjJjOiAgRjMgMEYg
+NTggQ0QgICAgICAgICAgICAgIEFERFNTIFhNTTEsWE1NNQoxNDAxNDI2MzA6ICA0OSA4QiA4NSA3
+MCAwOSAwMCAwMCAgICAgTU9WIFJBWCxxd29yZCBwdHIgW1IxMyArIDB4OTcwXQoxNDAxNDI2Mzc6
+ICA0OCA4QiAxNCAwMSAgICAgICAgICAgICAgTU9WIFJEWCxxd29yZCBwdHIgW1JDWCArIFJBWCow
+eDFdCjE0MDE0MjYzYjogIEYzIDBGIDEwIDYyIDA4ICAgICAgICAgICBNT1ZTUyBYTU00LGR3b3Jk
+IHB0ciBbUkRYICsgMHg4XQoxNDAxNDI2NDA6ICBGMyAwRiAxMCA1MiAxOCAgICAgICAgICAgTU9W
+U1MgWE1NMixkd29yZCBwdHIgW1JEWCArIDB4MThdCjE0MDE0MjY0NTogIDBGIDI4IEM0ICAgICAg
+ICAgICAgICAgICBNT1ZBUFMgWE1NMCxYTU00CjE0MDE0MjY0ODogIEYzIDBGIDU4IEM0ICAgICAg
+ICAgICAgICBBRERTUyBYTU0wLFhNTTQKMTQwMTQyNjRjOiAgMEYgMjggREMgICAgICAgICAgICAg
+ICAgIE1PVkFQUyBYTU0zLFhNTTQKMTQwMTQyNjRmOiAgRjMgMEYgNUUgRDggICAgICAgICAgICAg
+IERJVlNTIFhNTTMsWE1NMAoxNDAxNDI2NTM6ICA0MSAwRiAyOCBDMiAgICAgICAgICAgICAgTU9W
+QVBTIFhNTTAsWE1NMTAKMTQwMTQyNjU3OiAgRjMgMEYgNUMgQzMgICAgICAgICAgICAgIFNVQlNT
+IFhNTTAsWE1NMwoxNDAxNDI2NWI6ICBGMyAwRiA1OSBDMSAgICAgICAgICAgICAgTVVMU1MgWE1N
+MCxYTU0xCjE0MDE0MjY1ZjogIEYzIDBGIDU5IENCICAgICAgICAgICAgICBNVUxTUyBYTU0xLFhN
+TTMKMTQwMTQyNjYzOiAgRjMgMEYgNUQgRDAgICAgICAgICAgICAgIE1JTlNTIFhNTTIsWE1NMAox
+NDAxNDI2Njc6ICBGMyAwRiAxMCA0MiAwOCAgICAgICAgICAgTU9WU1MgWE1NMCxkd29yZCBwdHIg
+W1JEWCArIDB4OF0KMTQwMTQyNjZjOiAgRjMgMEYgNUQgRTEgICAgICAgICAgICAgIE1JTlNTIFhN
+TTQsWE1NMQoxNDAxNDI2NzA6ICBGMyAwRiA1QyBDNCAgICAgICAgICAgICAgU1VCU1MgWE1NMCxY
+TU00CjE0MDE0MjY3NDogIEYzIDBGIDExIDQyIDA4ICAgICAgICAgICBNT1ZTUyBkd29yZCBwdHIg
+W1JEWCArIDB4OF0sWE1NMAoxNDAxNDI2Nzk6ICBGMyAwRiAxMCA0QSAxOCAgICAgICAgICAgTU9W
+U1MgWE1NMSxkd29yZCBwdHIgW1JEWCArIDB4MThdCjE0MDE0MjY3ZTogIEYzIDBGIDVDIENBICAg
+ICAgICAgICAgICBTVUJTUyBYTU0xLFhNTTIKMTQwMTQyNjgyOiAgRjMgMEYgMTEgNEEgMTggICAg
+ICAgICAgIE1PVlNTIGR3b3JkIHB0ciBbUkRYICsgMHgxOF0sWE1NMQoxNDAxNDI2ODc6ICBGMyAw
+RiA1OCBBQiBGMCAwNSAwMCAwMCAgQUREU1MgWE1NNSxkd29yZCBwdHIgW1JCWCArIDB4NWYwXQox
+NDAxNDI2OGY6ICBGMyAwRiAxMSBBQiBGMCAwNSAwMCAwMCAgTU9WU1MgZHdvcmQgcHRyIFtSQlgg
+KyAweDVmMF0sWE1NNQoxNDAxNDI2OTc6ICBFOSBCMCAwMCAwMCAwMCAgICAgICAgICAgSk1QIDB4
+MTQwMTQyNzRjCjE0MDE0MjY5YzogIDQ5IDhCIDhEIDc4IDA5IDAwIDAwICAgICBNT1YgUkNYLHF3
+b3JkIHB0ciBbUjEzICsgMHg5NzhdCjE0MDE0MjZhMzogIDQ4IDhCIEM1ICAgICAgICAgICAgICAg
+ICBNT1YgUkFYLFJCUAoxNDAxNDI2YTY6ICA0OSAyQiA4RCA3MCAwOSAwMCAwMCAgICAgU1VCIFJD
+WCxxd29yZCBwdHIgW1IxMyArIDB4OTcwXQoxNDAxNDI2YWQ6ICA0NSAzMyBEQiAgICAgICAgICAg
+ICAgICAgWE9SIFIxMUQsUjExRAoxNDAxNDI2YjA6ICA0OCBGNyBFOSAgICAgICAgICAgICAgICAg
+SU1VTCBSQ1gKMTQwMTQyNmIzOiAgNDUgMzMgQzkgICAgICAgICAgICAgICAgIFhPUiBSOUQsUjlE
+CjE0MDE0MjZiNjogIDQ4IEMxIEZBIDA2ICAgICAgICAgICAgICBTQVIgUkRYLDB4NgoxNDAxNDI2
+YmE6ICA0OCA4QiBDMiAgICAgICAgICAgICAgICAgTU9WIFJBWCxSRFgKMTQwMTQyNmJkOiAgNDgg
+QzEgRTggM0YgICAgICAgICAgICAgIFNIUiBSQVgsMHgzZgoxNDAxNDI2YzE6ICA0OCAwMyBEMCAg
+ICAgICAgICAgICAgICAgQUREIFJEWCxSQVgKMTQwMTQyNmM0OiAgNzQgNUIgICAgICAgICAgICAg
+ICAgICAgIEpaIDB4MTQwMTQyNzIxCjE0MDE0MjZjNjogIDREIDhCIDk1IDcwIDA5IDAwIDAwICAg
+ICBNT1YgUjEwLHF3b3JkIHB0ciBbUjEzICsgMHg5NzBdCjE0MDE0MjZjZDogIDQ4IDhCIEM1ICAg
+ICAgICAgICAgICAgICBNT1YgUkFYLFJCUAoxNDAxNDI2ZDA6ICA0OSA4QiA4RCA3OCAwOSAwMCAw
+MCAgICAgTU9WIFJDWCxxd29yZCBwdHIgW1IxMyArIDB4OTc4XQoxNDAxNDI2ZDc6ICA0NSAzMyBD
+MCAgICAgICAgICAgICAgICAgWE9SIFI4RCxSOEQKMTQwMTQyNmRhOiAgNDkgMkIgQ0EgICAgICAg
+ICAgICAgICAgIFNVQiBSQ1gsUjEwCjE0MDE0MjZkZDogIDQ4IEY3IEU5ICAgICAgICAgICAgICAg
+ICBJTVVMIFJDWAoxNDAxNDI2ZTA6ICA0OCBDMSBGQSAwNiAgICAgICAgICAgICAgU0FSIFJEWCww
+eDYKMTQwMTQyNmU0OiAgNDggOEIgQzIgICAgICAgICAgICAgICAgIE1PViBSQVgsUkRYCjE0MDE0
+MjZlNzogIDQ4IEMxIEU4IDNGICAgICAgICAgICAgICBTSFIgUkFYLDB4M2YKMTQwMTQyNmViOiAg
+NDggMDMgRDAgICAgICAgICAgICAgICAgIEFERCBSRFgsUkFYCjE0MDE0MjZlZTogIDY2IDkwICAg
+ICAgICAgICAgICAgICAgICBOT1AKMTQwMTQyNmYwOiAgNDkgNjkgQzggRTAgMDAgMDAgMDAgICAg
+IElNVUwgUkNYLFI4LDB4ZTAKMTQwMTQyNmY3OiAgNDIgODMgQkMgMTEgOTAgMDAgMDAgMDAgMDMg
+Q01QIGR3b3JkIHB0ciBbUkNYICsgUjEwKjB4MSArIDB4OTBdLDB4MwoxNDAxNDI3MDA6ICA3NSAx
+NCAgICAgICAgICAgICAgICAgICAgSk5aIDB4MTQwMTQyNzE2CjE0MDE0MjcwMjogIDRBIDhCIDBD
+IDExICAgICAgICAgICAgICBNT1YgUkNYLHF3b3JkIHB0ciBbUkNYICsgUjEwKjB4MV0KMTQwMTQy
+NzA2OiAgNDggOEIgODYgRTAgQzIgMDAgMDAgICAgIE1PViBSQVgscXdvcmQgcHRyIFtSU0kgKyAw
+eGMyZTBdCjE0MDE0MjcwZDogIDQ4IDM5IDAxICAgICAgICAgICAgICAgICBDTVAgcXdvcmQgcHRy
+IFtSQ1hdLFJBWAoxNDAxNDI3MTA6ICA3NSAwNCAgICAgICAgICAgICAgICAgICAgSk5aIDB4MTQw
+MTQyNzE2CjE0MDE0MjcxMjogIDRDIDhEIDU5IDA4ICAgICAgICAgICAgICBMRUEgUjExLFtSQ1gg
+KyAweDhdCjE0MDE0MjcxNjogIDQxIEZGIEMxICAgICAgICAgICAgICAgICBJTkMgUjlECjE0MDE0
+MjcxOTogIDQ1IDhCIEMxICAgICAgICAgICAgICAgICBNT1YgUjhELFI5RAoxNDAxNDI3MWM6ICA0
+QyAzQiBDMiAgICAgICAgICAgICAgICAgQ01QIFI4LFJEWAoxNDAxNDI3MWY6ICA3MiBDRiAgICAg
+ICAgICAgICAgICAgICAgSkMgMHgxNDAxNDI2ZjAKMTQwMTQyNzIxOiAgRjMgNDEgMEYgMTAgMEIg
+ICAgICAgICAgIE1PVlNTIFhNTTEsZHdvcmQgcHRyIFtSMTFdCjE0MDE0MjcyNjogIDQxIDBGIDJG
+IEM5ICAgICAgICAgICAgICBDT01JU1MgWE1NMSxYTU05CjE0MDE0MjcyYTogIDc2IDIwICAgICAg
+ICAgICAgICAgICAgICBKQmUgMHgxNDAxNDI3NGMKMTQwMTQyNzJjOiAgMEYgMjggQzEgICAgICAg
+ICAgICAgICAgIE1PVkFQUyBYTU0wLFhNTTEKMTQwMTQyNzJmOiAgRjMgMEYgNUQgQzMgICAgICAg
+ICAgICAgIE1JTlNTIFhNTTAsWE1NMwoxNDAxNDI3MzM6ICBGMyAwRiA1QyBDOCAgICAgICAgICAg
+ICAgU1VCU1MgWE1NMSxYTU0wCjE0MDE0MjczNzogIEYzIDQxIDBGIDExIDBCICAgICAgICAgICBN
+T1ZTUyBkd29yZCBwdHIgW1IxMV0sWE1NMQoxNDAxNDI3M2M6ICBGMyAwRiA1OCA4MyBGMCAwNSAw
+MCAwMCAgQUREU1MgWE1NMCxkd29yZCBwdHIgW1JCWCArIDB4NWYwXQoxNDAxNDI3NDQ6ICBGMyAw
+RiAxMSA4MyBGMCAwNSAwMCAwMCAgTU9WU1MgZHdvcmQgcHRyIFtSQlggKyAweDVmMF0sWE1NMAox
+NDAxNDI3NGM6ICA0NCAwRiAyRiA4QiBGMCAwNSAwMCAwMCAgQ09NSVNTIFhNTTksZHdvcmQgcHRy
+IFtSQlggKyAweDVmMF0KMTQwMTQyNzU0OiAgMEYgODcgREIgMEIgMDAgMDAgICAgICAgIEpBIDB4
+MTQwMTQzMzM1CjE0MDE0Mjc1YTogIDQ4IDhCIDkzIDA4IDE3IDAwIDAwICAgICBNT1YgUkRYLHF3
+b3JkIHB0ciBbUkJYICsgMHgxNzA4XQoKYGBgCgoNCgoKIyMgU2VjdGlvbiA0IOKAlCBQRSBSYXcg
+Qnl0ZXMsIFNlY3Rpb24gTWFwcGluZywgRmxvYXQzMiBWYWx1ZXMKCgpgYGAKIyMgU2VjdGlvbiA0
+IMOi4oKs4oCdIFBFIFJhdyBCeXRlcywgU2VjdGlvbiBNYXBwaW5nLCBGbG9hdDMyIFZhbHVlcwoK
+KipTb3VyY2U6KiogTG9jYWwgZmlsZSByZWFkIG9mIGBDOlxXb3JrZXJzIFJlc291cmNlcyBTb3Zp
+ZXQgUmVwdWJsaWNcU09WSUVUNjQuZXhlYCAoU0hBLTI1NiBgMjk2NjQ0QTlGMjA3RDYwOTAzMUZD
+MkFFNzNGRUQyRENCMzQ2MTlBMUQ1NUEzNUQxQzdCNTE5NjVDRTY4NDFCOGAsIG1hdGNoZXMgcmVj
+b3JkZWQgdjEuMS4xLjkgaGFzaCkuIE5vIEdoaWRyYSBxdWVyeSB1c2VkLgoKIyMjIFBFIFNlY3Rp
+b24gSGVhZGVycyAoOCBzZWN0aW9ucykKCnwgIyB8IE5hbWUgfCBWQSB8IFZTaXplIHwgUmF3UHRy
+IHwgUmF3U2l6ZSB8IERlbHRhIChWQcOiy4bigJlSYXcpIHwKfC0tLXwtLS18LS0tfC0tLXwtLS18
+LS0tfC0tLXwKfCAwIHwgLnRleHQgfCAweDAwMDAxMDAwIHwgMHgwMDg2QUEwMyB8IDB4MDAwMDA0
+MDAgfCAweDAwODZBQzAwIHwgMHgwMDAwMEMwMCB8CnwgMSB8IC5yZGF0YSB8IDB4MDA4NkMwMDAg
+fCAweDAwMTI1QzYyIHwgMHgwMDg2QjAwMCB8IDB4MDAxMjVFMDAgfCAweDAwMDAxMDAwIHwKfCAy
+IHwgLmRhdGEgfCAweDAwOTkyMDAwIHwgMHgwMDBDNDcxOCB8IDB4MDA5OTBFMDAgfCAweDAwMDAx
+NjAwIHwgMHgwMDAwMTIwMCB8CnwgMyB8IC5wZGF0YSB8IDB4MDBBNTcwMDAgfCAweDAwMDI5ODIw
+IHwgMHgwMDk5MjQwMCB8IDB4MDAwMjlBMDAgfCAweDAwMDE0QzAwIHwKfCA0IHwgLmdmaWRzIHwg
+MHgwMEE4MTAwMCB8IDB4MDAwMDAwNDAgfCAweDAwOUJCRTAwIHwgMHgwMDAwMDIwMCB8IDB4MDAw
+MDAwMDAgfAp8IDUgfCAudGxzIHwgMHgwMEE4MjAwMCB8IDB4MDAwMDAwMDkgfCAweDAwOUJDMDAw
+IHwgMHgwMDAwMDIwMCB8IDB4MDAwMDAwMDAgfAp8IDYgfCAucnNyYyB8IDB4MDBBODMwMDAgfCAw
+eDAwMDE4M0Q4IHwgMHgwMDlCQzIwMCB8IDB4MDAwMTg0MDAgfCAweDAwMDAwMDAwIHwKfCA3IHwg
+LnJlbG9jIHwgMHgwMEE5QzAwMCB8IDB4MDAwMDA0NzQgfCAweDAwOUQ0NjAwIHwgMHgwMDAwMDYw
+MCB8IDB4MDAwMDAwMDAgfAoKSW1hZ2UgYmFzZSA9IDB4MTQwMDAwMDAwLiBBbGwgdGFyZ2V0IFZB
+cyBmYWxsIGluIGAucmRhdGFgIChWQSAweDAwODZDMDAww6LigqzigJwweDAwOTkxQzYyKS4KCiMj
+IyBSVkEtdG8tRmlsZSBNYXBwaW5nIGFuZCBGbG9hdDMyIERlY29kZXMKCnwgUHJlZmVycmVkIFZB
+IHwgUlZBIChWQcOiy4bigJkweDE0MDAwMDAwMCkgfCBGaWxlIE9mZnNldCB8IFJhdyBCeXRlcyAo
+TEUpIHwgRmxvYXQzMiBWYWx1ZSB8CnwtLS18LS0tfC0tLXwtLS18LS0tfAp8IDB4MTQwOTBBNjE4
+IHwgMHgwMDkwQTYxOCB8IDB4MDA5MDk2MTggfCBgMDAgMDAgODAgNDBgIHwgYDQuMGAgfAp8IDB4
+MTQwOTA5RERDIHwgMHgwMDkwOUREQyB8IDB4MDA5MDhEREMgfCBgMDAgMDAgMDAgM0ZgIHwgYDAu
+NWAgfAp8IDB4MTQwOTBCMkQwIHwgMHgwMDkwQjJEMCB8IDB4MDA5MEEyRDAgfCBgMDAgMDAgMDAg
+QkZgIHwgYC0wLjVgIHwKCioqTWFwcGluZyBmb3JtdWxhOioqIEZpbGVPZmZzZXQgPSBSYXdQdHIg
+KyAoUlZBIMOiy4bigJkgU2VjdGlvblZBKS4gRm9yIGAucmRhdGFgOiBSYXdQdHI9MHgwMDg2QjAw
+MCwgU2VjdGlvblZBPTB4MDA4NkMwMDAsIHNvIEZpbGVPZmZzZXQgPSBSVkEgw6LLhuKAmSAweDEw
+MDAuCgotIGBEQVRfMTQwOTBBNjE4ID0gNC4wYCAoZmxvYXQzMiwgYnl0ZXMgYDAwIDAwIDgwIDQw
+YCkgw6LigqzigJ0gZGl2aXNvciB1c2VkIGF0IGAxNDA2NmUxZmRgIGBNT1ZTUyBYTU0xLFsweDE0
+MDkwYTYxOF1gIChjYWxsZXIgcGFyYW1fMikuCi0gYERBVF8xNDA5MDlEREMgPSAwLjVgIChmbG9h
+dDMyLCBieXRlcyBgMDAgMDAgMDAgM0ZgKSDDouKCrOKAnSBjYXBhY2l0eSB3ZWlnaHRpbmcgZmFj
+dG9yIHVzZWQgYXQgYDE0MDZiM2JmNWAgKDZCM0I1MCkgYW5kIGAxNDAxNDI1ZmRgICgxNDI0MzAp
+LgotIGBEQVRfMTQwOTBCMkQwID0gLTAuNWAgKGZsb2F0MzIsIGJ5dGVzIGAwMCAwMCAwMCBCRmAp
+IMOi4oKs4oCdIHJlc2VydmUgZmxvb3IgZmFjdG9yIHVzZWQgYXQgYDE0MDZiNDNjZWAgKDZCM0I1
+MCBjbGFtcCkuCgpgYGAKCg0KCgojIyBTZWN0aW9uIDUg4oCUIFNpeCBJbmRleCBFbnRyaWVzIChD
+dXJyZW50IENvbnRlbnRzKSArIEhFQUQvV29ya3RyZWUgQ29tcGFyaXNvbgoKCmBgYAojIyBTZWN0
+aW9uIDUgw6LigqzigJ0gU2l4IEluZGV4IEVudHJpZXMgKEN1cnJlbnQgQ29udGVudHMpICsgSEVB
+RC9Xb3JrdHJlZSBDb21wYXJpc29uCgoqKlNvdXJjZToqKiBgZG9jc1xnaGlkcmEtaW5kZXhcMTZF
+M0IwLm1kYCwgYDE0MjQzMC5tZGAsIGAxNEI5MjAubWRgLCBgNkIzQjUwLm1kYCwgYDZDODFEMC5t
+ZGAsIGA0MjAzNTAubWRgIChjdXJyZW50IHdvcmtpbmctdHJlZSBmaWxlcywgd3JpdHRlbiBpbiBw
+cmlvciBzZXNzaW9uKS4gYGdpdCBkaWZmIEhFQUQgLS0gZG9jcy9naGlkcmEtaW5kZXgvYCBjb25m
+aXJtcyBhbGwgc2l4IGRpZmZlciBmcm9tIEhFQUQgYmxvYnMuCgojIyMgNS4xIEhFQUQgdnMgV29y
+a3RyZWUgQmxvYiBDb21wYXJpc29uCgp8IEluZGV4IEZpbGUgfCBXb3JraW5nIFRyZWUgU0hBLTI1
+NiB8IEhFQUQgQmxvYiBTSEEtMjU2IHwgTWF0Y2g/IHwKfC0tLXwtLS18LS0tfC0tLXwKfCBgMTZF
+M0IwLm1kYCB8IGA1OURGQUM5NDMxMDRFQUQ2MkM0Njc3ODZCQUFFMDM3MTk3QzZERkNCNTJFMTUy
+QkQ5QzBBOTRBQTQzRUZFMzE2YCB8IGBlYzZmYzBhY2JlZmRlNDM1NGY2NmM1NTgyNzc3YWM5NzFh
+ZjViMGUwYCB8IERJRkZFUiB8CnwgYDE0MjQzMC5tZGAgfCBgQUE1MjAzOTM1NjAyQzJGMkU5OTY0
+MEUxRDAzRTRBRjU1NzQ2QTFFQjkwMDE2ODZGQ0Y0MUU1N0ZGMzA0MDExOGAgfCBgNzJiYzAzMTk0
+NmNkMjdiZWQ2ZmQ2ZTBkZmExOTE0NTdhMjRmNDgzN2AgfCBESUZGRVIgfAp8IGAxNEI5MjAubWRg
+IHwgYEY2QTE5N0M3OUY3NEE4ODE3QTBERTk0QUI1MUU4MkI3RDA5NzNENzlBRUZFMUE0OTNCM0JF
+MEUxQzEyNUJBRDVgIHwgYGE3Zjc5NGI1MGMyODQ0MzQ5YjUxZmJiMTVhMTRjZmNjNWZjYjc1MWNg
+IHwgRElGRkVSIHwKfCBgNkIzQjUwLm1kYCB8IGA2RDNDMjQzRTg0RTU3MjREMjE4REY0MzNFRDQy
+M0EwODE4MjEyMEYzNTI2NkYxRDk4N0Y4MDg0N0IzMTRGNDBCYCB8IGAyNzY2ZmZjMDE1YzA4YWJl
+YzAzOWE1NGZiYTBiOTFmMjM2MzdiNzlmYCB8IERJRkZFUiB8CnwgYDZDODFEMC5tZGAgfCBgOTFE
+QkVCMDA2RUJDQzcxM0I3RDBGRUY1QUIyOEFGMThGQkUzQkM0QjdDNkJFMjI0NDI2NkNBQTkzODJE
+NUMxNGAgfCBgMmNlNzg2N2M2YzI3NTcwMTBhZjAwNTQ0MTQ3NDE4ZDViMGI3NGYxOWAgfCBESUZG
+RVIgfAp8IGA0MjAzNTAubWRgIHwgYDgzOUIyRTE0QzBEOEQ0OTk2MEVCNTEzQkE0RThGNzY2QzMz
+NDk4NDg2NTlGNzc3RUQ1QzhFMTBBRTkyRUFBRERgIHwgYDFjNDdiNjE2ZjgwMDZhMDMwMzA5ZGYx
+MmIzMGNhYjNlMWJhMDNkZTVgIHwgRElGRkVSIHwKCkFsbCBzaXggd29ya2luZy10cmVlIGZpbGVz
+IGRpZmZlciBmcm9tIHRoZWlyIEhFQUQgYmxvYnMgKHJld3JpdHRlbiB3aXRoIGNvcnJlY3RlZCBz
+ZW1hbnRpY3MgaW4gcHJpb3Igc2Vzc2lvbikuIE5vIGNvbW1pdHMgd2VyZSBtYWRlOyB3b3JraW5n
+IHRyZWUgb25seS4KCiMjIyA1LjIgZG9jc1xnaGlkcmEtaW5kZXhcMTZFM0IwLm1kIChjdXJyZW50
+KQoKYGBgCiMgRlVOXzE0MDE2RTNCMCDDouKCrOKAnSBCdWlsZGluZyBVcGtlZXAgKG5lc3RlZCBz
+dG9yYWdlIHZpYSBsb2NhbF8xNzgpCgoqKlJWQToqKiBgMHgxNkUzQjBgCioqU2lnbmF0dXJlOioq
+IGB2b2lkIEZVTl8xNDAxNmUzYjAobG9uZ2xvbmcgZ2FtZSwgbG9uZ2xvbmcgYnVpbGRpbmcsIGZs
+b2F0IHRpY2tfZGVsdGEpYCAoUkNYPWdhbWUsIFJEWD1idWlsZGluZywgWE1NMj10aWNrX2RlbHRh
+KQoqKlB1cnBvc2U6KiogUGVyLWJ1aWxkaW5nIHVwa2VlcC4gV3JpdGVzIHRocm91Z2ggYGxvY2Fs
+XzE3OGAgYnVmZmVyIChuZXN0ZWQgc3RvcmFnZSBlbnRyaWVzIGZpbGxlZCBieSBgRlVOXzE0MDE0
+MjViMTBgIEFORCBgRlVOXzE0MDE0MjczNDBgKS4gTk9UIHByb3ZhYmx5IGBvdXRlcl90cnVjaysw
+eDNCOGAuIFJCWCBvdmVyd3JpdHRlbiB3aXRoIGNvbGxlY3RvciBlbnRyeSBpbnNpZGUgdGhlIGxv
+b3AuIGB2ZWhpY2xlKzB4NTBDYCBzdGF0ZSBpcyBtdXRhYmxlLCBub3QgaW1tdXRhYmxlIHZlaGlj
+bGUga2luZC4gRG9lcyBOT1Qgd3JpdGUgYHZlaGljbGUrMHg1RjBgICh6ZXJvIHJlZmVyZW5jZXMg
+aW4gZGlzYXNzZW1ibHkpLgoqKkNhbGxlcnM6KiogcGVyLXRpY2sgYnVpbGRpbmcgdXBrZWVwIGxv
+b3AgKGNhbGxlciBSVkEgbm90IHRyYWNlZCkKKipEYXRhIFJlZnM6KiogYGxvY2FsXzE3OGAgKG5l
+c3RlZCBzdG9yYWdlIHZpYSA0MjVCMTArNDI3MzQwKSwgYHZlaGljbGUrMHgzQjhgICh0b3VjaGVk
+IGJ1dCBub3QgY29uZmlybWVkIGFzIHRhbmspLCBgZ2FtZSsweEMzMzBgIChmdWVsIHJlc291cmNl
+KSwgYEZVTl8xNDAxMjFkOTAoKSsweDhgIChhY2N1bXVsYXRvcikKKipBcnRpZmFjdDoqKiBzY3Jh
+dGNoXG91dFwxNDAxNmUzYjBfZGVjb21wLmMgOyBzY3JhdGNoXG91dFwxNDAxNmUzYjBfMTQwMTcw
+MDAwX2Rpc2FzbS5hc20gOyBzY3JhdGNoXG91dFwxNDAxNmY2ZDBfMTQwMTZmODcwX2Rpc2FzbS5h
+c20KKipOb3RlczoqKiBDT05UUkFESUNUSU9OIHZzIHByaW9yIGluZGV4OiByZWNlaXZlciBpZGVu
+dGl0eSB1bnJlc29sdmVkIMOi4oKs4oCdIG5vdCBvdXRlcl90cnVjaysweDNCODsgbG9jYWxfMTc4
+IHZpYSA0MjVCMTArNDI3MzQwLiBQcmlvciBhcnRpZmFjdCBwYXRocyAoc2NyYXRjaC9kZWNvbXBf
+MTZlM2IwLmMgZXRjLikgZG8gbm90IGV4aXN0IG9uIGRpc2suIGB0aWNrKnJhdGUqMjUvNjBgIGZv
+cm11bGEgTk9UIGVzdGFibGlzaGVkIChEZWZlY3QgMykuIGBEQVRfMTQwOTA5ZGRjPTAuNWAsIGBE
+QVRfMTQwOTBhYjcwYCByZWFkIGZyb20gUEUgLnJkYXRhOyB1bml0cyB1bnJlc29sdmVkLgoqKlN0
+YXR1czoqKiBjb250ZXN0ZWQgKHJlY2VpdmVyIGlkZW50aXR5IHVucmVzb2x2ZWQ7IG5vdCBvdXRl
+cl90cnVjaysweDNCOCkKYGBgCgojIyMgNS4zIGRvY3NcZ2hpZHJhLWluZGV4XDE0MjQzMC5tZCAo
+Y3VycmVudCkKCmBgYAojIEZVTl8xNDAxNDI0MzAgw6LigqzigJ0gRGlzY3JldGUgUmVmdWVsIChj
+cmVkaXRzIDVGMCBlYXJseSBicmFuY2gsIGFsc28gY2hhbmdlcyAzQjgvM0MwIGNhcmdvKQoKKipS
+VkE6KiogYDB4MTQyNDMwYAoqKlNpZ25hdHVyZToqKiBgdm9pZCBGVU5fMTQwMTQyNDMwKGxvbmds
+b25nICpwYXJhbV8xLCBsb25nbG9uZyB2ZWhpY2xlLCBsb25nbG9uZyAqcGFyYW1fMylgCioqUHVy
+cG9zZToqKiBEaXNjcmV0ZSByZWZ1ZWwgb2YgdmVoaWNsZSBmcm9tIGhvbWUgYnVpbGRpbmcuIGBw
+YXJhbV8yYCA9IHZlaGljbGUsIGBwYXJhbV8yKzB4NEY4YCA9IGhvbWUgYnVpbGRpbmcgKGBsVmFy
+NGApLCBgcGFyYW1fMisweDE3MDhgID0gcHJvdG90eXBlLCBgcGFyYW1fMisweDVGMGAgPSB2ZWhp
+Y2xlIGZ1ZWwsIGBwcm90b3R5cGUrMHg4Njg0YCA9IHRhbmsgY2FwYWNpdHkuCioqNUYwIGNyZWRp
+dCAoZWFybHkgYnJhbmNoLCBsaW5lcyA1Ny0xNTEgb2YgZGVjb21wKToqKiBzdGF0ZSBnYXRlIGBw
+YXJhbV8xWzB4YjZdPT0yYDsgaGVhZHJvb20gYHZlaGljbGUrMHg1RjAgPCBwcm90b3R5cGUrMHg4
+Njg0YDsgdHdvIHN1Yi1icmFuY2hlcyBjcmVkaXQgYHZlaGljbGUrMHg1RjAgKz0gYW1vdW50YCAo
+ZGVjb21wIGxpbmVzIDkwIGFuZCAxNDcpLiBTdG9yYWdlIHNvdXJjZSBkZWJpdCBmcm9tIGhvbWUt
+YnVpbGRpbmcgc3RvcmFnZSBvcmRlcnMgKGBsVmFyNCsweDk3MC8rMHg5NzhgLCBzdHJpZGUgMHhF
+MCkgdmlhIGAqcGZWYXIyMSA9IGZWYXIyNyAtIGluX1hNTTBfRGFgIChsaW5lIDg4KSBhbmQgYCoo
+ZmxvYXQgKikobFZhcjI0KzgpID0gaW5fWE1NMF9EYWAgKGxpbmUgMTQ0KS4KKipMYXRlciBjYXJn
+byBtb2RpZmljYXRpb24gKGxpbmVzIDE1Ni01NDIpOioqIHdyaXRlcyBgdmVoaWNsZSsweDNCOGAv
+YDB4M0MwYCBjYXJnbyBzbG90cyBBRlRFUiBjcmVkaXRpbmcgMHg1RjAuIFNhbWUgcmVjZWl2ZXIg
+KGBwYXJhbV8yYCksIGRpZmZlcmVudCBzdG9yZXMgw6LigqzigJ0gcGFpcmVkIGRlYml0L2NyZWRp
+dCBOT1QgcHJvdmVkLgoqKkNhbGxlcnM6KiogcmVmdWVsL3RydWNrIGpvYiBwYXRocyAobm90IGZ1
+bGx5IHRyYWNlZCkKKipEYXRhIFJlZnM6KiogdmVoaWNsZSsweDVGMCAoZnVlbCBtaXJyb3IsIFdS
+SVRURU4pLCB2ZWhpY2xlKzB4NEY4IChob21lIGJ1aWxkaW5nKSwgdmVoaWNsZSsweDNCOC8weDND
+MCAoY2FyZ28gdmVjdG9yLCBXUklUVEVOIGxhdGVyKSwgcHJvdG90eXBlKzB4ODY4NCAodGFuayBj
+YXBhY2l0eSksIGdhbWUrMHgxODVjLzB4MTg1ZAoqKkFydGlmYWN0OioqIHNjcmF0Y2hcb3V0XDE0
+MDE0MjQzMF9kZWNvbXAuYwoqKk5vdGVzOioqIDVGMCBjcmVkaXQgaXMgcmVhbCBpbiBlYXJseSBi
+cmFuY2g7IGNhcmdvIHdyaXRlIGlzIHNlcGFyYXRlIHN0b3JlLiBTYW1lLXJlY2VpdmVyIHBhaXJp
+bmcgdW5wcm92ZWQuIFByaW9yIGNsYWltICJ3cml0ZXMgMHg1RjAgb24gcmVmdWVsIiBjb25zaXN0
+ZW50IGJ1dCBpbmNvbXBsZXRlIChvbWl0cyBjYXJnbyB3cml0ZSkuCioqU3RhdHVzOioqIHZlcmlm
+aWVkICg1RjAgY3JlZGl0IGNvbmZpcm1lZDsgcGFpcmluZyB1bnJlc29sdmVkKQpgYGAKCiMjIyA1
+LjQgZG9jc1xnaGlkcmEtaW5kZXhcMTRCOTIwLm1kIChjdXJyZW50KQoKYGBgCiMgRlVOXzE0MDE0
+QjkyMCDDouKCrOKAnSBCdWlsZGluZy9UaWNrIENvbnRleHQgKE5PVCBwcm92ZWQgdmVoaWNsZSBy
+ZWZpbGwpCgoqKlJWQToqKiBgMHgxNEI5MjBgCioqU2lnbmF0dXJlOioqIGB2b2lkIEZVTl8xNDAx
+NGI5MjAobG9uZ2xvbmcgcGFyYW1fMSwgdWxvbmdsb25nIHBhcmFtXzIpYAoqKlB1cnBvc2U6Kiog
+Q29udGV4dCBpbmNsdWRlcyBwcm9kdWN0aW9uL2ZsZWV0L3dvcmtlcnMvKzB4MzE4LW1vZGVsLCB2
+ZWhpY2xlKzB4QTQ4LysweEExMCBzdG9yYWdlLCB2ZWhpY2xlKzB4NUYwIHJlYWQgYXQgbGluZSAy
+MzEgKGAqKGZsb2F0ICopKHBhcmFtXzIgKyAweDVmMCkgPSBmVmFyMjU7YCB3aGVyZSBmVmFyMjUg
+PSBmVmFyMjQgKiB2ZWhpY2xlKzB4REUwICogbFZhcjEwKzB4NDI4ICsgdmVoaWNsZSsweDVGMCku
+IEJVVCB0aGUgYnJvYWRlciBjb250ZXh0IChidWlsZGluZy1sZXZlbCBpdGVyYXRpb24gYXQgcGFy
+YW1fMisweEM3MC8rMHhDNzggZmxlZXQsIHBhcmFtXzIrMHhCQjAsIHBhcmFtXzIrMHhDMzgpIGlu
+ZGljYXRlcyB0aGlzIGlzIGxpa2VseSBhIGJ1aWxkaW5nLWxldmVsIHRpY2sgZnVuY3Rpb24sIE5P
+VCBhIHZlaGljbGUgcmVmaWxsLiB2ZWhpY2xlKzB4NUYwIGlzIHVwZGF0ZWQgYnV0IHRoZSBmdW5j
+dGlvbidzIHByaW1hcnkgb2JqZWN0IHR5cGUgaXMgbm90IGVzdGFibGlzaGVkIGFzIHZlaGljbGUu
+CioqQ2FsbGVyczoqKiBwZXItdGljayB1cGRhdGUgKG5vdCBmdWxseSB0cmFjZWQpCioqRGF0YSBS
+ZWZzOioqIHZlaGljbGUrMHg1RjAgKHJlYWQrd3JpdGUpLCB2ZWhpY2xlKzB4REUwLCB2ZWhpY2xl
+KzB4REU4LCB2ZWhpY2xlKzB4REU0LCB2ZWhpY2xlKzB4RERDLCB2ZWhpY2xlKzB4MzE4LCBwcm90
+b3R5cGUrMHg0MjgsIHZlaGljbGUrMHhBNDgvKzB4QTEwLCB2ZWhpY2xlKzB4OTcwLysweDk3OAoq
+KkFydGlmYWN0OioqIHNjcmF0Y2hcb3V0XDE0MDE0YjkyMF9kZWNvbXAuYwoqKk5vdGVzOioqIFBy
+aW9yIGNsYWltICJidXJuIGFkanVzdG1lbnQiIHJldHJhY3RlZC4gQ29udGV4dCBub3QgcHJvdmVk
+IHZlaGljbGUgcmVmaWxsOyBsaWtlbHkgdW5yZWxhdGVkIGJ1aWxkaW5nIDVGMCBwcm9ncmVzcyBm
+aWVsZC4gdmVoaWNsZSsweDVGMCB3cml0ZSBleGlzdHMgYnV0IG9iamVjdCB0eXBlIHVuY2VydGFp
+bi4KKipTdGF0dXM6KiogY29udGVzdGVkIChvYmplY3QgdHlwZSBub3QgcHJvdmVkIGFzIHZlaGlj
+bGU7IGxpa2VseSBidWlsZGluZyBmaWVsZCkKYGBgCgojIyMgNS41IGRvY3NcZ2hpZHJhLWluZGV4
+XDZCM0I1MC5tZCAoY3VycmVudCkKCmBgYAojIEZVTl8xNDA2QjNCNTAgw6LigqzigJ0gUGVyLUZy
+YW1lIFZlaGljbGUgRmxlZXQgRnVlbCBVcGRhdGUgKGFjdHVhbCAweDVGMCBjb25zdW1wdGlvbikK
+CioqUlZBOioqIGAweDZCM0I1MGAKKipTaWduYXR1cmU6KiogYGZsb2F0IEZVTl8xNDA2YjNiNTAo
+bG9uZ2xvbmcgdmVoaWNsZSwgZmxvYXQgcGFyYW1fMiwgY2hhciBwYXJhbV8zKWAKKipQdXJwb3Nl
+OioqIFBlci1mcmFtZSB2ZWhpY2xlIGZ1ZWwgdXBkYXRlLiBDYWxsZWQgZnJvbSBgRlVOXzE0MDY2
+RDUzMGAgYXQgZGVjb21wIGxpbmVzIDQyNC00MzEsIGd1YXJkZWQgYnkgYHZlaGljbGUrMHgxM0Mg
+IT0gMGAgQU5EIGB2ZWhpY2xlKzB4MTQ1ICE9ICdcMCdgLiBJdGVyYXRlcyBgdmVoaWNsZSsweDNB
+MC8rMHgzQThgIGZsZWV0IChzdHJpZGUgOCkuIEZvciBlYWNoIGZsZWV0IG1lbWJlciBgbFZhcjE1
+YDogY2hlY2tzIGBwcm90b3R5cGUrMHg4NjgwID09ICdcMCdgIChmbGFnKSwgYG1lbWJlcisweDE3
+OTQgPT0gMGAgKGFjdGl2ZSksIGBjYXBhY2l0eSA+IDBgOyBjb21wdXRlcyByZXF1ZXN0ZWQgYGZW
+YXIyNyA9ICgoY2FwYWNpdHkgKiBEQVRfMTQwOTA5ZGRjICsgbWVtYmVyKzB4NUYwKSAvIGZWYXIz
+MV93ZWlnaHRpbmcpICogZlZhcjMwYDsgY29tcHV0ZXMgYWN0dWFsIGBmVmFyMjIgPSBQb3dlclRp
+bWUgKiBmVmFyMjcgKiBwYXJhbV8yYCB3aXRoIGZsb29yIGNsYW1wOyBXUklURVMgYG1lbWJlcisw
+eDVGMCAtPSBmVmFyMjJgIChzdWJ0cmFjdGlvbikgYW5kIGBtZW1iZXIrMHg1RjAgPSBjYXBhY2l0
+eSAqIERBVF8xNDA5MGIyZDBgIChmbG9vciBhc3NpZ25tZW50KS4gUm9vdCdzIG93biBgdmVoaWNs
+ZSsweDVGMGAgaXMgUkVBRCBpbnRvIExPQ0FMIGBmVmFyMzFgIHdlaWdodGluZyB0b3RhbCAobGlu
+ZSA1MykgYnV0IE5FVkVSIHdyaXR0ZW4gYnkgdGhpcyBmdW5jdGlvbi4KKipDYWxsZXJzOioqIGBG
+VU5fMTQwNjZENTMwYCAocGVyLWZyYW1lLCBSVkEgYDB4NjZENTMwYCksIGNhbGwgZ2F0ZSBgdmVo
+aWNsZSsweDEzQyAhPSAwYCBBTkQgYHZlaGljbGUrMHgxNDUgIT0gJ1wwJ2AKKipEYXRhIFJlZnM6
+KiogdmVoaWNsZSsweDE3MDggKHByb3RvdHlwZSksIHByb3RvdHlwZSsweDg2ODQgKGNhcGFjaXR5
+KSwgcHJvdG90eXBlKzB4ODY4OCwgcHJvdG90eXBlKzB4ODY4MCAoZmxhZyksIHZlaGljbGUrMHgz
+QTAvKzB4M0E4IChmbGVldCBzdHJpZGUgOCksIG1lbWJlcisweDE3MDggKG1lbWJlciBwcm90b3R5
+cGUpLCBtZW1iZXIrMHg1RjAgKFdSSVRURU46IHN1YnRyYWN0aW9uK2Zsb29yKSwgbWVtYmVyKzB4
+MTc5NCAoYWN0aXZlIGZsYWcpLCBEQVRfMTQwOTA5ZGRjPTAuNSwgREFUXzE0MDkwYjJkMCAoZmxv
+b3IgZmFjdG9yKSwgREFUXzE0MDkwYWI3MAoqKkFydGlmYWN0OioqIHNjcmF0Y2hcb3V0XDE0MDZi
+M2I1MF9kZWNvbXAuYyA7IHNjcmF0Y2hcb3V0XDE0MDZiM2I1MF8xNDA2YjQ1MDBfZGlzYXNtLmFz
+bQoqKk5vdGVzOioqIGZWYXIzMSArPSBjYXBhY2l0eSowLjUgaXMgTE9DQUwgd2VpZ2h0aW5nIHRv
+dGFsLCBOT1QgYSA1RjAgd3JpdGUgKERlZmVjdCA1IHJldHJhY3RlZCkuIEFjdHVhbCA1RjAgd3Jp
+dGVzIGF0IHN1YnRyYWN0aW9uIChgMTQwNkI0NEI3YCkgYW5kIGZsb29yIChgMTQwNkI0NERBYCku
+IENhY2hlZCBzdG9yZSBWQXMgY29uZmlybWVkOiBgMTQwNkI0NEI3YCAvIGAxNDA2QjQ0REFgLiBE
+ZWR1Y3Rpb24gcGFpciAxMCBieXRlcywgY2xhbXAgMTEgYnl0ZXMgw6LigqzigJ0gYmVsb3cgMTQt
+Ynl0ZSBpbmxpbmUtaG9vayBtaW5pbXVtOyBubyBob29rIGFwcHJvdmVkLiBGbGFnKzB4ODY4MCBw
+aHlzaWNhbCBtZWFuaW5nIHVucmVzb2x2ZWQuIFJlY2VpdmVyIChyb290IHZzIG1lbWJlcikgYXBw
+bGljYWJpbGl0eSB1bnJlc29sdmVkLgoqKlN0YXR1czoqKiB2ZXJpZmllZCAoNUYwIHN1YnRyYWN0
+aW9uK2Zsb29yIGJ5dGVzIGNvbmZpcm1lZDsgcmVjZWl2ZXIgYXBwbGljYWJpbGl0eSB1bnJlc29s
+dmVkKQpgYGAKCiMjIyA1LjYgZG9jc1xnaGlkcmEtaW5kZXhcNkM4MUQwLm1kIChjdXJyZW50KQoK
+YGBgCiMgRlVOXzE0MDZDODFEMCDDouKCrOKAnSBGSUxFKiBTdGF0ZSBSZWFkZXIvUmVzdG9yZXIg
+KE5PVCBhc3NpZ25tZW50L2J1cm4pCgoqKlJWQToqKiBgMHg2QzgxRDBgCioqU2lnbmF0dXJlOioq
+IGB2b2lkIEZVTl8xNDA2YzgxZDAobG9uZ2xvbmcgcGFyYW1fMSwgRklMRSAqcGFyYW1fMilgCioq
+UHVycG9zZToqKiBSZWFkcyB2ZWhpY2xlIHN0YXRlIGZyb20gYSBGSUxFKiAoYGZyZWFkYCBhdCBs
+aW5lIDM1NDogYGZyZWFkKCZsb2NhbF85MjgsMHg3ZTgsMSxwYXJhbV8yKWApLCByZXN0b3JlcyBm
+aWVsZHMgaW50byB2ZWhpY2xlIHN0cnVjdCAod3JpdGVzIGB2ZWhpY2xlKzB4NUYwID0gbG9jYWxf
+MTcwYCBhdCBsaW5lIDgxMiBhcyBwYXJ0IG9mIHN0YXRlIHJlc3RvcmF0aW9uKSwgYHZlaGljbGUr
+MHg1MENgICh0eXBlKSBzZXQgYXQgdmFyaW91cyBwb2ludHMuIExhcmdlIHN0YXRlLW1hbmFnZW1l
+bnQgZnVuY3Rpb24gd2l0aCB+MTQwMCBsaW5lcy4gTm90IGFzc2lnbm1lbnQgbG9naWMsIG5vdCBi
+dXJuLiBUaGUgYDB4NUYwYCB3cml0ZSBpcyBwYXJ0IG9mIGRlc2VyaWFsaXphdGlvbiBmcm9tIHNh
+dmUgZmlsZS4KKipDYWxsZXJzOioqIHNhdmUvbG9hZCBwYXRocyAobm90IGZ1bGx5IHRyYWNlZCkK
+KipEYXRhIFJlZnM6KiogdmVoaWNsZSsweDNCOCAoY2FyZ28gdmVjdG9yIGJhc2UsIHJlc3RvcmVk
+IGZyb20gZmlsZSksIHZlaGljbGUrMHg1RjAgKGZ1ZWwgbWlycm9yLCByZXN0b3JlZCBmcm9tIGZp
+bGUpLCB2ZWhpY2xlKzB4NTBDICh0eXBlLCByZXN0b3JlZCBmcm9tIGZpbGUpLCBGSUxFICpwYXJh
+bV8yCioqQXJ0aWZhY3Q6Kiogc2NyYXRjaFxvdXRcMTQwNmM4MWQwX2RlY29tcC5jCioqTm90ZXM6
+KiogUHJpb3IgY2xhaW0gImFzc2lnbm1lbnQvYnVybiIgcmV0cmFjdGVkLiBGSUxFKiByZWFkZXIg
+cmVzdG9yaW5nIHN0YXRlOyAweDVGMCB3cml0ZSBpcyBkZXNlcmlhbGl6YXRpb24sIG5vdCBjb25z
+dW1wdGlvbiBvciByZWZpbGwuCioqU3RhdHVzOioqIHZlcmlmaWVkIChGSUxFKiByZWFkZXI7IG5v
+dCBhc3NpZ25tZW50L2J1cm4pCmBgYAoKIyMjIDUuNyBkb2NzXGdoaWRyYS1pbmRleFw0MjAzNTAu
+bWQgKGN1cnJlbnQpCgpgYGAKIyBGVU5fMTQwNDIwMzUwIMOi4oKs4oCdIFRyYW5zZmVyIEZ1bmN0
+aW9uIChDYXJnby9GdWVsIE1vdmVtZW50KQoKKipSVkE6KiogYDB4NDIwMzUwYAoqKlNpZ25hdHVy
+ZToqKiBgY2hhciBGVU5fMTQwNDIwMzUwKGxvbmdsb25nIGdhbWUsIGxvbmdsb25nIGJ1aWxkaW5n
+X29yX3ZlaGljbGUsIGludCBtb2RlLCBsb25nbG9uZyByZXNvdXJjZSwgZmxvYXQgdG9ucywgZmxv
+YXQgKm91dCwgZmxvYXQgY2FwLCBjaGFyIGZsYWcsIGxvbmdsb25nIGJ1aWxkaW5nX3ZhbGlkYXRl
+ZClgIChSQ1g9Z2FtZSwgUkRYPWJ1aWxkaW5nX29yX3ZlaGljbGUsIFI4PW1vZGUsIFI5PXJlc291
+cmNlLCBbUlNQKzB4MjBdPXRvbnMsIFtSU1ArMHgyOF09b3V0KQoqKlB1cnBvc2U6KiogQ29yZSB0
+cmFuc2ZlciBmb3IgY2FyZ28vZnVlbC4gTW9kZSAwIHNlbGVjdHMgdGhyb3VnaCBgRlVOXzE0MDE0
+MjQ0MzBgIC8gYGdhbWUrMHgxNDRBOGAgcmVjb3JkcyAoMHg2OCBzdHJpZGUpOyBNb2RlIDEgdXNl
+cyBkaXJlY3QgY2FyZ28gbGF5b3V0IChgYnVpbGRpbmdfb3JfdmVoaWNsZSsweDNCOC8rMHgzQzBg
+IHN0cmlkZSAweDEwIHNsb3Qge1Jlc291cmNlKkAwLCBmbG9hdCBhbW91bnRAOH0pLiBEbyBOT1Qg
+Y29uZmxhdGUgbW9kZSAwIHdpdGggbW9kZSAxLiBNdXRhdGlvbiBhdCBMQUJfMTQwNDIwOUUzOiBO
+RUdBVElWRSB0b25zIMOi4oCg4oCZIHJlbW92YWwgY2xhbXBlZCBhdCAwOyBQT1NJVElWRSB0b25z
+IMOi4oCg4oCZIGFkZGl0aW9uIGNsYW1wZWQgYXQgY2FwLiBSZXR1cm5zIEFMPTEgaWYgY29tbWl0
+dGVkOyBgKm91dGAgPSByZWplY3RlZC9vdmVyZmxvdyBhbW91bnQgKE5PVCBhY3R1YWwgbW92ZWQp
+LgoqKkNhbGxlcnM6KiogMTYgc2l0ZXMgaW5jbC4gYDB4MTZGODMxYCAocmVmdWVsLCBpbiBgRlVO
+XzE0MDE2RTNCMGAgdHlwZS0weDQzIGJyYW5jaCksIGAweDFCMjg5OGAgKHJvYWQgZGVsaXZlcnkp
+LCBgMHg2OTRGNDBgIChwaWNrdXApLCBgMHg2OTUzQzRgICh2ZWhpY2xlLWNhcmdvIGFkZGl0aW9u
+KQoqKkRhdGEgUmVmczoqKiBjYXJnbyB2ZWN0b3Igc3RyaWRlIDB4MTAsIGJ1aWxkaW5nIHN0b3Jh
+Z2Ugb3JkZXJzIHN0cmlkZSAweDIxQjgsIGdhbWUrMHgxNDRhOC8rMHgxNDRiMCAoMHg2OCBzdHJp
+ZGUpCioqQXJ0aWZhY3Q6Kiogc2NyYXRjaFxvdXRcMTQwNDIwMzUwX2RlY29tcC5jIDsgc2NyYXRj
+aFx4cmVmc180MjAzNTAudHh0CioqTm90ZXM6KiogTmVnYXRpdmUgZGViaXQgd2l0aG91dCBwYWly
+ZWQgdGFuayBjcmVkaXQgaXMgbm90IHByb3ZlZCByZWZpbGwuIENhbGwtc2l0ZSBwYXRjaGluZyAo
+Ynl0ZSAwPT0weEU4LCByZWwzMiB0byAweDQyMDM1MCkgdXNlZCBieSBwcml2YXRlX2xvZ2lzdGlj
+czsgaW5saW5lIGhvb2sgbm90IHBvc3NpYmxlIChwcm9sb2d1ZSA8MTQgYnl0ZXMpLiBNb2RlMCBy
+ZWNvcmQgaW5kaXJlY3Rpb24gdmlhIDQyNDQzMCBub3Qgc2FtZSBhcyBtb2RlMSBkaXJlY3QgY2Fy
+Z28uCioqU3RhdHVzOioqIHZlcmlmaWVkIChtb2RlIHNlbWFudGljcyBjb25maXJtZWQ7IG1vZGUw
+L21vZGUxIGRpc3RpbmN0aW9uIGNsYXJpZmllZCkKCmBgYAoKDQoKCi0tLQoKIyMgU2VjdGlvbiA2
+IOKAlCBVbnJlc29sdmVkIEVkZ2VzIChQcmVjaXNlKQoKMS4gKio2NkQ1MzDihpI2QjNCNTA6Kiog
+V2hldGhlciBvYnNlcnZlZCByb2FkLURPIHRydWNrIHJlYWNoZXMgY2FsbCBnYXRlIChgcm9vdCsw
+eDEzQyAhPSAwYCBBTkQgYHJvb3QrMHgxNDUgIT0KCgpgYGAKYGBgCgoNCgoKLS0tCgoKYGBgCgot
+LS0KCiMjIFNlY3Rpb24gNiDDouKCrOKAnSBVbnJlc29sdmVkIEVkZ2VzIChQcmVjaXNlKQoKMS4g
+Kio2NkQ1MzDDouKAoOKAmTZCM0I1MDoqKiBXaGV0aGVyIG9ic2VydmVkIHJvYWQtRE8gdHJ1Y2sg
+cmVhY2hlcyBjYWxsIGdhdGUgKGByb290KzB4MTNDICE9IDBgIEFORCBgcm9vdCsweDE0NSAhPSAn
+XDAnYCkuIENhbGxpbmcgY29udmVudGlvbiBkaXNjcmVwYW5jeSAoWE1NMS9SOEIgdnMgWE1NMC9S
+RFgpIHVucmVzb2x2ZWQgw6LigqzigJ0gZGVjb21waWxlZCBvbWl0dGVkIGFyZ3VtZW50cyBkbyBu
+b3QgcHJvdmUgZGVmYXVsdHMuCjIuICoqNkIzQjUwOioqIFdoZXRoZXIgb2JzZXJ2ZWQgcm9hZC1E
+TyB0cnVjayBpcyBgcGFyYW1fMWAgKHJvb3QpIG9yIGZsZWV0IG1lbWJlciBgbFZhcjE1YC4gRmxh
+ZyBgcHJvdG90eXBlKzB4ODY4MCA9PSAnXDAnYCBzZW1hbnRpY3MgdW5yZXNvbHZlZC4gUGh5c2lj
+YWwgdW5pdHMgdW5yZXNvbHZlZCAobm8gMTE3Ni8wLjAwMSBhc3N1bXB0aW9uKS4KMy4gKioxNDI0
+MzA6KiogQWN0dWFsIDVGMCBjcmVkaXQgaW5zdHJ1Y3Rpb24gYnl0ZXMgYXQgVkFzIGJleW9uZCBg
+MHgxNDAxNDI1MzBgIG5vdCBpbiBjYWNoZWQgZXZpZGVuY2UuIFBhaXJpbmcgb2Ygc291cmNlIGRl
+Yml0IChob21lIGJ1aWxkaW5nIHN0b3JhZ2UpIGFuZCBkZXN0aW5hdGlvbiBgdmVoaWNsZSsweDVG
+MGAgY3JlZGl0IG5vdCBwcm92ZWQgYXMgb25lIHJlZmlsbC4KNC4gKipJbmRleCBkaWZmOioqIGBn
+aXQgZGlmZmAgcmV0dXJucyBubyBjaGFuZ2VzIGZvciB0aGUgc2l4IGluZGV4IGZpbGVzIGRlc3Bp
+dGUgcmV3cml0dGVuIGNvbnRlbnQgw6LigqzigJ0gcmVwb3NpdG9yeSBzdGF0ZSBvYnNlcnZhdGlv
+biwgbm90IHJlc29sdmVkLgo1LiAqKk5vIGhvb2sgYXBwcm92ZWQ6KiogU3VidHJhY3Rpb24gYE1P
+VlNTYCB3cml0ZSAxMCBieXRlczsgZmxvb3IgYE1PVlNTYCB3cml0ZSAxMSBieXRlczsgYm90aCBi
+ZWxvdyAxNC1ieXRlIG1pbmltdW0uIENhbGwtc2l0ZSBwYXRjaCBub3QgYXBwcm92ZWQuCgoqKk5v
+IGJpbGxpbmcvaW1wbGVtZW50YXRpb24gcmVhZGluZXNzIGNsYWltLiBQYXltZW50cyBPRkYuIFJl
+ZmlsbHMgY2Fubm90IG5ldCBhd2F5IGJ1cm4uIEFzc2lnbm1lbnQgY2xvc3VyZXMgaW5jbHVkZSBj
+YW5jZWxsYXRpb24vcmVtb3ZhbC9yZXBsYWNlbWVudC4gT3V0c2lkZS1hc3NpZ25tZW50IGJ1cm4g
+aXMgc2VwYXJhdGUgb3BlcmF0aW5nIG92ZXJoZWFkOyB1bmNlcnRhaW4gYm91bmRhcmllcyB1bmFs
+bG9jYXRlZC4qKgoKYGBgCgoNCg==
+````
+
+### Complete final lossless-preservation helper
+
+Source `.cache/preserve_raw_closure_20261101.py`; bytes=2042; SHA256=e29b0ba8e13503fc55b325dd7e452458ed49c9db6d578b4d2c908801f206994e. This helper only copies the actual attached bytes and verifies each small write; it does not assemble or reconstruct findings.
+
+````python
+#!/usr/bin/env python3
+"""Losslessly archive the actual report in the single cumulative Markdown.
+Base64 preserves its mixed line endings/trailing spaces without Git whitespace
+errors. Only mechanical copying; no report reconstruction or semantic edits.
+"""
+from pathlib import Path
+import base64
+import hashlib
+import textwrap
+
+source = Path('/tmp/arena-coding-uploads/FUEL_NATIVE_RAW_CLOSURE_20261101.md')
+target = Path('docs/private-logistics-runtime/VEHICLE_PANEL_FUEL_INVESTIGATION.md')
+raw = source.read_bytes()
+digest = hashlib.sha256(raw).hexdigest()
+assert len(raw) == 65056
+assert digest == '188d659567e2c06aaf1009480e46372efe9f231bba50c7ada399d214fcacf206'
+heading = '\n### Complete original raw-closure attachment — lossless base64\n\n'
+before = target.read_bytes()
+assert heading.encode() not in before
+prefix_size, prefix_sha = len(before), hashlib.sha256(before).hexdigest()
+
+def append(data):
+    n = target.stat().st_size
+    with target.open('ab') as f:
+        f.write(data)
+    with target.open('rb') as f:
+        f.seek(n)
+        assert f.read() == data
+
+append((heading + f'Exact attached bytes={len(raw)}; SHA256={digest}. Decode the following base64 block to recover the UNMODIFIED report. Raw text contains stale claims and formatting defects; see the parent review above.\n\n````base64\n').encode())
+lines = textwrap.wrap(base64.b64encode(raw).decode(), 76)
+for i in range(0, len(lines), 40):
+    append(('\n'.join(lines[i:i+40])+'\n').encode())
+append(b'````\n')
+after = target.read_bytes()
+assert hashlib.sha256(after[:prefix_size]).hexdigest() == prefix_sha
+payload = after[prefix_size:].split(b'````base64\n', 1)[1].split(b'````', 1)[0]
+assert base64.b64decode(b''.join(payload.split()), validate=True) == raw
+print(f'PASS exact attachment archived: {len(raw)} bytes, SHA256={digest}')
+print(f'PASS {(len(lines)+39)//40} small base64 writes individually read back; historical prefix {prefix_size} bytes unchanged')
+print('PASS decoded archive equals actual attachment byte-for-byte. Not PE authentication.')
+
+````
+
+### Actual lossless-preservation stdout — exit0
+
+Source `.cache/preserve_raw_closure_20261101.out`; bytes=295; SHA256=0314e8393af275fde0f74280322759ec6a2f0f6bc744490a462c85293bc15804. This helper only copies the actual attached bytes and verifies each small write; it does not assemble or reconstruct findings.
+
+````text
+PASS exact attachment archived: 65056 bytes, SHA256=188d659567e2c06aaf1009480e46372efe9f231bba50c7ada399d214fcacf206
+PASS 29 small base64 writes individually read back; historical prefix 8349495 bytes unchanged
+PASS decoded archive equals actual attachment byte-for-byte. Not PE authentication.
+
+````

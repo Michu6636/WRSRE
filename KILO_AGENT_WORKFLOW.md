@@ -95,6 +95,14 @@ packet, or resume an interrupted child using a genuinely exposed resumable
 
 ## Reliable writes without reducing output quality
 
+**Mandatory trigger: if EITHER the planned content OR the destination file is
+long, write only in small, coherent chunks, verifying each before continuing.**
+This applies to all agents and file types, not only report recovery after a
+timeout. For a short change inside a long file, use a small targeted edit rather
+than replacing the file. For a long addition, use a sequence of small verified
+writes even when the destination starts empty. Short writes to short files do
+not need artificial splitting. Preserve completeness; no arbitrary byte cap.
+
 The following instruction initially helped with larger-write failures in
 Kilo7.8.18 through Kilo Gateway, but a later final-matrix append timed out again.
 Use it as the baseline, with the explicit write checkpoints below. This is a
@@ -107,7 +115,9 @@ For existing files, use narrowly targeted edits.
 For the cumulative handover, append only the new section.
 Do not load or reproduce the entire historical handover.
 
-Perform large additions in bounded sections and verify the result after each.
+If either the planned content or the destination file is long, write only in
+small, coherent chunks and verify each write before continuing. Use small
+targeted edits for short changes to long files; never replace the whole file.
 If a request times out, inspect the file and diff before retrying.
 Only the parent writes shared reports; research children return findings.
 ```
@@ -193,6 +203,100 @@ do not pretend a Linux checkout has the Windows EXE or Ghidra project.
   prefix/semicolon rules in `INSTRUCTIONS.md`; do not claim Linux checks were
   Windows builds or native game tests.
 
+## Native-evidence acceptance gates (2026-11-01)
+
+These gates address repeated fuel-report failures. They are acceptance criteria,
+not a claim that longer prompts, another model or more agents guarantee accuracy.
+Apply them to consequential claims; do not create paperwork for every trivial
+sentence. Existing task restrictions remain controlling.
+
+### 1. Claim ledger before narrative
+
+Separate raw observations from interpretations and implementation readiness.
+For each consequential claim, record:
+
+| Claim ID / exact statement | Raw artifact + address/line | Derivation | Status | Limit / missing edge |
+| --- | --- | --- | --- | --- |
+| Example: selected bytes encode an 8-byte store | Exact supplied byte string and its source | Count bytes and decode | Supported for supplied string | Does not authenticate the EXE or identify the receiver |
+
+Use supported, contested or unresolved per claim. Record binary identity as
+locally measured, externally reported or unavailable. An agent summary, file
+hash, index label, script exit0 or agreement between agents cannot by itself
+prove the game's semantics. Name what each check actually establishes.
+
+### 2. Mechanical check before semantic promotion
+
+Count byte tokens; independently decode consequential instructions and compute
+end-exclusive spans and branch targets. Check for overlapping starts, function
+boundaries and incoming edges into proposed stolen spans. Existing tools are
+sufficient; no new script or assembly helper is required. If a helper is added,
+embed its complete final source and actual output in the designated Markdown.
+
+Track address domains explicitly (RVA/preferred VA/runtime VA/file offset).
+For data accesses, retain the decompiler's exact pointer type and casts, then
+show byte-offset arithmetic and operand evidence. For example, float* index
+0x13C means byte displacement0x4F0; a byte-pointer cast can change that rule.
+An ADD index,index before scale8 yields effective stride16. Never infer either
+from an isolated displayed scale or a field name copied from an older report.
+
+### 3. Data-flow proof before naming the event
+
+Trace reaching definitions at the relevant instruction on each selected path:
+receiver root/member/storage selection, overwritten registers, dereferences,
+float argument registers, mutable states and branch guards. Distinguish local
+variable arithmetic from actual memory stores. The same offset on different
+object types is not the same field. Separate these questions:
+
+- What exact location is read/written, and which object owns it?
+- Is it a live update, save restore, rendering adjustment or unrelated object?
+- Which caller/path applies to the observed vehicle, and what remains unproved?
+- What are requested change, actual rounded pre/post change and floor/reserve
+  effects? Where are source debit and destination credit actually paired?
+- What native evidence establishes physical and price units?
+
+Keep the ordered expression, factor sources and register lifetimes. Do not
+cancel distinct constants or ignore floating-point rounding/reassigned registers.
+Use a symbol or raw unit when a constant's value or physical meaning is unknown.
+A decompiled call displaying fewer arguments does not prove default arguments;
+trace actual argument registers/stack and the callee's use before claiming ABI.
+For ordinary Windows x64, slots follow total parameter position: a signature
+(pointer, float, char) normally uses RCX, XMM1, R8B, not separate type counters.
+A preceding conditional is not necessarily a call gate: follow both successors
+and their merges before calling a condition necessary for reaching the call.
+Distinguish a requested operand from rounded stored change and from the completed
+operation after its floor/reserve correction. Such a correction is not by itself
+an external refill; counting an intermediate undershoot can overstate burn.
+A static debit can be supported while runtime applicability or unit conversion
+remains unresolved. Do not demand runtime proof for a claim decidable statically;
+do not present static reasoning as an observed game test.
+
+### 4. Adversarial review, dependency repair and delivery
+
+Before integration, the parent tests the contract against counterexamples:
+wrong object type, attached member, alternate branch, local-only calculation,
+restore/refill mistaken for burn, index mistaken for displacement. A focused
+read-only child can independently challenge the stable raw packet if useful;
+review is a role, not a required extra agent or a vote between models. Do not
+ask it to defend the preferred conclusion. The parent is subject to the same
+source and scope requirements; its corrections are not automatically true.
+
+For a contradiction, preserve old and replacement claims, identify the deciding
+raw evidence, and revise or invalidate dependent conclusions. Two narratives of
+one export are not independent evidence. Re-read caches before requesting any
+new query; a wrong interpretation usually needs analysis, not another export.
+
+Require the actual owned report at handoff, not just its completion summary.
+Check its consequential claims against embedded evidence and the final summary.
+No report reconstruction from a summary. If delivery is missing, request that
+existing artifact only; do not repeat extraction. Keep selected excerpts labelled
+partial and externally reported hashes labelled unverified until measured.
+
+Stop when the scoped questions are answered or an exact blocker is identified.
+State the missing edge and smallest proposed follow-up; do not auto-start broader
+research or runtime work. Each finding retains supported/contested/unresolved
+status even if the overall implementation remains blocked. Hook feasibility is
+separate from event semantics; neither is implementation authorization.
+
 ## Permissions, models and human involvement
 
 Prefer Kilo's built-in read-only `explore` child for exported-evidence research.
@@ -251,13 +355,20 @@ only when supported and independent. Treat Swarm as advisory communication.
 Collect results, deduplicate evidence requests, fill gaps serially as required,
 and delegate only affected follow-ups. Do not require the user to relay messages.
 Reconcile actual evidence, preserve counterexamples and state remaining limits.
+For native contracts, apply this guide's Native-evidence acceptance gates: use a
+claim ledger; check bytes/address domains/typed offsets; trace receiver and
+factor definitions; distinguish static facts, semantics and runtime applicability.
+Challenge the preferred explanation and repair dependent claims after corrections.
+Do not inherit a verified index label or treat two summaries as corroboration.
 Stop on completion or an exact blocker; do not repeat unchanged queries.
 
-Preserve existing files and use narrowly targeted edits. Append only new sections
-to the cumulative handover; do not load or reproduce its entire history. Perform
-large additions with explicit checkpoints: heading/header separately, then one
-complete matrix-case row or supporting paragraph per write. Read back and verify
-each before continuing. Never send the entire new section in one tool payload.
+Preserve existing files and use narrowly targeted edits. If EITHER the planned
+content OR the destination file is long, write only in small, coherent chunks
+and verify each before continuing; never replace a long file for a short edit.
+Append only new sections to the cumulative handover; do not load or reproduce
+its entire history. Perform additions with explicit checkpoints: heading/header
+separately, then one complete matrix-case row or supporting paragraph per write.
+Read back and verify each before continuing. Never send the entire new section in one tool payload.
 After a timeout, inspect only the relevant tail/diff before retrying; first recover
 one missing fragment and report its verified checkpoint. After success, continue
 autonomously with write/verify cycles. If that small fragment also fails, stop and
