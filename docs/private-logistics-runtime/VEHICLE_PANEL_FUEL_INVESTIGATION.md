@@ -121478,3 +121478,14 @@ Ran 137 tests in 8.793s
 
 OK
 ```
+
+## PR #39 merge reconciliation checkpoint (2026-11-01)
+
+The user authorized merging PR #39. Reviewed every target change from common ancestor 9cff1a3 through `4b835a20f3c2c1dcc250da600f92e401ef7315de`: six source/test files containing the superseded gate/UI-endpoint implementation and five compiled root `.obj` files, with no unrelated changes. Retain the already corrected 0.18.14 source/tests and omit compiled artifacts, consistent with the existing `.obj` ignore rule. Reconcile ancestry using an explicit `ours` strategy merge of that reviewed target commit into the fixed session branch (not a blanket conflict-side choice for unseen changes). Before adding this checkpoint, both staged and working trees were verified byte-identical to PR commit `9945e8b`; no new source edits are needed. The complete final source and earlier sanitizer outputs remain archived above. Fresh host suite after reconciliation: 137 PASS in 8.233s; exact output follows. Publish the reconciliation commit, then merge PR #39 through GitHub; this checkpoint records preparation and validation, not an advance claim of remote merge success. No DLL build/deploy/game run or payment.
+
+```text
+----------------------------------------------------------------------
+Ran 137 tests in 8.233s
+
+OK
+```
