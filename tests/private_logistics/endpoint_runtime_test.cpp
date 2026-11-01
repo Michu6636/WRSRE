@@ -107,7 +107,6 @@ static void native_copy_rejects_missing_and_preserves_signed() {
 struct LogFixture {
     sch::History history;
     PanelRecord record{};
-    Address home=0x30000;
     LogFixture() {
         ResetPrices();logs.clear();g_scheduleLedger=a::Ledger{};
         record.epoch=1;record.snapshot=NativeSnapshot();record.schedule.status=sch::Status::Complete;
@@ -118,13 +117,12 @@ struct LogFixture {
     }
     void Step() {
         const auto previous=history.LastValidValues();++record.sequence;record.milliseconds+=1000;
-        auto d=history.Observe(record.schedule,1,record.snapshot.root,home,record.sequence,record.milliseconds);
+        auto d=history.Observe(record.schedule,1,record.snapshot.root,0x30000,record.sequence,record.milliseconds);
         auto changes=d.endpointCompared ? sch::ClassifyChanges(previous,record.schedule) : sch::FieldChanges{};
-        ScheduleAssignmentLog(record,d,changes,home);
+        ScheduleAssignmentLog(record,d,changes,0x30000);
     }
     void Level(float raw) {record.snapshot.objects[0].raw=raw;record.snapshot.litresCandidate=raw*1000;Step();}
     void Close(float raw) {record.schedule.count=0;Level(raw);}
-    void Home(Address h) {home=h;}
 };
 static void runtime_closing_boundary_prices_native_not_ui() {
     LogFixture f;f.Level(.75f);CHECK(priceCalls==0);f.Close(.5f);
@@ -145,57 +143,6 @@ static void runtime_quiet_rise_suppresses_hypothesis() {
     CHECK(line.find("hypothetical_cost_reason=observed_level_rise")!=std::string::npos);
     std::puts(line.c_str());
 }
-
-static void target_replacement_preserves_original_target() {
-    LogFixture f; // Opens with home=0x30000, original_target=0x30000
-    const auto& openLine=logs.back();
-    CHECK(openLine.find("original_target=0000000000030000")!=std::string::npos);
-    CHECK(openLine.find("original_target_resolved=0")!=std::string::npos);
-
-    // Replace the target: change home to 0x40000, which triggers identity change
-    f.Home(0x40000);
-    f.Level(.5f);
-    // Should produce Abandon (old target) + Adopt (new target)
-    CHECK(logs.size()>=2);
-    const auto& abandonLine=logs[logs.size()-2];
-    CHECK(abandonLine.find("event=abandon_unobserved")!=std::string::npos);
-    CHECK(abandonLine.find("original_target=0000000000030000")!=std::string::npos);
-    CHECK(abandonLine.find("original_target_resolved=0")!=std::string::npos);
-    const auto& adoptLine=logs.back();
-    CHECK(adoptLine.find("event=adopt_existing")!=std::string::npos || adoptLine.find("event=observed_open")!=std::string::npos);
-    CHECK(adoptLine.find("original_target=0000000000040000")!=std::string::npos);
-    CHECK(adoptLine.find("original_target_resolved=0")!=std::string::npos);
-    // Old target never transferred to new target
-    CHECK(adoptLine.find("original_target=0000000000030000")==std::string::npos);
-    std::puts(adoptLine.c_str());
-}
-
-static void scalar_index_continuity_preserves_original_target() {
-    LogFixture f; // Opens with home=0x30000
-    // Quiet update with same home — scalar/index change only, no structural change.
-    // May not emit a log line if d.emit is false; close confirms target preserved.
-    f.Level(.75f);
-    // Close with original target retained
-    f.Close(.5f);
-    const auto& closeLine=logs.back();
-    CHECK(closeLine.find("event=observed_close")!=std::string::npos);
-    CHECK(closeLine.find("original_target=0000000000030000")!=std::string::npos);
-    CHECK(closeLine.find("original_target_resolved=0")!=std::string::npos);
-    std::puts(closeLine.c_str());
-}
-
-static void closure_retains_original_target() {
-    LogFixture f; // Opens with home=0x30000
-    f.Level(.8f); // quiet update, same target
-    f.Close(.2f); // close with original target (consumption: 1.0→0.2)
-    const auto& closeLine=logs.back();
-    CHECK(closeLine.find("event=observed_close")!=std::string::npos);
-    CHECK(closeLine.find("original_target=0000000000030000")!=std::string::npos);
-    CHECK(closeLine.find("original_target_resolved=0")!=std::string::npos);
-    CHECK(closeLine.find("hypothetical_cost_if_no_refill_available=1")!=std::string::npos);
-    CHECK(closeLine.find("actual_cost=not_computed settlement=none billing=off")!=std::string::npos);
-    std::puts(closeLine.c_str());
-}
 static void pricing_live_resource_and_currency() {
     ResetPrices();auto q=PanelHypotheticalPrice(Closed(),Falling());
     CHECK(q.available && q.amount==50 && q.perTonne==200 && q.currency==TSM_CURRENCY_RUB);
@@ -209,4 +156,40 @@ static void pricing_live_resource_and_currency() {
     CHECK(q.available && q.currency==TSM_CURRENCY_RUB && activeCalls==1);
     prices.structSize=offsetof(TsmResourcePricingApi,getPrice)+sizeof(prices.getPrice);
     CHECK(PanelHypotheticalPrice(Closed(),Falling()).available);
+}
+// Corrected b4c50dc attribution scenarios: home stays the DO, target is unload row.
+static std::string TargetToken(Address target) {
+    char text[96];std::snprintf(text,sizeof(text),"original_target_candidate=%p",(void*)target);
+    return text; // Match the host's %p format rather than Windows-only zero padding.
+}
+static void target_replacement_preserves_original_target() {
+    LogFixture f;
+    CHECK(g_scheduleLedger.Current().home==0x30000 && g_scheduleLedger.Current().originalTarget==0x20000);
+    CHECK(logs.back().find(TargetToken(0x20000))!=std::string::npos);
+    f.record.schedule.rows[1].target=0x60000;f.Level(.5f);
+    CHECK(logs.size()>=2);
+    const auto& closed=logs[logs.size()-2];const auto& opened=logs.back();
+    CHECK(closed.find("event=observed_close reason=observed_targets_replaced")!=std::string::npos);
+    CHECK(closed.find(TargetToken(0x20000))!=std::string::npos);
+    CHECK(opened.find("event=observed_open")!=std::string::npos);
+    CHECK(opened.find(TargetToken(0x60000))!=std::string::npos);
+    CHECK(g_scheduleLedger.Current().home==0x30000 && g_scheduleLedger.Current().root==f.record.snapshot.root);
+    CHECK(g_scheduleLedger.Current().id==2 && g_scheduleLedger.Current().originalTarget==0x60000);
+    CHECK(closed.find("original_target_resolved=0")!=std::string::npos);
+    CHECK(opened.find("original_target_resolved=0")!=std::string::npos);
+}
+static void scalar_index_continuity_preserves_original_target() {
+    LogFixture f;const auto id=g_scheduleLedger.Current().id;
+    f.record.schedule.rows[1].valueCC=7;f.record.schedule.index698=1;f.Level(.75f);
+    CHECK(g_scheduleLedger.Current().id==id && g_scheduleLedger.Current().originalTarget==0x20000);
+    f.Close(.5f);
+    CHECK(logs.back().find("event=observed_close")!=std::string::npos);
+    CHECK(logs.back().find(TargetToken(0x20000))!=std::string::npos);
+}
+static void closure_retains_original_target() {
+    LogFixture f;f.Level(.8f);f.Close(.2f);
+    CHECK(logs.back().find(TargetToken(0x20000))!=std::string::npos);
+    CHECK(logs.back().find("original_target_resolved=0")!=std::string::npos);
+    CHECK(logs.back().find("hypothetical_cost_if_no_refill_available=1")!=std::string::npos);
+    CHECK(logs.back().find("actual_cost=not_computed settlement=none billing=off")!=std::string::npos);
 }

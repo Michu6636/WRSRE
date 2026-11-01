@@ -1,4 +1,4 @@
-// Selected-panel ledger and provisional raw endpoint hypothesis. No actual burn,
+// Copied-value observation ledger and provisional raw endpoint hypothesis. No actual burn,
 // native job IDs, price service, settlement or payments in this portable core.
 #ifndef PRIVATE_LOGISTICS_SCHEDULE_ASSIGNMENT_LEDGER_H
 #define PRIVATE_LOGISTICS_SCHEDULE_ASSIGNMENT_LEDGER_H
@@ -45,8 +45,10 @@ struct Point {
 struct Candidate {
     std::uint64_t id=0,epoch=0;
     Address root=0,home=0;
-    Address originalTarget=0; // Frozen at Open/Adopt; never transferred to a replacement target.
-    bool originalTargetResolved=false; // Always false: we never invent a stable payer identity from a raw pointer.
+    // Frozen first-observed single unloading-row target, NOT a verified payer.
+    // Adopted candidates can have an unknown true original target/start.
+    Address originalTarget=0;
+    unsigned originalTargetRows=0;
     Point first{},last{};
     bool unknownStart=false,observationGap=false,roleUncertain=false;
     bool fuelUncertain=false,receiverChanged=false,observedRise=false;
@@ -108,6 +110,15 @@ public:
     bool Active() const {return active_.id!=0;}
     const Candidate& Current() const {return active_;}
     void Break() {if(Active()) active_.observationGap=true;}
+    Result Abandon(const char* reason) {
+        Result r;
+        if(Active()) {
+            active_.observationGap=true;
+            Add(r,Kind::Abandoned,reason,active_,Point{});
+            active_=Candidate{};
+        }
+        return r; // Original target survives in copied event; no refund or native dereference.
+    }
     Result Observe(const sch::Snapshot& s,const sch::Delta& d,const sch::FieldChanges& changes,
                    std::uint64_t epoch,Address root,Address home,Point point) {
         Result result;
@@ -167,9 +178,15 @@ public:
             }
             const bool appeared=!changedIdentity && d.endpointCompared && changes.comparable && changes.Structure();
             active_.id=++serial_;active_.epoch=epoch;active_.root=root;active_.home=home;
-            active_.originalTarget=home; // Freeze the intended target at open/adopt; never transferred later.
-            active_.originalTargetResolved=false; // Raw pointers are not resolved into stable payer identities.
             active_.first=active_.last=point;
+            for(unsigned i=0;i<s.count;++i) {
+                const auto& row=s.rows[i];
+                if(row.configRead && row.target && row.target!=home && row.flag00==0 && row.flagC8==1) {
+                    ++active_.originalTargetRows;
+                    active_.originalTarget=row.target;
+                }
+            }
+            if(active_.originalTargetRows!=1) active_.originalTarget=0; // No arbitrary buyer selection.
             active_.fuelUncertain=!ValidFuel(point.native);
             active_.unknownStart=!appeared;
             active_.observationGap=d.endpointAcrossGap;

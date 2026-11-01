@@ -91,7 +91,7 @@ class ScheduleObserverTest(unittest.TestCase):
         history = header.split('class History {', 1)[1]
         self.assertNotIn('m.Get(', history)  # cached-value comparisons only
         self.assertEqual(header.count('m.Get('), 13)  # native read sites unchanged
-        self.assertIn('0.18.14-endpoint-estimate', cpp)
+        self.assertIn('0.18.15-fleet-observer', cpp)
         self.assertIn('if (d.endpointCompared && d.endpointAcrossGap)', runtime)
         self.assertIn('compared_across_gap=1 continuity_valid=0', runtime)
         self.assertIn('native_event_time=unknown', runtime)
