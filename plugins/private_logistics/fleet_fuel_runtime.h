@@ -10,9 +10,13 @@ static FleetRoot g_fleetRoots[FleetVehicleLimit];
 static ULONGLONG g_fleetLastMs=0;
 static LONG g_fleetEpoch=0;
 static bool g_fleetFault=false,g_fleetDiscoveryComplete=true,g_fleetCoverageWarned=false;
+static bool g_fleetStarted=false;
 static ULONGLONG g_fleetPriceMs=0,g_fleetCoverageLogMs=0;
 static bool g_fleetPriceCached=false;
 static PanelEndpointPrice g_fleetPrice{}; // Copied quote only; no native pointer retained.
+// Optional dry accounting sinks; selected-panel events never feed this ledger.
+static void (*g_fleetCostEvent)(const fleet::a::Event&,const PanelEndpointPrice&,bool)=nullptr;
+static void (*g_fleetCostSample)(const fleet::a::Candidate&,bool)=nullptr;
 static void FleetRefreshPrice(ULONGLONG now) {
     if(!g_fleetPriceCached || now<g_fleetPriceMs || now-g_fleetPriceMs>=30000) {
         g_fleetPrice=DiagnosticFuelPrice();g_fleetPriceMs=now;g_fleetPriceCached=true;
@@ -38,6 +42,7 @@ static void FleetEvents(const fleet::a::Result& result) {
         const auto& e=result.events[i];const auto& c=e.candidate;
         const auto endpoint=fleet::a::Estimate(c,e.boundary);
         const auto price=FleetApproximatePrice(c.sampledDecrease,c.sampledPairs);
+        if(g_fleetCostEvent) g_fleetCostEvent(e,price,g_fleetDiscoveryComplete);
         Logf("[FLEET ASSIGNMENT] epoch=%llu root=%p home=%p id=%llu event=%s reason=%s "
              "original_target_candidate=%p original_target_rows=%u original_target_resolved=0 "
              "first_sample=%u boundary_sample=%u first_ms=%llu boundary_ms=%llu "
@@ -165,6 +170,8 @@ static void FleetTickBody() {
         const bool wasValid=slot->previousValid;
         const auto events=slot->Observe(schedule,fuel,(unsigned long long)epoch,now);
         FleetEvents(events);
+        if(g_fleetCostSample && slot->ledger.Active())
+            g_fleetCostSample(slot->ledger.Current(),g_fleetDiscoveryComplete);
         if(slot->sample==1 || slot->sample%30==0 || events.count ||
            slot->previousValid!=wasValid) FleetVehicleLog(*slot,"poll");
     }
@@ -189,6 +196,7 @@ static void FleetObserverStart() {
     if(!g_simClock->registerTick(FleetObserverTick,nullptr)) {
         Logf("[FLEET FUEL] tick_registration_failed=1 billing=off");return;
     }
+    g_fleetStarted=true;
     Logf("[FLEET FUEL] started panel_required=0 source=private_enterprise_road_office_fleets "
          "interval_ms=1000 max_enterprises=32 max_vehicles=64 max_fleet=256 new_hooks=0 "
          "coverage=sampled_not_continuous units=unverified refill_coverage=unverified "

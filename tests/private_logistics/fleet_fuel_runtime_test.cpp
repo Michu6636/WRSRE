@@ -171,7 +171,11 @@ static void runtime_start_uses_existing_tick_and_no_new_hook() {
     enterprises.structSize=0;FleetObserverStart();CHECK(!tick);
 }
 #include "fleet_approximation_cases.h"
+#ifdef FLEET_RUNTIME_TEST_NO_MAIN
+int FleetRegressionMain() {
+#else
 int main() {
+#endif
     (void)&PanelObserverStart;(void)&PanelObserverLoading;
 #define RUN(name) name();std::puts("PASS " #name)
     RUN(reader_without_window_and_signed_levels);
@@ -205,4 +209,5 @@ int main() {
     RUN(changing_roster_still_breaks_baselines_unlike_capacity_only);
 #undef RUN
     std::puts("29 fleet scenarios PASS (synthetic memory, host services; no game/DLL proof)");
+    return 0;
 }
