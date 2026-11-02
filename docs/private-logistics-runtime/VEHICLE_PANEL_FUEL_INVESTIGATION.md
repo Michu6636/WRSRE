@@ -164149,3 +164149,113 @@ Ready-to-paste next-agent review prompt (read-only, not new implementation/deplo
 ```text
 Read AGENTS.md, INSTRUCTIONS.md and KILO_AGENT_WORKFLOW.md. On arena/343e943d-wrsre, review the latest “Authorized durable dry-run assignment costs — 0.18.17-dry-ledger” section of docs/private-logistics-runtime/VEHICLE_PANEL_FUEL_INVESTIGATION.md and the actual working files. Check closure-frozen quotes, original-target cancellation/replacement allocation, pointer-free snapshots, persistence failure/epoch safety and interrupted active-save policy against the archived 141 Python / 29 fleet + 12 optimized and sanitized runtime passes. Separate host support from unverified native identity/lifecycle/build/reload claims. Payments OFF; no debt/transfers, configuration changes, new hooks, build/deploy, commits, push or PR without separate approval. Named saving already worked; native loading is deferred. Do not repeat baseline/pause tests or broad fuel research. Return bounded findings and the exact smallest next step; keep the same cumulative report, not competing reports.
 ```
+
+## PR #42 merge reconciliation — authorized merge (2026-11-01)
+
+The user requested merging https://github.com/Michu6636/WRSRE/pull/42. Target 05e4dcf51a037d26550eb6cb311eb79f3660f075 conflicts only in this cumulative report: its divergent history removes 21,124 lines relative to our base and adds an older Windows compile-only report. Resolution preserves the entire PR report byte-for-byte as a prefix and appends the complete upstream Windows-build section below, rather than discarding earlier evidence. Production and test files have no incoming changes or conflicts. The following Windows build/results are upstream-reported evidence for **0.18.15**, not a Windows build, native reload validation or deployment of **0.18.17-dry-ledger**. The current native-validation limitations and payments-OFF safeguards remain unchanged. Publication a2c679b opened PR #42; this section supersedes earlier no-publication/no-merge statements only as the corresponding operations actually complete.
+
+## Windows DLL compile-only build — 0.18.15-fleet-observer (2026-11-01)
+
+### Source parity and pre-build checks
+
+| Check | Result |
+|---|---|
+| HEAD commit | `a2e15a61d3de2803f316dc0ce7fb2346a6655eb5` (Merge pull request #40) |
+| Branch | `DO-fuel-cost-calculatotr` |
+| `git status --short` | Empty (clean working tree) |
+| `git diff --check` | Clean (no whitespace errors) |
+| PL_VERSION | `0.18.15-fleet-observer` (`private_logistics.cpp:499`) |
+| Required files | `fleet_fuel_observer.h`, `fleet_fuel_runtime.h`, `fleet_fuel_runtime_test.cpp`, `test_fleet_fuel_observer.py` — all present |
+| INI | `private_logistics.ini` present, UTF-8 without BOM (first bytes `59 32 45`, not `239 187 191`) |
+
+### Build command and toolchain
+
+Command:
+```
+cmd /c '"C:\WRSRE\build.bat" private_logistics'
+```
+
+Compiler/SDK:
+- Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36257 for x64 (MSVC 14.51.36231 toolset)
+- Visual Studio 2026 Developer Command Prompt (x64)
+- `vcvars64.bat` sourced via `vswhere.exe` from `build.bat`
+- Compiler flags: `/nologo /MT /O2 /W3 /std:c++17 /EHsc /D_CRT_SECURE_NO_WARNINGS /D_CRT_NONSTDC_NO_DEPRECATE /I<root>/src /I<root>/src`
+- `/LD` (DLL), `/MT` (static CRT per `src/tesmio_api.h` contract)
+
+### Build output
+
+```
+[build] plugins\private_logistics.dll
+private_logistics.cpp
+   Creating library private_logistics.lib and object private_logistics.exp
+
+-----------------------------------------------------------------------------
+  built:   1
+  skipped: 0
+-----------------------------------------------------------------------------
+
+Workspace cleaned successfully.
+```
+
+Exit status: 0 (success). Warnings/errors: none reported. Intermediate files (`private_logistics.obj`, `private_logistics.exp`, `private_logistics.lib`, `private_logistics.ilk`, `private_logistics.pdb`) created during compile and cleaned by `clean.bat` afterward.
+
+### Output DLL
+
+| Property | Value |
+|---|---|
+| Path | `C:\WRSRE\build\plugins\private_logistics.dll` |
+| Size | 269,824 bytes |
+| SHA-256 | `E8426DF0FE3B550FACA349F8D5DCA489BC196960A941F0BB374DF64881027037` |
+| Architecture | x64 (machine 8664) |
+| Subsystem | Windows GUI (6.00) |
+| File type | DLL |
+
+### Required plugin exports (3 functions)
+
+| Ordinal | RVA | Name |
+|---|---|---|
+| 1 | 0x00012F60 | `TsmPluginApiVersion` |
+| 2 | 0x00012F70 | `TsmPluginInit` |
+| 3 | 0x00013080 | `TsmPluginStart` |
+
+### Deployment status
+
+Compile-only build. Output written to `build\plugins\private_logistics.dll` and `build\plugins\private_logistics.ini` (INI copied by build script). **No deployment to the game installation directory.** No DLL build artifacts committed to Git (`.obj`, `.exp`, `.lib`, `.ilk`, `.pdb` ignored). No game run, no commit, no push.
+
+### Post-build host validation — 140/140 PASS
+
+All host test binaries rerun after the build with no source changes:
+
+| Binary | Cases | Result |
+|---|---|---|
+| `fleet_runtime_test.exe` | 16 fleet scenarios | PASS |
+| `endpoint_runtime_test.exe` | 9 endpoint scenarios | PASS |
+| `assignment_ledger_test.exe` | 29 ledger cases | PASS |
+| `panel_fuel_observer_test.exe` | 16 native scenarios | PASS |
+| `panel_fuel_runtime_test.exe` | 21 cases (13 gate-diagnostic + 8 host-shim) | PASS |
+| `schedule_observer_test.exe` | 28 schedule cases | PASS |
+| `schedule_runtime_test.exe` | 1 schedule runtime case | PASS |
+| Python wrappers (`test_schedule_assignment_ledger.py`, `test_fleet_fuel_observer.py`) | — | SKIPPED (no g++/clang++ on Windows PATH; MSVC used directly for C++ compilation) |
+
+Host shims do NOT validate real Windows SEH, DLL ABI, native lifecycle, physical fuel units or exact consumption.
+
+### Build verdict
+
+**PASS.** The `private_logistics` 0.18.15-fleet-observer DLL compiles cleanly on Windows x64 with no warnings or errors, all 3 required exports present, all 140 host test cases pass, `git diff --check` clean, working tree clean, INI unchanged, billing OFF.
+
+No new native reads/hooks, feature changes, payment enablement, deployment, game launch, commit or push. Deployment and logging-only game validation require separate authorization.
+
+
+### PR #42 reconciliation validation
+
+Preserved exact pre-reconciliation report prefix: 12,689,637 bytes, SHA-256 `edd329630f9df4aab44952d2dc62a5aeaca414eadc293f162fec728032beb554`. Complete upstream build section retained byte-for-byte; production/test source unchanged by the target merge. Archive verifier PASS for the historical prefix, all six new source files, both integration patches and complete test outputs; `git diff --check` PASS. Re-ran `python3 -m unittest discover -s tests/private_logistics -p 'test_*.py'` after resolution:
+
+```text
+.............................................................................................................................................
+----------------------------------------------------------------------
+Ran 141 tests in 12.011s
+
+OK
+```
+
+User-authorized merge is pending GitHub completion at this checkpoint; no deployment, native test or payment enablement is performed.
