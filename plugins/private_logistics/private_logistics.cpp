@@ -1,6 +1,9 @@
 // private_logistics - what a private company earns, and what it pays.
 //
 // ---------------------------------------------------------------------------
+// v0.18.17: durable dry-run assignment costs; frozen original-target snapshots,
+// closed quotes and save-scoped records. Interrupted active saves stay unpriced.
+// No actual debts, settlement, payments, new hooks or dispatch changes.
 // v0.18.16: approximate sampled-drop fuel/cost diagnostics, refill-safe totals,
 // pause-tolerant comparisons, cached prices and quieter bounded fleet logging.
 // Provisional units only; no settlement, payments, new hooks or dispatch changes.
@@ -499,7 +502,7 @@ static char   gFuelResource[64] = "fuel";  // resolved through resource_pricing
 static double gBasketsPerTrip   = 0.80;    // CPI fallback, in daily survival baskets
 static double gBasketsPerTonne  = 0.02;
 
-#define PL_VERSION "0.18.16-approx-fuel"
+#define PL_VERSION "0.18.17-dry-ledger"
 static int g_panelObserverEnabled = 1;
 static int g_scheduleObserverEnabled = 1;
 static void PanelObserverLoading(void);
@@ -3419,6 +3422,8 @@ static void CensusFleets(int closedDay)
 
 #include "panel_fuel_runtime.h"
 #include "fleet_fuel_runtime.h"
+#include "dry_assignment_native.h"
+#include "dry_assignment_runtime.h"
 
 extern "C" __declspec(dllexport) unsigned TsmPluginApiVersion(void)
 {
@@ -3541,6 +3546,7 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
 
     PanelObserverStart();
     FleetObserverStart();
+    DryCostStart();
 
     PatchAllSites();
 
