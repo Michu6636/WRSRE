@@ -166537,3 +166537,11 @@ Ran 144 tests in 19.211s
 
 OK
 ```
+
+### Publication completed — PR #43
+
+Actual Git outcome: committed the 15 reviewed files as `55012d557ed74dd05e5351c4f84c3ff727a13102` (`Guard legacy census slot exhaustion and archive runtime evidence`) and successfully ran `git push origin arena/423e4046-wrsre`. No cache artifacts, generated binaries or workflow files were staged. `gh pr create --base DO-fuel-cost-calculatotr --head arena/423e4046-wrsre` with the reviewed title/body succeeded and returned **https://github.com/Michu6636/WRSRE/pull/43**.
+
+Readback with `gh pr view 43`: title “Guard legacy census slot exhaustion and consolidate DO runtime evidence”; state **OPEN**, non-draft; head `arena/423e4046-wrsre`, base `DO-fuel-cost-calculatotr`; initial head SHA `55012d557ed74dd05e5351c4f84c3ff727a13102`; created `2026-11-03T01:57:30Z` (2026-11-02 local). The check rollup was empty at this readback, not a successful Windows CI result. The PR explicitly records 144 fresh host tests PASS and Windows/game validation pending. No merge, Windows build, game run, deployment, workflow installation or billing change was performed.
+
+This publication record is a documentation-only follow-up to the implementation/evidence commit. Earlier “uncommitted/no publication authorization” notices and checkpoint scripts are historical; source is now published for review. Do not rerun the old uncommitted-diff/HEAD-dependent verifiers as general post-commit tests. The next-agent starting point is open PR #43 on the same fixed branch; do not merge or add CI without further authorization. User game testing remains unavailable and is not requested now.
