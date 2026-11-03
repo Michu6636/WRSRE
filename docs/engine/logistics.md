@@ -1,4 +1,6 @@
 # Logistics Investigation — Distribution Office (Autonomous Private Logistics)
+
+> **Current implementation entry point (2026-11-01):** [How DO offices work in this mod](../private-logistics-runtime/DO_OFFICES.md) and [design section 12](../WRSRE%20DESIGN%20DOC.md) describe 0.18.17-dry-ledger: native dispatch, daily role/permission reconciliation, sampled road-fleet estimates and persisted dry records; payments OFF. This file is historical RE evidence, **not a current implementation recipe**. Do not copy the superseded pointer-vector write instructions below, infer universal receiver/unit semantics from an offset, or treat static layout descriptions as native lifecycle/billing validation. The existing supersession notice and original exports remain preserved.
 > **Status 2026-10-22 — Superseded in part:** For DO task storage, see `docs/ghidra-do-storage-findings.md` (stride `0x18` Entry `+0x00/+0x08/+0x10`, `TaskCfg 0x198`, dirty `+0xD50`/`+0xFC0`, save `1EDC40/6C5350` load `1F0BE0`, type-3 road / type-6 rail, cap 5 policy, `panel+0x310` unverified). The `Logistics_Investigation` `0xD38 stride 8` pointer-vector model is incomplete; use the new doc as source of truth. Original kept for history.
 
 **Target:** `SOVIET64.exe` v1.1.1.9 (base `0x140000000`). Addresses are file-based
