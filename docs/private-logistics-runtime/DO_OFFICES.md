@@ -1,7 +1,7 @@
 # How distribution offices work in WRSRE
 
-**Current source:** `private_logistics` **0.18.18-census-guard**, an uncommitted, host-tested legacy-census safety follow-up to **0.18.17-dry-ledger** from [PR #42](https://github.com/Michu6636/WRSRE/pull/42), merge commit `fa6dc671a38af4976f346b6d4ab8bbf0bbdbfc36`. No newer Windows build/deployment or in-game run is claimed.
-**Documentation review:** 2026-11-01. This page describes source behavior, not proof that this version is installed in the player's game.
+**Current source:** `private_logistics` **0.18.18-census-guard**, merged in [PR #43](https://github.com/Michu6636/WRSRE/pull/43) at `2d83fdc41d99f0a98ab00ea2ae2292dc6e78ba2f`, following **0.18.17-dry-ledger** from [PR #42](https://github.com/Michu6636/WRSRE/pull/42). The user reports a successful Windows build; Test15 now logs this version running natively across 30 daily summaries. It exposes the existing five-total-target automatic-connection restriction and unresolved secondary-goods dispatch symptoms; it is not a clean overall dispatch acceptance, a >64-slot stress test or a source/binary hash-parity check.
+**Documentation review:** updated 2026-11-03 with Test15 evidence. Source behaviour and native observations remain distinguished; a logged version is not byte-for-byte compiler/source parity.
 
 ## 1. The short version
 
@@ -21,7 +21,7 @@ The player controls access to state-owned sites, not each private company's list
 
 The daily pass discovers eligible sites, rechecks ownership and permissions, reconciles existing tasks and adds missing eligible targets. It keeps existing entries rather than deleting the whole list. However, it **does apply company direction/resource-selection and percentage policy to managed existing tasks, including manually added ones**. This is not a promise to preserve every manual setting. Manually configured customs targets are an explicit preservation exception; automatic customs selection is not implemented. State-owned DOs are not taken over by this automation.
 
-The source currently limits automatic additions to **five total target entries per private office**, counting existing/manual entries. This is a conservative mod safety budget, not a proven game maximum. Existing entries beyond that budget are not deleted to make space. A target still present but unreachable is not treated as missing or duplicated. Native roads, cargo compatibility, storage input/output acceptance and planner decisions still determine whether a truck can actually work; a permitted connection does not guarantee a dispatch.
+The source currently limits automatic additions to **five total target entries per private office**, counting existing/manual entries. This is a conservative mod safety budget, not a proven game maximum. Existing entries beyond that budget are not deleted to make space. **Test15 confirms this budget can prevent required connections:** 411 omissions are logged, including meat storage and a shop_prior destination; waiting another day does not free a five-entry office. The native UI's 49-target display is not this plugin's current automatic limit. A target still present but unreachable is not treated as missing or duplicated. Native roads, cargo compatibility, storage input/output acceptance and planner decisions still determine whether a truck can actually work; a permitted connection does not guarantee a dispatch.
 
 ## 3. Loading, deliveries and stock thresholds
 
@@ -103,11 +103,13 @@ PR #42 recorded **141 Python tests**, plus **29 fleet + 12 dry-ledger C++ scenar
 
 **Test14 update:** `autosave5` now loads a **nonempty three-record book** (`loaded=1`, zero interrupted/missing/blocked). Two autosaves write 3 records / 616 bytes; the named save **`26741 - My republic`** writes **4 records / 812 bytes**. One new assignment opens before that save and none closes: the fourth row is consistent with the saved interrupted/unpriced copy of an active assignment, not a completed cost. Its stage is inferred from source, not printed. Exact restored IDs/quotes and reloading that fourth row are not yet compared. This supersedes the blanket “nonempty native ledger reload unverified” limitation, not the narrower Test13 demolition-record persistence limit: that cancellation occurred after the loaded autosave. No repeat basic saving or demolition is required.
 
+**Test15 update (2026-11-03):** the next native load reports `records=4 interrupted_unpriced=1 missing_file=0 blocked=0 prior_active_not_rebound=1`. The four-record/interrupted classification is now observed, not merely inferred; exact restored row identities/amounts are still not compared. The log also runs 0.18.18 through 30 daily summaries, with the target-cap/secondary-goods problems discussed above. Full Test15 evidence is in the cumulative report.
+
 Next steps, each within its own approval scope:
 
 1. Treat Test13's observed 0.18.17 startup/closures/save callbacks as completed native evidence, not a pending blanket rebuild/redeployment requirement. A matching compiler transcript/binary hash would separately establish build provenance if needed.
 2. Preserve the successful cancellation/original-target result and Test14 named save/nonempty reload. Do not require repeated simple saves, demolition or broad baseline/pause research just to reconstruct a cancelled record absent from the earlier save.
-3. Further validation can compare exact restored closed-row fields and restore an interrupted active-save copy without rejoining it to a vehicle; stale-world isolation remains a separate case. These additional loading checks can wait by agreement. The basic nonempty native load path is no longer wholly untested.
+3. Further validation can compare exact restored closed-row fields and interrupted-copy contents; Test15 already observes the four-record/interrupted classification and no-rebind flag, so a basic repeat is not required. Stale-world isolation remains a separate case. These field-level loading checks can wait; the current priority is the target/secondary-goods dispatch problem.
 4. Measure large-save observation/daily-pass spikes and save/load overhead. Improve coverage/retention if necessary; do not call the current bounds an unlimited production system.
 5. Before real settlement, verify original-customer and carrier financial identities, prevent duplicate debits/credits across saves, and implement explicitly auditable insufficient-funds/unpaid-debt handling. No automatic charge, refund, write-off or replacement-payer substitution is authorized by a dry record. Improving exact fuel accounting can be incremental; the user has accepted the initial approximation.
 
