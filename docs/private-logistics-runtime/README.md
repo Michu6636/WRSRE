@@ -1,4 +1,18 @@
-# Private logistics — runtime observation work package
+# Private logistics — runtime observation and implementation
+
+## Current source — 0.18.18-census-guard (2026-11-02)
+
+The authorized safety follow-up guards the older daily census's exhausted slot before per-vehicle diagnostics and summarizes omitted visits. It keeps the 64-slot cap, existing identities, dispatch, newer observer and ledger/billing policy unchanged. **144 host tests pass**, including optimized/sanitized execution of the extracted census; the original census fails the same host sanitizer fixture at index -1. No new Windows DLL build, deployment or game run is claimed. Native evidence below remains for 0.18.17; scale timing/instrumentation and discovery/retention changes are separate work.
+
+Start with [How distribution offices work in WRSRE](DO_OFFICES.md) and [the main design document, section 12](../WRSRE%20DESIGN%20DOC.md). PR #42 merged persistent dry assignment costs: closure-frozen cached quotes, original-target cancellation/replacement allocation, pointer-free snapshots, protected save/load and interrupted/unpriced active saves. Payments remain OFF; snapshots do not verify economic payers, and no actual debt/settlement is created. [Permissions and working-dispatch history](AUTONOMOUS_DO_PERMISSIONS_PLAN.md) covers the unchanged daily 10/30 connection policy.
+
+Vehicle observation runs at most approximately once per real-world second through tick callbacks, not a full scan every tick or a replacement dispatch engine. Prices are cached for approximately 30 real-world seconds; weekly game-clock pricing/cache invalidation is a future idea only. Large-save performance is unmeasured. The guide separates these clocks, limits and remaining work.
+
+The implementation has archived host-test support (141 Python tests; 29 fleet + 12 optimized/sanitized dry-ledger scenarios). Earlier live tests support dispatch, the accepted initial approximation/refill-like rises and pause continuity; Test12 named saving worked. **Test13 (2026-11-02) now provides live 0.18.17 dry-ledger evidence:** reported factory demolition closed once, retaining the original factory and a 1.8025194 RUB estimate, without adding later return fuel. Two earlier autosaves logged successful 3-record/616-byte writes, but neither includes this later cancellation. Cancelled-record persistence, exact restored row values, compiler/source-binary parity, payer linkage and large-save timing remain unverified. **Test14 now shows nonempty native restoration:** `autosave5` loads 3 records without missing/blocked/interrupted flags; two autosaves retain 3 rows / 616 bytes, and the named `26741 - My republic` save writes 4 rows / 812 bytes. Only a new assignment opening is logged, no closure: the fourth saved row is consistent with the active interrupted/unpriced-copy policy, not a new completed bill. Reloading that fourth row and comparing frozen amounts remain later checks; further loading can wait. No repeat simple-save/demolition/baseline/pause research is required. Complete original log/screenshots, helper source/results and handover remain in [the single cumulative report](VEHICLE_PANEL_FUEL_INVESTIGATION.md).
+
+## Historical observation work package and reviews
+
+**Everything below is historical context, not the current task list or branch status.** Earlier “next” prompts, exact-burn research gates, success-only billing proposals, agent/model/worktree assignments and session-retirement instructions are not active directions. Use current user authorization and repository workflow; the old disconnected journey core is not the durable fleet-cost book. Preserve these records without reactivating old agents, legacy billing or repeated evidence requests.
 
 > **ACTUAL RAW CLOSURE RECEIVED AND HASH-MATCHED (2026-11-01).** Attachment
 > 65056bytes/SHA188d6595…fcacf206;801 supplied instructions independently

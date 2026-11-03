@@ -1,6 +1,12 @@
 # Autonomous private DOs — step 1 implementation and step 2 test
 
-## Current status
+## Current scope — permissions remain in force (2026-11-01)
+
+For the complete current DO behavior, read [the implementation guide](DO_OFFICES.md) and [design section 12](../WRSRE%20DESIGN%20DOC.md). Source is now **0.18.17-dry-ledger** (PR #42), not 0.18.5. This update did not change the working permissions/dispatch policy below: independent default-OFF state directions, consumer unload-only roles, daily reconnection, source10/destination30, five-entry addition budget and preserved manual customs tasks. Existing manual tasks of managed types are reconciled too; manual removal is not a lasting access veto. Target writes are enabled in source independently of payments remaining OFF.
+
+The newer road-fleet observer and persistent approximate dry-cost ledger are separate from these connection rules. Original-target cancellation/replacement costs are frozen without transfers; active saves reload interrupted/unpriced. The guide explains one-second observation, 30-second price caching, unmeasured large-save performance and the future-only weekly-price idea. Earlier dispatch save/reload acceptance is not native reload validation for this new book. Do not rerun the historical test sequence or use old fuel-research “next” instructions as the current plan; current evidence and pending validation are in [the cumulative report](VEHICLE_PANEL_FUEL_INVESTIGATION.md).
+
+## Dispatch acceptance milestone — v0.18.5 history
 
 **Latest status:** the player reports that the working DO also passes the full save/exit/restart/reload check in v0.18.5-source10. The new log shows three existing tasks, no additions or configuration corrections, and subsequent warehouse pickups and attributed state-shop deliveries. The tested dispatch/save-load acceptance check is passed; this does not prove universal native compatibility or explain the older office's failure. Keep source10/destination30 and billing OFF. No blanket persistence reset or unknown-flag repair is justified. Next development stage is actual fuel-resource validation, not live settlement.
 

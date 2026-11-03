@@ -164259,3 +164259,2289 @@ OK
 ```
 
 User-authorized merge is pending GitHub completion at this checkpoint; no deployment, native test or payment enablement is performed.
+
+## Current DO design/documentation reconciliation — 2026-11-01
+
+User authorizes documenting the DO implementation exactly as explained, including the real-second performance question and the future weekly-price idea. Work is on active `arena/423e4046-wrsre`, based on merged PR #42 (`fa6dc671a38af4976f346b6d4ab8bbf0bbdbfc36`). This is documentation only: no source, INI, runtime interval, hook, billing, pricing or deployment change; no commit/push/PR requested in this turn. PR #42 is confirmed merged at 2026-11-02T01:31:24Z (local date 2026-11-01); this supersedes the prior pending-merge checkpoint, not its evidence. Full local instructions/workflow were consulted; remote INSTRUCTIONS blob 64684a0b860b09a88976af9c074176bc8dc1db88 matches local.
+
+### Documentation contract and corrections
+
+Added [How distribution offices work in WRSRE](DO_OFFICES.md) as the detailed player/developer explanation, with source/evidence links. [Main design section 12](../WRSRE%20DESIGN%20DOC.md) now describes the actual private-DO layers and replaces the old Task 6b/status row. The [vision](../visions/vision-private-logistics.md), [runtime entry point](README.md), [permissions history](AUTONOMOUS_DO_PERMISSIONS_PLAN.md) and [historical engine notes](../engine/logistics.md) point readers to the current contract. Obsolete v0.17 load-only/live-billing/defaults and manual-task assumptions are explicitly historical, not current instructions; old exports/reviews remain preserved. No old agent lifecycle, model/worktree allocation or repeated exact-burn research prompt is reactivated. These explanatory pages are not competing evidence reports: complete findings/source/results remain here, with the existing implementation archive unchanged.
+
+Source review distinguishes daily `AutoTargetsOnDay` connection reconciliation (private offices, independent default-OFF state permissions, role-based private endpoints, source10/destination30, five-total-entry addition budget and customs preservation) from `FleetTickBody` road-only observation and `DryCostPersistence` file callbacks. Managed manual tasks can have directions/selectors/thresholds reconciled; manual removal is not a permanent veto. Costs use accumulated positive signed-native decreases, not net start/end or transferred cargo counts; original-target snapshots remain on cancellation/replacement, outside-assignment overhead stays unallocated, quotes freeze at closure, and unavailable price is not zero. Snapshots do not establish payer/company identity. Open saves retain quantities/target but reload interrupted/unpriced, not resumed native jobs; closed records retain frozen estimates. Corrupt/unreadable cost files block overwrite. No actual debt, settlement or invoice UI is claimed. Checked-in `billing=0` and `auto_targets_dry_run=0` are deliberately different: payments OFF while target application is ON. Source references and provisional-unit/native-lifecycle limits are explicit in the guide.
+
+### Timing/performance answer and future idea
+
+The one-real-second gate is observation throttling inside existing simulation callbacks, not a full scan every tick, native dispatch timing or a new timer thread. Faster simulation advances more work between samples; pause duration alone does not break identity, and resuming does not fabricate catch-up samples. Discovery covers at most 32 **enterprise-register entries**, not 32 offices, with 64 global tracked vehicles and a 256-root fleet-vector bound. Bounded/fixed-size readers and throttled logs reduce work but do not prove negligible overhead: membership checks, target-opening world scans, daily world/site reconciliation and save lock duration still require representative native large-save profiling. No new benchmark was run. Current 30-real-second quote caching does not set the underlying economy's price-change cadence. The user's possible game-week pricing/cache refresh is recorded only as a future idea: define week/event/ordering, initialize/invalidate on load and exceptional updates, keep fuel sampling independent, and preserve closure-frozen records. Neither weekly price changes nor cache scheduling is implemented or authorized here.
+
+### Actual documentation verification
+
+Before appending this report section, the following inline Python check ran successfully over the five modified explanatory pages and the new guide. It checks only new links, not all historical links. Its exact pre-append file-count/report-equality assertions describe that checkpoint, not a reusable requirement after this report grows. No helper/test source file was added.
+
+```python
+from pathlib import Path
+from urllib.parse import unquote, urlsplit
+import re, subprocess, hashlib
+changed = subprocess.check_output(['git', 'diff', '--name-only'], text=True).splitlines()
+new = subprocess.check_output(['git', 'ls-files', '--others', '--exclude-standard'], text=True).splitlines()
+assert len(changed) == 5 and new == ['docs/private-logistics-runtime/DO_OFFICES.md']
+assert all(p.startswith('docs/') for p in changed + new)
+links = 0
+for name in changed + new:
+    path = Path(name)
+    if name in new:
+        text = path.read_text()
+    else:
+        diff = subprocess.check_output(['git', 'diff', '--unified=0', '--', name], text=True)
+        text = '\n'.join(line[1:] for line in diff.splitlines() if line.startswith('+') and not line.startswith('+++'))
+    for href in re.findall(r'\[[^\]\n]+\]\(([^)\s]+)\)', text):
+        url = urlsplit(href)
+        if url.scheme or not url.path:
+            continue
+        target = path.parent / unquote(url.path)
+        assert target.exists(), (name, href)
+        links += 1
+    assert not any(re.match(r'^(<<<<<<< |=======|>>>>>>> )', line) for line in path.read_text().splitlines())
+print(f'PASS documentation-only scope: {len(changed)} modified pages + {len(new)} new guide; runtime/config/tests unchanged')
+print(f'PASS all {links} new local Markdown link targets exist; no conflict markers')
+report = Path('docs/private-logistics-runtime/VEHICLE_PANEL_FUEL_INVESTIGATION.md').read_bytes()
+original = subprocess.check_output(['git', 'show', 'HEAD:docs/private-logistics-runtime/VEHICLE_PANEL_FUEL_INVESTIGATION.md'])
+assert report == original
+print(f'PASS pre-update cumulative report unchanged: {len(report)} bytes SHA256 {hashlib.sha256(report).hexdigest()}')
+guide = Path(new[0]).read_text()
+for phrase in ('weekly', 'future idea', 'not benchmarked', 'interrupted/unpriced', 'billing=0', 'auto_targets_dry_run=0', 'original target', '32 enterprise-register entries'):
+    assert phrase.lower() in guide.lower(), phrase
+print('PASS current/future, payment/target switches, identity/load limits and performance caveats present')
+```
+
+Actual pre-report documentation-check output:
+
+```text
+PASS documentation-only scope: 5 modified pages + 1 new guide; runtime/config/tests unchanged
+PASS all 31 new local Markdown link targets exist; no conflict markers
+PASS pre-update cumulative report unchanged: 12695659 bytes SHA256 825c035d8a0e23cbe577d3742e44fead06e17b9e566da49bf8928e1e36284b4d
+PASS current/future, payment/target switches, identity/load limits and performance caveats present
+```
+
+Actual regression command: `python3 -m unittest discover -s tests/private_logistics -p 'test_*.py'`. Complete captured output (no failure or skip):
+
+```text
+.............................................................................................................................................
+----------------------------------------------------------------------
+Ran 141 tests in 16.999s
+
+OK
+```
+
+`git diff --check` also passed. The prior optimized/sanitized implementation results remain historical evidence; sanitizers, MSVC, deployment, native reload and timing benchmarks were not rerun for this documentation-only change.
+
+### Reviewed explanatory-document manifest
+
+Final document bytes/SHA-256 (the cumulative report is excluded to avoid a self-hash):
+
+- `docs/WRSRE DESIGN DOC.md`: 37354 bytes; `68dc66d788211ee2a8e1a22597724e57e75d10e2c474de89eea66eec8fbbd461`.
+- `docs/private-logistics-runtime/DO_OFFICES.md`: 21186 bytes; `e93981911d0edb5646c6ebf86c198654a317a132a39a4a0776e38c9a1136ac28`.
+- `docs/visions/vision-private-logistics.md`: 14197 bytes; `b2a0a0583c5afcc223a2159fb24d5e382ac6a764de22d4b3c2d1b3efc9b9090f`.
+- `docs/private-logistics-runtime/README.md`: 38524 bytes; `ba96704649a6ddc3eab3c43a96d5fd14cc8ed4c53d13498a11cd57fe4459e135`.
+- `docs/private-logistics-runtime/AUTONOMOUS_DO_PERMISSIONS_PLAN.md`: 65109 bytes; `ca94733f4b111472216ac5e60338aaece25524dfe4c312764b4a01bafa402a7a`.
+- `docs/engine/logistics.md`: 11150 bytes; `d56bb45f39686eb414b31a712c66487294fe3200171c48ee9c24b84c6a4c6c02`.
+
+### Final documentation review / handover
+
+Final review passed: six existing documentation files modified plus the new guide; all **37** added local link targets resolve after including this report's links. The original **12,695,659-byte** report prefix remains byte-for-byte intact; all six explanatory-document manifest hashes match. `git diff --exit-code -- plugins src tests` confirms no source/config/test changes; `git diff --check` passes. The existing 141-test regression suite passed in **16.999s**. No new native build, deployment, profiling, loading test, price event, payment or settlement implementation occurred. Changes remain uncommitted on the active branch. Next practical step remains a separately authorized Windows build/focused ledger check; loading can wait and baseline/pause tests need not be repeated.
+
+Ready-to-paste read-only review prompt:
+
+```text
+Read AGENTS.md, INSTRUCTIONS.md and KILO_AGENT_WORKFLOW.md. Stay on arena/423e4046-wrsre. Review docs/WRSRE DESIGN DOC.md section 12 and docs/private-logistics-runtime/DO_OFFICES.md against the actual 0.18.17 production code. Check state/private directions, daily target policy versus road-only observation, cancellation/replacement allocation, provisional quantities and frozen quotes, interrupted active saves and financial-identity limits. Confirm the vision/README/permissions/engine pages mark superseded material clearly. Verify one-second observation and 30-second quote caching are separate from native dispatch and economy price updates; weekly game-clock pricing remains a future idea only, and large-save performance is unmeasured. This is documentation-only: no runtime/INI/payment changes, new native queries, repeated baseline/pause tests, build/deploy, commits, push or PR. Keep complete evidence in the existing cumulative report, not a competing report. Return bounded factual corrections or approval and the smallest next step.
+```
+
+## Test13 — live durable-ledger closure after reported destination demolition
+
+User supplied `tesmioloader-13.log` and two screenshots, stating the destination was demolished. Measured log: **1,263,907 bytes / 12,035 CRLF lines**, SHA-256 `a40e4f8687abf5cc49ec1f48b14069b55cbfcdb080fdb51233aaf9104d8b63e0`. The original log is preserved losslessly below as ordered base64-XZ parts; original PNGs are preserved without alteration in `evidence/test13/` and displayed here. All previous report bytes remain intact as a 12,706,275-byte prefix / SHA-256 `e202f6c1c3c41dfd8c9a3e95e932bf1a4b130d5e54b17a18cb887d8f1e157e06`. This is evidence review/documentation only; no production, configuration, billing, polling or pricing change, build, deployment, commit or publication performed by the assistant.
+
+### Supported live result: original-target cancellation closure
+
+Startup L139/L157 reports 0.18.17-dry-ledger, working dry-cost sinks and `billing=0`. Road root `000001C8F1617F30` opens fleet assignment 2 at L8632, sample 348, against original target `000001C9174AB3F0`. The screenshot's factory task maps to that target in L10470. At **20:32:02.024**, L10513 closes **durable record 5** with `close_reason=2` (office-only); L10514 closes that same fleet candidate at sample 398 with `reason=observed_office_only`. Exactly one close exists for this root/assignment, with the original target pointer unchanged. The durable snapshot remains `fabric_factory`, type 6, x=4020.93579, z=-6819.35645, key `E992E4536EE27172`, not the DO or a replacement. Its 50 compared pairs accumulate **0.0119992178 provisional native quantity** and freeze **150.219742 RUB/tonne**, giving **1.8025194 RUB**. `partial=0` means none of the implemented partial flags was raised; it does not prove exact burn, units, payer ownership or native event completeness. Demolition is the user's ground truth; telemetry proves the observed three-row-to-office-only transition, not the exact instant of the demolition action or a verified native demolition callback.
+
+### Screenshot correlation and post-close overhead
+
+The first screenshot shows the Rnt AGK carrying **0.86 t chemicals**, with warehouse → fabric factory → office tasks and **26.63** displayed fuel. Panel L10463 matches 26.63 on the same unique fleet root; rows L10469–10471 match source/factory/office. The second shows **25.76**, the same chemicals still aboard, and only the office task. L10539/L10541/L10544 match that root, quantity and one-row office-only list. The visual comparison supports cancellation rather than completed unloading; it does not itself identify a persistent vehicle ID or exact consumption. The closing sample lies between those images at native 0.0260632578 (about 26.06 displayed), not at either screenshot endpoint. Fleet readings later reach 0.0199510101 and 0.0187864825 at L11427/L11912: another **0.0072767753** native decrease after observed closure, with no further assignment event/record for this root. That later vehicle-total activity is not allocated to the closed factory assignment; the lifetime `[FLEET FUEL]` estimate is not its bill. The sample boundary is approximate, so exclusion after the observed close is supported, not exclusion from the exact player-click instant.
+
+### Saving, other records and limits
+
+There are **9 dry-cost messages**, **20 fleet assignment events** (5 open / 10 update / 5 close), **50 vehicle fuel samples** plus one fleet-start message, and 17 panel samples. Five unique cost records close in order 1/2/3/5/4, at 3.55996871 / 4.14354985 / 4.70475868 / 1.8025194 / 5.64701508 RUB respectively. All log valid snapshots and available estimates; all printed decrease×quote products match within log precision. Records 1 and 5 retain the same factory tuple/key on separate assignments; later quotes differ from the earlier 150.907608 reference. This supports actual dry runtime operation, not historical-price reconstruction or financial ownership.
+
+Autosave4 at **20:27:49** and autosave5 at **20:30:32** both report `saved=1 records=3 bytes=616` (28 + 3×196), followed by save manifests at L5227/L8143. The former occurs while some assignments are active; the latter is after records 1–3 close. **Both precede the later demolition/record 5 closure.** No subsequent ledger save is logged. Thus live ledger writing is supported, but persistence of this specific cancelled record is not established. Initial L700 loads an existing empty book (`records=0 missing_file=0`); first-load-to-empty is not proof of restoring nonempty closed records or financial linkage. The binary ledger file itself was not supplied. Native nonempty restoration remains deferred; no repeated demolition/baseline/pause test or filesystem-reset exercise is required by this result.
+
+### Safety and remaining evidence boundaries
+
+All seven day-close payment summaries say billing off; dry records say actual debt not created / settlement none / payer not verified. No fleet-coverage, observer guarded-fault or tick-subscriber-fault warning appears. All 50 numeric fleet samples have native_valid=1 and discontinuities=0. Do not report zero game errors: 108 `game.ERROR` lines comprise 62 pre-load messages, one load-time `replace_history.bin` read error at L736, seven focus messages, and 38 `saved_last` exit-write errors. The latter are the user-explained expected exit-without-save behavior and do not invalidate the earlier autosave successes. No causal diagnosis of the unrelated load read/focus messages is inferred. The run now supports deployed 0.18.17 dry-ledger behavior for these paths; a separate compiler transcript/source-binary hash parity, nonempty ledger restore, universal native lifecycle/units, exact burn, payer linkage and large-save timing remain unverified. No real debt or transfer is authorized by this pass.
+
+### Original screenshot evidence
+
+`image-44.png`: 523,998 bytes; SHA-256 `84ca128dd56cad7735bcd948f03eb79e85f04dadd695cf78f21a18b24af30076`. Original bytes preserved; first image shows warehouse/factory/office tasks, chemicals still aboard, and 26.63 displayed fuel.
+
+![Test13 first screenshot: chemicals assignment to fabric factory, 26.63 fuel](evidence/test13/image-44.png)
+
+`image-45.png`: 500,321 bytes; SHA-256 `40d3fec42da891248a6f2c498ffddb6a351076423627f3247d142c1da9dccb2c`. Original bytes preserved; second image shows chemicals still aboard, office-only task and 25.76 displayed fuel.
+
+![Test13 second screenshot: office-only after reported demolition, 25.76 fuel](evidence/test13/image-45.png)
+
+#### Test13 exact excerpts — startup and successful saves
+
+```text
+Test13-L139: [20:23:53.230] [DRY COST] started file=private_logistics_costs.bin max_records=4096 closed_quotes_immutable=1 open_save_policy=interrupted_unpriced no_money_writes=1 billing=off
+Test13-L157: [20:23:53.230] private_logistics  live v0.18.17-dry-ledger: billing=0 dry_run=1 factory=1 carrier=1, 16 sites, cap 5000/day, price = LEGACY FRAGMENT MODEL (fuel x margin + wear), NOT journey settlement, factory share 0.90
+Test13-L700: [20:25:02.495] [DRY COST] loaded=1 records=0 interrupted_unpriced=0 missing_file=0 blocked=0 prior_active_not_rebound=1 billing=off
+Test13-L5224: [20:27:49.982] [DRY COST] saved=1 records=3 bytes=616 billing=off
+Test13-L5227: [20:27:49.992] save   manifest written to media_soviet/save/autosave4\tesmioloader.save.ini
+Test13-L8140: [20:30:32.162] [DRY COST] saved=1 records=3 bytes=616 billing=off
+Test13-L8143: [20:30:32.169] save   manifest written to media_soviet/save/autosave5\tesmioloader.save.ini
+```
+
+#### Test13 exact excerpts — all five frozen dry closures
+
+```text
+Test13-L4310: [20:27:16.603] [DRY COST] record=1 stage=closed close_reason=3 target_snapshot_available=1 target_key=E992E4536EE27172 asset=fabric_factory type=6 x=4020.93579 z=-6819.35645 identity_scope=asset_type_position_snapshot payer_verified=0 sampled_decrease_native=0.0235903859 sampled_increase_native=0 compared_pairs=68 partial=0 estimated_cost_available=1 would_owe_available=1 estimated_cost=3.55996871 currency=0 frozen_price_per_tonne=150.907608 price_policy=freeze_at_observed_close units=native_tonnes_provisional actual_debt=not_created settlement=none billing=off
+Test13-L5360: [20:27:59.080] [DRY COST] record=2 stage=closed close_reason=1 target_snapshot_available=1 target_key=8E996B0CAFB33F49 asset=shop_grocerystore type=3 x=4116.18604 z=-6869.62842 identity_scope=asset_type_position_snapshot payer_verified=0 sampled_decrease_native=0.0274575278 sampled_increase_native=0 compared_pairs=109 partial=0 estimated_cost_available=1 would_owe_available=1 estimated_cost=4.14354985 currency=0 frozen_price_per_tonne=150.907608 price_policy=freeze_at_observed_close units=native_tonnes_provisional actual_debt=not_created settlement=none billing=off
+Test13-L6543: [20:28:41.472] [DRY COST] record=3 stage=closed close_reason=1 target_snapshot_available=1 target_key=8BEBEAAAAAD31640 asset=shop_clothes type=3 x=4176.13916 z=-6862.02686 identity_scope=asset_type_position_snapshot payer_verified=0 sampled_decrease_native=0.0311764181 sampled_increase_native=0 compared_pairs=83 partial=0 estimated_cost_available=1 would_owe_available=1 estimated_cost=4.70475868 currency=0 frozen_price_per_tonne=150.907608 price_policy=freeze_at_observed_close units=native_tonnes_provisional actual_debt=not_created settlement=none billing=off
+Test13-L10513: [20:32:02.024] [DRY COST] record=5 stage=closed close_reason=2 target_snapshot_available=1 target_key=E992E4536EE27172 asset=fabric_factory type=6 x=4020.93579 z=-6819.35645 identity_scope=asset_type_position_snapshot payer_verified=0 sampled_decrease_native=0.0119992178 sampled_increase_native=0 compared_pairs=50 partial=0 estimated_cost_available=1 would_owe_available=1 estimated_cost=1.8025194 currency=0 frozen_price_per_tonne=150.219742 price_policy=freeze_at_observed_close units=native_tonnes_provisional actual_debt=not_created settlement=none billing=off
+Test13-L11959: [20:33:02.247] [DRY COST] record=4 stage=closed close_reason=1 target_snapshot_available=1 target_key=8E996B0CAFB33F49 asset=shop_grocerystore type=3 x=4116.18604 z=-6869.62842 identity_scope=asset_type_position_snapshot payer_verified=0 sampled_decrease_native=0.0375916974 sampled_increase_native=0 compared_pairs=105 partial=0 estimated_cost_available=1 would_owe_available=1 estimated_cost=5.64701508 currency=0 frozen_price_per_tonne=150.219742 price_policy=freeze_at_observed_close units=native_tonnes_provisional actual_debt=not_created settlement=none billing=off
+```
+
+#### Test13 exact excerpts — original assignment and first screenshot
+
+```text
+Test13-L8632: [20:31:03.638] [FLEET ASSIGNMENT] epoch=2 root=000001C8F1617F30 home=000001C9174ADE10 id=2 event=observed_open reason=observed_appearance original_target_candidate=000001C9174AB3F0 original_target_rows=1 original_target_resolved=0 first_sample=348 boundary_sample=348 first_ms=47341781 boundary_ms=47341781 native_start_valid=1 native_start=0.0380624756 native_end_valid=1 native_end=0.0380624756 unknown_start=0 observation_gap=0 role_uncertain=0 fuel_uncertain=0 receiver_changed=0 observed_level_rise=0 net_change_valid=1 net_change_native=0 units=unverified id_scope=process_local_vehicle_slot native_boundary=unverified refill_coverage=unverified exact_burn=0 sampled_decrease_native=0 sampled_increase_native=0 compared_pairs=0 estimate_partial=1 discovery_complete=1 estimated_cost_available=0 estimated_cost=0 estimate_reason=no_compared_samples estimate_currency=0 price_per_tonne=150.219742 price_basis=current_cached_30s quantity_assumption=native_tonnes_provisional actual_cost=not_computed settlement=none billing=off
+Test13-L10463: [20:32:00.009] [PANEL FUEL] epoch=2 sample=8 ms=47397171 phase=post_render window=000001C92BEBF0C0 root=000001C8F1617F30 status=complete aggregate_valid=1 current_raw=0.0266321283 litres_candidate=26.63 capacity_unadjusted=0.327600002 ratio_valid=1 ratio=0.0812946558 links=0 mode=2 metadata_kind=1 flags_read=1 flag8681=0 flag8682=0 adjustment_read=1 adjustment_needed=0 presentation=unresolved_7c58 queue_full_total_at_capture=0 queue_full_total_at_drain=0 captured_paused=1 coalesced_snapshots=5 sample_ids=accepted_records_only root514_read=1 root514=0 root4f0_read=1 root4f0=0000000000000000 gate_global_read=1 gate_global=2 gate_diag=0.18.17-dry-ledger native_execution=unobserved physical_fuel=unverified exact_burn=0 billing=off
+Test13-L10466: [20:32:00.009] [PANEL SCHEDULE] epoch=2 sample=8 ms=47397171 root=000001C8F1617F30 candidate_home=000001C9174ADE10 status=complete_selected_fields baseline=diagnostic_gap observed_fields_changed=0 storage_changed=0 row_index_changed=0 opaque_context_changed=0 begin680=000001C92BD7BCF0 end688=000001C92BD7BD08 configs638=000001C92BA49410 raw_row_count=3 captured_rows=3 index698=1 flag5fd=0 raw4a0=0000000000000000 raw610=0000000000000000 raw650=0000000000000000 fuel_valid=1 fuel_root_raw=0.0266321283 aggregate_litres_candidate=26.63 visibility=panel_only phase=post_render native_event_coverage=unverified native_job_id=unverified buyer=unverified completion=unverified exact_burn=0 billing=off
+Test13-L10469: [20:32:00.010] [PANEL SCHEDULE ROW] epoch=2 sample=8 row=0 target_raw=000001C9174AC900 config_fields_read=1 flag00=1 value04=0.566666722 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+Test13-L10470: [20:32:00.010] [PANEL SCHEDULE ROW] epoch=2 sample=8 row=1 target_raw=000001C9174AB3F0 config_fields_read=1 flag00=0 value04=1 flagc8=1 valuecc=1 target_role=unverified buyer=unverified
+Test13-L10471: [20:32:00.010] [PANEL SCHEDULE ROW] epoch=2 sample=8 row=2 target_raw=000001C9174ADE10 config_fields_read=1 flag00=0 value04=1 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+```
+
+#### Test13 exact excerpts — observed closure and second screenshot
+
+```text
+Test13-L10514: [20:32:02.024] [FLEET ASSIGNMENT] epoch=2 root=000001C8F1617F30 home=000001C9174ADE10 id=2 event=observed_close reason=observed_office_only original_target_candidate=000001C9174AB3F0 original_target_rows=1 original_target_resolved=0 first_sample=348 boundary_sample=398 first_ms=47341781 boundary_ms=47400171 native_start_valid=1 native_start=0.0380624756 native_end_valid=1 native_end=0.0260632578 unknown_start=0 observation_gap=0 role_uncertain=0 fuel_uncertain=0 receiver_changed=0 observed_level_rise=0 net_change_valid=1 net_change_native=-0.0119992178 units=unverified id_scope=process_local_vehicle_slot native_boundary=unverified refill_coverage=unverified exact_burn=0 sampled_decrease_native=0.0119992178 sampled_increase_native=0 compared_pairs=50 estimate_partial=0 discovery_complete=1 estimated_cost_available=1 estimated_cost=1.8025194 estimate_reason=approximate_positive_drops estimate_currency=0 price_per_tonne=150.219742 price_basis=current_cached_30s quantity_assumption=native_tonnes_provisional actual_cost=not_computed settlement=none billing=off
+Test13-L10519: [20:32:02.051] [PANEL SCHEDULE] epoch=2 sample=11 ms=47400187 root=000001C8F1617F30 candidate_home=000001C9174ADE10 status=complete_selected_fields baseline=none observed_fields_changed=1 storage_changed=1 row_index_changed=1 opaque_context_changed=0 begin680=000001C92BD7BCF0 end688=000001C92BD7BCF8 configs638=000001C92BA49410 raw_row_count=1 captured_rows=1 index698=0 flag5fd=0 raw4a0=0000000000000000 raw610=0000000000000000 raw650=0000000000000000 fuel_valid=1 fuel_root_raw=0.0260632578 aggregate_litres_candidate=26.06 visibility=panel_only phase=post_render native_event_coverage=unverified native_job_id=unverified buyer=unverified completion=unverified exact_burn=0 billing=off
+Test13-L10520: [20:32:02.051] [PANEL SCHEDULE CLASSIFICATION] epoch=2 sample=11 previous_sample=10 root=000001C8F1617F30 comparison_available=1 compared_across_gap=0 previous_pattern=load_unload_pattern current_pattern=office_only_pattern row_count_changed=1 ordered_targets_changed=1 structure_changed=1 config_availability_changed=0 task_flags_changed=1 scalar_settings_changed=1 settings_only=0 active_index_only=0 comparison_scope=captured_endpoints pattern_semantics=observed_flags_only resource_identity=unverified native_job_boundary=unverified billing=off
+Test13-L10521: [20:32:02.051] [PANEL SCHEDULE ROW] epoch=2 sample=11 row=0 target_raw=000001C9174ADE10 config_fields_read=1 flag00=0 value04=1 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+Test13-L10539: [20:32:07.435] [PANEL FUEL] epoch=2 sample=13 ms=47404765 phase=post_render window=000001C92BEBF0C0 root=000001C8F1617F30 status=complete aggregate_valid=1 current_raw=0.0257624537 litres_candidate=25.76 capacity_unadjusted=0.327600002 ratio_valid=1 ratio=0.0786399692 links=0 mode=2 metadata_kind=1 flags_read=1 flag8681=0 flag8682=0 adjustment_read=1 adjustment_needed=0 presentation=unresolved_7c58 queue_full_total_at_capture=0 queue_full_total_at_drain=0 captured_paused=1 coalesced_snapshots=1 sample_ids=accepted_records_only root514_read=1 root514=0 root4f0_read=1 root4f0=0000000000000000 gate_global_read=1 gate_global=2 gate_diag=0.18.17-dry-ledger native_execution=unobserved physical_fuel=unverified exact_burn=0 billing=off
+Test13-L10541: [20:32:07.435] [PANEL SCHEDULE] epoch=2 sample=13 ms=47404765 root=000001C8F1617F30 candidate_home=000001C9174ADE10 status=complete_selected_fields baseline=diagnostic_gap observed_fields_changed=0 storage_changed=0 row_index_changed=0 opaque_context_changed=0 begin680=000001C92BD7BCF0 end688=000001C92BD7BCF8 configs638=000001C92BA49410 raw_row_count=1 captured_rows=1 index698=0 flag5fd=0 raw4a0=0000000000000000 raw610=0000000000000000 raw650=0000000000000000 fuel_valid=1 fuel_root_raw=0.0257624537 aggregate_litres_candidate=25.76 visibility=panel_only phase=post_render native_event_coverage=unverified native_job_id=unverified buyer=unverified completion=unverified exact_burn=0 billing=off
+Test13-L10544: [20:32:07.435] [PANEL SCHEDULE ROW] epoch=2 sample=13 row=0 target_raw=000001C9174ADE10 config_fields_read=1 flag00=0 value04=1 flagc8=0 valuecc=1 target_role=unverified buyer=unverified
+```
+
+#### Test13 exact excerpts — later return readings and error context
+
+```text
+Test13-L11427: [20:32:28.930] [FLEET FUEL] epoch=2 root=000001C8F1617F30 home=000001C9174ADE10 sample=420 ms=47427078 reason=poll native_valid=1 native_total=0.0199510101 objects=1 root_metadata=000001C8C76112E0 root_raw=0.0199510101 root_capacity=0.327600002 observed_decrease_raw=0.0455689933 observed_increase_raw=0 discontinuities=0 panel_required=0 units=unverified refill_coverage=unverified compared_pairs=419 estimate_partial=0 discovery_complete=1 estimated_cost_available=1 estimated_cost=6.84536241 estimate_reason=approximate_positive_drops estimate_currency=0 price_per_tonne=150.219742 price_basis=current_cached_30s quantity_assumption=native_tonnes_provisional estimate_scope=vehicle_observed_not_bill exact_burn=0 actual_cost=not_computed settlement=none billing=off
+Test13-L11912: [20:32:59.242] [FLEET FUEL] epoch=2 root=000001C8F1617F30 home=000001C9174ADE10 sample=450 ms=47457390 reason=poll native_valid=1 native_total=0.0187864825 objects=1 root_metadata=000001C8C76112E0 root_raw=0.0187864825 root_capacity=0.327600002 observed_decrease_raw=0.0467335209 observed_increase_raw=0 discontinuities=0 panel_required=0 units=unverified refill_coverage=unverified compared_pairs=449 estimate_partial=0 discovery_complete=1 estimated_cost_available=1 estimated_cost=7.02029745 estimate_reason=approximate_positive_drops estimate_currency=0 price_per_tonne=150.219742 price_basis=current_cached_30s quantity_assumption=native_tonnes_provisional estimate_scope=vehicle_observed_not_bill exact_burn=0 actual_cost=not_computed settlement=none billing=off
+Test13-L736: [20:25:02.949] game.ERROR Read error (8) - File 'media_soviet/save\31687 - TEST/replace_history.bin'\x20
+Test13-L11997: [20:33:04.450] game.ERROR Cannot open media_soviet/saved_last/header.bin header
+Test13-L12034: [20:33:04.456] game.ERROR Cannot open media_soviet/saved_last/windows.bin for save Windows
+```
+
+### Test13 verification helper — complete source, part 1 of 3
+
+Save the three Python source blocks in order as `analyze.py`; put the recovered original log at the source path or update only that path. This verifies the observed log, not native execution of a synthetic model.
+
+```python
+from pathlib import Path
+import collections
+import hashlib
+import math
+import re
+
+source = Path('/tmp/arena-coding-uploads/tesmioloader-13.log')
+raw = source.read_bytes()
+assert len(raw) == 1263907 and raw.count(b'\r\n') == 12035
+assert hashlib.sha256(raw).hexdigest() == 'a40e4f8687abf5cc49ec1f48b14069b55cbfcdb080fdb51233aaf9104d8b63e0'
+lines = raw.decode('utf-8-sig').splitlines()
+def rows(marker):
+    return [(n, dict(re.findall(r'(\w+)=([^ ]+)', s)))
+            for n, s in enumerate(lines, 1) if marker in s]
+costs = rows('[DRY COST]')
+closed = [(n, r) for n, r in costs if r.get('stage') == 'closed']
+assert len(costs) == 9 and len(closed) == 5
+assert [int(r['record']) for _, r in closed] == [1, 2, 3, 5, 4]
+for n, r in closed:
+    assert all(r[k] == '1' for k in ('target_snapshot_available', 'estimated_cost_available', 'would_owe_available'))
+    assert r['payer_verified'] == '0' and r['actual_debt'] == 'not_created'
+    assert r['settlement'] == 'none' and r['billing'] == 'off'
+    assert r['partial'] == '0' and r['sampled_increase_native'] == '0'
+    amount = float(r['sampled_decrease_native']) * float(r['frozen_price_per_tonne'])
+    assert math.isclose(amount, float(r['estimated_cost']), rel_tol=2e-8)
+    event = dict(re.findall(r'(\w+)=([^ ]+)', lines[n]))
+    assert '[FLEET ASSIGNMENT]' in lines[n] and event['event'] == 'observed_close'
+    assert r['sampled_decrease_native'] == event['sampled_decrease_native']
+print('PASS original log: 1263907 bytes / 12035 CRLF lines / SHA256 a40e4f86...d8b63e0')
+```
+
+#### Test13 verification helper — complete source, part 2 of 3
+
+```python
+print('PASS 5 unique closed dry records; all price products, original snapshots and non-paying labels valid')
+
+root = '000001C8F1617F30'
+events = rows('[FLEET ASSIGNMENT]')
+assert len(events) == 20
+assert collections.Counter(r['event'] for _, r in events) == {'observed_open': 5, 'observed_update': 10, 'observed_close': 5}
+opened = [(n, r) for n, r in events if r['root'] == root and r['id'] == '2' and r['event'] == 'observed_open']
+ended = [(n, r) for n, r in events if r['root'] == root and r['id'] == '2' and r['event'] == 'observed_close']
+assert len(opened) == len(ended) == 1
+n, event = ended[0]
+assert n == 10514 and event['reason'] == 'observed_office_only'
+assert event['original_target_candidate'] == opened[0][1]['original_target_candidate'] == '000001C9174AB3F0'
+assert event['compared_pairs'] == '50' and event['first_sample'] == '348' and event['boundary_sample'] == '398'
+record = next(r for _, r in closed if r['record'] == '5')
+assert record['asset'] == 'fabric_factory' and record['type'] == '6'
+assert record['target_key'] == 'E992E4536EE27172' and record['close_reason'] == '2'
+assert record['estimated_cost'] == '1.8025194' and record['frozen_price_per_tonne'] == '150.219742'
+assert not any(n > 10514 and r['root'] == root for n, r in events)
+print('PASS demolition-associated closure: root F1617F30 / assignment 2 / record 5 at L10513-10514; original fabric_factory retained')
+fuel = [(n, r) for n, r in rows('[FLEET FUEL]') if 'root' in r]
+assert len(fuel) == 50 and all(r['native_valid'] == '1' and r['discontinuities'] == '0' for _, r in fuel)
+post = [(n, r) for n, r in fuel if n > 10515 and r['root'] == root]
+assert [n for n, _ in post] == [11427, 11912]
+overhead = float(event['native_end']) - float(post[-1][1]['native_total'])
+assert math.isclose(overhead, 0.0072767753, abs_tol=1e-12)
+print(f'PASS later vehicle readings fall to 0.0187864825; extra {overhead:.10f} native drop has no new assignment record')
+panel = dict(rows('[PANEL FUEL]'))
+assert panel[10463]['root'] == panel[10539]['root'] == root
+assert panel[10463]['litres_candidate'] == '26.63' and panel[10539]['litres_candidate'] == '25.76'
+```
+
+#### Test13 verification helper — complete source, part 3 of 3
+
+```python
+assert 'raw_row_count=3' in lines[10466-1] and 'raw_row_count=1' in lines[10541-1]
+assert 'target_raw=000001C9174AB3F0' in lines[10470-1]
+assert 'target_raw=000001C9174ADE10' in lines[10544-1]
+print('PASS screenshot correlation: 26.63 / three task rows -> 25.76 / office-only, same fleet root; demolition itself is user-reported')
+saves = [(n, r) for n, r in costs if r.get('saved') == '1']
+assert [n for n, _ in saves] == [5224, 8140]
+assert all(r['records'] == '3' and r['bytes'] == str(28 + 3 * 196) for _, r in saves)
+assert all(n < 10513 for n, _ in saves)
+assert 'autosave4' in lines[5213-1] and 'autosave5' in lines[8129-1]
+assert 'manifest written' in lines[5227-1] and 'manifest written' in lines[8143-1]
+print('PASS autosave4 20:27:49 / autosave5 20:30:32: saved=1, records=3, bytes=616, manifests written')
+loaded = [(n, r) for n, r in costs if r.get('loaded') == '1']
+assert len(loaded) == 1 and loaded[0][0] == 700 and loaded[0][1]['records'] == '0'
+print('LIMIT both saves precede demolition; record 5 persistence and nonempty record restoration not established')
+pay = [s for s in lines if '[PAY] day ' in s]
+assert len(pay) == 7 and all('billing off' in s for s in pay)
+for marker in ('[FLEET COVERAGE]', 'disabled_after_guarded_fault', 'tick_registration_failed', 'subscriber faulted'):
+    assert not any(marker in s for s in lines)
+errors = [(n, s) for n, s in enumerate(lines, 1) if 'game.ERROR' in s]
+assert len(errors) == 108
+assert sum(n < 695 for n, _ in errors) == 62
+middle = [(n, s) for n, s in errors if 695 <= n < 11990]
+assert len(middle) == 8 and sum('setfocus' in s for _, s in middle) == 7
+assert 'replace_history.bin' in dict(middle)[736]
+assert sum(n >= 11990 for n, _ in errors) == 38
+print('PASS payments OFF on 7 day closures; no fleet coverage/fault warning; 108 game.ERROR = 62 preload + 1 load read + 7 focus + 38 expected-exit messages')
+print('LIMIT sampled-close timing, provisional units, actual payer linkage, exact burn and large-save performance remain unverified')
+```
+
+#### Test13 helper execution — actual final stdout, exit 0
+
+Command: `python3 .cache/test13/analyze.py`
+
+```text
+PASS original log: 1263907 bytes / 12035 CRLF lines / SHA256 a40e4f86...d8b63e0
+PASS 5 unique closed dry records; all price products, original snapshots and non-paying labels valid
+PASS demolition-associated closure: root F1617F30 / assignment 2 / record 5 at L10513-10514; original fabric_factory retained
+PASS later vehicle readings fall to 0.0187864825; extra 0.0072767753 native drop has no new assignment record
+PASS screenshot correlation: 26.63 / three task rows -> 25.76 / office-only, same fleet root; demolition itself is user-reported
+PASS autosave4 20:27:49 / autosave5 20:30:32: saved=1, records=3, bytes=616, manifests written
+LIMIT both saves precede demolition; record 5 persistence and nonempty record restoration not established
+PASS payments OFF on 7 day closures; no fleet coverage/fault warning; 108 game.ERROR = 62 preload + 1 load read + 7 focus + 38 expected-exit messages
+LIMIT sampled-close timing, provisional units, actual payer linkage, exact burn and large-save performance remain unverified
+```
+
+The first analysis-helper attempt incorrectly treated the `[FLEET FUEL] started` configuration message as a numeric sample. It failed with `KeyError: native_valid`, not a game/plugin failure. The final helper above filters rows containing a root: 50 numeric samples plus the startup message, not 51 numeric samples. To reconstruct that first source, replace its two lines beginning `fuel =` / `assert len(fuel)` with `fuel = rows('[FLEET FUEL]')` / `assert len(fuel) == 51 and all(r['native_valid'] == '1' and r['discontinuities'] == '0' for _, r in fuel)`; the rest was identical. First-attempt captured output follows.
+
+```text
+PASS original log: 1263907 bytes / 12035 CRLF lines / SHA256 a40e4f86...d8b63e0
+PASS 5 unique closed dry records; all price products, original snapshots and non-paying labels valid
+PASS demolition-associated closure: root F1617F30 / assignment 2 / record 5 at L10513-10514; original fabric_factory retained
+Traceback (most recent call last):
+  File "/home/user/WRSRE/.cache/test13/analyze.py", line 50, in <module>
+    assert len(fuel) == 51 and all(r['native_valid'] == '1' and r['discontinuities'] == '0' for _, r in fuel)
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/WRSRE/.cache/test13/analyze.py", line 50, in <genexpr>
+    assert len(fuel) == 51 and all(r['native_valid'] == '1' and r['discontinuities'] == '0' for _, r in fuel)
+                                   ~^^^^^^^^^^^^^^^^
+KeyError: 'native_valid'
+```
+
+### Test13 complete original log — lossless base64-XZ archive
+
+Concatenate only the contents of the following 14 `test13-log-part-NN` code blocks in numeric order, base64-decode, then XZ-decompress. Output must be `tesmioloader-13.log`, exactly 1,263,907 bytes / 12,035 CRLF lines / SHA-256 `a40e4f8687abf5cc49ec1f48b14069b55cbfcdb080fdb51233aaf9104d8b63e0`. The base64 text is 98,864 characters; decoded XZ is 74,148 bytes. No textual normalization of recovered bytes is allowed. Each block was appended in a bounded write and immediately read back byte-for-byte.
+
+#### Test13 original log archive part 01 of 14
+
+```test13-log-part-01
+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
+```
+
+#### Test13 original log archive part 02 of 14
+
+```test13-log-part-02
+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
+```
+
+#### Test13 original log archive part 03 of 14
+
+```test13-log-part-03
+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
+```
+
+#### Test13 original log archive part 04 of 14
+
+```test13-log-part-04
+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
+```
+
+#### Test13 original log archive part 05 of 14
+
+```test13-log-part-05
+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
+```
+
+#### Test13 original log archive part 06 of 14
+
+```test13-log-part-06
+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
+```
+
+#### Test13 original log archive part 07 of 14
+
+```test13-log-part-07
+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
+```
+
+#### Test13 original log archive part 08 of 14
+
+```test13-log-part-08
+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
+```
+
+#### Test13 original log archive part 09 of 14
+
+```test13-log-part-09
+IgnnYettERrITtdzy7eFw/x/Kr+IHQS1QuZ7tjleZAFsp4xfWzbK9kx25a49Ym9EHR1UketMOTv46gdFn3C0bJjGiZMb/pewaPbudDe6VGdg9Z1lM3E1gS7SmctWMRfxxKaPLVoBWguMEF4pmwTOe4FaH8KEngjaCTgXte5xZt4MSrZwMLCEdMjACFPaIb9yxeyib2NgZWYZfqUxQ55GqrqyjWp2obTz5spzttyIx8HzWfwiKJM0u3FS+qwm3jwv1xy25rxQxPxIE7RV+hD9lI8qxbVWb5kTwouzrXXgsmelpxtFMHbKE72Ifwih7hb3RWhGFm1EpsOSc9osMXI/6xpDIonMS+f6zPbSedo1GhoPJxAWFBkB8643Hl8ffjFR2KlMdlKikYt3EE8gSzYSS4Emals6i0zO3VJRN3IKCr7swCQSZNbSDv/TEw3g/RW5OYBOcSjBtb9daeGOcYUL4jONi6HrgAbmQy6IAmpisg8FX4/pt7u6aEl6Tsjv6zWCKE92hGQExkjC2FbRhoOCB+Qk5PzZAUT/TY9/FulEu+GnK4N2e47vvr/WPB6no3NExhSRjl0TTNAKgtYVl1YE2MGIjbmKVlElvfacNZK0ZFI6N4R2vIfXA/nlNahhySVLzOnEm9++0xmSceLZCSlZEDOvcYNuzAHNo1jwUezaqzVPCisPv7pAJQ6cXwd7XeI9EZ9/fABo8coqeaMa13lzQjzYpsUHlIOanxKMdn6lHSZt1+Siu1vSqOHwjF6//hBtHj/KJbY0grITmpC684hiWiJoKiGCSxJ1BUcyJGkh0irJGcZkB/n6rhlKPxXNZWHEBbmWO0jlNJ+MulZipiq8niMuPkpvP8CXSD7emxuaUbNJkRZ317HToRfDqAgrByOK/Nz92pVfo79AzdTNA+rEKK3mV7XRknlvA7MufOXIeJfWbmUlRAXpxh+j7EimHPvSy6uvsazoLik2r3UFYk2xOU9Cz1CbWjAHHbo0kR0QLBsS8jCyr2xHSsrmmR1of0TTi1ScaZEZ1jd8TA3wxIA5p1OJE+44Ax5ImSsQ36KGyFhHEDsoiCKcutTRE72Nw40InNVLcs8TOUHtqujfDdpSjAlW0p3CghOdHrCEWBfV27/6FVi2U6hWC2P+qfTavEtjxikTREpfAGlB2DUiX3Fo+6f/PnU7yM/PoisIZa67TJtxKz4x2Ji6GB6CQoXwCRBnVUElxfIghvqxwrh7eFP1n55qquonYkI4uloTuQNJKp+epCXT9wrPJvWuVsCAsy/KycIUxbiuTID6XyYWocpbXsDtnqqBFFLEtBgMaLGySKX7pLh5M4sad9YtacRbo56xU+/y9IiSGBYTjfG7Io51f2Rp1W1BQJQLRMs150/JWr3Q92KhOBhS8hTnrLnN9kUmlV8yiRZZdb24KWY3264XRIRqudbZWi5K2+q2N394jf6xQwVm38nqL281WZavYqOsoYgXdbQK5bgq1Aajvxr5kuEI5Sq+Z/d7oTZBsUBgdRAydqq/BbI0yz3FRnsTi1iMz4P/mGj3U2TYyZ3rjDjwbaaQAvpgycJtUginRXYwGm25jcYKvrd2avck51LaasNWFj/DVUIPTIPA2LlBEO3yUo5GDSfnLE83c+l6YKwKUFKR69IbvKZtn5uZAQmHcBBb7ew1HYbyTGuMyQZOL5mm63huYFG8LmzA8jfZZi0R5+Zrit4Mwwm0gof+kn0AjVNvHfRBSSBL/aOnmJycjbfobbrbl6MULcAEqaArdt7fPPf6xusTdpYORyforYUeb4i5BEAe1vOfXWGRwPwbAxGxHTbSt3AIfUT0SmnlCc4AsTYY2O/MWadLulcH49ViYI4oG6fysVnwQkw7GH5n9Yo0RdboA3sSl7uN+8g1VRfXPu/astV5MNN7g7rgSEo+1FDaAxNAY2YyVki2Mey/yr1JkknH1/DllxQtCADdpppL6A/O503MpIug4btMbfuFfNjIa4qNCOa11E6ZKWp6+ME9ITpHBiMnJlZnZIEH78zCIjbhPuDyXMJLE3lqdZfSzMtAcUF1KfmxCLCHXsdwqKJ2WU7Rx+KhphxRpSoXEkl7bqxPi9H1EZIoI35mMVnu40dtI1gDP/myFELixh32pNNeMrQhkS222j5RT5bYMD/G4WPxvCWta8K3WrcL3ZPctVkl5h6LHkPlA7ARlQOwPM6C0H0lCkSf2WSkcaX6egt7EutG1Ta4+E31OVnX8/zNomT7XtFBuI7/v04wUMO2sJ3GE6s8RdgnNHnpUG9nxipqxeVuZndjxYI9cUyYgqAe9Y/U436k81NZ1FslwH0GdtY0wY3NVzWPxuBEUXVE8xky/H2etgISJobNBXyZl0VHlrF49uswkhFVQrq5c8qJUhi0eq6sicfz4fm6kIZH0nFM0UyYa3ms+NvXNZrVeptscuf4cZ2lTQlEWv3qnz9LTu+7hZrOJrd39Z8vhwkRbzurNgo2eG9cINF7/LZq1fKy2ebRyfY//kaw9owM64qfQqfrj6zfG6j5v7h8SVIDCQLRIxztzuFJswgxqbJVZnBaWy6XnyqJoe21V5WnC/fPsNDrq0e6LDqSLEr0WtAqDRHrUZRhnHrJPnSeXr6e0J1kaK9d6hxBzAnyzK7EIpmGNihNdzVwHOFbtXDyoju8oncnyHVseD/09EQdpQxRZlk9cVoDDaqIlDeRXR6coVG0l1UaCQmcQulIFnHVyKsM3rG7rrtCXJUUX8aY6QqZbhGdtTAVmEY3RsFhbRhIHThvbFOyAoRNa4vh3Mx2a60yWkSuiKDE4mka+88PQIbH0kgOep7wpKkBF5Zp39LQNFSjib2TJoTjrkwCM4YBqpVyx7jcEoEtYWlnGDmSchYxrxP5Y05GyZwcf0VwCEi9vkClv/Tw7jXFwc9nP97iynXe6yl6hBkJEgWYPJUV4TIH2FkbrQX0A4UYjKh2wSbNHRwFug7EnOAz1cHE8YgG2nBSKH06VQhkwd0+4s3rcLPmm4KoWxgw9cUShZrYt/ZkEaVnDXjw4bLlRWaMjbPOneCb6P7X6RJlHoAjPVCmf2jJK7tt5LVj/ra/j7a29m7dz+dpNMVKFZ5tFR2QEc0stM0m2sVgmYD4osnxAmdQXyX4s+vyejwBxblP/5e5ciUK3xQk/ioYVVNq0d2sLnMjM1dsuBYzbdytR86OrSMDbnecnzdBtfyEFkXBaEZsMxUYjzR+3cPAU7O9AVU0wEPt3Wr5/qRXkx1ntzVg4UYYHKmoMouTTHaDxBKt4IHMkeUk10KFYTRZu9Q+G5KFhE85og2pGqzqFGPKYGwKfbnym0G6EilJYWoSpfwtxWHmXcVp290h0Gz6L8v0oHXDYVlfMO91sIt3SBVT1CntISWJ9TiXXj/4OYTqPZCnssBWkyE6sNJMOHDHHELQTuEOGwbcIyC0NlZXoydrUqegr0DghbSBNttGMLMsOVxXTxuIwS+PRjiqSlU4oyCp1Y0tdNG67zbHWddjFmhQhvyviPIHUiH/MaZ6PkU6ZLnJdXqhrpTIdQSq3CeCLm41OHxXbno+sKzDsbgEfz1pvT779sr8fORCPnkmvosE9y3wTtx30kt1rzwYsTrfJBjkjRQZuOne3ev5Md9VHiqFonMw4hLvOTwiniMkJ9wAJn13fboaOouWbE9VCNpU8wbNuut9hlmofOyw64q8qjARnVfDCm0OaN0MZItQeW1AXL4eLHyFV9GkxFhfzyrie5qQurS+J6giItRVx44Qg6F1NinMkGG88lQaJoYQoJKwxEZBngsib+MLA/igPBprFOJxY4poJBUl9PpUp5KzKYVrdY4+j9NmupSzLDOXNiJo5u9W8CFut9XkPwBP0fJsK5qBeu80i7hs+5GdSecp56CyOZjAt8FOSOJz5cjlMyS+qMsW2CaSXOq7/ZXmoJH5Tsv3yjbWKDv5EIGXJb7AELGOEKB7qO/YDvuzppnFW89HcpKr+uJDiOMlr2AJjhN3K+M59Tc8vd7rtYBM0/AC6EaH0RJiNTDnROnanX/2YqF8QqE1zbvxkPTP2F5Ur7OPMW0MVDIcbv3YMEWN1BnfBnCj9o01ZWpi0I+WtEo5ERGllTQGFENF8/FjigJ8vzspQfVg4kTdxLDvQuyYNJLpdByRy9t9icoIK1WTi1KKoW4jVqmJm1DFkJtLcF44i6aUVuGDbK43iLx7TG99CpU9eIjO/o/dGo8aMWekNmVuuXyjNSdmg9etLj6/Rj0UGyHQ1RHZyrbn/1LnOwFhZi3FZ+iyPgc0m3Uai3Ul9SlPbm0t01y/Bti51tm0YWDVn85C4dQyo/BdPa5u4ZiJ1D/3flofKDvJpCXylHsuWfVFu8DrEM3aR5rihgu+BMruw7jqQRKt9beKdlISgkaU9UpgMhYyfcBU8XIVTj7S9zQhURCe7CfvxdjumpAYveAF81OhGWflN9bQh/K205XfYRu8c3tI6OsBckKG2HZc48EHaLnzkOhSnUGngX89sbxkcIOfdW7ivSX9pGGdTOeEIoWykIfbgJh1Lw1L72tK0lGW4Gj7LUn2ca/jLLD2YR1WZXtBTZK7qhRXs1WimVrjGBvr2zaBM+2vPeeIIDOe4Al9rFFI1QalvWnwLGiGTP2vy5VeJHlbO+3rMUK2VGpoXoBd2rjOEjaJjMuAzeNMZN1BIDbdjUvxMvc40US14D53JVtkxbWp2v8EYyEhbsZIAqIV/+kYKStEV5aAqIJ1JxiuAO0JZl8XyzG5ImKBVM7NnbBTUezlVXKhgI/cDwWcvf3XbpDi3wfPwWC9mCpg+FzFGJKdKlRF0Obg9CzgHOnbPDlE9b4J6kNhDLwWMBfrh9LCDoY/Cx2aR1W+4C/dLtM6ayTfr5bRrFgzlMSOOKod0NF1iE0HrMmk3JTn1We+WGG7lGFqaEQW8RuP8br1u28+vD4ZDNc0AtNVuNsQeVs92tzhyIy9fB+yo7BoMMkArQI9ce3l0181U5CLzsiisgb43T3AwgNSdQ/ZzLy5FgWeUa7bpmnqZcMih4OOnzTZJPkS1ChtcbVnpzmr+MoZaW+Ee6tgcFWhT3oNQRZFPcNz/W4ArnLmzX729Qb+pGjq+ewdAoRkT6qYYX8uu3isRVFHYan2gNa2Yz54nuglzC5RjsmtxR7gT1FKa7JHJR92rtDQisGB+B1TfiZrQsrV8V59kkrGdYg8U5e8wSD5svWsHWPfC5Y6ymoZ6/VJ2EFHOTOFW9Zzw8GRVSyMYgV62K9FGtDIqhQP3ho/F905jp+YPSZtZ6l6WwqELOxSynwP4Mh3t81q2dRYYsAJNJDI+dGWu98+GrlSY/kEds8vfZrKyO0qxJDnXAR6uZ+XVSI12xsEXhXLVcg0HMYP6pNgqT2QAg/VESHiiNCBn9MIG+LuwLMePY1/gbfgnSXhFESvqQ273smvj7t3rztE+A1qjeDpiH3BcQSTZb8TGMjgGV1DE4ZywI8shGHtONv/62nePUwRxYTv1PJ+9saxPYxXq2U2VPPVoz/A79mivtX8u/kHwXi2p6xUvgLRKhCmuJjUXUXtKNW8XXfbGOjwn+bMPvawNB4ev1XuX1kE2s4XbciWvnPlgK7V6Q6D56L8K40k7gw11eUYUF262VdY2qlVtWrQLVXiXuBbBgifKxDLjjChmjyl3uA0M2yW73K0VV+Rmzzl81vPrQo6xGFNHON3TlXizINw5C7PjmJ37CEeHw7nT19HHCIXeudExKC9GorKry6rGijKKUJIbEVHy6eMTXdznL1YOB0LLIVB2/5RIobuqnywbfg4jHQIJ+QCjbycNPYccgZxFp3/uThFwxBNOnjMzA9qmYVQ1y3Gb7wnO0J3k3nb7WOWEO/RPDbvI2NnLgcdcpZvsqzyrdQFFD64vCiSom2JN8xLvrSGpFIYI86rchsVIqWKBgiWis87hOaKaGOPoqsou0tk3ruyTvSgjstzNhM1jUaOg1IcDIUwuqzNbHSrWZcr4pxSkp6aW0l65Yv98Qu3jXKld51Qji6mieMC1IPbSXXmvUbcHZecexxYKU6XqjToy+mZymuDMQS9sx7KaWG+uYKgGqfVqBkw442p5gg37+QbuElCQ7WEk3BVqqWPE7SKFxqnOTz6lXgOzNc/myhHOI7HQmVhBBN38sOV1YMjYDWi593I6XtFdRmSQtJ4Fru5/UEw+GQ/TO4UIfEG8vtWVXGhy7XXhonmKe+K+SbjlgEtA9eWI4W97CGG1HZEEQfhcMmir0zrzyJexA2EaAAhtaovAFRisx06THffHjXyFa1OpVZZLaFCJ6sM2bmw0x16TvmIVwJhnJBBhDlbIaKPXWztfIos6rvZnlPoy6ne824hEX6NCoL37hMkvU62hTiXUkiyi2nXkAY+vKis7/++/Xai50zvIzcDwq035FILtCtRElIvQZPbEnrh8AF7k576AFZqJoYa8DxM3P5Ul8vKs9rJWBXazI2+tbDimCdbKy9F5kQKGDD46A9a8zj3RzMyYmtVcXAWFvYVklMZXk/iPLKL3fQXA00hAWhv6bx2bA4Cglxz9wdbLVH7pEYTZ1wGysH1ugXG4VjxCw1FT7U+wdhuQAMudvmxlATo/JHh12sNa1FiqJk94o68N+mmXBkOOZV56M3ejySys0he2yfCnJfayXSmBu+Xwk8S/yFSLHcDfappPE5Qa7Jn1rnBDjuNwdNWlyampiEqmTwRVBMPztZgBMWPi3TI5Htr05pWHnA9tu70m/aPBHx31P96zaBOMXOxPN2I7DO5hzKTqgCKiwTFzFccAN7Yj2VhkdoKX+OhsR0Ya+sX/PhnFH5kx8M0AY4ROk8AZQT8j/Ee6LcERk6LCL8sGsoHNvAzOBkVUq4/R1/pXRb8crGyO3xDojseGZB3FPKZhurI/jVscdKM/VktuVA5mV6mBdJLi2g0uusQOzm3B567aqNBcSUf4GK3w32ylQ7QVoS0fpf0bjdg1Ow9z+7XEziYtW6LYGu/lyEyZ/+dM5WpqDPVuPZDGiFS0QcyuSwdlxxvnaZsmrwA97AMUod2kuYQNwoWeYBzDfcw0PdGW07BtzfkziXVxJ19wL9EGCQxpnRC6nEu6JuaCwfNOgJprStqu/g40McNyka3mVhNO1tDLQCjptwQ9x1ol+n6h5/rSGmEN6xuFvQj9vuDWr7mfQ5eYAFSJOIIM19SfyR3ZLt3gEHEfT2czOhpKzMcp4Bz6q3yFK76p9Yu4K4a7JpTV/4SuOPL1DvFrosDhN8VhEf5aIB0hrK9c5/L5b4CEH1n/hiJscrOdQmGwp5YSa08hJc6ssHSNjjxkrEgwWKKAR8JufGMIjiMzT1NpYCRVGj6Y8kA/l4izxdJu0uMqOq0jP//QzegcC6hvF6O2AuG+e3qWCZADdp88koiqz7GPzmzIl6f5leHXpvtQqJYcWuRVZMBCtaAZJshfJcKU/tXU3e9BhxU7mMwQaLncwVa/hkmowUuSGKOApX5LIhOdoDxlbDjXQU3HTp5QRMHKWuCCFL9jtYQbxIU+mxLVk+qRFHB2ENLNWgT2zTE4eO/3blavTEV5tg3a23JN5TDhIwD4rGXP7DnVKYNhzzmcTfeQzlMS8u+eVuO3/fdMDlL
+```
+
+#### Test13 original log archive part 10 of 14
+
+```test13-log-part-10
+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
+```
+
+#### Test13 original log archive part 11 of 14
+
+```test13-log-part-11
+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
+```
+
+#### Test13 original log archive part 12 of 14
+
+```test13-log-part-12
+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
+```
+
+#### Test13 original log archive part 13 of 14
+
+```test13-log-part-13
+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
+```
+
+#### Test13 original log archive part 14 of 14
+
+```test13-log-part-14
+uLve87OqjzEY2MxdZhamANRbutq2grkaAAGAwwSjkk3V8xZsscRn+wIAAAAABFla
+```
+
+Test13 excerpt transcription note: the single trailing ASCII space on L736 is displayed as literal `\x20` to keep Markdown whitespace checks clean. Recover exact original bytes from the lossless archive, not the display excerpts. This supersedes the unqualified “exact excerpt” label for that one escaped character; all other excerpt characters are unchanged apart from line-number prefixes/newline presentation.
+
+#### Test13 archive/scope verifier — complete source, part 1 of 3
+
+```python
+from pathlib import Path
+import base64
+import hashlib
+import lzma
+import re
+import subprocess
+from urllib.parse import unquote
+
+report = Path('docs/private-logistics-runtime/VEHICLE_PANEL_FUEL_INVESTIGATION.md')
+raw = report.read_bytes()
+assert hashlib.sha256(raw[:12706275]).hexdigest() == 'e202f6c1c3c41dfd8c9a3e95e932bf1a4b130d5e54b17a18cb887d8f1e157e06'
+new = raw[12706275:].decode()
+parts = re.findall(r'```test13-log-part-(\d+)\n([A-Za-z0-9+/=\n]+)\n```', new)
+assert [int(i) for i, _ in parts] == list(range(1, 15))
+b64 = ''.join(s for _, s in parts)
+assert len(b64) == 98864
+xz = base64.b64decode(b64, validate=True)
+assert len(xz) == 74148
+recovered = lzma.decompress(xz)
+assert len(recovered) == 1263907 and recovered.count(b'\r\n') == 12035
+assert hashlib.sha256(recovered).hexdigest() == 'a40e4f8687abf5cc49ec1f48b14069b55cbfcdb080fdb51233aaf9104d8b63e0'
+out = Path('.cache/test13/recovered.log')
+out.write_bytes(recovered)
+print('PASS immutable report prefix and all 14 archive parts; original log byte count / CRLF / SHA256 recovered exactly')
+
+blocks = re.findall(r'```python\n(.*?)\n```', new, re.S)[:3]
+assert len(blocks) == 3
+```
+
+#### Test13 archive/scope verifier — complete source, part 2 of 3
+
+```python
+helper = ''.join(s + '\n' for s in blocks)
+assert helper == Path('.cache/test13/analyze.py').read_text()
+replacement = helper.replace("Path('/tmp/arena-coding-uploads/tesmioloader-13.log')", f'Path({str(out)!r})')
+run = subprocess.run(['python3', '-c', replacement], capture_output=True, text=True, check=True)
+assert not run.stderr
+assert run.stdout == Path('.cache/test13/results.txt').read_text()
+assert run.stdout in new
+print('PASS complete helper recovered byte-for-byte and rerun against recovered log; stdout matches archived actual results')
+
+images = {
+    'image-44.png': (523998, '84ca128dd56cad7735bcd948f03eb79e85f04dadd695cf78f21a18b24af30076'),
+    'image-45.png': (500321, '40d3fec42da891248a6f2c498ffddb6a351076423627f3247d142c1da9dccb2c'),
+}
+for name, (size, sha) in images.items():
+    p = report.parent / 'evidence/test13' / name
+    data = p.read_bytes()
+    assert len(data) == size and hashlib.sha256(data).hexdigest() == sha
+    assert f'(evidence/test13/{name})' in new
+print('PASS both original screenshot sizes/hashes and report links')
+
+pages = [Path(p) for p in (
+    'docs/WRSRE DESIGN DOC.md',
+    'docs/private-logistics-runtime/DO_OFFICES.md',
+    'docs/private-logistics-runtime/README.md',
+    'docs/private-logistics-runtime/AUTONOMOUS_DO_PERMISSIONS_PLAN.md',
+    'docs/visions/vision-private-logistics.md',
+    'docs/engine/logistics.md',
+```
+
+#### Test13 archive/scope verifier — complete source, part 3 of 3
+
+```python
+)]
+link_count = 0
+for page in pages:
+    for target in re.findall(r'\]\(([^)]+)\)', page.read_text()):
+        if '://' in target or target.startswith('#'):
+            continue
+        assert (page.parent / unquote(target.split('#')[0])).exists(), (page, target)
+        link_count += 1
+for page in pages[:3]:
+    assert 'Test13' in page.read_text() and '1.8025194' in page.read_text()
+print(f'PASS {link_count} implementation-page relative links and current Test13 status in design/guide/README')
+
+branch = subprocess.check_output(['git', 'branch', '--show-current'], text=True).strip()
+assert branch == 'arena/423e4046-wrsre'
+allowed = {str(p) for p in pages + [report]}
+allowed.update(str(report.parent / 'evidence/test13' / p) for p in images)
+status = subprocess.check_output(['git', 'status', '--porcelain', '-z', '--untracked-files=all']).decode().split('\0')
+assert {s[3:] for s in status if s} == allowed
+subprocess.run(['git', 'diff', '--exit-code', '--', 'plugins', 'src', 'tests'], check=True)
+subprocess.run(['git', 'diff', '--check'], check=True)
+print('PASS active branch; only seven documentation files and two original evidence PNGs differ; no runtime/config/test change; git diff --check')
+print('CHECKPOINT manifest excludes the self-referential cumulative report; prior manifests remain historical:')
+for p in pages + [report.parent / 'evidence/test13' / name for name in images]:
+    data = p.read_bytes()
+    print(f'{p}: {len(data)} bytes / SHA256 {hashlib.sha256(data).hexdigest()}')
+```
+
+#### Test13 final archive/scope verification — actual execution and refreshed manifest
+
+Command: `python3 .cache/test13/verify_archive.py`, exit 0. Restore its three blocks in order to rerun; it expects the helper/results cache files named in its source, which can be recovered from the preceding source/output blocks. No production rebuild or Windows test was executed by the assistant. No new host suite rerun was needed for this evidence/doc-only addition: the latest prior 141-test documentation regression result remains historical, not a new run.
+
+```text
+PASS immutable report prefix and all 14 archive parts; original log byte count / CRLF / SHA256 recovered exactly
+PASS complete helper recovered byte-for-byte and rerun against recovered log; stdout matches archived actual results
+PASS both original screenshot sizes/hashes and report links
+PASS 39 implementation-page relative links and current Test13 status in design/guide/README
+PASS active branch; only seven documentation files and two original evidence PNGs differ; no runtime/config/test change; git diff --check
+CHECKPOINT manifest excludes the self-referential cumulative report; prior manifests remain historical:
+docs/WRSRE DESIGN DOC.md: 38126 bytes / SHA256 1b0b41c9f9584f2cf374ce4f96ea7c422bfe9b3bd75a1557e25385190ed078cc
+docs/private-logistics-runtime/DO_OFFICES.md: 22174 bytes / SHA256 b20c2962be392463af4ce4f807cfb2d44ebac26f147a35d3ec2065e9604cb954
+docs/private-logistics-runtime/README.md: 38930 bytes / SHA256 60d59e257b24904583a28160284a31587e0361d6cd0b397b0090fb972fbb3962
+docs/private-logistics-runtime/AUTONOMOUS_DO_PERMISSIONS_PLAN.md: 65109 bytes / SHA256 ca94733f4b111472216ac5e60338aaece25524dfe4c312764b4a01bafa402a7a
+docs/visions/vision-private-logistics.md: 14197 bytes / SHA256 b2a0a0583c5afcc223a2159fb24d5e382ac6a764de22d4b3c2d1b3efc9b9090f
+docs/engine/logistics.md: 11150 bytes / SHA256 d56bb45f39686eb414b31a712c66487294fe3200171c48ee9c24b84c6a4c6c02
+docs/private-logistics-runtime/evidence/test13/image-44.png: 523998 bytes / SHA256 84ca128dd56cad7735bcd948f03eb79e85f04dadd695cf78f21a18b24af30076
+docs/private-logistics-runtime/evidence/test13/image-45.png: 500321 bytes / SHA256 40d3fec42da891248a6f2c498ffddb6a351076423627f3247d142c1da9dccb2c
+```
+
+### Test13 completed handover / ready-to-paste next-agent prompt
+
+Outcome: **PASS for observed demolition-associated dry closure and original-target attribution; PASS for earlier live ledger save callbacks; not yet proven for saving/restoring that cancelled record.** All findings, selected excerpts, complete recoverable original log, exact screenshot files/hashes, complete helper/verifier sources and actual results are retained. Design section 12, DO guide section 10 and runtime README now reflect the native 0.18.17 exercise rather than treating all new-version runtime paths as pending. Other prior documentation edits remain intact. Only documentation/evidence changed; no runtime/config/build/deployment/payment, commit, push or PR action. Loading remains deferred. The 12,706,275-byte historical report prefix was preserved exactly; refreshed non-report hashes above supersede earlier manifests only for current-file identity, not historical evidence.
+
+```text
+Continue in /home/user/WRSRE on arena/423e4046-wrsre. Read the canonical docs/private-logistics-runtime/VEHICLE_PANEL_FUEL_INVESTIGATION.md Test13 tail and current instructions. User reported destination demolition in live 0.18.17: root F1617F30 assignment 2 closed once at 20:32:02, original fabric_factory retained, dry record 5 estimated 1.8025194 RUB; return fuel after observed close was not assigned to it. Two successful autosaves precede demolition; this cancelled record's persistence and nonempty reload are unproven. Loading is deferred; do not demand repeated demolition/baseline/pause testing or treat expected exit-without-save errors as failed earlier saves. Complete original log is in 14 base64-XZ blocks; PNGs/helper/verifier/results and refreshed docs manifest are preserved. Payments stay OFF; no payer/debt/settlement proof or exact-burn/performance claim. Current changes are documentation/evidence only and uncommitted. No runtime change, build, deployment, commit, push, PR or payment is authorized by this evidence review. Continue only with the user's next request and preserve the cumulative evidence in bounded writes/readbacks.
+```
+
+## Test14 — nonempty ledger reload and successful named save
+
+User supplied `tesmioloader-14.log` after the request for saving evidence. Original: **567,499 bytes / 7,619 CRLF lines**, SHA-256 `93d06d518f8dffc8062c9c4385298f90ccfe07aadce7d2816e2ca381983d8b9d`. Complete original bytes are recoverable from the seven base64-XZ blocks below. Historical report prefix remains exactly **12,844,704 bytes**, SHA-256 `152c7038c15c572f3b5cf2a10d214692fca95e4521704d7700a968b84e2ea138`. Review is documentation/evidence only: no production/configuration changes, build, deployment, payment activation, commit, push or PR. Local and remote target-branch INSTRUCTIONS blobs still match `64684a0b860b09a88976af9c074176bc8dc1db88`. A targeted search initially named nonexistent `dry_assignment_persistence.h`; the real implementation is `dry_assignment_codec.h` / `dry_assignment_runtime.h`, inspected without changes. One oversized exploratory output was truncated; the assignment and named-save lines were subsequently recovered with a narrow read.
+
+### Native nonempty reload: supported, not an empty initialization
+
+The 0.18.17-dry-ledger run loads **`autosave5` at 21:00:03.670** (L691). L696 reports **`loaded=1 records=3 interrupted_unpriced=0 missing_file=0 blocked=0 prior_active_not_rebound=1 billing=off`**. This is a materially stronger result than Test13's empty load: the runtime accepted an existing nonempty book. The source decoder (`dry_assignment_codec.h`, Decode) rejects Open rows and invalid stages; the runtime only publishes/counts a successfully decoded, current-epoch book and separately counts Interrupted rows. Given that code and the zero-interrupted log count, the accepted three records are consistent with closed records, not three joined live assignments. Test13's earlier autosave5 wrote 3 records / 616 bytes after closures 1–3; the new count/path match that history. This establishes a native nonempty-book restore path, not exact restored row IDs, original-target snapshots or amounts: no row dump or binary file was supplied. Source parity and every corruption/concurrency case are not independently established by this log.
+
+### Autosaves and named-save growth: three to four is not a new close
+
+Autosave1 at **21:02:45.310** (L3778) and autosave2 at **21:05:25.849** (L6731) each report `saved=1 records=3 bytes=616`; manifests follow at L3781/L6734. At **21:06:06.089**, L7521 reports **`saved=1 records=4 bytes=812`**, within the explicit save to **`26741 - My republic`** (L7510), manifest L7524. Sizes exactly match 28-byte header + 196-byte rows. Between autosave2 and the named save, the sole assignment event at L7302 (**21:05:54.323**) opens assignment 1 for road root `0000022BF337E760`, target `0000022C19448070`, sample 349. There is **no observed close, abandonment or new frozen `[DRY COST] record=...` event** anywhere in this log. Source Encode copies each record (`Record r=b.rows[i]`) and converts an Open copy to Interrupted/unpriced without closing the live record. Thus one active candidate added to three restored records explains the four-row save; this is source-correlated behavior, not a directly printed fourth-row stage or a newly completed bill. The log ends without reloading this four-record named save, so interrupted-copy restoration and exact frozen-field preservation remain unverified natively.
+
+### Scope, error context and what not to repeat
+
+Test13's demolition record 5 closed after its autosave5. Test14 loads that earlier autosave, not a demonstrated post-demolition save. The matching three-row restore therefore does **not** establish saving/restoring the later 1.8025194 RUB cancelled record, and the new four-row book must not be called that cancelled assignment plus earlier history. New process-local pointers/assignment IDs are not save-stable identities. The later fleet-wide estimate 0.661376157 at L7502 has explicit scope `vehicle_observed_not_bill` and is not the fourth record's frozen price/debt. Counts are 5 dry-cost status messages, 1 assignment open, 27 numeric fuel samples plus startup, two observed roots, all numeric samples valid/discontinuities=0. All six payment day summaries say billing off. No logged coverage/observer-fault, allocation-failure, capacity or blocked-save warning occurs. There are 97 `game.ERROR` messages: 58 before load, one `replace_history.bin` read error at L732, and 38 expected `saved_last` errors at exit (L7581–7618). These do not negate the preceding successful named save. Exact error cause beyond the user-explained exit behavior is not inferred.
+
+### Test14 exact excerpts — startup, nonempty load and autosaves
+
+```text
+Test14-L139: [20:59:15.432] [DRY COST] started file=private_logistics_costs.bin max_records=4096 closed_quotes_immutable=1 open_save_policy=interrupted_unpriced no_money_writes=1 billing=off
+Test14-L157: [20:59:15.433] private_logistics  live v0.18.17-dry-ledger: billing=0 dry_run=1 factory=1 carrier=1, 16 sites, cap 5000/day, price = LEGACY FRAGMENT MODEL (fuel x margin + wear), NOT journey settlement, factory share 0.90
+Test14-L691: [21:00:03.670] persistence  loading -> media_soviet/save\autosave5
+Test14-L696: [21:00:03.670] [DRY COST] loaded=1 records=3 interrupted_unpriced=0 missing_file=0 blocked=0 prior_active_not_rebound=1 billing=off
+Test14-L3767: [21:02:45.301] persistence  writing -> media_soviet/save/autosave1
+Test14-L3778: [21:02:45.310] [DRY COST] saved=1 records=3 bytes=616 billing=off
+Test14-L3781: [21:02:45.319] save   manifest written to media_soviet/save/autosave1\tesmioloader.save.ini
+Test14-L6720: [21:05:25.839] persistence  writing -> media_soviet/save/autosave2
+Test14-L6731: [21:05:25.849] [DRY COST] saved=1 records=3 bytes=616 billing=off
+Test14-L6734: [21:05:25.853] save   manifest written to media_soviet/save/autosave2\tesmioloader.save.ini
+```
+
+#### Test14 exact excerpts — sole new open, later named save, expected exit errors
+
+```text
+Test14-L7302: [21:05:54.323] [FLEET ASSIGNMENT] epoch=2 root=0000022BF337E760 home=0000022C19457D30 id=1 event=observed_open reason=observed_appearance original_target_candidate=0000022C19448070 original_target_rows=1 original_target_resolved=0 first_sample=349 boundary_sample=349 first_ms=49432468 boundary_ms=49432468 native_start_valid=1 native_start=0.0377306491 native_end_valid=1 native_end=0.0377306491 unknown_start=0 observation_gap=0 role_uncertain=0 fuel_uncertain=0 receiver_changed=0 observed_level_rise=0 net_change_valid=1 net_change_native=0 units=unverified id_scope=process_local_vehicle_slot native_boundary=unverified refill_coverage=unverified exact_burn=0 sampled_decrease_native=0 sampled_increase_native=0 compared_pairs=0 estimate_partial=1 discovery_complete=1 estimated_cost_available=0 estimated_cost=0 estimate_reason=no_compared_samples estimate_currency=0 price_per_tonne=146.215179 price_basis=current_cached_30s quantity_assumption=native_tonnes_provisional actual_cost=not_computed settlement=none billing=off
+Test14-L7502: [21:06:05.410] [FLEET FUEL] epoch=2 root=0000022BF337E760 home=0000022C19457D30 sample=360 ms=49443562 reason=poll native_valid=1 native_total=0.0332698897 objects=1 root_metadata=0000022BC954A4D0 root_raw=0.0332698897 root_capacity=0.462799996 observed_decrease_raw=0.00452330709 observed_increase_raw=0 discontinuities=0 panel_required=0 units=unverified refill_coverage=unverified compared_pairs=359 estimate_partial=0 discovery_complete=1 estimated_cost_available=1 estimated_cost=0.661376157 estimate_reason=approximate_positive_drops estimate_currency=0 price_per_tonne=146.215179 price_basis=current_cached_30s quantity_assumption=native_tonnes_provisional estimate_scope=vehicle_observed_not_bill exact_burn=0 actual_cost=not_computed settlement=none billing=off
+Test14-L7510: [21:06:06.081] persistence  writing -> media_soviet/save/26741 - My republic
+Test14-L7521: [21:06:06.089] [DRY COST] saved=1 records=4 bytes=812 billing=off
+Test14-L7524: [21:06:06.097] save   manifest written to media_soviet/save/26741 - My republic\tesmioloader.save.ini
+Test14-L7581: [21:06:08.478] game.ERROR Cannot open media_soviet/saved_last/header.bin header
+Test14-L7618: [21:06:08.488] game.ERROR Cannot open media_soviet/saved_last/windows.bin for save Windows
+```
+
+#### Test14 source correlation — Encode converts only the saved copy
+
+Unchanged production source `plugins/private_logistics/dry_assignment_codec.h`, lines 25–32; these explain log semantics, not independently proven binary parity.
+
+```cpp
+inline std::size_t Encode(const Book& b,unsigned char* out,std::size_t capacity) {
+    if(b.count>Limit || !b.next || capacity<HeaderBytes+b.count*RowBytes) return 0;
+    std::memcpy(out,"PLDRY001",8);Writer w{out+8};w.Int(b.count,4);w.Int(b.next,8);w.Int(0,8);
+    std::uint64_t prior=0;
+    for(unsigned i=0;i<b.count;++i) {
+        Record r=b.rows[i];
+        if(r.stage==Stage::Open) {r.stage=Stage::Interrupted;r.reason=Reason::Unobserved;r.flags|=Partial|InterruptedFlag;}
+        if(!ValidRecord(r) || r.id<=prior || r.id>=b.next) return 0;
+```
+
+#### Test14 source correlation — Decode validates stage and rejects Open rows
+
+Unchanged production source `plugins/private_logistics/dry_assignment_codec.h`, lines 44–59; these explain log semantics, not independently proven binary parity.
+
+```cpp
+inline bool Decode(const unsigned char* data,std::size_t size,Book& out) {
+    if(!data || size<HeaderBytes || size>MaxBytes || std::memcmp(data,"PLDRY001",8)) return false;
+    Reader h{data+8};const auto count=h.Int(4),next=h.Int(8),hash=h.Int(8);
+    if(count>Limit || !next || size!=HeaderBytes+count*RowBytes || hash!=Checksum(data,size)) return false;
+    Reader w{data+HeaderBytes};std::uint64_t prior=0;
+    for(unsigned i=0;i<count;++i) {
+        Record r{};r.id=w.Int(8);r.stage=(Stage)w.Int(1);r.reason=(Reason)w.Int(1);r.flags=(unsigned)w.Int(4);
+        const auto valid=w.Int(1);if(valid>1) return false;
+        r.target.valid=valid!=0;r.target.type=(std::uint32_t)w.Int(4);r.target.x=w.Float();r.target.z=w.Float();
+        std::memcpy(r.target.asset,w.p,NameSize);w.p+=NameSize;
+        r.decrease=w.Real();r.increase=w.Real();r.pairs=(unsigned)w.Int(4);
+        const auto available=w.Int(1);if(available>1) return false;
+        r.available=available!=0;r.price=w.Real();r.amount=w.Real();r.currency=(int)w.Int(4);
+        if(r.stage==Stage::Open || !ValidRecord(r) || r.id<=prior || r.id>=next) return false;
+        out.rows[i]=r;prior=r.id;
+    }
+```
+
+#### Test14 source correlation — Only accepted current book is counted/published
+
+Unchanged production source `plugins/private_logistics/dry_assignment_runtime.h`, lines 116–129; these explain log semantics, not independently proven binary parity.
+
+```cpp
+        std::free(data);
+    }
+    unsigned count=0,interrupted=0;
+    EnterCriticalSection(&g_lock);
+    const bool current=g_dryEpoch==epoch && epoch==InterlockedCompareExchange(&g_panelEpoch,0,0);
+    if(ok && current) {
+        g_dryBook=*loaded;g_dryReady=true;count=g_dryBook.count;
+        for(unsigned i=0;i<count;++i) if(g_dryBook.rows[i].stage==dry::Stage::Interrupted) ++interrupted;
+    }
+    LeaveCriticalSection(&g_lock);
+    delete loaded;
+    Logf("[DRY COST] loaded=%d records=%u interrupted_unpriced=%u "
+         "missing_file=%d blocked=%d prior_active_not_rebound=1 billing=off",
+         (ok && current)?1:0,count,interrupted,state==0?1:0,(!ok || !current)?1:0);
+```
+
+### Test14 evidence verifier — complete source, part 1 of 2
+
+```python
+from pathlib import Path
+import base64
+import collections
+import hashlib
+import lzma
+import re
+
+source = Path('/tmp/arena-coding-uploads/tesmioloader-14.log')
+raw = source.read_bytes()
+assert len(raw) == 567499 and raw.count(b'\r\n') == 7619
+assert hashlib.sha256(raw).hexdigest() == '93d06d518f8dffc8062c9c4385298f90ccfe07aadce7d2816e2ca381983d8b9d'
+lines = raw.decode('utf-8-sig').splitlines()
+def rows(marker):
+    return [(n, dict(re.findall(r'(\w+)=([^ ]+)', s)))
+            for n, s in enumerate(lines, 1) if marker in s]
+costs = rows('[DRY COST]')
+assert len(costs) == 5
+loaded = [(n, r) for n, r in costs if 'loaded' in r]
+assert len(loaded) == 1
+n, r = loaded[0]
+assert n == 696 and r['loaded'] == '1' and r['records'] == '3'
+assert r['interrupted_unpriced'] == r['missing_file'] == r['blocked'] == '0'
+assert r['prior_active_not_rebound'] == '1' and 'autosave5' in lines[690]
+print('PASS original Test14: 567499 bytes / 7619 CRLF lines / SHA256 93d06d51...983d8b9d')
+print('PASS nonempty native load from autosave5: loaded=1 records=3 interrupted=0 missing=0 blocked=0 at 21:00:03.670')
+saves = [(n, r) for n, r in costs if 'saved' in r]
+assert [(n, int(r['records']), int(r['bytes'])) for n, r in saves] == [(3778, 3, 616), (6731, 3, 616), (7521, 4, 812)]
+assert all(r['saved'] == '1' and int(r['bytes']) == 28 + 196 * int(r['records']) for _, r in saves)
+for start, end, name in [(3767, 3781, 'autosave1'), (6720, 6734, 'autosave2'), (7510, 7524, '26741 - My republic')]:
+    assert 'persistence  writing ->' in lines[start-1] and name in lines[start-1]
+    assert 'manifest written' in lines[end-1] and name in lines[end-1]
+print('PASS two autosaves keep 3 records / 616 bytes; named save 26741 - My republic writes 4 records / 812 bytes at 21:06:06.089, all with manifests')
+events = rows('[FLEET ASSIGNMENT]')
+assert len(events) == 1 and events[0][0] == 7302
+opened = events[0][1]
+assert opened['event'] == 'observed_open' and opened['first_sample'] == '349'
+```
+
+### Test14 evidence verifier — complete source, part 2 of 2
+
+```python
+assert opened['root'] == '0000022BF337E760' and opened['id'] == '1'
+assert not any(r.get('stage') in ('closed', 'interrupted') for _, r in costs)
+assert 6731 < events[0][0] < 7521
+print('PASS only one new assignment opens (21:05:54); no observed close/new frozen cost; 3-to-4 save growth is consistent with active interrupted-copy policy, not a completed trip')
+fuel = [(n, r) for n, r in rows('[FLEET FUEL]') if 'root' in r]
+assert len(fuel) == 27 and len({r['root'] for _, r in fuel}) == 2
+assert all(r['native_valid'] == '1' and r['discontinuities'] == '0' for _, r in fuel)
+assert dict(fuel)[7502]['estimated_cost'] == '0.661376157'
+assert dict(fuel)[7502]['estimate_scope'] == 'vehicle_observed_not_bill'
+pays = rows('[PAY] day')
+assert len(pays) == 6 and all('billing off' in lines[n-1] for n, _ in pays)
+errors = [(n, s) for n, s in enumerate(lines, 1) if 'game.ERROR' in s]
+assert len(errors) == 97
+assert sum(n < 691 for n, _ in errors) == 58
+assert [n for n, _ in errors if 691 <= n < 7581] == [732]
+assert 'replace_history.bin' in lines[731]
+assert sum(n >= 7581 for n, _ in errors) == 38
+assert all('saved_last' in s for n, s in errors if n >= 7581)
+for marker in ('[FLEET COVERAGE]', 'disabled_after_guarded_fault', 'tick_registration_failed', 'subscriber faulted', 'save_skipped_invalid_or_blocked', 'save_allocation_failed', 'capacity_exhausted=1'):
+    assert not any(marker in s for s in lines)
+print('PASS 27 numeric fleet samples / two roots / zero logged discontinuities; six payment summaries billing off; no ledger save/coverage/fault warning')
+print('CONTEXT 97 game.ERROR messages: 58 preload + one replace_history.bin read + 38 expected saved_last exit errors; named saving succeeded before exit')
+report = Path('docs/private-logistics-runtime/VEHICLE_PANEL_FUEL_INVESTIGATION.md').read_bytes()
+assert hashlib.sha256(report[:12844704]).hexdigest() == '152c7038c15c572f3b5cf2a10d214692fca95e4521704d7700a968b84e2ea138'
+parts = re.findall(r'```test13-log-part-(\d+)\n([A-Za-z0-9+/=\n]+)\n```', report[:12844704].decode())
+assert [int(i) for i, _ in parts] == list(range(1, 15))
+prior = lzma.decompress(base64.b64decode(''.join(s for _, s in parts))).decode('utf-8-sig').splitlines()
+assert '[DRY COST] saved=1 records=3 bytes=616' in prior[8139]
+assert 'autosave5' in prior[8142]
+assert all('stage=closed' in prior[i-1] for i in (4310, 5360, 6543))
+assert 'record=5 stage=closed' in prior[10512] and 10513 > 8140
+print('PASS cross-run consistency: Test13 autosave5 saved three earlier closed records; Test14 loads a three-record book from autosave5; later demolition record cannot be inferred from that count')
+print('LIMIT no binary book/row dump: exact restored IDs, snapshots and frozen amounts not independently compared; fourth row stage inferred from source, not printed; fourth-row reload and demolition-record persistence unproven')
+```
+
+#### Test14 evidence verifier — actual output / exit 0
+
+Command: `python3 .cache/test14/analyze.py`. Complete source above, with only its source-log path needing adjustment after recovery. The previous Test13 log is read from its durable archive in this report, not a temporary upload. No new regression suite, native run or build was executed by the assistant. Latest prior host-suite results remain historical; this checker analyzes real supplied evidence.
+
+```text
+PASS original Test14: 567499 bytes / 7619 CRLF lines / SHA256 93d06d51...983d8b9d
+PASS nonempty native load from autosave5: loaded=1 records=3 interrupted=0 missing=0 blocked=0 at 21:00:03.670
+PASS two autosaves keep 3 records / 616 bytes; named save 26741 - My republic writes 4 records / 812 bytes at 21:06:06.089, all with manifests
+PASS only one new assignment opens (21:05:54); no observed close/new frozen cost; 3-to-4 save growth is consistent with active interrupted-copy policy, not a completed trip
+PASS 27 numeric fleet samples / two roots / zero logged discontinuities; six payment summaries billing off; no ledger save/coverage/fault warning
+CONTEXT 97 game.ERROR messages: 58 preload + one replace_history.bin read + 38 expected saved_last exit errors; named saving succeeded before exit
+PASS cross-run consistency: Test13 autosave5 saved three earlier closed records; Test14 loads a three-record book from autosave5; later demolition record cannot be inferred from that count
+LIMIT no binary book/row dump: exact restored IDs, snapshots and frozen amounts not independently compared; fourth row stage inferred from source, not printed; fourth-row reload and demolition-record persistence unproven
+```
+
+### Test14 complete original log — seven lossless base64-XZ parts
+
+Concatenate the contents of only `test14-log-part-01` through `test14-log-part-07` in order, base64-decode, then XZ-decompress. Base64 length: 52,588 characters; XZ length: 39,440 bytes. Recovered `tesmioloader-14.log` must be exactly 567,499 bytes / 7,619 CRLF lines / SHA-256 `93d06d518f8dffc8062c9c4385298f90ccfe07aadce7d2816e2ca381983d8b9d`. Preserve original bytes, not normalized text.
+
+#### Test14 log archive part 01 of 7
+
+```test14-log-part-01
+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
+```
+
+#### Test14 log archive part 02 of 7
+
+```test14-log-part-02
+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
+```
+
+#### Test14 log archive part 03 of 7
+
+```test14-log-part-03
+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
+```
+
+#### Test14 log archive part 04 of 7
+
+```test14-log-part-04
+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
+```
+
+#### Test14 log archive part 05 of 7
+
+```test14-log-part-05
+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
+```
+
+#### Test14 log archive part 06 of 7
+
+```test14-log-part-06
+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
+```
+
+#### Test14 log archive part 07 of 7
+
+```test14-log-part-07
+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
+```
+
+### Test14 archive/scope verifier — complete source, part 1 of 2
+
+```python
+from pathlib import Path
+import base64
+import hashlib
+import lzma
+import re
+import subprocess
+from urllib.parse import unquote
+
+report = Path('docs/private-logistics-runtime/VEHICLE_PANEL_FUEL_INVESTIGATION.md')
+raw = report.read_bytes()
+assert hashlib.sha256(raw[:12844704]).hexdigest() == '152c7038c15c572f3b5cf2a10d214692fca95e4521704d7700a968b84e2ea138'
+new = raw[12844704:].decode()
+parts = re.findall(r'```test14-log-part-(\d+)\n([A-Za-z0-9+/=\n]+)\n```', new)
+assert [int(i) for i, _ in parts] == list(range(1, 8))
+b64 = ''.join(s for _, s in parts)
+assert len(b64) == 52588
+xz = base64.b64decode(b64, validate=True)
+assert len(xz) == 39440
+recovered = lzma.decompress(xz)
+assert len(recovered) == 567499 and recovered.count(b'\r\n') == 7619
+assert hashlib.sha256(recovered).hexdigest() == '93d06d518f8dffc8062c9c4385298f90ccfe07aadce7d2816e2ca381983d8b9d'
+out = Path('.cache/test14/recovered.log')
+out.write_bytes(recovered)
+print('PASS 12844704-byte prior report prefix unchanged; seven Test14 archive parts recover original bytes / CRLF / SHA256')
+blocks = re.findall(r'```python\n(.*?)\n```', new, re.S)[:2]
+assert len(blocks) == 2
+helper = ''.join(s + '\n' for s in blocks)
+assert helper == Path('.cache/test14/analyze.py').read_text()
+helper = helper.replace("Path('/tmp/arena-coding-uploads/tesmioloader-14.log')", f'Path({str(out)!r})')
+run = subprocess.run(['python3', '-c', helper], capture_output=True, text=True, check=True)
+assert not run.stderr and run.stdout == Path('.cache/test14/results.txt').read_text()
+assert run.stdout in new
+print('PASS full evidence helper source recovered exactly; recovered-log rerun matches actual archived stdout')
+```
+
+### Test14 archive/scope verifier — complete source, part 2 of 2
+
+```python
+pages = [Path(p) for p in (
+    'docs/WRSRE DESIGN DOC.md', 'docs/private-logistics-runtime/DO_OFFICES.md',
+    'docs/private-logistics-runtime/README.md', 'docs/private-logistics-runtime/AUTONOMOUS_DO_PERMISSIONS_PLAN.md',
+    'docs/visions/vision-private-logistics.md', 'docs/engine/logistics.md',
+)]
+images = {
+    'image-44.png': '84ca128dd56cad7735bcd948f03eb79e85f04dadd695cf78f21a18b24af30076',
+    'image-45.png': '40d3fec42da891248a6f2c498ffddb6a351076423627f3247d142c1da9dccb2c',
+}
+image_paths = [report.parent / 'evidence/test13' / name for name in images]
+for p in image_paths:
+    assert hashlib.sha256(p.read_bytes()).hexdigest() == images[p.name]
+links = 0
+for p in pages:
+    for target in re.findall(r'\]\(([^)]+)\)', p.read_text()):
+        if '://' in target or target.startswith('#'):
+            continue
+        assert (p.parent / unquote(target.split('#')[0])).exists(), (p, target)
+        links += 1
+for p in pages[:3]:
+    assert 'Test14' in p.read_text() and '26741 - My republic' in p.read_text()
+print(f'PASS Test13 original screenshot hashes; {links} implementation-page links; Test14 current status in design/guide/README')
+assert subprocess.check_output(['git', 'branch', '--show-current'], text=True).strip() == 'arena/423e4046-wrsre'
+allowed = {str(p) for p in pages + [report] + image_paths}
+status = subprocess.check_output(['git', 'status', '--porcelain', '-z', '--untracked-files=all']).decode().split('\0')
+assert {s[3:] for s in status if s} == allowed
+subprocess.run(['git', 'diff', '--exit-code', '--', 'plugins', 'src', 'tests'], check=True)
+subprocess.run(['git', 'diff', '--check'], check=True)
+print('PASS active branch / documentation-and-existing-evidence-only scope / production-config-tests unchanged / git diff --check')
+print('Updated documentation manifest (self-referential report excluded; prior manifests historical):')
+for p in pages:
+    data = p.read_bytes()
+    print(f'{p}: {len(data)} bytes / SHA256 {hashlib.sha256(data).hexdigest()}')
+```
+
+#### Test14 archive/scope verifier — actual output / exit 0
+
+Command: `python3 .cache/test14/verify_archive.py`. To replay from durable evidence, restore both analyzer and archive-verifier blocks into their named `.cache/test14/` scripts and save the analyzer actual stdout as `results.txt`; the archive-verifier reconstructs the original log itself and reruns the analyzer against it. Prior documentation manifests remain historical checkpoints, not current hashes for pages updated here.
+
+```text
+PASS 12844704-byte prior report prefix unchanged; seven Test14 archive parts recover original bytes / CRLF / SHA256
+PASS full evidence helper source recovered exactly; recovered-log rerun matches actual archived stdout
+PASS Test13 original screenshot hashes; 39 implementation-page links; Test14 current status in design/guide/README
+PASS active branch / documentation-and-existing-evidence-only scope / production-config-tests unchanged / git diff --check
+Updated documentation manifest (self-referential report excluded; prior manifests historical):
+docs/WRSRE DESIGN DOC.md: 38758 bytes / SHA256 7028384a46c04e7794fa096f7d96e1124089aef2464b499241c4a86cadfbfda4
+docs/private-logistics-runtime/DO_OFFICES.md: 23026 bytes / SHA256 2b8331f192ec9ec497b549a9878ca154b6a0a9886d8817338a4071bc1a1d9184
+docs/private-logistics-runtime/README.md: 39410 bytes / SHA256 7ebc0a8116bbfc348f55f99d2a6a3f46f9a2e6d346e2f8e1daec4c4c5138b257
+docs/private-logistics-runtime/AUTONOMOUS_DO_PERMISSIONS_PLAN.md: 65109 bytes / SHA256 ca94733f4b111472216ac5e60338aaece25524dfe4c312764b4a01bafa402a7a
+docs/visions/vision-private-logistics.md: 14197 bytes / SHA256 b2a0a0583c5afcc223a2159fb24d5e382ac6a764de22d4b3c2d1b3efc9b9090f
+docs/engine/logistics.md: 11150 bytes / SHA256 d56bb45f39686eb414b31a712c66487294fe3200171c48ee9c24b84c6a4c6c02
+```
+
+### Test14 final assessment and ready-to-paste next-agent handover
+
+**PASS: native nonempty-book load, continued three-record autosaves, and named four-record save.** The fourth row is consistent with active interrupted-copy serialization, not another completed delivery. The older “all native cost-ledger reload unverified” statement is superseded for this observed three-record load, while exact restored row values, interrupted-row reload and the later Test13 demolition record's persistence remain bounded gaps. No need to repeat basic saves/demolition/baseline/pause. A next development review can focus on large-save performance/coverage and verified payer/debt prerequisites; do not activate payments. Further row-level/interrupted-save reload checks remain optional later work under the user's agreement, not an imposed repeat-test loop. All raw evidence/source/actual checker results are retained here; main design/guide/runtime README updated, historical prefix preserved, runtime/config/tests untouched. No native run/build, deployment, commit, push or PR performed by assistant.
+
+```text
+Continue on /home/user/WRSRE branch arena/423e4046-wrsre, reading current instructions and canonical VEHICLE_PANEL_FUEL_INVESTIGATION.md Test14 tail. User supplied tesmioloader-14.log: live 0.18.17 loads autosave5 with loaded=1 records=3 interrupted=0 missing=0 blocked=0 at 21:00:03. Two autosaves write 3/616; named 26741 - My republic writes 4/812 at 21:06:06. One assignment opens shortly before save, none closes; fourth row is consistent with active interrupted/unpriced copy, not a completed bill. Source correlation is archived, not binary-content proof. Test13 autosave5 preceded demolition; this load does not verify later cancelled record 5. Native nonempty restoration is now supported, exact row/quote equality and interrupted-row restoration remain untested; further loading can wait. Expected saved_last exit errors do not negate successful saves. Full Test14 original is in seven base64-XZ blocks; helper/verifier sources, stdout and refreshed docs manifest retained. Basic save/cancellation checks need not be repeated. Payments OFF; performance/coverage and verified payer/debt are future review priorities, not authorized implementation/activation. Only docs/evidence modified, uncommitted; no new runtime/config/build/deploy/commit/push/PR approval. Preserve all prior report bytes and use bounded verified writes. Continue with the user's next request.
+```
+
+## Read-only performance and coverage review — 0.18.17-dry-ledger
+
+Authorized scope: user's **“proceed”** accepted source review, findings/recommendations and a minimal future timing plan, **not runtime edits or instrumentation**. Reviewed source is unchanged at commit `fa6dc671a38af4976f346b6d4ab8bbf0bbdbfc36` on `arena/423e4046-wrsre`; exact reviewed-file hashes and checker source/results follow. Root instructions/workflow reread; local/remote target-branch INSTRUCTIONS match blob `64684a0b860b09a88976af9c074176bc8dc1db88`. The historical report prefix is **12,924,469 bytes**, SHA-256 `a2abf0f30255fd7071b0454ae71b71d0a73bca54d1c753816d90b0ab9496f74f`, preserved exactly. Findings below distinguish source defects, designed coverage limits, derived operation counts and unmeasured native performance. No production/config/test change, native query/hook, build, deployment, new game test, payment, commit, push or PR performed. Existing uncommitted docs/evidence remain intact.
+
+### R1 — high-priority source safety defect: legacy census table exhaustion
+
+`private_logistics.cpp:2972–2980` searches the legacy process-lifetime vehicle table, returning **-1** for a new pointer after `VEH_MAX=64` entries. `CensusFleets` (`3293–3417`, enabled by checked-in `census_log=1`) can visit up to 32 enterprise entries × 64 vehicles per fleet; a 65th distinct observed pointer is therefore reachable across fleets, not just within a single office. Pointer churn over time/load can also exhaust the table: source has initialization and increment, no retirement/reset of `g_vehCount`. `ReadTank(s,...)` rejects negative slots, and other nearby uses guard `s>=0`, **but L3398 reads `g_vehFuelValid[s]` unconditionally after ReadTank returns**. This is an out-of-bounds read for s=-1, not a safe capacity skip. The later negative-index fuel print is inside a branch whose zero-initialized burn/refill outputs stay zero on the invalid-slot early return; the unconditional L3398 read alone establishes the defect. Depending on layout/runtime, it can silently miscount or fault; a native crash has **not** been reproduced or inferred from Test13/14. `sim_clock.cpp:89–102` catches a faulting day subscriber and disables that subscriber, so a fault here could also stop later `OnDay` work, including daily target reconciliation called at L1857. Tick observation is a separate subscription; no claim that every outcome crashes the game.
+
+**R1 recommendation, not executed:** before deliberately stressing large fleets, separately authorize a bounded caller-side slot guard, explicit capacity reporting, and regression coverage at 64/65 distinct pointers and churn across loads. Verify daily processing/reconciliation still continues for supported entries and no invalid-slot array access occurs; do not enlarge limits or change dispatch/billing as a shortcut. The existing portable dry-ledger/fleet harnesses do not reproduce this legacy full-census path (targeted test-source search found no `VehSlot`/`CensusFleets` coverage). This is a new safety-fix prerequisite for a stress benchmark, not a request that the player provoke a native failure. Runtime remains unchanged under the read-only authorization.
+
+### R2 — hard coverage limits can starve later offices/vehicles indefinitely
+
+`fleet_fuel_runtime.h:76–101` visits the **first min(total,32) enterprise-register entries**, not the first 32 road offices and not a rotating slice. Non-office enterprises consume that prefix budget. It keeps the first **64 distinct roots globally** across those offices and skips later distinct roots when full. It continues validating visited fleets even after the selected-root budget fills. With stable ordering, a later eligible office/root can remain unobserved indefinitely; bounded work is not eventual coverage. If total>32 or another truncation/invalidity occurs, discovery is marked incomplete even if visible roots are independently usable; events carry partial discovery flags, and coverage warnings are throttled to about 30 seconds. Unseen roots are not billed. Missing/duplicate observed identities are retired/interrupted, not reported as successful completion. Candidate-home membership and count-stability checks are not an atomic proof of the entire registry or every native lifetime. An approved future fairness design would need explicit discovery-versus-tracking budgets, retirement/adoption behavior and preserved original-target semantics, not just larger arrays or unqualified round-robin eviction of active assignments.
+
+### R3 — repeated guarded reads and burst-time identity scans are first timing suspects
+
+`fleet_fuel_observer.h:13–32` validates each office list (max 256 roots), checks duplicates with a nested loop, and rechecks list entries/header. At 32 full eligible offices this duplicate loop alone has an upper envelope **32×256×255/2 = 1,044,480 pointer comparisons per eligible pass**. Global selection dedup adds at most **32×256×64 = 524,288 comparisons** (a loose bound, not an exact simultaneous workload). `ReadFuel:35–61` calls `FindMembership` twice per selected root; that helper (`panel_fuel_observer.h:56–77`) linearly rereads the candidate home's entire fleet, up to **2×64×256 = 32,768 fleet-slot reads** per pass, before object and schedule reads. `PanelRead` calls host readability checking; loader `ReadablePtr` (`tesmioloader.cpp:1139–1156`) uses `VirtualQuery` region walks. These counts are **source-derived operations, not milliseconds or evidence of an observed slowdown**. Keep the safety rechecks unless a separately reviewed consistency-preserving replacement is approved; naive pointer caching/removal of validation is not a performance fix.
+
+`DryCostEvent` captures original identity before taking the book lock on each Opened/Adopted event (`dry_assignment_runtime.h:54–66`). `DryIdentitySnapshot` (`dry_assignment_native.h:6–31`) scans the whole supported world-building vector to prove a unique matching pointer, reads asset/type/position, then rechecks the span/target. A 64-opening/adoption burst with a 25,000-entry vector can therefore perform **1,600,000 pointer comparisons** in these identity scans alone, plus guarded name/type reads. The scan occurs before capacity refusal, so even an unrecordable opening at a full book can pay this cost. A future capacity fast path would need epoch/readiness revalidation after any unlocked identity work. `game_world.h:210–222` refuses vectors over 25,000: this is an additional availability ceiling, not an unlimited world scan. No atomic lifetime or payer-ID proof is implied. Fuel capture also refuses >8 links (9 total objects), non-road detail kinds and office lists >256; schedule capture refuses >16 rows and rereads selected fields (`schedule_observer.h:55–81`). Unsupported data stays unavailable/partial, not a partial total silently treated as complete. These limits require explicit status counters in profiling, not only speed measurements on accepted samples.
+
+### R4 — daily connection work is a separate, broader spike budget
+
+`AutoTargetsOnDay` (`private_logistics.cpp:2569–2799`) may inspect **8,704 enterprise entries**, not 32; if registered count exceeds 8,704 it skips the whole connection pass. Infrastructure probing (`2390–2483`) scans the supported world vector, indexes only the first **512 state storage-bearing candidates** and **512 customs sites**, and searches indexed customs per office. Entity storage can fill before all state candidates are appended. Existing target enforcement separately handles readable manual/unindexed entries; an omitted discovery candidate is not proof that every existing task loses permission. Each office clears/walks the entity set; active generated memos may search the office's target vector for each memo (`2692–2711`). Memo-index rebuild is O(stored memos), with a 262,144-row append-only memo ceiling; hash tables have bounded but collision-sensitive probing. The target-vector validation ceiling is **65,536 entries**, not the five-entry addition budget. `AutoMemoFind` is invoked even before the full-budget skip, so five allowed total target entries do **not** mean only five candidate checks. Work includes world/register scans, per-office entity loops, per-memo×target searches, capability/name reads, permission-table scans (up to 512 under the shared lock), native config enforcement, notifications and logs. A useful rough workload description is world/register/memo rebuild + office×entities + sum(memos_per_office×targets_per_office) + office×customs, plus hash probes and guarded reads—not simply O(64).
+
+### R5 — bounded ledger storage is finite history, not indefinite service
+
+The cost book (`dry_assignment_ledger.h:68–97`) has **4,096 append-only records**, including interrupted/unknown/unpriced candidates; slots are not reclaimed on close. At capacity `Begin` refuses new records and the runtime warns once per load while preserving old rows. Fleet diagnostics can keep observing while new durable costs are missing. Record slots are consumed on opening/adoption, not solely on completed deliveries; repeated interrupted-save reloads followed by separately adopted current assignments can consume additional history. No exhaustion horizon in hours is claimed without a measured assignment rate. The 64 dry-token slots and 64 fleet slots are distinct from the book's lifetime capacity. An approved retention/export/checkpoint design must preserve frozen historical quotes and avoid silently dropping liabilities or joining interrupted records. No silent eviction, reset or payment activation is recommended here.
+
+### R6 — serialization/lock costs and synchronous I/O need separate measurements
+
+`dry_assignment_runtime.h:88–129` allocates a maximum wire buffer (**802,844 bytes**) on every save callback, even for a three-row book, and encodes/validates/checksums the whole used book under private_logistics `g_lock`. Disk write/flush/rename occurs after releasing that lock. Load allocates a full scratch Book, reads/validates outside the lock, then assigns the fixed Book and counts interrupted rows under the lock; the struct size is not the wire size. The shared plugin lock can stall simulation updates while serialization/publication holds it; the service's own `Dispatch` (`persistence.cpp:196–217`) also holds its separate handler lock across callbacks, serializing save/load handlers. Persistence is invoked synchronously from the existing file-hook path, not a new asynchronous worker promising zero game stalls. `WriteAtomicImpl:112–151` performs WriteFile → FlushFileBuffers → MoveFileEx with write-through. Its FlushFileBuffers return is not checked: `saved=1` must not be promoted to proven power-loss durability. Valid book size is capped at 802,844, but an oversized malformed existing file can be read/allocated by generic persistence up to its **16 MiB** service limit before Decode rejects it. This does not weaken the decoder's acceptance bound; it is an error-path I/O/allocation cost. Measure lock-wait/hold, encode/checksum, read/decode and file I/O separately before proposing scratch snapshots or service hardening; any change must preserve current generation/overwrite protections.
+
+### R7 — logging and older diagnostics can dominate a day-boundary spike
+
+Host logging (`tesmioloader.cpp:80–105`, reached through the plugin API) formats lines and synchronously calls WriteFile under the loader log lock; logs are not a free in-memory sink or necessarily a disk-flush per line. New fleet summaries are quiet-sample throttled (first/every 30th sample/events/validity transitions), coverage warnings about every 30 seconds, but assignment/close bursts can emit many lines in one pass. Daily auto-target auditing has a shared 80-line default budget for some messages, not every summary/reconnection/error message. Legacy `census_log=1`, `veh_scan=1`, `veh_scan_log_per_day=40` are also enabled in source: the 512-dword scan is per tracked vehicle per day, and **40 changed-word log lines is per vehicle, not a fleet-wide 40** (64 tracked vehicles visited once can emit 2,560 such lines, plus omitted-count/census/other logs; repeated or invalid census membership is not a global line-budget guarantee). Cargo dumps cover the first three legacy slots. Daily target appends also allocate entry/config objects and may cause native vector growth (`private_logistics.cpp:2273–2320`); the normal observer's fixed-size allocation-free structures do not make the entire daily path zero-allocation. At a day change, sim_clock runs FireDay before FireTick on the normal calendar-update path (`sim_clock.cpp:241–260`), so census, connection and observer costs can coincide. Profile whole OnDay as well as AutoTargetsOnDay to avoid attributing legacy work to the new ledger. No diagnostic/config toggle was changed during this review.
+
+### R8 — sampling frequency is neither full event coverage nor a CPU budget
+
+The observer gates full passes using **1,000 real-world ms** on simulation callbacks; it performs no missed-second catch-up and has no hard microsecond execution deadline (`fleet_fuel_runtime.h:123–176`). At higher game speed more native activity and more daily boundaries fit between real-world samples; a short assignment or decrease/rise sequence between endpoints may be missed. Scalar/index-only changes correctly retain assignment identity, but two native assignments with indistinguishable observed endpoints cannot be universally separated without an approved native identity/event contract. `discovery_complete=1` describes the visited census result, not continuous event coverage. A 30-second copied-price cache is distinct from sampling and from the future-only game-week pricing idea. The pricing provider's name lookup scans at most 256 resource records (`resource_pricing.cpp:145–171`); it is not a world-building scan on every vehicle. Neither reducing price-refresh frequency nor increasing sample intervals cures discovery starvation, record exhaustion or identity-scan bursts. Keep accepted approximate units/positive-drop accounting separate from actual burn, payer verification and eventual exactly-once debt/settlement requirements.
+
+### Existing native evidence does not measure these risks at scale
+
+The review checker recovers Test13/14 from their exact report archives. Test13's infra probe reports **35–36 world entries, one private office, two observed vehicle roots**, 50 numeric fleet samples and 291 `[VEH CHG]` lines. Test14 reports **36 world entries, one private office, two roots**, 27 numeric samples and 29 `[VEH CHG]` lines. These are real gameplay observations and useful log-volume context, **not** a 32-office/64-vehicle/full-book benchmark. Startup “16 sites” is transfer instrumentation count, not office/fleet scale. Existing sample timestamps and save-status/manifest ordering lack phase timers, lock-wait times, disk-flush durations and frame-time attribution. No p95/p99, CPU milliseconds, frame-drop rate, large-save latency or power-loss durability result can be extracted honestly. Named saving and nonempty restoration remain accepted; no basic save/demolition/baseline/pause repetition is requested.
+
+### Minimal future measurement plan — proposed only, separately authorize instrumentation
+
+Use the existing callbacks and normal platform high-resolution elapsed-time facility (e.g. QueryPerformanceCounter), **no new game hook, offset or native layout probe**. Start with coarse phase timers and fixed-size count/sum/max/histogram buckets, not a timer/log per guarded read or heap-backed tick vectors. Count cheap operations/statuses where already observed. Record build/INI/save-scale/hardware/storage/game-speed and diagnostic settings. Keep payments OFF and source10/destination30 unchanged. Emit aggregated summaries at a slow wall-clock cadence (e.g. 60 seconds) or explicit end-of-run snapshot, outside measured hot sections/shared locks; report the instrumentation/logging overhead itself. Percentiles from histograms must be labelled bucket estimates. Do not imply a calendar-week price change or alter observer/dispatch cadence to obtain a flattering result.
+
+1. **Observer pass:** count all callbacks, gate skips and full passes; time full-pass total including events/logs, discovery, selected-root fuel/membership, schedule capture, identity-snapshot bursts and cached-price refresh separately. Record registry total/entries actually visited, road offices among those visited, roots inspected/selected/duplicates/cap skips, invalid status reasons, active candidates, openings/closures/interruptions and record-allocation failures. A prefix-only observer cannot report an exact count of all eligible unvisited offices without extra discovery work: label those as unknown.
+
+2. **Day boundary:** time whole `OnDay`, legacy census/scanner, infrastructure discovery, memo-index rebuild and connection reconciliation; count world/enterprise/entity/office/state/customs/memo/target visits, appended/config-changed tasks and emitted/suppressed log lines. Attribute hash probes/permission lookups only if coarse results justify deeper counters. Separate normal ticks from ticks coinciding with day boundaries; include native append/notification elapsed time without replacing native dispatch.
+
+3. **Persistence:** measure allocation, shared-lock wait/hold, encoding/checksum or read/decode, book publication and write/flush/rename separately where existing service boundaries permit. A private-plugin-only timer around `writeAtomic` measures the combined I/O call, not individual filesystem stages; deeper service timers would require separate authorization. Record book rows/stages, bytes, failures and callback totals; do not equate unrelated plugins' whole-save wall time with this book. Profile small/current and near-capacity valid books without touching the user's historical evidence or resetting production history. Malformed-file checks belong in controlled host/service tests, not destructive player-save experiments.
+
+4. **Smallest useful native workload, only after R1 is fixed/tested and measurement/deployment approved:** one representative larger copied save, ordinary panels closed, normal speed then busiest supported speed, enough runtime for several daily boundaries and natural assignment bursts, one ordinary save and optional later load. Use already-existing external/frame telemetry if available rather than inventing a render hook. Correlate pass count, max/percentiles, phase totals and longest effective sample gap with scale and coverage flags; identify omitted work alongside costs. Compare equivalent timing-enabled/disabled runs to bound measurement overhead; any optional diagnostic-verbosity A/B must be explicitly approved and must not disable required fleet switches. Define acceptable budget against the user's target frame/simulation responsiveness, rather than declaring a guessed 1 ms threshold or source bound a PASS. The current read-only task does not run this workload or require the user to repeat Test13/14.
+
+### R1 exact production-source excerpt — exhausted table returns -1
+
+`plugins/private_logistics/private_logistics.cpp:2972–2980`, unchanged committed source.
+
+```cpp
+static int VehSlot(void* v)
+{
+    for (int i = 0; i < g_vehCount; i++)
+        if (g_vehPtr[i] == v) return i;
+    if (g_vehCount >= VEH_MAX) return -1;
+    g_vehPtr[g_vehCount]     = v;
+    g_vehPeakTons[g_vehCount] = 0.0;
+    g_vehSamples[g_vehCount]  = 0;
+    return g_vehCount++;
+```
+
+### R1 exact production-source excerpt — ReadTank does not repair the caller slot
+
+`plugins/private_logistics/private_logistics.cpp:3229–3232`, unchanged committed source.
+
+```cpp
+static void ReadTank(int slot, void* v, int closedDay, double* burned, unsigned* refills)
+{
+    if (slot < 0 || slot >= VEH_MAX) return;
+    using namespace private_logistics_fuel_diagnostics;
+```
+
+### R1 exact production-source excerpt — unchecked caller read after negative-slot return
+
+`plugins/private_logistics/private_logistics.cpp:3392–3405`, unchanged committed source.
+
+```cpp
+            // v0.10: fuel on board, and what left the tank since yesterday.
+            double burned = 0.0;
+            unsigned refills = 0;
+            ReadTank(s, v, closedDay, &burned, &refills);
+            g_burnTonsRun += burned;
+            g_refillsRun  += refills;
+            if (g_vehFuelValid[s]) g_tankVehDaysRun++;
+            if (burned > 0.0 || refills > 0)
+                Logf("[TANK SAMPLE] day %d v=%p candidate_raw=%.4f | decrease_raw=%.4f "
+                     "| sample_increases=%u units=unverified exact_burn=0 verified_refill=0",
+                     closedDay, v, g_vehFuelValid[s] ? g_vehFuel[s] : 0.0,
+                     burned, refills);
+
+            ScanVehicle(s, v, closedDay);
+```
+
+### Read-only review checker — complete source, part 1 of 3
+
+```python
+from pathlib import Path
+import base64
+import hashlib
+import lzma
+import re
+import subprocess
+
+root = Path('.')
+report = root / 'docs/private-logistics-runtime/VEHICLE_PANEL_FUEL_INVESTIGATION.md'
+raw = report.read_bytes()
+assert hashlib.sha256(raw[:12924469]).hexdigest() == 'a2abf0f30255fd7071b0454ae71b71d0a73bca54d1c753816d90b0ab9496f74f'
+assert subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip() == 'fa6dc671a38af4976f346b6d4ab8bbf0bbdbfc36'
+assert subprocess.check_output(['git', 'branch', '--show-current'], text=True).strip() == 'arena/423e4046-wrsre'
+subprocess.run(['git', 'diff', '--exit-code', '--', 'plugins', 'src', 'tests'], check=True)
+cpp = Path('plugins/private_logistics/private_logistics.cpp').read_text()
+fleet = Path('plugins/private_logistics/fleet_fuel_runtime.h').read_text()
+readers = Path('plugins/private_logistics/fleet_fuel_observer.h').read_text()
+codec = Path('plugins/private_logistics/dry_assignment_codec.h').read_text()
+assert 'if (g_vehCount >= VEH_MAX) return -1;' in cpp
+assert 'if (g_vehFuelValid[s]) g_tankVehDaysRun++;' in cpp
+assert 'if (slot < 0 || slot >= VEH_MAX) return;' in cpp
+assert cpp.count('g_vehCount   = 0') == 1
+assert 'FleetVehicleLimit=64,FleetEnterpriseLimit=32' in fleet
+assert 'i<limit' in fleet and 'if(count==FleetVehicleLimit) {complete=false;continue;}' in fleet
+assert 'for(unsigned j=0;j<i;++j)' in readers
+```
+
+### Read-only review checker — complete source, part 2 of 3
+
+```python
+assert readers.count('p::FindMembership(m,') == 2
+assert 'now-g_fleetLastMs<1000' in fleet and 'now-g_fleetPriceMs>=30000' in fleet
+assert 'Record r=b.rows[i];' in codec and 'if(r.stage==Stage::Open)' in codec
+print('PASS source assertions: unsafe legacy -1 caller identified; prefix/global selection, duplicate loops, repeated membership, cadence and copy-on-save checked')
+print('DERIVED operation ceilings, not timings: office duplicate comparisons', 32*256*255//2)
+print('DERIVED selected-root dedup comparisons <=', 32*256*64)
+print('DERIVED membership fleet-slot reads <=', 2*64*256)
+print('DERIVED simultaneous-opening world comparisons <=', 64*25000)
+print('DERIVED wire bytes at 4096 records:', 28+4096*196)
+for test, expected in [(13, 'a40e4f8687abf5cc49ec1f48b14069b55cbfcdb080fdb51233aaf9104d8b63e0'), (14, '93d06d518f8dffc8062c9c4385298f90ccfe07aadce7d2816e2ca381983d8b9d')]:
+    parts = re.findall(rf'```test{test}-log-part-(\d+)\n([A-Za-z0-9+/=\n]+)\n```', raw.decode())
+    log = lzma.decompress(base64.b64decode(''.join(s for _, s in parts)))
+    assert hashlib.sha256(log).hexdigest() == expected
+    lines = log.decode().splitlines()
+    samples = [s for s in lines if '[FLEET FUEL]' in s and 'root=' in s]
+    worlds = sorted({int(x) for s in lines for x in re.findall(r'infra probe: world=(\d+)', s)})
+    offices = sorted({int(x) for s in lines for x in re.findall(r'summary: private offices=(\d+)', s)})
+    roots = {re.search(r'root=(\w+)', s)[1] for s in samples}
+    print(f'NATIVE CONTEXT Test{test}: world={worlds}, private offices={offices}, observed roots={len(roots)}, numeric fuel samples={len(samples)}, VEH CHG lines={sum("[VEH CHG]" in s for s in lines)}')
+print('LIMIT source assertions and real-log context are not a native CPU, frame-time, lock-wait or filesystem benchmark; no native fault reproduced')
+files = ['plugins/private_logistics/' + name for name in (
+    'private_logistics.cpp', 'private_logistics.ini', 'fleet_fuel_runtime.h', 'fleet_fuel_observer.h',
+    'panel_fuel_observer.h', 'panel_fuel_runtime.h', 'schedule_observer.h', 'schedule_assignment_ledger.h',
+    'dry_assignment_native.h', 'dry_assignment_runtime.h', 'dry_assignment_ledger.h', 'dry_assignment_codec.h', 'site_permissions.h',
+```
+
+### Read-only review checker — complete source, part 3 of 3
+
+```python
+)] + ['plugins/persistence/persistence.cpp', 'plugins/sim_clock/sim_clock.cpp',
+      'plugins/enterprise_base/enterprise_base.cpp', 'plugins/resource_pricing/resource_pricing.cpp',
+      'src/game_world.h', 'src/tesmioloader.cpp', 'src/tesmio_plugin.h']
+print('Immutable reviewed-source manifest (all bytes equal HEAD fa6dc671):')
+for filename in files:
+    data = Path(filename).read_bytes()
+    committed = subprocess.check_output(['git', 'show', f'HEAD:{filename}'])
+    assert data == committed, filename
+    print(f'{filename}: {len(data)} bytes / SHA256 {hashlib.sha256(data).hexdigest()}')
+subprocess.run(['git', 'diff', '--check'], check=True)
+print('PASS historical report prefix, source identity, active branch and diff whitespace; only documentation/evidence work permitted')
+```
+
+#### Read-only checker actual stdout — part 1 of 3
+
+Command: `python3 .cache/performance-review/check.py`, exit 0. Concatenate the preceding source blocks to reproduce. Assertions check source/log facts and arithmetic, not native performance. Manifest files are unchanged repository source at the named commit; no new runtime source was generated.
+
+```text
+PASS source assertions: unsafe legacy -1 caller identified; prefix/global selection, duplicate loops, repeated membership, cadence and copy-on-save checked
+DERIVED operation ceilings, not timings: office duplicate comparisons 1044480
+DERIVED selected-root dedup comparisons <= 524288
+DERIVED membership fleet-slot reads <= 32768
+DERIVED simultaneous-opening world comparisons <= 1600000
+DERIVED wire bytes at 4096 records: 802844
+NATIVE CONTEXT Test13: world=[35, 36], private offices=[1], observed roots=2, numeric fuel samples=50, VEH CHG lines=291
+NATIVE CONTEXT Test14: world=[36], private offices=[1], observed roots=2, numeric fuel samples=27, VEH CHG lines=29
+LIMIT source assertions and real-log context are not a native CPU, frame-time, lock-wait or filesystem benchmark; no native fault reproduced
+Immutable reviewed-source manifest (all bytes equal HEAD fa6dc671):
+```
+
+#### Read-only checker actual stdout — part 2 of 3
+
+```text
+plugins/private_logistics/private_logistics.cpp: 168053 bytes / SHA256 f748fc5b8434cd062d07da0e25af339098538176d5ab978d9d25b95058f47c4b
+plugins/private_logistics/private_logistics.ini: 10210 bytes / SHA256 fc2d763962e9f1d3684b0eabf31d2b79efdeb9c2621e98af9d3b2ce07a8fbf04
+plugins/private_logistics/fleet_fuel_runtime.h: 12399 bytes / SHA256 af5dc11e538d26e7ef8d4d67058ce4e868c03a772ffaa79c87ce27cc1dee7658
+plugins/private_logistics/fleet_fuel_observer.h: 5747 bytes / SHA256 65888b632ab47bed684c725615f561f1c12bd54d8f282f66e696e7a4f9dc321a
+plugins/private_logistics/panel_fuel_observer.h: 6912 bytes / SHA256 76d509ec1350ead603cd86aa8e903dbb1646a81e37990c286b5e5d198bce79e5
+plugins/private_logistics/panel_fuel_runtime.h: 31672 bytes / SHA256 4b5f5bc2ced226ffb29a6a9d98d0ce966be5b1ca0fb9805ef9bcea004f6acb2e
+plugins/private_logistics/schedule_observer.h: 10489 bytes / SHA256 ce7a52a9c2a34ae92ee902b6ae8d7baafbb93c871629234b7315a25bcfce7988
+plugins/private_logistics/schedule_assignment_ledger.h: 10382 bytes / SHA256 122d1825c04ee52bdf05b3bb8a497133b7e5339f84b2c5a1883fc1fb402fdd18
+plugins/private_logistics/dry_assignment_native.h: 2541 bytes / SHA256 ccc83108d894eda40ad81d0b35fd0d7ede7b9132a3368ee3c5339919bb68e91c
+plugins/private_logistics/dry_assignment_runtime.h: 8193 bytes / SHA256 610b05808e4e73e8f164402a5c68ba3905f99f0e64cc4806c4bc0494a259f7bf
+plugins/private_logistics/dry_assignment_ledger.h: 4842 bytes / SHA256 f8adc630847ffd329a102f28bf4deba5afb5d4bd3cd319a329f5db8b50d1749c
+```
+
+#### Read-only checker actual stdout — part 3 of 3
+
+```text
+plugins/private_logistics/dry_assignment_codec.h: 3717 bytes / SHA256 93eae84791b584974c8ce6df4c08946304f01e6710ee919cacf5e6e126cb768f
+plugins/private_logistics/site_permissions.h: 5288 bytes / SHA256 212e269b609c9c61696c282c553a2609414f19d9368ca98de384a4b0d0158e25
+plugins/persistence/persistence.cpp: 13096 bytes / SHA256 19c9883899ec11e7089ff8fe1b4e3f934e5148f4c617bb74a1b9706c03667d8d
+plugins/sim_clock/sim_clock.cpp: 14021 bytes / SHA256 c26a27a70cdfb64ed9d19ccc20f5a7af560b24a0d73c549861fb858594fbdcb6
+plugins/enterprise_base/enterprise_base.cpp: 207376 bytes / SHA256 4407bdfa9777e470f52c1d9ffce107ddc0dac6f466ffa39d98c519c428070ee4
+plugins/resource_pricing/resource_pricing.cpp: 28798 bytes / SHA256 c269c72f648e4765f8dbec75cdda3c95468653e3cc1154697cf59bec887e6587
+src/game_world.h: 15128 bytes / SHA256 f57c2ef0ca8b9fb7d32f62c33a8c96c042de790ebad2f68789e9d1e292fad0c7
+src/tesmioloader.cpp: 83098 bytes / SHA256 a5bafb6786f1df2ac23d2bbfc05c12233db0dae5423b94d47e5ecc1c380caa6a
+src/tesmio_plugin.h: 5042 bytes / SHA256 d886ac6550dd84031ee2ed3afab13a7f75e4ddf920d23183b93395440d3cff49
+PASS historical report prefix, source identity, active branch and diff whitespace; only documentation/evidence work permitted
+```
+
+### Review assembly/scope verifier — full source, part 1 of 2
+
+```python
+from pathlib import Path
+import hashlib
+import re
+import subprocess
+from urllib.parse import unquote
+
+p = Path('docs/private-logistics-runtime/VEHICLE_PANEL_FUEL_INVESTIGATION.md')
+raw = p.read_bytes()
+assert hashlib.sha256(raw[:12924469]).hexdigest() == 'a2abf0f30255fd7071b0454ae71b71d0a73bca54d1c753816d90b0ab9496f74f'
+new = raw[12924469:].decode()
+source = ''.join(s + '\n' for s in re.findall(r'```python\n(.*?)\n```', new, re.S)[:3])
+assert source == Path('.cache/performance-review/check.py').read_text()
+result = subprocess.run(['python3', '-c', source], capture_output=True, text=True, check=True)
+assert not result.stderr
+actual = ''.join(s + '\n' for s in re.findall(r'```text\n(.*?)\n```', new, re.S)[:3])
+assert result.stdout == actual == Path('.cache/performance-review/results.txt').read_text()
+assert len(re.findall(r'^### R[1-8] —', new, re.M)) == 8
+print('PASS immutable pre-review report prefix; all eight findings; complete checker source and exact stdout recovered/rerun')
+pages = [Path(s) for s in ('docs/WRSRE DESIGN DOC.md', 'docs/private-logistics-runtime/DO_OFFICES.md',
+    'docs/private-logistics-runtime/README.md', 'docs/private-logistics-runtime/AUTONOMOUS_DO_PERMISSIONS_PLAN.md',
+```
+
+### Review assembly/scope verifier — full source, part 2 of 2
+
+```python
+    'docs/visions/vision-private-logistics.md', 'docs/engine/logistics.md')]
+images = [p.parent / 'evidence/test13' / name for name in ('image-44.png', 'image-45.png')]
+allowed = {str(x) for x in pages + [p] + images}
+status = subprocess.check_output(['git', 'status', '--porcelain', '-z', '--untracked-files=all']).decode().split('\0')
+assert {s[3:] for s in status if s} == allowed
+links = 0
+for page in pages:
+    for target in re.findall(r'\]\(([^)]+)\)', page.read_text()):
+        if '://' in target or target.startswith('#'):
+            continue
+        assert (page.parent / unquote(target.split('#')[0])).exists()
+        links += 1
+assert 'Read-only scale review' in pages[1].read_text()
+subprocess.run(['git', 'diff', '--check'], check=True)
+print(f'PASS documentation/evidence-only scope; {links} implementation-page relative links; guide safety notice; git diff --check')
+print('Current non-report documentation manifest (older checkpoints retained):')
+for page in pages:
+    data = page.read_bytes()
+    print(f'{page}: {len(data)} bytes / SHA256 {hashlib.sha256(data).hexdigest()}')
+```
+
+#### Review final verification — actual stdout / exit 0
+
+Command: `python3 .cache/performance-review/verify.py`. Reconstruct its two source blocks and preceding checker blocks into the named cache files; the preceding three actual-stdout blocks reconstruct `results.txt`. Host assertion checks are not new runtime features or native performance measurements. No regression-suite rerun is claimed for this source-unchanged review; prior 141-test results remain historical.
+
+```text
+PASS immutable pre-review report prefix; all eight findings; complete checker source and exact stdout recovered/rerun
+PASS documentation/evidence-only scope; 39 implementation-page relative links; guide safety notice; git diff --check
+Current non-report documentation manifest (older checkpoints retained):
+docs/WRSRE DESIGN DOC.md: 38758 bytes / SHA256 7028384a46c04e7794fa096f7d96e1124089aef2464b499241c4a86cadfbfda4
+docs/private-logistics-runtime/DO_OFFICES.md: 23914 bytes / SHA256 a12d408a57cfcbc2b3bd0ff9da48c38e3eb5c66c6cb8891c0b07eb519c12c151
+docs/private-logistics-runtime/README.md: 39410 bytes / SHA256 7ebc0a8116bbfc348f55f99d2a6a3f46f9a2e6d346e2f8e1daec4c4c5138b257
+docs/private-logistics-runtime/AUTONOMOUS_DO_PERMISSIONS_PLAN.md: 65109 bytes / SHA256 ca94733f4b111472216ac5e60338aaece25524dfe4c312764b4a01bafa402a7a
+docs/visions/vision-private-logistics.md: 14197 bytes / SHA256 b2a0a0583c5afcc223a2159fb24d5e382ac6a764de22d4b3c2d1b3efc9b9090f
+docs/engine/logistics.md: 11150 bytes / SHA256 d56bb45f39686eb414b31a712c66487294fe3200171c48ee9c24b84c6a4c6c02
+```
+
+### Review conclusion, priority order and next-agent handover
+
+**Completed read-only review; native scale performance remains unmeasured.** Priority 1 is the narrowly scoped legacy census negative-slot guard and regression coverage, requiring a new implementation authorization before large-fleet stress. Priority 2 is separately approved opt-in coarse timing/counters on existing callbacks, with coverage and legacy logging attribution. Priority 3 is a measured design for discovery fairness, history retention and any consistency-preserving optimization; do not bundle arbitrary cap increases or target-policy changes into the safety fix. Verified payer/debt/idempotent settlement remains a later separately authorized stage, payments OFF. This review changed only this cumulative report and the DO guide safety/performance notice; all earlier uncommitted docs/evidence are retained. Historical report prefix/source manifests and recovered Test13/14 evidence verified, complete checker/verifier sources/results preserved, no runtime/config/test change or publication. The user should not be asked to provoke the 65th-slot issue or repeat basic save/demolition/pause tests.
+
+```text
+Continue in /home/user/WRSRE on arena/423e4046-wrsre. Read current root instructions and cumulative VEHICLE_PANEL_FUEL_INVESTIGATION.md latest read-only performance/coverage review. User authorized review only; no runtime/instrumentation/deploy/payment approval yet. Source fa6dc671 has a concrete legacy census defect: VehSlot returns -1 when its lifetime 64-slot table fills; ReadTank safely returns, but CensusFleets unconditionally reads g_vehFuelValid[s] at private_logistics.cpp:3398. Across fleets or pointer churn this is reachable; native crash not reproduced. A fault could disable the day subscriber, so fix/regression-test that narrow caller guard before large-fleet stress IF user authorizes. New fleet discovery is first 32 enterprise entries, first 64 roots globally, no rotation; 256-root fleet validation, 9 fuel objects/16 schedule rows and 25000 world-entry availability limits apply. Repeated membership/duplicate scans, opening-time world identity scans, daily entity/memo/target loops, finite 4096-row history, serialization under shared lock and synchronous logging/I/O are reviewed with exact source refs and operation counts, not timing claims. Test13/14 have one office/two roots/35-36 world entries, not scale proof. Complete read-only checker/verifier sources, actual output, source hashes and minimal future measurement plan preserved; prior report prefix12924469/SHAa2abf0f3... retained. Only report/guide updated this turn, prior docs/evidence uncommitted. No runtime/config/test/build/deploy/commit/push/PR/payment done. Named save and nonempty restore remain accepted; further row-level/interrupted loading can wait. Continue with user's next decision; do not silently broaden scope, activate payments or remove memory rechecks to optimize. Preserve evidence in bounded writes/readbacks.
+```
+
+## Authorized census capacity guard — 0.18.18-census-guard source follow-up
+
+User's latest **“Proceed”** authorizes only the proposed bounded legacy census guard, capacity reporting and regression coverage. Implemented on `arena/423e4046-wrsre`; no branch switch, commit, push, PR, deployment, new hook/offset, timing instrumentation, cap increase, dispatch/price/ledger/payment change. Local and remote target-branch INSTRUCTIONS still match blob `64684a0b860b09a88976af9c074176bc8dc1db88`. Historical report prefix **12,961,121 bytes / SHA-256 `e1f3f906ca1cbe52bb1eb983be50283fe77d42b732b49eb987f4f2d009816866`** preserved. Only production `private_logistics.cpp` and a diagnostic version string in `panel_fuel_runtime.h` change; the INI, newer fleet observer and dry-ledger implementation are untouched. Earlier read-only review remains historical; its R1 safety-fix prerequisite is now addressed in source, not yet a tested Windows DLL.
+
+### Exact behavior change and boundaries
+
+The daily census now calls `VehSlot(v)` **once**, immediately after root-pointer plausibility, and checks both `s<0` and `s>=VEH_MAX` before any per-slot diagnostic or further vehicle-field read. Invalid slots increment a local omitted-visit counter and `continue` only that vehicle visit; later vehicles/offices and the caller's daily work continue. CargoDump reuses the checked slot. At the end of an overflowing census, one `[VEH COVERAGE] ... legacy_census_capacity_exhausted=1 max_slots=64 omitted_visits=N existing_slots_retained=1` summary reports visits, **not distinct missing vehicles, native fleet size or missing costs**. Existing identities are still found after exhaustion, no slot recycling/reset/cap increase is introduced, and an already-full table with only known identities causes no warning. The lifetime retention limit itself remains; fairness, stale/reused pointers and long-term record history are not “fixed” by this bounds guard. The sole extra routine work is the slot range check/local counter; one duplicate slot lookup is removed. Version `0.18.18-census-guard` flows through the existing PL_VERSION export/startup macro and the panel diagnostic version string; no gate fingerprints or hook bytes change.
+
+### Regression evidence: actual extracted production bodies, not native validation
+
+New `test_census_capacity.py` extracts the **unchanged text** of `VehSlot` and `CensusFleets` from the production source and compiles it with the new C++ fixture's fake service/native memory and diagnostic stubs. Eight scenarios cover disabled/empty census, 63/64 identities, over-capacity visits across two offices with a supported identity after the rejected pointer, repeated overflowing days with one summary each, load-like pointer churn while retaining the lifetime table, and a full table visited only by known identities. The fixture's post-census reconciliation counter is explicitly a **continuation sentinel, not execution of native target reconciliation**. A source-contract assertion also checks that the real OnDay still calls AutoTargetsOnDay after CensusFleets; the complete OnDay body is unchanged. The fake ReadTank preserves its invalid-slot early-return behavior, allowing the old caller's actual negative array access to be detected by UBSan. These tests establish host control flow/bounds and warning semantics, not Windows SEH scheduling, actual game memory lifetime, pointer-reuse identity, native dispatch, performance or deployment.
+
+### Expected pre-fix host sanitizer failure — exact output
+
+```text
+Command: g++ -std=c++17 -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -fno-pie -no-pie -I .cache/census-guard tests/private_logistics/census_capacity_test.cpp -o .cache/census-guard/before-census
+Old production bodies from unchanged HEAD fa6dc671. Same current fixture.
+Exit: 1
+.cache/census-guard/production_census.inc:116:33: runtime error: index -1 out of bounds for type 'bool [64]'
+    #0 0x4051c1 in CensusFleets .cache/census-guard/production_census.inc:116
+    #1 0x4051c1 in Day tests/private_logistics/census_capacity_test.cpp:80
+    #2 0x4063d8 in main tests/private_logistics/census_capacity_test.cpp:94
+    #3 0x7f0a21245249  (/lib/x86_64-linux-gnu/libc.so.6+0x27249)
+    #4 0x7f0a21245304 in __libc_start_main (/lib/x86_64-linux-gnu/libc.so.6+0x27304)
+    #5 0x402300 in _start (/home/user/WRSRE/.cache/census-guard/before-census+0x402300)
+
+```
+
+### Fixed-body optimized and sanitized runs — exact output
+
+```text
+Command: g++ -std=c++17 -Wall -Wextra -Werror -pedantic -O2 -I .cache/census-guard/after tests/private_logistics/census_capacity_test.cpp -o .cache/census-guard/after/optimized
+Run: .cache/census-guard/after/optimized
+Exit: 0
+8 extracted census capacity scenarios PASS
+
+Command: g++ -std=c++17 -Wall -Wextra -Werror -pedantic -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -fno-pie -no-pie -I .cache/census-guard/after tests/private_logistics/census_capacity_test.cpp -o .cache/census-guard/after/sanitized
+Run: .cache/census-guard/after/sanitized
+Exit: 0
+8 extracted census capacity scenarios PASS
+```
+
+### Initial focused unittest execution — exact output
+
+```text
+test_guard_dominates_slot_access_and_day_reconciliation_continues (test_census_capacity.CensusCapacityTest.test_guard_dominates_slot_access_and_day_reconciliation_continues) ... ok
+test_optimized_production_census (test_census_capacity.CensusCapacityTest.test_optimized_production_census) ... ok
+test_sanitized_production_census (test_census_capacity.CensusCapacityTest.test_sanitized_production_census) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 1.618s
+
+OK
+```
+
+### Final complete unittest execution — exact output
+
+```text
+................................................................................................................................................
+----------------------------------------------------------------------
+Ran 144 tests in 18.226s
+
+OK
+```
+
+### Recoverable .cache/census-guard/production.patch — part 1 of 3
+
+```census-production-patch-part-01
+diff --git a/plugins/private_logistics/panel_fuel_runtime.h b/plugins/private_logistics/panel_fuel_runtime.h
+index 1fd04d6..af3dd82 100644
+--- a/plugins/private_logistics/panel_fuel_runtime.h
++++ b/plugins/private_logistics/panel_fuel_runtime.h
+@@ -6,7 +6,7 @@
+ #include "schedule_observer.h"
+ #include "schedule_assignment_ledger.h"
+ ~
+-static constexpr char kGateDiagnosticVersion[] = "0.18.17-dry-ledger";
++static constexpr char kGateDiagnosticVersion[] = "0.18.18-census-guard";
+ static bool g_scheduleReady = false;
+ static volatile LONG g_scheduleFault = 0;
+ static private_logistics_schedule::History g_scheduleHistory; // simulation tick only
+diff --git a/plugins/private_logistics/private_logistics.cpp b/plugins/private_logistics/private_logistics.cpp
+index bbf73af..d9545de 100644
+--- a/plugins/private_logistics/private_logistics.cpp
++++ b/plugins/private_logistics/private_logistics.cpp
+@@ -1,6 +1,8 @@
+ // private_logistics - what a private company earns, and what it pays.
+ //
+ // ---------------------------------------------------------------------------
++// v0.18.18 updates: guard exhausted legacy census slots before per-vehicle
++// diagnostics; report omitted visits without changing limits or dispatch/billing.
+ // v0.18.17: durable dry-run assignment costs; frozen original-target snapshots,
+ // closed quotes and save-scoped records. Interrupted active saves stay unpriced.
+ // No actual debts, settlement, payments, new hooks or dispatch changes.
+@@ -502,7 +504,7 @@ static char   gFuelResource[64] = "fuel";  // resolved through resource_pricing
+ static double gBasketsPerTrip   = 0.80;    // CPI fallback, in daily survival baskets
+ static double gBasketsPerTonne  = 0.02;
+ ~
+-#define PL_VERSION "0.18.17-dry-ledger"
++#define PL_VERSION "0.18.18-census-guard"
+ static int g_panelObserverEnabled = 1;
+ static int g_scheduleObserverEnabled = 1;
+ static void PanelObserverLoading(void);
+@@ -3303,6 +3305,7 @@ static void CensusFleets(int closedDay)
+     // the rate the physics has; it must not double-count a fleet seen from two
+     // enterprises.
+```
+
+### Recoverable .cache/census-guard/production.patch — part 2 of 3
+
+```census-production-patch-part-02
+     const unsigned vehDaysBefore = g_tankVehDaysRun;
++    unsigned omittedVisits = 0;
+ ~
+     for (size_t i = 0; i < n; i++) {
+         void* b = g_enterprise->getEnterpriseByIndex(i);
+@@ -3330,6 +3333,14 @@ static void CensusFleets(int closedDay)
+             void* v = ((void* const*)beg)[k];
+             if (!v || !TsmIsValidGamePtr(v)) continue;
+ ~
++            // Legacy slots are process-lifetime: a new pointer may not fit.
++            // Skip only this visit, never index a per-slot array with -1.
++            const int s = VehSlot(v);
++            if (s < 0 || s >= VEH_MAX) {
++                ++omittedVisits;
++                continue;
++            }
++
+             void* home = nullptr;
+             if (ReadablePtr((const BYTE*)v + 0x4F8, 8))
+                 home = *(void* const*)((const BYTE*)v + 0x4F8);
+@@ -3350,9 +3361,8 @@ static void CensusFleets(int closedDay)
+ ~
+             int slots = 0;
+             const double tons = CargoTons(v, &slots);
+-            CargoDump(VehSlot(v), v, closedDay);
++            CargoDump(s, v, closedDay);
+ ~
+-            const int s = VehSlot(v);
+             const bool first = (s >= 0 && g_vehSamples[s] == 0);
+             if (s >= 0) {
+                 g_vehSamples[s]++;
+@@ -3412,6 +3422,11 @@ static void CensusFleets(int closedDay)
+         }
+     }
+ ~
++    if (omittedVisits)
++        Logf("[VEH COVERAGE] day %d legacy_census_capacity_exhausted=1 max_slots=%u "
++             "omitted_visits=%u existing_slots_retained=1",
+```
+
+### Recoverable .cache/census-guard/production.patch — part 3 of 3
+
+```census-production-patch-part-03
++             closedDay, (unsigned)VEH_MAX, omittedVisits);
++
+     // v0.11: this close saw at least one tank -> it counts as a fleet-day.
+     if (g_tankVehDaysRun > vehDaysBefore) g_tankDaysRun++;
+ }
+```
+
+### Recoverable .cache/census-guard/version-tests.patch — part 1 of 1
+
+```census-version-tests-patch-part-01
+diff --git a/tests/private_logistics/test_panel_fuel_observer.py b/tests/private_logistics/test_panel_fuel_observer.py
+index e5c754e..7f33269 100644
+--- a/tests/private_logistics/test_panel_fuel_observer.py
++++ b/tests/private_logistics/test_panel_fuel_observer.py
+@@ -105,8 +105,8 @@ class PanelFuelObserverTest(unittest.TestCase):
+     def test_gate_diagnostic_version_and_qualified_address(self):
+         runtime = (PLUGIN / 'panel_fuel_runtime.h').read_text()
+         cpp = (PLUGIN / 'private_logistics.cpp').read_text()
+-        self.assertIn('#define PL_VERSION "0.18.17-dry-ledger"', cpp)
+-        self.assertIn('"0.18.17-dry-ledger"', runtime)
++        self.assertIn('#define PL_VERSION "0.18.18-census-guard"', cpp)
++        self.assertIn('"0.18.18-census-guard"', runtime)
+         self.assertIn('reinterpret_cast<std::uintptr_t>(g_exeBase)', runtime)
+         self.assertNotRegex(runtime, r'\b(?:static_cast|reinterpret_cast)<Address>')
+         self.assertIn('native_execution=unobserved', runtime)
+diff --git a/tests/private_logistics/test_schedule_observer.py b/tests/private_logistics/test_schedule_observer.py
+index 88a637e..06ef7ac 100644
+--- a/tests/private_logistics/test_schedule_observer.py
++++ b/tests/private_logistics/test_schedule_observer.py
+@@ -91,7 +91,7 @@ class ScheduleObserverTest(unittest.TestCase):
+         history = header.split('class History {', 1)[1]
+         self.assertNotIn('m.Get(', history)  # cached-value comparisons only
+         self.assertEqual(header.count('m.Get('), 13)  # native read sites unchanged
+-        self.assertIn('0.18.17-dry-ledger', cpp)
++        self.assertIn('0.18.18-census-guard', cpp)
+         self.assertIn('if (d.endpointCompared && d.endpointAcrossGap)', runtime)
+         self.assertIn('compared_across_gap=1 continuity_valid=0', runtime)
+         self.assertIn('native_event_time=unknown', runtime)
+```
+
+### Recoverable tests/private_logistics/census_capacity_test.cpp — part 1 of 3
+
+```census-fixture-part-01
+// Host fixture for extracted, unmodified VehSlot + CensusFleets bodies.
+// Services/native memory are synthetic; this is not Windows lifecycle proof.
+#include <array>
+#include <cassert>
+#include <cstdarg>
+#include <cstdio>
+#include <cstring>
+#include <vector>
+using BYTE = unsigned char;
+#define VEH_MAX 64
+static void* g_vehPtr[VEH_MAX]{};
+static double g_vehPeakTons[VEH_MAX]{}, g_vehFuel[VEH_MAX]{}, g_vehCap[VEH_MAX]{};
+static unsigned g_vehSamples[VEH_MAX]{};
+static bool g_vehFuelValid[VEH_MAX]{};
+static unsigned char g_vehCapValid[VEH_MAX]{};
+static int g_vehCount=0, g_censusLog=1;
+static unsigned g_tankVehDaysRun=0, g_tankDaysRun=0, g_activeVehDaysRun=0, g_idleVehDaysRun=0;
+static double g_burnTonsRun=0;
+static unsigned g_refillsRun=0;
+struct alignas(void*) Vehicle { std::array<BYTE,0x900> bytes{}; };
+struct alignas(void*) Office { std::array<BYTE,0xD00> bytes{}; };
+static Vehicle vehicles[128];
+static Office offices[2];
+static std::vector<void*> fleets[2];
+static unsigned officeCount=0, reconciliations=0, warnings=0, lastOmitted=0;
+static unsigned tankVisits[128]{}, scanVisits[128]{};
+static size_t Count() { return officeCount; }
+static void* ByIndex(size_t i) { return &offices[i]; }
+struct EnterpriseApi { size_t (*getEnterpriseCount)(); void* (*getEnterpriseByIndex)(size_t); };
+static EnterpriseApi api{Count,ByIndex};
+static EnterpriseApi* g_enterprise=&api;
+static bool TsmIsValidGamePtr(void* p) { return p!=nullptr; }
+static bool ReadablePtr(const void* p,size_t) { return p!=nullptr; }
+static void Logf(const char* format,...) {
+    char line[1024]; va_list args; va_start(args,format);
+    std::vsnprintf(line,sizeof(line),format,args); va_end(args);
+    if (std::strstr(line,"[VEH COVERAGE]")) {
+```
+
+### Recoverable tests/private_logistics/census_capacity_test.cpp — part 2 of 3
+
+```census-fixture-part-02
+        ++warnings;
+        assert(std::strstr(line,"max_slots=64") && std::strstr(line,"existing_slots_retained=1"));
+        const char* p=std::strstr(line,"omitted_visits="); assert(p);
+        assert(std::sscanf(p,"omitted_visits=%u",&lastOmitted)==1);
+    }
+}
+static unsigned Id(void* p) {
+    for(unsigned i=0;i<128;++i) if(p==&vehicles[i]) return i;
+    assert(false); return 0;
+}
+static void BuildingName(void*,char* out,size_t size) { std::snprintf(out,size,"office"); }
+static double CargoTons(void*,int* slots) { *slots=1; return 0.5; }
+static void CargoDump(int slot,void*,int) { if(slot<0 || slot>=VEH_MAX) return; }
+static double TankCapacity(void*) { return 1.0; }
+static void ReadTank(int slot,void* p,int,double* burned,unsigned*) {
+    if(slot<0 || slot>=VEH_MAX) return; // Same early-return contract as production.
+    ++tankVisits[Id(p)]; g_vehFuelValid[slot]=true; g_vehFuel[slot]=0.5; *burned+=0.25;
+}
+static void ScanVehicle(int slot,void* p,int) {
+    assert(slot>=0 && slot<VEH_MAX); ++scanVisits[Id(p)];
+}
+#include "production_census.inc"
+static void Publish() {
+    for(unsigned i=0;i<officeCount;++i) {
+        void** begin=fleets[i].data(); void** end=begin;
+        if(!fleets[i].empty()) end+=fleets[i].size();
+        std::memcpy(offices[i].bytes.data()+0xC70,&begin,sizeof(begin));
+        std::memcpy(offices[i].bytes.data()+0xC78,&end,sizeof(end));
+    }
+}
+static void Reset() {
+    g_enterprise=&api; g_censusLog=1; officeCount=2; reconciliations=warnings=lastOmitted=0;
+    g_vehCount=0; g_tankVehDaysRun=g_tankDaysRun=g_activeVehDaysRun=g_idleVehDaysRun=0;
+    g_burnTonsRun=0; g_refillsRun=0;
+    for(int i=0;i<VEH_MAX;++i) {
+        g_vehPtr[i]=nullptr; g_vehPeakTons[i]=g_vehFuel[i]=g_vehCap[i]=0;
+        g_vehSamples[i]=0; g_vehFuelValid[i]=false; g_vehCapValid[i]=0;
+```
+
+### Recoverable tests/private_logistics/census_capacity_test.cpp — part 3 of 3
+
+```census-fixture-part-03
+    }
+    for(unsigned i=0;i<128;++i) { tankVisits[i]=scanVisits[i]=0; vehicles[i]=Vehicle{}; }
+    for(unsigned i=0;i<2;++i) { offices[i]=Office{}; fleets[i].clear(); }
+}
+static void Day(int day) {
+    Publish(); CensusFleets(day);
+    ++reconciliations; // Continuation sentinel, NOT the native target reconciler.
+}
+static void Fill(unsigned n) { for(unsigned i=0;i<n;++i) fleets[0].push_back(&vehicles[i]); }
+int main() {
+    Reset(); g_censusLog=0; Fill(1); Day(1);
+    assert(g_vehCount==0 && reconciliations==1 && warnings==0);
+    Reset(); officeCount=0; Day(1);
+    assert(g_vehCount==0 && reconciliations==1 && warnings==0);
+    Reset(); Fill(63); Day(1);
+    assert(g_vehCount==63 && tankVisits[62]==1 && warnings==0 && g_tankDaysRun==1);
+    Reset(); Fill(64); Day(1);
+    assert(g_vehCount==64 && tankVisits[63]==1 && warnings==0 && g_burnTonsRun==16.0);
+    // A full table must still visit supported identities after a rejected pointer.
+    fleets[1]={&vehicles[64],&vehicles[0],&vehicles[65]}; Day(2);
+    assert(g_vehCount==64 && tankVisits[64]==0 && scanVisits[65]==0);
+    assert(tankVisits[0]==3 && scanVisits[0]==3 && g_vehSamples[0]==3);
+    assert(warnings==1 && lastOmitted==2 && reconciliations==2 && g_tankDaysRun==2);
+    // Repeated overflowing days report once per census, not once per omitted visit.
+    Day(3);
+    assert(warnings==2 && lastOmitted==2 && reconciliations==3 && tankVisits[64]==0);
+    // Load-like pointer churn: preserve the lifetime table, do not recycle identities.
+    fleets[0].clear(); fleets[1]={&vehicles[66],&vehicles[1]}; Day(4);
+    assert(warnings==3 && lastOmitted==1 && tankVisits[66]==0 && tankVisits[1]==4);
+    assert(g_vehCount==64 && g_vehPtr[1]==&vehicles[1] && reconciliations==4);
+    // A full table is not itself an error: existing pointers still fit without warning.
+    fleets[1]={&vehicles[2]}; Day(5);
+    assert(warnings==3 && tankVisits[2]==4 && reconciliations==5);
+    std::puts("8 extracted census capacity scenarios PASS");
+}
+```
+
+### Recoverable tests/private_logistics/test_census_capacity.py — part 1 of 2
+
+```census-python-test-part-01
+"""Execute actual legacy census/slot bodies with synthetic services, not native proof."""
+from pathlib import Path
+import os
+import shutil
+import subprocess
+import tempfile
+import unittest
+
+ROOT = Path(__file__).resolve().parents[2]
+SOURCE = ROOT / 'plugins/private_logistics/private_logistics.cpp'
+
+def production_bodies(source):
+    def function(signature):
+        start = source.index(signature + '\n{')
+        return source[start:source.index('\n}', start) + 2] + '\n'
+    return function('static int VehSlot(void* v)') + function('static void CensusFleets(int closedDay)')
+
+class CensusCapacityTest(unittest.TestCase):
+    def exercise(self, sanitized):
+        compiler = shutil.which('g++') or shutil.which('clang++')
+        if not compiler:
+            self.skipTest('C++ compiler required')
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)
+            (path / 'production_census.inc').write_text(production_bodies(SOURCE.read_text()))
+            flags = ['-O1', '-g', '-fsanitize=address,undefined', '-fno-omit-frame-pointer', '-fno-pie', '-no-pie'] if sanitized else ['-O2']
+            command = [compiler, '-std=c++17', '-Wall', '-Wextra', '-Werror', '-pedantic', *flags,
+                       '-I', str(path), str(Path(__file__).with_name('census_capacity_test.cpp')), '-o', str(path / 'census')]
+            result = subprocess.run(command, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+```
+
+### Recoverable tests/private_logistics/test_census_capacity.py — part 2 of 2
+
+```census-python-test-part-02
+            env = dict(os.environ)
+            if sanitized:
+                env.update(ASAN_OPTIONS='detect_leaks=1:halt_on_error=1', UBSAN_OPTIONS='halt_on_error=1:print_stacktrace=1')
+            result = subprocess.run([str(path / 'census')], capture_output=True, text=True, env=env)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertEqual(result.stderr, '')
+            self.assertIn('8 extracted census capacity scenarios PASS', result.stdout)
+
+    def test_optimized_production_census(self):
+        self.exercise(False)
+
+    def test_sanitized_production_census(self):
+        self.exercise(True)
+
+    def test_guard_dominates_slot_access_and_day_reconciliation_continues(self):
+        source = SOURCE.read_text()
+        body = production_bodies(source).split('static void CensusFleets', 1)[1]
+        guard = body.index('if (s < 0 || s >= VEH_MAX)')
+        self.assertLess(guard, body.index('CargoDump(s, v, closedDay)'))
+        self.assertLess(guard, body.index('g_vehFuelValid[s]'))
+        self.assertEqual(body.count('VehSlot(v)'), 1)
+        self.assertIn('++omittedVisits;\n                continue;', body)
+        self.assertEqual(body.count('legacy_census_capacity_exhausted=1'), 1)
+        self.assertIn('#define VEH_MAX 64', source)
+        day = source.split('static void OnDay(void*, int day, int month, int year)\n{', 1)[1].split('\n// ---', 1)[0]
+        self.assertLess(day.index('CensusFleets(closedDay);'), day.index('AutoTargetsOnDay(day, closedDay);'))
+
+if __name__ == '__main__':
+    unittest.main()
+```
+
+Patch recovery note: seven blank context lines in the production diff had a trailing ASCII space, flagged by `git diff --check` when embedded in Markdown. They are stored as ` ~` (space + tilde) in the `census-production-patch-part-NN` blocks; convert only lines exactly equal to ` ~` back to one ASCII space before applying/verifying the patch. No original source or patch content was discarded. The test-version patch and complete fixture/Python source blocks are unescaped. Concatenate each artifact's blocks in numeric order. The runtime patch reconstructs source from HEAD `fa6dc671a38af4976f346b6d4ab8bbf0bbdbfc36`; it does not represent a deployed DLL.
+
+### Census follow-up verifier — full source, part 1 of 3
+
+```census-verifier-part-01
+from pathlib import Path
+import hashlib
+import importlib.util
+import re
+import subprocess
+from urllib.parse import unquote
+
+report = Path('docs/private-logistics-runtime/VEHICLE_PANEL_FUEL_INVESTIGATION.md')
+raw = report.read_bytes()
+assert hashlib.sha256(raw[:12961121]).hexdigest() == 'e1f3f906ca1cbe52bb1eb983be50283fe77d42b732b49eb987f4f2d009816866'
+new = raw[12961121:].decode()
+def artifact(tag):
+    blocks = re.findall(r'```' + re.escape(tag) + r'-part-(\d+)\n(.*?)\n```', new, re.S)
+    assert [int(i) for i, _ in blocks] == list(range(1, len(blocks)+1)) and blocks
+    return ''.join(s+'\n' for _, s in blocks)
+fixture = Path('tests/private_logistics/census_capacity_test.cpp')
+wrapper = Path('tests/private_logistics/test_census_capacity.py')
+assert artifact('census-fixture') == fixture.read_text()
+assert artifact('census-python-test') == wrapper.read_text()
+patch = ''.join(' \n' if s == ' ~\n' else s for s in artifact('census-production-patch').splitlines(keepends=True))
+production = ['plugins/private_logistics/private_logistics.cpp', 'plugins/private_logistics/panel_fuel_runtime.h']
+tracked_tests = ['tests/private_logistics/test_panel_fuel_observer.py', 'tests/private_logistics/test_schedule_observer.py']
+assert patch == subprocess.check_output(['git', 'diff', '--', *production], text=True)
+```
+
+### Census follow-up verifier — full source, part 2 of 3
+
+```census-verifier-part-02
+assert artifact('census-version-tests-patch') == subprocess.check_output(['git', 'diff', '--', *tracked_tests], text=True)
+subprocess.run(['git', 'apply', '--check', '--reverse', '-'], input=patch, text=True, capture_output=True, check=True)
+print('PASS immutable pre-fix report prefix; both full new test sources and complete runtime/test patches recovered exactly; reverse patch check')
+def baseline(path):
+    return subprocess.check_output(['git', 'show', f'HEAD:{path}'], text=True)
+spec = importlib.util.spec_from_file_location('census', wrapper)
+module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+source = Path(production[0]).read_text(); old = baseline(production[0])
+version_old, version_new = '0.18.17-dry-ledger', '0.18.18-census-guard'
+notes = '// v0.18.18 updates: guard exhausted legacy census slots before per-vehicle\n// diagnostics; report omitted visits without changing limits or dispatch/billing.\n'
+assert source.replace(module.production_bodies(source).split('static void CensusFleets', 1)[1], module.production_bodies(old).split('static void CensusFleets', 1)[1]).replace(version_new, version_old).replace(notes, '') == old
+assert Path(production[1]).read_text().replace(version_new, version_old) == baseline(production[1])
+for path in tracked_tests:
+    assert Path(path).read_text().replace(version_new, version_old) == baseline(path)
+assert set(subprocess.check_output(['git', 'diff', '--name-only', '--', 'plugins', 'src'], text=True).splitlines()) == set(production)
+print('PASS only CensusFleets body and version annotations differ in runtime; OnDay/dispatch/limits/config/new observer/ledger APIs untouched; old tests change version only')
+pages = [Path(p) for p in ('docs/WRSRE DESIGN DOC.md', 'docs/private-logistics-runtime/DO_OFFICES.md',
+    'docs/private-logistics-runtime/README.md', 'docs/private-logistics-runtime/AUTONOMOUS_DO_PERMISSIONS_PLAN.md',
+    'docs/visions/vision-private-logistics.md', 'docs/engine/logistics.md')]
+images = [report.parent/'evidence/test13'/name for name in ('image-44.png','image-45.png')]
+allowed = {str(p) for p in pages+[report,fixture,wrapper]+images} | set(production+tracked_tests)
+```
+
+### Census follow-up verifier — full source, part 3 of 3
+
+```census-verifier-part-03
+status = subprocess.check_output(['git','status','--porcelain','-z','--untracked-files=all']).decode().split('\0')
+assert {s[3:] for s in status if s} == allowed
+assert subprocess.check_output(['git','branch','--show-current'],text=True).strip() == 'arena/423e4046-wrsre'
+assert 'Ran 144 tests in 18.226s' in new and 'index -1 out of bounds' in new
+assert new.count('8 extracted census capacity scenarios PASS') >= 2
+links=0
+for p in pages:
+    for link in re.findall(r'\]\(([^)]+)\)',p.read_text()):
+        if '://' in link or link.startswith('#'): continue
+        assert (p.parent/unquote(link.split('#')[0])).exists()
+        links+=1
+for p in pages[:3]: assert version_new in p.read_text()
+subprocess.run(['git','diff','--check'],check=True)
+print(f'PASS allowed file scope / active branch / actual results preserved / {links} relative doc links / current source notices / diff whitespace')
+print('Final file manifest (cumulative report excluded; prior manifests historical):')
+for p in [Path(x) for x in production+tracked_tests]+[fixture,wrapper]+pages:
+    data=p.read_bytes()
+    print(f'{p}: {len(data)} bytes / SHA256 {hashlib.sha256(data).hexdigest()}')
+```
+
+### Census follow-up verifier actual stdout — part 1 of 2
+
+Command: `python3 .cache/census-guard/verify.py`, exit 0. Scope/recovery check only, not a native run.
+
+```text
+PASS immutable pre-fix report prefix; both full new test sources and complete runtime/test patches recovered exactly; reverse patch check
+PASS only CensusFleets body and version annotations differ in runtime; OnDay/dispatch/limits/config/new observer/ledger APIs untouched; old tests change version only
+PASS allowed file scope / active branch / actual results preserved / 39 relative doc links / current source notices / diff whitespace
+Final file manifest (cumulative report excluded; prior manifests historical):
+```
+
+### Census follow-up verifier actual stdout — part 2 of 2
+
+```text
+plugins/private_logistics/private_logistics.cpp: 168733 bytes / SHA256 350d8a0acb552f551e1d06aaec491ab6a3b47e7a90afcbc60660160fe8442b96
+plugins/private_logistics/panel_fuel_runtime.h: 31674 bytes / SHA256 8dda0b79f0cf3f325342e42385d4a613e1f0abe6665a50d82280a1e9b12f522e
+tests/private_logistics/test_panel_fuel_observer.py: 7718 bytes / SHA256 d6245cf5b3c5d6ac10724e76499c942cc52b85896bebc2eef89d842e32fb001c
+tests/private_logistics/test_schedule_observer.py: 6365 bytes / SHA256 bfcd8677586603eae00d5619ed1eee0d7b747ae6838dfdc170166422c54dc721
+tests/private_logistics/census_capacity_test.cpp: 5548 bytes / SHA256 90ed5f7437ca6e8e76c4878c153dc3a18849656165ddf11ea9e9ab2088bf0453
+tests/private_logistics/test_census_capacity.py: 3090 bytes / SHA256 c562a143a576e2c04e2e830b373f4bcfb2f9db35d934bedd1884620a654cbae0
+docs/WRSRE DESIGN DOC.md: 39044 bytes / SHA256 2a03ef44b0cabf08f18e49e1957995d57e1e8ea1bc1712813c4c06234c73201b
+docs/private-logistics-runtime/DO_OFFICES.md: 24832 bytes / SHA256 4a1ee7dd3fbe44c793e87654d86e9eee71ae1765c7a43ab29eaaedef51e8e38d
+docs/private-logistics-runtime/README.md: 40003 bytes / SHA256 6f4ea0732e2ddf18f6a72c8f415cb7d897c7b2f3464e214568635c25c55e7538
+docs/private-logistics-runtime/AUTONOMOUS_DO_PERMISSIONS_PLAN.md: 65109 bytes / SHA256 ca94733f4b111472216ac5e60338aaece25524dfe4c312764b4a01bafa402a7a
+docs/visions/vision-private-logistics.md: 14197 bytes / SHA256 b2a0a0583c5afcc223a2159fb24d5e382ac6a764de22d4b3c2d1b3efc9b9090f
+docs/engine/logistics.md: 11150 bytes / SHA256 d56bb45f39686eb414b31a712c66487294fe3200171c48ee9c24b84c6a4c6c02
+```
+
+### Census guard handover — completed scope and remaining boundary
+
+The authorized bounded source fix is complete as `0.18.18-census-guard`: reject an exhausted legacy slot before per-slot diagnostics, continue later visits/known identities, and report omitted visits once per overflowing census. The cap remains 64 process-lifetime identities; the change does not recycle slots, expand discovery, estimate missing costs, repair ABA/pointer reuse, add fairness, or resolve the other performance-review findings. `omitted_visits` is not a unique-vehicle count. Payments remain OFF; dispatch, billing and configuration are unchanged.
+
+Actual host evidence: the same fixture with original production function bodies fails UBSan at index -1; the fixed extracted production bodies pass all eight optimized and sanitized scenarios; the complete Python discovery run passes 144 tests in 18.226s. The tests exercise actual census/slot bodies with fake memory/services, not the complete Windows plugin or game. The post-census continuation counter is a stub sentinel, not a native target-reconciler execution. The full source comparison independently confirms unchanged `OnDay` order and all runtime code outside the bounded census/version edits. The new verifier also recovers both complete patches and test sources byte-for-byte, checks the preserved historical report prefix, all 39 relative guide links, allowed changed-file scope, and clean diff whitespace. Its complete source and actual stdout/file hashes are archived immediately above. Earlier read-only-review verifiers describe their historical checkpoint, not the now-authorized source change.
+
+Reproduction entry point: from the repository root run `python3 -m unittest discover -s tests/private_logistics -p 'test_*.py'`. The focused wrapper is `test_census_capacity.py`, with compiler/sanitizer flags and complete fixture source archived above. To reproduce the old failure, use its `production_bodies` extractor on `git show fa6dc671a38af4976f346b6d4ab8bbf0bbdbfc36:plugins/private_logistics/private_logistics.cpp` instead of the working source, write `production_census.inc` in a separate temporary include directory, compile the same C++ fixture with the wrapper's sanitized flags, and run with its ASan/UBSan environment. Expect a nonzero exit at the original invalid slot access, not an eight-scenario success. No old source needs to be restored into the checkout. Concatenate the three verifier source blocks to recover the checkpoint verifier; it deliberately asserts the uncommitted checkpoint's file scope/HEAD and is not a general post-commit audit.
+
+No Windows DLL was built or deployed, no native game run or native crash reproduction occurred, and no large-save timing or performance improvement is claimed. Current source and existing native `0.18.17-dry-ledger` evidence must remain distinct. No commit, push, pull request or merge was performed for this fix. Additional instrumentation, larger limits, billing/payment activation, publication and deployment remain outside this authorization. Native validation/build can follow when authorized and available; do not silently treat host sanitizers as that validation.
+
+### Ready-to-paste continuation prompt
+
+> Continue in `/home/user/WRSRE` on `arena/423e4046-wrsre`; do not switch or rename branches. Read the latest “Authorized census capacity guard” section and its final handover in `docs/private-logistics-runtime/VEHICLE_PANEL_FUEL_INVESTIGATION.md`, then inspect the actual working diff. The user authorized only safe legacy census invalid-slot handling plus regression tests/capacity reporting. That work is implemented as uncommitted `0.18.18-census-guard`, host-tested (144 tests PASS; optimized/sanitized eight-case fixtures PASS; original extracted census UBSan failure reproduced). Runtime changes are confined to CensusFleets and diagnostic version annotations. Retain the 64-slot lifetime cap, current dispatch/billing/config, payments OFF and all prior docs/Test13/Test14 evidence. No Windows build, deployment, native run, timing measurement or publication was done. Do not infer those from host tests, nor restore the superseded read-only source prohibition. Do not introduce timing hooks, larger limits, payments or broader optimizations without new authorization. Preserve the cumulative report and make small bounded writes/readbacks. Earlier performance-review findings R2–R8 remain unresolved; R1 has a source/host repair, not a native validation. Test14 already establishes a nonempty three-record native load and later named four-record saving, not an exact four-row reload or paid bill; do not require repeating basic saving or treat expected exit saved_last errors as a blocker. Report results precisely and request new authorization only if additional implementation/build/deployment/publication is actually needed for the user's next request.
+
+## Offline follow-up — remaining slot safety and Windows CI feasibility (2026-11-02)
+
+**Authorization and execution:** after asking what could be done without a game test, the user said “Proceed” to the recommended remaining slot-safety audit and Windows CI/build-feasibility assessment. This turn is read-only for runtime, tests, build scripts, configuration, workflow files and Git publication. Only this cumulative report and ignored local review artifacts are written. No workflow is installed/enabled/dispatched, and no commit/push/PR/merge/build/deployment/game run is authorized or performed here. The user cannot test in-game now; these findings do not require repeating previous native saving tests.
+
+Starting report: 12,995,269 bytes, SHA256 `9cc1835be606e75f7c8e78d47fd94251e86e6e28a87a693dc57d7f5cbd6fff92`. This entire prefix is preserved. The prior `0.18.18-census-guard` implementation, host evidence and complete recovery artifacts remain immediately above. Earlier historical pending items are not new testing demands. Local `INSTRUCTIONS.md` Git blob `64684a0b860b09a88976af9c074176bc8dc1db88` matches the target-branch remote contents SHA retrieved with `gh api repos/Michu6636/WRSRE/contents/INSTRUCTIONS.md?ref=DO-fuel-cost-calculatotr`. Root `AGENTS.md`, `KILO_AGENT_WORKFLOW.md`, current source and relevant runtime guide were inspected. Work remained in the parent session; no child agents or Ghidra exports were needed.
+
+### A1 — Legacy slot accesses: no second unchecked caller found
+
+There is exactly one `VehSlot` definition and one production call, the already-fixed call in `CensusFleets`. The complete quoted-local-include closure contains 24 tracked files in `plugins/private_logistics` and `src`; no other file in that closure introduces a legacy `g_veh...` table consumer. All ten legacy arrays have their non-declaration subscripts in four functions: `VehSlot`, `ReadTank`, `ScanVehicle`, and `CensusFleets`. The mechanical inventory below accounts for every subscript in the production translation unit, rather than sampling a few matching lines.
+
+`g_vehCount` is statically initialized to zero and only accessed/mutated by `VehSlot` thereafter. Under that source invariant, the lookup loop stays in 0..63, allocation tests the 64-slot cap before writing, and an unknown pointer at capacity returns -1. The census range check dominates its array accesses and downstream diagnostic calls. `ReadTank` independently rejects slots outside 0..63; `ScanVehicle` does likewise and bounds its inner snapshot index by `VEH_SCAN_WORDS`. `CargoDump` does not subscript a legacy vehicle array; it independently limits diagnostics to slots 0..2. Known pointers are looked up before the capacity rejection, so a full table does not reject known identities.
+
+**Verdict:** no additional unchecked legacy slot-array access was found in this source review. This is not a proof against unrelated memory corruption, concurrent native lifetime changes, bad native layouts, or arbitrary external writes. No extra safety patch is justified by this audit alone. Existing host tests remain the previously recorded 144 PASS; no new compilation/test-suite run was needed because no production/test code changed.
+
+### A2 — Coverage and lifetime remain deliberately limited
+
+The new `[VEH COVERAGE]` summary is emitted once after an overflowing **enabled census pass**. Its counter increments only for non-null, address-range-screened root visits that reach `VehSlot` and are rejected. `TsmIsValidGamePtr` checks only the numeric address range (`src/game_world.h`); it does not prove readability, vehicle type or lifetime. The legacy scan is limited to the first 32 enterprises and the first 64 roots of each encountered vector; roots outside those bounds, unreadable vectors, and disabled census passes do not contribute to `omitted_visits`. Repeated occurrences of one rejected pointer can count repeatedly. Therefore neither this warning nor its absence establishes full fleet coverage, a unique missing-truck count, or missing costs. No such inference was added to code.
+
+The legacy pointer table/count, peak/sample counts, capacity flags and scanner snapshots are not cleared by the inspected load callback. Loading increments `g_fuelDiagnosticEpoch`; `Samples::Observe` uses that generation to reset fuel-comparison baselines lazily, but it does not reclaim legacy slots or reset all legacy diagnostic history. A fresh save loaded into the same process can encounter a full lifetime table. A reused pointer can inherit peak/capacity/scanner history. This remains a diagnostic provenance/lifecycle limitation, not evidence of a new negative-index path and not authorization to recycle slots.
+
+The newer `g_fleetVehicles[64]`/`g_fleetRoots[64]` observer is a separate system: `FleetCollect` caps writes at 64, marks partial/duplicate coverage, and returns a bounded count; `FleetTickBody` iterates that count, retires absent identities before allocation, and handles a null slot instead of indexing -1. `ReadOffice` bounds its root array by `MaxFleet=256`; `ReadFuel` restricts links before populating `NativeFuel` arrays of `MaxObjects=9`; validity checks bound later comparisons. This focused manual inspection found no analogous unchecked negative-slot path there. It is not a fresh exhaustive review of every schedule/ledger array or a native layout/lifecycle proof. The `[FLEET COVERAGE]` report and `[VEH COVERAGE]` report describe different discovery/state mechanisms and are not interchangeable.
+
+No fairness, discovery, lifetime or billing changes were made. R2–R8 of the prior performance review remain open; this follow-up adds source-level context, not timing measurements or a broad optimization plan.
+
+### B1 — Windows compile-only CI is feasible in principle
+
+`build.bat private_logistics` selects one plugin and invokes MSVC on `plugins/private_logistics/private_logistics.cpp` as a single translation unit, with `/MT /O2 /W3 /std:c++17 /EHsc` and `/LD`. It locates Visual Studio through `vswhere` and calls `vcvars64.bat` in the same cmd session. The 24-file local include closure is entirely checked in; its remaining includes are standard C/C++ or Windows/MSVC headers. No game EXE, game installation, Ghidra project, external plugin import library or cross-plugin internal header was found as a compile-time input. Runtime game/service dependencies still exist; compiling the DLL does not exercise them.
+
+The official [GitHub runner-images Windows 2022 inventory](https://github.com/actions/runner-images/blob/main/images/windows/Windows2022-Readme.md), retrieved on 2026-11-02, advertises VS Enterprise 2022, the x86/x64 C++ tool component, VSWhere and Windows SDKs. Retrieved Git blob: `b27a30ca8423b555ca3b1640c82a1d335183cd12`; advertised image `20261026.347.1`. Relevant exact lines are archived below. Thus a `windows-2022` compile-only job is a reasonable next implementation, **not an already successful Windows build**. Hosted image contents can change; log actual tool/image versions when it runs.
+
+### B2 — CI prerequisites and build-script precautions
+
+There is no local `.github/workflows` directory. `gh api repos/Michu6636/WRSRE/actions/workflows` returned `{"total_count":0,"workflows":[]}`. This is evidence of no listed repository workflows, **not** proof that Actions is enabled or that a future workflow can run. Reading `repos/Michu6636/WRSRE/actions/permissions` returned HTTP 403, `Resource not accessible by integration`; the enabled/actions-allowlist settings therefore remain unknown. This was a permissions-settings read failure, not a failed build or evidence that the GitHub connection is disconnected. No settings, credentials or tokens were changed/requested.
+
+Source review identifies these precautions for a future workflow:
+
+1. **False-success guard.** The script initializes `BUILT=0`, but its final failure condition tests only `FAILED>0`. An unknown/nonmatching plugin name, or missing matching `.cpp`, can finish with exit 0 and no DLL. Invoke the exact `private_logistics` target, preserve/check the native command exit code, start without an old target artifact, and independently require a nonempty fresh `build/plugins/private_logistics.dll`. Require upload failure when expected files are missing. Do not treat exit 0 alone as a successful build.
+2. **Isolated cleanup.** `clean.bat` recursively deletes `*.obj *.exp *.lib *.ilk *.pdb` from the working tree; `build.bat` calls it even after a failed compile. Use a clean, disposable hosted checkout. Do not repurpose that cleanup as a user-machine “safe cleanup” command; it could remove unrelated locally generated libraries/debug data. No such cleanup was executed here.
+3. **Preserve compiler contract.** Keep x64 setup, C++17 and `/MT`; do not switch CRT or rewrite the build system just to add CI. The unquoted `/I%ROOT%src` flag is vulnerable to checkout-root spaces in general; a normal space-free hosted checkout avoids that particular case. This review does not authorize a path-quoting/build-script change.
+4. **Compilation is not testing.** Do not load the DLL, call plugin entry points or install game files on the runner. The existing host C++ tests choose g++/clang++ and include Unix/Linux sanitizer flags; do not assume a Windows MSVC job can run the full host suite unchanged. Keep the Windows job compile/PE-inspection-only unless test portability is separately assessed.
+
+No MSVC or `cmd.exe` exists in this sandbox. The plugin has not been Windows-compiled here, and no compiler diagnostic or runnable DLL is claimed.
+
+5. **Tool environment is local.** `build.bat` uses `setlocal`, so its `vcvars64` PATH does not configure the calling shell or later workflow steps. PE/export inspection must initialize its own MSVC environment or resolve the tool's absolute path; merely calling `dumpbin` after the batch returns is not guaranteed to work.
+
+### B3 — Proposed next implementation, not yet applied
+
+A minimal workflow can use a disposable `windows-2022` runner with `contents: read`, reviewed/pinned checkout and artifact actions, and a bounded job timeout. It should build **only** `private_logistics`, preserve build stdout/stderr and compiler exit status, check the fresh nonempty DLL/expected INI, and inspect PE x64 machine type plus exports `TsmPluginApiVersion`, `TsmPluginInit`, and `TsmPluginStart` without executing it. Retain build log, DLL/INI hashes, source revision and tool/image versions as artifacts. A successful result should be labelled **Windows compile/PE validation only — game compatibility pending**, not “native game test passed.” No release, installation, payments or automatic deployment should be part of that job.
+
+This requires a new authorization to add the workflow and, separately or explicitly together, commit/push this fixed branch so GitHub can see the uncommitted source. Select push/PR events that actually cover the approved branch/target; do not assume a new manual-dispatch button is immediately available for an unpublished workflow. Running also depends on repository Actions policy and hosted-runner availability, not established by the successful read-only workflow-list call. No admin policy changes or broad token permissions are proposed. PR creation/merge remains separately controlled.
+
+This is the next useful offline step. A larger-fleet redesign or more runtime changes are not prerequisites for compiling the existing guard, and no further in-game activity is requested now.
+
+### Remote feasibility evidence — actual reads
+
+- `gh api repos/Michu6636/WRSRE/contents/INSTRUCTIONS.md?ref=DO-fuel-cost-calculatotr --jq .sha`: exit 0, `64684a0b860b09a88976af9c074176bc8dc1db88`.
+- `gh api repos/Michu6636/WRSRE/actions/workflows`: exit 0, `{"total_count":0,"workflows":[]}` (read twice with the same result, second response saved as `.cache/slot-ci-review/workflows.json`).
+- `gh api repos/Michu6636/WRSRE/actions/permissions`: HTTP 403; stdout JSON `{"message":"Resource not accessible by integration","documentation_url":"https://docs.github.com/rest/actions/permissions#get-github-actions-permissions-for-a-repository","status":"403"}`; stderr `gh: Resource not accessible by integration (HTTP 403)`. It ran in an earlier multi-command shell whose final command succeeded; that shell's exit 0 must not be misread as success of this API call. No permissions retry or policy change was performed.
+- `gh api repos/actions/runner-images/contents/images/windows/Windows2022-Readme.md`: exit 0; response retained in `.cache/census-guard/windows2022-runner.json`, decoded snapshot in the corresponding `.md`. The relevant lines below are exact source text; surrounding inventory was not needed to infer compiler feasibility.
+
+### Exact runner inventory excerpts
+
+```offline-runner-excerpts-part-01
+Original lines 6-8:
+# Windows Server 2022
+- OS Version: 10.0.20348 Build 5761
+- Image Version: 20261026.347.1
+
+Original lines 88-88:
+- VSWhere 3.1.7
+
+Original lines 227-230:
+### Visual Studio Enterprise 2022
+| Name                          | Version       | Path                                                     |
+| ----------------------------- | ------------- | -------------------------------------------------------- |
+| Visual Studio Enterprise 2022 | 17.14.37824.6 | C:\Program Files\Microsoft Visual Studio\2022\Enterprise |
+
+Original lines 396-396:
+| Microsoft.VisualStudio.Component.VC.Tools.x86.x64                         | 17.14.36510.44  |
+
+Original lines 477-481:
+#### Installed Windows SDKs
+- 10.0.17763.0
+- 10.0.19041.0
+- 10.0.22621.0
+- 10.0.26100.0
+```
+
+### Read-only review baseline — full JSON
+
+```offline-review-baseline-part-01
+{
+  "report_bytes": 12995269,
+  "report_sha256": "9cc1835be606e75f7c8e78d47fd94251e86e6e28a87a693dc57d7f5cbd6fff92",
+  "nonreport_diff_sha256": "711f75f24fe71d12d0d18d7180f5abd7dc0ff47a28dbc83049af176e8aa8029f",
+  "untracked": {
+    "docs/private-logistics-runtime/DO_OFFICES.md": "4a1ee7dd3fbe44c793e87654d86e9eee71ae1765c7a43ab29eaaedef51e8e38d",
+    "docs/private-logistics-runtime/evidence/test13/image-44.png": "84ca128dd56cad7735bcd948f03eb79e85f04dadd695cf78f21a18b24af30076",
+    "docs/private-logistics-runtime/evidence/test13/image-45.png": "40d3fec42da891248a6f2c498ffddb6a351076423627f3247d142c1da9dccb2c",
+    "tests/private_logistics/census_capacity_test.cpp": "90ed5f7437ca6e8e76c4878c153dc3a18849656165ddf11ea9e9ab2088bf0453",
+    "tests/private_logistics/test_census_capacity.py": "c562a143a576e2c04e2e830b373f4bcfb2f9db35d934bedd1884620a654cbae0"
+  }
+}
+```
+
+### Offline source/inventory check — complete source, part 1 of 4
+
+```offline-review-check-part-01
+from pathlib import Path
+import hashlib
+import json
+import re
+import shutil
+import subprocess
+
+root = Path.cwd()
+report = Path('docs/private-logistics-runtime/VEHICLE_PANEL_FUEL_INVESTIGATION.md')
+baseline = json.loads(Path('.cache/slot-ci-review/baseline.json').read_text())
+def sha(data): return hashlib.sha256(data).hexdigest()
+assert sha(report.read_bytes()[:baseline['report_bytes']]) == baseline['report_sha256']
+diff = subprocess.check_output(['git','diff','--binary','--','.',f':(exclude){report}'])
+assert sha(diff) == baseline['nonreport_diff_sha256']
+untracked = subprocess.check_output(['git','ls-files','--others','--exclude-standard','-z']).decode().strip('\0').split('\0')
+assert {p:sha(Path(p).read_bytes()) for p in untracked if p} == baseline['untracked']
+assert subprocess.check_output(['git','branch','--show-current'],text=True).strip() == 'arena/423e4046-wrsre'
+source = Path('plugins/private_logistics/private_logistics.cpp').read_text()
+def body(signature):
+    start=source.index(signature+'\n{')
+```
+
+### Offline source/inventory check — complete source, part 2 of 4
+
+```offline-review-check-part-02
+    return source[start:source.index('\n}',start)+2]
+functions = {s:body(s) for s in ('static int VehSlot(void* v)',
+    'static void ReadTank(int slot, void* v, int closedDay, double* burned, unsigned* refills)',
+    'static void ScanVehicle(int slot, void* v, int closedDay)', 'static void CensusFleets(int closedDay)')}
+alloc, tank, scan, census = functions.values()
+assert len(re.findall(r'\bVehSlot\(',source)) == 2
+assert 'if (g_vehCount >= VEH_MAX) return -1;' in alloc and 'return g_vehCount++;' in alloc
+assert source.count('g_vehCount') == alloc.count('g_vehCount')+1
+assert 'static int      g_vehCount   = 0;' in source
+assert tank.index('if (slot < 0 || slot >= VEH_MAX) return;') < tank.index('g_vehFuelSamples[slot]')
+assert scan.index('slot < 0 || slot >= VEH_MAX') < scan.index('g_vehSnapValid[slot]')
+assert scan.count('i < VEH_SCAN_WORDS') == 2
+assert 'if (!g_cargoDump || slot < 0 || slot > 2) return;' in body('static void CargoDump(int slot, void* v, int closedDay)')
+arrays = re.findall(r'^static\s+[^\n]*?\b(g_veh\w+)\[VEH_MAX\]',source,re.M)
+assert len(arrays) == 10
+for name in arrays:
+    total=len(re.findall(r'\b'+name+r'\[',source))
+    checked=sum(len(re.findall(r'\b'+name+r'\[',f)) for f in functions.values())
+    assert total == checked+1, (name,total,checked)
+    print(f'LEGACY ARRAY {name}: declaration + {checked} accesses in allocator/guarded helpers/census')
+```
+
+### Offline source/inventory check — complete source, part 3 of 4
+
+```offline-review-check-part-03
+assert census.index('if (s < 0 || s >= VEH_MAX)') < census.index('CargoDump(s, v, closedDay)')
+assert census.count('++omittedVisits;') == 1 and census.count('legacy_census_capacity_exhausted=1') == 1
+print('PASS 1 VehSlot definition + 1 caller; all 10 legacy arrays inventoried; helper/census guards and count ownership confirmed')
+seen={}; pending=[root/'plugins/private_logistics/private_logistics.cpp']; system=set()
+while pending:
+    p=pending.pop().resolve()
+    if p in seen: continue
+    assert p.is_relative_to(root) and p.is_file(),p
+    seen[p]=sha(p.read_bytes())
+    text=p.read_text()
+    if p.name!='private_logistics.cpp':
+        assert not re.search(r'\bVehSlot\s*\(',text)
+        assert not any(re.search(r'\b'+name+r'\b',text) for name in arrays)
+    system.update(re.findall(r'^\s*#include\s+<([^>]+)>',text,re.M))
+    for name in re.findall(r'^\s*#include\s+"([^"]+)"',text,re.M):
+        pending.append((p.parent/name).resolve())
+for p,digest in sorted(seen.items()):
+    relative=p.relative_to(root)
+    subprocess.run(['git','ls-files','--error-unmatch',str(relative)],stdout=subprocess.DEVNULL,check=True)
+    assert relative.parts[0]=='src' or relative.parent==Path('plugins/private_logistics')
+```
+
+### Offline source/inventory check — complete source, part 4 of 4
+
+```offline-review-check-part-04
+    print(f'BUILD INPUT {relative}: SHA256 {digest}')
+assert not any('#pragma comment(lib' in p.read_text() for p in seen)
+print(f'PASS include closure: {len(seen)} tracked local files; no missing quoted includes or cross-plugin internal includes')
+print('SYSTEM/STANDARD HEADERS: '+', '.join(sorted(system)))
+build=Path('build.bat').read_text(); clean=Path('clean.bat').read_text()
+for text in ('vswhere.exe','vcvars64.bat','/MT /O2 /W3 /std:c++17 /EHsc','/LD "%%d\\!NAME!.cpp"','if !FAILED! gtr 0 exit /b 1'):
+    assert text in build,text
+assert 'set "BUILT=0"' in build and 'if !BUILT!' not in build
+assert 'del /s /q *.obj *.exp *.lib *.ilk *.pdb' in clean
+print('PASS build-script source contracts; zero-build success and recursive cleanup require CI precautions, not runtime edits')
+for name in ('build.bat','clean.bat'):
+    p=Path(name); print(f'BUILD SCRIPT {name}: {p.stat().st_size} bytes / SHA256 {sha(p.read_bytes())}')
+print('LOCAL TOOLS: cmd.exe='+str(shutil.which('cmd.exe'))+'; cl.exe='+str(shutil.which('cl.exe')))
+assert not (root/'.github/workflows').exists()
+subprocess.run(['git','diff','--check'],check=True)
+print('PASS immutable report prefix, all pre-existing nonreport changes/untracked artifacts unchanged, fixed branch, no workflow added, clean diff whitespace')
+print('LIMIT source-contract/inventory checks only; no new compiler, Windows build, game run, workflow execution or performance measurement')
+```
+
+### Audited legacy allocator/helpers — exact function source, part 1 of 3
+
+```offline-slot-functions-part-01
+static int VehSlot(void* v)
+{
+    for (int i = 0; i < g_vehCount; i++)
+        if (g_vehPtr[i] == v) return i;
+    if (g_vehCount >= VEH_MAX) return -1;
+    g_vehPtr[g_vehCount]     = v;
+    g_vehPeakTons[g_vehCount] = 0.0;
+    g_vehSamples[g_vehCount]  = 0;
+    return g_vehCount++;
+}
+
+static void CargoDump(int slot, void* v, int closedDay)
+{
+    if (!g_cargoDump || slot < 0 || slot > 2) return;   // first three vehicles
+    DumpVector(v, 0x3A0, "trailer", closedDay, slot);
+    DumpVector(v, 0x3B8, "cargo",   closedDay, slot);
+}
+
+static void ReadTank(int slot, void* v, int closedDay, double* burned, unsigned* refills)
+{
+    if (slot < 0 || slot >= VEH_MAX) return;
+    using namespace private_logistics_fuel_diagnostics;
+    int found = 0;
+    const double slotRaw = FuelSlotTons(v, &found);
+    const double displayRaw = MirrorTons(v);
+    const Reading reading = Select(found != 0, slotRaw, displayRaw);
+    const Result result = g_vehFuelSamples[slot].Observe(reading,
+```
+
+### Audited legacy allocator/helpers — exact function source, part 2 of 3
+
+```offline-slot-functions-part-02
+        (unsigned long long)InterlockedCompareExchange(&g_fuelDiagnosticEpoch, 0, 0));
+    g_vehFuelValid[slot] = reading.valid;
+    if (reading.valid) g_vehFuel[slot] = reading.value;
+    // Legacy accumulators are candidate sample changes ONLY. No tracker feed.
+    if (burned) *burned += result.decrease;
+    if (refills && result.change == Change::Increase) ++*refills;
+    if (g_tankCrossLog > 0) {
+        Logf("[TANK] day %d v=%p selected_source=%s source_valid=%d "
+             "slot_found=%d slot_candidate_raw=%.9g display_5f0_raw=%.9g "
+             "drift_valid=%d drift_raw=%+.9g change=%s decrease_raw=%.9g "
+             "units=unverified exact_burn=0 verified_refill=0 billing_input=0",
+             closedDay, v, SourceName(reading.source), reading.valid ? 1 : 0,
+             found, slotRaw, displayRaw, reading.comparable ? 1 : 0,
+             reading.drift, ChangeName(result.change), result.decrease);
+        --g_tankCrossLog;
+    }
+}
+
+static void ScanVehicle(int slot, void* v, int closedDay)
+{
+    if (!g_vehScan || slot < 0 || slot >= VEH_MAX) return;
+    if (!ReadablePtr((const BYTE*)v, VEH_SCAN_WORDS * 4)) return;
+
+    const unsigned* src = (const unsigned*)v;
+
+    if (!g_vehSnapValid[slot]) {
+        for (int i = 0; i < VEH_SCAN_WORDS; i++) g_vehSnap[slot][i] = src[i];
+```
+
+### Audited legacy allocator/helpers — exact function source, part 3 of 3
+
+```offline-slot-functions-part-03
+        g_vehSnapValid[slot] = true;
+        return;                                   // baseline, not a delta
+    }
+
+    int logged = 0;
+    int changed = 0;
+    for (int i = 0; i < VEH_SCAN_WORDS; i++) {
+        const int off = i * 4;
+        if (g_vehSnap[slot][i] == src[i]) continue;
+        changed++;
+        if (VehScanSkip(off)) { g_vehSnap[slot][i] = src[i]; continue; }
+        if (logged < g_vehScanLogPerDay) {
+            const unsigned a = g_vehSnap[slot][i];
+            const unsigned b = src[i];
+            float fa, fb;
+            memcpy(&fa, &a, 4);
+            memcpy(&fb, &b, 4);
+            Logf("[VEH CHG] day %d v=%p +0x%03X %08X -> %08X (f %.4f -> %.4f)",
+                 closedDay, v, off, a, b, (double)fa, (double)fb);
+            logged++;
+        }
+        g_vehSnap[slot][i] = src[i];
+    }
+    if (changed > logged)
+        Logf("[VEH CHG] day %d v=%p %d more word(s) changed, not logged",
+             closedDay, v, changed - logged);
+}
+```
+
+### Audited build scripts — complete byte-exact recovery archives
+
+The following base64 blocks preserve all original bytes, including CRLF and end-of-file state. Concatenate each script's blocks in numeric order and base64-decode. These are source evidence, not scripts executed in this Linux sandbox. Exact sizes/SHA256 are in the check stdout below.
+
+#### build.bat base64 part 1
+
+```offline-build-bat-base64-part-01
+QGVjaG8gb2ZmDQpzZXRsb2NhbCBlbmFibGVkZWxheWVkZXhwYW5zaW9uDQoNClJF
+TSAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
+LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQ0KUkVNIEJ1aWxkIHBsdWdp
+bnMgZm9yIHRlc21pb2xvYWRlci4NClJFTQ0KUkVNIEJ5IGRlZmF1bHQgdGhpcyBi
+dWlsZHMgZXZlcnkgcGx1Z2luIGluIHBsdWdpbnNcIGFuZCBub3RoaW5nIGVsc2Uu
+IFRoZQ0KUkVNIGxvYWRlciAodGVzbWlvbG9hZGVyLmRsbCkgaXMgbm90IGJ1aWx0
+IGhlcmUgYmVjYXVzZSBpdCBpcyBhbHJlYWR5IGluDQpSRU0gdGhlIGdhbWU7IGlm
+IHlvdSBkbyB3YW50IHRvIHJlYnVpbGQgaXQsIHBhc3MgImxvYWRlciIgYXMgdGhl
+IGZpcnN0DQpSRU0gYXJndW1lbnQgYW5kIHRoZSBzY3JpcHQgd2lsbCBsb29rIGZv
+ciB0ZXNtaW9sb2FkZXIuY3BwIGluIHRoZSByb290Lg0KUkVNDQpSRU0gUmVxdWly
+ZXMgVmlzdWFsIFN0dWRpbyBCdWlsZCBUb29scyAyMDIyIHdpdGggIkRlc2t0b3Ag
+ZGV2ZWxvcG1lbnQgd2l0aA0KUkVNIEMrKyIuIEZyZWUgZG93bmxvYWQ6IGh0dHBz
+Oi8vdmlzdWFsc3R1ZGlvLm1pY3Jvc29mdC5jb20vZG93bmxvYWRzLw0KUkVNDQpS
+RU0gVGhlIHNjcmlwdCBsb2NhdGVzIHZjdmFyczY0LmJhdCB0aHJvdWdoIHZzd2hl
+cmUsIHNvdXJjZXMgaXQsIGFuZCB0aGVuDQpSRU0gaW52b2tlcyBjbC5leGUuIHZj
+dmFyczY0LmJhdCBtdXN0IHJ1biBpbiB0aGUgc2FtZSBjbWQgc2Vzc2lvbiBhcw0K
+UkVNIGNsLmV4ZSwgd2hpY2ggaXMgd2h5IHRoZSB3aG9sZSBidWlsZCBsaXZlcyBp
+biBvbmUgZmlsZS4NClJFTQ0KUkVNIC9NVCBzdGF0aWNhbGx5IGxpbmtzIHRoZSBD
+IHJ1bnRpbWUgaW50byBlYWNoIERMTC4gVGhhdCBpcyBub3QgYQ0KUkVNIHByZWZl
+cmVuY2UgLSB0aGUgY29udHJhY3QgaW4gc3JjL3Rlc21pb19hcGkuaCBzYXlzIG5v
+dGhpbmcgbWF5IGJlDQpSRU0gZnJlZWQgYWNyb3NzIHRoZSBsb2FkZXIvcGx1Z2lu
+IGJvdW5kYXJ5LiBEbyBub3QgY2hhbmdlIGl0Lg0KUkVNDQpSRU0gVXNhZ2U6DQpS
+RU0gICBidWlsZC5iYXQgICAgICAgICAgICAgIGJ1aWxkIGV2ZXJ5IHBsdWdpbiBp
+biBwbHVnaW5zXA0KUkVNICAgYnVpbGQuYmF0IGNsZWFuICAgICAgICByZW1vdmUg
+YnVpbGRccGx1Z2luc1wgZmlyc3QNClJFTSAgIGJ1aWxkLmJhdCA8bmFtZT4gICAg
+ICAgYnVpbGQgb25lIHBsdWdpbiwgZS5nLiBgYnVpbGQuYmF0IHNpbV9jbG9ja2AN
+ClJFTSAgIGJ1aWxkLmJhdCBsb2FkZXIgICAgICAgYWxzbyBidWlsZCB0ZXNtaW9s
+b2FkZXIuZGxsIChuZWVkcw0KUkVNICAgICAgICAgICAgICAgICAgICAgICAgICB0
+ZXNtaW9sb2FkZXIuY3BwIGluIHRoZSByb290KQ0KUkVNIC0tLS0tLS0tLS0tLS0t
+LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
+```
+
+#### build.bat base64 part 2
+
+```offline-build-bat-base64-part-02
+LS0tLS0tLS0tLS0tLS0tDQoNCnNldCAiUk9PVD0lfmRwMCINCnB1c2hkICIlUk9P
+VCUiDQoNClJFTSAtLS0gT3B0aW9uYWw6IGNsZWFuIC0tLQ0KaWYgL2kgIiV+MSI9
+PSJjbGVhbiIgKA0KICAgIGlmIGV4aXN0IGJ1aWxkXHBsdWdpbnMgKA0KICAgICAg
+ICBybWRpciAvcyAvcSBidWlsZFxwbHVnaW5zDQogICAgKQ0KICAgIHNoaWZ0DQop
+DQoNClJFTSAtLS0gTG9jYXRlIE1TVkMgLS0tDQpzZXQgIlZTV0hFUkU9JVByb2dy
+YW1GaWxlcyh4ODYpJVxNaWNyb3NvZnQgVmlzdWFsIFN0dWRpb1xJbnN0YWxsZXJc
+dnN3aGVyZS5leGUiDQppZiBub3QgZXhpc3QgIiVWU1dIRVJFJSIgZ290byA6bm9f
+dnMNCg0Kc2V0ICJWU1BBVEg9Ig0KZm9yIC9mICJ1c2ViYWNrcSB0b2tlbnM9KiIg
+JSVpIGluIChgIiVWU1dIRVJFJSIgLWxhdGVzdCAtcHJvZHVjdHMgKiAtcmVxdWly
+ZXMgTWljcm9zb2Z0LlZpc3VhbFN0dWRpby5Db21wb25lbnQuVkMuVG9vbHMueDg2
+Lng2NCAtcHJvcGVydHkgaW5zdGFsbGF0aW9uUGF0aCAyXj5udWxgKSBkbyBzZXQg
+IlZTUEFUSD0lJWkiDQppZiBub3QgZGVmaW5lZCBWU1BBVEggZ290byA6bm9fdnMN
+Cg0KY2FsbCAiJVZTUEFUSCVcVkNcQXV4aWxpYXJ5XEJ1aWxkXHZjdmFyczY0LmJh
+dCIgPm51bA0KaWYgZXJyb3JsZXZlbCAxICgNCiAgICBlY2hvIEVSUk9SOiB2Y3Zh
+cnM2NC5iYXQgZmFpbGVkLiBUcnkgcnVubmluZyBpdCBieSBoYW5kIHRvIHNlZSB3
+aHkuDQogICAgcG9wZA0KICAgIGV4aXQgL2IgMQ0KKQ0KDQpSRU0gLS0tIERpcmVj
+dG9yaWVzIC0tLQ0KaWYgbm90IGV4aXN0IGJ1aWxkICAgICAgICAgIG1rZGlyIGJ1
+aWxkDQppZiBub3QgZXhpc3QgYnVpbGRccGx1Z2lucyAgbWtkaXIgYnVpbGRccGx1
+Z2lucw0KDQpSRU0gLS0tIENvbW1vbiBjb21waWxlciBmbGFncyAtLS0NClJFTQ0K
+UkVNICAgL25vbG9nbyAgICAgICAgICAgICAgICAgbm8gYmFubmVyDQpSRU0gICAv
+TVQgICAgICAgICAgICAgICAgICAgICBzdGF0aWMgQ1JULCBwZXIgdGhlIEFQSSBj
+b250cmFjdA0KUkVNICAgL08yICAgICAgICAgICAgICAgICAgICAgcmVsZWFzZSBv
+cHRpbWlzYXRpb24NClJFTSAgIC9XMyAgICAgICAgICAgICAgICAgICAgIHdhcm5p
+bmcgbGV2ZWwgMw0KUkVNICAgL3N0ZDpjKysxNyAgICAgICAgICAgICAgdGhlIHN0
+YW5kYXJkIHRoZSBwcm9qZWN0IHRhcmdldHMNClJFTSAgIC9FSHNjICAgICAgICAg
+ICAgICAgICAgIHN0YW5kYXJkIEMrKyBleGNlcHRpb24gc2VtYW50aWNzOyBfX3Ry
+eSAvDQpSRU0gICAgICAgICAgICAgICAgICAgICAgICAgICBfX2V4Y2VwdCBpcyBT
+RUggYW5kIHdvcmtzIHJlZ2FyZGxlc3MNClJFTSAgIC9EX0NSVF8qICAgICAgICAg
+ICAgICAgIHNpbGVuY2UgYSBoYW5kZnVsIG9mIGRlbGliZXJhdGUgdXNlcyBvZiB0
+aGUNClJFTSAgICAgICAgICAgICAgICAgICAgICAgICAgIGNsYXNzaWMgc3RyaW5n
+```
+
+#### build.bat base64 part 3
+
+```offline-build-bat-base64-part-03
+IGZ1bmN0aW9ucw0KUkVNICAgL0klUk9PVCVzcmMgICAgICAgICAgICAgc28gYSBw
+bHVnaW4gY2FuIHdyaXRlICNpbmNsdWRlICJnYW1lX3dvcmxkLmgiDQpSRU0gICAg
+ICAgICAgICAgICAgICAgICAgICAgICB3aXRob3V0IGEgcGF0aCwgZXZlbiB0aG91
+Z2ggbW9zdCBvZiB0aGVtIHVzZQ0KUkVNICAgICAgICAgICAgICAgICAgICAgICAg
+ICAgcmVsYXRpdmUgaW5jbHVkZXMNCnNldCAiQ09NTU9OPS9ub2xvZ28gL01UIC9P
+MiAvVzMgL3N0ZDpjKysxNyAvRUhzYyAvRF9DUlRfU0VDVVJFX05PX1dBUk5JTkdT
+IC9EX0NSVF9OT05TVERDX05PX0RFUFJFQ0FURSAvSSVST09UJXNyYyAvSSVST09U
+JXNyYyINCg0Kc2V0ICJXSElDSD0lfjEiDQoNClJFTSAtLS0gTG9hZGVyOiBvcHQt
+aW4gb25seSAtLS0NCmlmIC9pICIlV0hJQ0glIj09ImxvYWRlciIgKA0KICAgIGlm
+IG5vdCBleGlzdCAidGVzbWlvbG9hZGVyLmNwcCIgKA0KICAgICAgICBlY2hvIFtz
+a2lwXSAgdGVzbWlvbG9hZGVyLmNwcCBub3QgaW4gdGhlIHByb2plY3Qgcm9vdCAt
+IGxvYWRlciBub3QgYnVpbHQNCiAgICAgICAgZ290byA6cGx1Z2lucw0KICAgICkN
+CiAgICBlY2hvIFtidWlsZF0gdGVzbWlvbG9hZGVyLmRsbA0KICAgIGNsICVDT01N
+T04lIC9MRCB0ZXNtaW9sb2FkZXIuY3BwIC9saW5rIC9PVVQ6YnVpbGRcdGVzbWlv
+bG9hZGVyLmRsbCB1c2VyMzIubGliDQogICAgaWYgZXJyb3JsZXZlbCAxIGdvdG8g
+OmZhaWxlZA0KICAgIFJFTSBJZiB0aGUgdXNlciBhc2tlZCBmb3IgbG9hZGVyIGV4
+cGxpY2l0bHksIGRvIG5vdCBidWlsZCBwbHVnaW5zIHRvby4NCiAgICBnb3RvIDpk
+b25lDQopDQoNCjpwbHVnaW5zDQoNClJFTSAtLS0gUGx1Z2lucyAtLS0NCnNldCAi
+QlVJTFQ9MCINCnNldCAiU0tJUFBFRD0wIg0Kc2V0ICJGQUlMRUQ9MCINCg0KZm9y
+IC9kICUlZCBpbiAocGx1Z2luc1wqKSBkbyAoDQogICAgc2V0ICJOQU1FPSUlfm54
+ZCINCiAgICBzZXQgIk1BVENIPTAiDQoNCiAgICBpZiAiJVdISUNIJSI9PSIiICAg
+ICAgICBzZXQgIk1BVENIPTEiDQogICAgaWYgL2kgIiFOQU1FISI9PSIlV0hJQ0gl
+IiBzZXQgIk1BVENIPTEiDQoNCiAgICBpZiAiIU1BVENIISI9PSIxIiAoDQogICAg
+ICAgIGlmIGV4aXN0ICIlJWRcIU5BTUUhLmNwcCIgKA0KICAgICAgICAgICAgZWNo
+byBbYnVpbGRdIHBsdWdpbnNcIU5BTUUhLmRsbA0KICAgICAgICAgICAgY2wgJUNP
+TU1PTiUgL0xEICIlJWRcIU5BTUUhLmNwcCIgL2xpbmsgL09VVDpidWlsZFxwbHVn
+aW5zXCFOQU1FIS5kbGwNCiAgICAgICAgICAgIGlmIGVycm9ybGV2ZWwgMSAoDQog
+ICAgICAgICAgICAgICAgc2V0IC9hIEZBSUxFRCs9MQ0KICAgICAgICAgICAgICAg
+IGVjaG8gW0ZBSUxdICAhTkFNRSENCiAgICAgICAgICAgICkgZWxzZSAoDQogICAg
+ICAgICAgICAgICAgc2V0IC9hIEJVSUxUKz0xDQogICAgICAgICAgICAgICAgaWYg
+```
+
+#### build.bat base64 part 4
+
+```offline-build-bat-base64-part-04
+ZXhpc3QgIiUlZFwhTkFNRSEuaW5pIiAoDQogICAgICAgICAgICAgICAgICAgIGlm
+IGV4aXN0ICJidWlsZFxwbHVnaW5zXCFOQU1FIS5pbmkiIGRlbCAvcSAiYnVpbGRc
+cGx1Z2luc1whTkFNRSEuaW5pIiA+bnVsIDI+JjENCiAgICAgICAgICAgICAgICAg
+ICAgY29weSAvWSAiJSVkXCFOQU1FIS5pbmkiICJidWlsZFxwbHVnaW5zXCFOQU1F
+IS5pbmkiID5udWwNCiAgICAgICAgICAgICAgICApDQogICAgICAgICAgICAgICAg
+UkVNIFJlbW92ZSBpbnRlcm1lZGlhdGUgY29tcGlsZXIgZmlsZXMgZnJvbSB0aGUg
+c291cmNlIGRpcmVjdG9yeQ0KICAgICAgICAgICAgICAgIGRlbCAvcSAiJSVkXCFO
+QU1FIS5vYmoiICIlJWRcIU5BTUUhLmV4cCIgIiUlZFwhTkFNRSEubGliIiAiJSVk
+XCFOQU1FIS5pbGsiICIlJWRcIU5BTUUhLnBkYiIgPm51bCAyPm51bA0KICAgICAg
+ICAgICAgKQ0KICAgICAgICApIGVsc2UgKA0KICAgICAgICAgICAgZWNobyBbc2tp
+cF0gIHBsdWdpbnNcIU5BTUUhIC0gbm8gIU5BTUUhLmNwcA0KICAgICAgICAgICAg
+c2V0IC9hIFNLSVBQRUQrPTENCiAgICAgICAgKQ0KICAgICkNCikNCg0KUkVNIC0t
+LSBSZXBvcnQgLS0tDQplY2hvLg0KZWNobyAtLS0tLS0tLS0tLS0tLS0tLS0tLS0t
+LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
+LS0tLS0tLQ0KZWNobyAgIGJ1aWx0OiAgICFCVUlMVCENCmVjaG8gICBza2lwcGVk
+OiAhU0tJUFBFRCENCmlmICFGQUlMRUQhIGd0ciAwICgNCiAgICBlY2hvICAgRkFJ
+TEVEOiAgIUZBSUxFRCENCikNCmVjaG8gLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
+LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0t
+LS0tLS0NCmVjaG8uDQoNClJFTSAtLS0gQXV0by1jbGVhbiBpbnRlcm1lZGlhdGUg
+YnVpbGQgZmlsZXMgYXQgdGhlIGVuZCAtLS0NCmNhbGwgIiVST09UJWNsZWFuLmJh
+dCINCg0KOmRvbmUNCnBvcGQNCmlmICFGQUlMRUQhIGd0ciAwIGV4aXQgL2IgMQ0K
+ZXhpdCAvYiAwDQoNCjpub192cw0KZWNoby4NCmVjaG8gVmlzdWFsIFN0dWRpbyB3
+aXRoIEMrKyBidWlsZCB0b29scyBub3QgZm91bmQuDQplY2hvLg0KZWNobyBJbnN0
+YWxsIFZpc3VhbCBTdHVkaW8gQnVpbGQgVG9vbHMgMjAyMiAoZnJlZSk6DQplY2hv
+ICAgaHR0cHM6Ly92aXN1YWxzdHVkaW8ubWljcm9zb2Z0LmNvbS9kb3dubG9hZHMv
+DQplY2hvIFNlbGVjdCAiRGVza3RvcCBkZXZlbG9wbWVudCB3aXRoIEMrKyIgZHVy
+aW5nIGluc3RhbGxhdGlvbi4NCmVjaG8uDQpwb3BkDQpleGl0IC9iIDENCg0KOmZh
+aWxlZA0KZWNoby4NCmVjaG8gQlVJTEQgRkFJTEVELg0KcG9wZA0KZXhpdCAvYiAx
+```
+
+#### clean.bat base64 part 1
+
+```offline-clean-bat-base64-part-01
+QGVjaG8gb2ZmDQpkZWwgL3MgL3EgKi5vYmogKi5leHAgKi5saWIgKi5pbGsgKi5w
+ZGIgPm51bCAyPm51bA0KaWYgbm90IGVycm9ybGV2ZWwgMSBlY2hvIFdvcmtzcGFj
+ZSBjbGVhbmVkIHN1Y2Nlc3NmdWxseS4NCg==
+```
+
+### Offline source/inventory check — actual stdout, part 1 of 3
+
+Command: `python3 .cache/slot-ci-review/check.py`; exit 0. These are source/inventory assertions, not game or Windows build results.
+
+```offline-review-results-part-01
+LEGACY ARRAY g_vehPtr: declaration + 2 accesses in allocator/guarded helpers/census
+LEGACY ARRAY g_vehPeakTons: declaration + 4 accesses in allocator/guarded helpers/census
+LEGACY ARRAY g_vehSamples: declaration + 3 accesses in allocator/guarded helpers/census
+LEGACY ARRAY g_vehSnap: declaration + 5 accesses in allocator/guarded helpers/census
+LEGACY ARRAY g_vehSnapValid: declaration + 2 accesses in allocator/guarded helpers/census
+LEGACY ARRAY g_vehFuel: declaration + 2 accesses in allocator/guarded helpers/census
+LEGACY ARRAY g_vehFuelValid: declaration + 3 accesses in allocator/guarded helpers/census
+LEGACY ARRAY g_vehFuelSamples: declaration + 1 accesses in allocator/guarded helpers/census
+LEGACY ARRAY g_vehCapValid: declaration + 2 accesses in allocator/guarded helpers/census
+LEGACY ARRAY g_vehCap: declaration + 1 accesses in allocator/guarded helpers/census
+PASS 1 VehSlot definition + 1 caller; all 10 legacy arrays inventoried; helper/census guards and count ownership confirmed
+BUILD INPUT plugins/private_logistics/dry_assignment_codec.h: SHA256 93eae84791b584974c8ce6df4c08946304f01e6710ee919cacf5e6e126cb768f
+BUILD INPUT plugins/private_logistics/dry_assignment_ledger.h: SHA256 f8adc630847ffd329a102f28bf4deba5afb5d4bd3cd319a329f5db8b50d1749c
+BUILD INPUT plugins/private_logistics/dry_assignment_native.h: SHA256 ccc83108d894eda40ad81d0b35fd0d7ede7b9132a3368ee3c5339919bb68e91c
+BUILD INPUT plugins/private_logistics/dry_assignment_runtime.h: SHA256 610b05808e4e73e8f164402a5c68ba3905f99f0e64cc4806c4bc0494a259f7bf
+BUILD INPUT plugins/private_logistics/fleet_fuel_observer.h: SHA256 65888b632ab47bed684c725615f561f1c12bd54d8f282f66e696e7a4f9dc321a
+BUILD INPUT plugins/private_logistics/fleet_fuel_runtime.h: SHA256 af5dc11e538d26e7ef8d4d67058ce4e868c03a772ffaa79c87ce27cc1dee7658
+BUILD INPUT plugins/private_logistics/fuel_diagnostics.h: SHA256 850492a3e58c46a2a4439dbf700676919890f0076082adce217d8ac5b94b2201
+```
+
+### Offline source/inventory check — actual stdout, part 2 of 3
+
+```offline-review-results-part-02
+BUILD INPUT plugins/private_logistics/journey_tracker.h: SHA256 4b11e07b3099d275d3933b21f6c7367bfc775a49b02f0f7981b8feb65db1ba33
+BUILD INPUT plugins/private_logistics/panel_fuel_observer.h: SHA256 76d509ec1350ead603cd86aa8e903dbb1646a81e37990c286b5e5d198bce79e5
+BUILD INPUT plugins/private_logistics/panel_fuel_runtime.h: SHA256 8dda0b79f0cf3f325342e42385d4a613e1f0abe6665a50d82280a1e9b12f522e
+BUILD INPUT plugins/private_logistics/private_logistics.cpp: SHA256 350d8a0acb552f551e1d06aaec491ab6a3b47e7a90afcbc60660160fe8442b96
+BUILD INPUT plugins/private_logistics/schedule_assignment_ledger.h: SHA256 122d1825c04ee52bdf05b3bb8a497133b7e5339f84b2c5a1883fc1fb402fdd18
+BUILD INPUT plugins/private_logistics/schedule_observer.h: SHA256 ce7a52a9c2a34ae92ee902b6ae8d7baafbb93c871629234b7315a25bcfce7988
+BUILD INPUT plugins/private_logistics/site_permissions.h: SHA256 212e269b609c9c61696c282c553a2609414f19d9368ca98de384a4b0d0158e25
+BUILD INPUT plugins/private_logistics/task_audit.h: SHA256 0c1a490265a04cc029d95119f360dad3dc5efa6f2a75f10ad0b176c45e5db0c6
+BUILD INPUT src/currency_api.h: SHA256 c63b59b8813110a77a65e0e7d67be20625d9c4816a3e5d0da15f2c8824e30559
+BUILD INPUT src/enterprise_base_api.h: SHA256 3793719029f4527e7a48c8bd01c96180df2fa48a4b660a29777f29164c8f9555
+BUILD INPUT src/game_world.h: SHA256 f57c2ef0ca8b9fb7d32f62c33a8c96c042de790ebad2f68789e9d1e292fad0c7
+BUILD INPUT src/persistence_api.h: SHA256 4f641f74949dc236e00030907243b9ace8446417036affdc9aad115c6cadc174
+BUILD INPUT src/resource_pricing_api.h: SHA256 bc3e7e6ec30b64379c4724564e9219cfa97c6dbaad88e2dc18c03e2ed76a70b2
+BUILD INPUT src/sim_clock_api.h: SHA256 0f2fb230075ec32f2c01846632a9211e8c902d5fb37ae7e75633537551895eb5
+BUILD INPUT src/tesmio_api.h: SHA256 33c9fae4acb1041708c7b1b4675b0eb4740f0af737e7a1968c0acb0c325fff3c
+BUILD INPUT src/tesmio_plugin.h: SHA256 d886ac6550dd84031ee2ed3afab13a7f75e4ddf920d23183b93395440d3cff49
+BUILD INPUT src/ui_panels_api.h: SHA256 2ba0839f4293dcbff6a68d33c13d86e42a6e6d34a0fd1d206b312764522296eb
+PASS include closure: 24 tracked local files; no missing quoted includes or cross-plugin internal includes
+```
+
+### Offline source/inventory check — actual stdout, part 3 of 3
+
+```offline-review-results-part-03
+SYSTEM/STANDARD HEADERS: cmath, cstddef, cstdint, cstdio, cstring, intrin.h, math.h, new, stdarg.h, stddef.h, stdint.h, stdio.h, stdlib.h, string.h, windows.h
+PASS build-script source contracts; zero-build success and recursive cleanup require CI precautions, not runtime edits
+BUILD SCRIPT build.bat: 5664 bytes / SHA256 e16b1a6f71593f2f0c94b06ec6821864e705b0a99c57343e6024ae36de7a7441
+BUILD SCRIPT clean.bat: 121 bytes / SHA256 d9c558751287298686bb9360df8faea911310cac00649a5860cd8e20765cd6bf
+LOCAL TOOLS: cmd.exe=None; cl.exe=None
+PASS immutable report prefix, all pre-existing nonreport changes/untracked artifacts unchanged, fixed branch, no workflow added, clean diff whitespace
+LIMIT source-contract/inventory checks only; no new compiler, Windows build, game run, workflow execution or performance measurement
+```
+
+### Offline archive verifier — complete source, part 1 of 2
+
+```offline-review-verifier-part-01
+from pathlib import Path
+import base64
+import hashlib
+import json
+import re
+import subprocess
+
+report=Path('docs/private-logistics-runtime/VEHICLE_PANEL_FUEL_INVESTIGATION.md')
+text=report.read_bytes()[12995269:].decode()
+def artifact(tag):
+    blocks=re.findall(r'```'+re.escape(tag)+r'-part-(\d+)\n(.*?)\n```',text,re.S)
+    assert [int(i) for i,_ in blocks]==list(range(1,len(blocks)+1)) and blocks
+    return ''.join(s+'\n' for _,s in blocks)
+pairs={'offline-runner-excerpts':'runner-excerpts.txt','offline-review-baseline':'baseline.json',
+       'offline-review-check':'check.py','offline-slot-functions':'slot-functions.cpp',
+       'offline-build-bat-base64':'build.bat.b64','offline-clean-bat-base64':'clean.bat.b64',
+       'offline-review-results':'results.txt','offline-review-verifier':'verify.py'}
+for tag,name in pairs.items():
+    assert artifact(tag)==Path('.cache/slot-ci-review',name).read_text(),tag
+```
+
+### Offline archive verifier — complete source, part 2 of 2
+
+```offline-review-verifier-part-02
+for tag,name in [('offline-build-bat-base64','build.bat'),('offline-clean-bat-base64','clean.bat')]:
+    assert base64.b64decode(artifact(tag))==Path(name).read_bytes()
+print('PASS all 8 archived artifacts recover exactly; both complete CRLF build scripts decode byte-for-byte')
+result=subprocess.check_output(['python3','.cache/slot-ci-review/check.py'],text=True)
+assert result==artifact('offline-review-results')
+print('PASS offline check rerun exit 0; stdout identical to archived full source/input manifest and scope checks')
+result=subprocess.check_output(['python3','.cache/census-guard/verify.py'],text=True)
+assert result==Path('.cache/census-guard/verification.txt').read_text()
+print('PASS prior census implementation verifier still passes with identical stdout; production/test/doc notices unchanged')
+j=json.loads(Path('.cache/census-guard/windows2022-runner.json').read_text())
+raw=base64.b64decode(j['content'])
+assert hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest()==j['sha']=='b27a30ca8423b555ca3b1640c82a1d335183cd12'
+lines=raw.decode().splitlines()
+expected='\n'.join(f'Original lines {a}-{b}:\n'+'\n'.join(lines[a-1:b])+'\n' for a,b in ((6,8),(88,88),(227,230),(396,396),(477,481)))
+assert expected==artifact('offline-runner-excerpts')
+print('PASS runner excerpt fidelity and retrieved Git blob SHA; source only, no runner execution')
+assert json.loads(Path('.cache/slot-ci-review/workflows.json').read_text())=={'total_count':0,'workflows':[]}
+subprocess.run(['git','diff','--check'],check=True)
+print('PASS current diff whitespace; workflow listing confirms 0 workflows, not Actions-policy availability')
+```
+
+### Offline archive verifier — actual result
+
+Command: `python3 .cache/slot-ci-review/verify.py`, exit 0.
+
+```offline-review-verification-stdout
+PASS all 8 archived artifacts recover exactly; both complete CRLF build scripts decode byte-for-byte
+PASS offline check rerun exit 0; stdout identical to archived full source/input manifest and scope checks
+PASS prior census implementation verifier still passes with identical stdout; production/test/doc notices unchanged
+PASS runner excerpt fidelity and retrieved Git blob SHA; source only, no runner execution
+PASS current diff whitespace; workflow listing confirms 0 workflows, not Actions-policy availability
+```
+
+### Offline follow-up handover and recovery
+
+**Completed:** read-only legacy slot/adjacent fleet-array audit and Windows build/CI feasibility assessment; no second unchecked legacy slot consumer found, and compile-only Windows CI is feasible in principle with the documented safeguards. The remaining lifetime/coverage limitations are explicit, not repaired. The checker/archiver verifiers passed; the prior census-guard implementation verifier also passed again with exactly its historical stdout. No runtime/test/build/config/workflow file or pre-existing nonreport edit changed during this turn. No new host compilation, test-suite run, Windows build, workflow run, performance measurement or game run occurred. No Git publication occurred. The existing 144-test result remains from the earlier implementation run, not a newly claimed run.
+
+**Recovery:** concatenate blocks sharing each `offline-...-part-NN` prefix in numeric order; preserve each recovered part's final newline. Check/baseline/verifier source and full actual stdout/input manifest are embedded, as are the exact legacy helper functions and byte-preserving base64 of both build scripts. `.cache` is excluded from persisted snapshots, so restore needed helpers/results from this report rather than assuming that directory survives. The checkpoint verifiers intentionally compare the current uncommitted diff/branch against this baseline; they are not general post-commit checks. For the verifier's supplemental runner input, the immutable original blob can be retrieved with `gh api repos/actions/runner-images/git/blobs/b27a30ca8423b555ca3b1640c82a1d335183cd12` into the documented JSON path. Its exact relevant lines are already archived; no fresh runner build is implied. The workflow-list JSON and earlier census verifier stdout are likewise recoverable from their actual response/output blocks, labelled as historical data if restored. Do not reinterpret the Actions-settings HTTP 403 as a disabled/disconnected app or request credentials.
+
+**Next approval boundary:** add a bounded Windows compile-only workflow; commit/push only `arena/423e4046-wrsre` if explicitly authorized to make it runnable remotely. No automatic release/deployment/payment/merge and no request for an in-game test now. Source publication and CI changes were assessed, not authorized by this read-only follow-up. Inspect the cumulative working tree so the existing guard/tests and prior documentation/evidence are not accidentally dropped from a later approved publication.
+
+### Ready-to-paste next-agent prompt — offline work
+
+> Continue on `arena/423e4046-wrsre` in `/home/user/WRSRE`. Read `INSTRUCTIONS.md`, `KILO_AGENT_WORKFLOW.md`, and the final “Offline follow-up — remaining slot safety and Windows CI feasibility” section in the cumulative `VEHICLE_PANEL_FUEL_INVESTIGATION.md`. The user cannot test in-game now. The bounded `0.18.18-census-guard` fix is already implemented/uncommitted and previously host-tested (144 PASS); this latest read-only audit made no additional runtime/test/build/config changes. It found one legacy slot caller, all ten legacy arrays guarded under their current invariants, and no additional analogous negative-slot issue in the inspected adjacent fleet arrays. Do not mistake this for full native safety/lifecycle coverage. Windows compile-only CI looks feasible: 24 checked-in local inputs, MSVC/SDKs documented on windows-2022; no local/remote Windows build ran. No workflows exist; Actions policy is unknown because the permissions-settings read returned 403. Future CI must catch zero-build success, require a fresh DLL, respect /MT and x64, account for setlocal tool PATH and recursive cleanup, archive logs/hashes, and never load/deploy the DLL. Review current task authorization before adding a workflow or committing/pushing; neither was approved/performed in this audit. Push only the fixed session branch if authorized; no automatic merge/release/deployment/payments. Preserve all prior source/docs/Test13/Test14 evidence and small-write/readback discipline. No new game test or repeated saving test is needed now. The cumulative report contains exact helper source, stdout, source hashes, original build-script bytes and recovery instructions; do not rely on ignored .cache surviving.
+
+## Authorized pull-request publication — 2026-11-02
+
+The user explicitly requested opening a pull request for the changes on this branch. This supersedes earlier publication-not-authorized notices only for committing/pushing `arena/423e4046-wrsre` and opening its PR against `DO-fuel-cost-calculatotr`; it does not authorize merge, CI implementation, Windows build, deployment or billing changes. A fresh fetch confirmed the target at `fa6dc671a38af4976f346b6d4ab8bbf0bbdbfc36`. No existing PR was listed for this head branch. This paragraph is the prepublication checkpoint; the actual PR link/outcome will be recorded after creation.
+
+Prepublication checks: `git diff --check` exit 0; fresh full host suite exit 0 (exact stdout below). The census implementation verifier and offline slot/include/build-source checker were restored from their complete archived sources because ignored .cache artifacts did not survive the turn. Both reran with exit 0 and stdout byte-identical to their already archived full outputs/manifests. The complete test sources and CRLF build scripts also matched their report recovery archives exactly. Historical report prefix through the prior delivery (13,040,522 bytes / SHA256 `668e8da0a4b8279386481b94549fe02587a8e52c2f55bda7415c734f3c13fd2c`) remains unchanged. No new runtime/test/config/build/workflow edits were made for publication.
+
+Fresh command: `python3 -m unittest discover -s tests/private_logistics -p 'test_*.py'`, exit 0:
+
+```text
+................................................................................................................................................
+----------------------------------------------------------------------
+Ran 144 tests in 19.211s
+
+OK
+```
+
+### Publication completed — PR #43
+
+Actual Git outcome: committed the 15 reviewed files as `55012d557ed74dd05e5351c4f84c3ff727a13102` (`Guard legacy census slot exhaustion and archive runtime evidence`) and successfully ran `git push origin arena/423e4046-wrsre`. No cache artifacts, generated binaries or workflow files were staged. `gh pr create --base DO-fuel-cost-calculatotr --head arena/423e4046-wrsre` with the reviewed title/body succeeded and returned **https://github.com/Michu6636/WRSRE/pull/43**.
+
+Readback with `gh pr view 43`: title “Guard legacy census slot exhaustion and consolidate DO runtime evidence”; state **OPEN**, non-draft; head `arena/423e4046-wrsre`, base `DO-fuel-cost-calculatotr`; initial head SHA `55012d557ed74dd05e5351c4f84c3ff727a13102`; created `2026-11-03T01:57:30Z` (2026-11-02 local). The check rollup was empty at this readback, not a successful Windows CI result. The PR explicitly records 144 fresh host tests PASS and Windows/game validation pending. No merge, Windows build, game run, deployment, workflow installation or billing change was performed.
+
+This publication record is a documentation-only follow-up to the implementation/evidence commit. Earlier “uncommitted/no publication authorization” notices and checkpoint scripts are historical; source is now published for review. Do not rerun the old uncommitted-diff/HEAD-dependent verifiers as general post-commit tests. The next-agent starting point is open PR #43 on the same fixed branch; do not merge or add CI without further authorization. User game testing remains unavailable and is not requested now.

@@ -1,6 +1,8 @@
 // private_logistics - what a private company earns, and what it pays.
 //
 // ---------------------------------------------------------------------------
+// v0.18.18 updates: guard exhausted legacy census slots before per-vehicle
+// diagnostics; report omitted visits without changing limits or dispatch/billing.
 // v0.18.17: durable dry-run assignment costs; frozen original-target snapshots,
 // closed quotes and save-scoped records. Interrupted active saves stay unpriced.
 // No actual debts, settlement, payments, new hooks or dispatch changes.
@@ -502,7 +504,7 @@ static char   gFuelResource[64] = "fuel";  // resolved through resource_pricing
 static double gBasketsPerTrip   = 0.80;    // CPI fallback, in daily survival baskets
 static double gBasketsPerTonne  = 0.02;
 
-#define PL_VERSION "0.18.17-dry-ledger"
+#define PL_VERSION "0.18.18-census-guard"
 static int g_panelObserverEnabled = 1;
 static int g_scheduleObserverEnabled = 1;
 static void PanelObserverLoading(void);
@@ -3303,6 +3305,7 @@ static void CensusFleets(int closedDay)
     // the rate the physics has; it must not double-count a fleet seen from two
     // enterprises.
     const unsigned vehDaysBefore = g_tankVehDaysRun;
+    unsigned omittedVisits = 0;
 
     for (size_t i = 0; i < n; i++) {
         void* b = g_enterprise->getEnterpriseByIndex(i);
@@ -3330,6 +3333,14 @@ static void CensusFleets(int closedDay)
             void* v = ((void* const*)beg)[k];
             if (!v || !TsmIsValidGamePtr(v)) continue;
 
+            // Legacy slots are process-lifetime: a new pointer may not fit.
+            // Skip only this visit, never index a per-slot array with -1.
+            const int s = VehSlot(v);
+            if (s < 0 || s >= VEH_MAX) {
+                ++omittedVisits;
+                continue;
+            }
+
             void* home = nullptr;
             if (ReadablePtr((const BYTE*)v + 0x4F8, 8))
                 home = *(void* const*)((const BYTE*)v + 0x4F8);
@@ -3350,9 +3361,8 @@ static void CensusFleets(int closedDay)
 
             int slots = 0;
             const double tons = CargoTons(v, &slots);
-            CargoDump(VehSlot(v), v, closedDay);
+            CargoDump(s, v, closedDay);
 
-            const int s = VehSlot(v);
             const bool first = (s >= 0 && g_vehSamples[s] == 0);
             if (s >= 0) {
                 g_vehSamples[s]++;
@@ -3411,6 +3421,11 @@ static void CensusFleets(int closedDay)
             }
         }
     }
+
+    if (omittedVisits)
+        Logf("[VEH COVERAGE] day %d legacy_census_capacity_exhausted=1 max_slots=%u "
+             "omitted_visits=%u existing_slots_retained=1",
+             closedDay, (unsigned)VEH_MAX, omittedVisits);
 
     // v0.11: this close saw at least one tank -> it counts as a fleet-day.
     if (g_tankVehDaysRun > vehDaysBefore) g_tankDaysRun++;
