@@ -442,37 +442,38 @@ static float GetLocalScarcityMultiplierImpl(void* building, void* resRecord)
 
     __try {
         BYTE* b = (BYTE*)building;
-        BYTE* sb = b + TSM_BLD_STORAGES_BEGIN;
-        if (!ReadablePtr(sb, 16)) return 1.0f;
-        void** beg = *(void***)sb;
-        void** end = *(void***)(sb + 8);
-        if (!beg || !end || end <= beg) return 1.0f;
-        size_t nstor = (size_t)(end - beg);
-        if (nstor > 64) return 1.0f;
+        BYTE* storBegin = *(BYTE**)(b + TSM_BLD_STORAGES_BEGIN);
+        BYTE* storEnd   = *(BYTE**)(b + TSM_BLD_STORAGES_END);
+        if (!storBegin || !storEnd || storEnd <= storBegin) return 1.0f;
+        size_t storBytes = (size_t)(storEnd - storBegin);
+        if (storBytes % TSM_STORAGE_STRIDE != 0) return 1.0f;
+        size_t nstor = storBytes / TSM_STORAGE_STRIDE;
+        if (nstor == 0 || nstor > 64) return 1.0f;
+        if (!ReadablePtr(storBegin, storBytes)) return 1.0f;
 
         double totalCur = 0.0;
         double totalCap = 0.0;
         bool found = false;
         for (size_t i = 0; i < nstor; i++) {
-            void* st = beg[i];
-            if (!st || !TsmIsValidGamePtr(st)) continue;
-            if (!ReadablePtr(st, TSM_STORAGE_STRIDE)) continue;
-            BYTE* sp = (BYTE*)st;
+            BYTE* sp = storBegin + i * TSM_STORAGE_STRIDE;
+            if (!ReadablePtr(sp, TSM_STORAGE_STRIDE)) continue;
             // slots
-            void** ss = *(void***)(sp + TSM_ST_SLOTS_BEGIN);
-            void** se = *(void***)(sp + TSM_ST_SLOTS_END);
-            if (!ss || !se || se <= ss) continue;
-            size_t nslot = (size_t)(se - ss);
-            if (nslot > 64) continue;
-            if (!ReadablePtr(ss, nslot * sizeof(void*))) continue;
+            BYTE* slotBegin = *(BYTE**)(sp + TSM_ST_SLOTS_BEGIN);
+            BYTE* slotEnd   = *(BYTE**)(sp + TSM_ST_SLOTS_END);
+            if (!slotBegin || !slotEnd || slotEnd <= slotBegin) continue;
+            size_t slotBytes = (size_t)(slotEnd - slotBegin);
+            if (slotBytes % TSM_SLOT_STRIDE != 0) continue;
+            size_t nslot = slotBytes / TSM_SLOT_STRIDE;
+            if (nslot == 0 || nslot > 64) continue;
+            if (!ReadablePtr(slotBegin, slotBytes)) continue;
             float cap = *(float*)(sp + TSM_ST_CAPACITY);
             if (!(cap == cap) || cap <= 0.0f) continue;
             if (cap < g_minCapacityTons) continue; // ignore tiny
             for (size_t j = 0; j < nslot; j++) {
                 // slot stride 0x10: resource ptr +0, content +8
-                BYTE* slot = (BYTE*)ss + j * TSM_SLOT_STRIDE;
+                BYTE* slot = slotBegin + j * TSM_SLOT_STRIDE;
                 if (!ReadablePtr(slot, TSM_SLOT_STRIDE)) continue;
-                void* r = *(void**)slot;
+                void* r = *(void**)(slot + TSM_SLOT_RESOURCE);
                 if (r != resRecord) continue;
                 float content = *(float*)(slot + TSM_SLOT_CONTENT);
                 if (!(content == content)) content = 0.0f;
@@ -502,9 +503,11 @@ static float GetLocalPriceQuoteImpl(void* building, void* resRecord, int currenc
     if (currency != TSM_CURRENCY_USD && currency != TSM_CURRENCY_RUB)
         currency = TSM_CURRENCY_RUB;
     float base = GetPriceImpl(resRecord, currency);
+    float mkt = GetMarketMultiplierImpl(resRecord);
+    if (!(mkt == mkt) || mkt <= 0.0f) mkt = 1.0f;
     float m = GetLocalScarcityMultiplierImpl(building, resRecord);
     if (!(m == m) || m <= 0.0f) m = 1.0f;
-    float q = base * m;
+    float q = base * mkt * m;
     if (!(q == q) || q <= 0.0f) q = base;
     return q;
 }
