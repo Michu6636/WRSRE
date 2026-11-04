@@ -4,6 +4,7 @@
 
 #include "../../src/tesmio_plugin.h"
 #include "../../src/persistence_api.h"
+#include "save_path_match.h"
 
 // ---------------------------------------------------------------- config
 
@@ -64,37 +65,10 @@ static void UnregisterHandler(int handle)
 
 // ---------------------------------------------------------------- save dir
 
-static bool SaveDirOf(const char* path, const char* filename,
-                      char* out, size_t n)
-{
-    if (!path || !filename || !out || n == 0) return false;
 
-    size_t pathLen = strlen(path);
-    size_t fileLen = strlen(filename);
-    if (pathLen < fileLen + 2 || pathLen >= n) return false;
-
-    if (_stricmp(path + pathLen - fileLen, filename) != 0) return false;
-    char beforeSep = path[pathLen - fileLen - 1];
-    if (beforeSep != '\\' && beforeSep != '/') return false;
-
-    size_t dirLen = pathLen - fileLen - 1;
-    if (dirLen == 0 || dirLen >= n) return false;
-    memcpy(out, path, dirLen);
-    out[dirLen] = 0;
-
-    size_t i = dirLen;
-    while (i > 0 && out[i - 1] != '\\' && out[i - 1] != '/') i--;
-    if (i == 0) return false;
-
-    size_t sepPos = i - 1;
-    if (sepPos < 4) return false;
-    if (_strnicmp(out + sepPos - 4, "save", 4) != 0) return false;
-
-    size_t saveStart = sepPos - 4;
-    if (saveStart == 0) return true;
-    char before = out[saveStart - 1];
-    return before == '\\' || before == '/';
-}
+static SaveDebounceState g_debounce;
+#define g_lastLoadTick g_debounce.lastLoadTick
+#define g_lastLoadDir  g_debounce.lastLoadDir
 
 static bool SaveDirOfW(const wchar_t* path, const char* filename,
                        char* out, size_t n)
@@ -219,8 +193,6 @@ static void Dispatch(TsmSaveEvent event, const char* dir)
 // ---------------------------------------------------------------- hooks
 
 static __declspec(thread) int t_inHook = 0;
-static DWORD g_lastLoadTick = 0;
-static char  g_lastLoadDir[MAX_PATH * 2] = {0};
 
 static void MaybeDispatch(const char* path, const char* mode)
 {
@@ -233,17 +205,20 @@ static void MaybeDispatch(const char* path, const char* mode)
     char dir[MAX_PATH * 2];
     if (!SaveDirOf(path, trigger, dir, sizeof(dir))) return;
 
-    // Debounce under lock: prevent duplicate LOADING triggers for the same directory within 3 seconds
-    if (!writing) {
+    if (writing) {
+        // Invalidate the load-debounce latch so a rapid
+        // Load -> QuickSave -> QuickLoad never suppresses the second load.
+        EnterCriticalSection(&g_lock);
+        g_lastLoadDir[0] = 0;
+        g_lastLoadTick = 0;
+        InvalidateLoadDebounce(g_debounce);
+        LeaveCriticalSection(&g_lock);
+    } else {
+        // Debounce duplicate loads for the same directory within 3 seconds.
         DWORD now = GetTickCount();
         bool skip = false;
         EnterCriticalSection(&g_lock);
-        if ((int)(now - g_lastLoadTick) < 3000 && _stricmp(g_lastLoadDir, dir) == 0) {
-            skip = true;
-        } else {
-            g_lastLoadTick = now;
-            strncpy_s(g_lastLoadDir, sizeof(g_lastLoadDir), dir, _TRUNCATE);
-        }
+        skip = DebounceLoad(g_debounce, dir, now, 3000);
         LeaveCriticalSection(&g_lock);
         if (skip) return;
     }
@@ -267,17 +242,20 @@ static void MaybeDispatchW(const wchar_t* path, const wchar_t* mode)
     char dir[MAX_PATH * 2];
     if (!SaveDirOfW(path, trigger, dir, sizeof(dir))) return;
 
-    // Debounce under lock: prevent duplicate LOADING triggers for the same directory within 3 seconds
-    if (!writing) {
+    if (writing) {
+        // Invalidate the load-debounce latch so a rapid
+        // Load -> QuickSave -> QuickLoad never suppresses the second load.
+        EnterCriticalSection(&g_lock);
+        g_lastLoadDir[0] = 0;
+        g_lastLoadTick = 0;
+        InvalidateLoadDebounce(g_debounce);
+        LeaveCriticalSection(&g_lock);
+    } else {
+        // Debounce duplicate loads for the same directory within 3 seconds.
         DWORD now = GetTickCount();
         bool skip = false;
         EnterCriticalSection(&g_lock);
-        if ((int)(now - g_lastLoadTick) < 3000 && _stricmp(g_lastLoadDir, dir) == 0) {
-            skip = true;
-        } else {
-            g_lastLoadTick = now;
-            strncpy_s(g_lastLoadDir, sizeof(g_lastLoadDir), dir, _TRUNCATE);
-        }
+        skip = DebounceLoad(g_debounce, dir, now, 3000);
         LeaveCriticalSection(&g_lock);
         if (skip) return;
     }
