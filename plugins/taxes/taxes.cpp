@@ -1,3 +1,10 @@
+// v4.5 updates (City Hall shared-row-budget fix):
+//   - Widget mode no longer duplicates the three rate/state text rows and
+//     the Controls help row beneath equivalent widgets. With ui_panels v6's
+//     two-row content-flow TAX button, the old expanded dashboard needed 16
+//     rows by itself (17 with republic_bank), silently dropping the property
+//     slider and badges from the 14-row budget. Macro rows + all controls +
+//     the bank slider now take 13. The text-only fallback is unchanged.
 // v4.4 updates (City Hall macro census & render-thread cache fix):
 //   - Fixed the 64-wallet sample truncation bug in SnapshotMacroStats:
 //     replaced both fixed-size stack buffers (id[64]/bal[64]) with a
@@ -878,8 +885,10 @@ static void TaxPanelRows(void* building, TsmPanelRows* out, void* /*ud*/)
     // market multipliers x calibrated tonnes + the real residential rent),
     // Poverty Rate is the share of wallets under 7 days of that basket
     // (the same rationing threshold citizen_retail classifies Low on), and
-    // Commercial Solvency surveys the enterprise register. Row budget with
-    // widgets expanded: 8 text + 6 widget = 14 = TSM_PANEL_MAX_ROWS exact.
+    // Commercial Solvency surveys the enterprise register. In widget mode
+    // these are the only text rows: rates and ON/OFF state already appear on
+    // the controls themselves, so duplicating them starves the shared 14-row
+    // City Hall budget (also used by republic_bank and the TAX button).
     // v4.4: cached on the render thread for 500 ms (or until day/save change)
     // so 60-144 FPS rendering never hammers currency::g_lock or heap-copies
     // g_wallets every frame.
@@ -980,11 +989,13 @@ static void TaxPanelRows(void* building, TsmPanelRows* out, void* /*ud*/)
         PushTaxRow(out, L"Commercial Solvency", v);
     }
 
-    // v3.3: skip the cosmetic title row while widgets are present - the
-    // two-row button header needs its budget (4 text + 8 widget = 12).
-    // Without widgets the full v3.1 text dashboard (incl. title) remains.
-    if (!g_panelsWidgets)
-        PushTaxRow(out, L"Fiscal Policy", L"Republic Tax Authority");
+    // The widget dashboard is the live rate/state dashboard; do not print a
+    // second copy beneath it. Expanded macro layout: 4 text + 2 TAX-button
+    // rows + 6 body widgets = 12, plus republic_bank's one slider = 13/14.
+    // Without widgets, retain the complete text-only dashboard below.
+    if (g_panelsWidgets) return;
+
+    PushTaxRow(out, L"Fiscal Policy", L"Republic Tax Authority");
 
     for (int k = 0; k < 3; k++) {
         const wchar_t* name   = kTaxNames[k];
@@ -1018,11 +1029,10 @@ static void TaxPanelBody(void);
 // ui_panels post-hook, AFTER the text rows. Commit-on-change only,
 // helpers called with NO lock held.
 //
-// v3.9: the toggle tile is docked in the native tab row (slot 4, right of
-// [Chart]) by ui_panels v3.9. As chrome it consumes NO content rows, so the
-// row budget is just the body: 4 text + 3+3 = 10 rows, well inside the 12
-// cap. Collapsed the button is the only thing drawn and no rows are pushed,
-// so the window keeps its default height.
+// ui_panels v6 places the toggle tile in content flow, where it consumes two
+// rows. The expanded macro dashboard uses 4 text + 2 button + 6 body rows =
+// 12; republic_bank's City Hall slider brings the shared total to 13/14.
+// Collapsed there are no tax text/body rows, only the two-row toggle.
 static void TaxPanelWidgets(void* building, void* /*ud*/)
 {
     if (!g_panelsWidgets || !g_panels) return;
@@ -1032,16 +1042,9 @@ static void TaxPanelWidgets(void* building, void* /*ud*/)
     if (TsmIsDemolished(building)) return;
     if (TsmBuildingType(building) != TSM_TYPE_CITYHALL) return;
 
-    // v3.9: the docked tab-row tile first (chrome, no rows consumed), then
-    // the dashboard body appended cleanly at window+0x250.
-    // v4.1: the TAX tile is a BIG tab-row tile again - same size as the
-    // native tab icons, docked next to the "Domestic production &
-    // consumption" icon (the tester's "same size, next to that button").
-    // v4.0's small toolbar tile was the wrong role: the small toolbar
-    // tile belongs to the construction panel's CON button. The
-    // tab-row dock geometry is INI-tunable (tab_tile_x_pitch /
-    // tab_tile_row_dy). Older ui_panels builds fall back to the
-    // checkbox header.
+    // Draw the big content-flow TAX tile first, then append the dashboard
+    // body at window+0x250. Older ui_panels builds without buttons use the
+    // one-row checkbox header instead.
     if (g_panelsButtons) {
         if (g_panels->widgetButton(L"TAX", s_showTaxPanel ? 1 : 0)) {
             s_showTaxPanel = !s_showTaxPanel;
@@ -1128,7 +1131,7 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
 {
     TsmBind(host);
     info->name    = "taxes";
-    info->version = "4.4";
+    info->version = "4.5";
 
     g_simClock = (const TsmSimClockApi*)
         H->consume(TSM_SERVICE_SIM_CLOCK, TSM_SIM_CLOCK_VERSION);
@@ -1274,7 +1277,7 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
             Logf("taxes  WARN  persistence refused the handler");
     }
 
-    Logf("taxes  live v4.4 (currency %s, macro readouts %s, CPI %s)",
+    Logf("taxes  live v4.5 (currency %s, macro readouts %s, CPI %s)",
          CurSym(),
          g_macroIndicators ? "on" : "off",
          TsmPricingHasCpi(g_pricing) ? "live (pricing v3)"

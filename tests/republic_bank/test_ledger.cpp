@@ -1,6 +1,7 @@
 #include <cassert>
 #include <cmath>
 #include <cstdio>
+#include <limits>
 #include <string>
 #include "bank_ledger.h"
 
@@ -83,24 +84,67 @@ int main() {
         assert(near(approved, 0.0));
     }
 
-    // (d) USD/RUB scaling
+    // (d) CPI indexation handles inflation, deflation and neutral USD.
     {
         LoanBook rub;
-        rub.config.currencyScale = 1.0;
+        rub.config.currencyScale = BankEconomicScale(2.15, 2.15);
         LoanKey k; k.objectName = "entE";
-        double a1 = rub.requestCreditDraw(k, 1000.0, 1);
-        assert(near(a1, 1000.0));
+        assert(near(rub.config.currencyScale, 1.0));
+        assert(near(rub.requestCreditDraw(k, 1000.0, 1), 1000.0));
 
         LoanBook usd;
-        usd.config.currencyScale = 90.0; // 1 USD = 90 RUB scale? amount scaled
+        // 2.15 RUB / 50 = 0.043 USD, so the reference-RUB 50,000 draw
+        // limit becomes 1,000 USD without a second hardcoded nominal cap.
+        usd.config.currencyScale = BankEconomicScale(0.043, 2.15);
         LoanKey k2; k2.objectName = "entF";
-        // with scale, credit limit and cap scale; request 1000 (active units) -> allowed up to scaled cap
-        double a2 = usd.requestCreditDraw(k2, 1000.0, 1);
-        assert(a2 > 0.0);
-        // debt stored scaled
+        assert(near(usd.config.currencyScale, 0.02));
+        assert(near(usd.requestCreditDraw(k2, 2000.0, 1), 1000.0));
         double p = 0, mi = 0; int m = 0;
         usd.getEnterpriseDebt(k2, p, mi, m);
-        assert(near(p, 1000.0)); // stored in active units
+        assert(near(p, 1000.0));
+
+        LoanBook inflated;
+        inflated.config.currencyScale = BankEconomicScale(4.30, 2.15);
+        LoanKey ki; ki.objectName = "inflated";
+        assert(near(inflated.config.currencyScale, 2.0));
+        assert(near(inflated.requestCreditDraw(ki, 150000.0, 1), 100000.0));
+
+        LoanBook deflated;
+        deflated.config.currencyScale = BankEconomicScale(1.075, 2.15);
+        LoanKey kd; kd.objectName = "deflated";
+        assert(near(deflated.config.currencyScale, 0.5));
+        assert(near(deflated.requestCreditDraw(kd, 30000.0, 1), 25000.0));
+
+        const double inf = std::numeric_limits<double>::infinity();
+        assert(near(BankEconomicScale(inf, 2.15, 0.02), 0.02));
+        assert(near(BankEconomicScale(2.15, 0.0, 0.02), 0.02));
+    }
+
+    // (d2) The retained cash buffer uses the same live scale as credit caps.
+    {
+        LoanBook book;
+        book.config.annualInterestRate = 0.0;
+        book.config.cashBufferKeep = 1000.0;
+        book.config.currencyScale = 2.0;
+        LoanKey k; k.objectName = "buffer";
+        assert(near(book.requestCreditDraw(k, 1000.0, 1), 1000.0));
+        double capital = 2500.0;
+        Settlement s = book.monthlySettle(k, capital);
+        assert(near(s.principal_sweep, 500.0)); // retain 2,000, not 1,000
+        assert(near(capital, 2000.0));
+        assert(near(s.principal, 500.0));
+    }
+
+    // (d3) The native 0..100 slider covers 0..25% in 1% increments.
+    {
+        assert(BankRateToSlider(0.0) == 0);
+        assert(BankRateToSlider(0.06) == 24);
+        assert(BankRateToSlider(0.25) == 100);
+        assert(BankRateToSlider(1.0) == 100);
+        assert(near(BankRateFromSlider(28), 0.07));
+        assert(near(BankRateFromSlider(100), 0.25));
+        assert(near(BankRateFromSlider(101), 0.25));
+        assert(near(BankRateFromSlider(BankRateToSlider(0.06)), 0.06));
     }
 
     // (e) save/load roundtrip integrity
