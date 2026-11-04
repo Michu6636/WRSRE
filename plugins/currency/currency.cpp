@@ -25,7 +25,7 @@
 #include <unordered_map>
 #include <vector>
 
-#define RVA_GAME_OBJECT     0x9D4F10
+#define RVA_GAME_OBJECT     (g_tsmAddr.game_object)
 #define TREASURY_OFFSET_USD 0x580
 #define TREASURY_OFFSET_RUB 0x588
 
@@ -114,6 +114,8 @@ static inline bool IsValidGamePtr(const void* p)
 
 static BYTE* GameObject()
 {
+    if (!TsmCheckExeBuild(H, "currency") || !g_exeBase || !RVA_GAME_OBJECT)
+        return nullptr;
     return g_exeBase + RVA_GAME_OBJECT;
 }
 

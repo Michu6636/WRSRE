@@ -16,10 +16,10 @@
 
 // ---------------------------------------------------------------- sites
 
-#define RVA_GAME_OBJECT    0x9D4F10
-#define RVA_SIM_TIMER      0x9D4EE0
-#define RVA_DAYTICK_POWER  0x334AA0
-#define RVA_DAY_LENGTH     0x90AA78
+#define RVA_GAME_OBJECT    (g_tsmAddr.game_object)
+#define RVA_SIM_TIMER      (g_tsmAddr.sim_timer)
+#define RVA_DAYTICK_POWER  (g_tsmAddr.daytick_power)
+#define RVA_DAY_LENGTH     (g_tsmAddr.day_length)
 #define VANILLA_DAY_LEN    60.0f
 
 #define SYM_POWERTIME "?PowerTime@C3D_TIMER@@QEAAMM_N0@Z"
@@ -349,6 +349,13 @@ static bool VerifyDayTickCall()
     }
 
     const BYTE* timer = p + 7 + *(const int*)(p + 3);
+    // If `addresses.ini` relocated `daytick_power` without explicitly setting
+    // `sim_timer`, adopt the exact RIP-relative timer singleton from the call site.
+    if (g_tsmAddr.usingIniOverrides && g_tsmAddr.sim_timer == 0 &&
+        timer > g_exeBase && (size_t)(timer - g_exeBase) < g_exeSize)
+    {
+        g_tsmAddr.sim_timer = (uint32_t)(timer - g_exeBase);
+    }
     if (timer != g_exeBase + RVA_SIM_TIMER) {
         Logf("sim_clock  day tick's timer is +0x%llX, expected +0x%X - refusing",
              (unsigned long long)(timer - g_exeBase), RVA_SIM_TIMER);
@@ -412,6 +419,13 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
     ReadSettings();
     if (!g_enabled) {
         Logf("sim_clock  disabled");
+        return 1;
+    }
+    if (!TsmCheckExeBuild(host, "sim_clock"))
+        return 1;
+    if (!RVA_DAY_LENGTH || !RVA_DAYTICK_POWER || !RVA_GAME_OBJECT ||
+        !ReadablePtr(g_exeBase + RVA_DAY_LENGTH, sizeof(float))) {
+        Logf("sim_clock  required RVAs unavailable or unreadable - refusing");
         return 1;
     }
 

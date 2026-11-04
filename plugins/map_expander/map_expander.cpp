@@ -25,12 +25,12 @@
 
 #include "../../src/tesmio_plugin.h"
 
-#define RVA_WORLD_SIZE  0x90B1A4
-#define RVA_HALF_WORLD  0x90B180
-#define RVA_GATE_HI     0x90B178
-#define RVA_GATE_LO     0x90BD2C
-#define RVA_MARGIN_HI   0x90B164
-#define RVA_MARGIN_LO   0x90BD20
+#define RVA_WORLD_SIZE  (g_tsmAddr.world_size)
+#define RVA_HALF_WORLD  (g_tsmAddr.half_world)
+#define RVA_GATE_HI     (g_tsmAddr.gate_hi)
+#define RVA_GATE_LO     (g_tsmAddr.gate_lo)
+#define RVA_MARGIN_HI   (g_tsmAddr.margin_hi)
+#define RVA_MARGIN_LO   (g_tsmAddr.margin_lo)
 
 #define VANILLA_WORLD   20000.0f
 #define VANILLA_HALF    10000.0f
@@ -161,6 +161,14 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
     if (!g_enabled)
     {
         Logf("map_expander  disabled");
+        return 1;
+    }
+    if (!TsmCheckExeBuild(host, "map_expander"))
+        return 1;
+    if (!RVA_WORLD_SIZE || !RVA_HALF_WORLD || !RVA_GATE_HI ||
+        !RVA_GATE_LO || !RVA_MARGIN_HI || !RVA_MARGIN_LO)
+    {
+        Logf("map_expander  required RVAs disabled in addresses.ini - inactive");
         return 1;
     }
 
