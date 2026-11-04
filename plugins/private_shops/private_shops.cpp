@@ -231,6 +231,7 @@
 #include "../../src/persistence_api.h"
 #include "../../src/resource_pricing_api.h"
 #include "../../src/enterprise_base_api.h"
+#include "../../src/b2b_logistics_api.h"
 #include "../../src/taxes_api.h"
 
 #include <unordered_map>
@@ -244,6 +245,7 @@ static const TsmSimClockApi*        g_simClock    = nullptr;
 static const TsmCurrencyApi*        g_currency    = nullptr;
 static const TsmResourcePricingApi* g_pricing     = nullptr;
 static const TsmEnterpriseBaseApi*  g_enterprise  = nullptr;
+static const TsmB2bLogisticsApi*    g_b2bLogistics = nullptr;
 static const TsmTaxesApi*           g_taxes       = nullptr;
 static const TsmPersistenceApi*     g_persistence = nullptr;
 static int                          g_persHandle  = -1;
@@ -849,9 +851,11 @@ static void WholesaleSlot(void* storage, void* slotBytes, void* res,
                 double value = tons * (double)priceT * (double)marketMult
                              * (double)g_procurementMult;
                 if (value > 0.0) {
-                    g_currency->moveTreasury(-value, "procurement");
-                    g_enterprise->modifyCompanyCapital(
-                        ctx->shop, value, TSM_CAP_PRODUCTION);
+                    if (!TsmB2bCounterpartyActive(g_b2bLogistics)) {
+                        g_currency->moveTreasury(-value, "procurement");
+                        g_enterprise->modifyCompanyCapital(
+                            ctx->shop, value, TSM_CAP_PRODUCTION);
+                    }
                     ctx->procured++;
                     ctx->revenue += value;
                     if (flagless) ctx->fallback++;   // v3.3: audited above
@@ -899,7 +903,9 @@ static void WholesaleSlot(void* storage, void* slotBytes, void* res,
     // A native delivery has already happened. Settle its full wholesale cost,
     // allowing company capital to become negative; never erase delivered stock
     // to enforce affordability after the vehicle has relinquished the goods.
-    g_enterprise->chargeWholesaleDelivery(ctx->shop, wholesale);
+    if (!TsmB2bCounterpartyActive(g_b2bLogistics)) {
+        g_enterprise->chargeWholesaleDelivery(ctx->shop, wholesale);
+    }
     ctx->capital -= wholesale;
     ctx->charged += wholesale;
     ctx->billed++;
@@ -1699,6 +1705,8 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
 
     g_enterprise = (const TsmEnterpriseBaseApi*)H->consume(TSM_SERVICE_ENTERPRISE_BASE, TSM_ENTERPRISE_BASE_VERSION);
     if (!g_enterprise) { Logf("private_shops  enterprise_base is not installed"); return 1; }
+
+    g_b2bLogistics = (const TsmB2bLogisticsApi*)H->consume(TSM_SERVICE_B2B_LOGISTICS, TSM_B2B_LOGISTICS_VERSION);
 
     g_taxes = (const TsmTaxesApi*)H->consume(TSM_SERVICE_TAXES, TSM_TAXES_VERSION);
     if (!g_taxes) Logf("private_shops  WARN  taxes service not installed");
