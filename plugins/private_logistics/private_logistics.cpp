@@ -1,6 +1,9 @@
 // private_logistics - what a private company earns, and what it pays.
 //
 // ---------------------------------------------------------------------------
+// v0.18.20 updates: match the verified mode-1 vehicle-delivery leg even when
+// p9 equals vehicleHome; genuine staging, ambiguous fragments and refuelling
+// remain excluded. No tariff, dispatch or billing-configuration change.
 // v0.18.19 updates: bounded road automatic targets up to 20 TOTAL entries,
 // rail remains five; count manual entries and recheck the live vector before
 // native allocation/append. No permissions, thresholds, timers or billing changes.
@@ -526,7 +529,7 @@ static char   gFuelResource[64] = "fuel";  // resolved through resource_pricing
 static double gBasketsPerTrip   = 0.80;    // CPI fallback, in daily survival baskets
 static double gBasketsPerTonne  = 0.02;
 
-#define PL_VERSION "0.18.19-road-targets"
+#define PL_VERSION "0.18.20-b2b-delivery"
 static int g_panelObserverEnabled = 1;
 static int g_scheduleObserverEnabled = 1;
 static void PanelObserverLoading(void);
@@ -1234,8 +1237,13 @@ static int DetourTransfer(void* game, void* p2, unsigned mode, void* res,
             loadSellerKey = 0;
     }
 
-    const uint32_t mode1VehSlot = (committed && mode != 0 && p2 && !isStaging &&
-                                   known != SITE_REFUEL) ? VehSlotIdx(p2) : 0;
+    // p9 == vehicleHome is tautological on the verified vehicle-delivery
+    // site, not a reason to discard its cargo or its only delivery join.
+    // Other staging legs remain excluded, and refuelling is never cargo.
+    const bool trackMode1Cargo = wrsre::b2b::ShouldTrackMode1Cargo(
+        committed, mode, p2 != nullptr, isStaging,
+        known == SITE_REFUEL, siteRva);
+    const uint32_t mode1VehSlot = trackMode1Cargo ? VehSlotIdx(p2) : 0;
 
     EnterCriticalSection(&g_lock);
 
@@ -1457,8 +1465,9 @@ static int DetourTransfer(void* game, void* p2, unsigned mode, void* res,
     }
 
     // ---- Ship 2 counterparty settlement (mode-1 delivery commit: 0x68F7F9) --
-    if (g_counterpartySettlement && committed && mode != 0 && tons < 0.0f &&
-        p2 && !isStaging && known != SITE_REFUEL) {
+    // trackMode1Cargo admits that verified site even when p9 == vehicleHome;
+    // the mode-0 building leg is only recorded, so it cannot settle twice.
+    if (g_counterpartySettlement && trackMode1Cargo && tons < 0.0f) {
         wrsre::b2b::MatchedDelivery md;
         EnterCriticalSection(&g_lock);
         const bool mdMatched = g_b2bEngine.matchMode1Delivery(

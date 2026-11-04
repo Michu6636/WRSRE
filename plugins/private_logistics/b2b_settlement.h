@@ -13,6 +13,20 @@ static constexpr std::size_t PENDING_RING = 32;
 static constexpr std::size_t VEH_CARGO_SLOTS = 4;
 static constexpr std::size_t VEH_TRACK_MAX = 16384;
 
+// At this verified native call site, mode 1 / negative tons is the vehicle
+// half of the delivery recorded at 0x68F792.  Its p9 is the same fleet owner
+// as the vehicle home on ordinary deliveries, so p9 == vehicleHome is NOT
+// evidence of depot staging here.  The Windows detour supplies the native
+// RVA; this pure predicate lets the routing rule be tested without Windows.
+static constexpr unsigned DELIVERY_VEHICLE_SITE_RVA = 0x0068F7F9u;
+
+inline bool ShouldTrackMode1Cargo(bool committed, unsigned mode,
+                                  bool hasVehicle, bool isStaging,
+                                  bool isRefuel, unsigned siteRva) {
+    if (!committed || mode == 0 || !hasVehicle || isRefuel) return false;
+    return !isStaging || siteRva == DELIVERY_VEHICLE_SITE_RVA;
+}
+
 // Matches TsmCapitalCategory in src/enterprise_base_api.h without pulling in
 // platform headers so unit tests compile anywhere with -std=c++17.
 static constexpr int CAP_CAT_WHOLESALE  = 1;
