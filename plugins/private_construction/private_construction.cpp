@@ -2166,6 +2166,10 @@ static void ReadSettings(void)
     v[0] = 0;
     if (H->configString(ini, "private_construction", "panel_builder_rva", v, sizeof(v), "") && v[0])
         g_pbRva = ParseRva(v);
+    if (g_tsmAddr.usingIniOverrides &&
+        (g_pbRva == 0 || g_pbRva == TSM_RVA_DEFAULT_PANEL_CONSTRUCT)) {
+        g_pbRva = (size_t)g_tsmAddr.panel_construction;
+    }
 
     v[0] = 0;
     if (H->configString(ini, "private_construction", "panel_builder_expect", v, sizeof(v), "") && v[0])
@@ -2200,6 +2204,7 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host, TsmPlugi
 extern "C" __declspec(dllexport) int TsmPluginStart(void)
 {
     if (!g_enabled) return 1;
+    if (!TsmCheckExeBuild(H, "private_construction")) return 1;
 
     g_simClock = (const TsmSimClockApi*)H->consume(TSM_SERVICE_SIM_CLOCK, TSM_SIM_CLOCK_VERSION);
     if (!g_simClock) { Logf("private_construction  sim_clock missing"); return 1; }

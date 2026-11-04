@@ -217,13 +217,13 @@ static float  g_minCostCfg     = 0.01f;
 static float  g_usdDivisor     = 50.0f;
 
 // ---------------------------------------------------------------- v2.4 native checkout hook
-#define TSM_CHECKOUT_HOOK_RVA   0x1725DE
+#define TSM_CHECKOUT_HOOK_RVA   (g_tsmAddr.retail_checkout_hook)
 // v2.6: allow/abort are RVAs resolved from g_exeBase at install time. The old
 // absolute constants (0x1401725F0 / 0x14017293A) were only valid at the
 // preferred base 0x140000000; under ASLR the stub's jmp [rip+0] tails jumped
 // into unmapped memory on the first private-shop purchase.
-#define TSM_CHECKOUT_ALLOW_RVA  0x1725F0u
-#define TSM_CHECKOUT_ABORT_RVA  0x17293Au
+#define TSM_CHECKOUT_ALLOW_RVA  (g_tsmAddr.retail_checkout_allow)
+#define TSM_CHECKOUT_ABORT_RVA  (g_tsmAddr.retail_checkout_abort)
 #define TSM_CHECKOUT_STOLEN     18u
 
 static const BYTE kCheckoutExpect[TSM_CHECKOUT_STOLEN] = {
@@ -689,7 +689,9 @@ static int CheckoutAffordabilityGate(void* shop, void* person, void* res, float 
 // v2.4: installs the 18-byte inline hook at the checkout fulfillment gate.
 static bool InstallCheckoutHook(void)
 {
-    if (!g_exeBase) return false;
+    if (!g_exeBase || !TsmCheckExeBuild(H, "citizen_retail") ||
+        !TSM_CHECKOUT_HOOK_RVA || !TSM_CHECKOUT_ALLOW_RVA || !TSM_CHECKOUT_ABORT_RVA)
+        return false;
 
     void* target = (void*)(g_exeBase + TSM_CHECKOUT_HOOK_RVA);
 

@@ -30,6 +30,7 @@
 #include <intrin.h>
 
 #include "tesmio_api.h"
+#include "game_addresses.h"
 
 #define DLL_ENGINE "C3DDLL64.dll"
 #define DLL_STDIO  "api-ms-win-crt-stdio-l1-1-0.dll"
@@ -62,6 +63,7 @@ static void TsmBind(const TsmHost* host)
         g_vfsRoot = host->vfsRoot;
 
     InitializeCriticalSection(&g_lock);
+    TsmAddrInit(host);
 }
 
 static void** FindIatSlot(HMODULE mod, const char* dll, const char* fn)

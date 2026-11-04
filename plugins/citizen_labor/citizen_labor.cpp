@@ -492,13 +492,14 @@ static std::unordered_map<void*, int> g_zeroedWorkers;
 // thread OnDay runs on); with flag 0 it never re-enters plugin code, so
 // running it while this thread holds g_lock is safe (recursive lock,
 // no cross-thread deadlock path).
-#define TSM_FUNEJECT_WORKER_RVA 0x822FD0
+#define TSM_FUNEJECT_WORKER_RVA (g_tsmAddr.eject_worker)
 typedef void (__fastcall *TsmEjectWorkerFn)(void* game, void* person,
                                             void* building, char flag);
 static TsmEjectWorkerFn EjectWorkerFn(void)
 {
-    if (!g_exeBase) return nullptr;
-    return (TsmEjectWorkerFn)(g_exeBase + TSM_FUNEJECT_WORKER_RVA);
+    if (!TsmCheckExeBuild(H, "citizen_labor")) return nullptr;
+    const unsigned char* code = TsmCallableCodePtr(H, TSM_FUNEJECT_WORKER_RVA, "eject_worker");
+    return (TsmEjectWorkerFn)code;
 }
 
 // v4.8: zero a defaulting firm's worker limit and eject its current
@@ -2075,7 +2076,7 @@ static void ReadSettings(void)
 // v4.4: Wage-driven labor mobility hook
 // =====================================================================
 
-#define TSM_HOOK_LABOR_DEST_RVA   0x1D3797
+#define TSM_HOOK_LABOR_DEST_RVA   (g_tsmAddr.labor_mobility_hook)
 #define TSM_HOOK_LABOR_DEST_ADDR  (g_exeBase + TSM_HOOK_LABOR_DEST_RVA)
 // v4.6: the tail jmp's JBE target is RVA 0x1D37A9 (= hook site 0x1D3797 +
 // the 18 stolen bytes = the instruction right after the stolen COMISS). It
@@ -2084,7 +2085,7 @@ static void ReadSettings(void)
 // 0x140000000; under ASLR (real base e.g. 0x7FF759C60000) that constant is
 // an unmapped address and the tail jmp faults. Computed exactly the way the
 // hook site itself is.
-#define TSM_HOOK_JBE_RVA          0x1D37A9u
+#define TSM_HOOK_JBE_RVA          (g_tsmAddr.labor_mobility_jbe)
 #define TSM_HOOK_JBE_TARGET       ((uintptr_t)(g_exeBase + TSM_HOOK_JBE_RVA))
 #define TSM_HOOK_STOLEN           18u
 
@@ -2259,7 +2260,9 @@ static_assert(sizeof(kStubBase) >= STUB_OFF_JMP_REL32 + 4u,
 
 static bool InstallLaborMobilityHook(void)
 {
-    if (!g_exeBase) return false;
+    if (!g_exeBase || !TsmCheckExeBuild(H, "citizen_labor") ||
+        !TSM_HOOK_LABOR_DEST_RVA || !TSM_HOOK_JBE_RVA)
+        return false;
 
     // v4.6: the tail `jmp rel32` (kStubBase +0x7F) can only reach +-2GB. The
     // JBE target lives in the exe (~0x7FF7_....); a VirtualAlloc(NULL) stub

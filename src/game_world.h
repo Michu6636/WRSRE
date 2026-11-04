@@ -9,12 +9,13 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include "game_addresses.h"
 
 // -----------------------------------------------------------------------------
 // The game object
 // -----------------------------------------------------------------------------
 
-#define TSM_GO_RVA              0x9D4F10
+#define TSM_GO_RVA              (g_tsmAddr.game_object)
 
 #define TSM_GO_DAY              0x590
 #define TSM_GO_YEAR             0x594
@@ -198,7 +199,9 @@ static inline const wchar_t* TsmBuildingCityName(const void* b)
 
 static inline BYTE* TsmGameObject(BYTE* exeBase)
 {
-    return exeBase + TSM_GO_RVA;
+    if (!exeBase || !g_tsmAddr.exeVerified || g_tsmAddr.game_object == 0)
+        return nullptr;
+    return exeBase + g_tsmAddr.game_object;
 }
 
 struct TsmBuildingSpan {

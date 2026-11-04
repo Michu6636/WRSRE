@@ -13,9 +13,9 @@
 
 // ---------------------------------------------------------------- sites
 
-#define RVA_FONTMGR    0x996FB0
-#define RVA_FONT       0x995220
-#define RVA_DPI        0x992088
+#define RVA_FONTMGR    (g_tsmAddr.fontmgr)
+#define RVA_FONT       (g_tsmAddr.font_alt_a)
+#define RVA_DPI        (g_tsmAddr.dpi)
 
 #define SYM_TERRAIN_RENDER "?Render@C3D_TERRAIN@@QEAAX_NPEAVC3D_CAMERA@@0HH@Z"
 #define SYM_PRINT_NOARG    "?PrintLeftUnicodeNoArg@C3D_FONTMANAGER@@QEAAXPEAVC3D_FONT@@MMKPEB_W@Z"
@@ -78,7 +78,7 @@ static void UnregisterDrawer(int handle)
 static void DrawTextImpl(float x, float y, unsigned long color,
                          const wchar_t* text)
 {
-    if (!o_Print || !text) return;
+    if (!o_Print || !text || !RVA_FONT || !RVA_FONTMGR) return;
 
     void* font = *(void**)(g_exeBase + RVA_FONT);
     if (!font) return;
@@ -89,12 +89,12 @@ static void DrawTextImpl(float x, float y, unsigned long color,
 static void DrawTextOutlinedImpl(float x, float y, unsigned long color,
                                  const wchar_t* text)
 {
-    if (!o_Print || !text) return;
+    if (!o_Print || !text || !RVA_FONT || !RVA_FONTMGR) return;
 
     void* font = *(void**)(g_exeBase + RVA_FONT);
     if (!font) return;
 
-    float dpi = *(float*)(g_exeBase + RVA_DPI);
+    float dpi = RVA_DPI ? *(float*)(g_exeBase + RVA_DPI) : 1.0f;
     if (!(dpi > 0.2f && dpi < 8.0f)) dpi = 1.0f;
 
     const float o = 1.6f * dpi;
@@ -109,6 +109,7 @@ static void DrawTextOutlinedImpl(float x, float y, unsigned long color,
 
 static float GetDPIImpl(void)
 {
+    if (!RVA_DPI) return 1.0f;
     float d = *(float*)(g_exeBase + RVA_DPI);
     if (!(d > 0.2f && d < 8.0f)) return 1.0f;
     return d;
@@ -243,6 +244,7 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
 extern "C" __declspec(dllexport) int TsmPluginStart(void)
 {
     if (!g_enabled) return 1;
+    if (!TsmCheckExeBuild(H, "ui_overlay")) return 1;
 
     o_Print = (t_PrintNoArg)GetProcAddress(g_engine, SYM_PRINT_NOARG);
     if (!o_Print) {
@@ -255,7 +257,8 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
         return 1;
     }
 
-    if (!ReadablePtr(g_exeBase + RVA_FONT, sizeof(void*))) {
+    if (!RVA_FONT || !RVA_FONTMGR ||
+        !ReadablePtr(g_exeBase + RVA_FONT, sizeof(void*))) {
         Logf("ui_overlay  the panel font handle is not where this build "
              "puts it - inactive");
         return 1;

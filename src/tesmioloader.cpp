@@ -30,6 +30,8 @@
 #include <string.h>
 #include <wchar.h>
 #include <intrin.h>
+#include "tesmio_api.h"
+#include "game_addresses.h"
 
 // The save-manifest warning box is the only user32 call in the DLL; a pragma
 // here keeps build.bat's kernel32-only link line untouched.
@@ -1174,8 +1176,6 @@ static bool ReadablePtr(const void* p, size_t n)
 // feature can be written, rebuilt and removed without touching this file, and
 // that shipping one is copying a DLL.
 
-#include "tesmio_api.h"
-
 #define MAX_PLUGINS 32
 
 struct LoadedPlugin
@@ -1885,7 +1885,7 @@ static void NoteSaveOpenW(const wchar_t* path, bool writing)
 //
 // The suffix is appended to the format string rather than printed separately,
 // so the game does the drawing and the line stays one string with one layout.
-#define P_MENU_VERSION_SITE 0x28B5CC     // v1.1.1.9; was 0x28B55C. LEA RAX,[rip+disp32] - the format argument
+#define P_MENU_VERSION_SITE (g_tsmAddr.menu_version_site) // v1.1.1.9 = 0x28B5CC; LEA RAX,[rip+disp32]
 #define MENU_LEA_LEN        7
 
 static const BYTE kMenuLeaOrig[3] = { 0x48, 0x8D, 0x05 };   // lea rax,[rip+disp32]
@@ -1908,6 +1908,12 @@ static wchar_t g_menuTag[96] = L"";
 static void PatchMenuVersion()
 {
     if (!g_menuTag[0]) { Logf("menu     tag is empty - version line left alone"); return; }
+    if (!g_tsmAddr.exeVerified || !P_MENU_VERSION_SITE ||
+        !ReadablePtr(g_exeBase + P_MENU_VERSION_SITE, MENU_LEA_LEN))
+    {
+        Logf("menu     SKIPPED  unverified executable build or disabled menu_version_site");
+        return;
+    }
 
     BYTE* site = g_exeBase + P_MENU_VERSION_SITE;
     if (memcmp(site, kMenuLeaOrig, sizeof(kMenuLeaOrig)) != 0)
@@ -2081,6 +2087,14 @@ static void Init()
              (void**)&o_CreateFileW, "CreateFileW");
 
     HookTextureVtable(engine);
+
+    BuildHostTable();
+    TsmAddrInit(&g_host);
+    Logf("exe stamp 0x%08X (%s)",
+         (unsigned)g_tsmAddr.exeStamp,
+         g_tsmAddr.usingIniOverrides ? "verified via addresses.ini" :
+         g_tsmAddr.exeVerified       ? "verified baseline v1.1.1.9" :
+                                       "UNVERIFIED - raw RVA hooks/reads paused");
 
     if (g_menuPatch) PatchMenuVersion();
 

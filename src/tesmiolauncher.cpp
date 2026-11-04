@@ -528,10 +528,26 @@ struct GameVersion
 {
     int      v[4];              // -1 when the numbers could not be read
     bool     known;
+    bool     viaAddressesIni;   // stamp matched [build] target_stamp in addresses.ini
     unsigned stamp;             // PE TimeDateStamp, 0 when the headers would not parse
     int      verdict;
     wchar_t  text[32];          // "1.1.1.7", or "unknown"
 };
+
+static wchar_t g_addrIni[MAX_PATH];
+
+static unsigned ReadAddressesIniStamp()
+{
+    if (!g_addrIni[0]) return 0;
+    wchar_t buf[64] = {0};
+    GetPrivateProfileStringW(L"build", L"target_stamp", L"",
+                             buf, _countof(buf), g_addrIni);
+    if (!buf[0]) return 0;
+    wchar_t* end = NULL;
+    unsigned long v = wcstoul(buf, &end, 0);
+    if (end == buf) return 0;
+    return (unsigned)v;
+}
 
 // The one string the game formats its own version line from. It is the
 // anchor for everything below: find it, find the instruction that points at
@@ -700,7 +716,13 @@ static void ReadGameVersion(const wchar_t* exe, GameVersion* g)
             stampKnown = true;
     }
 
-    if (byNumbers >= 0)
+    const unsigned addrStamp = ReadAddressesIniStamp();
+    if (addrStamp != 0 && g->stamp != 0 && g->stamp == addrStamp)
+    {
+        g->verdict = GV_OK;
+        g->viaAddressesIni = true;
+    }
+    else if (byNumbers >= 0)
         g->verdict = (g->stamp == kSupportedVersions[byNumbers].stamp) ? GV_OK : GV_REBUILD;
     else if (g->known)
         g->verdict = GV_WRONG;
@@ -762,7 +784,12 @@ static void VersionStatusText(const GameVersion* g, wchar_t* out, size_t n)
     switch (g->verdict)
     {
     case GV_OK:
-        _snwprintf_s(out, n, _TRUNCATE, L"Installed: v%s - supported", g->text);
+        if (g->viaAddressesIni)
+            _snwprintf_s(out, n, _TRUNCATE,
+                         L"Installed: v%s (build %08X) - relocated via addresses.ini",
+                         g->text, g->stamp);
+        else
+            _snwprintf_s(out, n, _TRUNCATE, L"Installed: v%s - supported", g->text);
         break;
     case GV_REBUILD:
         _snwprintf_s(out, n, _TRUNCATE,
@@ -822,6 +849,7 @@ static bool        g_host = true;       // [tesmioloader] plugins
 static void SetIniPath(const wchar_t* dllDir)
 {
     Join(g_ini, _countof(g_ini), dllDir, LOADER_INI);
+    Join(g_addrIni, _countof(g_addrIni), dllDir, L"addresses.ini");
     WideCharToMultiByte(CP_ACP, 0, g_ini, -1, g_iniA, sizeof(g_iniA), NULL, NULL);
 }
 
