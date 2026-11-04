@@ -16,6 +16,7 @@
 #include "../../src/sim_clock_api.h"
 #include "../../src/persistence_api.h"
 #include "../../src/resource_pricing_api.h"
+#include "scarcity_curve.h"
 
 #include <unordered_map>
 
@@ -68,6 +69,14 @@ static float g_cpiFoodTons    = 0.0020f;
 static float g_cpiMeatTons    = 0.0006f;
 static float g_cpiClothesTons = 0.0005f;
 static float g_cpiDefaultRent = 0.33f;
+
+// v4: local scarcity config.
+static int   g_localScarcityEnabled = 0;
+static float g_emptyMarkupMax       = 1.30f;
+static float g_fullDiscountMin     = 0.82f;
+static float g_neutralFillLow      = 0.35f;
+static float g_neutralFillHigh     = 0.65f;
+static float g_minCapacityTons     = 0.5f;
 
 // ---------------------------------------------------------------- v2: market book
 //
@@ -421,7 +430,84 @@ static float GetCpiDailyBasketImpl(float injectedDailyRent)
     return cpi;
 }
 
-// ---------------------------------------------------------------- the API
+// ---------------------------------------------------------------- v4: local scarcity
+static float GetLocalScarcityMultiplierImpl(void* building, void* resRecord)
+{
+    if (!g_localScarcityEnabled) return 1.0f;
+    if (!TsmCheckExeBuild(H, "resource_pricing")) return 1.0f;
+    if (!TsmIsValidGamePtr(building) || !TsmIsValidGamePtr(resRecord)) return 1.0f;
+    if (!TsmLooksLikeBuilding(building)) return 1.0f;
+    if (!ReadablePtr(building, TSM_BLD_MIN_READABLE)) return 1.0f;
+    if (!ReadablePtr(resRecord, TSM_RES_STRIDE)) return 1.0f;
+
+    __try {
+        BYTE* b = (BYTE*)building;
+        BYTE* sb = b + TSM_BLD_STORAGES_BEGIN;
+        if (!ReadablePtr(sb, 16)) return 1.0f;
+        void** beg = *(void***)sb;
+        void** end = *(void***)(sb + 8);
+        if (!beg || !end || end <= beg) return 1.0f;
+        size_t nstor = (size_t)(end - beg);
+        if (nstor > 64) return 1.0f;
+
+        double totalCur = 0.0;
+        double totalCap = 0.0;
+        bool found = false;
+        for (size_t i = 0; i < nstor; i++) {
+            void* st = beg[i];
+            if (!st || !TsmIsValidGamePtr(st)) continue;
+            if (!ReadablePtr(st, TSM_STORAGE_STRIDE)) continue;
+            BYTE* sp = (BYTE*)st;
+            // slots
+            void** ss = *(void***)(sp + TSM_ST_SLOTS_BEGIN);
+            void** se = *(void***)(sp + TSM_ST_SLOTS_END);
+            if (!ss || !se || se <= ss) continue;
+            size_t nslot = (size_t)(se - ss);
+            if (nslot > 64) continue;
+            if (!ReadablePtr(ss, nslot * sizeof(void*))) continue;
+            float cap = *(float*)(sp + TSM_ST_CAPACITY);
+            if (!(cap == cap) || cap <= 0.0f) continue;
+            if (cap < g_minCapacityTons) continue; // ignore tiny
+            for (size_t j = 0; j < nslot; j++) {
+                // slot stride 0x10: resource ptr +0, content +8
+                BYTE* slot = (BYTE*)ss + j * TSM_SLOT_STRIDE;
+                if (!ReadablePtr(slot, TSM_SLOT_STRIDE)) continue;
+                void* r = *(void**)slot;
+                if (r != resRecord) continue;
+                float content = *(float*)(slot + TSM_SLOT_CONTENT);
+                if (!(content == content)) content = 0.0f;
+                if (content < 0.0f) content = 0.0f;
+                totalCur += (double)content;
+                totalCap += (double)cap;
+                found = true;
+            }
+        }
+        if (!found || totalCap <= 0.0) return 1.0f;
+        float fill = (float)(totalCur / totalCap);
+        ScarcityParams p;
+        p.empty_markup_max  = g_emptyMarkupMax;
+        p.full_discount_min = g_fullDiscountMin;
+        p.neutral_fill_low   = g_neutralFillLow;
+        p.neutral_fill_high  = g_neutralFillHigh;
+        p.min_capacity_tons  = g_minCapacityTons;
+        return scarcityMultiplier(fill, p);
+    } __except (FaultFilter("resource_pricing local scarcity",
+                            GetExceptionInformation())) {
+        return 1.0f;
+    }
+}
+
+static float GetLocalPriceQuoteImpl(void* building, void* resRecord, int currency)
+{
+    if (currency != TSM_CURRENCY_USD && currency != TSM_CURRENCY_RUB)
+        currency = TSM_CURRENCY_RUB;
+    float base = GetPriceImpl(resRecord, currency);
+    float m = GetLocalScarcityMultiplierImpl(building, resRecord);
+    if (!(m == m) || m <= 0.0f) m = 1.0f;
+    float q = base * m;
+    if (!(q == q) || q <= 0.0f) q = base;
+    return q;
+}
 
 static const TsmResourcePricingApi kApi = {
     sizeof(TsmResourcePricingApi),
@@ -436,6 +522,8 @@ static const TsmResourcePricingApi kApi = {
     GetMarketMultiplierImpl,
     GetMarketBalanceImpl,
     GetCpiDailyBasketImpl,
+    GetLocalScarcityMultiplierImpl,
+    GetLocalPriceQuoteImpl,
 };
 
 // ---------------------------------------------------------------- settings
@@ -588,6 +676,38 @@ static void ReadSettings(void)
     // Keep the clamp sane even if both ends were pushed past each other.
     if (g_marketMinMult > g_marketMaxMult) g_marketMinMult = g_marketMaxMult;
 
+    // v4: local per-building scarcity quote spreads.
+    g_localScarcityEnabled = H->configInt(ini, "local_scarcity", "enabled", 0);
+    if (H->configString(ini, "local_scarcity", "empty_markup_max",
+                        v, sizeof(v), "") && v[0]) {
+        float f = (float)atof(v);
+        if (f >= 1.0f && f <= 10.0f && f == f) g_emptyMarkupMax = f;
+    }
+    if (H->configString(ini, "local_scarcity", "full_discount_min",
+                        v, sizeof(v), "") && v[0]) {
+        float f = (float)atof(v);
+        if (f > 0.0f && f <= 1.0f && f == f) g_fullDiscountMin = f;
+    }
+    if (H->configString(ini, "local_scarcity", "neutral_fill_low",
+                        v, sizeof(v), "") && v[0]) {
+        float f = (float)atof(v);
+        if (f >= 0.0f && f <= 1.0f && f == f) g_neutralFillLow = f;
+    }
+    if (H->configString(ini, "local_scarcity", "neutral_fill_high",
+                        v, sizeof(v), "") && v[0]) {
+        float f = (float)atof(v);
+        if (f >= 0.0f && f <= 1.0f && f == f) g_neutralFillHigh = f;
+    }
+    if (H->configString(ini, "local_scarcity", "min_capacity_tons",
+                        v, sizeof(v), "") && v[0]) {
+        float f = (float)atof(v);
+        if (f >= 0.0f && f <= 100000.0f && f == f) g_minCapacityTons = f;
+    }
+    if (g_neutralFillLow > g_neutralFillHigh) {
+        float t = g_neutralFillLow; g_neutralFillLow = g_neutralFillHigh; g_neutralFillHigh = t;
+    }
+    if (g_fullDiscountMin > g_emptyMarkupMax) g_fullDiscountMin = g_emptyMarkupMax;
+
     // GetPrivateProfileSectionA needs the full path; the profile API in
     // TsmHost resolves a bare name against baseDir, but the section
     // enumerator does not. Build the path the same way the host would.
@@ -609,7 +729,7 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
 {
     TsmBind(host);
     info->name    = "resource_pricing";
-    info->version = "3.0";
+    info->version = "4.0";
 
     ReadSettings();
     if (!g_enabled) {
@@ -617,13 +737,7 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
         return 1;
     }
 
-    // v3 ABI: publish THREE views of the same struct - v1 (prefix up to
-    // the market book, for e.g. private_construction), v2 (prefix up to
-    // the CPI tail, for any consumer built against the v2 header) and v3
-    // (full struct, the current TSM_RESOURCE_PRICING_VERSION). The
-    // registry matches versions exactly, so each consumer resolves the
-    // exact prefix it was compiled against. Same dual-provide pattern
-    // currency (v3/v4) and citizen_labor (v2/v3/v4) use, extended by one.
+    // v4 ABI: publish FOUR views: v1, v2, v3, v4.
     static TsmResourcePricingApi kApiV1;
     memcpy(&kApiV1, &kApi, sizeof(kApiV1));
     kApiV1.structSize = (unsigned)offsetof(TsmResourcePricingApi, recordSupply);
@@ -636,6 +750,13 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
                                            getCpiDailyBasket);
     H->provide(TSM_SERVICE_RESOURCE_PRICING,
                TSM_RESOURCE_PRICING_VERSION_V2, &kApiV2);
+
+    static TsmResourcePricingApi kApiV3;
+    memcpy(&kApiV3, &kApi, sizeof(kApiV3));
+    kApiV3.structSize = (unsigned)offsetof(TsmResourcePricingApi,
+                                           getLocalScarcityMultiplier);
+    H->provide(TSM_SERVICE_RESOURCE_PRICING,
+               TSM_RESOURCE_PRICING_VERSION_V3, &kApiV3);
 
     H->provide(TSM_SERVICE_RESOURCE_PRICING,
                TSM_RESOURCE_PRICING_VERSION, &kApi);
