@@ -1,6 +1,6 @@
 # Test15 delegated element construction — evidence task completed
 
-**Review status (2026-11-04): COMPLETE for cached count-one pointer transfer.** The packet is synced at `2ffc5fdb04b4cda921e2160aa6953e785515a7e7:TEST15_ELEMENT_CONSTRUCTION_PACKET.md`. Independent decoding and objdump verify the 27-byte helper, closing growth/append calls at 0x1E212/0x1E2DF. No new commit/push prompt, repackaging, R9 research or insertion extraction is needed. See the cumulative report and 1E8C0.md. This is not target-cap approval. The original request below is retained as task history; do not rerun it.
+**Review status (2026-11-04): COMPLETE for cached count-one pointer transfer.** The packet is synced at `2ffc5fdb04b4cda921e2160aa6953e785515a7e7:TEST15_ELEMENT_CONSTRUCTION_PACKET.md` (now at `docs/private-logistics-runtime/packets/TEST15_ELEMENT_CONSTRUCTION_PACKET.md`). Independent decoding and objdump verify the 27-byte helper, closing growth/append calls at 0x1E212/0x1E2DF. No new commit/push prompt, repackaging, R9 research or insertion extraction is needed. See the cumulative report and 1E8C0.md. This is not target-cap approval. The original request below is retained as task history; do not rerun it.
 
 Proposed ready-to-paste task for the existing Windows Kilo parent session. Read AGENTS.md, INSTRUCTIONS.md and KILO_AGENT_WORKFLOW.md; keep native access serialized. No runtime/config/build/deployment, commit or push. Do not repeat packet packaging, 0x1E140 extraction, R9 research, creator/ctor/dispatcher/rail exports or gameplay tests.
 

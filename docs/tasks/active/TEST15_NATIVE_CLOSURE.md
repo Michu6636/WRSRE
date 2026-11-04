@@ -6,9 +6,9 @@ Use one parent Kilo Code session in the existing Windows WRSRE workspace. Read A
 
 The Test15 cap is five TOTAL entries, not five additions/day. Existing automatic append uses TaskEntry 0x18, TaskCfg 0x198, ctor RVA 0x1512A0 and vector helper 0x08E050. Native ordinary 0.18.18 was tested; do not repeat saving/fuel/demolition tests or request the EXE.
 
-Root `decomp_1406EE2A0.c` lines 155–156 allocate 0x5D8 and call ctor 0x25C500. Lines 580–600 initialize **100 DWORD values** in `[receiver+0x310, receiver+0x4A0)`: undefined2* displacement 0x188 means byte 0x310; `(6*8+2)*8=400` bytes; next separate field is byte 0x4A0. This is a real capacity lead, not implementation readiness.
+`docs/ghidra-exports/decomp_1406EE2A0.c` lines 155–156 allocate 0x5D8 and call ctor 0x25C500. Lines 580–600 initialize **100 DWORD values** in `[receiver+0x310, receiver+0x4A0)`: undefined2* displacement 0x188 means byte 0x310; `(6*8+2)*8=400` bytes; next separate field is byte 0x4A0. This is a real capacity lead, not implementation readiness.
 
-`docs/private-logistics-runtime/RAW_EXPORTS_741170_1E440.md` lines 162/175 bind the road renderer's panel and building. Lines 1697–1715 read/write `panel+0x310+idx*4`, including bulk propagation over the total task count. The literal `/49` is at line 1017. Root `xrefs_1406EE2A0.txt` names dispatcher 0x6E9B80 and both DO builders. Xref membership is not receiver-flow proof. See `docs/ghidra-index/6EE2A0.md`.
+`docs/private-logistics-runtime/RAW_EXPORTS_741170_1E440.md` lines 162/175 bind the road renderer's panel and building. Lines 1697–1715 read/write `panel+0x310+idx*4`, including bulk propagation over the total task count. The literal `/49` is at line 1017. `docs/ghidra-exports/xrefs_1406EE2A0.txt` names dispatcher 0x6E9B80 and both DO builders. Xref membership is not receiver-flow proof. See `docs/ghidra-index/6EE2A0.md`.
 
 ## A. Close the receiver / consumer edge
 
@@ -31,7 +31,7 @@ The cached predicate at preferred VAs 0x1401DE327–0x1401DE35F reads row+0x60, 
 
 Start from office candidate vector +0xD58/+0xD60 (0x80-byte rows), rebuilt by 0x1E2380 and consumed by 0x1E5480/0x1E5BA0. Reuse the latter's full cached decompilation in the cumulative report, lines 74500 onward. Trace the actual writers of row+0x28/+0x60 and their resource/storage selection and denominator. Inspect only the relevant upkeep caller/writer as needed; stop with the exact missing edge if unavailable. No broad gauge/offset research.
 
-Root `DO_PLANNER_RAW_EVIDENCE.md` lines 300–331 has a sum of resource stock/capacity terms on one positive-param4 branch. Here plVar19 is a building storage record (`building+0x970`, stride 0xE0), **not TaskCfg** despite older prose at lines 1553 onward. Do not use that separate planner branch to assert the DO threshold ratio.
+`docs/private-logistics-runtime/DO_PLANNER_RAW_EVIDENCE.md` lines 300–331 has a sum of resource stock/capacity terms on one positive-param4 branch. Here plVar19 is a building storage record (`building+0x970`, stride 0xE0), **not TaskCfg** despite older prose at lines 1553 onward. Do not use that separate planner branch to assert the DO threshold ratio.
 
 Test15 crops80/880≈9.09% is only a conditional source10 explanation; Electronics stock was cropped out, and Electro comp. is distinct. Do not change 10/30 defaults or suggest 30→100 based on aggregate fullness.
 
