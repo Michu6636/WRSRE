@@ -139,14 +139,13 @@ static void OnTick(void* /*ud*/, float /*dt*/, float /*dayDelta*/)
         g_stocksEnterpriseOpen = 0.0;
         if (g_enterprise) {
             size_t n = g_enterprise->getEnterpriseCount();
-            double caps[1024];
-            // guard
-            if (n > 1024) n = 1024;
+            double sum = 0.0;
             for (size_t i = 0; i < n; ++i) {
                 void* b = g_enterprise->getEnterpriseByIndex(i);
-                caps[i] = b ? g_enterprise->getCompanyCapital(b) : 0.0;
+                double cap = b ? g_enterprise->getCompanyCapital(b) : 0.0;
+                if (std::isfinite(cap)) sum += cap;
             }
-            g_stocksEnterpriseOpen = state_ledger::reconcile::SumEnterpriseCapital(caps, n);
+            g_stocksEnterpriseOpen = sum;
             g_stocksPoolOpen = g_enterprise->getPrivateInvestmentPool();
         }
         return;
@@ -164,13 +163,13 @@ static void OnTick(void* /*ud*/, float /*dt*/, float /*dayDelta*/)
         g_stocksPoolOpen       = 0.0;
         if (g_enterprise) {
             size_t n = g_enterprise->getEnterpriseCount();
-            double caps[1024];
-            if (n > 1024) n = 1024;
+            double sum = 0.0;
             for (size_t i = 0; i < n; ++i) {
                 void* b = g_enterprise->getEnterpriseByIndex(i);
-                caps[i] = b ? g_enterprise->getCompanyCapital(b) : 0.0;
+                double cap = b ? g_enterprise->getCompanyCapital(b) : 0.0;
+                if (std::isfinite(cap)) sum += cap;
             }
-            g_stocksEnterpriseOpen = state_ledger::reconcile::SumEnterpriseCapital(caps, n);
+            g_stocksEnterpriseOpen = sum;
             g_stocksPoolOpen = g_enterprise->getPrivateInvestmentPool();
         }
         EnterCriticalSection(&g_lock);
@@ -187,7 +186,10 @@ static void OnTick(void* /*ud*/, float /*dt*/, float /*dayDelta*/)
         int closedMonth = g_lastMonth;
 
         double observedDelta = closing - g_treasuryAtMonthStart;
-        double flowDelta     = g_flowSum;
+        double flowDelta = 0.0;
+        EnterCriticalSection(&g_lock);
+        flowDelta = g_flowSum;
+        LeaveCriticalSection(&g_lock);
         double divergence    = observedDelta - flowDelta;
 
         // v2.0 stock snapshot at close
@@ -196,13 +198,13 @@ static void OnTick(void* /*ud*/, float /*dt*/, float /*dayDelta*/)
         double closePool = 0.0;
         if (g_enterprise) {
             size_t n = g_enterprise->getEnterpriseCount();
-            double caps[1024];
-            if (n > 1024) n = 1024;
+            double sum = 0.0;
             for (size_t i = 0; i < n; ++i) {
                 void* b = g_enterprise->getEnterpriseByIndex(i);
-                caps[i] = b ? g_enterprise->getCompanyCapital(b) : 0.0;
+                double cap = b ? g_enterprise->getCompanyCapital(b) : 0.0;
+                if (std::isfinite(cap)) sum += cap;
             }
-            closeEnterprise = state_ledger::reconcile::SumEnterpriseCapital(caps, n);
+            closeEnterprise = sum;
             closePool = g_enterprise->getPrivateInvestmentPool();
         }
         double openTotal = g_stocksTreasuryOpen + g_stocksWalletsOpen + g_stocksEnterpriseOpen + g_stocksPoolOpen;
@@ -213,7 +215,7 @@ static void OnTick(void* /*ud*/, float /*dt*/, float /*dayDelta*/)
             g_enterprise->getMonthlyEconomySummary(&privSales, &privWages, &privTaxes, &privPool);
         }
 
-        double unexplained = (closing - g_treasuryAtMonthStart) - g_flowSum;
+        double unexplained = (closing - g_treasuryAtMonthStart) - flowDelta;
 
         if (g_crossCheck && !g_crossCheckWarned &&
             (divergence > 1.0 || divergence < -1.0))
@@ -298,6 +300,7 @@ static std::string CsvHeader(void)
     return std::string(h);
 }
 static const char kCsvTag[] = "Year,Month";
+static const size_t kCsvTagLen = sizeof(kCsvTag) - 1;
 
 static void DumpToCsv(int year, int month,
                       double openBalance, double closeBalance,
@@ -313,6 +316,33 @@ static void DumpToCsv(int year, int month,
         Logf("state_ledger  no save directory known - not writing %s",
              g_csvFilename);
         return;
+    }
+
+    std::string fname = g_csvFilename;
+    // detect old v1.4 header
+    // read existing using fname
+    size_t existingLen = 0;
+    void* existing = g_persistence->readFile(g_saveDir, fname.c_str(),
+                                              &existingLen);
+
+    bool oldHeader = false;
+    if (existing && existingLen >= kCsvTagLen &&
+        memcmp(existing, kCsvTag, kCsvTagLen) == 0) {
+        // check for new column
+        std::string head((const char*)existing, existingLen);
+        size_t nl = head.find('\n');
+        if (nl != std::string::npos) head = head.substr(0, nl);
+        if (head.find("TotalMoneySupplyOpen") == std::string::npos) {
+            oldHeader = true;
+        }
+    }
+
+    if (oldHeader) {
+        fname = "tesmio_ledger_v2.csv";
+        // re-read for new file
+        if (existing) { free(existing); existing = nullptr; existingLen = 0; }
+        existing = g_persistence->readFile(g_saveDir, fname.c_str(), &existingLen);
+        Logf("state_ledger  old v1.4 header detected - writing to %s", fname.c_str());
     }
 
     std::unordered_map<std::string, double> snapshot;
@@ -359,41 +389,36 @@ static void DumpToCsv(int year, int month,
         privSales, privWages, privTaxes, privPool,
         unexplained);
 
-    const size_t tagLen = sizeof(kCsvTag) - 1;
-
     std::string payload;
-    size_t existingLen = 0;
-    void* existing = g_persistence->readFile(g_saveDir, g_csvFilename,
-                                             &existingLen);
 
     if (!existing) {
         char path[MAX_PATH * 2];
-        _snprintf_s(path, sizeof(path), _TRUNCATE, "%s\\%s",
-                    g_saveDir, g_csvFilename);
+         _snprintf_s(path, sizeof(path), _TRUNCATE, "%s\\%s",
+                     g_saveDir, fname.c_str());
         if (GetFileAttributesA(path) != INVALID_FILE_ATTRIBUTES) {
             Logf("state_ledger  WARN  %s exists but could not be read - "
                  "this month's row is not written", path);
             return;
         }
         payload = CsvHeader();
-    } else if (existingLen >= tagLen &&
-               memcmp(existing, kCsvTag, tagLen) == 0) {
+    } else if (existingLen >= kCsvTagLen &&
+               memcmp(existing, kCsvTag, kCsvTagLen) == 0) {
         payload.assign((const char*)existing, existingLen);
     } else {
         if (existingLen > 0)
             Logf("state_ledger  %s\\%s does not begin with the expected "
                  "header - starting a fresh file",
-                 g_saveDir, g_csvFilename);
+                  g_saveDir, fname.c_str());
         payload = CsvHeader();
     }
     if (existing) free(existing);
 
     payload += row;
 
-    if (!g_persistence->writeAtomic(g_saveDir, g_csvFilename,
+    if (!g_persistence->writeAtomic(g_saveDir, fname.c_str(),
                                     payload.data(), payload.size())) {
         Logf("state_ledger  WARN  could not write %s\\%s",
-             g_saveDir, g_csvFilename);
+                  g_saveDir, fname.c_str());
         return;
     }
 

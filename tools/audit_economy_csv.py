@@ -140,7 +140,7 @@ def audit(path, tolerance=1.0):
                 "issues": row_issues,
             })
             if row_issues:
-                issues.extend("%s: %s" % (label or ("row %d" % row_count), "; ".join(row_issues)))
+                issues.append("%s: %s" % (label or ("row %d" % row_count), "; ".join(row_issues)))
 
     velocities_summary = {
         "count": len(velocities),
@@ -202,6 +202,7 @@ def selftest():
         report, code = audit(path, tolerance=1.0)
         assert report["rows"] == 3, report
         assert report["issues_count"] >= 2, report
+        assert isinstance(report["issues"][0], str) and len(report["issues"][0]) > 10, report
         # max drift at least 3
         assert report["max_treasury_drift"] >= 3.0, report
         # velocity present
