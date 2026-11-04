@@ -17,8 +17,43 @@ struct Config {
     int    maxMissedMonths = 3;
     int    autoOverdraftEnabled = 0;
     int    solvencyStreakRequired = 0;
+    // Runtime-derived multiplier for the three nominal limits above.  The
+    // plugin sets this to live CPI / reference CPI; because resource_pricing
+    // reports CPI in the active currency, this includes both price indexation
+    // and RUB/USD conversion.  It is not a user-configured exchange rate.
     double currencyScale = 1.0;
 };
+
+// Native ui_panels sliders span 0..100.  Spread the bank's 0..25% policy
+// range over that full span: four slider units are one percentage point.
+inline unsigned BankRateToSlider(double annualRate) {
+    if (!std::isfinite(annualRate) || annualRate <= 0.0) return 0;
+    if (annualRate >= 0.25) return 100;
+    return (unsigned)std::lround(annualRate * 400.0);
+}
+
+inline double BankRateFromSlider(unsigned value) {
+    if (value > 100) value = 100;
+    return (double)value / 400.0;
+}
+
+// Configured bank amounts are reference-RUB values.  A CPI of 2.15 RUB/day
+// therefore gives scale 1; 4.30 gives 2 (inflation), 1.075 gives 0.5
+// (deflation), and 0.043 gives 0.02 (the neutral USD basket at divisor 50).
+// fallbackScale is the neutral active-currency scale used if pricing is
+// absent or returns an invalid value.
+inline double BankEconomicScale(double cpiDailyBasket,
+                                double referenceCpiDailyBasket,
+                                double fallbackScale = 1.0) {
+    if (!std::isfinite(fallbackScale) || fallbackScale <= 0.0)
+        fallbackScale = 1.0;
+    if (!std::isfinite(cpiDailyBasket) || cpiDailyBasket <= 0.0 ||
+        !std::isfinite(referenceCpiDailyBasket) ||
+        referenceCpiDailyBasket <= 0.0)
+        return fallbackScale;
+    const double scale = cpiDailyBasket / referenceCpiDailyBasket;
+    return (std::isfinite(scale) && scale > 0.0) ? scale : fallbackScale;
+}
 
 struct LoanKey {
     std::string objectName;
@@ -147,8 +182,9 @@ public:
         double interest = L.principal * monthlyRate;
         double beforePrincipal = L.principal;
         double sweep = 0.0;
-        if (enterpriseCapital > config.cashBufferKeep) {
-            sweep = enterpriseCapital - config.cashBufferKeep;
+        const double cashBuffer = config.cashBufferKeep * config.currencyScale;
+        if (enterpriseCapital > cashBuffer) {
+            sweep = enterpriseCapital - cashBuffer;
             if (sweep > L.principal) sweep = L.principal;
             if (sweep < 0.0) sweep = 0.0;
         }

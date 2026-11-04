@@ -1,8 +1,11 @@
 // republic_bank - working-capital credit lines and term loans for private enterprises.
+// v1.1: full-span numeric City Hall rate slider; credit caps and the retained
+// cash buffer follow resource_pricing's live active-currency CPI basket.
 
 #include "../../src/tesmio_plugin.h"
 #include "../../src/sim_clock_api.h"
 #include "../../src/currency_api.h"
+#include "../../src/resource_pricing_api.h"
 #include "../../src/enterprise_base_api.h"
 #include "../../src/persistence_api.h"
 #include "../../src/ui_panels_api.h"
@@ -20,12 +23,17 @@ static int  g_autoOverdraft = 0;
 
 static TsmSimClockApi*      g_clock = nullptr;
 static TsmCurrencyApi*      g_currency = nullptr;
+static const TsmResourcePricingApi* g_pricing = nullptr;
 static TsmEnterpriseBaseApi* g_enterprise = nullptr;
 static TsmPersistenceApi*   g_persistence = nullptr;
 static TsmUiPanelsApi*     g_ui = nullptr;
 static int g_persistenceHandle = 0;
 
 static LoanBook g_book;
+static double g_referenceCpiRub = 2.15;
+static double g_usdDivisor = 50.0;
+static double g_lastLoggedScale = -1.0;
+static int g_lastLoggedCurrency = -1;
 
 static LoanKey keyForBuilding(void* b) {
     std::string objName = "unknown";
@@ -60,11 +68,34 @@ static LoanKey keyForBuilding(void* b) {
     return LoanBook::makeKey(objName, x, z);
 }
 
+// The INI limits are reference-RUB amounts, not live nominal constants.
+// resource_pricing's v3 CPI basket is already denominated in the ACTIVE
+// currency, so live CPI / reference RUB CPI performs currency conversion and
+// inflation/deflation indexation together.  With an older/missing pricing
+// service, retain neutral prices but still honour the active currency.
+static double CurrentEconomicScale(void) {
+    const int currency = TsmCurrencyActive(g_currency);
+    const double divisor = (g_usdDivisor >= 1.0) ? g_usdDivisor : 50.0;
+    const double fallback = (currency == TSM_CURRENCY_USD) ? 1.0 / divisor : 1.0;
+    if (!TsmPricingHasCpi(g_pricing)) return fallback;
+    const float cpi = g_pricing->getCpiDailyBasket(0.0f);
+    return BankEconomicScale((double)cpi, g_referenceCpiRub, fallback);
+}
+
+static double RefreshEconomicScale(void) {
+    const double scale = CurrentEconomicScale();
+    EnterCriticalSection(&g_lock);
+    g_book.config.currencyScale = scale;
+    LeaveCriticalSection(&g_lock);
+    return scale;
+}
+
 static double getRateImpl(void) { EnterCriticalSection(&g_lock); double r=g_book.getAnnualInterestRate(); LeaveCriticalSection(&g_lock); return r; }
 static void setRateImpl(double r) { EnterCriticalSection(&g_lock); g_book.setAnnualInterestRate(r); LeaveCriticalSection(&g_lock); }
 
 static double requestCreditDrawImpl(void* building, double neededAmount, const char* reason) {
     if (!g_enterprise || !building || !g_enabled) return 0.0;
+    RefreshEconomicScale();
     LoanKey k = keyForBuilding(building);
     int streak = g_enterprise->isCompanySolvent(building) ? 1 : 0;
     EnterCriticalSection(&g_lock);
@@ -119,6 +150,7 @@ static const TsmRepublicBankApi kApi = {
 static void onSave(TsmSaveEvent event, const char* dir, void* userData) {
     if (!g_persistence || !dir) return;
     if (event == TSM_SAVE_WRITING) {
+        RefreshEconomicScale();
         EnterCriticalSection(&g_lock);
         auto bytes = g_book.saveBytes();
         LeaveCriticalSection(&g_lock);
@@ -139,10 +171,17 @@ static void onSave(TsmSaveEvent event, const char* dir, void* userData) {
             g_book.config = cfg;
             LeaveCriticalSection(&g_lock);
         }
+        // v1 files contain a scale for backwards compatibility, but it is a
+        // derived runtime value.  Never let a stale saved scale freeze the
+        // limits against the newly loaded world's prices or currency.
+        RefreshEconomicScale();
+        g_lastLoggedScale = -1.0;
+        g_lastLoggedCurrency = -1;
     }
 }
 
 static void onMonth(void* userData, int day, int month, int year) {
+    RefreshEconomicScale();
     if (!g_enterprise) return;
     size_t n = g_enterprise->getEnterpriseCount();
     for (size_t i = 0; i < n; i++) {
@@ -163,7 +202,23 @@ static void onMonth(void* userData, int day, int month, int year) {
 }
 
 static void onDay(void* userData, int day, int month, int year) {
-    if (!g_book.config.autoOverdraftEnabled) return;
+    const double scale = RefreshEconomicScale();
+    const int currency = TsmCurrencyActive(g_currency);
+    if (g_lastLoggedScale < 0.0 || currency != g_lastLoggedCurrency ||
+        fabs(scale - g_lastLoggedScale) > 0.0001) {
+        EnterCriticalSection(&g_lock);
+        const double maxDebt = g_book.config.maxDebtPerEnterprise * scale;
+        const double creditLimit = g_book.config.creditLimit * scale;
+        const double cashBuffer = g_book.config.cashBufferKeep * scale;
+        LeaveCriticalSection(&g_lock);
+        Logf("republic_bank  economic index x%.4f (%s): debt cap %.2f, "
+             "draw limit %.2f, cash buffer %.2f",
+             scale, TsmCurrencySymbol(g_currency), maxDebt, creditLimit,
+             cashBuffer);
+        g_lastLoggedScale = scale;
+        g_lastLoggedCurrency = currency;
+    }
+    if (!g_autoOverdraft) return;
     if (!g_enterprise) return;
     size_t n = g_enterprise->getEnterpriseCount();
     for (size_t i = 0; i < n; i++) {
@@ -195,17 +250,28 @@ static void readSettings() {
     char v[64];
     double rate = 0.06;
     if (H->configString(ini, "republic_bank", "annual_interest_rate", v, sizeof(v), "") && v[0]) rate = atof(v);
-    if (rate <= 0) rate = 0.06;
+    if (!std::isfinite(rate) || rate < 0.0) rate = 0.06;
     g_book.setAnnualInterestRate(rate);
     double md = 100000.0;
     if (H->configString(ini, "republic_bank", "max_debt_per_enterprise", v, sizeof(v), "") && v[0]) md = atof(v);
+    if (!std::isfinite(md) || md < 0.0) md = 100000.0;
     g_book.config.maxDebtPerEnterprise = md;
     double cl = 50000.0;
     if (H->configString(ini, "republic_bank", "credit_limit", v, sizeof(v), "") && v[0]) cl = atof(v);
+    if (!std::isfinite(cl) || cl < 0.0) cl = 50000.0;
     g_book.config.creditLimit = cl;
     double cb = 1000.0;
     if (H->configString(ini, "republic_bank", "cash_buffer_keep", v, sizeof(v), "") && v[0]) cb = atof(v);
+    if (!std::isfinite(cb) || cb < 0.0) cb = 1000.0;
     g_book.config.cashBufferKeep = cb;
+    if (H->configString(ini, "republic_bank", "reference_cpi_rub", v, sizeof(v), "") && v[0]) {
+        const double ref = atof(v);
+        if (std::isfinite(ref) && ref > 0.0) g_referenceCpiRub = ref;
+    }
+    if (H->configString(ini, "republic_bank", "usd_divisor", v, sizeof(v), "") && v[0]) {
+        const double d = atof(v);
+        if (std::isfinite(d) && d >= 1.0 && d <= 1000.0) g_usdDivisor = d;
+    }
     g_book.config.maxMissedMonths = H->configInt(ini, "republic_bank", "max_missed_months", 3);
 }
 
@@ -216,7 +282,7 @@ extern "C" __declspec(dllexport) unsigned TsmPluginApiVersion(void) {
 extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host, TsmPluginInfo* info) {
     TsmBind(host);
     info->name = "republic_bank";
-    info->version = "1.0";
+    info->version = "1.1";
 
     readSettings();
     if (!g_enabled) {
@@ -233,6 +299,17 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void) {
     g_clock = (TsmSimClockApi*)H->consume(TSM_SERVICE_SIM_CLOCK, TSM_SIM_CLOCK_VERSION);
     g_currency = (TsmCurrencyApi*)H->consume(TSM_SERVICE_CURRENCY, TSM_CURRENCY_VERSION);
     if (!g_currency) g_currency = (TsmCurrencyApi*)H->consume(TSM_SERVICE_CURRENCY, TSM_CURRENCY_VERSION_V3);
+    g_pricing = (const TsmResourcePricingApi*)H->consume(
+        TSM_SERVICE_RESOURCE_PRICING, TSM_RESOURCE_PRICING_VERSION);
+    if (!g_pricing) g_pricing = (const TsmResourcePricingApi*)H->consume(
+        TSM_SERVICE_RESOURCE_PRICING, TSM_RESOURCE_PRICING_VERSION_V3);
+    if (!g_pricing) g_pricing = (const TsmResourcePricingApi*)H->consume(
+        TSM_SERVICE_RESOURCE_PRICING, TSM_RESOURCE_PRICING_VERSION_V2);
+    if (!g_pricing) g_pricing = (const TsmResourcePricingApi*)H->consume(
+        TSM_SERVICE_RESOURCE_PRICING, TSM_RESOURCE_PRICING_VERSION_V1);
+    if (!TsmPricingHasCpi(g_pricing))
+        Logf("republic_bank  WARN  resource_pricing v3 CPI unavailable - "
+             "using neutral prices with active-currency scaling");
     g_enterprise = (TsmEnterpriseBaseApi*)H->consume(TSM_SERVICE_ENTERPRISE_BASE, TSM_ENTERPRISE_BASE_VERSION);
     if (!g_enterprise) g_enterprise = (TsmEnterpriseBaseApi*)H->consume(TSM_SERVICE_ENTERPRISE_BASE, TSM_ENTERPRISE_BASE_VERSION_V7);
     g_persistence = (TsmPersistenceApi*)H->consume(TSM_SERVICE_PERSISTENCE, TSM_PERSISTENCE_VERSION);
@@ -266,11 +343,16 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void) {
         g_ui->registerWidgetProvider([](void* building, void* ud) {
             if (!g_ui || !TsmUiPanelsHasWidgets(g_ui)) return;
             if (TsmBuildingType(building) != 39) return;
-            unsigned v = (unsigned)(getRateImpl() * 100.0 + 0.5);
-            if (v > 100) v = 100; // percent 0..25 represented as 0..25? keep 0..25
-            if (v > 25) v = 25;
-            if (g_ui->widgetSlider(L"Bank rate %", &v, 1, 1)) {
-                setRateImpl(v / 100.0);
+            const double rate = getRateImpl();
+            unsigned v = BankRateToSlider(rate);
+            wchar_t caption[64];
+            _snwprintf_s(caption, _countof(caption), _TRUNCATE,
+                         L"Bank rate: %.0f%%", rate * 100.0);
+            if (g_ui->widgetSlider(caption, &v, 4, 1)) {
+                const double newRate = BankRateFromSlider(v);
+                setRateImpl(newRate);
+                Logf("republic_bank  [WIDGET RATE] Bank rate -> %.0f%% "
+                     "(slider %u)", newRate * 100.0, v);
             }
         }, nullptr);
     }
