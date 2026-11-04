@@ -172474,3 +172474,1033 @@ Even successful insertion closure does not by itself approve 5→49/100: retain 
 ### Line-ending clarification and publication authorization
 
 The user asked why Git normalized the packet and authorized creating and merging the review PR. Windows CRLF (`0D 0A`) and LF (`0A`) both represent line breaks; `.gitattributes` deliberately stores Markdown with LF. This preserves readable text but changes byte counts and hashes of rendered excerpts. It does not alter the decoded binary contents of gzip/Base64 blocks. Keep the repository policy; no V2 repair is needed. The follow-up prompt now requires explicit normalized-view labels and hash domains (original bytes versus displayed text), while retaining lossless originals. Publication scope remains the three documentation files; runtime/configuration and the five-total cap are unchanged.
+
+## Test15 insertion packet independent review — R9 closed, delegated construction still partial (2026-11-03)
+
+User continued on active branch arena/ba311674-wrsre and synced the packet. Fetched base tip `5bff8da15a497a97a69006a9c3bc23eb55a19665` without switching branch or importing unrelated changes. Exact immutable reviewed source: `5bff8da15a497a97a69006a9c3bc23eb55a19665:TEST15_INSERTION_CONTRACT_PACKET.md`, Git blob `fbeaf6f87b16f42b7d0173060cc7bff5244881e9`, 23455 bytes, SHA256 `eb8c5132908ee02dd699d5464e47291394a04e35eb51ca86935dc3e4709f206c`. The packet retains all five original gzip/Base64 bodies, including the external index and old verification source/output; that historical evidence is not rewritten to match the corrected interpretation. Remote/local INSTRUCTIONS SHA256 remains 1d04ac2dbfe194db07c5b9f6c55ead5547f658bc15ec2334b721ef43a474a084.
+
+### Mechanical results and claim boundaries
+
+Independent decoder checked all five encoded artifact lengths/hashes: PASS. Seven displayed source slices reproduce their claimed ranges/counts: PASS, but **slice identity is not label correctness**. All seven labels fail to show their claimed deciding instructions: the R9-save excerpt contains header comments; the clobber excerpt shows MOV RBP,R8; fifth-argument-load excerpt shows MOV EDX,8; dereference excerpt shows CMP RAX,1; output-store excerpt shows SAR R9,3; growth excerpt includes allocation but not the claimed constructor call; bulk-fill excerpt contains the constructor call and later setup, not the fill loop. No normalized excerpt hashes are actually printed in that packet despite its introductory claim; the independent verifier below computes them. No repackaging request: complete raw exports are usable.
+
+The embedded 20/20 PASS output is `test15_v2_verify_output.txt`, the old seven-artifact/thirteen-excerpt V2 check. Its supplied script targets V2, not the insertion packet. It is not evidence that the five NEW artifacts/seven NEW excerpts were checked on Windows. The independently run checks below cover this insertion packet. No embedded script was executed; original Windows disk files and PE remain independently unavailable.
+
+Combined disassembly has one identical duplicated boundary row at 0x14001E320; not a contradictory instruction overlap. Deduplicating it and excluding the next-function row at 0x14001E3B0 gives 164 unique instructions and 621 contiguous bytes over [0x14001E140,0x14001E3AD), SHA256 `c52ac197b8dad9db64b6e4122468c42aa76213e26821512b21c7498852999ea9`. Independent GNU objdump of those bytes agrees with decisive instructions; this checks the supplied byte stream, not authenticity against a locally held PE.
+
+### Branch-specific native review
+
+**Accepted: R9's incoming value is dead.** Entry 0x1E140 stores R9 at entry RSP+0x20; prologue pushes 0x28 bytes and subtracts 0x30, lowering RSP by 0x58. The original spill aliases current RSP+0x78. 0x1E16A overwrites R9 with capacity before later R9 use. Crucially, scanning only textual stack+0x20 is insufficient; the +0x78 alias must also be traced. Growth and middle do not read that spill. Append loads *fifth_arg at 0x1E2AD and stores it over +0x78 at 0x1E2B4 before taking its address at 0x1E2C6 or reading it at 0x1E316. Thus no original fourth-argument value reaches a consumed read in the supplied body. R9 is no longer a blocker.
+
+**Accepted: fifth-argument and direct middle store.** Fifth argument at entry RSP+0x28 becomes current +0x80. 0x1E331 actually has `48 8B 84 24 80 00 00 00` (not the narrative's +0x78 bytes). 0x1E346 loads *arg5 into RSI; 0x1E380 `48 89 30` writes RSI to the insertion position retained at current RSP+0x70. Loop termination compares to original position+8, proving one eight-byte table slot under normal vector invariants, not a bulk overwrite through vector end. 0x1E36C is `FF 15 D6 F8 84 00`, indirect call through 0x14086DC48 (memmove in the decompiler), NOT a third 0x1E8C0 call. The raw decompiler agrees with this middle path.
+
+**Accepted: output-slot address, not table value.** 0x1E398 `48 8D 0C E8` computes new begin+insertion_index*8 in RCX; 0x1E39C is `49 8B C6` (RAX=R14); 0x1E39F is `49 89 0E` (*output=slot address). The narrative's 0x1E39C/`48 89 0E` claim is wrong both in address and register encoding. This output write cannot be used as proof that window* was stored in the table.
+
+**Still partial: growth and append construction.** Growth 0x1E1FA loads fifth argument as source, EDX=1, RCX=new buffer+index*8, then calls 0x1E8C0 at 0x1E212. Metadata is committed later at 0x1E276/0x1E282/0x1E286; growth jumps to epilogue, not the alleged bulk-fill loop. Append saves *arg5 to +0x78, passes its address with destination oldend/count 1 to 0x1E8C0 at 0x1E2DF. For valid append position==oldend, after end+=8 the computed fill count is `(newend-8-position+7)>>3 = 7>>3 = 0`; it skips 0x1E323. Thus the generic fill loop does not independently prove append's table-value store. The construction helper's body is absent from this packet and no cached native body was located in this checkout/report review. A familiar function name or decompiled call shape is not proof of its write semantics.
+
+### Review verdict / actionable delta
+
+The packet makes real progress: full caller-helper body is usable, R9/non-growth middle transfer now closed. **All-path insertion transfer remains partial only at delegated 0x1E8C0 construction for growth/append.** Historical remote index's blanket `verified` transfer statement and cumulative append's claimed third construction call/bulk fill are contested by their own raw bytes, not evidence of a native game bug. Corrected local index records these branches without rewriting original packet evidence.
+
+No need to resend, regenerate or repair this packet. Proposed focused next-agent task: [TEST15_ELEMENT_CONSTRUCTION.md](../tasks/active/TEST15_ELEMENT_CONSTRUCTION.md), cached 0x1E8C0 first and only its missing count-one store if a native query is needed. No repeat R9/0x1E140/creator/ctor/rail extraction. Even successful pointer transfer closure is not automatic-cap safety acceptance: physical 100, /49 display, total target UI/lifecycle and batch bounds remain distinct; commodity admission row+0x28/+0x60 writers stay separately blocked. No runtime/config/threshold/permission/billing/cap changes, native run, build, gameplay test, commit/push/PR performed here.
+
+### Independent insertion verifier source (part 1/2)
+
+```python
+import base64, gzip, hashlib, pathlib, re, subprocess
+root = pathlib.Path('/home/user/WRSRE')
+cache = root / '.cache/insertion-review'
+p = (cache / 'packet.md').read_bytes()
+sha = lambda b: hashlib.sha256(b).hexdigest()
+print('Packet bytes/SHA256:', len(p), sha(p))
+print('Commit:', subprocess.check_output(['git','rev-parse','FETCH_HEAD'],cwd=root).decode().strip())
+text = p.decode()
+artifacts = {}
+pat = r'### Artifact (\d+): `([^`]+)`\n\nRole: (.*?) \| Bytes: (\d+) \| SHA-256: `([A-F0-9]+)`\n\n```base64\n(.*?)\n```'
+for m in re.finditer(pat,text,re.S):
+    n,path,role,size,digest,enc = m.groups()
+    raw = gzip.decompress(base64.b64decode(enc))
+    assert len(raw)==int(size) and sha(raw).upper()==digest
+    artifacts[path]=raw
+    (cache/pathlib.Path(path).name).write_bytes(raw)
+    print('PASS artifact',n,path,len(raw),sha(raw))
+assert len(artifacts)==5
+pat = r'### Excerpt: ([^\n]+)\n\nSource: `([^`]+)` lines (\d+)-(\d+) \| Original bytes: (\d+) \| Normalized display bytes: (\d+).*?^```text\n(.*?)^```$'
+count=0
+for m in re.finditer(pat,text,re.M|re.S):
+    label,path,a,b,origsize,normsize,body = m.groups()
+    raw=b''.join(artifacts[path].splitlines(keepends=True)[int(a)-1:int(b)])
+    norm=raw.replace(b'\r\n',b'\n')
+    assert len(raw)==int(origsize) and len(norm)==int(normsize)
+    assert norm==body.encode()
+    print('PASS excerpt slice, not label semantics:',a+'-'+b,label,'displaySHA256',sha(norm))
+    count+=1
+assert count==7
+```
+
+### Independent insertion verifier source (part 2/2)
+
+```python
+asm=artifacts['scratch/out/14001e140_disasm_full.asm'].decode()
+rows={}; duplicates=[]
+for line in asm.splitlines():
+    m=re.match(r'^([0-9a-f]{9}):\s+((?:[0-9A-F]{2} )+)',line)
+    if not m:continue
+    addr=int(m[1],16); data=bytes.fromhex(m[2])
+    if addr in rows:
+        assert rows[addr]==data
+        duplicates.append(hex(addr))
+    rows[addr]=data
+start=0x14001e140; end=0x14001e3ad
+selected=sorted((a,b) for a,b in rows.items() if start<=a<end)
+assert selected[0][0]==start
+for (a,b),(c,d) in zip(selected,selected[1:]):assert a+len(b)==c,(hex(a),hex(c))
+raw=b''.join(b for a,b in selected)
+assert len(raw)==end-start
+(cache/'helper.bin').write_bytes(raw)
+print('Complete function byte coverage:',hex(start),hex(end),'bytes',len(raw),'unique rows',len(selected),'identical boundary duplicates',duplicates,'SHA256',sha(raw))
+print('PASS: 5/5 artifact hashes; 7/7 excerpt slices. Embedded 20/20 log is old V2 verification, NOT insertion-packet validation.')
+```
+
+### Actual insertion verifier output
+
+```text
+Packet bytes/SHA256: 23455 eb8c5132908ee02dd699d5464e47291394a04e35eb51ca86935dc3e4709f206c
+Commit: 5bff8da15a497a97a69006a9c3bc23eb55a19665
+PASS artifact 1 scratch/out/14001e140_decomp.c 3042 099a51c0b5c3f115f1184b79707825bc4cb51054d6b5831172c353f07f1769d8
+PASS artifact 2 scratch/out/14001e140_disasm_full.asm 9603 80a1f6eeef042415965e9df022bf4e8e5a1b5a7dcb16bf796f2e9a3ae7e202f2
+PASS artifact 3 docs/ghidra-index/1E140.md 4749 ffe18511d7bdfde6fc9fa692e5b25583fa9be06bb42f33f4633ebc1398e88754
+PASS artifact 4 scratch/verify_test15_v2.py 4934 f7477b2552a98d68ad21a17e88ef7272da8d112ad579dd49570b9b963fa5855d
+PASS artifact 5 scratch/test15_v2_verify_output.txt 2786 7dac85bef9490ec7d1cc1168b921631170eda5264031468bf5b4325ca75244ff
+PASS excerpt slice, not label semantics: 2-3 Entry save: R9 (param_4) to [RSP+0x20] displaySHA256 ddcf56c4e14f36c230a0e30f5d965778892836a1ef223cd1667cbe2e8cb47cec
+PASS excerpt slice, not label semantics: 17-17 Clobber: capacity load overwrites R9 displaySHA256 b65a41bb9a37f2d6f7ef1b638678322fe9e84503458bf44efcc8a2b00234dd61
+PASS excerpt slice, not label semantics: 54-54 5th arg load at [callee RSP+0x80] displaySHA256 57bcb4d6e361b110d3eb54b1e4ff4afc2e1b42b0aad3056331836700c067055d
+PASS excerpt slice, not label semantics: 36-36 Window* dereference: [RCX] -> RDX displaySHA256 3e1da2047b65dc1ccd78f309640738de5c1643813e10cd8a3e168b80059735e0
+PASS excerpt slice, not label semantics: 43-43 Table store: inserted element -> [R14] (param_2) displaySHA256 d8a2029fd8be5b59777078d8c89f7605b93188b72f4079a332728b0243ad40ad
+PASS excerpt slice, not label semantics: 49-58 Growth/realloc path uses FUN_1400019E0 + FUN_14001E8C0 displaySHA256 856164baa9807f314711ef896b28a785df85f8accaab1fcc752ec128e0755e48
+PASS excerpt slice, not label semantics: 64-68 Bulk-propagation loop writes window* displaySHA256 46efffa602f27458662ff4e5bdf6b0c5fb642482e8945adc7a124983f30cc859
+Complete function byte coverage: 0x14001e140 0x14001e3ad bytes 621 unique rows 164 identical boundary duplicates ['0x14001e320'] SHA256 c52ac197b8dad9db64b6e4122468c42aa76213e26821512b21c7498852999ea9
+PASS: 5/5 artifact hashes; 7/7 excerpt slices. Embedded 20/20 log is old V2 verification, NOT insertion-packet validation.
+```
+
+### Independent byte decoder — command and selected actual output
+
+```bash
+objdump -D -b binary -m i386:x86-64 --adjust-vma=0x14001e140 .cache/insertion-review/helper.bin > .cache/insertion-review/objdump.txt
+```
+
+Selected instructions below use AT&T operand order (source, destination). Full byte stream is mechanically recovered by the preserved verifier from the immutable packet above.
+
+```text
+   14001e140:	4c 89 4c 24 20       	mov    %r9,0x20(%rsp)
+   14001e16a:	4c 8b 4f 10          	mov    0x10(%rdi),%r9
+   14001e1fa:	4c 8b 84 24 80 00 00 	mov    0x80(%rsp),%r8
+   14001e212:	e8 a9 06 00 00       	call   0x14001e8c0
+   14001e2a5:	48 8b 8c 24 80 00 00 	mov    0x80(%rsp),%rcx
+   14001e2ad:	48 8b 11             	mov    (%rcx),%rdx
+   14001e2b4:	48 89 54 24 78       	mov    %rdx,0x78(%rsp)
+   14001e2c6:	4c 8d 44 24 78       	lea    0x78(%rsp),%r8
+   14001e2df:	e8 dc 05 00 00       	call   0x14001e8c0
+   14001e316:	48 8b 44 24 78       	mov    0x78(%rsp),%rax
+   14001e323:	48 89 01             	mov    %rax,(%rcx)
+   14001e331:	48 8b 84 24 80 00 00 	mov    0x80(%rsp),%rax
+   14001e346:	48 8b 30             	mov    (%rax),%rsi
+   14001e36c:	ff 15 d6 f8 84 00    	call   *0x84f8d6(%rip)        # 0x14086dc48
+   14001e380:	48 89 30             	mov    %rsi,(%rax)
+   14001e398:	48 8d 0c e8          	lea    (%rax,%rbp,8),%rcx
+   14001e39c:	49 8b c6             	mov    %r14,%rax
+   14001e39f:	49 89 0e             	mov    %rcx,(%r14)
+```
+
+### Focused next-agent request — verbatim
+
+````text
+# Test15 next edge — delegated element construction only
+
+Proposed ready-to-paste task for the existing Windows Kilo parent session. Read AGENTS.md, INSTRUCTIONS.md and KILO_AGENT_WORKFLOW.md; keep native access serialized. No runtime/config/build/deployment, commit or push. Do not repeat packet packaging, 0x1E140 extraction, R9 research, creator/ctor/dispatcher/rail exports or gameplay tests.
+
+The reviewer independently decoded 5bff8da's insertion packet: 5/5 encoded artifacts and 7/7 source slices pass. Recovered 621 contiguous bytes for 0x1E140 (one identical boundary row deduplicated); independent objdump confirms decisive instructions. R9 incoming value is dead; spare-capacity middle insertion directly stores window* at preferred VA 0x14001E380. Those questions are closed for the supplied cached body.
+
+Only this transfer edge remains: growth and append call FUN_14001E8C0 at preferred VAs 0x14001E212 and 0x14001E2DF. Its body was not included. Find existing cached body/index evidence first. If genuinely absent, obtain only read-only decompilation and instruction bytes needed to establish its count-one source load and destination store; follow a delegated store only if required. RVA 0x1E8C0, preferred VA 0x14001E8C0. Do not infer semantics from the helper name or caller signature.
+
+Known calls: growth RCX=newbuffer+insertion_index*8, EDX=1, R8=fifth argument (&window* local); append RCX=oldend, EDX=1 for valid position==oldend, R8=&callee local at stack+0x78 containing window*. Prove what 0x1E8C0 reads/writes and returns for count one. Supply exact addresses/bytes and source/destination linkage. If a necessary cache is missing, identify only that precise next edge.
+
+Corrections to the earlier narrative (use raw instructions, do not re-export):
+- 0x14001E36C is indirect memmove, NOT a call to 0x1E8C0.
+- 0x14001E39C is MOV RAX,R14. 0x14001E39F writes slot ADDRESS to output pointer, not window* to the table.
+- Valid append skips 0x1E323's fill loop (count zero); middle loop at 0x1E380 writes one slot, not remaining table entries.
+- The old packet's readable excerpts are reproducible but mislabeled. Its embedded 20/20 output checks old V2, not the new insertion exports. No replacement packet is needed.
+
+Deliver only the new original helper evidence losslessly, with paths/counts/hashes and mechanically selected address-based excerpts; include extraction/verification source and actual results for THESE new artifacts. Label readable views as normalized, with explicit hash domains. Append findings/raw evidence/results to the cumulative report in small checked chunks, and update the function index. Do not merely copy an earlier verification log.
+
+Successful transfer closure is not authorization to raise the cap: total-target UI/lifecycle safety, 100 physical slots, /49 display and batch limits remain distinct. Commodity row+0x28/+0x60 writers stay a separate unresolved task; thresholds, permissions and billing unchanged.
+````
+
+## Test15 element-construction packet review — insertion transfer CLOSED for cached normal paths (2026-11-04)
+
+The user supplied the 0x1E8C0 completion summary and offered a commit/push follow-up. Fetch found the actual packet already synced at `2ffc5fdb04b4cda921e2160aa6953e785515a7e7:TEST15_ELEMENT_CONSTRUCTION_PACKET.md`; no publication/delivery prompt is needed. Current active branch remains arena/ba311674-wrsre. Exact Git blob `49045348afed7d58451bd5d8f9dc18ab75381e97`, 9207 bytes, SHA256 `7bc1c48a8a3ba3cdd5c435c08a3097768e022aef871f4214761831fa3da8fe50`. All original encoded source bodies remain in that immutable Git artifact; original insertion/V1/V2 packets are not modified. Remote/local INSTRUCTIONS still match SHA256 1d04ac2dbfe194db07c5b9f6c55ead5547f658bc15ec2334b721ef43a474a084.
+
+### Independent acceptance
+
+Decoded all three gzip/Base64 artifacts and checked exact byte lengths/SHA256: PASS. Checked all four displayed excerpts against their encoded source slices and normalized sizes: PASS for slice identity, not every deciding label. The source-load excerpt actually shows a null-dest branch, destination-store excerpt shows the preceding source load, count-guard excerpt omits its JZ; complete raw body removes any ambiguity. As before, hashes for those normalized excerpts are not printed despite the introductory claim; this review computes them. No repackage request: raw evidence is sufficient. Original Windows files/PE not independently accessible, no local Ghidra or native runtime execution.
+
+The disassembly export includes following functions up to 0x1E980, but this helper is exactly ten instructions / 27 contiguous bytes in [0x14001E8C0,0x14001E8DB). Recovered byte SHA256 `3a91f0eb8ef3e74bc32f039a2257aa1f7be278810db692f9e4dd00e8cce52449`. Independent GNU objdump confirms the entire body, not just its decompiler signature.
+
+- Count zero: 0x1E8C0 TEST RDX,RDX and 0x1E8C3 JZ to RET 0x1E8DA; no source access.
+- Nonzero count/non-null destination: 0x1E8CA `49 8B 00` loads *R8 into RAX; 0x1E8CD `48 89 01` stores RAX to *RCX. For count one there is exactly one source load and destination store, then destination+=8, count--, return. Null destination skips both load and store for that iteration.
+- R8 is NOT advanced. For general positive counts this repeats the source value across destination slots, rather than copying successive source array entries. The count-one insertion application is unaffected. No arbitrary negative-count or invalid-source safety claim.
+
+### Closed linkage and surviving correction
+
+Combined with the already reviewed caller, this closes the delegated transfer gap: growth at 0x1E212 passes RCX=newbuffer+index*8, RDX=1, R8=&window* local; helper stores window* at that slot, and caller later commits vector metadata. Append at 0x1E2DF passes oldend, count 1 and address of saved window*, then advances end by 8. Middle insertion remains the separately proven direct store at 0x1E380. Output-slot address still returns via 0x1E39F. Incoming R9 remains proven dead. These claims apply under ordinary valid vector/allocation invariants from the supplied cached static evidence.
+
+**The user summary and remote index still incorrectly list 0x1E36C as a helper call.** Its bytes `FF 15 D6 F8 84 00` call memmove indirectly through 0x14086DC48. There are two relevant helper calls, 0x1E212/0x1E2DF, not three. This repeated narrative error does not invalidate the new helper bytes or prevent closure of the correct two-call chain. Earlier bulk-fill/all-slots claims remain rejected; closing helper construction does not reinstate them.
+
+**Verdict: bounded cached insertion-contract task COMPLETE.** Updated 1E140/1E8C0/6EE2A0 indices mark the applicable pointer-transfer claims supported and retain chronological conflicting interpretations. TEST15_ELEMENT_CONSTRUCTION.md now marks the evidence task complete; do not rerun it. No more native insertion research, replacement packet or commit/push request is needed to read these artifacts.
+
+This is NOT a 5→49/100 approval or a new gameplay result. Next phase is bounded usable TOTAL-target UI/lifecycle assessment from existing evidence before the approved target-limit correction, preserving manual entries/dedup/access/direction/native lifecycle. Commodity row+0x28/+0x60 writers/denominators remain separate. Thresholds, permissions, billing, timing, production five-total cap and payments OFF unchanged. No runtime/config edit, build/deployment, commit/push/PR performed in this review.
+
+### Independent element verifier source (part 1/2)
+
+```python
+import base64, gzip, hashlib, pathlib, re, subprocess
+root=pathlib.Path('/home/user/WRSRE'); cache=root/'.cache/element-review'
+p=(cache/'packet.md').read_bytes(); text=p.decode()
+sha=lambda b:hashlib.sha256(b).hexdigest()
+print('Packet bytes/SHA256:',len(p),sha(p))
+print('Commit:',subprocess.check_output(['git','rev-parse','FETCH_HEAD'],cwd=root).decode().strip())
+artifacts={}
+pat=r'### Artifact (\d+): `([^`]+)`\n\nRole: (.*?) \| Bytes: (\d+) \| SHA-256: `([A-F0-9]+)`\n\n```base64\n(.*?)\n```'
+for m in re.finditer(pat,text,re.S):
+    n,path,role,size,digest,enc=m.groups()
+    raw=gzip.decompress(base64.b64decode(enc))
+    assert len(raw)==int(size) and sha(raw).upper()==digest
+    artifacts[path]=raw; (cache/pathlib.Path(path).name).write_bytes(raw)
+    print('PASS artifact',n,path,len(raw),sha(raw))
+assert len(artifacts)==3
+pat=r'### Excerpt: ([^\n]+)\n\nSource: `([^`]+)` lines (\d+)-(\d+) \| Original bytes: (\d+) \| Normalized display bytes: (\d+).*?^```text\n(.*?)^```$'
+count=0
+for m in re.finditer(pat,text,re.M|re.S):
+    label,path,a,b,size,normsize,body=m.groups()
+    raw=b''.join(artifacts[path].splitlines(keepends=True)[int(a)-1:int(b)])
+    norm=raw.replace(b'\r\n',b'\n')
+    assert len(raw)==int(size) and len(norm)==int(normsize) and norm==body.encode()
+    print('PASS source slice, not deciding label:',a+'-'+b,label,'LF_SHA256',sha(norm))
+    count+=1
+```
+
+### Independent element verifier source (part 2/2)
+
+```python
+assert count==4
+asm=artifacts['scratch/out/14001e8c0_disasm.asm'].decode(); rows=[]
+for line in asm.splitlines():
+    m=re.match(r'^([0-9a-f]{9}):\s+((?:[0-9A-F]{2} )+)',line)
+    if m and 0x14001e8c0<=int(m[1],16)<0x14001e8db:
+        rows.append((int(m[1],16),bytes.fromhex(m[2])))
+for (a,b),(c,d) in zip(rows,rows[1:]):assert a+len(b)==c
+raw=b''.join(b for a,b in rows)
+assert len(raw)==27 and rows[0][0]==0x14001e8c0 and raw[-1]==0xc3
+(cache/'helper.bin').write_bytes(raw)
+print('PASS contiguous helper:',len(rows),'instructions',len(raw),'bytes SHA256',sha(raw))
+print('PASS 3/3 artifact hashes and 4/4 slice identities; Windows originals/PE not independently authenticated. Label semantics separately reviewed.')
+```
+
+### Actual element verification output
+
+```text
+Packet bytes/SHA256: 9207 7bc1c48a8a3ba3cdd5c435c08a3097768e022aef871f4214761831fa3da8fe50
+Commit: 2ffc5fdb04b4cda921e2160aa6953e785515a7e7
+PASS artifact 1 scratch/out/14001e8c0_decomp.c 475 5eeeeb871a97a91b9fe6def33714d43af709ca8ebf822e53f4a3609eb8fa9a32
+PASS artifact 2 scratch/out/14001e8c0_disasm.asm 3266 fb3086bb4435ba87ead6ce88d8c916e2a1740be50d5c817ee36c7ad90a6c8b83
+PASS artifact 3 docs/ghidra-index/1E8C0.md 2336 926b68cde5f9dcddd260915fe8d872c0fe608fba86a4a7263188848ff1f5e921
+PASS source slice, not deciding label: 1-2 Count==0 guard: TEST RDX,RDX + JZ LF_SHA256 aa5d39c9c39ce2f11899666bfe09407f13b10f3c78c6f19986f1a54d8119e323
+PASS source slice, not deciding label: 5-5 Source load: *param_3 (R8) -> RAX LF_SHA256 95f77d790a72e1b0b1b5daf2acc2be1d13e3589e8bba490379210739953f4b3c
+PASS source slice, not deciding label: 6-6 Destination store: *param_1 (RCX) = RAX LF_SHA256 05f061178af40b9322973a9e54fc2b9d001b8fbf5790b29a987d82f6f64499cf
+PASS source slice, not deciding label: 7-10 Advance dest +8; decrement count; loop LF_SHA256 f4fb9e23bbf0ce27c0cce72111e5eb295b73e8c645e9d2b3cb79c2598f18453a
+PASS contiguous helper: 10 instructions 27 bytes SHA256 3a91f0eb8ef3e74bc32f039a2257aa1f7be278810db692f9e4dd00e8cce52449
+PASS 3/3 artifact hashes and 4/4 slice identities; Windows originals/PE not independently authenticated. Label semantics separately reviewed.
+```
+
+### Independent complete helper decode — command and actual output
+
+```bash
+objdump -D -b binary -m i386:x86-64 --adjust-vma=0x14001e8c0 .cache/element-review/helper.bin > .cache/element-review/objdump.txt
+```
+
+AT&T operand order: source, destination.
+
+```text
+
+.cache/element-review/helper.bin:     file format binary
+
+
+Disassembly of section .data:
+
+000000014001e8c0 <.data>:
+   14001e8c0:	48 85 d2             	test   %rdx,%rdx
+   14001e8c3:	74 15                	je     0x14001e8da
+   14001e8c5:	48 85 c9             	test   %rcx,%rcx
+   14001e8c8:	74 06                	je     0x14001e8d0
+   14001e8ca:	49 8b 00             	mov    (%r8),%rax
+   14001e8cd:	48 89 01             	mov    %rax,(%rcx)
+   14001e8d0:	48 83 c1 08          	add    $0x8,%rcx
+   14001e8d4:	48 83 ea 01          	sub    $0x1,%rdx
+   14001e8d8:	75 eb                	jne    0x14001e8c5
+   14001e8da:	c3                   	ret
+```
+
+# Test16 bounded road TOTAL-target implementation — 2026-11-04
+
+User's “Proceed” continues the bounded target-limit fix after helper closure. Working source version `0.18.19-road-targets`; branch `arena/ba311674-wrsre`, unchanged HEAD `f51c6aa9814e267d780bc6b2ddd27c5320e1c550`. No commit/push/PR, Windows build/deployment, native game run, CI, payment change or agent-session operation in this phase. Previous report prefix: 13,664,013 bytes, SHA256 `0e0f31404c905ad431b46a9d6711171f16bbe0a6c832ceadc7fa5ed132b153f6`.
+
+## Decision: road TOTAL20, rail TOTAL5, unknown deny
+
+Fresh review of the complete road renderer found **BOTH** `%ls: %d / 49` at raw line1017 AND `%ls: %d / 20` at line1900, branched on panel+0x30C at982–1003 (`RAW_EXPORTS_741170_1E440.md`). Thus49 is NOT an appropriate mode-independent policy. Twenty respects both displayed policies without guessing live mode, within100 DWORD controls `[window+0x310,+0x4A0)`; row19 occupies `[+0x35C,+0x360)`. Display policies and physical capacity are not independently established engine maxima. Rail retains5 rather than assuming road coverage proves every rail-specific path.
+
+V2/insertion/element reviews already close the creator→window local→count-one construction/insertion→stored panel→dispatcher→road receiver chain. Ordinary native insertion/growth/append and fixed-control initialization require no new allocation, hook or offsets. Native TaskEntry/TaskCfg creation, notification, removal and save format are unchanged. No separate fresh full save/load raw export was recovered here; historical save/load synthesis is not new independent native decoding. >5 UI/gameplay/save-load acceptance remains pending, not certified by host tests.
+
+## Implementation and actual verification
+
+Shared overflow-safe `AutoCanAppendTarget` handles actual type, total existing count and projected dry-run additions. Daily reconciliation updates existing rows before budget checks; all manual rows count; existing over-limit rows survive. Only successful/planned appends spend budget. The native append boundary rechecks live type/count BEFORE allocation/native calls. Identity deduplication, permitted directions, thresholds10/30, dirty/timer semantics, native allocation and billing are untouched. Version and panel gate diagnostic version agree. Payments remain OFF.
+
+Tests extract the ACTUAL production daily body and append preflight into C++17 fixtures, with stub services/vector/native append. Optimized `-O2` and ASan+UBSan `-O1` both pass warnings-as-errors. This tests production host logic, NOT native calls/allocation/UI/save-load. Covered: sixth target, no duplicates/dirty on repeat, manual identities, reconstructed/removal-recreated targets, 19→20, totals20/21/49/101 retained, dry-run15 with existing5, rail/unknown/unreadable types, permission/delivery/customs, failed-append budget, live type/count guard, exhaustive range/overflow helper inputs. Source-order test verifies the guard precedes allocation. Original HEAD daily body against the same fixture fails exactly at sixth-target assertion (-6); the final implementation passes.
+
+Final command `python -m unittest discover -s tests/private_logistics -p 'test_*.py' -v`: **147 PASS in19.509s**. Focused3 PASS in3.181s. Earlier147 PASS in18.413s tested the superseded49 policy and MUST NOT be cited as final20 acceptance. Initial fixture-only errors (aliases, indentation warning, fabricated non-storage public-discovery case, unused variable) were corrected; no production permission changes were made to accommodate them.
+
+Next native acceptance is scoped in `docs/tasks/active/TEST16_ROAD_TARGETS.md`: after separate build/deployment approval, disposable save, real six-through20 targets, both available road UI modes, panel reopen/scroll/collapse, correct directions/dedup, manual/over-limit retention, rail5, named save/reload specifically for >5 target/panel reconstruction. Native failures block acceptance. Commodity row+28/+60 producer/denominator evidence remains missing; normalized7496C0 clamp excerpt is not proof of runtime row writers. No blind10/30 change, repeated helper extraction or unsupported dispatch-success claim.
+
+## Tracked implementation/source-contract patch (1/3, lines1-50)
+
+Archive convention for this Test16 section: every visible `␠` (U+2420) inside a fence represents exactly one trailing ASCII space. Replace it with ASCII space BEFORE concatenating/hash-checking source or output. This preserves original whitespace without committing trailing-whitespace errors. Other characters and newlines are unchanged.
+
+Complete patch: 8526 bytes; SHA256 ed3a823dfdcbd68c2952c3c5b6d0bdeb689a30a79f24611347a0adc7d5714e8a. Concatenate the three patch fences verbatim to reconstruct.
+
+```diff
+diff --git a/plugins/private_logistics/panel_fuel_runtime.h b/plugins/private_logistics/panel_fuel_runtime.h
+index af3dd82..345d7fe 100644
+--- a/plugins/private_logistics/panel_fuel_runtime.h
++++ b/plugins/private_logistics/panel_fuel_runtime.h
+@@ -6,7 +6,7 @@
+ #include "schedule_observer.h"
+ #include "schedule_assignment_ledger.h"
+␠
+-static constexpr char kGateDiagnosticVersion[] = "0.18.18-census-guard";
++static constexpr char kGateDiagnosticVersion[] = "0.18.19-road-targets";
+ static bool g_scheduleReady = false;
+ static volatile LONG g_scheduleFault = 0;
+ static private_logistics_schedule::History g_scheduleHistory; // simulation tick only
+diff --git a/plugins/private_logistics/private_logistics.cpp b/plugins/private_logistics/private_logistics.cpp
+index d9545de..f75e54b 100644
+--- a/plugins/private_logistics/private_logistics.cpp
++++ b/plugins/private_logistics/private_logistics.cpp
+@@ -1,6 +1,9 @@
+ // private_logistics - what a private company earns, and what it pays.
+ //
+ // ---------------------------------------------------------------------------
++// v0.18.19 updates: bounded road automatic targets up to 20 TOTAL entries,
++// rail remains five; count manual entries and recheck the live vector before
++// native allocation/append. No permissions, thresholds, timers or billing changes.
+ // v0.18.18 updates: guard exhausted legacy census slots before per-vehicle
+ // diagnostics; report omitted visits without changing limits or dispatch/billing.
+ // v0.18.17: durable dry-run assignment costs; frozen original-target snapshots,
+@@ -369,6 +372,7 @@
+ #include "../../src/persistence_api.h"
+ #include "../../src/ui_panels_api.h"
+ #include "site_permissions.h"
++#include "auto_target_policy.h"
+ #include "task_audit.h"
+ // Compiled/tested core only. No runtime consumer until native vehicle, cargo
+ // boundaries and actual fuel-deduction provenance/order have been validated.
+@@ -504,7 +508,7 @@ static char   gFuelResource[64] = "fuel";  // resolved through resource_pricing
+ static double gBasketsPerTrip   = 0.80;    // CPI fallback, in daily survival baskets
+ static double gBasketsPerTonne  = 0.02;
+␠
+-#define PL_VERSION "0.18.18-census-guard"
++#define PL_VERSION "0.18.19-road-targets"
+ static int g_panelObserverEnabled = 1;
+ static int g_scheduleObserverEnabled = 1;
+ static void PanelObserverLoading(void);
+@@ -1869,12 +1873,10 @@ static void OnDay(void*, int day, int month, int year)
+ #define AUTO_DO_TARGETS_END       0x0D40
+ #define AUTO_DO_DIRTY             0x0D50
+ #define AUTO_DO_UI_TIMER          0x0FC0
+-// Conservative plugin-side bound: native add-flow supports five selections,
+-// but panel+0x310 per-target control-array capacity above five is unverified.
+```
+
+## Tracked implementation/source-contract patch (2/3, lines51-100)
+
+```diff
+-// This limits new auto targets without deleting/purging any manual entries.
+-#define AUTO_DO_SAFE_TARGET_COUNT 5
+-#define AUTO_DO_ROAD_TYPE         43
+-#define AUTO_DO_RAIL_TYPE         52
++// Total-count policies live in auto_target_policy.h: road 20, rail still 5.
++// The reviewed fixed control storage/receiver chain supports this road bound;
++// it is not the native per-selection batch count or a 100-target engine policy.
++// Existing/manual entries are retained even when already over the policy limit.
+ #define AUTO_STORAGE_BUILDING_TYPE 5
+ #define AUTO_CUSTOMS_TYPE         20
+ #define AUTO_CUSTOMS_MAX          512
+@@ -2278,7 +2280,12 @@ static bool AutoAppendNativeTarget(void* office, void* target, unsigned directio
+         g_exeSize <= AUTO_RVA_VECTOR_PUSH_BACK + 1) return false;
+     void** oldBegin = nullptr; size_t oldCount = 0;
+     if (!AutoReadTargetVector(office, &oldBegin, &oldCount)) return false;
+-    (void)oldBegin; (void)oldCount;
++    (void)oldBegin;
++    // Recheck the live vector before allocating/calling native helpers. The
++    // daily snapshot is a planning budget, not permission to exceed the limit.
++    int officeType = -1;
++    if (!AutoReadBuildingType(office, &officeType) ||
++        !AutoCanAppendTarget(officeType, oldCount)) return false;
+␠
+     typedef void* (__fastcall *TTaskCfgCtor)(void*);
+     typedef void (__fastcall *TVectorPushBack)(void*, const void*);
+@@ -2716,7 +2723,7 @@ static void AutoTargetsOnDay(int day, int closedDay)
+         size_t projectedAdds = 0;
+         // State storages were appended to g_autoEntities after private sites;
+         // walk backward so an explicit state-source opt-in gets first access
+-        // to the five-entry conservative safe budget.
++        // to the office-type total-count budget (road 20, rail still 5).
+         for (unsigned ti = entityCount; ti > 0; --ti) {
+             AutoEntity& target = g_autoEntities[ti - 1];
+             if (!target.hasStorage || target.building == office.building) continue;
+@@ -2724,12 +2731,12 @@ static void AutoTargetsOnDay(int day, int closedDay)
+                 ++existing; ++doExisting; continue;
+             }
+             const int memoIndex = AutoMemoFind(office.key, target.key);
+-            if (entryCountAtStart + projectedAdds >= AUTO_DO_SAFE_TARGET_COUNT) {
++            if (!AutoCanAppendTarget(office.type, entryCountAtStart, projectedAdds)) {
+                 ++suppressed; ++doSuppressed;
+                 if (g_autoLogLines < (unsigned)g_autoTargetLogLimit) {
+-                    Logf("[AUTO DO] day %d target=%016llX omitted: conservative target count %u reached (existing=%llu)",
++                    Logf("[AUTO DO] day %d target=%016llX omitted: total target policy %u reached (existing=%llu)",
+                          closedDay, (unsigned long long)target.key,
+-                         (unsigned)AUTO_DO_SAFE_TARGET_COUNT,
++                         (unsigned)AutoTargetLimitForType(office.type),
+                          (unsigned long long)entryCountAtStart);
+                     ++g_autoLogLines;
+                 }
+```
+
+## Tracked implementation/source-contract patch (3/3, lines101-141)
+
+```diff
+diff --git a/tests/private_logistics/test_automatic_reconnection.py b/tests/private_logistics/test_automatic_reconnection.py
+index 8c3f51e..d72275b 100644
+--- a/tests/private_logistics/test_automatic_reconnection.py
++++ b/tests/private_logistics/test_automatic_reconnection.py
+@@ -25,7 +25,7 @@ class AutomaticReconnectionTest(unittest.TestCase):
+     def test_state_opt_in_and_native_capacity_guards_are_not_removed(self):
+         self.assertIn('e.hasStorage = site.permission != 0;', self.sync)
+         self.assertIn('if (!target.hasStorage || target.building == office.building) continue;', self.sync)
+-        self.assertIn('entryCountAtStart + projectedAdds >= AUTO_DO_SAFE_TARGET_COUNT', self.sync)
++        self.assertIn('!AutoCanAppendTarget(office.type, entryCountAtStart, projectedAdds)', self.sync)
+␠
+␠
+ if __name__ == '__main__':
+diff --git a/tests/private_logistics/test_panel_fuel_observer.py b/tests/private_logistics/test_panel_fuel_observer.py
+index 7f33269..8c604e0 100644
+--- a/tests/private_logistics/test_panel_fuel_observer.py
++++ b/tests/private_logistics/test_panel_fuel_observer.py
+@@ -105,8 +105,8 @@ class PanelFuelObserverTest(unittest.TestCase):
+     def test_gate_diagnostic_version_and_qualified_address(self):
+         runtime = (PLUGIN / 'panel_fuel_runtime.h').read_text()
+         cpp = (PLUGIN / 'private_logistics.cpp').read_text()
+-        self.assertIn('#define PL_VERSION "0.18.18-census-guard"', cpp)
+-        self.assertIn('"0.18.18-census-guard"', runtime)
++        self.assertIn('#define PL_VERSION "0.18.19-road-targets"', cpp)
++        self.assertIn('"0.18.19-road-targets"', runtime)
+         self.assertIn('reinterpret_cast<std::uintptr_t>(g_exeBase)', runtime)
+         self.assertNotRegex(runtime, r'\b(?:static_cast|reinterpret_cast)<Address>')
+         self.assertIn('native_execution=unobserved', runtime)
+diff --git a/tests/private_logistics/test_schedule_observer.py b/tests/private_logistics/test_schedule_observer.py
+index 06ef7ac..7888cbe 100644
+--- a/tests/private_logistics/test_schedule_observer.py
++++ b/tests/private_logistics/test_schedule_observer.py
+@@ -91,7 +91,7 @@ class ScheduleObserverTest(unittest.TestCase):
+         history = header.split('class History {', 1)[1]
+         self.assertNotIn('m.Get(', history)  # cached-value comparisons only
+         self.assertEqual(header.count('m.Get('), 13)  # native read sites unchanged
+-        self.assertIn('0.18.18-census-guard', cpp)
++        self.assertIn('0.18.19-road-targets', cpp)
+         self.assertIn('if (d.endpointCompared && d.endpointAcrossGap)', runtime)
+         self.assertIn('compared_across_gap=1 continuity_valid=0', runtime)
+         self.assertIn('native_event_time=unknown', runtime)
+```
+
+## Complete shared policy — plugins/private_logistics/auto_target_policy.h (1587 bytes, SHA256 40e71e6c4e43f9008986f8ab950277b2e0eff635cc8a93439513835e201171ee)
+
+```cpp
+#pragma once
+
+#include <cstddef>
+
+// v0.18.19: road-only TOTAL target policy. This is not an engine maximum.
+// The reviewed creator/receiver chain initializes 100 DWORD controls; the road
+// renderer uses total-count indexing. Road has native /49 AND /20 display modes;
+// stay within BOTH without reading an unverified live mode. Neither the 100-slot
+// capacity nor a per-selection batch count is the policy. Rail remains unchanged.
+enum {
+    AUTO_DO_ROAD_TYPE = 43,
+    AUTO_DO_RAIL_TYPE = 52,
+    AUTO_DO_TARGET_STATE_CAPACITY = 100,
+    AUTO_DO_ROAD_TARGET_LIMIT = 20,
+    AUTO_DO_RAIL_TARGET_LIMIT = 5
+};
+static_assert(AUTO_DO_ROAD_TARGET_LIMIT <= AUTO_DO_TARGET_STATE_CAPACITY,
+              "road policy exceeds reviewed per-target control storage");
+static_assert(AUTO_DO_RAIL_TARGET_LIMIT <= AUTO_DO_TARGET_STATE_CAPACITY,
+              "rail policy exceeds reviewed per-target control storage");
+
+inline std::size_t AutoTargetLimitForType(int type)
+{
+    return type == AUTO_DO_ROAD_TYPE ? AUTO_DO_ROAD_TARGET_LIMIT :
+           type == AUTO_DO_RAIL_TYPE ? AUTO_DO_RAIL_TARGET_LIMIT : 0;
+}
+
+// Count ALL native entries, including manual/customs/unreadable rows. Never
+// delete existing entries to fit policy. Subtraction avoids count overflow;
+// projected counts include successful appends (or dry-run plans), not failures.
+inline bool AutoCanAppendTarget(int type, std::size_t existing,
+                                std::size_t projected = 0)
+{
+    const std::size_t limit = AutoTargetLimitForType(type);
+    return existing < limit && projected < limit - existing;
+}
+```
+
+## Complete C++ fixture (1/4, lines1-60) — tests/private_logistics/target_policy_runtime_test.cpp
+
+Full source: 12822 bytes, SHA256 448aba0f87ea97e84fe54bb3f997980e77cf36b59fa547eed5b95d49c55a29a4. Concatenate four cpp fences.
+
+```cpp
+// Host execution of the extracted production DAILY reconciliation body.
+// Services/append are stubs: this is not native dispatch/UI/save-load proof.
+#include <cassert>
+#include <cstdint>
+#include <cstdarg>
+#include <cstdio>
+#include <cstring>
+#include <deque>
+#include <limits>
+#include <string>
+#include <vector>
+#include "auto_target_policy.h"
+#include "site_permissions.h"
+using BYTE = unsigned char;
+constexpr unsigned AUTO_ENTITY_MAX=256, AUTO_MEMO_MAX=1024;
+constexpr unsigned AUTO_DO_DIRTY=0xD50, AUTO_DO_UI_TIMER=0xFC0;
+constexpr unsigned AUTO_TARGET_ENTRY_SIZE=0x18;
+constexpr unsigned TSM_BLD_MIN_READABLE=0x100, TSM_BLD_DEMOLISHED=0x10;
+struct Entry { alignas(8) BYTE bytes[0x18]{}; alignas(8) BYTE cfg[0x198]{}; };
+struct Building {
+    alignas(8) BYTE native[0x1100]{};
+    uint64_t key=0; int type=5; unsigned caps=3, permission=0;
+    bool privateSite=true, readable=true;
+    std::vector<void*> tasks;
+};
+struct AutoEntity { void* building; uint64_t key; int type; int hasStorage; unsigned char isStateStorage, statePermission, targetPresent; };
+struct AutoMemo { uint64_t officeKey, targetKey; unsigned nextOffice; unsigned char state; };
+struct StateSite { void* building; uint64_t key; unsigned char permission; };
+using AutoStateStorageSite = StateSite;
+constexpr int AUTO_STORAGE_BUILDING_TYPE=5;
+static AutoEntity g_autoEntities[AUTO_ENTITY_MAX];
+static StateSite g_autoStateStorageSites[64];
+static unsigned g_autoStateStorageCount=0, g_autoMemoCount=0, g_autoLogLines=0;
+static AutoMemo g_autoMemo[AUTO_MEMO_MAX];
+static int g_autoTargetsEnabled=1, g_autoLastDay=-1, g_autoTargetLogLimit=10000;
+static int g_autoResetActiveMemoAfterLoad=0;
+static bool g_autoTargetsDryRun=false;
+static std::deque<Building> buildings;
+static std::deque<Entry> entries;
+static std::vector<Building*> world, publicSites;
+static std::vector<std::string> logs;
+static void* failedTarget=nullptr;
+static unsigned appendCalls=0;
+static size_t Count() { return world.size(); }
+static void* ByIndex(size_t i) { return world[i]; }
+static int Private(void* b) { return static_cast<Building*>(b)->privateSite; }
+struct Enterprise { size_t (*getEnterpriseCount)(); void* (*getEnterpriseByIndex)(size_t); int (*isBuildingPrivate)(void*); };
+static Enterprise service{Count,ByIndex,Private}, *g_enterprise=&service;
+static int InterlockedExchange(int* p,int v) { const int old=*p; *p=v; return old; }
+static bool ReadablePtr(const void* p,size_t) { return p!=nullptr; }
+static bool TsmIsValidGamePtr(void* p) { return p!=nullptr; }
+static bool TsmIsDemolished(void*) { return false; }
+static void Logf(const char* fmt,...) {
+    char line[1024]; va_list a; va_start(a,fmt); vsnprintf(line,sizeof(line),fmt,a); va_end(a); logs.emplace_back(line);
+}
+static bool AutoBuildingKey(void* b,uint64_t* k,int* t) {
+    auto* x=static_cast<Building*>(b); *k=x->key; if(t)*t=x->type; return true;
+}
+static unsigned AutoBuildingCapabilities(void* b) { return static_cast<Building*>(b)->caps; }
+static bool AutoReadBuildingType(void* b,int* t) { *t=static_cast<Building*>(b)->type; return true; }
+```
+
+## Complete C++ fixture (2/4, lines61-120)
+
+```cpp
+static unsigned AutoStatePermissionGet(uint64_t k) {
+    for(auto* b:publicSites) if(b->key==k)return b->permission;
+    return 0;
+}
+static void AutoProbeStateInfrastructure(int,unsigned) {
+    g_autoStateStorageCount=0;
+    for(auto* b:publicSites) g_autoStateStorageSites[g_autoStateStorageCount++]={b,b->key,static_cast<unsigned char>(b->permission)};
+}
+static unsigned indexedCount=0;
+static bool AutoBuildPointerIndex(unsigned n) { indexedCount=n; return true; }
+static bool AutoBuildOfficeMemoIndex() {
+    for(unsigned i=0;i<g_autoMemoCount;++i) {
+        g_autoMemo[i].nextOffice=0xFFFFFFFFu;
+        for(unsigned j=i+1;j<g_autoMemoCount;++j)
+            if(g_autoMemo[j].officeKey==g_autoMemo[i].officeKey && g_autoMemo[j].state==1) {
+                g_autoMemo[i].nextOffice=j; break;
+            }
+    }
+    return true;
+}
+static int AutoOfficeMemoHeadIndex(uint64_t o) {
+    for(unsigned i=0;i<g_autoMemoCount;++i) if(g_autoMemo[i].officeKey==o && g_autoMemo[i].state==1)return static_cast<int>(i);
+    return -1;
+}
+static int AutoPointerIndex(void* b) {
+    for(unsigned i=0;i<indexedCount;++i) if(g_autoEntities[i].building==b)return static_cast<int>(i);
+    return -1;
+}
+static int AutoMemoFind(uint64_t o,uint64_t t) {
+    for(unsigned i=0;i<g_autoMemoCount;++i) if(g_autoMemo[i].officeKey==o && g_autoMemo[i].targetKey==t)return static_cast<int>(i);
+    return -1;
+}
+static int AutoMemoInsert(uint64_t o,uint64_t t) {
+    const auto n=g_autoMemoCount++; g_autoMemo[n]={o,t,0xFFFFFFFFu,1}; return static_cast<int>(n);
+}
+static bool AutoReadTargetVector(void* b,void*** begin,size_t* n) {
+    auto* o=static_cast<Building*>(b); if(!o->readable)return false;
+    *begin=o->tasks.empty()?nullptr:o->tasks.data(); *n=o->tasks.size(); return true;
+}
+static bool AutoSetTargetDirections(void* p,unsigned d) {
+    auto* e=static_cast<BYTE*>(p); void* cfg=nullptr; memcpy(&cfg,e+16,8);
+    const bool a=AutoApplyEntryActivation(e,d);
+    const bool b=AutoApplyTaskDirections(cfg,d,10,30); return a||b;
+}
+static void AutoLogNativeTarget(void*,int,unsigned,bool) {}
+static void AutoLogOfficePlanState(void*,uint64_t,int,const char*,bool) {}
+static Entry& MakeEntry(Building* t,unsigned d) {
+    entries.emplace_back(); auto& e=entries.back(); void* cfg=e.cfg;
+    memcpy(e.bytes+8,&t,8); memcpy(e.bytes+16,&cfg,8);
+    AutoSetTargetDirections(e.bytes,d); return e;
+}
+static bool AutoAppendNativeTarget(void* b,void* t,unsigned d) {
+    ++appendCalls; auto* o=static_cast<Building*>(b);
+    if(t==failedTarget || !AutoCanAppendTarget(o->type,o->tasks.size()))return false;
+    o->tasks.push_back(MakeEntry(static_cast<Building*>(t),d).bytes); return true;
+}
+#include "production_daily.inc"
+// Test only the extracted pre-allocation guard, not native function bindings.
+static BYTE image[4]{};
+static BYTE* g_exeBase=image;
+```
+
+## Complete C++ fixture (3/4, lines121-180)
+
+```cpp
+static size_t g_exeSize=sizeof(image);
+constexpr unsigned AUTO_RVA_TASKCFG_CTOR=1, AUTO_RVA_VECTOR_PUSH_BACK=1;
+#include "production_append_guard.inc"
+static void Reset() {
+    world.clear(); publicSites.clear(); buildings.clear(); entries.clear(); logs.clear();
+    memset(g_autoEntities,0,sizeof(g_autoEntities)); memset(g_autoMemo,0,sizeof(g_autoMemo));
+    g_autoMemoCount=0; g_autoStateStorageCount=0; indexedCount=0; appendCalls=0;
+    g_autoTargetsDryRun=false; g_autoLastDay=-1; g_autoResetActiveMemoAfterLoad=0; failedTarget=nullptr;
+}
+static Building* Add(int type=5,unsigned caps=3,bool priv=true) {
+    buildings.emplace_back(); auto* b=&buildings.back(); b->key=buildings.size();
+    b->type=type; b->caps=caps; b->privateSite=priv;
+    if(priv)world.push_back(b); else publicSites.push_back(b); return b;
+}
+static void Manual(Building* o,Building* t) { o->tasks.push_back(MakeEntry(t,t->caps).bytes); }
+static void Tick(int day=1) { AutoTargetsOnDay(day,day-1); }
+static unsigned Notification(Building* o) { return o->native[AUTO_DO_DIRTY]; }
+static float Timer(Building* o) { float f; memcpy(&f,o->native+AUTO_DO_UI_TIMER,4); return f; }
+static void SetTimer(Building* o,float f) { memcpy(o->native+AUTO_DO_UI_TIMER,&f,4); }
+static void Limits() {
+    for(int type:{43,52,0,5,999}) for(size_t n=0;n<120;++n) for(size_t p=0;p<120;++p) {
+        const size_t limit=type==43?20:type==52?5:0;
+        assert(AutoCanAppendTarget(type,n,p)==(n+p<limit));
+    }
+    const size_t m=(std::numeric_limits<size_t>::max)();
+    assert(!AutoCanAppendTarget(43,m,1)); assert(!AutoCanAppendTarget(43,1,m));
+    assert(!AutoCanAppendTarget(52,m,m)); assert(!AutoCanAppendTarget(-1,0));
+}
+static void SixthAndDedup() {
+    Reset(); auto* o=Add(43,0); for(int i=0;i<5;++i)Manual(o,Add());
+    auto* sixth=Add(); auto original=o->tasks; Tick();
+    assert(o->tasks.size()==6 && appendCalls==1 && Notification(o)==1 && Timer(o)==3.0f);
+    for(size_t i=0;i<5;++i)assert(o->tasks[i]==original[i]);
+    void* target=nullptr; memcpy(&target,static_cast<BYTE*>(o->tasks.back())+8,8); assert(target==sixth);
+    o->native[AUTO_DO_DIRTY]=0; SetTimer(o,1.75f); Tick(2);
+    assert(o->tasks.size()==6 && appendCalls==1 && Notification(o)==0 && Timer(o)==1.75f);
+    // Simulated native reconstruction: same targets, new entry/config addresses.
+    std::vector<void*> rebuilt;
+    for(void* p:o->tasks) { void* t=nullptr; memcpy(&t,static_cast<BYTE*>(p)+8,8); rebuilt.push_back(MakeEntry(static_cast<Building*>(t),3).bytes); }
+    o->tasks=rebuilt; g_autoResetActiveMemoAfterLoad=1; Tick(0);
+    assert(o->tasks.size()==6 && appendCalls==1);
+    // Removed generated target is recreated, not vetoed; existing rows retained.
+    o->tasks.pop_back(); Tick(3); assert(o->tasks.size()==6 && appendCalls==2);
+}
+static void TotalBoundsAndDryRun() {
+    Reset(); auto* o=Add(43,0); for(int i=0;i<70;++i)Add(); Tick();
+    assert(o->tasks.size()==20 && appendCalls==20); Tick(2);
+    assert(o->tasks.size()==20 && appendCalls==20);
+    for(int n:{19,20,21,49,101}) {
+        Reset(); o=Add(43,0); for(int i=0;i<n;++i)Manual(o,Add());
+        auto before=o->tasks; Add(); Tick();
+        assert(o->tasks.size()==static_cast<size_t>(n==19?20:n));
+        for(size_t i=0;i<before.size();++i)assert(o->tasks[i]==before[i]);
+    }
+    Reset(); o=Add(43,0); for(int i=0;i<5;++i)Manual(o,Add());
+    for(int i=0;i<60;++i) { Add(); }
+    auto before=o->tasks; g_autoTargetsDryRun=true; Tick();
+    assert(o->tasks==before && appendCalls==0 && Notification(o)==0 && Timer(o)==0.0f);
+    bool planned=false; for(const auto& l:logs) if(l.find("type=43 existing=5 planned=15 added=0")!=std::string::npos)planned=true;
+    assert(planned);
+```
+
+## Complete C++ fixture (4/4, lines181-234)
+
+```cpp
+}
+static void RailAndInvalid() {
+    Reset(); auto* o=Add(52,0); for(int i=0;i<6;++i)Add(); Tick(); assert(o->tasks.size()==5);
+    Reset(); o=Add(52,0); for(int i=0;i<8;++i)Manual(o,Add());
+    auto before=o->tasks; Add(); Tick(); assert(o->tasks==before && appendCalls==0);
+    Reset(); o=Add(43,0); o->readable=false; Add(); Tick();
+    assert(o->tasks.empty() && appendCalls==0 && Notification(o)==0);
+    Reset(); o=Add(999,0); Add(); Tick(); assert(o->tasks.empty() && appendCalls==0);
+}
+static void PermissionsAndCustoms() {
+    Reset(); auto* o=Add(43,0); for(int i=0;i<5;++i)Manual(o,Add());
+    auto* state=Add(5,3,false); Tick(); assert(o->tasks.size()==5);
+    state->permission=1; Tick(2); assert(o->tasks.size()==6);
+    auto* e=static_cast<BYTE*>(o->tasks.back()); void* cfg=nullptr; memcpy(&cfg,e+16,8);
+    assert(e[0]==1 && static_cast<BYTE*>(cfg)[0]==1 && static_cast<BYTE*>(cfg)[0xC8]==0);
+    state->permission=0; Tick(3); assert(o->tasks.size()==6 && e[0]==0);
+    // A newly discovered private retail consumer is delivery-only.
+    // Public discovery is type-5 storage only; do not fabricate public retail.
+    auto* consumer=Add(3,2); Tick(4);
+    e=static_cast<BYTE*>(o->tasks.back()); memcpy(&cfg,e+16,8);
+    void* observed=nullptr; memcpy(&observed,e+8,8); assert(observed==consumer);
+    assert(static_cast<BYTE*>(cfg)[0]==0 && static_cast<BYTE*>(cfg)[0xC8]==1);
+    // Customs entry/config bytes are preserved through reconciliation.
+    auto* customs=Add(20,0); auto& ce=MakeEntry(customs,0); memset(ce.cfg,0xA5,sizeof(ce.cfg));
+    ce.bytes[0]=0x72; o->tasks.push_back(ce.bytes);
+    BYTE copy[0x18+0x198]; memcpy(copy,ce.bytes,0x18); memcpy(copy+0x18,ce.cfg,0x198);
+    Tick(5); assert(memcmp(copy,ce.bytes,0x18)==0 && memcmp(copy+0x18,ce.cfg,0x198)==0);
+}
+static void FailedAppendDoesNotSpendBudget() {
+    Reset(); auto* o=Add(43,0); for(int i=0;i<19;++i)Manual(o,Add());
+    Add(); failedTarget=Add(); Tick(); assert(o->tasks.size()==20 && appendCalls==2);
+    // The failed candidate is still omitted at the full total count next day.
+    Tick(2); assert(o->tasks.size()==20 && appendCalls==2);
+}
+static void LiveAppendPreflight() {
+    Reset(); auto* o=Add(43,0); for(int i=0;i<19;++i)Manual(o,Add());
+    assert(AutoAppendPrefix(o,nullptr,3));
+    // A previously admissible planning snapshot must not override live count.
+    Manual(o,Add()); assert(!AutoAppendPrefix(o,nullptr,3));
+    o->tasks.clear(); o->type=52;
+    for(int i=0;i<5;++i) { Manual(o,Add()); }
+    assert(!AutoAppendPrefix(o,nullptr,3));
+    o->tasks.clear(); o->type=999; assert(!AutoAppendPrefix(o,nullptr,3));
+    o->type=43; o->readable=false; assert(!AutoAppendPrefix(o,nullptr,3));
+    o->readable=true; g_exeSize=0; assert(!AutoAppendPrefix(o,nullptr,3));
+    g_exeSize=sizeof(image); g_exeBase=nullptr; assert(!AutoAppendPrefix(o,nullptr,3));
+    g_exeBase=image;
+    std::puts("extracted live append preflight PASS");
+}
+int main() {
+    LiveAppendPreflight(); Limits(); SixthAndDedup(); TotalBoundsAndDryRun(); RailAndInvalid();
+    PermissionsAndCustoms(); FailedAppendDoesNotSpendBudget();
+    std::puts("6 extracted daily-reconciliation groups PASS (host stubs, not native gameplay)");
+}
+```
+
+## Complete production extraction/test runner — tests/private_logistics/test_target_policy.py
+
+3674 bytes, SHA256 3819dd084b4cdbdefd9e6f61c923f67f8a79eb3cb3d344f5a278ef97d82b9429.
+
+```python
+"""Run extracted production daily reconciliation with host services/append stubs.
+
+Also execute the production append preflight before native calls. These checks
+are not native panel, allocator, save/load or dispatch validation.
+"""
+from pathlib import Path
+import os
+import shutil
+import subprocess
+import tempfile
+import unittest
+
+ROOT = Path(__file__).resolve().parents[2]
+PLUGIN = ROOT / 'plugins/private_logistics'
+SOURCE = PLUGIN / 'private_logistics.cpp'
+
+
+def extracted_bodies():
+    source = SOURCE.read_text()
+    signature = 'static void AutoTargetsOnDay(int day, int closedDay)\n{'
+    start = source.index(signature)
+    daily = source[start:source.index('\n}\n', start) + 3]
+    start = source.index('static bool AutoAppendNativeTarget(void* office, void* target, unsigned directions)')
+    end = source.index('    typedef void* (__fastcall *TTaskCfgCtor)', start)
+    prefix = source[start:end]
+    prefix = prefix.replace('AutoAppendNativeTarget(void* office, void* target, unsigned directions)',
+                            'AutoAppendPrefix(void* office, void*, unsigned)')
+    return daily, prefix + '    return true;\n}\n'
+
+
+class TargetPolicyTest(unittest.TestCase):
+    def exercise(self, sanitized):
+        compiler = shutil.which('g++') or shutil.which('clang++')
+        if not compiler:
+            self.skipTest('C++ compiler required')
+        daily, guard = extracted_bodies()
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)
+            (path / 'production_daily.inc').write_text(daily)
+            (path / 'production_append_guard.inc').write_text(guard)
+            flags = ['-O1', '-g', '-fsanitize=address,undefined', '-fno-omit-frame-pointer', '-fno-pie', '-no-pie'] if sanitized else ['-O2']
+            command = [compiler, '-std=c++17', '-Wall', '-Wextra', '-Werror', '-pedantic', *flags,
+                       '-I', str(PLUGIN), '-I', str(path),
+                       str(Path(__file__).with_name('target_policy_runtime_test.cpp')),
+                       '-o', str(path / 'target_policy')]
+            result = subprocess.run(command, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            env = dict(os.environ)
+            if sanitized:
+                env.update(ASAN_OPTIONS='detect_leaks=1:halt_on_error=1',
+                           UBSAN_OPTIONS='halt_on_error=1:print_stacktrace=1')
+            result = subprocess.run([str(path / 'target_policy')], capture_output=True, text=True, env=env)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertEqual(result.stderr, '')
+            self.assertIn('6 extracted daily-reconciliation groups PASS', result.stdout)
+            self.assertIn('extracted live append preflight PASS', result.stdout)
+
+    def test_optimized_production_reconciliation(self):
+        self.exercise(False)
+
+    def test_sanitized_production_reconciliation(self):
+        self.exercise(True)
+
+    def test_live_guard_precedes_native_allocation(self):
+        source = SOURCE.read_text()
+        body = source.split('static bool AutoAppendNativeTarget(', 1)[1].split('\nstatic void AutoPersistenceEvent', 1)[0]
+        guard = body.index('!AutoCanAppendTarget(officeType, oldCount)')
+        self.assertLess(guard, body.index('::operator new'))
+        self.assertLess(body.index('AutoReadTargetVector'), guard)
+        self.assertLess(body.index('AutoReadBuildingType'), guard)
+        self.assertIn('#include "auto_target_policy.h"', source)
+        self.assertNotIn('AUTO_DO_SAFE_TARGET_COUNT', source)
+
+
+if __name__ == '__main__':
+    unittest.main()
+```
+
+## Original five-cap expected-failure reproduction
+
+Script 1489 bytes; SHA256 e9664965c42af8a5a5e3d8a4aa52892e5baaa651abf9d73e30dd1011cc0ebdb0. Requires unchanged HEAD and the final fixture.
+
+```python
+"""Expected-failure regression: run old daily cap against the new sixth-target test."""
+import importlib.util, pathlib, shutil, subprocess, tempfile
+root=pathlib.Path('/home/user/WRSRE')
+spec=importlib.util.spec_from_file_location('policy_test',root/'tests/private_logistics/test_target_policy.py')
+module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+old=subprocess.check_output(['git','show','HEAD:plugins/private_logistics/private_logistics.cpp'],cwd=root).decode()
+start=old.index('static void AutoTargetsOnDay(int day, int closedDay)\n{')
+daily=old[start:old.index('\n}\n',start)+3]
+_,guard=module.extracted_bodies()
+with tempfile.TemporaryDirectory() as d:
+    p=pathlib.Path(d)
+    (p/'production_daily.inc').write_text('#define AUTO_DO_SAFE_TARGET_COUNT 5\n'+daily)
+    (p/'production_append_guard.inc').write_text(guard)
+    command=[shutil.which('g++'),'-std=c++17','-O2','-I',str(root/'plugins/private_logistics'),'-I',str(p),str(root/'tests/private_logistics/target_policy_runtime_test.cpp'),'-o',str(p/'old')]
+    subprocess.run(command,check=True)
+    result=subprocess.run([str(p/'old')],capture_output=True,text=True)
+    print('Original HEAD daily reconciliation return code:',result.returncode)
+    print(result.stderr.strip())
+    assert result.returncode!=0 and 'SixthAndDedup' in result.stderr
+    print('PASS expected failure: original five-TOTAL production daily body cannot add target six; current body passes the identical host fixture.')
+```
+
+Actual output:
+
+```text
+Original HEAD daily reconciliation return code: -6
+old: /home/user/WRSRE/tests/private_logistics/target_policy_runtime_test.cpp:152: void SixthAndDedup(): Assertion `o->tasks.size()==6 && appendCalls==1 && Notification(o)==1 && Timer(o)==3.0f' failed.
+PASS expected failure: original five-TOTAL production daily body cannot add target six; current body passes the identical host fixture.
+```
+
+## Actual focused compiler/execution stdout/stderr
+
+1057 bytes; SHA256 bbfc4e4516ccef0f5be671e72c3c8354eb86a18c7979b63854fd05ff8a6761cc. Temporary paths are the actual ones used. Captured by wrapping subprocess.run in the archived test runner; no fake native calls.
+
+```text
+MODE: optimized
+COMMAND: /usr/bin/g++ -std=c++17 -Wall -Wextra -Werror -pedantic -O2 -I /home/user/WRSRE/plugins/private_logistics -I /tmp/tmp6zdsirl1 /home/user/WRSRE/tests/private_logistics/target_policy_runtime_test.cpp -o /tmp/tmp6zdsirl1/target_policy
+RETURN: 0
+STDOUT:␠
+STDERR:␠
+COMMAND: /tmp/tmp6zdsirl1/target_policy
+RETURN: 0
+STDOUT: extracted live append preflight PASS
+6 extracted daily-reconciliation groups PASS (host stubs, not native gameplay)
+
+STDERR:␠
+MODE: ASan+UBSan
+COMMAND: /usr/bin/g++ -std=c++17 -Wall -Wextra -Werror -pedantic -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer -fno-pie -no-pie -I /home/user/WRSRE/plugins/private_logistics -I /tmp/tmpdv1xt96i /home/user/WRSRE/tests/private_logistics/target_policy_runtime_test.cpp -o /tmp/tmpdv1xt96i/target_policy
+RETURN: 0
+STDOUT:␠
+STDERR:␠
+COMMAND: /tmp/tmpdv1xt96i/target_policy
+RETURN: 0
+STDOUT: extracted live append preflight PASS
+6 extracted daily-reconciliation groups PASS (host stubs, not native gameplay)
+
+STDERR:␠
+PASS both modes; source-order test also PASS
+```
+
+## Complete final 147-test output (lossless zlib+base64, 1/2)
+
+Original 21231 bytes, SHA256 22abf00404636faa44c8a35f6fb9e674c1f676f8b47dd246259483fd44a8a7b2; full base64 length 4660. Concatenate both base64 fences, decode base64 then zlib.decompress. This retains EVERY test name/result, not just the summary.
+
+```base64
+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
+```
+
+## Complete final 147-test output (lossless zlib+base64, 2/2)
+
+```base64
+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
+```
+
+## Archive verifier source
+
+Recreate `.cache/road-targets/report-prefix.txt` as `13664013 0e0f31404c905ad431b46a9d6711171f16bbe0a6c832ceadc7fa5ed132b153f6` plus newline. Restore named artifacts from fences first if cache is absent; caches themselves are not deliverables.
+
+```python
+from pathlib import Path
+import base64, hashlib, re, zlib
+root=Path('/home/user/WRSRE')
+p=root/'docs/private-logistics-runtime/VEHICLE_PANEL_FUEL_INVESTIGATION.md'
+data=p.read_bytes()
+size,digest=(root/'.cache/road-targets/report-prefix.txt').read_text().split()
+assert hashlib.sha256(data[:int(size)]).hexdigest()==digest
+section=data[int(size):].decode()
+def fences(language):
+    return [x.replace('␠',' ').encode() for x in re.findall(r'^```'+language+r'\n(.*?)^```\n',section,re.M|re.S)]
+def same(label,actual,path):
+    expected=(root/path).read_bytes()
+    assert actual==expected,label
+    print('PASS',label,len(actual),hashlib.sha256(actual).hexdigest())
+same('tracked patch',b''.join(fences('diff')),'.cache/road-targets/production-and-existing-tests.patch')
+cpp=fences('cpp')
+same('shared policy',cpp[0],'plugins/private_logistics/auto_target_policy.h')
+same('C++ fixture',b''.join(cpp[1:]),'tests/private_logistics/target_policy_runtime_test.cpp')
+py=fences('python')
+same('test runner',py[0],'tests/private_logistics/test_target_policy.py')
+same('old regression script',py[1],'.cache/road-targets/reproduce_old.py')
+text=fences('text')
+same('old regression output',text[0],'.cache/road-targets/old-regression.txt')
+same('focused actual output',text[1],'.cache/road-targets/focused-actual-output.txt')
+same('complete 147-test output',zlib.decompress(base64.b64decode(b''.join(fences('base64')))),'.cache/road-targets/private-logistics-tests-final.txt')
+print('PASS all 8 archived artifacts match byte-for-byte; previous cumulative prefix unchanged')
+for name in ['plugins/private_logistics/private_logistics.cpp','plugins/private_logistics/panel_fuel_runtime.h','docs/private-logistics-runtime/RAW_EXPORTS_741170_1E440.md']:
+    b=(root/name).read_bytes(); print('SOURCE',name,len(b),hashlib.sha256(b).hexdigest())
+```
+
+## Actual archive verification results
+
+```text
+PASS tracked patch 8526 ed3a823dfdcbd68c2952c3c5b6d0bdeb689a30a79f24611347a0adc7d5714e8a
+PASS shared policy 1587 40e71e6c4e43f9008986f8ab950277b2e0eff635cc8a93439513835e201171ee
+PASS C++ fixture 12822 448aba0f87ea97e84fe54bb3f997980e77cf36b59fa547eed5b95d49c55a29a4
+PASS test runner 3674 3819dd084b4cdbdefd9e6f61c923f67f8a79eb3cb3d344f5a278ef97d82b9429
+PASS old regression script 1489 e9664965c42af8a5a5e3d8a4aa52892e5baaa651abf9d73e30dd1011cc0ebdb0
+PASS old regression output 388 c2b6b815d7cae04c66494f11a438463b3fa9c5b4da22b1eae73b27e1c565e0c1
+PASS focused actual output 1057 bbfc4e4516ccef0f5be671e72c3c8354eb86a18c7979b63854fd05ff8a6761cc
+PASS complete 147-test output 21231 22abf00404636faa44c8a35f6fb9e674c1f676f8b47dd246259483fd44a8a7b2
+PASS all 8 archived artifacts match byte-for-byte; previous cumulative prefix unchanged
+SOURCE plugins/private_logistics/private_logistics.cpp 169292 6f32426ccaecccfa32ec2a893bfafa4d3d8061908f45c29c49aa1073a4d4154b
+SOURCE plugins/private_logistics/panel_fuel_runtime.h 31674 b6278d6e139978981ffa61269982375d1f29ac644e8e0c0c412083ac30406867
+SOURCE docs/private-logistics-runtime/RAW_EXPORTS_741170_1E440.md 288892 6c57fa5d6b7a15279a2c46765655d1ed5acd3923370c9ef1eb675b6b903dbc57
+```
+
+## Handover / ready-to-paste continuation
+
+Completed: bounded road20/rail5 implementation + production-body host regressions, baseline failure reproduction, final147 PASS, source/evidence/output archival. Pending: Windows/native >5 acceptance and separate commodity admission evidence. No agent sessions were started/stopped; no publication/build/deploy authority is implied.
+
+> Continue on `arena/ba311674-wrsre`, without switching branches. Read `AGENTS.md`, `INSTRUCTIONS.md`, `KILO_AGENT_WORKFLOW.md`, `docs/tasks/active/TEST16_ROAD_TARGETS.md` and this report's Test16 section. Working source is `0.18.19-road-targets`, road20 TOTAL including manual, rail5, unknown deny. Preserve over-limit existing rows, directions, defaults, thresholds10/30, timers, dirty notifications and paymentsOFF. All147 private-logistics tests passed on final20; optimized/sanitized fixtures execute extracted production daily/preflight with stubs, NOT native calls. Do not reopen insertion/ctor/R9/rail/dispatcher/helper extraction or ask for the EXE. Do not commit/push/PR/build/deploy/CI or run the game without separate authorization. If native results arrive, assess >5 panel/dedup/directions and named save/reload against the scoped checklist without repeating basic saving tests or treating a version log as hash parity. Commodity remains separate: inspect existing native closure task/caches for actual resource-row+28/+60 writers and denominators; the7496C0 clamp excerpt alone is insufficient. If required native evidence is unavailable, state the exact missing edge rather than infer a blanket10/30 change or request already-closed exports. Use one parent and focused children only if useful/available; serialize any authorized Ghidra work. Append new source/actual results to this cumulative report in small checked chunks and update the active task.
+
+## Test16 PR publication checkpoint — 2026-11-04
+
+User explicitly requested a pull request for this branch, authorizing commit/push/PR publication (not merge, build, deployment or native execution). Source branch `arena/ba311674-wrsre`; intended base `DO-fuel-cost-calculatotr`. Revalidated before publication with `python -m unittest discover -s tests/private_logistics -p 'test_*.py'` (exit0):
+
+```text
+...................................................................................................................................................
+----------------------------------------------------------------------
+Ran 147 tests in 23.131s
+
+OK
+```
+
+Initial log redirection failed because the ignored cache directory was absent after snapshot restoration; no tests ran in that attempt. Created the cache directory and ran the successful command above. Native acceptance and commodity-writer evidence remain pending; payments OFF.

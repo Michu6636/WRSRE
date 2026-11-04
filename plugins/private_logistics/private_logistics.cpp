@@ -1,6 +1,9 @@
 // private_logistics - what a private company earns, and what it pays.
 //
 // ---------------------------------------------------------------------------
+// v0.18.19 updates: bounded road automatic targets up to 20 TOTAL entries,
+// rail remains five; count manual entries and recheck the live vector before
+// native allocation/append. No permissions, thresholds, timers or billing changes.
 // v0.18.18 updates: guard exhausted legacy census slots before per-vehicle
 // diagnostics; report omitted visits without changing limits or dispatch/billing.
 // v0.18.17: durable dry-run assignment costs; frozen original-target snapshots,
@@ -369,6 +372,7 @@
 #include "../../src/persistence_api.h"
 #include "../../src/ui_panels_api.h"
 #include "site_permissions.h"
+#include "auto_target_policy.h"
 #include "task_audit.h"
 // Compiled/tested core only. No runtime consumer until native vehicle, cargo
 // boundaries and actual fuel-deduction provenance/order have been validated.
@@ -504,7 +508,7 @@ static char   gFuelResource[64] = "fuel";  // resolved through resource_pricing
 static double gBasketsPerTrip   = 0.80;    // CPI fallback, in daily survival baskets
 static double gBasketsPerTonne  = 0.02;
 
-#define PL_VERSION "0.18.18-census-guard"
+#define PL_VERSION "0.18.19-road-targets"
 static int g_panelObserverEnabled = 1;
 static int g_scheduleObserverEnabled = 1;
 static void PanelObserverLoading(void);
@@ -1869,12 +1873,10 @@ static void OnDay(void*, int day, int month, int year)
 #define AUTO_DO_TARGETS_END       0x0D40
 #define AUTO_DO_DIRTY             0x0D50
 #define AUTO_DO_UI_TIMER          0x0FC0
-// Conservative plugin-side bound: native add-flow supports five selections,
-// but panel+0x310 per-target control-array capacity above five is unverified.
-// This limits new auto targets without deleting/purging any manual entries.
-#define AUTO_DO_SAFE_TARGET_COUNT 5
-#define AUTO_DO_ROAD_TYPE         43
-#define AUTO_DO_RAIL_TYPE         52
+// Total-count policies live in auto_target_policy.h: road 20, rail still 5.
+// The reviewed fixed control storage/receiver chain supports this road bound;
+// it is not the native per-selection batch count or a 100-target engine policy.
+// Existing/manual entries are retained even when already over the policy limit.
 #define AUTO_STORAGE_BUILDING_TYPE 5
 #define AUTO_CUSTOMS_TYPE         20
 #define AUTO_CUSTOMS_MAX          512
@@ -2278,7 +2280,12 @@ static bool AutoAppendNativeTarget(void* office, void* target, unsigned directio
         g_exeSize <= AUTO_RVA_VECTOR_PUSH_BACK + 1) return false;
     void** oldBegin = nullptr; size_t oldCount = 0;
     if (!AutoReadTargetVector(office, &oldBegin, &oldCount)) return false;
-    (void)oldBegin; (void)oldCount;
+    (void)oldBegin;
+    // Recheck the live vector before allocating/calling native helpers. The
+    // daily snapshot is a planning budget, not permission to exceed the limit.
+    int officeType = -1;
+    if (!AutoReadBuildingType(office, &officeType) ||
+        !AutoCanAppendTarget(officeType, oldCount)) return false;
 
     typedef void* (__fastcall *TTaskCfgCtor)(void*);
     typedef void (__fastcall *TVectorPushBack)(void*, const void*);
@@ -2716,7 +2723,7 @@ static void AutoTargetsOnDay(int day, int closedDay)
         size_t projectedAdds = 0;
         // State storages were appended to g_autoEntities after private sites;
         // walk backward so an explicit state-source opt-in gets first access
-        // to the five-entry conservative safe budget.
+        // to the office-type total-count budget (road 20, rail still 5).
         for (unsigned ti = entityCount; ti > 0; --ti) {
             AutoEntity& target = g_autoEntities[ti - 1];
             if (!target.hasStorage || target.building == office.building) continue;
@@ -2724,12 +2731,12 @@ static void AutoTargetsOnDay(int day, int closedDay)
                 ++existing; ++doExisting; continue;
             }
             const int memoIndex = AutoMemoFind(office.key, target.key);
-            if (entryCountAtStart + projectedAdds >= AUTO_DO_SAFE_TARGET_COUNT) {
+            if (!AutoCanAppendTarget(office.type, entryCountAtStart, projectedAdds)) {
                 ++suppressed; ++doSuppressed;
                 if (g_autoLogLines < (unsigned)g_autoTargetLogLimit) {
-                    Logf("[AUTO DO] day %d target=%016llX omitted: conservative target count %u reached (existing=%llu)",
+                    Logf("[AUTO DO] day %d target=%016llX omitted: total target policy %u reached (existing=%llu)",
                          closedDay, (unsigned long long)target.key,
-                         (unsigned)AUTO_DO_SAFE_TARGET_COUNT,
+                         (unsigned)AutoTargetLimitForType(office.type),
                          (unsigned long long)entryCountAtStart);
                     ++g_autoLogLines;
                 }

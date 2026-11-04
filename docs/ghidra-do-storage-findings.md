@@ -147,3 +147,7 @@ No safe, global reservation or exclusive-target mechanism was established. Multi
 - Confirm disabled/unreachable tasks are retained, not removed, then re-enabled when reachable.
 - Test one DO first; observe duplicate-source contention before expanding to multiple offices.
 - Confirm no inventory manipulation occurs and no target writes happen while `auto_targets_dry_run = 1`.
+
+## Narrow supersession: road target policy, 2026-11-04
+
+Working source is now `0.18.19-road-targets`, ROAD total20 / RAIL total5, counting manual entries and retaining existing over-limit rows. Earlier five-TOTAL source descriptions remain historical Test15 results. Road has BOTH `/49` and `/20` display branches (raw renderer lines1017/1900), not just49; twenty is a bounded plugin choice inside both and the independently linked100-DWORD panel allocation, NOT proof of an engine maximum. The live native append preflight rechecks type/count before allocation. No entry/config layout, native lifecycle, permission/default, 10/30 threshold or payment change. All147 private-logistics host tests pass, including optimized/sanitized actual production-body extraction; these do not establish native save-load/UI behavior. See `docs/tasks/active/TEST16_ROAD_TARGETS.md` for pending >5 native acceptance and the cumulative Test16 section for all source/results. Commodity row+28/+60 producers remain unresolved; no repeated insertion/helper extraction is needed.
