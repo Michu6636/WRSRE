@@ -172321,3 +172321,156 @@ PASS: exact Git packet round-trip, bytes=215658; ready-to-paste repair request a
 ### Final review checks
 
 Actual checks passed: all13,555,785 prior report bytes remain unchanged (SHA256 c71617d52b12cfef91f1ce5fc830aa335ab26ffb8462140bf22223dab1c70d46);13 numbered packet blocks decompress byte-for-byte to the fetched Git artifact; embedded repair request and archive-helper source match their local files. Scope check found exactly two edited documentation files plus the new repair request, on arena/23b97bf8-wrsre. `git diff --check` passed. These are document/archive checks, not native safety acceptance or a host regression-suite run. No commit/push/PR was performed.
+
+## Test15 V2 review — full artifacts accepted, native insertion edge still partial (2026-11-03)
+
+The user synced the V2 packet. Fetched `DO-fuel-cost-calculatotr` tip `a2daa81a950eb7180a6f1bcf40166b303c488f48`; its only change from this session HEAD ccf9279 is root `TEST15_NATIVE_CLOSURE_PACKET_V2.md`. No base merge or branch switch was needed. Current branch: `arena/38c86ab5-wrsre`. Remote and local INSTRUCTIONS match SHA256 1d04ac2dbfe194db07c5b9f6c55ead5547f658bc15ec2334b721ef43a474a084.
+
+Exact reviewed Git artifact: `a2daa81a950eb7180a6f1bcf40166b303c488f48:TEST15_NATIVE_CLOSURE_PACKET_V2.md`, blob `488bf43dce962e613d7805e5d63ceb600cda93ae`, 106232 bytes, SHA256 `d39e9436bc8e3b29f7aff4c441ce0c472591d02adfd140daba0d1cce2ec29dac`. This immutable Git artifact contains all seven encoded original files and the supplied packager/verification scripts/output. Unlike V1's manually rendered raw bodies, decoded full artifacts now match the six unchanged original-file inventory hashes from V1; the index is a newer snapshot. V1 remains exactly 215658 bytes/SHA256 f83153c40a3672bf2de6c37056d3716981e80a3e6939350c414e3b8fb6d9970e.
+
+### Mechanical acceptance and limitations
+
+Independent verifier decoded all seven full-file gzip/Base64 blocks and checked their lengths/hashes. All thirteen excerpt hashes match their source slices from decoded files. The original Windows disk files/PE are not independently accessible; these checks authenticate internal package consistency and continuity with the earlier inventory, not the native executable. No embedded script was executed.
+
+The initial strict excerpt check stopped on the first fence: the Git packet is entirely LF, whereas the seven encoded originals retain CRLF. `.gitattributes` enforces LF for Markdown. On the received Git bytes, all thirteen readable fences fail strict CRLF byte equality but all thirteen match after newline normalization. Their stated byte counts/hashes are correct for the original CRLF source slices, not the rendered LF fence bytes. The Windows 20/20 log is externally reported, not reproduced as a strict 20/20 fence test here. This does NOT require V3/repackaging: full artifacts remain lossless and every readable excerpt can be reproduced exactly from them. The final verifier below records this distinction.
+
+### Native findings recovered from decoded originals
+
+- Creator: 1209 parsed instruction rows, no backward/overlapping consecutive rows. Bytes `48 C7 43 18 00 00 00 00` are at preferred VA 0x1406EE81B; 0x1406EE83F is `48 83 C8 FF`. V1's overlap was in its rendered packet, not this source.
+- Ctor: 159 parsed rows over the supplied range (including later functions), no backward/overlapping consecutive rows. Preferred VA 0x14025C58B is `48 89 77 08` (RSI store); 0x14025C7E5 precedes 0x14025C7E8. No native corruption established. Constructor sets RAX=RBX before restoring RBX and returning.
+- Allocation/caller source: creator lines 206–212 request 0x5D8, save allocation at stack+0x30, call 0x25C500 and retain its returned window*. Creator 0x6EF305–0x6EF34C initializes 400 bytes: 100 DWORDs of **2**, not 100 DWORDs of 0x200000002; the latter QWORD pattern contains two DWORDs. Following field starts at +0x4A0.
+- Dispatcher: line 364 loads puVar2 from context+0xCAC0 table; lines 430/435/495 gate window kind/subtype 0 and load building from window+0x240; line 564 reads descriptor+0x318/+0x360. Lines 825–832 route building types 0x2B/0x34 to road/rail builders with puVar2 as window receiver. Window kind +0x34 values 8/9 are a different domain; do not equate them with DO building types.
+- Complete rail: line 156 saves param_2 as local_e88; lines 765/800/807/812 and later restore window alias lVar20. Lines 1619–1640 access window+0x310+idx*4 and bulk-copy to total target count, derived from building targets +0xD38/+0xD40. Line 904 contains /49; line 1803 contains /20 in the separate cVar13 mode branch beginning at line 891. The partial excerpt's note saying lVar20 is a target-vector entry is misleading here; the state receiver is the restored window alias. The raw file now supports the previously missing rail segment.
+- Caller insertion: R14=&context+0xCAC0 at 0x6EE41F; 0x6EF68D LEA gets address of local stack+0x30 holding window*, then 0x6EF692 stores that address into pre-CALL stack+0x20 (fifth arg). RDX is address of local stack+0x120 and R8 is insertion address; RCX=R14. Their callee roles are not proven just by caller setup. No R9 assignment occurs in this call-site region; prior calls can clobber it. That is NOT itself a native bug if the callee does not consume R9.
+- Post-insert 0x6EF6A7 sets R8D=1, 0x6EF6BD sets EDX=8; 0x6EF6C5–0x6EF6E1 clears table elements' +0x18 from fixed table index 1 through end. It is not a demonstrated inserted-index loop.
+
+### Acceptance decision and next scope
+
+**Packaging repair accepted; no further packaging request.** V2's revised CONDITIONALLY CLOSED is a statement of remaining uncertainty, not an implementation-ready verdict. The encoded historical ledger/index retain stale CLOSED/YES/Resolved language, ctor-vs-creator and DWORD-pattern errors, plus misleading argument descriptions; preserving those bytes is correct evidence handling, not fresh corroboration of those claims. Current index tables are corrected with this review and retain the prior contested note.
+
+**Exact remaining receiver edge:** actual callee 0x1E140 input/output contract and the path from fifth-argument window-pointer local to a context table element. The current packet includes no body of that helper; a second decompiled caller is insufficient to close it. Cached corroborating caller assembly already in this report (around historical lines 57589–57620) also writes an address into pre-CALL stack+0x20; it supports a similar call shape but cannot prove the callee's argument-use semantics. Locate cached helper output first; only if missing is the proposed narrow follow-up its body and needed delegated store range. Prove R9 non-use if unused, rather than demanding a fabricated value. No re-export of already supplied creator/ctor/rail/dispatcher is needed.
+
+Even that closure must be followed by a bounded total-target UI/lifecycle assessment; /49 display alone does not prove a hard append bound, nor do 100 slots prove a 100-target policy or per-selection batch capacity. Commodity admission row+0x28/+0x60 writers/denominators remain separately blocked. No threshold, permission, billing, target-cap, config or runtime change in this review; no new native/Ghidra run, build, gameplay test, commit/push/PR. Proposed focused handover: [TEST15_INSERTION_CONTRACT.md](../tasks/active/TEST15_INSERTION_CONTRACT.md). Sending it is the next read-only task, not a claim it has already executed.
+
+### Independent verifier source (part 1/2)
+
+```python
+import base64, gzip, hashlib, pathlib, re, subprocess
+root = pathlib.Path('/home/user/WRSRE')
+cache = root / '.cache/test15-v2'
+packet = (cache / 'packet.md').read_bytes()
+text = packet.decode('utf-8')
+sha = lambda b: hashlib.sha256(b).hexdigest().upper()
+print('V2', len(packet), sha(packet))
+print('Remote commit', subprocess.check_output(['git','rev-parse','FETCH_HEAD'], cwd=root).decode().strip())
+v1 = subprocess.check_output(['git','show','FETCH_HEAD:TEST15_NATIVE_CLOSURE_PACKET.md'], cwd=root)
+assert sha(v1) == 'F83153C40A3672BF2DE6C37056D3716981E80A3E6939350C414E3B8FB6D9970E'
+print('PASS V1 unchanged:', len(v1), sha(v1))
+artifacts = {}
+pattern = r'### Artifact (\d+): `([^`]+)`\n\nRole: ([^\n]+?) \| Bytes: (\d+) \| SHA-256: `([0-9A-F]+)`.*?```base64\n(.*?)\n```'
+for m in re.finditer(pattern, text, re.S):
+    n, path, role, size, digest, encoded = m.groups()
+    raw = gzip.decompress(base64.b64decode(encoded))
+    assert len(raw) == int(size) and sha(raw) == digest, path
+    artifacts[path] = raw
+    (cache / pathlib.Path(path).name).write_bytes(raw)
+    print('PASS ARTIFACT', n, path, len(raw), sha(raw))
+assert len(artifacts) == 7
+count = 0
+strict = 0
+normalized = 0
+```
+
+### Independent verifier source (part 2/2)
+
+```python
+pattern = r'### Excerpt: ([^\n]+)\n\nSource: `([^`]+)` lines (\d+)-(\d+) \| Excerpt bytes: (\d+) \| Excerpt SHA-256: `([0-9A-F]+)`.*?```text\n(.*?)\n```'
+for m in re.finditer(pattern, text, re.S):
+    label, path, start, end, size, digest, readable = m.groups()
+    raw = b''.join(artifacts[path].splitlines(keepends=True)[int(start)-1:int(end)])
+    assert len(raw) == int(size) and sha(raw) == digest, label
+    exact = raw in [readable.encode(), (readable+'\n').encode()]
+    norm = raw.replace(b'\r\n', b'\n') in [readable.encode(), (readable+'\n').encode()]
+    assert norm, label
+    strict += int(exact)
+    normalized += int(norm)
+    print('PASS EXCERPT source slice/hash; strict_fence='+str(exact)+' LF_normalized='+str(norm), path, start+'-'+end, len(raw), sha(raw))
+    count += 1
+assert count == 13
+print('PASS: 7/7 full-artifact hashes; 13/13 excerpt source-slice hashes; readable fences strict',strict,'/13, LF-normalized',normalized,'/13. Windows originals not independently accessible.')
+for name in ['test15_creator.asm','disasm_25c500.txt']:
+    rows = []
+    for line in (cache/name).read_text().splitlines():
+        m = re.match(r'^\s*(?:0x)?([0-9a-fA-F]{9,}):\s+((?:[0-9a-fA-F]{2} )+)',line)
+        if m: rows.append((int(m[1],16),len(m[2].split())))
+    bad = [(hex(a),n,hex(b)) for (a,n),(b,k) in zip(rows,rows[1:]) if b<a+n]
+    print('ASM',name,'rows',len(rows),'overlap/backtrack',bad)
+```
+
+### Actual verifier output (part 1/2)
+
+```text
+V2 106232 D39E9436BC8E3B29F7AFF4C441CE0C472591D02ADFD140DABA0D1CCE2EC29DAC
+Remote commit a2daa81a950eb7180a6f1bcf40166b303c488f48
+PASS V1 unchanged: 215658 F83153C40A3672BF2DE6C37056D3716981E80A3E6939350C414E3B8FB6D9970E
+PASS ARTIFACT 1 scratch/test15_claim_ledger.md 15737 2EA410E1FEE7E81D226082000B75D014A8F64505B134D8D5A7F31D8C2A464F26
+PASS ARTIFACT 2 docs/ghidra-index/6EE2A0.md 5768 5B0CFD3CC691C7C2F873264511A85FB5D2AFD61BEC7C1839CC0DD70F1B410398
+PASS ARTIFACT 3 scratch/out/test15_creator.asm 72356 8E5C9CF1BCB91C96B446766C9FE81E1CE1B63401A7CA88783C5411512224EFB8
+PASS ARTIFACT 4 scratch/disasm_25c500.txt 12453 B15A9B9F82E4252E242318E39AA390C885F344057B0A72D207DFD8322A9C87B7
+PASS ARTIFACT 5 scratch/decomp_6e9b80.c 67072 43F384885C890B0F59D7D81D0C7D3821C47DE50BEEA551D38B086AB800B896F3
+PASS ARTIFACT 6 scratch/panel_745350_final.c 79895 6DB7AD084C686263AB04653769947BA6756DC95C3E7FED2BA0CFDD042B12DEBE
+PASS ARTIFACT 7 scratch/agent1_install_connected_decomp.c 5439 5A8DD879472BC1E430C9E5CD5AE5ABC56090D4DC71BD1628C5F107ADBE9B09FD
+PASS EXCERPT source slice/hash; strict_fence=False LF_normalized=True scratch/out/test15_creator.asm 1136-1146 636 DF6C03FFC1CE88D28BA193D89255D6DA497B273FE87BBA34B3692A3AA7AC5883
+PASS EXCERPT source slice/hash; strict_fence=False LF_normalized=True scratch/out/test15_creator.asm 925-955 2035 E3E7D4A0FC1146E9A1B5E0BBAF9A8C892963CA9355130A768924583FECA053B4
+PASS EXCERPT source slice/hash; strict_fence=False LF_normalized=True scratch/out/test15_creator.asm 1100-1140 2403 46705CC0DCC0BA50C088E6E0A74F1B79F84834F262B291874774B1952456B6AE
+PASS EXCERPT source slice/hash; strict_fence=False LF_normalized=True scratch/out/test15_creator.asm 1148-1162 865 1C9B82C77F59A4F0F6BC4F79F3559C69D74423380BD82E4D47E8A8F905092E6E
+PASS EXCERPT source slice/hash; strict_fence=False LF_normalized=True scratch/out/test15_creator.asm 320-335 1102 0AE76FF4F82C51F194BEA52F4146C65D18D6D60FBF2D67667EFD13278F8B07D9
+```
+
+### Actual verifier output (part 2/2)
+
+```text
+PASS EXCERPT source slice/hash; strict_fence=False LF_normalized=True scratch/disasm_25c500.txt 1-46 3723 EEFB3C86289358E43886DF31D42EE6184FCAC2D7A678F9DE30F6AE070048AC4A
+PASS EXCERPT source slice/hash; strict_fence=False LF_normalized=True scratch/disasm_25c500.txt 29-33 413 35C3CA518925B04D6A893A3649897E4A860760930D1BB05CE949B423EAA32CBC
+PASS EXCERPT source slice/hash; strict_fence=False LF_normalized=True scratch/disasm_25c500.txt 150-156 469 109B5D7DE13F9F7F62E7FC7EAF39EC36218B40D8994DC673C2737FDB374A9F7B
+PASS EXCERPT source slice/hash; strict_fence=False LF_normalized=True scratch/decomp_6e9b80.c 825-832 372 E042DB8D1259DFCACC84AB9FB4957704C43D70FC0355F6A8C8E1CE61F1C31EA5
+PASS EXCERPT source slice/hash; strict_fence=False LF_normalized=True scratch/panel_745350_final.c 1615-1635 1121 288FD4E177CD130C8E7784046EBA0D513CEA2BE02D548AC261FE88A11BA6F020
+PASS EXCERPT source slice/hash; strict_fence=False LF_normalized=True scratch/panel_745350_final.c 900-906 421 B7B12464A2B5A383F370BFE8C18A43918F016F30D34699ED627A9DCA68877C17
+PASS EXCERPT source slice/hash; strict_fence=False LF_normalized=True scratch/panel_745350_final.c 1798-1806 425 120862ED73B3C85BB68DB91B9F4918D29FC6B1FC849EFF0E54836C953FBD8DD6
+PASS EXCERPT source slice/hash; strict_fence=False LF_normalized=True scratch/agent1_install_connected_decomp.c 86-101 630 FAE37BD6B33D71D51AF940AE6DB544C22408906082E0BAEFC47FE948479F2521
+PASS: 7/7 full-artifact hashes; 13/13 excerpt source-slice hashes; readable fences strict 0 /13, LF-normalized 13 /13. Windows originals not independently accessible.
+ASM test15_creator.asm rows 1209 overlap/backtrack []
+ASM disasm_25c500.txt rows 159 overlap/backtrack []
+```
+
+### Ready-to-paste next-agent request (verbatim)
+
+````text
+# Test15 next native gap — insertion helper only
+
+Use the existing Windows Kilo parent session. Read AGENTS.md, INSTRUCTIONS.md and KILO_AGENT_WORKFLOW.md. This is a proposed read-only follow-up for the user to send, not evidence that another native run already happened. No runtime/config/build/deployment, commit or push. Keep scratch ignored. Do not repeat V2 packaging or re-export creator/ctor/dispatcher/rail files.
+
+V2 at a2daa81a950eb7180a6f1bcf40166b303c488f48 is now independently decoded: seven full artifact hashes and thirteen excerpt source-slice hashes pass. LF normalization of readable Markdown fences is harmless to encoded artifacts. V1's bad assembly rows are not present in the decoded originals. The outstanding receiver edge is the insertion helper's actual transfer of window* into the context panel table, not another caller summary.
+
+## One bounded question
+
+Does FUN_14001E140 (RVA 0x1E140; preferred VA 0x14001E140) load the window* through the fifth argument and store it as an element of the context+0xCAC0 table? What incoming arguments does it actually consume, including R9? If R9 is unused, prove that; an unassigned volatile register alone does not invalidate a call.
+
+Known caller at preferred VA 0x1406EF68D–0x1406EF6A2:
+- RCX = R14 = &context panel table at context+0xCAC0.
+- RDX = &stack local at caller RSP+0x120 (input/output role not assumed).
+- R8 = insertion address.
+- Caller [RSP+0x20] = &local at caller RSP+0x30 containing window*. This is argument five (callee entry RSP+0x28), not R9's home slot. Account for the callee prologue when tracing.
+
+Search the index, cached exports and cumulative report first. If the callee body is genuinely absent, this follow-up requests only its read-only decompilation plus instruction bytes for the argument-consuming/table-store ranges needed to verify the dataflow. Serialize Ghidra through one owner. Follow a delegated store only if required, and stop at the exact missing edge rather than widening into general UI research.
+
+Report exact bytes/addresses for the fifth-argument load, window* dereference, table-element store and return/output roles, with branch coverage including relocation/growth if relevant. Do not infer the signature from the corroborating caller's decompilation. Preserve conflicting historical claims while correcting the index. Post-insert clearing starts at fixed index 1, not a proven insertion index. The creator initializes 100 DWORD values of 2; the QWORD pattern is 0x200000002.
+
+Append full raw output, extraction/verification source and actual results to the cumulative VEHICLE_PANEL_FUEL_INVESTIGATION.md in small verified chunks; update the function index. Return one lossless Markdown containing the new original export(s), source paths, counts/hashes, deciding excerpts and scripts/results. No need to resend the existing V2 artifacts. Label readable excerpts as line-ending-normalized views, not byte-identical exports. State whether each hash covers original bytes or normalized display text; retain exact original bytes in the lossless encoded blocks.
+
+Even successful insertion closure does not by itself approve 5→49/100: retain the distinction between physical slots, native /49 display, total-target UI/lifecycle bounds and batch limits. Commodity row+0x28/+0x60 writers remain a separate unresolved task. Do not change thresholds, permissions, billing or the production five-total cap in this follow-up.
+````
+
+### Line-ending clarification and publication authorization
+
+The user asked why Git normalized the packet and authorized creating and merging the review PR. Windows CRLF (`0D 0A`) and LF (`0A`) both represent line breaks; `.gitattributes` deliberately stores Markdown with LF. This preserves readable text but changes byte counts and hashes of rendered excerpts. It does not alter the decoded binary contents of gzip/Base64 blocks. Keep the repository policy; no V2 repair is needed. The follow-up prompt now requires explicit normalized-view labels and hash domains (original bytes versus displayed text), while retaining lossless originals. Publication scope remains the three documentation files; runtime/configuration and the five-total cap are unchanged.
