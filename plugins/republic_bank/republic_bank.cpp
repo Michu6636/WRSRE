@@ -1,4 +1,4 @@
-﻿// republic_bank - working-capital credit lines and term loans for private enterprises.
+// republic_bank - working-capital credit lines and term loans for private enterprises.
 
 #include "../../src/tesmio_plugin.h"
 #include "../../src/sim_clock_api.h"
@@ -132,6 +132,12 @@ static void onSave(TsmSaveEvent event, const char* dir, void* userData) {
             g_book.loadBytes(v);
             LeaveCriticalSection(&g_lock);
             free(buf);
+        } else {
+            EnterCriticalSection(&g_lock);
+            auto cfg = g_book.config;
+            g_book = LoanBook();
+            g_book.config = cfg;
+            LeaveCriticalSection(&g_lock);
         }
     }
 }
@@ -264,7 +270,7 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void) {
             if (v > 100) v = 100; // percent 0..25 represented as 0..25? keep 0..25
             if (v > 25) v = 25;
             if (g_ui->widgetSlider(L"Bank rate %", &v, 1, 1)) {
-                g_book.setAnnualInterestRate(v / 100.0);
+                setRateImpl(v / 100.0);
             }
         }, nullptr);
     }
