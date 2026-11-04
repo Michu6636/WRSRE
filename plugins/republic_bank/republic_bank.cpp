@@ -1,5 +1,6 @@
 // republic_bank - working-capital credit lines and term loans for private enterprises.
-// v1.1: full-span numeric City Hall rate slider; credit caps and the retained
+// v1.2: native drags snap to the same whole-percent grid as the slider buttons;
+// v1.1 fractional-drag saves are normalised on load. Credit caps and the retained
 // cash buffer follow resource_pricing's live active-currency CPI basket.
 
 #include "../../src/tesmio_plugin.h"
@@ -91,7 +92,7 @@ static double RefreshEconomicScale(void) {
 }
 
 static double getRateImpl(void) { EnterCriticalSection(&g_lock); double r=g_book.getAnnualInterestRate(); LeaveCriticalSection(&g_lock); return r; }
-static void setRateImpl(double r) { EnterCriticalSection(&g_lock); g_book.setAnnualInterestRate(r); LeaveCriticalSection(&g_lock); }
+static void setRateImpl(double r) { EnterCriticalSection(&g_lock); g_book.setAnnualInterestRate(NormalizeBankRate(r)); LeaveCriticalSection(&g_lock); }
 
 static double requestCreditDrawImpl(void* building, double neededAmount, const char* reason) {
     if (!g_enterprise || !building || !g_enabled) return 0.0;
@@ -158,6 +159,7 @@ static void onSave(TsmSaveEvent event, const char* dir, void* userData) {
     } else {
         size_t len = 0;
         void* buf = g_persistence->readFile(dir, "republic_bank.bin", &len);
+        const bool hadState = (buf != nullptr);
         if (buf) {
             std::vector<char> v((char*)buf, (char*)buf + len);
             EnterCriticalSection(&g_lock);
@@ -171,10 +173,25 @@ static void onSave(TsmSaveEvent event, const char* dir, void* userData) {
             g_book.config = cfg;
             LeaveCriticalSection(&g_lock);
         }
+
+        double rate = 0.0;
+        size_t entries = 0;
+        EnterCriticalSection(&g_lock);
+        // v1.1 could save off-grid drag values such as 3.75% beneath a 4%
+        // caption. Migrate them to the visible whole-percent choice.
+        g_book.setAnnualInterestRate(NormalizeBankRate(g_book.getAnnualInterestRate()));
+        rate = g_book.getAnnualInterestRate();
+        entries = g_book.loans.size();
+        LeaveCriticalSection(&g_lock);
+
         // v1 files contain a scale for backwards compatibility, but it is a
         // derived runtime value.  Never let a stale saved scale freeze the
         // limits against the newly loaded world's prices or currency.
-        RefreshEconomicScale();
+        const double scale = RefreshEconomicScale();
+        Logf("republic_bank  %s %s\\republic_bank.bin: rate %.2f%%, "
+             "ledger entries %zu, economic index x%.4f",
+             hadState ? "loaded state from" : "no saved state at", dir,
+             rate * 100.0, entries, scale);
         g_lastLoggedScale = -1.0;
         g_lastLoggedCurrency = -1;
     }
@@ -251,7 +268,7 @@ static void readSettings() {
     double rate = 0.06;
     if (H->configString(ini, "republic_bank", "annual_interest_rate", v, sizeof(v), "") && v[0]) rate = atof(v);
     if (!std::isfinite(rate) || rate < 0.0) rate = 0.06;
-    g_book.setAnnualInterestRate(rate);
+    g_book.setAnnualInterestRate(NormalizeBankRate(rate));
     double md = 100000.0;
     if (H->configString(ini, "republic_bank", "max_debt_per_enterprise", v, sizeof(v), "") && v[0]) md = atof(v);
     if (!std::isfinite(md) || md < 0.0) md = 100000.0;
@@ -282,7 +299,7 @@ extern "C" __declspec(dllexport) unsigned TsmPluginApiVersion(void) {
 extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host, TsmPluginInfo* info) {
     TsmBind(host);
     info->name = "republic_bank";
-    info->version = "1.1";
+    info->version = "1.2";
 
     readSettings();
     if (!g_enabled) {
@@ -349,9 +366,10 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void) {
             _snwprintf_s(caption, _countof(caption), _TRUNCATE,
                          L"Bank rate: %.0f%%", rate * 100.0);
             if (g_ui->widgetSlider(caption, &v, 4, 1)) {
+                v = BankRateSnapSlider(v);
                 const double newRate = BankRateFromSlider(v);
                 setRateImpl(newRate);
-                Logf("republic_bank  [WIDGET RATE] Bank rate -> %.0f%% "
+                Logf("republic_bank  [WIDGET RATE] Bank rate -> %.2f%% "
                      "(slider %u)", newRate * 100.0, v);
             }
         }, nullptr);
