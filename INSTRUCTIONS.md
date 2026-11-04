@@ -55,6 +55,8 @@ first instead of appending. Multiple dirs go in one flag, ';' separated.
 
 ### Available Ghidra Scripts:
 
+Tracked repository copies of the workspace `.java` scripts live in `tools\ghidra\` (include `<workspace>\tools\ghidra` in `-scriptPath` or copy into `scratch\` as needed; cached raw exports live in `docs\ghidra-exports\`).
+
 - Decompile Function: `scratch\ghidra_run.bat DecompAt.java <out_file.c> <0x140RVA1> [0x140RVA2...]`
 - Find Cross-References: `scratch\ghidra_run.bat Xrefs.java <out_xrefs.txt> <0x140RVA>`
 - Disassemble Instruction Bytes: `scratch\ghidra_run.bat DisasmMany.java <out_disasm.asm> <0x140start:0x140end>`
