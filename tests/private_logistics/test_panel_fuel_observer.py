@@ -105,8 +105,8 @@ class PanelFuelObserverTest(unittest.TestCase):
     def test_gate_diagnostic_version_and_qualified_address(self):
         runtime = (PLUGIN / 'panel_fuel_runtime.h').read_text()
         cpp = (PLUGIN / 'private_logistics.cpp').read_text()
-        self.assertIn('#define PL_VERSION "0.18.19-road-targets"', cpp)
-        self.assertIn('"0.18.19-road-targets"', runtime)
+        self.assertIn('#define PL_VERSION "0.18.20-b2b-delivery"', cpp)
+        self.assertIn('"0.18.20-b2b-delivery"', runtime)
         self.assertIn('reinterpret_cast<std::uintptr_t>(g_exeBase)', runtime)
         self.assertNotRegex(runtime, r'\b(?:static_cast|reinterpret_cast)<Address>')
         self.assertIn('native_execution=unobserved', runtime)

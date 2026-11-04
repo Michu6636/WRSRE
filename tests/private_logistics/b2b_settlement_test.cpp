@@ -285,6 +285,59 @@ int main() {
         std::printf("8. resetAll + ORIGIN_UNKNOWN policy OK\n");
     }
 
+    // 9. Runtime delivery-site routing: p9 == vehicleHome must not suppress
+    // the vehicle half at 0x68F7F9, while genuine staging elsewhere stays out.
+    {
+        assert(ShouldTrackMode1Cargo(true, 1, true, true, false,
+                                     DELIVERY_VEHICLE_SITE_RVA));
+        assert(!ShouldTrackMode1Cargo(true, 1, true, true, false, 0x006953C4));
+        assert(ShouldTrackMode1Cargo(true, 1, true, false, false, 0x006953C4));
+        assert(!ShouldTrackMode1Cargo(false, 1, true, true, false,
+                                      DELIVERY_VEHICLE_SITE_RVA));
+        assert(!ShouldTrackMode1Cargo(true, 0, true, true, false,
+                                      DELIVERY_VEHICLE_SITE_RVA));
+        assert(!ShouldTrackMode1Cargo(true, 1, false, true, false,
+                                      DELIVERY_VEHICLE_SITE_RVA));
+        assert(!ShouldTrackMode1Cargo(true, 1, true, true, true,
+                                      DELIVERY_VEHICLE_SITE_RVA));
+
+        // Exact 1.650 t pair from the two-save runtime log, including cargo
+        // attribution and single consumption of the pending delivery.
+        g_testEngine.resetAll();
+        g_testEngine.recordMode0Load(1, 5, 1.650f, 1.0, true, 0xD311E1ULL);
+        assert(g_testEngine.matchMode1Load(10, 9, 5, 1.650f, 1.03, false, 0));
+        g_testEngine.recordMode0Delivery(2, 3, 5, 1.650f, 2.0);
+        MatchedDelivery md{};
+        assert(g_testEngine.matchMode1Delivery(10, 9, 3, 5, 1.650f, 2.03, &md));
+        assert(md.deliveryMatched && md.cargoFound);
+        assert(md.origin == ORIGIN_PRIVATE);
+        assert(md.sellerBld == 1 && md.sellerKey == 0xD311E1ULL);
+        assert(md.destBld == 2 && md.carrierBld == 3);
+        assert(!g_testEngine.matchMode1Delivery(10, 9, 3, 5, 1.650f, 2.04, &md));
+
+        // A wrong resource cannot consume a pending delivery; an excessively
+        // old pair and an ambiguous partial-load tonnage remain safe skips.
+        g_testEngine.recordMode0Delivery(2, 3, 6, 0.500f, 4.0);
+        assert(!g_testEngine.matchMode1Delivery(10, 9, 3, 5, 0.500f, 4.03, &md));
+        assert(g_testEngine.matchMode1Delivery(10, 9, 3, 6, 0.500f, 4.05, &md));
+        g_testEngine.recordMode0Delivery(2, 3, 7, 0.500f, 10.0);
+        assert(!g_testEngine.matchMode1Delivery(10, 9, 3, 7, 0.500f, 12.011, &md));
+        g_testEngine.recordMode0Load(1, 8, 10.0f, 20.0, true, 0x1234ULL);
+        assert(!g_testEngine.matchMode1Load(10, 9, 8, 6.0f, 20.03, false, 0));
+
+        // One cargo lot can legitimately satisfy multiple partial deliveries.
+        g_testEngine.resetAll();
+        g_testEngine.recordMode0Load(1, 5, 10.0f, 1.0, true, 0xBEEFULL);
+        assert(g_testEngine.matchMode1Load(10, 9, 5, 10.0f, 1.03, false, 0));
+        g_testEngine.recordMode0Delivery(2, 3, 5, 4.0f, 2.0);
+        assert(g_testEngine.matchMode1Delivery(10, 9, 3, 5, 4.0f, 2.03, &md));
+        assert(md.cargoFound);
+        g_testEngine.recordMode0Delivery(2, 3, 5, 6.0f, 3.0);
+        assert(g_testEngine.matchMode1Delivery(10, 9, 3, 5, 6.0f, 3.03, &md));
+        assert(md.cargoFound && md.sellerKey == 0xBEEFULL);
+        std::printf("9. vehicle-delivery gate + safe partial joins OK\n");
+    }
+
     std::printf("ALL B2B SCENARIOS PASS\n");
     return 0;
 }
