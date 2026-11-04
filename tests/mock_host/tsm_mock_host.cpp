@@ -1,4 +1,4 @@
-﻿#include "tsm_mock_host.h"
+#include "tsm_mock_host.h"
 
 #include <windows.h>
 #include <cstdio>
@@ -47,9 +47,11 @@ void MockTsmEnvironment::trackRange(const void* p, std::size_t n) {
 int MockTsmEnvironment::readablePtr(const void* p, std::size_t n) {
     if (!p || n == 0) return 0;
     uintptr_t addr = (uintptr_t)p;
-    if (addr < 0x10000) return 0;
-    if (n > 64 * 1024 * 1024) return 0;
-    return 1;
+    for (auto& r : ranges_) {
+        uintptr_t base = (uintptr_t)r.first;
+        if (addr >= base && (addr + n) <= (base + r.second)) return 1;
+    }
+    return 0;
 }
 
 int MockTsmEnvironment::readablePtrThunk(const void* p, std::size_t n) {

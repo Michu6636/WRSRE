@@ -1,4 +1,4 @@
-﻿#include "tsm_mock_host.h"
+#include "tsm_mock_host.h"
 #include "../../src/game_addresses.h"
 #include "../../src/game_world.h"
 
@@ -41,8 +41,11 @@ int main() {
 
     // readablePtr
     void* p = std::malloc(16);
+    env.trackRange(p, 16);
     CHECK(h->readablePtr(p, 16) == 1);
     CHECK(h->readablePtr((void*)0x1, 4) == 0);
+    CHECK(h->readablePtr((void*)0xDEADBEEF, 4) == 0);
+    std::free(p);
 
     // PE / addresses
     CHECK(g_tsmAddr.exeVerified == 1);

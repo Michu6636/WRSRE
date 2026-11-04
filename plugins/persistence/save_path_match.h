@@ -1,4 +1,4 @@
-﻿// save_path_match.h - pure helpers for persistence save-directory
+// save_path_match.h - pure helpers for persistence save-directory
 // resolution and load-debounce state. Header-only so the unit tests
 // exercise the exact production code.
 
@@ -6,6 +6,7 @@
 #define WRSRE_PERSISTENCE_SAVE_PATH_MATCH_H
 
 #include <cstddef>
+#include <cstdint>
 #include <cstring>
 #include <cctype>
 
@@ -110,7 +111,7 @@ inline bool DebounceLoad(SaveDebounceState& st, const char* dir,
                          unsigned long nowMs, unsigned long windowMs) {
     if (!dir) return false;
     if (st.lastLoadDir[0] != '\0' &&
-        (int)(nowMs - st.lastLoadTick) < (int)windowMs &&
+        (std::uint32_t)(nowMs - st.lastLoadTick) < (std::uint32_t)windowMs &&
         spm_stricmp(st.lastLoadDir, dir) == 0) {
         return true;
     }

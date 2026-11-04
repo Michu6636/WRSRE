@@ -1,4 +1,4 @@
-﻿// tsm_mock_host.h - portable headless mock host for WRSRE plugins.
+// tsm_mock_host.h - portable headless mock host for WRSRE plugins.
 #pragma once
 
 #include <cstddef>

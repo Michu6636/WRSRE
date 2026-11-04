@@ -67,8 +67,6 @@ static void UnregisterHandler(int handle)
 
 
 static SaveDebounceState g_debounce;
-#define g_lastLoadTick g_debounce.lastLoadTick
-#define g_lastLoadDir  g_debounce.lastLoadDir
 
 static bool SaveDirOfW(const wchar_t* path, const char* filename,
                        char* out, size_t n)
@@ -209,8 +207,6 @@ static void MaybeDispatch(const char* path, const char* mode)
         // Invalidate the load-debounce latch so a rapid
         // Load -> QuickSave -> QuickLoad never suppresses the second load.
         EnterCriticalSection(&g_lock);
-        g_lastLoadDir[0] = 0;
-        g_lastLoadTick = 0;
         InvalidateLoadDebounce(g_debounce);
         LeaveCriticalSection(&g_lock);
     } else {
@@ -246,8 +242,6 @@ static void MaybeDispatchW(const wchar_t* path, const wchar_t* mode)
         // Invalidate the load-debounce latch so a rapid
         // Load -> QuickSave -> QuickLoad never suppresses the second load.
         EnterCriticalSection(&g_lock);
-        g_lastLoadDir[0] = 0;
-        g_lastLoadTick = 0;
         InvalidateLoadDebounce(g_debounce);
         LeaveCriticalSection(&g_lock);
     } else {
