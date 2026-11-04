@@ -411,6 +411,14 @@ static double g_buyerOverdraftLimit = 5000.0;
 static int   g_chargeStateCarrier = 1;
 static int   g_inFlightReloadPolicy = 0;
 static unsigned g_skipBuyerInsolvent = 0;
+static unsigned g_b2bLoadsMode0      = 0;
+static unsigned g_b2bLoadsMatched    = 0;
+static unsigned g_b2bDelivMode0      = 0;
+static unsigned g_b2bDelivMatched    = 0;
+static unsigned g_b2bSettleCount     = 0;
+static double   g_b2bPrincipalSum    = 0.0;
+static double   g_b2bFreightSum      = 0.0;
+static double   g_b2bStateNetSum     = 0.0;
 static int   g_payFactory      = 1;
 static int   g_payCarrier      = 1;
 static int   g_logCapPerDay    = 400;
@@ -650,17 +658,9 @@ static unsigned g_ledgerTotal = 0;
 // under 2 s. If nothing matches, the payment is skipped and counted - never
 // guessed.
 
-#define CARRIER_RING 32
-
-struct CarrierNote {
-    void*  res;
-    float  tons;      // absolute
-    void*  home;      // the fleet owner
-    double t;
-};
-
-static CarrierNote g_carrier[CARRIER_RING];
-static int         g_carrierHead = 0;
+// Mode-0 building transfers and mode-1 vehicle transfers are joined through
+// g_b2bEngine (PendingLoad: 0x694F40 -> 0x6953C4; PendingDelivery: 0x68F792 ->
+// 0x68F7F9) using resource identity, tonnage within 0.5%, and dt <= 2.0 s.
 
 static double NowSeconds(void)
 {
@@ -771,17 +771,18 @@ static int SiteIndex(unsigned rva)
 
 static uint32_t VehSlotIdx(void* veh)
 {
-    if (!veh) return 0;
+    if (!veh || !TsmIsValidGamePtr(veh) ||
+        !ReadablePtr((const BYTE*)veh + 0x10, sizeof(uint32_t))) {
+        return wrsre::b2b::Engine::hashVehiclePtr((std::uintptr_t)veh);
+    }
     uint32_t idx = 0;
     __try {
-        idx = *(uint32_t*)((BYTE*)veh + 0x10);
-    } __except (EXCEPTION_EXECUTE_HANDLER) { idx = 0; }
+        idx = *(const uint32_t*)((const BYTE*)veh + 0x10);
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        return wrsre::b2b::Engine::hashVehiclePtr((std::uintptr_t)veh);
+    }
     if (idx < (uint32_t)wrsre::b2b::VEH_TRACK_MAX) return idx;
-    uintptr_t h = (uintptr_t)veh;
-    h ^= h >> 33;
-    h *= 0xff51afd7ed558ccdULL;
-    h ^= h >> 33;
-    return (uint32_t)(h % wrsre::b2b::VEH_TRACK_MAX);
+    return wrsre::b2b::Engine::hashVehiclePtr((std::uintptr_t)veh);
 }
 static bool AutoBuildingKey(void* b, uint64_t* outKey, int* outType);
 static bool IsPrivate(void* b)
@@ -1217,32 +1218,46 @@ static int DetourTransfer(void* game, void* p2, unsigned mode, void* res,
     void*    carrier    = nullptr;
     bool     carrierMatched = false;
 
+    // Pre-compute source building identity outside the lock on load legs so
+    // VehCargoLot carries the exact same AutoBuildingKey verified at delivery.
+    const bool loadLegMode0 = (committed && mode == 0 && tons < 0.0f &&
+                               building && known != SITE_REFUEL);
+    const bool loadSrcPriv  = loadLegMode0 ? IsPrivate(building) : false;
+    std::uint64_t loadSellerKey = 0;
+    if (loadSrcPriv) {
+        int btype = 0;
+        if (!AutoBuildingKey(building, &loadSellerKey, &btype))
+            loadSellerKey = 0;
+    }
+
+    const uint32_t mode1VehSlot = (committed && mode != 0 && p2 && !isStaging &&
+                                   known != SITE_REFUEL) ? VehSlotIdx(p2) : 0;
+
     EnterCriticalSection(&g_lock);
 
-    // Record PendingLoad on load leg.
-    if (committed && mode == 0 && tons < 0.0f && building && known != SITE_REFUEL) {
+    // Record PendingLoad on mode-0 load leg (0x694F40).
+    if (loadLegMode0) {
+        g_b2bLoadsMode0++;
         g_b2bEngine.recordMode0Load((std::uintptr_t)building, (std::uintptr_t)res,
-                                     fabsf(tons), NowSeconds(), IsPrivate(building));
+                                   fabsf(tons), NowSeconds(), loadSrcPriv, loadSellerKey);
     }
-    // Match PendingLoad on mode-1 load.
+    // Match PendingLoad on mode-1 load leg (0x6953C4).
     if (committed && mode != 0 && tons > 0.0f && p2 && !isStaging && known != SITE_REFUEL) {
-        carrierMatched = g_b2bEngine.matchMode1Load((std::uintptr_t)p2, VehSlotIdx(p2),
+        carrierMatched = g_b2bEngine.matchMode1Load((std::uintptr_t)p2, mode1VehSlot,
                                                     (std::uintptr_t)res, tons, NowSeconds(),
                                                     false, 0);
-        // carrier from vehicleHome if matched
-        if (carrierMatched) carrier = vehicleHome;
+        if (carrierMatched) {
+            g_b2bLoadsMatched++;
+            carrier = vehicleHome;
+        }
     }
 
-    // Record PendingDelivery on delivery leg.
+    // Record PendingDelivery on mode-0 delivery leg (0x68F792).
     if (committed && mode == 0 && tons > 0.0f && building && known != SITE_REFUEL) {
-        g_b2bEngine.recordMode0Delivery((std::uintptr_t)building, (std::uintptr_t)(owner ? owner : nullptr),
+        g_b2bDelivMode0++;
+        g_b2bEngine.recordMode0Delivery((std::uintptr_t)building,
+                                        (std::uintptr_t)(owner ? owner : nullptr),
                                         (std::uintptr_t)res, tons, NowSeconds());
-    }
-    // Match PendingDelivery will be consumed at mode-1 delivery commit later (below).
-    // Keep legacy carrier note for compatibility? no.
-
-    if (committed && mode != 0 && tons < 0.0f && p2 && !isStaging && known != SITE_REFUEL) {
-        // match now to populate carrierMatched? delivery matching handled in billing section.
     }
 
     if (committed) g_callsCommitted++;
@@ -1437,71 +1452,132 @@ static int DetourTransfer(void* game, void* p2, unsigned mode, void* res,
              rname, (double)s.tons, s.unitPrice, s.value, siteRva, mode);
     }
 
-    // ---- Ship 2 counterparty settlement (mode-1 delivery commit) -------------
+    // ---- Ship 2 counterparty settlement (mode-1 delivery commit: 0x68F7F9) --
     if (g_counterpartySettlement && committed && mode != 0 && tons < 0.0f &&
         p2 && !isStaging && known != SITE_REFUEL) {
         wrsre::b2b::MatchedDelivery md;
-        bool mdMatched = g_b2bEngine.matchMode1Delivery((std::uintptr_t)p2, VehSlotIdx(p2),
-            (std::uintptr_t)vehicleHome, (std::uintptr_t)res, fabsf(tons), NowSeconds(), &md);
+        EnterCriticalSection(&g_lock);
+        const bool mdMatched = g_b2bEngine.matchMode1Delivery(
+            (std::uintptr_t)p2, mode1VehSlot,
+            (std::uintptr_t)vehicleHome, (std::uintptr_t)res,
+            fabsf(tons), NowSeconds(), &md);
+        if (mdMatched) g_b2bDelivMatched++;
+        LeaveCriticalSection(&g_lock);
 
-        int cur = g_currency ? TsmCurrencyActive(g_currency) : 0;
-        float price = 0.0f;
-        if (g_pricing) price = g_pricing->getPrice(res, cur);
-        double marketMult = g_pricing ? (double)TsmPricingMarketMult(g_pricing, res) : 1.0;
-        double goodsValue = (double)fabsf(tons) * (double)price * marketMult * g_b2bWholesaleFactor;
+        if (mdMatched && md.destBld != 0 && (g_billing || g_dryRun)) {
+            const float absTons = fabsf(tons);
+            const int cur = g_currency ? TsmCurrencyActive(g_currency) : 0;
+            const float price = g_pricing ? g_pricing->getPrice(res, cur) : 0.0f;
+            const double marketMult = g_pricing ? (double)TsmPricingMarketMult(g_pricing, res) : 1.0;
+            const double goodsValue = (price > 0.0f)
+                ? ((double)absTons * (double)price * marketMult * g_b2bWholesaleFactor)
+                : 0.0;
 
-        double freightValue = 0.0;
-        double probeCost = 0.0, probeShare = 0.0;
-        int probeIndex = 0;
-        double probeTariff = TariffFor((double)fabsf(tons), &probeCost, &probeShare, &probeIndex);
-        if (g_tripTariff) freightValue = probeTariff;
-        else freightValue = FreightFor((double)fabsf(tons), price);
+            double probeCost = 0.0, probeShare = 0.0;
+            int probeIndex = 0;
+            const double probeTariff = TariffFor((double)absTons, &probeCost, &probeShare, &probeIndex);
+            const double freightValue = g_tripTariff
+                ? probeTariff
+                : FreightFor((double)absTons, (double)price);
 
-        wrsre::b2b::OriginKind origin = md.cargoFound ? md.origin : wrsre::b2b::ORIGIN_UNKNOWN;
-        std::uintptr_t sellerBld = md.sellerBld;
-        std::uint64_t sellerKey = md.sellerKey;
-        std::uintptr_t buyerBld = md.destBld;
-        std::uintptr_t carrierBld = md.carrierBld;
+            const wrsre::b2b::OriginKind origin = md.cargoFound ? md.origin : wrsre::b2b::ORIGIN_UNKNOWN;
+            const std::uintptr_t sellerBld  = md.sellerBld;
+            const std::uint64_t  sellerKey  = md.sellerKey;
+            const std::uintptr_t buyerBld   = md.destBld;
+            const std::uintptr_t carrierBld = md.carrierBld;
 
-        void* sellerPtr = (origin == wrsre::b2b::ORIGIN_PRIVATE) ? (void*)sellerBld : nullptr;
-        void* buyerPtr = IsPrivate((void*)buyerBld) ? (void*)buyerBld : nullptr;
-        void* carrierPtr = nullptr;
-        if (carrierBld != 0) {
-            if (IsPrivate((void*)carrierBld)) carrierPtr = (void*)carrierBld;
-            else carrierPtr = nullptr; // state carrier
-        }
+            const bool sellerPriv  = (origin == wrsre::b2b::ORIGIN_PRIVATE) &&
+                                     sellerBld != 0 && IsPrivate((void*)sellerBld);
+            const bool buyerPriv   = buyerBld != 0 && IsPrivate((void*)buyerBld);
+            const bool carrierPriv = carrierBld != 0 && IsPrivate((void*)carrierBld);
 
-        wrsre::b2b::SettlementPlan plan = wrsre::b2b::planSettlement(
-            origin, (std::uintptr_t)sellerPtr, sellerKey, (std::uintptr_t)carrierPtr,
-            (std::uintptr_t)buyerPtr, goodsValue, freightValue,
-            g_allowBuyerOverdraft != 0, g_buyerOverdraftLimit,
-            g_chargeStateCarrier != 0, g_inFlightReloadPolicy);
+            const wrsre::b2b::SettlementPlan plan = wrsre::b2b::planSettlement(
+                origin,
+                sellerBld, sellerPriv, sellerKey,
+                carrierBld, carrierPriv,
+                buyerBld, buyerPriv,
+                goodsValue, freightValue,
+                g_allowBuyerOverdraft != 0, g_buyerOverdraftLimit,
+                g_chargeStateCarrier != 0, g_inFlightReloadPolicy);
 
-        wrsre::b2b::FundsTransferCallbacks cb;
-        cb.isLivePrivate = [](void* b){ return IsPrivate(b) && !TsmIsDecayed(b); };
-        cb.getCapital = [](void* b){ return g_enterprise ? g_enterprise->getCompanyCapital(b) : 0.0; };
-        cb.modifyCapital = [](void* b, double d, int cat){ if (g_enterprise) g_enterprise->modifyCompanyCapital(b, d, (TsmCapitalCategory)cat); };
-        cb.getTreasury = [](int){ return g_currency ? g_currency->getTreasuryBalance(TsmCurrencyActive(g_currency)) : 0.0; };
-        cb.moveTreasury = [](double amt, const char* label){ if (g_currency) g_currency->moveTreasury(amt, label); };
-        cb.checkSellerKey = [](void* b, std::uint64_t key){
-            std::uint64_t k = 0; int t = 0;
-            if (AutoBuildingKey(b, &k, &t)) return k == key;
-            return key == 0;
-        };
-        cb.allowBuyerOverdraft = g_allowBuyerOverdraft != 0;
-        cb.buyerOverdraftLimit = g_buyerOverdraftLimit;
-        cb.minPayment = g_minPayment;
-        cb.dryRun = (g_dryRun != 0) || !(g_billing != 0);
-        cb.skipBuyerInsolvent = &g_skipBuyerInsolvent;
-        cb.skipTreasury = &g_skipTreasury;
+            unsigned localInsolvent = 0;
+            unsigned localTreasurySkip = 0;
+            wrsre::b2b::FundsTransferCallbacks cb;
+            cb.userData = nullptr;
+            cb.isLivePrivate = [](void*, void* b) -> bool {
+                return IsPrivate(b) && !TsmIsDecayed(b);
+            };
+            cb.getCapital = [](void*, void* b) -> double {
+                return g_enterprise ? g_enterprise->getCompanyCapital(b) : 0.0;
+            };
+            cb.modifyCapital = [](void*, void* b, double d, int cat) {
+                if (g_enterprise) g_enterprise->modifyCompanyCapital(b, d, (TsmCapitalCategory)cat);
+            };
+            cb.getTreasury = [](void*, int) -> double {
+                return (g_currency && TreasuryReadable())
+                    ? g_currency->getTreasuryBalance(TsmCurrencyActive(g_currency))
+                    : 0.0;
+            };
+            cb.moveTreasury = [](void*, double amt, const char* label) {
+                if (g_currency) g_currency->moveTreasury(amt, label);
+            };
+            cb.checkSellerKey = [](void*, void* b, std::uint64_t key) -> bool {
+                if (key == 0) return true;
+                std::uint64_t k = 0; int t = 0;
+                if (AutoBuildingKey(b, &k, &t)) return k == key;
+                return false;
+            };
+            cb.allowBuyerOverdraft = (g_allowBuyerOverdraft != 0);
+            cb.buyerOverdraftLimit = g_buyerOverdraftLimit;
+            cb.minPayment          = g_minPayment;
+            cb.dryRun              = (g_dryRun != 0) || !(g_billing != 0);
+            cb.skipBuyerInsolvent  = &localInsolvent;
+            cb.skipTreasury        = &localTreasurySkip;
 
-        wrsre::b2b::executeAtomicTransfer(plan, cb, nullptr);
+            const wrsre::b2b::TransferExecutionSummary exec =
+                wrsre::b2b::executeAtomicTransfer(plan, cb);
 
-        if (g_payLoggedToday < (unsigned)g_logCapPerDay) {
-            g_payLoggedToday++;
-            Logf("[B2B SETTLE] %s Buyer=%p Seller=%p principal=%.2f Carrier=%p freight=%.2f StateDelta=%.2f matched=%d",
-                 cb.dryRun ? "dry_run" : "live",
-                 (void*)buyerBld, (void*)sellerBld, goodsValue, (void*)carrierBld, freightValue, plan.stateDelta, mdMatched ? 1 : 0);
+            if (!cb.dryRun && carrierPriv && exec.freightPaid > 0.0) {
+                TrackCarrier((void*)carrierBld);
+                NoteCarrierIncome((void*)carrierBld, exec.freightPaid);
+                BurnProbe((void*)carrierBld);
+            }
+
+            bool emitSettleLog = false;
+            EnterCriticalSection(&g_lock);
+            g_skipBuyerInsolvent += localInsolvent;
+            g_skipTreasury       += localTreasurySkip;
+            if (exec.goodsPaid > 0.0 || exec.freightPaid > 0.0) {
+                g_b2bSettleCount++;
+                g_b2bPrincipalSum += exec.goodsPaid;
+                g_b2bFreightSum   += exec.freightPaid;
+                g_b2bStateNetSum  += exec.stateDelta;
+            }
+            if (g_payLoggedToday < (unsigned)g_logCapPerDay) {
+                g_payLoggedToday++;
+                emitSettleLog = true;
+            } else {
+                g_paySuppressed++;
+            }
+            LeaveCriticalSection(&g_lock);
+
+            if (emitSettleLog) {
+                char buyerName[64], sellerName[64], carrierName[64], rname[64];
+                BuildingName((void*)buyerBld, buyerName, sizeof(buyerName));
+                BuildingName(sellerBld ? (void*)sellerBld : nullptr, sellerName, sizeof(sellerName));
+                BuildingName(carrierBld ? (void*)carrierBld : nullptr, carrierName, sizeof(carrierName));
+                ResourceName(res, rname, sizeof(rname));
+                Logf("[B2B SETTLE] %s: Buyer \"%s\"%s -> Seller \"%s\"%s %.2f (%s %.3ft) + "
+                     "Carrier \"%s\"%s %.2f freight | State delta = %+.2f",
+                     cb.dryRun ? "dry_run" : "live",
+                     buyerName, buyerPriv ? " [P]" : " [S]",
+                     sellerBld ? sellerName : (origin == wrsre::b2b::ORIGIN_STATE ? "State" : "Unknown"),
+                     sellerPriv ? " [P]" : "",
+                     exec.goodsPaid, rname, (double)absTons,
+                     carrierBld ? carrierName : "None",
+                     carrierPriv ? " [P]" : (carrierBld ? " [S]" : ""),
+                     exec.freightPaid, exec.stateDelta);
+            }
         }
     }
 
@@ -1632,10 +1708,12 @@ static void OnDay(void*, int day, int month, int year)
     static SiteTally snap[MAX_SITES];
     unsigned calls, committed, noop, unknown, stag, nonPriv;
     unsigned siteSupp, attrSupp, paySupp, payCount, payCap, total;
-    unsigned skNoPayee, skNoPrice, skSmall, skTreasury;
+    unsigned skNoPayee, skNoPrice, skSmall, skTreasury, skBuyerInsolv;
+    unsigned b2bLoad0, b2bLoadM, b2bDeliv0, b2bDelivM, b2bSettleN;
     unsigned tCount, tNoIndex, tFuelIdx, tCpiIdx;
     unsigned trChecked, trExact, trOff, fuelEvents;
     double   paidF, paidC, freight, fuel, tSum, tCostSum, tShareSum, trMaxGap;
+    double   b2bPrin, b2bFrt, b2bStateNet;
     static double cIn[BAL_CARRIERS];
     static void*  cPt[BAL_CARRIERS];
     int      cCount;
@@ -1660,6 +1738,15 @@ static void OnDay(void*, int day, int month, int year)
     skNoPrice  = g_skipNoPrice;
     skSmall    = g_skipSmall;
     skTreasury = g_skipTreasury;
+    skBuyerInsolv = g_skipBuyerInsolvent;
+    b2bLoad0   = g_b2bLoadsMode0;
+    b2bLoadM   = g_b2bLoadsMatched;
+    b2bDeliv0  = g_b2bDelivMode0;
+    b2bDelivM  = g_b2bDelivMatched;
+    b2bSettleN = g_b2bSettleCount;
+    b2bPrin    = g_b2bPrincipalSum;
+    b2bFrt     = g_b2bFreightSum;
+    b2bStateNet = g_b2bStateNetSum;
     tCount     = g_tariffCount;
     tNoIndex   = g_tariffNoIndex;
     tFuelIdx   = g_tariffFuelIndex;
@@ -1689,6 +1776,10 @@ static void OnDay(void*, int day, int month, int year)
     g_siteSuppressed = g_attrSuppressed = g_paySuppressed = 0;
     g_payCount = g_payCapped = 0;
     g_skipNoPayee = g_skipNoPrice = g_skipSmall = g_skipTreasury = 0;
+    g_skipBuyerInsolvent = 0;
+    g_b2bLoadsMode0 = g_b2bLoadsMatched = g_b2bDelivMode0 = g_b2bDelivMatched = 0;
+    g_b2bSettleCount = 0;
+    g_b2bPrincipalSum = g_b2bFreightSum = g_b2bStateNetSum = 0.0;
     g_tariffCount = g_tariffNoIndex = g_tariffFuelIndex = g_tariffCpiIndex = 0;
     g_tariffCostSum = g_tariffShareSum = 0.0;
     g_tariffSum = 0.0;
@@ -1721,6 +1812,13 @@ static void OnDay(void*, int day, int month, int year)
          "staging %u, non-private %u | suppressed site %u attrib %u pay %u",
          closedDay, calls, committed, noop, unknown, stag, nonPriv, siteSupp,
          attrSupp, paySupp);
+    if (g_counterpartySettlement) {
+        Logf("[B2B DAY] day %d joins: load %u/%u, delivery %u/%u | settlements=%u "
+             "principal=%.2f freight=%.2f state_net=%+.2f buyer_insolvent=%u (%s)",
+             closedDay, b2bLoadM, b2bLoad0, b2bDelivM, b2bDeliv0, b2bSettleN,
+             b2bPrin, b2bFrt, b2bStateNet, skBuyerInsolv,
+             (g_dryRun || !g_billing) ? "dry_run" : "live");
+    }
 
     // Per-site table. A site that never fired is simply absent - absence is
     // evidence rather than a logging artefact.
@@ -2420,7 +2518,9 @@ static void AutoPersistenceEvent(TsmSaveEvent event, const char* dir, void*)
     if (event == TSM_SAVE_LOADING) {
         InterlockedIncrement(&g_fuelDiagnosticEpoch);
         PanelObserverLoading();
+        EnterCriticalSection(&g_lock);
         g_b2bEngine.resetAll();
+        LeaveCriticalSection(&g_lock);
     }
     // Persist permission keys only; never retain building pointers. Save/load
     // callbacks run on the file thread, so no game-memory access is performed.
@@ -2910,10 +3010,10 @@ static void ReadSettings(void)
     g_dryRun         = H->configInt(ini, "private_logistics", "dry_run", 1);
     // [b2b] section
     g_counterpartySettlement = H->configInt(ini, "b2b", "counterparty_settlement", 1);
-    if (H->configString(ini, "b2b", "wholesale_factor", v, sizeof(v), ""))
+    if (H->configString(ini, "b2b", "wholesale_factor", v, sizeof(v), "") && v[0])
         g_b2bWholesaleFactor = atof(v);
     g_allowBuyerOverdraft = H->configInt(ini, "b2b", "allow_buyer_overdraft", 1);
-    if (H->configString(ini, "b2b", "buyer_overdraft_limit", v, sizeof(v), ""))
+    if (H->configString(ini, "b2b", "buyer_overdraft_limit", v, sizeof(v), "") && v[0])
         g_buyerOverdraftLimit = atof(v);
     g_chargeStateCarrier = H->configInt(ini, "b2b", "charge_state_carrier", 1);
     g_inFlightReloadPolicy = H->configInt(ini, "b2b", "in_flight_reload_policy", 0);
@@ -3578,6 +3678,8 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
 
 extern "C" __declspec(dllexport) int TsmPluginStart(void)
 {
+    if (!g_enabled) return 1;
+
     if (!g_exeBase || g_exeSize == 0) {
         Logf("private_logistics  no executable base - refusing to start");
         return 1;

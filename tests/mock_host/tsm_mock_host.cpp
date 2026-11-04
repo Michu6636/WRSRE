@@ -49,7 +49,7 @@ int MockTsmEnvironment::readablePtr(const void* p, std::size_t n) {
     uintptr_t addr = (uintptr_t)p;
     for (auto& r : ranges_) {
         uintptr_t base = (uintptr_t)r.first;
-        if (addr >= base && (addr + n) <= (base + r.second)) return 1;
+        if (addr >= base && n <= r.second && (addr - base) <= (r.second - n)) return 1;
     }
     return 0;
 }
