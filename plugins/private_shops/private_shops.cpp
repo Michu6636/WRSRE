@@ -231,6 +231,7 @@
 #include "../../src/persistence_api.h"
 #include "../../src/resource_pricing_api.h"
 #include "../../src/enterprise_base_api.h"
+#include "../../src/b2b_logistics_api.h"
 #include "../../src/taxes_api.h"
 
 #include <unordered_map>
@@ -244,6 +245,7 @@ static const TsmSimClockApi*        g_simClock    = nullptr;
 static const TsmCurrencyApi*        g_currency    = nullptr;
 static const TsmResourcePricingApi* g_pricing     = nullptr;
 static const TsmEnterpriseBaseApi*  g_enterprise  = nullptr;
+static const TsmB2bLogisticsApi*    g_b2bLogistics = nullptr;
 static const TsmTaxesApi*           g_taxes       = nullptr;
 static const TsmPersistenceApi*     g_persistence = nullptr;
 static int                          g_persHandle  = -1;
@@ -723,6 +725,84 @@ static int DispatchFallbackAllowed(int type, int storCount)
     }
 }
 
+// When private_logistics Ship 2 counterparty billing is live, truck transfers
+// settle directly between Buyer, Seller, and Carrier at 0x68F7F9. Keep slot
+// snapshots and Republic macro supply/demand recording active without
+// running State-clearinghouse procurement or wholesale money transfers.
+static void WholesaleMarketOnlySlot(void* storage, void* slotBytes, void* res,
+                                    float content, float /*perSlotCap*/,
+                                    size_t globalIndex, void* ud)
+{
+    WholesaleContext* ctx = (WholesaleContext*)ud;
+    if (!ctx || !ctx->state) return;
+    if (!TsmIsValidGamePtr(res)) return;
+
+    if (globalIndex >= ctx->state->slots.size()) {
+        ctx->state->slots.resize(globalIndex + 1,
+                                 SlotSnapshot{ nullptr, nullptr, 0.0f });
+    }
+    if (!ctx->state->snapshotDone) {
+        ctx->state->slots[globalIndex].resource = res;
+        ctx->state->slots[globalIndex].slot     = slotBytes;
+        ctx->state->slots[globalIndex].content  = content;
+        return;
+    }
+
+    SlotSnapshot& snap = ctx->state->slots[globalIndex];
+    if (snap.slot != slotBytes) {
+        snap.slot     = slotBytes;
+        snap.resource = res;
+        snap.content  = content;
+        return;
+    }
+
+    bool isExport = storage &&
+        *(const BYTE*)((const BYTE*)storage + TSM_ST_EXPORT) != 0;
+    bool isImport = storage &&
+        *(const BYTE*)((const BYTE*)storage + TSM_ST_IMPORT) != 0;
+
+    int storIndex = -1;
+    {
+        void** sb = *(void***)((BYTE*)ctx->shop + TSM_BLD_STORAGES_BEGIN);
+        void** se = *(void***)((BYTE*)ctx->shop + TSM_BLD_STORAGES_END);
+        if (sb && se && (BYTE*)se > (BYTE*)sb && storage &&
+            (const BYTE*)storage >= (const BYTE*)sb &&
+            (const BYTE*)storage <  (const BYTE*)se) {
+            storIndex = (int)(((const BYTE*)storage - (const BYTE*)sb) /
+                              TSM_STORAGE_STRIDE);
+        }
+    }
+
+    bool flagless = storage && !isExport && !isImport;
+    if (g_procureFallback && !ctx->isRetail && flagless &&
+        storIndex >= 0 && storIndex == ctx->storCount - 1 &&
+        DispatchFallbackAllowed(TsmBuildingType(ctx->shop), ctx->storCount)) {
+        isExport = true;
+    }
+
+    if (!ctx->isRetail && isExport && ctx->state->snapshotDone) {
+        double delta = (double)content - (double)snap.content;
+        if (delta < -0.001 && snap.resource && content >= 0.0f) {
+            TsmPricingRecordSupply(g_pricing, snap.resource, -(double)delta);
+        }
+        snap.resource = res;
+        snap.content  = content;
+        return;
+    }
+
+    if (snap.resource != res) {
+        snap.resource = res;
+        snap.content  = content;
+        return;
+    }
+
+    float delta = content - snap.content;
+    if (delta < -0.001f && !isExport && isImport && snap.resource) {
+        TsmPricingRecordDemand(g_pricing, snap.resource, (double)(-delta));
+    }
+    snap.content = content;
+}
+
 static void WholesaleSlot(void* storage, void* slotBytes, void* res,
                           float content, float /*perSlotCap*/, size_t globalIndex,
                           void* ud)
@@ -931,7 +1011,10 @@ static void RunWholesaleBilling(void* building, ShopState& st)
         0, 0.0,
         storCount, 0
     };
-    ForEachSlot(building, WholesaleSlot, &ctx);
+    ForEachSlot(building,
+                TsmB2bCounterpartyActive(g_b2bLogistics) ? WholesaleMarketOnlySlot
+                                                         : WholesaleSlot,
+                &ctx);
 
     if (ctx.revenue > 0.0 && g_probe) {
         wchar_t name[128] = {0};
@@ -1699,6 +1782,8 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
 
     g_enterprise = (const TsmEnterpriseBaseApi*)H->consume(TSM_SERVICE_ENTERPRISE_BASE, TSM_ENTERPRISE_BASE_VERSION);
     if (!g_enterprise) { Logf("private_shops  enterprise_base is not installed"); return 1; }
+
+    g_b2bLogistics = (const TsmB2bLogisticsApi*)H->consume(TSM_SERVICE_B2B_LOGISTICS, TSM_B2B_LOGISTICS_VERSION);
 
     g_taxes = (const TsmTaxesApi*)H->consume(TSM_SERVICE_TAXES, TSM_TAXES_VERSION);
     if (!g_taxes) Logf("private_shops  WARN  taxes service not installed");
