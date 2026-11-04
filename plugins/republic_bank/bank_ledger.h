@@ -26,15 +26,30 @@ struct Config {
 
 // Native ui_panels sliders span 0..100.  Spread the bank's 0..25% policy
 // range over that full span: four slider units are one percentage point.
+// The native -/+ buttons honour that step, but dragging can produce any
+// integer.  Snap drag results back to the same grid so the whole-percent
+// caption, saved rate and interest calculation can never disagree.
 inline unsigned BankRateToSlider(double annualRate) {
     if (!std::isfinite(annualRate) || annualRate <= 0.0) return 0;
     if (annualRate >= 0.25) return 100;
     return (unsigned)std::lround(annualRate * 400.0);
 }
 
-inline double BankRateFromSlider(unsigned value) {
+inline unsigned BankRateSnapSlider(unsigned value) {
     if (value > 100) value = 100;
-    return (double)value / 400.0;
+    // Round to the nearest four-unit increment; exact half steps round up.
+    return ((value + 2) / 4) * 4;
+}
+
+inline double BankRateFromSlider(unsigned value) {
+    return (double)BankRateSnapSlider(value) / 400.0;
+}
+
+// Also migrate rates written by v1.1 after an off-grid drag (for example,
+// slider 15 meant 3.75% while the caption said 4%).  Normalising on load
+// preserves the user's visible whole-percent choice.
+inline double NormalizeBankRate(double annualRate) {
+    return BankRateFromSlider(BankRateToSlider(annualRate));
 }
 
 // Configured bank amounts are reference-RUB values.  A CPI of 2.15 RUB/day

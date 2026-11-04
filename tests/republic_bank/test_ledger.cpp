@@ -136,15 +136,37 @@ int main() {
     }
 
     // (d3) The native 0..100 slider covers 0..25% in 1% increments.
+    // Off-grid native drags snap to that same grid, including the exact
+    // positions observed in the two-save runtime test.
     {
         assert(BankRateToSlider(0.0) == 0);
         assert(BankRateToSlider(0.06) == 24);
         assert(BankRateToSlider(0.25) == 100);
         assert(BankRateToSlider(1.0) == 100);
+        assert(BankRateSnapSlider(0) == 0);
+        assert(BankRateSnapSlider(1) == 0);
+        assert(BankRateSnapSlider(2) == 4);
+        assert(BankRateSnapSlider(15) == 16);
+        assert(BankRateSnapSlider(31) == 32);
+        assert(BankRateSnapSlider(94) == 96);
+        assert(BankRateSnapSlider(98) == 100);
+        assert(BankRateSnapSlider(100) == 100);
+        assert(BankRateSnapSlider(101) == 100);
+        assert(near(BankRateFromSlider(15), 0.04));
         assert(near(BankRateFromSlider(28), 0.07));
+        assert(near(BankRateFromSlider(31), 0.08));
+        assert(near(BankRateFromSlider(94), 0.24));
+        assert(near(BankRateFromSlider(98), 0.25));
         assert(near(BankRateFromSlider(100), 0.25));
         assert(near(BankRateFromSlider(101), 0.25));
         assert(near(BankRateFromSlider(BankRateToSlider(0.06)), 0.06));
+
+        // v1.1 saves could contain these fractional rates beneath an integer
+        // caption. Loading through the normaliser preserves the visible rate.
+        assert(near(NormalizeBankRate(0.0375), 0.04));
+        assert(near(NormalizeBankRate(0.0775), 0.08));
+        assert(near(NormalizeBankRate(0.235), 0.24));
+        assert(near(NormalizeBankRate(0.245), 0.25));
     }
 
     // (e) save/load roundtrip integrity
