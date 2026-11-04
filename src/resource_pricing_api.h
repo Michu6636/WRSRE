@@ -67,7 +67,9 @@ extern "C" {
 // A v2 consumer asking for v2 reads exactly the prefix it expects;
 // a v3 consumer asks for v3 and gets the CPI tail. Purely additive:
 // no existing field moved, no existing meaning changed.
-#define TSM_RESOURCE_PRICING_VERSION    3u
+#define TSM_RESOURCE_PRICING_VERSION    4u
+#define TSM_RESOURCE_PRICING_VERSION_V4 4u
+#define TSM_RESOURCE_PRICING_VERSION_V3 3u
 #define TSM_RESOURCE_PRICING_VERSION_V2 2u
 #define TSM_RESOURCE_PRICING_VERSION_V1 1u
 
@@ -172,6 +174,16 @@ typedef struct TsmResourcePricingApi {
     // basket, ~2.15 RUB/day at shipped fallbacks, when no world/prices
     // are readable).
     float (*getCpiDailyBasket)(float injectedDailyRent);
+
+    // --- v4: local per-building inventory scarcity/glut quote spreads -----
+    //
+    // Purely local signal: remote under-stocked shops and over-stocked
+    // factories produce organic local price signals WITHOUT splitting the
+    // Republic baseline price. Reads the building's own storage slots; never
+    // touches getCpiDailyBasket or the market book. Multiplier is 1.0 in the
+    // neutral deadband and clamped to [full_discount_min, empty_markup_max].
+    float (*getLocalScarcityMultiplier)(void* building, void* resRecord);
+    float (*getLocalPriceQuote)(void* building, void* resRecord, int currency);
 } TsmResourcePricingApi;
 
 // --- v2 consumer guard ------------------------------------------------------
@@ -228,6 +240,35 @@ static inline float TsmPricingCpiBasket(const TsmResourcePricingApi* api,
     if (!TsmPricingHasCpi(api)) return 2.15f;
     float c = api->getCpiDailyBasket(injectedDailyRent);
     return (c == c && c > 0.0f) ? c : 2.15f;
+}
+
+// --- v4 consumer guard ------------------------------------------------------
+//
+// structSize-prefix guard for the local-quote tail. True when the provider
+// carries getLocalScarcityMultiplier + getLocalPriceQuote. Falls back to 1.0
+// / (getPrice * market mult) when absent.
+static inline int TsmPricingHasLocalQuote(const TsmResourcePricingApi* api)
+{
+    return api &&
+        api->structSize >= offsetof(TsmResourcePricingApi, getLocalPriceQuote) +
+                               sizeof(api->getLocalPriceQuote) &&
+        api->getLocalScarcityMultiplier && api->getLocalPriceQuote;
+}
+static inline float TsmPricingLocalMult(const TsmResourcePricingApi* api,
+                                        void* bld, void* res)
+{
+    if (!TsmPricingHasLocalQuote(api) || !bld || !res) return 1.0f;
+    float m = api->getLocalScarcityMultiplier(bld, res);
+    return (m == m && m > 0.0f) ? m : 1.0f;
+}
+static inline float TsmPricingLocalQuote(const TsmResourcePricingApi* api,
+                                         void* bld, void* res, int cur)
+{
+    if (TsmPricingHasLocalQuote(api) && bld && res)
+        return api->getLocalPriceQuote(bld, res, cur);
+    // fallback: getPrice * TsmPricingMarketMult
+    float base = api ? api->getPrice(res, cur) : 0.0f;
+    return base * TsmPricingMarketMult(api, res);
 }
 
 #ifdef __cplusplus
