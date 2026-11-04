@@ -1,4 +1,4 @@
-﻿#ifndef REPUBLIC_BANK_LEDGER_H
+#ifndef REPUBLIC_BANK_LEDGER_H
 #define REPUBLIC_BANK_LEDGER_H
 
 #include <cmath>
@@ -145,6 +145,7 @@ public:
         }
         double monthlyRate = config.annualInterestRate / 12.0;
         double interest = L.principal * monthlyRate;
+        double beforePrincipal = L.principal;
         double sweep = 0.0;
         if (enterpriseCapital > config.cashBufferKeep) {
             sweep = enterpriseCapital - config.cashBufferKeep;
@@ -159,7 +160,7 @@ public:
             L.missedMonths = 0;
             s.treasury_delta = total;
             s.enterprise_delta = -total;
-            s.net_outstanding_principal_delta = interest;
+            s.net_outstanding_principal_delta = L.principal - beforePrincipal;
             s.interest_transfer = interest;
             s.principal_sweep = sweep;
             s.interest = interest;
@@ -169,8 +170,8 @@ public:
             if (L.missedMonths >= config.maxMissedMonths) L.inDefault = 1;
             s.treasury_delta = 0.0;
             s.enterprise_delta = 0.0;
-            s.net_outstanding_principal_delta = interest;
-            s.interest_transfer = interest;
+            s.net_outstanding_principal_delta = L.principal - beforePrincipal;
+            s.interest_transfer = 0.0;
             s.principal_sweep = 0.0;
             s.interest = interest;
         }

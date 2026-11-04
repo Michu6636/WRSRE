@@ -27,7 +27,8 @@ int main() {
         (void)beforePrincipal;
         Settlement s = book.monthlySettle(k, capital);
         // identity
-        assert(near(s.treasury_delta + s.enterprise_delta + s.net_outstanding_principal_delta, s.interest_transfer));
+        assert(near(s.treasury_delta + s.enterprise_delta, 0.0));
+        assert(near(s.treasury_delta + s.net_outstanding_principal_delta, s.interest));
         // principal decreased by sweep (all principal if capital enough)
         assert(principal >= s.principal);
     }
@@ -41,7 +42,8 @@ int main() {
         book.requestCreditDraw(k, 1000.0, 1);
         double capital = 0.0; // cannot pay
         Settlement s = book.monthlySettle(k, capital);
-        assert(near(s.treasury_delta + s.enterprise_delta + s.net_outstanding_principal_delta, s.interest_transfer));
+        assert(near(s.treasury_delta + s.enterprise_delta, 0.0));
+        assert(near(s.treasury_delta + s.net_outstanding_principal_delta, s.interest));
         assert(s.missedPayments == 1);
     }
 

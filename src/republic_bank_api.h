@@ -1,4 +1,4 @@
-﻿#ifndef TSM_REPUBLIC_BANK_API_H
+#ifndef TSM_REPUBLIC_BANK_API_H
 #define TSM_REPUBLIC_BANK_API_H
 
 #include <stddef.h>

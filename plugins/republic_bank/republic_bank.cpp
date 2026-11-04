@@ -7,6 +7,7 @@
 #include "../../src/persistence_api.h"
 #include "../../src/ui_panels_api.h"
 #include "../../src/republic_bank_api.h"
+#include "../../src/game_world.h"
 #include "bank_ledger.h"
 
 #include <vector>
@@ -27,25 +28,48 @@ static int g_persistenceHandle = 0;
 static LoanBook g_book;
 
 static LoanKey keyForBuilding(void* b) {
-    LoanKey k;
-    k.qx = 0;
-    k.qz = 0;
+    std::string objName = "unknown";
     if (g_enterprise && b) {
         const char* on = g_enterprise->getBuildingObjectName(b);
-        if (on) k.objectName = on;
+        if (on && on[0]) objName = on;
     }
-    if (k.objectName.empty()) k.objectName = "unknown";
-    return k;
+    float x = 0.0f, z = 0.0f;
+    bool got = false;
+    if (b && TsmIsValidGamePtr(b) && ReadablePtr(b, 0x400)) {
+        const BYTE* nodeDirect = (const BYTE*)b + 0x320;
+        if (ReadablePtr(nodeDirect, 0x40)) {
+            float xx = *(const float*)(nodeDirect + 0x30);
+            float zz = *(const float*)(nodeDirect + 0x38);
+            if (xx == xx && zz == zz && (fabsf(xx) > 1.5f || fabsf(zz) > 1.5f) &&
+                fabsf(xx) < 100000.0f && fabsf(zz) < 100000.0f) {
+                x = xx; z = zz; got = true;
+            }
+        }
+        if (!got) {
+            const BYTE* nodePtr = *(const BYTE* const*)((const BYTE*)b + 0x320);
+            if (TsmIsValidGamePtr(nodePtr) && ReadablePtr(nodePtr, 0x40)) {
+                float xx = *(const float*)(nodePtr + 0x30);
+                float zz = *(const float*)(nodePtr + 0x38);
+                if (xx == xx && zz == zz && (fabsf(xx) > 1.5f || fabsf(zz) > 1.5f) &&
+                    fabsf(xx) < 100000.0f && fabsf(zz) < 100000.0f) {
+                    x = xx; z = zz; got = true;
+                }
+            }
+        }
+    }
+    return LoanBook::makeKey(objName, x, z);
 }
 
-static double getRateImpl(void) { return g_book.getAnnualInterestRate(); }
-static void setRateImpl(double r) { g_book.setAnnualInterestRate(r); }
+static double getRateImpl(void) { EnterCriticalSection(&g_lock); double r=g_book.getAnnualInterestRate(); LeaveCriticalSection(&g_lock); return r; }
+static void setRateImpl(double r) { EnterCriticalSection(&g_lock); g_book.setAnnualInterestRate(r); LeaveCriticalSection(&g_lock); }
 
 static double requestCreditDrawImpl(void* building, double neededAmount, const char* reason) {
     if (!g_enterprise || !building || !g_enabled) return 0.0;
     LoanKey k = keyForBuilding(building);
     int streak = g_enterprise->isCompanySolvent(building) ? 1 : 0;
+    EnterCriticalSection(&g_lock);
     double approved = g_book.requestCreditDraw(k, neededAmount, reason, streak);
+    LeaveCriticalSection(&g_lock);
     if (approved > 0.0) {
         g_enterprise->modifyCompanyCapital(building, approved, TSM_CAP_OTHER);
         if (g_currency) g_currency->moveTreasury(-approved, "bank_loan_issue");
@@ -57,10 +81,17 @@ static void repayPrincipalImpl(void* building, double amount) {
     if (!building) return;
     LoanKey k = keyForBuilding(building);
     double p = 0.0, mi = 0.0; int m = 0;
+    EnterCriticalSection(&g_lock);
     g_book.getEnterpriseDebt(k, p, mi, m);
+    LeaveCriticalSection(&g_lock);
     if (amount > p) amount = p;
     if (amount < 0.0) amount = 0.0;
+    double cap = g_enterprise ? g_enterprise->getCompanyCapital(building) : amount;
+    if (amount > cap) amount = cap;
+    if (amount < 0.0) amount = 0.0;
+    EnterCriticalSection(&g_lock);
     g_book.repayPrincipal(k, amount);
+    LeaveCriticalSection(&g_lock);
     if (g_enterprise) g_enterprise->modifyCompanyCapital(building, -amount, TSM_CAP_OTHER);
     if (g_currency && amount > 0.0) g_currency->moveTreasury(amount, "bank_loan_repay");
 }
@@ -68,7 +99,9 @@ static void repayPrincipalImpl(void* building, double amount) {
 static void getEnterpriseDebtImpl(void* building, double* outP, double* outMI, int* outMissed) {
     LoanKey k = keyForBuilding(building);
     double p = 0.0, mi = 0.0; int m = 0;
+    EnterCriticalSection(&g_lock);
     g_book.getEnterpriseDebt(k, p, mi, m);
+    LeaveCriticalSection(&g_lock);
     if (outP) *outP = p;
     if (outMI) *outMI = mi;
     if (outMissed) *outMissed = m;
@@ -86,14 +119,18 @@ static const TsmRepublicBankApi kApi = {
 static void onSave(TsmSaveEvent event, const char* dir, void* userData) {
     if (!g_persistence || !dir) return;
     if (event == TSM_SAVE_WRITING) {
+        EnterCriticalSection(&g_lock);
         auto bytes = g_book.saveBytes();
+        LeaveCriticalSection(&g_lock);
         g_persistence->writeAtomic(dir, "republic_bank.bin", bytes.data(), bytes.size());
     } else {
         size_t len = 0;
         void* buf = g_persistence->readFile(dir, "republic_bank.bin", &len);
         if (buf) {
             std::vector<char> v((char*)buf, (char*)buf + len);
+            EnterCriticalSection(&g_lock);
             g_book.loadBytes(v);
+            LeaveCriticalSection(&g_lock);
             free(buf);
         }
     }
@@ -107,7 +144,9 @@ static void onMonth(void* userData, int day, int month, int year) {
         if (!b) continue;
         LoanKey k = keyForBuilding(b);
         double capital = g_enterprise->getCompanyCapital(b);
+        EnterCriticalSection(&g_lock);
         Settlement s = g_book.monthlySettle(k, capital);
+        LeaveCriticalSection(&g_lock);
         if (s.enterprise_delta != 0.0 && g_enterprise)
             g_enterprise->modifyCompanyCapital(b, s.enterprise_delta, TSM_CAP_OTHER);
         if (g_currency) {
@@ -127,9 +166,14 @@ static void onDay(void* userData, int day, int month, int year) {
         double capital = g_enterprise->getCompanyCapital(b);
         if (capital >= 0.0) continue;
         LoanKey k = keyForBuilding(b);
-        if (g_book.isInDefault(k)) continue;
+        EnterCriticalSection(&g_lock);
+        int isDef = g_book.isInDefault(k);
+        LeaveCriticalSection(&g_lock);
+        if (isDef) continue;
         int streak = g_enterprise->isCompanySolvent(b) ? 1 : 0;
+        EnterCriticalSection(&g_lock);
         double approved = g_book.dailyOverdraftRescue(k, capital, streak);
+        LeaveCriticalSection(&g_lock);
         if (approved > 0.0) {
             g_enterprise->modifyCompanyCapital(b, approved, TSM_CAP_OTHER);
             if (g_currency) g_currency->moveTreasury(-approved, "bank_loan_issue");
@@ -174,8 +218,13 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host, TsmPlugi
         return 1;
     }
 
+    H->provide(TSM_SERVICE_REPUBLIC_BANK, TSM_REPUBLIC_BANK_VERSION, &kApi);
+    return 0;
+}
+
+extern "C" __declspec(dllexport) int TsmPluginStart(void) {
+    if (!g_enabled) return 1;
     g_clock = (TsmSimClockApi*)H->consume(TSM_SERVICE_SIM_CLOCK, TSM_SIM_CLOCK_VERSION);
-    // currency v4 with v3 fallback
     g_currency = (TsmCurrencyApi*)H->consume(TSM_SERVICE_CURRENCY, TSM_CURRENCY_VERSION);
     if (!g_currency) g_currency = (TsmCurrencyApi*)H->consume(TSM_SERVICE_CURRENCY, TSM_CURRENCY_VERSION_V3);
     g_enterprise = (TsmEnterpriseBaseApi*)H->consume(TSM_SERVICE_ENTERPRISE_BASE, TSM_ENTERPRISE_BASE_VERSION);
@@ -183,13 +232,6 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host, TsmPlugi
     g_persistence = (TsmPersistenceApi*)H->consume(TSM_SERVICE_PERSISTENCE, TSM_PERSISTENCE_VERSION);
     g_ui = (TsmUiPanelsApi*)H->consume(TSM_SERVICE_UI_PANELS, TSM_UI_PANELS_VERSION);
     if (!g_ui) g_ui = (TsmUiPanelsApi*)H->consume(TSM_SERVICE_UI_PANELS, TSM_UI_PANELS_VERSION_V5);
-
-    H->provide(TSM_SERVICE_REPUBLIC_BANK, TSM_REPUBLIC_BANK_VERSION, &kApi);
-    return 0;
-}
-
-extern "C" __declspec(dllexport) int TsmPluginStart(void) {
-    if (!g_enabled) return 1;
     if (g_persistence) {
         g_persistenceHandle = g_persistence->registerHandler("republic_bank", onSave, nullptr);
     }
@@ -217,15 +259,8 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void) {
         }, nullptr);
         g_ui->registerWidgetProvider([](void* building, void* ud) {
             if (!g_ui || !TsmUiPanelsHasWidgets(g_ui)) return;
-            const char* name = (g_enterprise) ? g_enterprise->getBuildingObjectName(building) : nullptr;
-            int isCity = 0;
-            if (name) {
-                for (const char* p = name; *p; p++) {
-                    if (_strnicmp(p, "city", 4) == 0 || _strnicmp(p, "hall", 4) == 0) { isCity = 1; break; }
-                }
-            }
-            if (!isCity) return;
-            unsigned v = (unsigned)(g_book.getAnnualInterestRate() * 100.0 + 0.5);
+            if (TsmBuildingType(building) != 39) return;
+            unsigned v = (unsigned)(getRateImpl() * 100.0 + 0.5);
             if (v > 100) v = 100; // percent 0..25 represented as 0..25? keep 0..25
             if (v > 25) v = 25;
             if (g_ui->widgetSlider(L"Bank rate %", &v, 1, 1)) {
