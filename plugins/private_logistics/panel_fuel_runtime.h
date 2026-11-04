@@ -6,7 +6,7 @@
 #include "schedule_observer.h"
 #include "schedule_assignment_ledger.h"
 
-static constexpr char kGateDiagnosticVersion[] = "0.18.18-census-guard";
+static constexpr char kGateDiagnosticVersion[] = "0.18.19-road-targets";
 static bool g_scheduleReady = false;
 static volatile LONG g_scheduleFault = 0;
 static private_logistics_schedule::History g_scheduleHistory; // simulation tick only

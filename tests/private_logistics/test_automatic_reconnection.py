@@ -25,7 +25,7 @@ class AutomaticReconnectionTest(unittest.TestCase):
     def test_state_opt_in_and_native_capacity_guards_are_not_removed(self):
         self.assertIn('e.hasStorage = site.permission != 0;', self.sync)
         self.assertIn('if (!target.hasStorage || target.building == office.building) continue;', self.sync)
-        self.assertIn('entryCountAtStart + projectedAdds >= AUTO_DO_SAFE_TARGET_COUNT', self.sync)
+        self.assertIn('!AutoCanAppendTarget(office.type, entryCountAtStart, projectedAdds)', self.sync)
 
 
 if __name__ == '__main__':
