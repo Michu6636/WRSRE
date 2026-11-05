@@ -159,11 +159,16 @@ is installed:
 The shell consumes `almanac::AlmanacHostSurface` and the validation helpers. It
 must:
 
-- Render only when `host_surface_can_render` is true.
+- Render only when `host_surface_can_render` is true. This requires validated
+  visibility, selection, geometry, DPI, flow layout, frame identity, and
+  lifecycle capabilities; geometry alone is insufficient.
 - Use `geometry` origin/extent and `dpi` for flow layout.
-- Apply `clip` only when `host_surface_can_clip` is true.
+- Apply `clip` only when `host_surface_can_clip` is true. An enabled invalid or
+  unsupported clip prevents rendering rather than being ignored.
 - Scroll only when `host_surface_can_scroll` is true.
 - Consume pointer input only when `host_surface_can_receive_pointer` is true.
+  The surface must be renderable and the non-empty event must belong to the
+  current frame; hidden surfaces and stale-frame events cannot commit input.
 - Invalidate cached page state when `lifecycle_invalidated` is true.
 - Never receive or dereference the raw game pointer.
 - Never use native panel indices as page identifiers.

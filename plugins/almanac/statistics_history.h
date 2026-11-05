@@ -133,6 +133,7 @@ struct ClockSource {
     int (*getDay)(void*) = nullptr;
     int (*getMonth)(void*) = nullptr;
     int (*getYear)(void*) = nullptr;
+    int (*getDaysPerMonth)(void*) = nullptr;
 };
 
 struct CurrencySource {
@@ -186,6 +187,14 @@ struct LogisticsSource {
     int (*isDryRun)(void*, int* out) = nullptr;
 };
 
+// Optional source of exact period metadata for flow metrics. A missing or
+// rejected period leaves periodStart/periodEnd invalid; the core never invents
+// a month boundary from a day-of-year value.
+struct PeriodSource {
+    void* userData = nullptr;
+    int (*getMetricPeriod)(void*, MetricId id, SimDate* start, SimDate* end) = nullptr;
+};
+
 struct Sources {
     ClockSource clock;
     CurrencySource currency;
@@ -193,6 +202,7 @@ struct Sources {
     PricingSource pricing;
     FlowSource flow;
     LogisticsSource logistics;
+    PeriodSource periods;
 };
 
 class StatisticsHistory {

@@ -227,7 +227,12 @@ int main() {
     // stale selection surface
     {
         AlmanacHostSurface surface{};
-        surface.capabilities = AlmanacHostCapability_Geometry | AlmanacHostCapability_FrameIdentity |
+        surface.capabilities = AlmanacHostCapability_Visibility |
+                              AlmanacHostCapability_SelectionValidation |
+                              AlmanacHostCapability_Geometry |
+                              AlmanacHostCapability_Dpi |
+                              AlmanacHostCapability_FlowLayout |
+                              AlmanacHostCapability_FrameIdentity |
                               AlmanacHostCapability_LifecycleInvalidation;
         surface.visible = true;
         surface.selected = true;
@@ -246,7 +251,12 @@ int main() {
     // valid surface render
     {
         AlmanacHostSurface surface{};
-        surface.capabilities = AlmanacHostCapability_Geometry | AlmanacHostCapability_FrameIdentity |
+        surface.capabilities = AlmanacHostCapability_Visibility |
+                              AlmanacHostCapability_SelectionValidation |
+                              AlmanacHostCapability_Geometry |
+                              AlmanacHostCapability_Dpi |
+                              AlmanacHostCapability_FlowLayout |
+                              AlmanacHostCapability_FrameIdentity |
                               AlmanacHostCapability_LifecycleInvalidation;
         surface.visible = true;
         surface.selected = true;
@@ -261,6 +271,20 @@ int main() {
         surface.lifecycle.invalidated = false;
         assert(host_surface_is_valid(surface));
         assert(host_surface_can_render(surface));
+
+        AlmanacHostSurface missing = surface;
+        missing.capabilities &= ~AlmanacHostCapability_Visibility;
+        assert(!host_surface_can_render(missing));
+
+        surface.capabilities |= AlmanacHostCapability_PointerInput;
+        surface.pointer.action = AlmanacPointerAction_Down;
+        surface.pointer.in_bounds = true;
+        surface.pointer.frame_id = 4u;
+        assert(!host_surface_can_receive_pointer(surface));
+        surface.pointer.frame_id = 5u;
+        assert(host_surface_can_receive_pointer(surface));
+        surface.visible = false;
+        assert(!host_surface_can_receive_pointer(surface));
     }
 
     // null global guards

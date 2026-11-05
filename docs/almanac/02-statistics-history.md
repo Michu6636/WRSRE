@@ -60,7 +60,9 @@ See `MetricId` enum in `statistics_history.h`. Stable string IDs via `metricIdSt
 
 ### Prices & Citizens
 - `price.food`, `price.meat`, `price.clothes`, `price.electronics` (stock, currency/ton, ACTUAL).
-- `price.cpi_daily_basket` (stock, currency/day, ACTUAL).
+- `price.cpi_daily_basket` (stock, currency/day, ACTUAL), available only when
+  enterprise rent and sim_clock month-length sources provide the real daily
+  rent basis; never silently computed as a zero-rent basket.
 - `price.market_mult_food` (stock, ratio, ACTUAL).
 - `citizen.wallets_total` (stock, currency, ACTUAL).
 - `citizen.count` (UNAVAILABLE - no citizen count source; never invented).
@@ -69,13 +71,20 @@ See `MetricId` enum in `statistics_history.h`. Stable string IDs via `metricIdSt
 - `logistics.fuel_consumed` (flow, fuel, DRY_RUN) - dry-run billing semantics.
 - `logistics.trip_count` (flow, count, DRY_RUN).
 - `logistics.tons_moved` (flow, tons, DRY_RUN).
-- `logistics.dry_run` (stock, flag, ACTUAL) - reports configured dry-run flag (default 1).
+- `logistics.dry_run` (stock, flag, ACTUAL) - reports configured dry-run flag
+  (default 1 only when the optional source is absent); a present-but-failing
+  source makes the metric unavailable.
 - `production.output` (UNAVAILABLE - no production source).
 
 ## Period boundaries
 - Stock metrics: periodStart == periodEnd == asOf date.
-- Flow metrics: periodStart is day 1 of the as-of month/year; periodEnd is asOf.
-- As-of date is supplied by the caller (integration) from sim_clock.
+- Flow metrics: `PeriodSource.getMetricPeriod` may supply exact start/end dates
+  for each metric. If it is missing, fails, returns invalid dates, or reverses
+  the period, both period fields remain invalid. The core never invents day 1:
+  sim_clock's day is a day-of-year, not a day-of-month.
+- As-of date is supplied by the caller (integration) from sim_clock. Source
+  adapters must distinguish current-month counters from last-closed-month
+  summaries when supplying flow periods.
 
 ## Currency handling
 - Active currency resolved from the injected currency source (0=RUB,1=USD).
@@ -96,7 +105,11 @@ See `MetricId` enum in `statistics_history.h`. Stable string IDs via `metricIdSt
 
 ## Integration requirements (future)
 - Wire `Sources` to public services: sim_clock, currency, enterprise_base, resource_pricing,
-  flow observers, private_logistics.
+  flow observers, private_logistics. Supply `PeriodSource` with exact metric
+  periods rather than deriving closed/current periods from a day-of-year.
+- CPI requires `ClockSource.getDaysPerMonth` and
+  `EnterpriseSource.getRentMonthly`; integration must use the same daily-rent
+  convention as the existing City Hall CPI calculation.
 - Call `update(asOf)` on tick/day boundaries; `recordHistory(asOf)` on period close.
 - Call `reset(RR_SAVE_LOAD)` / `RR_WORLD_CHANGE` on save load and world changes.
 - Render thread calls only `getSnapshot()` / `readHistory()`; no service calls or allocation.

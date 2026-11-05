@@ -1,4 +1,4 @@
-﻿#include "causation_ledger.h"
+#include "causation_ledger.h"
 #include <cmath>
 #include <cstdio>
 #include <cstring>
@@ -368,6 +368,38 @@ static void test_aggregate_for_root() {
     std::printf("PASS aggregate_for_root\n");
 }
 
+static void test_aggregate_truncation() {
+    cl::Ledger L;
+    CHECK(L.addNode(makeNode(1,0,1.0,10.0,"p","a","s","USD",1,cl::ValueClass::Actual,cl::EvidenceStatus::Supplied,1)));
+    CHECK(L.addNode(makeNode(2,0,2.0,5.0,"p","b","s","RUB",0,cl::ValueClass::Actual,cl::EvidenceStatus::Supplied,2)));
+    cl::Aggregate one[1];
+    size_t n = L.aggregate(one, 1);
+    CHECK(n == 1);
+    CHECK(one[0].truncated);
+
+    cl::Ledger overflow;
+    CHECK(overflow.addNode(makeNode(1,0,1.0,1e308,"p","a","s","RUB",0,cl::ValueClass::Actual,cl::EvidenceStatus::Supplied,1)));
+    CHECK(overflow.addNode(makeNode(2,1,2.0,1e308,"p","b","s","RUB",0,cl::ValueClass::Actual,cl::EvidenceStatus::Supplied,2)));
+    cl::Aggregate total[1];
+    CHECK(overflow.aggregateForRoot(1, total, 1) == 1);
+    CHECK(total[0].truncated);
+    CHECK(std::isfinite(total[0].totalAmount));
+    std::printf("PASS aggregate_truncation\n");
+}
+
+static void test_root_snapshot_ignores_unrelated() {
+    cl::Ledger L;
+    CHECK(L.addNode(makeNode(1,0,1.0,10.0,"p","root","s","RUB",0,cl::ValueClass::Actual,cl::EvidenceStatus::Supplied,1)));
+    CHECK(L.addNode(makeNode(2,1,2.0,5.0,"p","child","s","RUB",0,cl::ValueClass::Actual,cl::EvidenceStatus::Supplied,2)));
+    CHECK(L.addNode(makeNode(3,0,3.0,100.0,"p","other","s","RUB",0,cl::ValueClass::Actual,cl::EvidenceStatus::Supplied,3)));
+    cl::Snapshot s;
+    CHECK(L.buildSnapshot(s, 1));
+    CHECK(s.nodeCount == 2);
+    CHECK(!s.truncated);
+    CHECK(!s.overflow);
+    std::printf("PASS root_snapshot_ignores_unrelated\n");
+}
+
 int main(int argc, char** argv) {
     const char* name = (argc > 1) ? argv[1] : nullptr;
     if (!name) { std::printf("no test name\n"); return 2; }
@@ -393,6 +425,8 @@ int main(int argc, char** argv) {
     else if (std::strcmp(name, "remove_subtree") == 0) { test_remove_subtree(); }
     else if (std::strcmp(name, "evict_oldest") == 0) { test_evict_oldest(); }
     else if (std::strcmp(name, "aggregate_for_root") == 0) { test_aggregate_for_root(); }
+    else if (std::strcmp(name, "root_snapshot_ignores_unrelated") == 0) { test_root_snapshot_ignores_unrelated(); }
+    else if (std::strcmp(name, "aggregate_truncation") == 0) { test_aggregate_truncation(); }
     else { std::printf("unknown test %s\n", name); return 2; }
     std::printf("PASS %s\n", name);
     return 0;

@@ -1,4 +1,4 @@
-﻿# Almanac Causation Ledger (0.1, synthetic)
+# Almanac Causation Ledger (0.1, synthetic)
 
 UI-neutral, event-backed causation ledger. Synthetic events only in this worktree;
 live observer/hook registration belongs to integration.
@@ -38,12 +38,16 @@ Fixed-capacity arenas: nodes `kMaxNodes=256`, edges `kMaxEdges=1024`.
 
 `buildSnapshot` produces deterministic, fixed-capacity output sorted by `sequence`
 then `eventId`. Traversal budget via `maxDepth`, `nodeBudget`, `edgeBudget`.
-No allocation in hot path. Overflow sets `Snapshot.overflow`/`truncated`.
+No allocation in hot path. Overflow sets `Snapshot.overflow`/`truncated`. A
+root-specific snapshot is not marked truncated merely because unrelated trees
+exist; truncation inside the requested tree remains visible.
 
 ## Aggregation
 
 `aggregate` partitions by `(valueClass, currency, unit)`. Dry-run and estimated
 amounts never contribute to actual totals. `aggregateForRoot` restricts to a subtree.
+Output-capacity exhaustion, group-capacity exhaustion, and non-finite sums mark
+the returned aggregates truncated rather than silently presenting a complete total.
 
 ## Reset
 

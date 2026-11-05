@@ -1,4 +1,4 @@
-﻿#include "causation_ledger.h"
+#include "causation_ledger.h"
 
 #include <algorithm>
 
@@ -305,86 +305,17 @@ bool Ledger::buildSnapshot(Snapshot& out, std::uint64_t rootEventId,
     bool depthExceeded = false;
     bool nodeOverflow = false;
 
-    // Iterative DFS with explicit stack of (index, depth, childCursor)
-    // We'll simulate recursion using a stack of frames.
-    struct Frame { int idx; int depth; int childCursor; int childList[kMaxNodes]; int childCount; };
-    Frame frames[kMaxNodes];
-    int frameTop = 0;
-
-    // Helper to populate children for a node.
-    auto populateChildren = [&](Frame& f) {
-        f.childCount = 0;
-        for (std::size_t i = 0; i < nodeCount_; ++i) {
-            if (!nodes_[i].valid) continue;
-            if (nodes_[i].parentEventId != nodes_[static_cast<std::size_t>(f.idx)].eventId) continue;
-            f.childList[f.childCount++] = static_cast<int>(i);
-        }
-        std::sort(f.childList, f.childList + f.childCount, [this](int a, int b) {
-            if (nodes_[static_cast<std::size_t>(a)].sequence != nodes_[static_cast<std::size_t>(b)].sequence)
-                return nodes_[static_cast<std::size_t>(a)].sequence < nodes_[static_cast<std::size_t>(b)].sequence;
-            return nodes_[static_cast<std::size_t>(a)].eventId < nodes_[static_cast<std::size_t>(b)].eventId;
-        });
-        f.childCursor = 0;
-    };
-
-    // Push roots in reverse order.
-    for (int r = nRoots - 1; r >= 0; --r) {
-        int ri = roots[r];
-        if (visited[ri]) continue;
-        visited[ri] = true;
-        frames[frameTop].idx = ri;
-        frames[frameTop].depth = 0;
-        populateChildren(frames[frameTop]);
-        ++frameTop;
-    }
-
-    while (frameTop > 0) {
-        Frame& f = frames[frameTop - 1];
-        if (f.childCursor == 0 && f.depth == 0 && nOrder == 0 && false) {}
-        // If this frame hasn't been included yet, include now.
-        // We include when childCursor == -1 marker. Use childCursor == -2 for "to include".
-        // Simpler: include node on first visit before processing children.
-    }
-
-    // The above approach is messy; redo with explicit state.
-    // Reset.
-    frameTop = 0;
+    // Iterative DFS with explicit bounded frames.
     for (std::size_t i = 0; i < kMaxNodes; ++i) visited[i] = false;
     nOrder = 0;
     depthExceeded = false;
     nodeOverflow = false;
 
-    // We'll use a stack of node indices and a parallel "state": 0 = enter, 1 = exit.
-    int idxStack[kMaxNodes];
-    int depthStack[kMaxNodes];
-    int stateStack[kMaxNodes]; // 0 enter, 1 after children
-    int sp2 = 0;
-
-    auto pushRoot = [&](int ri, int d) {
-        if (visited[ri]) return;
-        visited[ri] = true;
-        idxStack[sp2] = ri;
-        depthStack[sp2] = d;
-        stateStack[sp2] = 0;
-        ++sp2;
-    };
-
-    for (int r = nRoots - 1; r >= 0; --r) {
-        pushRoot(roots[r], 0);
-    }
-
-    // Need children lists computed lazily. We'll store child arrays in frames.
-    // Use parallel arrays for child iteration.
-    // placeholder removed
-    // Instead store in a struct array.
     struct CFrame { int idx; int depth; int cursor; int kids[kMaxNodes]; int nkids; };
     CFrame cframes[kMaxNodes];
     int csp = 0;
 
-    // Rebuild push using cframes.
-    sp2 = 0;
     for (std::size_t i = 0; i < kMaxNodes; ++i) visited[i] = false;
-    nOrder = 0;
 
     auto pushRoot2 = [&](int ri, int d) {
         if (visited[ri]) return;
@@ -513,6 +444,9 @@ bool Ledger::buildSnapshot(Snapshot& out, std::uint64_t rootEventId,
     // If there are valid nodes not included.
     for (std::size_t i = 0; i < nodeCount_; ++i) {
         if (!nodes_[i].valid) continue;
+        // A root-specific snapshot is not truncated merely because unrelated
+        // trees exist. Nodes reached within the requested tree still count.
+        if (rootEventId != 0 && !visited[i]) continue;
         // check if included in order
         bool isIn = false;
         for (int j = 0; j < nOrder; ++j) {
@@ -534,7 +468,7 @@ std::size_t Ledger::aggregate(Aggregate* out, std::size_t capacity) const {
     // Use a temporary array of aggregates (on stack? capacity up to 128; use fixed max).
     Aggregate groups[kMaxAggregates];
     std::size_t groupCount = 0;
-    for (std::size_t i = 0; i < groupCount; ++i) groups[i] = Aggregate{};
+    bool resultTruncated = truncated_ || overflow_;
 
     for (std::size_t i = 0; i < nodeCount_; ++i) {
         if (!nodes_[i].valid) continue;
@@ -548,7 +482,10 @@ std::size_t Ledger::aggregate(Aggregate* out, std::size_t capacity) const {
             }
         }
         if (gi == groupCount) {
-            if (groupCount >= kMaxAggregates) continue;
+            if (groupCount >= kMaxAggregates) {
+                resultTruncated = true;
+                continue;
+            }
             groups[groupCount].valueClass = nodes_[i].valueClass;
             groups[groupCount].currency = nodes_[i].currency;
             CopyStr(groups[groupCount].unit, kUnitSize, nodes_[i].unit);
@@ -563,16 +500,16 @@ std::size_t Ledger::aggregate(Aggregate* out, std::size_t capacity) const {
         if (!std::isfinite(groups[gi].totalAmount)) {
             groups[gi].totalAmount = 0.0;
             groups[gi].truncated = true;
+            resultTruncated = true;
         }
     }
 
-    // Global truncated propagation.
-    if (truncated_ || overflow_) {
-        for (std::size_t g = 0; g < groupCount; ++g) groups[g].truncated = true;
-    }
-
     std::size_t toCopy = groupCount < capacity ? groupCount : capacity;
-    for (std::size_t i = 0; i < toCopy; ++i) out[i] = groups[i];
+    if (toCopy < groupCount) resultTruncated = true;
+    for (std::size_t i = 0; i < toCopy; ++i) {
+        out[i] = groups[i];
+        if (resultTruncated) out[i].truncated = true;
+    }
     return toCopy;
 }
 
@@ -611,6 +548,7 @@ std::size_t Ledger::aggregateForRoot(std::uint64_t rootEventId, Aggregate* out,
 
     Aggregate groups[kMaxAggregates];
     std::size_t groupCount = 0;
+    bool resultTruncated = truncated_ || overflow_;
     for (std::size_t s = 0; s < sc; ++s) {
         int idx = findNodeIndex(subtreeIds[s]);
         if (idx < 0) continue;
@@ -624,7 +562,10 @@ std::size_t Ledger::aggregateForRoot(std::uint64_t rootEventId, Aggregate* out,
             }
         }
         if (gi == groupCount) {
-            if (groupCount >= kMaxAggregates) continue;
+            if (groupCount >= kMaxAggregates) {
+                resultTruncated = true;
+                continue;
+            }
             groups[groupCount].valueClass = node.valueClass;
             groups[groupCount].currency = node.currency;
             CopyStr(groups[groupCount].unit, kUnitSize, node.unit);
@@ -636,12 +577,18 @@ std::size_t Ledger::aggregateForRoot(std::uint64_t rootEventId, Aggregate* out,
         groups[gi].totalAmount += node.amount;
         groups[gi].count += 1;
         if (node.truncated) groups[gi].truncated = true;
-    }
-    if (truncated_ || overflow_) {
-        for (std::size_t g = 0; g < groupCount; ++g) groups[g].truncated = true;
+        if (!std::isfinite(groups[gi].totalAmount)) {
+            groups[gi].totalAmount = 0.0;
+            groups[gi].truncated = true;
+            resultTruncated = true;
+        }
     }
     std::size_t toCopy = groupCount < capacity ? groupCount : capacity;
-    for (std::size_t i = 0; i < toCopy; ++i) out[i] = groups[i];
+    if (toCopy < groupCount) resultTruncated = true;
+    for (std::size_t i = 0; i < toCopy; ++i) {
+        out[i] = groups[i];
+        if (resultTruncated) out[i].truncated = true;
+    }
     return toCopy;
 }
 

@@ -258,11 +258,23 @@ bool host_surface_is_valid(const AlmanacHostSurface& surface) {
 }
 
 bool host_surface_can_render(const AlmanacHostSurface& surface) {
-    if (!host_has_capability(surface.capabilities, AlmanacHostCapability_Geometry)) return false;
+    const unsigned required =
+        AlmanacHostCapability_Visibility |
+        AlmanacHostCapability_SelectionValidation |
+        AlmanacHostCapability_Geometry |
+        AlmanacHostCapability_Dpi |
+        AlmanacHostCapability_FlowLayout |
+        AlmanacHostCapability_FrameIdentity |
+        AlmanacHostCapability_LifecycleInvalidation;
+    if ((surface.capabilities & required) != required) return false;
     if (!surface.visible || !surface.selected) return false;
     if (!host_geometry_is_valid(surface.geometry)) return false;
     if (!host_frame_identity_is_valid(surface.frame)) return false;
+    if (!host_lifecycle_is_valid(surface.lifecycle)) return false;
     if (lifecycle_invalidated(surface.lifecycle, surface.frame)) return false;
+    if (surface.clip.enabled && !host_surface_can_clip(surface)) return false;
+    if ((surface.scroll.can_scroll_x || surface.scroll.can_scroll_y) &&
+        !host_surface_can_scroll(surface)) return false;
     return true;
 }
 
@@ -279,10 +291,11 @@ bool host_surface_can_scroll(const AlmanacHostSurface& surface) {
 }
 
 bool host_surface_can_receive_pointer(const AlmanacHostSurface& surface) {
+    if (!host_surface_can_render(surface)) return false;
     if (!host_has_capability(surface.capabilities, AlmanacHostCapability_PointerInput)) return false;
-    if (!host_frame_identity_is_valid(surface.frame)) return false;
-    if (lifecycle_invalidated(surface.lifecycle, surface.frame)) return false;
     if (!host_pointer_event_is_valid(surface.pointer)) return false;
+    if (surface.pointer.action == AlmanacPointerAction_None) return false;
+    if (surface.pointer.frame_id != surface.frame.frame_number) return false;
     return surface.pointer.in_bounds;
 }
 

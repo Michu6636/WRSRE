@@ -97,17 +97,34 @@ void StatisticsHistory::buildCurrent_(const SimDate& asOf, int currency) {
     current_.currency = currency;
     current_.asOf = asOf;
 
-    // remove unused helpers
-    SimDate flowStart = asOf;
-    flowStart.day = 1;
+    // Flow periods come from the source adapter. A day-of-year is not a
+    // day-of-month, so the core must not invent day 1 as a month boundary.
+    SimDate flowStart;
 
     size_t mi = 0;
     auto add = [&](MetricId id, const char* idStr, int hasValue, double value,
                    const char* unit, int cur, int kind, const SimDate& pstart,
                    const SimDate& pend, const char* source, int vc, int avail, int stale) {
         if (mi >= SH_MAX_METRICS) return;
+        SimDate resolvedStart = pstart;
+        SimDate resolvedEnd = pend;
+        if (kind == MK_FLOW) {
+            resolvedStart = SimDate{};
+            resolvedEnd = SimDate{};
+            if (sources_.periods.getMetricPeriod) {
+                SimDate sourceStart;
+                SimDate sourceEnd;
+                if (sources_.periods.getMetricPeriod(
+                        sources_.periods.userData, id, &sourceStart, &sourceEnd) &&
+                    sourceStart.valid() && sourceEnd.valid() &&
+                    cmpDate_(sourceStart, sourceEnd) <= 0) {
+                    resolvedStart = sourceStart;
+                    resolvedEnd = sourceEnd;
+                }
+            }
+        }
         setMetric(current_.metrics[mi], id, idStr, hasValue, value, unit, cur, kind,
-                  pstart, pend, asOf, source, vc, avail, stale);
+                  resolvedStart, resolvedEnd, asOf, source, vc, avail, stale);
         ++mi;
     };
 
@@ -270,12 +287,25 @@ void StatisticsHistory::buildCurrent_(const SimDate& asOf, int currency) {
     priceMetric(MID_PRICE_CLOTHES, "price.clothes", sources_.pricing.getClothesPrice, "pricing.getClothes price");
     priceMetric(MID_PRICE_ELECTRONICS, "price.electronics", sources_.pricing.getElectronicsPrice, "pricing.getEletronics price");
 
-    // CPI
+    // CPI requires the same daily rent basis as the existing City Hall
+    // readout. Without rent and month-length sources it is unavailable, not
+    // an actual zero-rent basket.
     {
         double v=0.0; int ok=0;
-        if (sources_.pricing.getCpiBasket) {
-            double t=0.0;
-            if (sources_.pricing.getCpiBasket(sources_.pricing.userData, 0.0, &t) && finite(t) && t > 0.0) { v=t; ok=1; }
+        if (sources_.pricing.getCpiBasket &&
+            sources_.enterprise.getRentMonthly &&
+            sources_.clock.getDaysPerMonth) {
+            double rent=0.0;
+            int days = sources_.clock.getDaysPerMonth(sources_.clock.userData);
+            if (days > 0 &&
+                sources_.enterprise.getRentMonthly(
+                    sources_.enterprise.userData, &rent) &&
+                finite(rent) && rent >= 0.0) {
+                double t=0.0;
+                if (sources_.pricing.getCpiBasket(
+                        sources_.pricing.userData, rent / days, &t) &&
+                    finite(t) && t > 0.0) { v=t; ok=1; }
+            }
         }
         add(MID_CPI_DAILY_BASKET, "price.cpi_daily_basket", ok, v, currency==1?"USD/day":"RUB/day", currency, MK_STOCK, asOf, asOf, "pricing.getCpiDailyBasket", VC_ACTUAL, ok, 0);
     }
@@ -329,13 +359,16 @@ void StatisticsHistory::buildCurrent_(const SimDate& asOf, int currency) {
         int dry = 1; int ok = 0;
         if (sources_.logistics.isDryRun) {
             int t = 0;
-            if (sources_.logistics.isDryRun(sources_.logistics.userData, &t)) { dry = t; ok = 1; }
+            if (sources_.logistics.isDryRun(sources_.logistics.userData, &t)) {
+                dry = t ? 1 : 0;
+                ok = 1;
+            }
         } else {
-            // default documented: billing remains 0, dry_run remains 1
+            // Default documented by this portable core: billing remains 0,
+            // dry_run remains 1. A present-but-failing source is unavailable.
             dry = 1; ok = 1;
         }
-        add(MID_LOGISTICS_DRY_RUN_FLAG, "logistics.dry_run", 1, (double)dry, "flag", -1, MK_STOCK, asOf, asOf, "private_logistics config (dry_run=1)", VC_ACTUAL, 1, 0);
-        (void)ok;
+        add(MID_LOGISTICS_DRY_RUN_FLAG, "logistics.dry_run", ok, (double)dry, "flag", -1, MK_STOCK, asOf, asOf, "private_logistics config (dry_run=1)", VC_ACTUAL, ok, 0);
     }
     // production output: no source -> unavailable
     add(MID_PRODUCTION_OUTPUT, "production.output", 0, 0.0, "tons", -1, MK_FLOW, flowStart, asOf, "UNAVAILABLE: no production source", VC_ACTUAL, 0, 0);

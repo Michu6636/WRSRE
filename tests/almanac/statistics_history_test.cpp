@@ -36,7 +36,10 @@ struct Ctx {
     int priceOk = 1;
     double food = 2.0, meat = 3.0, clothes = 4.0, elec = 5.0;
     int cpiOk = 1; double cpi = 2.15;
+    double cpiRentSeen = -1.0;
     int multOk = 1; double mult = 1.2;
+    int daysPerMonth = 30;
+    int periodOk = 1;
     // flow
     int flowOk = 1;
     double wages=1,w2=0,w3=0,store=2,wholesale=3,vat=0.5,profit=0.6,prop=0.7,net=8,unexpl=0.1;
@@ -44,6 +47,7 @@ struct Ctx {
     int logOk = 1;
     double fuel=9.0, trips=4.0, tons=12.0;
     int dryRun = 1;
+    int dryRunOk = 1;
     // non-finite injection
     int injectNonFinite = 0;
 };
@@ -60,6 +64,7 @@ static int curWallets(void* u, double* o){ (void)u; if(!G.walletsOk) return 0; *
 static int clkDay(void* u){ (void)u; return 5; }
 static int clkMonth(void* u){ (void)u; return 3; }
 static int clkYear(void* u){ (void)u; return 2026; }
+static int clkDaysPerMonth(void* u){ (void)u; return G.daysPerMonth; }
 
 // enterprise
 static int entCount(void* u, size_t* o){ (void)u; if(!G.entCountOk) return 0; *o=G.entCount; return 1; }
@@ -74,8 +79,16 @@ static int prFood(void* u, int c, double* o){ (void)u;(void)c; if(!G.priceOk) re
 static int prMeat(void* u, int c, double* o){ (void)u;(void)c; if(!G.priceOk) return 0; *o=G.meat; return 1; }
 static int prClothes(void* u, int c, double* o){ (void)u;(void)c; if(!G.priceOk) return 0; *o=G.clothes; return 1; }
 static int prElec(void* u, int c, double* o){ (void)u;(void)c; if(!G.priceOk) return 0; *o=G.elec; return 1; }
-static int prCpi(void* u, double r, double* o){ (void)u;(void)r; if(!G.cpiOk) return 0; *o=G.cpi; return 1; }
+static int prCpi(void* u, double r, double* o){ (void)u; G.cpiRentSeen=r; if(!G.cpiOk) return 0; *o=G.cpi; return 1; }
 static int prMult(void* u, double* o){ (void)u; if(!G.multOk) return 0; *o=G.mult; return 1; }
+
+static int metricPeriod(void* u, MetricId id, SimDate* start, SimDate* end){
+    (void)u; (void)id;
+    if(!G.periodOk) return 0;
+    *start = SimDate{31,2,2026};
+    *end = SimDate{59,2,2026};
+    return 1;
+}
 
 // flow
 static int fWages(void* u, double* o){ (void)u; if(!G.flowOk) return 0; *o=G.wages; return 1; }
@@ -93,11 +106,13 @@ static int fUnexpl(void* u, double* o){ (void)u; if(!G.flowOk) return 0; *o=G.un
 static int lFuel(void* u, double* o){ (void)u; if(!G.logOk) return 0; *o=G.fuel; return 1; }
 static int lTrips(void* u, double* o){ (void)u; if(!G.logOk) return 0; *o=G.trips; return 1; }
 static int lTons(void* u, double* o){ (void)u; if(!G.logOk) return 0; *o=G.tons; return 1; }
-static int lDry(void* u, int* o){ (void)u; *o=G.dryRun; return 1; }
+static int lDry(void* u, int* o){ (void)u; if(!G.dryRunOk) return 0; *o=G.dryRun; return 1; }
 
 static Sources makeSources() {
     Sources s{};
     s.clock.getDay = clkDay; s.clock.getMonth = clkMonth; s.clock.getYear = clkYear;
+    s.clock.getDaysPerMonth = clkDaysPerMonth;
+    s.periods.getMetricPeriod = metricPeriod;
     s.currency.getActiveCurrency = curActive; s.currency.getSymbol = curSym;
     s.currency.getTreasury = curTreasury; s.currency.getTotalWallets = curWallets;
     s.enterprise.getCount = entCount; s.enterprise.getCapitalSum = entCapital;
@@ -156,6 +171,9 @@ int main() {
         Metric* ms = findMetric(s, MID_OVERVIEW_MONEY_SUPPLY);
         assert(ms && ms->available == 1);
         assert(near(ms->value, 100.0+50.0+30.0+5.0));
+        Metric* cpi = findMetric(s, MID_CPI_DAILY_BASKET);
+        assert(cpi && cpi->available == 1);
+        assert(near(G.cpiRentSeen, 7.0 / 30.0));
         // logistics fuel is dry-run, not actual
         Metric* lf = findMetric(s, MID_LOGISTICS_FUEL_CONSUMED);
         assert(lf && lf->available == 1);
@@ -166,6 +184,7 @@ int main() {
     {
         G = Ctx{};
         G.entSummaryOk = 0; G.priceOk = 0; G.logOk = 0; G.flowOk = 0;
+        G.dryRunOk = 0; G.rentOk = 0; G.periodOk = 0;
         auto h = std::make_unique<StatisticsHistory>();
         Sources s = makeSources();
         // remove optional sources entirely
@@ -184,6 +203,11 @@ int main() {
         assert(lf && lf->available == 0);
         Metric* fw = findMetric(snap, MID_FLOW_WAGES);
         assert(fw && fw->available == 0);
+        assert(!fw->periodStart.valid() && !fw->periodEnd.valid());
+        Metric* dry = findMetric(snap, MID_LOGISTICS_DRY_RUN_FLAG);
+        assert(dry && dry->available == 0 && dry->hasValue == 0);
+        Metric* cpi = findMetric(snap, MID_CPI_DAILY_BASKET);
+        assert(cpi && cpi->available == 0);
         // citizen count always unavailable (documented)
         Metric* cc = findMetric(snap, MID_CITIZEN_COUNT);
         assert(cc && cc->available == 0);
@@ -252,8 +276,8 @@ int main() {
         assert(tr->periodStart.day == 5 && tr->periodEnd.day == 5);
         Metric* fw = findMetric(snap, MID_FLOW_WAGES);
         assert(fw && fw->kind == MK_FLOW);
-        assert(fw->periodStart.day == 1); // month start
-        assert(fw->periodEnd.day == 5);
+        assert(fw->periodStart.day == 31 && fw->periodStart.month == 2);
+        assert(fw->periodEnd.day == 59 && fw->periodEnd.month == 2);
     }
 
     // (8) bounded history wraparound + deterministic ordering
