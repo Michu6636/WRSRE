@@ -1,0 +1,10 @@
+{
+  "fixture_id": "almanac.incomplete_residuals.v1",
+  "schema_version": "almanac-fixture-v1",
+  "scenario": "Unmatched deliveries and unresolved residuals",
+  "records": [
+    {"id": "IR-001", "residual_type": "unmatched_delivery", "matched": false, "value_class": "ACTUAL", "currency": "RUB", "unit": "tons", "amount": 4.0, "status": "unresolved", "must_not_infer_billing": true},
+    {"id": "IR-002", "residual_type": "partial_unload", "matched": false, "value_class": "ACTUAL", "currency": "RUB", "unit": "tons", "amount": 1.5, "status": "unresolved", "must_not_infer_billing": true}
+  ],
+  "invariants": ["incomplete residuals remain unresolved", "no billing is inferred from pairing success"]
+}

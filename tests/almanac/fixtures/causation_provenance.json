@@ -1,0 +1,31 @@
+{
+  "fixture_id": "almanac.causation_provenance.v1",
+  "schema_version": "almanac-fixture-v1",
+  "scenario": "Causation page provenance and missing-parent handling",
+  "events": [
+    {"id": "EVT-001", "timestamp": 100, "category": "tax", "label": "VAT rate changed"},
+    {"id": "EVT-002", "timestamp": 105, "category": "bank", "label": "Loan issued"},
+    {"id": "EVT-003", "timestamp": 105, "category": "tax", "label": "Treasury credited"},
+    {"id": "EVT-004", "timestamp": 110, "category": "logistics", "label": "Delivery completed"}
+  ],
+  "edges": [
+    {"id": "EDGE-001", "from": "EVT-001", "to": "EVT-003", "relation": "causes", "provenance": "tax settlement writes treasury credit"},
+    {"id": "EDGE-002", "from": "EVT-002", "to": "EVT-003", "relation": "related", "provenance": "same timestamp, category differs"},
+    {"id": "EDGE-003", "from": "EVT-004", "to": "EVT-003", "relation": "unsupported", "provenance": ""}
+  ],
+  "missing_parents": [
+    {"id": "MP-001", "edge": "EDGE-003", "reason": "no provenance path from delivery to treasury credit"}
+  ],
+  "truncated_history": {
+    "available_events": 4,
+    "total_events": 12,
+    "status": "incomplete"
+  },
+  "expected": {
+    "supported_edges": ["EDGE-001"],
+    "unsupported_edges": ["EDGE-002", "EDGE-003"],
+    "missing_parents": ["MP-001"],
+    "inference_rule": "shared category or timestamp alone does not imply causation"
+  },
+  "invariants": ["causation requires provenance", "truncated history is incomplete evidence"]
+}

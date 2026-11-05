@@ -1,0 +1,15 @@
+{
+  "fixture_id": "almanac.dry_run_output.v1",
+  "schema_version": "almanac-fixture-v1",
+  "scenario": "Private logistics DO target apply in dry-run mode; no treasury movement",
+  "value_class": "DRY_RUN",
+  "records": [
+    {"id": "DR-001", "operation": "do_target_apply", "mode": "dry_run", "value_class": "DRY_RUN", "currency": "RUB", "unit": "tons", "quantity": 4.0, "would_credit": 120.0, "status": "simulated", "posted": false, "provenance": "dry-run simulator"},
+    {"id": "DR-002", "operation": "do_target_apply", "mode": "dry_run", "value_class": "DRY_RUN", "currency": "RUB", "unit": "tons", "quantity": 2.0, "would_credit": 60.0, "status": "simulated", "posted": false, "provenance": "dry-run simulator"}
+  ],
+  "totals": [
+    {"id": "DR-TOT-RUB", "scope": "dry-run RUB tons", "value_class": "DRY_RUN", "currency": "RUB", "unit": "tons", "amount": 6.0, "components": ["DR-001", "DR-002"]}
+  ],
+  "must_not_be_combined_with": ["ACTUAL", "ESTIMATED"],
+  "invariants": ["dry-run rows are structurally separate from actual rows", "successful pairing is not billing evidence"]
+}

@@ -1,0 +1,15 @@
+{
+  "fixture_id": "almanac.mixed_currencies.v1",
+  "schema_version": "almanac-fixture-v1",
+  "scenario": "Actual flows denominated in both RUB and USD; totals stay currency-specific",
+  "records": [
+    {"id": "MC-001", "flow": "export_credit", "value_class": "ACTUAL", "currency": "USD", "unit": "money", "amount": 50.0, "status": "posted"},
+    {"id": "MC-002", "flow": "import_debit", "value_class": "ACTUAL", "currency": "RUB", "unit": "money", "amount": -2500.0, "status": "posted"},
+    {"id": "MC-003", "flow": "fx_estimate", "value_class": "ESTIMATED", "currency": "USD", "unit": "money", "amount": 12.0, "estimate_basis": "spot rate"}
+  ],
+  "totals": [
+    {"id": "MC-TOT-USD", "scope": "actual+estimated USD shown separately", "value_class": "ACTUAL", "currency": "USD", "unit": "money", "amount": 50.0, "components": ["MC-001"]},
+    {"id": "MC-TOT-RUB", "scope": "actual RUB money", "value_class": "ACTUAL", "currency": "RUB", "unit": "money", "amount": -2500.0, "components": ["MC-002"]}
+  ],
+  "invariants": ["no total mixes RUB and USD", "ESTIMATED USD is not added to ACTUAL USD total"]
+}

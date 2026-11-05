@@ -1,0 +1,17 @@
+{
+  "fixture_id": "almanac.actual_flows.v1",
+  "schema_version": "almanac-fixture-v1",
+  "scenario": "Actual treasury and enterprise flows posted through currency.moveTreasury",
+  "value_class": "ACTUAL",
+  "records": [
+    {"id": "AF-001", "flow": "vat_settlement", "source": "taxes", "value_class": "ACTUAL", "currency": "RUB", "unit": "money", "amount": 1250.0, "status": "posted", "provenance": "native flow observer"},
+    {"id": "AF-002", "flow": "profit_tax_settlement", "source": "taxes", "value_class": "ACTUAL", "currency": "RUB", "unit": "money", "amount": 840.0, "status": "posted", "provenance": "native flow observer"},
+    {"id": "AF-003", "flow": "property_tax_settlement", "source": "taxes", "value_class": "ACTUAL", "currency": "RUB", "unit": "money", "amount": 250.0, "status": "posted", "provenance": "native flow observer"},
+    {"id": "AF-004", "flow": "bank_loan_issue", "source": "republic_bank", "value_class": "ACTUAL", "currency": "RUB", "unit": "money", "amount": -1000.0, "status": "posted", "provenance": "treasury debit"},
+    {"id": "AF-005", "flow": "bank_repayment", "source": "republic_bank", "value_class": "ACTUAL", "currency": "RUB", "unit": "money", "amount": 300.0, "status": "posted", "provenance": "treasury credit"}
+  ],
+  "totals": [
+    {"id": "AF-TOT-RUB", "scope": "actual RUB money", "value_class": "ACTUAL", "currency": "RUB", "unit": "money", "amount": 1640.0, "components": ["AF-001", "AF-002", "AF-003", "AF-005"]}
+  ],
+  "invariants": ["actual totals never include dry-run or estimated records", "RUB and USD totals remain separate"]
+}

@@ -1,0 +1,10 @@
+{
+  "fixture_id": "almanac.truncated_diagnostics.v1",
+  "schema_version": "almanac-fixture-v1",
+  "scenario": "Diagnostic log capture truncated mid-record",
+  "records": [
+    {"id": "TD-001", "diagnostic": "[TANK] day 12 v=0x... fuel 0.4200 t", "truncated": true, "complete": false, "evidence_status": "incomplete", "phantom_income_claimed": false, "note": "capture ended before totals"},
+    {"id": "TD-002", "diagnostic": "[FLOW] vat settlement 1250.00 RUB", "truncated": false, "complete": true, "evidence_status": "complete", "phantom_income_claimed": false}
+  ],
+  "invariants": ["truncation means incomplete evidence, not proof of phantom income"]
+}

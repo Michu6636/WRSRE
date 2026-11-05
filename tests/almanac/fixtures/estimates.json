@@ -1,0 +1,14 @@
+{
+  "fixture_id": "almanac.estimates.v1",
+  "schema_version": "almanac-fixture-v1",
+  "scenario": "Estimated monthly revenue and cost projections",
+  "value_class": "ESTIMATED",
+  "records": [
+    {"id": "ES-001", "metric": "projected_vat_revenue", "value_class": "ESTIMATED", "currency": "RUB", "unit": "money", "amount": 1500.0, "estimate_basis": "trailing 30-day average", "confidence": 0.7, "stale_after_day": 45},
+    {"id": "ES-002", "metric": "projected_fuel_cost", "value_class": "ESTIMATED", "currency": "RUB", "unit": "money", "amount": 320.0, "estimate_basis": "current price basket", "confidence": 0.6, "stale_after_day": 30}
+  ],
+  "totals": [
+    {"id": "ES-TOT-RUB", "scope": "estimated RUB money", "value_class": "ESTIMATED", "currency": "RUB", "unit": "money", "amount": 1820.0, "components": ["ES-001", "ES-002"]}
+  ],
+  "invariants": ["estimated totals are never merged into actual totals"]
+}
