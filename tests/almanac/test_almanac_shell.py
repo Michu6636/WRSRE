@@ -46,5 +46,25 @@ class AlmanacShellTest(unittest.TestCase):
     def test_almanac_shell(self):
         self.run_case()
 
+    def test_shared_header_standalone(self):
+        with tempfile.TemporaryDirectory() as directory:
+            directory = Path(directory)
+            source = directory / 'standalone.cpp'
+            executable = directory / 'standalone'
+            source.write_text(
+                '#include "almanac_ui_api.h"\n'
+                'int main() { AlmanacPageSnapshot s{}; AlmanacUiApi a{}; '
+                '(void)s; (void)a; return 0; }\n',
+                encoding='utf-8',
+            )
+            result = subprocess.run(
+                [self.compiler, '-std=c++17', '-Wall', '-Wextra', '-Werror',
+                 '-I', str(ROOT / 'src'), str(source), '-o', str(executable)],
+                capture_output=True, text=True,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            run = subprocess.run([str(executable)], capture_output=True, text=True)
+            self.assertEqual(run.returncode, 0, run.stderr)
+
 if __name__ == '__main__':
     unittest.main()

@@ -41,6 +41,14 @@ Navigation is internal to the shell. `almanac_shell_navigate` validates the ID;
 - `almanac_shell_unregister_provider` removes a provider and invalidates its
   callback lifetime immediately.
 - Providers are never invoked after unregistration.
+- `almanac_shell_set_provider_action(shell, handle, callback)` attaches an
+  action callback to a registered provider. At most one action provider is
+  allowed per page, preventing one click from fanning out to duplicate economic
+  setters. Rows opt in with `interactive`, `enabled`, and an `actionId`.
+  Pointer-down on an enabled interactive row dispatches that ID to the page's
+  action provider; movement can hit-test but never commits an action. The action
+  provider owns every interactive row on that page; other providers must leave
+  their rows non-interactive.
 - `almanac_shell_provider_count` reports active providers.
 
 ## Snapshot and threading rules
@@ -49,7 +57,10 @@ Navigation is internal to the shell. `almanac_shell_navigate` validates the ID;
 - `almanac_shell_populate(shell, host)` is the only path that invokes providers.
 - Providers fill bounded `AlmanacPageSnapshot` structures (`ALMANAC_MAX_ROWS`).
 - Rendering (`almanac_shell_render`) performs no provider calls, I/O, service
-  discovery, hooking, or unbounded allocation.
+  discovery, hooking, or unbounded allocation. It requires a populated snapshot
+  for the current page and host generation; stale-generation or unpopulated
+  content is not rendered. A generation change invalidates cached pages until
+  they are populated again.
 - Providers must not retain locks or pointers after their callback returns.
 - Snapshots carry `hostGeneration`, `frameNumber`, `populated`, `available`,
   `stale`, and `coherent`.
@@ -62,7 +73,9 @@ Navigation is internal to the shell. `almanac_shell_navigate` validates the ID;
 - They are never silently aggregated together.
 - `almanac_aggregate_money` creates separate buckets for differing value class,
   currency, or unit.
-- Totals are per class and per currency/unit.
+- Totals are per class and per currency/unit. Capacity exhaustion, invalid or
+  non-finite inputs, and non-finite sums mark returned buckets truncated rather
+  than presenting a silently incomplete total.
 
 ## Host consumption
 
@@ -74,7 +87,10 @@ Navigation is internal to the shell. `almanac_shell_navigate` validates the ID;
 - Scrolling is used only when `host_surface_can_scroll` is true.
 - Pointer input is accepted only when `host_surface_can_receive_pointer` is
   true: renderable surface, pointer capability, valid non-empty in-bounds event
-  from the current frame.
+  from the current frame. The current page must also have a populated snapshot
+  from the same generation, and the hit row must be interactive and enabled.
+  Visible panel bounds are checked before adding scroll offset to the content
+  coordinate, so scrolling does not reject the bottom of the visible panel.
 - Host disappearance clears snapshots and stops rendering.
 - Lifecycle invalidation clears cached page state.
 - No raw game pointer or native panel index is accepted.

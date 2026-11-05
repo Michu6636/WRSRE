@@ -9,12 +9,13 @@
 #ifndef TSM_ALMANAC_UI_API_H
 #define TSM_ALMANAC_UI_API_H
 
-#include "host_contract.h"
-
 #include <cstddef>
 #include <cstdint>
 
 #ifdef __cplusplus
+// Forward declaration keeps this shared header independent of the Almanac
+// plugin's private include directory. almanac_shell.h supplies the full type.
+namespace almanac { struct AlmanacHostSurface; }
 extern "C" {
 #endif
 
@@ -88,6 +89,12 @@ struct AlmanacDisplayRow {
     int available = 0;
     int stale = 0;
     std::uint64_t updatedAt = 0u;
+
+    // Optional command metadata. Read-only rows leave these at zero. The
+    // shell dispatches actionId only for an interactive, enabled row.
+    unsigned actionId = 0u;
+    int interactive = 0;
+    int enabled = 0;
 };
 
 struct AlmanacPageSnapshot {

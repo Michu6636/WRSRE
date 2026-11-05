@@ -2,6 +2,7 @@
 #include "almanac_pages.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstring>
 
 namespace {
@@ -14,6 +15,7 @@ struct ProviderEntry {
     int valid = 0;
     AlmanacPageId page = ALMANAC_PAGE_OVERVIEW;
     AlmanacPopulatePageCallback populate = nullptr;
+    AlmanacPageActionCallback action = nullptr;
     void* userData = nullptr;
 };
 
@@ -104,6 +106,27 @@ extern "C" int almanac_shell_register_provider(AlmanacShell* shell,
         }
     }
     return 0;
+}
+
+extern "C" int almanac_shell_set_provider_action(AlmanacShell* shell, int handle,
+                                                 AlmanacPageActionCallback action) {
+    if (!shell || handle <= 0) return 0;
+    ProviderEntry* target = nullptr;
+    for (std::size_t i = 0; i < kMaxProviders; ++i) {
+        ProviderEntry& pe = shell->providers[i];
+        if (pe.valid && pe.handle == handle) target = &pe;
+    }
+    if (!target) return 0;
+    if (action) {
+        for (std::size_t i = 0; i < kMaxProviders; ++i) {
+            const ProviderEntry& pe = shell->providers[i];
+            if (pe.valid && pe.handle != handle && pe.page == target->page && pe.action) {
+                return 0; // never fan one command out to multiple economic providers
+            }
+        }
+    }
+    target->action = action;
+    return 1;
 }
 
 extern "C" void almanac_shell_unregister_provider(AlmanacShell* shell, int handle) {
@@ -250,11 +273,34 @@ extern "C" int almanac_shell_render(AlmanacShell* shell, const almanac::AlmanacH
 
     if (!host || !host_surface_can_render(*host)) {
         s->hostRenderable = 0;
+        s->hostGeneration = 0;
+        for (std::size_t i = 0; i < ALMANAC_PAGE_COUNT; ++i) {
+            reset_snapshot(s->snapshots[i], static_cast<AlmanacPageId>(i), 0u, 0u);
+            s->snapshots[i].populated = 0;
+        }
         s->lastFrame = frame;
         if (outFrame) *outFrame = frame;
         return 0;
     }
 
+    const std::uint64_t newGen = host->lifecycle.generation;
+    if (s->hostGeneration != 0u && s->hostGeneration != newGen) {
+        for (std::size_t i = 0; i < ALMANAC_PAGE_COUNT; ++i) {
+            reset_snapshot(s->snapshots[i], static_cast<AlmanacPageId>(i),
+                           newGen, host->frame.frame_number);
+            s->snapshots[i].populated = 0;
+        }
+        s->hostGeneration = newGen;
+    }
+    const AlmanacPageSnapshot& current = s->snapshots[s->currentPage];
+    if (!current.populated || current.hostGeneration != newGen) {
+        s->hostRenderable = 0;
+        s->lastFrame = frame;
+        if (outFrame) *outFrame = frame;
+        return 0;
+    }
+
+    s->hostGeneration = newGen;
     s->hostRenderable = 1;
     s->layoutDpi = host->geometry.dpi;
     s->rowHeight = host->geometry.dpi * 35.0f;
@@ -297,6 +343,7 @@ extern "C" int almanac_shell_render(AlmanacShell* shell, const almanac::AlmanacH
 extern "C" int almanac_shell_handle_pointer(AlmanacShell* shell, const almanac::AlmanacHostSurface* host) {
     if (!shell) return 0;
     AlmanacShell* s = shell;
+    s->lastHitRow = -1;
     if (!host || !host_surface_can_receive_pointer(*host)) return 0;
 
     // Clipping and hit-testing must agree.
@@ -312,24 +359,51 @@ extern "C" int almanac_shell_handle_pointer(AlmanacShell* shell, const almanac::
         }
     }
 
+    const AlmanacPageSnapshot& snap = s->snapshots[s->currentPage];
+    if (!snap.populated || snap.hostGeneration != host->lifecycle.generation) {
+        s->lastHitRow = -1;
+        return 0;
+    }
+
     const float ox = host->geometry.origin_x;
     const float oy = host->geometry.origin_y;
     const float ew = host->geometry.extent_width;
     const float eh = host->geometry.extent_height;
-    const float localX = px - ox;
-    const float localY = py - oy + s->scrollOffsetY;
-    if (localX < 0.0f || localY < 0.0f || localX >= ew || localY >= eh) {
+    const float visibleX = px - ox;
+    const float visibleY = py - oy;
+    if (visibleX < 0.0f || visibleY < 0.0f || visibleX >= ew || visibleY >= eh) {
         s->lastHitRow = -1;
         return 0;
     }
+
+    // Panel bounds use the visible coordinate. Only content hit-testing adds
+    // the current host's vertical scroll offset.
+    s->layoutDpi = host->geometry.dpi;
+    s->rowHeight = host->geometry.dpi * 35.0f;
+    s->scrollOffsetY = (host->scroll.can_scroll_y && host_surface_can_scroll(*host))
+        ? clampf(host->scroll.offset_y, 0.0f, host->scroll.max_offset_y)
+        : 0.0f;
+    const float contentY = visibleY + s->scrollOffsetY;
     const float rh = s->rowHeight > 0.0f ? s->rowHeight : 1.0f;
-    const int row = static_cast<int>(localY / rh);
-    const AlmanacPageSnapshot& snap = s->snapshots[s->currentPage];
+    const int row = static_cast<int>(contentY / rh);
     if (row < 0 || static_cast<std::size_t>(row) >= snap.rowCount) {
         s->lastHitRow = -1;
         return 0;
     }
+    const AlmanacDisplayRow& hit = snap.rows[static_cast<std::size_t>(row)];
+    if (!hit.interactive || !hit.enabled) {
+        s->lastHitRow = -1;
+        return 0;
+    }
     s->lastHitRow = row;
+    if (host->pointer.action == almanac::AlmanacPointerAction_Down && hit.actionId != 0u) {
+        for (std::size_t i = 0; i < kMaxProviders; ++i) {
+            ProviderEntry& pe = s->providers[i];
+            if (!pe.valid || pe.page != s->currentPage || !pe.action) continue;
+            pe.action(s->currentPage, hit.actionId, pe.userData);
+            break; // one action provider per page; never duplicate a command
+        }
+    }
     return 1;
 }
 
@@ -369,9 +443,16 @@ extern "C" std::size_t almanac_aggregate_money(const AlmanacMoney* values, std::
                                                AlmanacAggregateBucket* out, std::size_t capacity) {
     if (!values || !out || capacity == 0) return 0;
     std::size_t used = 0;
+    bool truncated = false;
     for (std::size_t i = 0; i < count; ++i) {
         const AlmanacMoney& v = values[i];
         if (!v.available) continue;
+        if (v.valueClass < ALMANAC_VALUE_ACTUAL ||
+            v.valueClass > ALMANAC_VALUE_ESTIMATED ||
+            !std::isfinite(v.amount)) {
+            truncated = true;
+            continue;
+        }
         // find existing bucket with identical class/currency/unit
         std::size_t idx = used;
         int found = 0;
@@ -384,7 +465,10 @@ extern "C" std::size_t almanac_aggregate_money(const AlmanacMoney* values, std::
             }
         }
         if (!found) {
-            if (used >= capacity) continue; // skip, but distinct count not tracked beyond capacity
+            if (used >= capacity) {
+                truncated = true;
+                continue;
+            }
             idx = used++;
             out[idx].valueClass = v.valueClass;
             out[idx].currency = v.currency;
@@ -395,6 +479,14 @@ extern "C" std::size_t almanac_aggregate_money(const AlmanacMoney* values, std::
         }
         out[idx].total += v.amount;
         ++out[idx].count;
+        if (!std::isfinite(out[idx].total)) {
+            out[idx].total = 0.0;
+            out[idx].truncated = 1;
+            truncated = true;
+        }
+    }
+    if (truncated) {
+        for (std::size_t i = 0; i < used; ++i) out[i].truncated = 1;
     }
     return used;
 }

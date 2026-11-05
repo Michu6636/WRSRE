@@ -22,6 +22,10 @@ int almanac_shell_register_provider(AlmanacShell* shell,
                                     AlmanacPageId page,
                                     AlmanacPopulatePageCallback populate,
                                     void* userData);
+// Attach an action callback to an existing provider. One action provider is
+// allowed per page; its userData is the registration userData. Null clears it.
+int almanac_shell_set_provider_action(AlmanacShell* shell, int handle,
+                                      AlmanacPageActionCallback action);
 void almanac_shell_unregister_provider(AlmanacShell* shell, int handle);
 std::size_t almanac_shell_provider_count(const AlmanacShell* shell);
 int almanac_shell_provider_is_registered(const AlmanacShell* shell, int handle);

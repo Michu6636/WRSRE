@@ -1,4 +1,5 @@
 #include <cassert>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
@@ -67,12 +68,25 @@ static int populate_cb(const AlmanacHostSurface* host, AlmanacPageSnapshot* out,
     out->rows[0].currency = 0;
     out->rows[0].valueClass = ALMANAC_VALUE_ACTUAL;
     out->rows[0].available = 1;
+    out->rows[0].actionId = 42u;
+    out->rows[0].interactive = 1;
+    out->rows[0].enabled = 1;
     std::snprintf(out->rows[1].label, ALMANAC_TEXT_LEN, "Row B");
     std::snprintf(out->rows[1].value, ALMANAC_TEXT_LEN, "20");
     out->rows[1].currency = 1;
     out->rows[1].valueClass = ALMANAC_VALUE_DRY_RUN;
     out->rows[1].available = 1;
     return 1;
+}
+
+static unsigned g_lastActionId = 0u;
+static AlmanacPageId g_lastActionPage = ALMANAC_PAGE_INVALID;
+
+static void action_cb(AlmanacPageId page, unsigned actionId, void* userData) {
+    int* counter = static_cast<int*>(userData);
+    if (counter) ++(*counter);
+    g_lastActionId = actionId;
+    g_lastActionPage = page;
 }
 
 int main() {
@@ -205,9 +219,11 @@ int main() {
     {
         AlmanacShell* sh = almanac_shell_create();
         AlmanacHostSurface host1 = make_host(1, 1, 1.0f);
+        assert(almanac_shell_populate(sh, &host1));
         almanac_shell_render(sh, &host1, nullptr);
         assert(almanac_shell_row_height(sh) == 35.0f);
         AlmanacHostSurface host2 = make_host(2, 2, 2.0f);
+        assert(almanac_shell_populate(sh, &host2));
         almanac_shell_render(sh, &host2, nullptr);
         assert(almanac_shell_row_height(sh) == 70.0f);
         almanac_shell_destroy(sh);
@@ -244,6 +260,8 @@ int main() {
         AlmanacHostSurface h3 = host;
         h3.visible = false;
         assert(!host_surface_can_render(h3));
+        assert(!almanac_shell_handle_pointer(sh, &h3));
+        assert(almanac_shell_last_hit_row(sh) == -1);
         // stale frame
         AlmanacHostSurface h4 = host;
         h4.pointer.frame_id = host.frame.frame_number + 1;
@@ -309,6 +327,74 @@ int main() {
         almanac_shell_destroy(sh);
     }
 
+    // visible bounds and scrolled content coordinates are distinct
+    {
+        auto many_rows_cb = [](const AlmanacHostSurface*, AlmanacPageSnapshot* out, void*) -> int {
+            if (!out) return 0;
+            out->populated = 1;
+            out->available = 1;
+            out->coherent = 1;
+            out->rowCount = 8;
+            for (std::size_t i = 0; i < out->rowCount; ++i) {
+                out->rows[i].available = 1;
+                out->rows[i].interactive = 1;
+                out->rows[i].enabled = 1;
+                out->rows[i].actionId = static_cast<unsigned>(i + 1);
+            }
+            return 1;
+        };
+        AlmanacShell* sh = almanac_shell_create();
+        almanac_shell_register_provider(sh, ALMANAC_PAGE_OVERVIEW, many_rows_cb, nullptr);
+        AlmanacHostSurface host = make_host(1, 1, 1.0f);
+        host.scroll.offset_y = 50.0f;
+        host.scroll.max_offset_y = 50.0f;
+        host.pointer.y = 210.0f; // 190 visible + 50 scrolled = row 6 at 35 px
+        assert(almanac_shell_populate(sh, &host));
+        assert(almanac_shell_handle_pointer(sh, &host));
+        assert(almanac_shell_last_hit_row(sh) == 6);
+        almanac_shell_destroy(sh);
+    }
+
+    // stale-generation render and input require fresh population
+    {
+        AlmanacShell* sh = almanac_shell_create();
+        int counter = 0;
+        almanac_shell_register_provider(sh, ALMANAC_PAGE_OVERVIEW, populate_cb, &counter);
+        AlmanacHostSurface host1 = make_host(1, 1, 1.0f);
+        assert(almanac_shell_populate(sh, &host1));
+        assert(almanac_shell_render(sh, &host1, nullptr));
+        AlmanacHostSurface host2 = make_host(2, 2, 1.0f);
+        assert(!almanac_shell_render(sh, &host2, nullptr));
+        assert(!almanac_shell_handle_pointer(sh, &host2));
+        const AlmanacPageSnapshot* snap = almanac_shell_page_snapshot(sh, ALMANAC_PAGE_OVERVIEW);
+        assert(snap && !snap->populated && snap->rowCount == 0);
+        almanac_shell_destroy(sh);
+    }
+
+    // one provider receives a row action only for a pointer-down command
+    {
+        AlmanacShell* sh = almanac_shell_create();
+        int counter = 0;
+        int first = almanac_shell_register_provider(sh, ALMANAC_PAGE_OVERVIEW, populate_cb, &counter);
+        int second = almanac_shell_register_provider(sh, ALMANAC_PAGE_OVERVIEW, populate_cb, &counter);
+        assert(first > 0 && second > 0);
+        assert(almanac_shell_set_provider_action(sh, first, action_cb));
+        assert(!almanac_shell_set_provider_action(sh, second, action_cb));
+        AlmanacHostSurface host = make_host();
+        g_lastActionId = 0u;
+        g_lastActionPage = ALMANAC_PAGE_INVALID;
+        assert(almanac_shell_populate(sh, &host));
+        int before = counter;
+        assert(almanac_shell_handle_pointer(sh, &host));
+        assert(counter == before + 1);
+        assert(g_lastActionId == 42u);
+        assert(g_lastActionPage == ALMANAC_PAGE_OVERVIEW);
+        host.pointer.action = AlmanacPointerAction_Move;
+        assert(almanac_shell_handle_pointer(sh, &host));
+        assert(counter == before + 1);
+        almanac_shell_destroy(sh);
+    }
+
     // ACTUAL/DRY_RUN/ESTIMATED and currency/unit separation
     {
         AlmanacMoney vals[4]{};
@@ -329,6 +415,24 @@ int main() {
             }
         }
         assert(found == 1);
+
+        AlmanacAggregateBucket limited[2];
+        n = almanac_aggregate_money(vals, 4, limited, 2);
+        assert(n == 2);
+        assert(limited[0].truncated && limited[1].truncated);
+
+        AlmanacMoney overflow[2]{};
+        for (int i = 0; i < 2; ++i) {
+            overflow[i].amount = 1e308;
+            overflow[i].currency = 0;
+            std::strcpy(overflow[i].unit, "RUB");
+            overflow[i].valueClass = ALMANAC_VALUE_ACTUAL;
+            overflow[i].available = 1;
+        }
+        AlmanacAggregateBucket sum[1];
+        assert(almanac_aggregate_money(overflow, 2, sum, 1) == 1);
+        assert(sum[0].truncated);
+        assert(std::isfinite(sum[0].total));
     }
 
     // value class names
