@@ -1,339 +1,33 @@
-// private_logistics - what a private company earns, and what it pays.
+// private_logistics -- simplified observed B2B settlement.
+//
+// Goods: unloading buyer -> verified loading seller. Each physical cargo lot
+// retains seller/resource/origin and global_base * global_market locked at
+// loading; residual lots are never reassigned to another seller.
+// DO trip fuel: original unloading buyer -> vehicle-owning private DO, using
+// sampled positive fuel decrease and the global fuel price at observed close.
+// Unknown starts, observation gaps, uncertain identities or missing prices are
+// explicitly unpriced. The assignment observer does not establish exact native
+// event coverage, fuel units, or exact burn. Dry-run defaults remain enabled.
+// No cargo-value freight, wholesale/margin factor, fragment tariff, wear,
+// upkeep, or other settlement component is applied.
 //
-// ---------------------------------------------------------------------------
-// v0.17 updates (state-storage source opt-in):
-//   - Register a storage-panel checkbox through ui_panels' widget API; each
-//     public type-5 storage defaults OFF and its permission is persisted by a
-//     stable type/name/position key, never by retaining a Building pointer.
-//   - When opted in, append a native DO target with load enabled and unload
-//     enable/percentage cleared. Turning the checkbox off disables both task
-//     directions on that state-storage target; unrelated DO targets are untouched.
-//   - The storage builder is hooked by the verified dispatcher call site in
-//     ui_panels. Customs remains diagnostic-only; no inventory is manipulated.
-// ---------------------------------------------------------------------------
-// v0.16 updates (coordinate probe correction):
-//   - v0.15 logged a state storage position of (0,0) and customs distance 0.0m.
-//     The position helper had read bld+0x08/+0x10 instead of the C3D_NODE
-//     translation at bld+0x320+0x30/+0x38 (with placement-bbox fallback).
-//     Stable identity keys and nearest-customs diagnostics now use the actual
-//     position helper. No customs/state-storage target writes were added.
-//
-// v0.15 updates (state-storage/customs discovery probe; no public-target writes):
-//   - Walk the game-wide building vector to count state storage buildings and
-//     report each private road/rail DO's geometrically nearest customs house.
-//     This is diagnostic only; neither is appended as a target in this version.
-//   - Use game_world.h's canonical demolished flag rather than an unverified
-//     raw offset in private-building discovery.
-//
-// v0.14 updates (automatic private DO targets; staged and disabled by default):
-//   1. Once per in-game day, discover registered private DOs (road 43 / rail 52)
-//      and private buildings with native storage, using enterprise_base.
-//   2. Preserve existing native target entries. Missing eligible targets are
-//      reported in dry-run mode by default; optional write mode appends a
-//      TaskEntry and mirrors the native add-path TaskCfg defaults (wildcard,
-//      100% thresholds, active/validated flags). The owner reports separate
-//      load/unload checkboxes in the DO panel; their backing fields and dataflow
-//      still need verification before assigning state storage as load-only.
-//   3. Generated entries are enabled, deduplicated, and trigger the verified DO
-//      dirty flag. Existing entries/configs are never rewritten or removed.
-//   4. A session-local identity ledger suppresses repeat allocation if the game
-//      prunes a generated target; keys are hashes, not cached Building pointers.
-//   5. This is a daily callback, not a per-frame hook. Save/load and manual-removal
-//      UI behavior remain runtime validation items; write mode ships off.
-// ---------------------------------------------------------------------------
-// Level 3. Consumes enterprise_base (v8), currency (v4) and sim_clock.
-// Optionally consumes resource_pricing for the unit price.
-//
-// ---------------------------------------------------------------------------
-// v0.10 - THE TANK WAS FOUND, AND THE TARIFF WAS FOUR TIMES TOO CHEAP.
-//
-// veh+0x5F0 is fuel in tonnes. v0.9's field scanner found it by watching which
-// words move, and the v0.9 run confirmed it five ways: it falls while the truck
-// works, it runs to zero and jumps at a refill, it tops out at 0.46 (the
-// player's own 456 LITRE tank at 1 kg/L), the refills reconcile to the diesel
-// the company paid for, and nothing else in the vehicle moves that way.
-//
-// With the tank readable, the burn stops being a guess:
-//
-//     2.05 t over 51 days, two active vehicles, 139 deliveries
-//     = 0.01475 t per delivery = 14.75 L at 1 kg/L
-//
-// v0.9 shipped 3.30 L/trip, derived from PURCHASES over trips. The company was
-// being paid 1.06 per delivery against a real fuel cost of 1.96 - it lost money
-// on every trip and the tariff, not the economy, was doing it.
-//
-// v0.10 reads every vehicle's tank at every close and reports
-//
-//     [TANK] day N   v=... fuel 0.4300 t | burned 0.0220 t | refills 0
-//     [TANK] run: burned 2.0500 t = 2050.0 L over 139 delivery(ies) = 14.75 L/trip
-//
-// Refills are counted, never subtracted from burn. This is the first figure in
-// the whole feature that is neither a purchase nor a model.
-//
-// ALSO: diesel_density 0.00084 -> 0.00100. The game stores 1 kg per litre; the
-// old constant was real-world diesel and made every litre 16 % too cheap.
-//
-// ---------------------------------------------------------------------------
-// v0.9 - FIND THE TANK.
-//
-// The player asked the right question: how do we know how much fuel a trip
-// burnt? We do not. Two runs measured it by dividing the company's diesel
-// PURCHASES by its trips and got 3.27 L/trip over 1,100 trips and 7.14 L/trip
-// over 214 trips - a factor of two, because fuel sits in tanks between
-// purchases. Purchases are not burn, and no amount of averaging makes them so.
-//
-// What is needed is the fuel going INTO a vehicle, or the level inside it. The
-// vehicle record is reachable (bld+0xC70, proven) and the transfer hook never
-// shows a fuel movement, so the tank is a FIELD inside the vehicle, not an
-// event we can already see.
-//
-// This build finds it empirically instead of guessing:
-//   - the first sighting of a vehicle is stored as a baseline and not logged;
-//   - every day after, the same 512 dwords at veh+0x000..0x800 are compared,
-//     and ONLY the words that changed are logged, as offset, old, new.
-//
-// A tank shows up as a word that falls while the truck drives and jumps when
-// it refuels. Position, speed and timers will show up too - the offsets tell
-// them apart. Nothing is priced from this; it is how the next tariff stops
-// being a fleet average.
-//
-// ALSO IN v0.9:
-//   - the [FUEL] run line now says PURCHASES and not burn, because that is
-//     what it measures.
-//   - the ini learned its section header back. v0.7's rewrite dropped
-//     [private_logistics], so the host read nothing and every key fell back to
-//     its compiled default - which is why the last two runs were dry runs.
-//
-// ---------------------------------------------------------------------------
-// v0.8 - SEE THE VEHICLES BEFORE PRICING THEM.
-//
-// v0.7's trip tariff charged every delivery the same litres. That is one
-// arbitrary vehicle imposed on a whole fleet, and it cannot survive: vehicles
-// differ in capacity, speed, price and consumption, and a tariff that ignores
-// it will overpay a scooter and bankrupt a heavy hauler. H41.
-//
-// The v0.7 run shows the transfer hook cannot supply the difference: 3,065
-// site lines resolve to exactly TWO vehicle-side pointers, one of them NULL.
-// The fleet has to be read where the game keeps it - bld+0xC70/+0xC78, proven
-// by three independent readers (Part 12) - and each vehicle's own record read
-// from there:
-//
-//     veh+0x4F8  Building*  home building                      proven
-//     veh+0x3B8  vec        cargo, stride 0x10 (Res*, float t)  proven
-//     veh+0x510  ?          candidate catalogue entry           UNPROVEN
-//
-// This build adds the census: once a day, every private enterprise's fleet is
-// walked, each vehicle is logged with what it carries and what it can carry at
-// peak, and the first sighting of each vehicle dumps 32 bytes at the pointer
-// the game gives for its catalogue entry. That is the lead for capacity,
-// speed, price and consumption - the four numbers the final model needs and
-// the four this build refuses to invent.
-//
-// The tariff is unchanged from v0.7. It stays a fallback until the census
-// says what the fleet actually is.
-//
-// ALSO IN v0.8:
-//   - litres_per_trip 5.00 -> 3.30. The v0.7 meter measured the DO's diesel
-//     bill against its own deliveries: 406.40 RUB over 1,100 trips =
-//     3.267 L/trip at ~128/RUB. Not a guess, and not 8.63 either - that
-//     figure counted tank fill, exactly as the player said it would.
-//   - the [FUEL] run line no longer claims "model and bill agree" when the
-//     bill is zero and there is nothing to compare.
-//
-// ---------------------------------------------------------------------------
-// v0.6 - THE TRIP IS PAID FOR BY THE TRIP, AND THE SHARE IS ONLY A SHARE.
-//
-// Session 7 ran v0.5 with fuel switched on and produced the number the whole
-// feature needed: the private DO's account reconciles exactly to
-//
-//     10,000.00 + 738.99 freight - 445.37 fuel - 0.02 = 10,293.60
-//
-// so the game DOES charge a private distribution office for diesel, and it
-// arrives as a cat=2 (FOREIGN) debit on its own company capital. H37 closed.
-// H33 closed too: 444 sampled payments, all moving the treasury to the kopeck.
-//
-// The same log indicted the payment model. Per delivery, against a measured
-// fuel cost of 0.34 RUB:
-//
-//     plants     282 deliveries   0.29 each   0.9x the fuel bill
-//     food       127 deliveries   2.13        6.3x
-//     meat        16 deliveries   2.37        7.0x
-//     fabric      19 deliveries   3.80       11.2x
-//     chemicals   45 deliveries   6.13       18.0x
-//
-// 58 % of the DO's work was selling at a LOSS and 9 % was paying for it. A
-// percentage of cargo value is not a tariff, it is a lottery. Real freight is
-// cost recovery plus a margin; only the handling of valuable cargo is priced
-// ad valorem, and it is a small part of the bill.
-//
-// v0.6 therefore models the tariff as what it has to be:
-//
-//     tariff = fuel_cost x (1 + margin) + tariff_share x cargo_value
-//
-// Cost recovery pays the trip, the share pays for the cargo being worth
-// carrying. litre counts come from session 7 (see litres_per_trip in the ini).
-//
-// Still probe only. Nothing here is charged. The 8 % share keeps running so
-// the two can be read side by side for one more session.
-//
-// Also fixed: the index and the treasury were read at plugin start, before the
-// world is loaded, so every log opened with "fuel NOT FOUND" and "treasury
-// opens at 0.00" that were both false a second later. Both are now re-read and
-// printed at every day close.
-//
-// ---------------------------------------------------------------------------
-// v0.5 - MEASURE THE COST BEFORE PRICING IT.
-//
-// v0.4 moved money and the money arrived (RE_DIGEST Part 19). What the same
-// session also showed is that the private DO has NO COST SIDE: its company
-// account took 646 credits over seven days and paid out nothing at all. Fuel,
-// upkeep and vehicles never touched its books. So the 8 % freight is not a
-// tariff, it is a subsidy, and "is 8 % enough to cover fuel" cannot be asked
-// until a cost exists to compare it against.
-//
-// This build therefore charges nothing new and measures two things:
-//
-//   1. THE TARIFF MODEL. A price built the way real freight is built - cost
-//      recovery plus a margin - and indexed to a live price, never to a
-//      rouble constant. A constant is exactly what inflation eats:
-//
-//          litres  = litres_per_trip + litres_per_tonne x tonnes
-//          cost    = litres x diesel_density x fuel_price      (live)
-//          tariff  = cost x (1 + margin)
-//
-//      If no fuel price resolves (fuel_resource unknown, resource_pricing
-//      absent), the same cost is expressed in daily survival baskets via the
-//      CPI tail, so the fallback is indexed too. If neither resolves the
-//      probe reports "unindexed" and prices nothing - it never guesses a
-//      figure in currency units.
-//
-//   2. THE MONEY PATH, both sides of it. [BAL] prints the treasury and every
-//      carrier's company capital at each day close. v0.4 proved the company
-//      side to the kopeck but never read the payer (H33); the delta between
-//      two closes is that proof, and the difference between a carrier's
-//      capital change and the freight it was paid is its fuel bill (H37).
-//
-// Nothing here charges the probe. `tariff_probe = 1` logs, it does not pay.
-// The 8 % share keeps running exactly as v0.4 left it, so a session produces
-// three numbers side by side: modelled tariff, freight actually paid, and the
-// vehicle's real fuel consumption as the game charged it.
-//
-// v0.4 also carried a stale banner - it opened every log with "v0.3" - which
-// cost the last reader a minute. Version now comes from PL_VERSION once.
-//
-// ---------------------------------------------------------------------------
-// v0.4 - FREIGHT IS A SHARE OF CARGO VALUE, AND THE MONEY MOVES.
-//
-// v0.3 paid a flat per-tonne rate (1.50 RUB/t). Measured against the live
-// session that is 0.31 % of what the cargo is worth - a private distribution
-// office could not cover a truck, and FreightRateFor() ignored the resource
-// anyway, so the liquid and goods rates were dead keys.
-//
-// v0.4 replaces the rate with freight_share, a fraction of the cargo's own
-// value:
-//
-//     freight = tons x unitPrice x freight_share          (default 0.08)
-//
-// A typical load is ~0.12 t of fabric worth ~58 RUB, so this pays ~4.70 RUB
-// instead of ~0.18. It scales with what is actually moved, it needs no
-// commodity-class table, and when Ship 2 makes the BUYER pay instead of the
-// state, the same formula becomes the wholesaler's margin with no rewrite.
-//
-// v0.4 also:
-//   - refuses a payment the treasury cannot afford (getTreasuryBalance),
-//     because moveTreasury takes a signed amount and will happily go negative;
-//   - splits `skipped` into the four things it was conflating;
-//   - labels the daily line with the day it actually covers (it was one
-//     behind - the callback fires at the START of the day).
-//
-// ---------------------------------------------------------------------------
-// v0.3 - THE FIRST MONEY.
-//
-// `dry_run = 1` by default: this build COMPUTES every payment and logs it as
-// "[PAY] would", but moves nothing. Set dry_run = 0 to actually pay.
-// Nothing else in the plugin changes when you flip it.
-//
-// The money model (PLAN_TECHNICAL.md sections 6 and 7):
-//
-//   H1 - A BUILDING IS PAID FOR GOODS THAT LEAVE IT
-//        at a mode-0 call with tons < 0, param_2 is the source Building.
-//        If that building is a private company, it is credited
-//        |tons| x price x factory_share, and the treasury pays.
-//
-//   H2 - A CARRIER IS PAID FREIGHT FOR A DELIVERY
-//        at a mode-0 call with tons > 0, param_2 is the destination Building
-//        and param_9 is the fleet owner. If the owner is a private company
-//        and is not the destination, it is credited
-//        tons x price x freight_share.
-//
-//   Nothing is billed at a mode-1 site: those are the vehicle side of the
-//   same movement and would double-charge it.
-//
-// ---------------------------------------------------------------------------
-// What the two live sessions established (RE_DIGEST Parts 10, 12 and 13)
-// ---------------------------------------------------------------------------
-//
-//   - THE COMMIT TEST IS `(unsigned char)r == 1`. The transfer returns a bool
-//     in AL; the upper 24 bits of EAX are register garbage. v0.1 tested the
-//     whole int and discarded exactly half the committed calls.
-//
-//   - `param_2` IS A Building* AT MODE 0 AND A Vehicle* AT MODE 1. That is
-//     the whole of attribution. At mode 0 the value also appears in
-//     enterprise_base's "[CAP] ... by=wholesale" lines, which only ever take
-//     a building; vehicle offsets read off it return garbage.
-//
-//   - `param_9` IS THE FLEET OWNER, not an endpoint: constant across two
-//     different destination buildings, and equal to the mode-1 vehicle's
-//     `home` field in every call.
-//
-//   - `(veh+0x4F0)` IS NOT AN ENDPOINT. It was NULL in all 342 calls v0.1
-//     measured and all 373 of v0.2's, because at mode 0 we were reading
-//     vehicle fields off a building. Nothing here uses it.
-//
-//   - A MOVEMENT IS TWO CALLS 30-70 ms APART, same resource, same tonnage:
-//       0x694F40  mode 0  -tons   the BUILDING the goods leave
-//       0x6953C4  mode 1  +tons   the VEHICLE they enter
-//       0x68F792  mode 0  +tons   the BUILDING they enter
-//       0x68F7F9  mode 1  -tons   the VEHICLE they leave
-//     The load leg's mode-0 call has param_9 == NULL, so its carrier is
-//     resolved from the paired mode-1 call through a short time ring.
-//
-// ---------------------------------------------------------------------------
-// The hook is a call-site patch, NOT an inline hook
-// ---------------------------------------------------------------------------
-//
-// FUN_140420350 has a five-byte prologue, so the loader's installInlineHook
-// (which requires >= 14 position-independent bytes) cannot take it. All
-// sixteen invocations are direct `call rel32` with no vtable, thunk or
-// indirect path, so retargeting the call sites sees every invocation.
-//
-//   site before:  E8 <rel32>          call FUN_140420350
-//   site after:   E8 <rel32>          call cave          <- SAME opcode
-//   cave:         FF 25 00 00 00 00   jmp qword ptr [rip+0]
-//                 <8-byte detour address>
-//
-// The opcode deliberately stays E8. A jmp does not push a return address, so
-// a detour entered that way both reads garbage from _ReturnAddress() and
-// executes `ret` into the enclosing function's caller. Verified on x86-64.
-//
-// Safety properties:
-//   - Nothing is written unless the site verifies: byte 0 must be E8 AND its
-//     rel32 must resolve to exeBase+0x420350.
-//   - Every game-memory read is behind ReadablePtr.
-//   - The ledger is a fixed ring; nothing allocates in the detour.
-//   - The lock covers counters and the rings only. Game-memory reads, calls
-//     into other plugins and logging all happen outside it.
-//   - A payment needs BOTH services. If enterprise_base or currency is
-//     missing, billing is skipped entirely and says so once.
-
 #include "../../src/tesmio_plugin.h"
 #include "../../src/game_world.h"
 #include "../../src/sim_clock_api.h"
 #include "../../src/enterprise_base_api.h"
 #include "../../src/currency_api.h"
 #include "../../src/resource_pricing_api.h"
+#include "../../src/b2b_logistics_api.h"
 #include "../../src/persistence_api.h"
+#include "b2b_settlement.h"
 #include "../../src/ui_panels_api.h"
+#include "site_permissions.h"
+#include "auto_target_policy.h"
+#include "task_audit.h"
+// Compiled/tested core only. No runtime consumer until native vehicle, cargo
+// boundaries and actual fuel-deduction provenance/order have been validated.
+#include "journey_tracker.h"
+#include "fuel_diagnostics.h"
 
 #include <stdint.h>
 #include <math.h>
@@ -359,40 +53,30 @@ static tTransfer g_realTransfer = nullptr;
 // ---------------------------------------------------------------------------
 
 static int   g_enabled         = 1;
-static int   g_billing         = 1;
+static wrsre::b2b::Engine g_b2bEngine;
+static int   g_billing         = 0; // Safe default: no money movement.
 static int   g_dryRun          = 1;      // SAFE DEFAULT: compute, log, do not pay
-static int   g_payFactory      = 1;
-static int   g_payCarrier      = 1;
+static int   g_counterpartySettlement = 1;
+static int   g_allowBuyerOverdraft = 1;
+static double g_buyerOverdraftLimit = 5000.0;
+static unsigned g_skipBuyerInsolvent = 0;
+static unsigned g_b2bLoadsMode0      = 0;
+static unsigned g_b2bLoadsMatched    = 0;
+static unsigned g_b2bDelivMode0      = 0;
+static unsigned g_b2bDelivMatched    = 0;
+static unsigned g_b2bSettleCount     = 0;
+static double   g_b2bPrincipalSum    = 0.0;
+static double   g_b2bTripFuelSum      = 0.0;
+static double   g_b2bStateNetSum     = 0.0;
 static int   g_logCapPerDay    = 400;
 static int   g_ledgerCapacity  = 512;
 static int   g_siteLog         = 1;
-// v0.4: ONE number, a share of the cargo's value. The three per-tonne rates
-// are gone: the class table never existed (FreightRateFor ignored its
-// argument) and a player cannot reason about "RUB per tonne of coal".
-static float g_freightShareRetired = 0.0f; // set when the ini still carries it
-static float g_freightShare    = 0.08f;  // v0.7: RETIRED. Kept only so the
-                                         // ini key can be recognised and warned about.
-static float g_factoryShare    = 0.90f;  // w - what a buyer pays a factory
-
-// v0.7: THE TRIP TARIFF REPLACES THE VALUE SHARE.
-//
-// v0.6 measured the value share against the DO's real fuel bill and lost:
-// 14,038.20 RUB of freight against 511.92 of diesel over 82 days. The share
-// is 27x the cost it was supposed to cover, and it is value-blind - a truck
-// hauling plants was paid 1.46 for the trip, one hauling chemicals 71.12.
-//
-// v0.7 charges the model that was only probed in v0.6; v0.6's behaviour is
-// one key away (`trip_tariff = 0`), so both can be compared in one session.
-static int    g_tripTariff      = 1;
-static double gWearLitres       = 5.0;   // maintenance reserve, in litres of diesel
-static int    g_litresAuto      = 0;     // re-tune litres_per_trip from the fuel bill
-
 // v0.7: the measured fuel bill. This is the only figure in the plugin that
 // comes from the game instead of from arithmetic - the [TARIFF] model is an
 // assumption, the DO's monthly foreign-cost total is the bill.
 //
 // Fuel is bought in bulk and stored, so a day's purchases are NOT a day's
-// burn. Over a run the tank delta washes out; the average is the burn.
+// burn. Run averages also do not establish exact native journey burn.
 // v0.8: the vehicle census. A republic has tens of vehicles, not thousands;
 // 64 slots is four times the largest fleet seen so far and keeps the table in
 // static storage, as the render/tick rules require.
@@ -407,59 +91,29 @@ static int      g_censusLog  = 1;
 #define VEH_SCAN_WORDS 512
 static unsigned g_vehSnap[VEH_MAX][VEH_SCAN_WORDS];
 static bool     g_vehSnapValid[VEH_MAX];
-// v0.10: THE TANK. veh+0x5F0 is fuel, in TONNES, and the v0.9 field scanner
-// found it the honest way - by watching which words move.
-//
-// The evidence, from the v0.9 run (51 days, two active vehicles):
-//   - the word falls every day the truck works: 0.4527 -> 0.4307 -> 0.4073 ...
-//   - it runs to ~0 and then JUMPS: 0.0024 -> 0.4527  (+0.4503, a refill)
-//   - three refills per vehicle, each +0.26 to +0.48, and the tanks top out at
-//     ~0.46 - which is the player's own reported 456 LITRE tank at 1 kg/L.
-//   - the refills over the run (2.66 t) match the diesel the company PAID for
-//     (389.23 RUB = 2.99 t at 133/RUB), less what was left in the tanks.
-//
-// That is five independent agreements, so the field is fuel and the unit is
-// tonnes. Nothing else in the vehicle moved like that.
-static double   g_vehFuel[VEH_MAX];          // last reading, tonnes
+// Legacy candidate sampling. Physical units, native deduction/refill writers
+// and activity gates are NOT verified for the selected road truck. Variable
+// names retain old units for compatibility; logs explicitly say raw/estimate.
+static double   g_vehFuel[VEH_MAX];          // last valid raw candidate
 static bool     g_vehFuelValid[VEH_MAX];
-static double   g_burnTonsRun   = 0.0;       // burned this run, tonnes
+static double   g_burnTonsRun   = 0.0;       // sum of candidate sample decreases
 static unsigned g_refillsRun    = 0;
-// v0.11: the denominator the physics actually has. Burn is per TICK, so the
-// honest rate is litres per fleet-day, not litres per delivery - and it scales
-// with HOW MANY TRUCKS and HOW LONG, never with how much they carry.
+// Historical denominators retained for candidate diagnostics, not physics.
 static unsigned g_tankDaysRun    = 0;        // closes with at least one tank read
 static unsigned g_tankVehDaysRun = 0;        // (vehicle, close) pairs
 static int      g_cargoDump      = 1;        // [CARGO] - settle where fuel lives
 static int      g_tankCrossLog   = 40;       // v0.13: [TANK] slot-vs-mirror lines
-static unsigned char g_vehNoSlotWarned[VEH_MAX];
+static private_logistics_fuel_diagnostics::Samples g_vehFuelSamples[VEH_MAX];
+static volatile LONG g_fuelDiagnosticEpoch = 1;
 static unsigned char g_vehCapValid[VEH_MAX];
-static double        g_vehCap[VEH_MAX];      // per-vehicle tank capacity, tonnes
+static double        g_vehCap[VEH_MAX];      // metadata capacity candidate, raw
 
-// v0.13: THE ACTIVITY GATE, straight out of the follow-up report.
-//
-// The engine skips a vehicle entirely unless veh+0x448 is 1 or 2 (and +0x440
-// is 9): no burn, no refuel, nothing. That means the honest denominator for a
-// fuel rate is not "fleet-day" but "TRUCK-DAY ACTIVE", and it means the ~40 L
-// this fleet burned on days with no private deliveries was burned doing work
-// that was not ours.
-//
+// Legacy state-word guesses only; never gate native events using these.
 static unsigned g_activeVehDaysRun = 0;
 static unsigned g_idleVehDaysRun   = 0;
 
-// v0.11: THE PER-TRIP FUEL PROBE.
-//
-// The player's question was exact: "You were able to see the fuel used for
-// every trip?" No. Every number this plugin has ever printed about fuel came
-// from PURCHASES divided by trips, and purchases are a stock movement, not a
-// burn. With 4,558 L bought and 4,157 L pumped into tanks in the v0.7 run, the
-// ratio could have been anywhere between 7.0 and 8.7 L/trip.
-//
-// The fix costs one pointer walk: at every committed delivery, total the tanks
-// of the fleet that did it. The difference from the previous delivery is the
-// fuel burned between the two - no purchases, no storage, no assumptions. A
-// refill (tank goes UP) or a change in fleet size invalidates that one
-// interval, and those are counted separately rather than averaged in.
-static const int VEH_FUEL_OFF = 0x5F0;     // the tank, in tonnes (see ReadTank)
+// Legacy fleet endpoint sampling. It cannot prove individual fuel events.
+static const int VEH_FUEL_OFF = 0x5F0;     // panel backing candidate; physical units unverified
 
 static void*    g_probeBld      = nullptr;
 static double   g_probeFuelTons = -1.0;
@@ -479,77 +133,14 @@ static double             g_fuelPaidRun  = 0.0;
 static double             g_fuelLitresRun = 0.0;
 static unsigned long long g_fuelTripsRun = 0;
 
-// v0.11 updates:
-//   1. litres_per_tonne ships at 0. Load does not enter the burn formula -
-//      Ghidra, FUN_14016E3B0 - and the v0.10 log agrees (r = -0.03).
-//   2. [TANK] run prints LITRES PER FLEET-DAY and per truck-day beside L/trip.
-//      L/trip is a ratio of two unrelated things; L/day is the physics.
-//   3. [CARGO] dumps the raw cargo vector, uncapped, to settle where fuel
-//      actually lives. The Ghidra report says veh+0x3B8; our own census says
-//      the trucks carry 0 slots while holding 0.29 t in the tank. One of those
-//      is wrong and a dump costs nothing.
-//   4. A NEGATIVE tank reading is read as empty, not as extra burn. Day 13 of
-//      the v0.10 run read -0.0302 t; +0x5F0 is derived, not the level.
-//   5. BURN PROBE: the fleet's tanks are totalled at every committed delivery,
-//      so the next run reports diesel that actually left the tanks BETWEEN two
-//      deliveries. That is the player's question answered with a measurement
-//      instead of purchases divided by trips.
-//
-// v0.12 updates:
-//   1. The cargo census no longer hides vectors longer than eight slots. That
-//      cap is what made this plugin report "0 slot(s)" on trucks holding fuel,
-//      and I used that as evidence. It was not evidence - it was a bug here.
-//   2. [CARGO] dumps BOTH storage vectors, 0x3A0 and 0x3B8, every slot.
-//   3. [VEH] now prints kind=, the int at +0x50C that the report calls the
-//      fuel-consumer flag. +0x510 was never a pointer; that is why it printed
-//      nonsense.
-//
-// v0.13 updates (follow-up disassembly):
-//   1. THE TANK IS THE CARGO SLOT, not +0x5F0. The slot at veh+0x3B8 whose
-//      resource pointer is diesel's, +0x08 tonnes, clamped at zero.
-//   2. +0x5F0 is an UNCLAMPED MIRROR written by the refuel and drive paths.
-//      That is why it went negative; it is now a cross-check, not the source.
-//   3. The fleet's tank can be read per vehicle in two places - the slot for
-//      the level, and *(veh+0x1708)+0x8684 for that vehicle's CAPACITY. The
-//      capacity is logged once per vehicle, so no arbitrary vehicle stands in
-//      for the fleet.
-//   4. [VEH] prints state (veh+0x448) and mode (veh+0x440). The engine skips a
-//      vehicle entirely unless the state is 1 or 2, so "litres per ACTIVE
-//      truck-day" is the only fuel rate that means anything; it is now on the
-//      [TANK] run line.
-//
-// v0.5: the cost side, in physical units. No rouble constant may appear here:
-// prices move, litres and ratios do not.
-static int    g_tariffProbe     = 1;       // compute + log the tariff, never charge
-static int    g_balanceLog      = 1;       // [BAL] treasury + carrier capital per day
-static int    g_tariffLogPerDay = 60;      // per-delivery [TARIFF] lines, then totals only
-static double gLitresPerTrip    = 14.75;   // v0.10: measured from the TANKS, not purchases
-// v0.11: ZERO - and this retires a term I invented.
-//
-// Ghidra on FUN_14016E3B0 (the per-tick upkeep function) shows the burn is
-//
-//   consumption = (slot_rate / *(float*)(bld+0xE30)) * base_rate
-//                 * (tick_delta / DAT_14090AA78) * fVar24
-//   fVar24      = DAT_140909F58 / ((bld+0xE68 - bld+0xE60) / 0xC)
-//
-// fVar24 is a BUILDING-level constant and cargo weight never enters it. A full
-// truck burns what an empty one burns. `litres_per_tonne` was my invention and
-// it is falsified by the code as well as by the v0.10 log (daily burn vs daily
-// deliveries: correlation -0.03 over 51 days).
-//
-// Kept as a key so the claim can be re-tested, but it ships at zero.
-static double gLitresPerTonne   = 0.0;     // FALSIFIED - load does not burn
-static double gTariffMargin     = 0.35;    // dimensionless: 35 % over fuel cost
-static double gDieselDensity    = 0.00100; // t/L - v0.10: the game uses 1 kg/L
-                                            // (a 456 L tank reads 0.456 t), not
-                                            // real diesel's 0.84
-static char   gFuelResource[64] = "fuel";  // resolved through resource_pricing
-static double gBasketsPerTrip   = 0.80;    // CPI fallback, in daily survival baskets
-static double gBasketsPerTonne  = 0.02;
+static int g_balanceLog = 1;
+static char gFuelResource[64] = "fuel";
 
-#define PL_VERSION "0.17"
+#define PL_VERSION "0.19.0-simplified-settlement"
+static int g_panelObserverEnabled = 1;
+static int g_scheduleObserverEnabled = 1;
+static void PanelObserverLoading(void);
 static float g_minPayment      = 0.01f;
-static double g_dailyPayCap    = 0.0;    // 0 = no cap
 
 static const TsmEnterpriseBaseApi*  g_enterprise = nullptr;
 static const TsmSimClockApi*        g_simClock   = nullptr;
@@ -562,10 +153,11 @@ static int                           g_stateStorageWidgetHandle = 0;
 
 // Automatic DO-target generation. Fixed buffers only; discovery runs from the
 // once-per-day sim_clock callback, never from a per-frame/render hook.
-static int g_autoTargetsEnabled = 0;
-static int g_autoTargetsDryRun  = 1;
+static int g_autoTargetsEnabled = 1;
+static int g_autoTargetsDryRun  = 0;
+static int g_autoSourcePercent = 10;
+static int g_autoDestinationPercent = 30;
 static int g_autoTargetLogLimit = 80;
-static int g_stateStorageForceOn = 0; // ini: state_storage_always_on=1 bypasses checkbox
 static volatile LONG g_autoResetActiveMemoAfterLoad = 0;
 #define AUTO_ENTITY_MAX 8704
 #define AUTO_MEMO_MAX   262144
@@ -643,7 +235,7 @@ static int  g_siteCount = MAX_SITES;
 // the ledger
 // ---------------------------------------------------------------------------
 
-enum ShipKind { SHIP_LOAD = 0, SHIP_DELIVERY, SHIP_FREIGHT, SHIP_FUEL, SHIP_PURCHASE };
+enum ShipKind { SHIP_LOAD = 0, SHIP_DELIVERY, SHIP_FUEL, SHIP_PURCHASE };
 
 struct Shipment {
     unsigned id;
@@ -679,17 +271,9 @@ static unsigned g_ledgerTotal = 0;
 // under 2 s. If nothing matches, the payment is skipped and counted - never
 // guessed.
 
-#define CARRIER_RING 32
-
-struct CarrierNote {
-    void*  res;
-    float  tons;      // absolute
-    void*  home;      // the fleet owner
-    double t;
-};
-
-static CarrierNote g_carrier[CARRIER_RING];
-static int         g_carrierHead = 0;
+// Mode-0 building transfers and mode-1 vehicle transfers are joined through
+// g_b2bEngine (PendingLoad: 0x694F40 -> 0x6953C4; PendingDelivery: 0x68F792 ->
+// 0x68F7F9) using resource identity, tonnage within 0.5%, and dt <= 2.0 s.
 
 static double NowSeconds(void)
 {
@@ -714,38 +298,9 @@ static unsigned g_siteSuppressed   = 0;
 static unsigned g_attrSuppressed   = 0;
 static unsigned g_paySuppressed    = 0;
 
-static unsigned g_payCount         = 0;
-// v0.4: `skipped` used to be one number covering four unrelated causes. In
-// the fourth session it read 159 in a day purely because the distribution
-// office was state-owned - alarming to read, and meaningless.
-static unsigned g_skipNoPayee      = 0;   // no private owner on the leg
-static unsigned g_skipNoPrice      = 0;   // resource_pricing gave no price
-static unsigned g_skipSmall        = 0;   // below min_payment
-static unsigned g_skipTreasury     = 0;   // the state could not afford it
+static unsigned g_skipTreasury = 0;
 
-// v0.5: the tariff probe's own tallies, and which index it managed to use.
-// An unindexed delivery is NOT a delivery worth 0.00 - it is one this build
-// could not price, and the daily line says so rather than folding it in.
-static unsigned g_tariffCount      = 0;
-static unsigned g_tariffNoIndex    = 0;
-static unsigned g_tariffFuelIndex  = 0;
-static unsigned g_tariffCpiIndex   = 0;
-static double   g_tariffCostSum    = 0.0; // the fuel-recovery half
-static double   g_tariffShareSum   = 0.0; // the ad valorem half
-static unsigned g_tariffLoggedToday= 0;
-static double   g_tariffSum        = 0.0;
-
-// v0.5 (H33): the payer leg, sampled per payment. A daily treasury delta is
-// useless as proof - wages, taxes and store sales move the same balance all
-// day long. Sampling either side of OUR OWN move isolates it completely: the
-// difference must be exactly minus the amount, or the books do not close.
-// v0.5: the refuel site (0x16F831) has never fired in any session. If the
-// game is going to start charging for fuel, this is where we see it first.
 static unsigned g_fuelEvents       = 0;
-static unsigned g_treasuryChecked  = 0;
-static unsigned g_treasuryExact    = 0;
-static unsigned g_treasuryOff      = 0;
-static double   g_treasuryMaxGap   = 0.0;
 
 // v0.5: the money path, both ends. The treasury is sampled at each close; the
 // carriers we paid are remembered so their capital can be printed beside it.
@@ -755,23 +310,15 @@ static bool   g_treasuryHaveClose  = false;
 static void*  g_balCarrier[BAL_CARRIERS]     = { nullptr, nullptr, nullptr, nullptr };
 static double g_balCarrierPrev[BAL_CARRIERS] = { -1.0, -1.0, -1.0, -1.0 };
 static double g_balCarrierIn[BAL_CARRIERS]   = { 0.0, 0.0, 0.0, 0.0 };
-static double g_balCarrierFuel[BAL_CARRIERS] = { -1.0, -1.0, -1.0, -1.0 }; // v0.7 meter,
-                                                                    // -1 = no baseline yet
 static int    g_balCarrierCount    = 0;
 static void*  g_fuelRes            = nullptr;   // cached lookup, re-resolved daily
 
 // v0.4: which day the accumulated tallies belong to. OnDay fires at the START
 // of `day`, so the window it reports is the day that just ENDED.
 static int g_summaryDay            = -1;
-static unsigned g_payCapped        = 0;
-static double   g_paidFactory      = 0.0;
-static double   g_paidCarrier      = 0.0;
-static double   g_paidToday        = 0.0;
 
-static double   g_wouldPayFreight  = 0.0;
 static double   g_wouldPayFuel     = 0.0;
 
-static int      g_lastMonth        = -1;
 
 // Per-site tallies, so "never fired" is distinguishable from "never logged".
 struct SiteTally {
@@ -798,6 +345,22 @@ static int SiteIndex(unsigned rva)
 // helpers
 // ---------------------------------------------------------------------------
 
+static uint32_t VehSlotIdx(void* veh)
+{
+    if (!veh || !TsmIsValidGamePtr(veh) ||
+        !ReadablePtr((const BYTE*)veh + 0x10, sizeof(uint32_t))) {
+        return wrsre::b2b::Engine::hashVehiclePtr((std::uintptr_t)veh);
+    }
+    uint32_t idx = 0;
+    __try {
+        idx = *(const uint32_t*)((const BYTE*)veh + 0x10);
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        return wrsre::b2b::Engine::hashVehiclePtr((std::uintptr_t)veh);
+    }
+    if (idx < (uint32_t)wrsre::b2b::VEH_TRACK_MAX) return idx;
+    return wrsre::b2b::Engine::hashVehiclePtr((std::uintptr_t)veh);
+}
+static bool AutoBuildingKey(void* b, uint64_t* outKey, int* outType);
 static bool IsPrivate(void* b)
 {
     if (!b || !g_enterprise) return false;
@@ -811,7 +374,6 @@ static const char* KindName(unsigned char k)
     switch (k) {
         case SHIP_LOAD:     return "load";
         case SHIP_DELIVERY: return "unload";
-        case SHIP_FREIGHT:  return "freight";
         case SHIP_FUEL:     return "fuel";
         case SHIP_PURCHASE: return "buy";
         default:            return "?";
@@ -890,27 +452,12 @@ static double UnitPrice(void* res)
     if (g_pricing) {
         const int cur = g_currency ? TsmCurrencyActive(g_currency) : 0;
         const float p = g_pricing->getPrice(res, cur);
-        if (p == p && p > 0.01f && p < 1e9f) return (double)p;
+        const double market = (double)TsmPricingMarketMult(g_pricing, res);
+        const double quote = (double)p * market;
+        if (std::isfinite(quote) && quote > 0.01 && quote < 1e9) return quote;
     }
 
-    // Fallback: the raw record field, only if resource_pricing is absent.
-    if (!ReadablePtr((const BYTE*)res + TSM_RES_PRICE_RUB, 4)) return 0.0;
-    const float f = *(const float*)((const BYTE*)res + TSM_RES_PRICE_RUB);
-    if (!(f == f) || f < 0.0f || f > 1e9f) return 0.0;
-    return (double)f;
-}
-
-// v0.4: freight as a share of the cargo's value.
-//
-// `tons` is positive on this leg (the delivery). A zero or nonsense unit
-// price yields zero rather than a guess - the caller counts it as a skip.
-static double FreightFor(double tons, double unitPrice)
-{
-    const double value = tons * unitPrice;
-    if (!(value > 0.0)) return 0.0;
-    const double share = (double)g_freightShare;
-    if (!(share > 0.0)) return 0.0;
-    return value * share;
+    return 0.0; // no global market service: explicitly unpriced
 }
 
 // One guard, used everywhere the treasury is read: an older currency host may
@@ -922,74 +469,38 @@ static bool TreasuryReadable(void)
                                      sizeof(g_currency->getTreasuryBalance);
 }
 
-// v0.5: the fuel price, resolved by NAME through resource_pricing so the
-// index moves with the game's own economy. Cached for the day and dropped at
-// each close, because a save load can replace the resource table under us.
-static double FuelUnitPrice(void)
+static wrsre::b2b::FundsTransferCallbacks MakeTransferCallbacks(
+    unsigned* insolvent, unsigned* treasurySkip)
 {
-    if (!g_pricing || !g_pricing->getByName) return 0.0;
-    if (!g_fuelRes) {
-        g_fuelRes = g_pricing->getByName(gFuelResource);
-        if (g_fuelRes && !TsmIsValidGamePtr(g_fuelRes)) g_fuelRes = nullptr;
-    }
-    if (!g_fuelRes) return 0.0;
-
-    const int cur = g_currency ? TsmCurrencyActive(g_currency) : 0;
-    const float p = g_pricing->getPrice(g_fuelRes, cur);
-    if (!(p == p) || !(p > 0.0f) || !(p < 1e9f)) return 0.0;
-    return (double)p;
-}
-
-// v0.7: THE TARIFF. Fuel plus a maintenance reserve, both denominated in
-// litres and both priced at the live fuel price:
-//
-//   work    = litres_per_trip + litres_per_tonne x tonnes
-//   fuel    = work x diesel_density x fuel_price        <- the index
-//   wear    = wear_litres x diesel_density x fuel_price <- sinking fund
-//   tariff  = fuel x (1 + margin) + wear
-//
-// Two rules are enforced here, not in prose. Nothing is a rouble constant, so
-// inflation cannot eat it; and nothing depends on what the cargo is WORTH, so
-// a truck of plants pays for its trip the same as a truck of chemicals.
-// The wear term exists because fuel x 1.35 can never buy a truck: a carrier
-// has to recover vehicles over their life, and that is a per-trip cost.
-//
-// `*outIndex` is 1 for the fuel index, 2 for the CPI fallback, 0 for neither.
-// A 0 return means "this build cannot price this delivery", not "it is free".
-static double TariffFor(double tons, double* outFuel, double* outWear,
-                        int* outIndex)
-{
-    if (outFuel)  *outFuel  = 0.0;
-    if (outWear)  *outWear  = 0.0;
-    if (outIndex) *outIndex = 0;
-    if (!(tons > 0.0)) return 0.0;
-
-    double fuel = 0.0, wear = 0.0;
-    const double work = gLitresPerTrip + gLitresPerTonne * tons;
-    const double fp   = FuelUnitPrice();
-
-    if (fp > 0.0) {
-        fuel = work * gDieselDensity * fp;
-        wear = gWearLitres * gDieselDensity * fp;
-        if (outIndex) *outIndex = 1;
-    } else if (g_pricing) {
-        const float basket = TsmPricingCpiBasket(g_pricing, 0.0f);
-        if (basket == basket && basket > 0.0f && basket < 1e9f) {
-            fuel = (gBasketsPerTrip + gBasketsPerTonne * tons) * (double)basket;
-            // The reserve expressed in the fallback unit: the litres ratio is
-            // dimensionless, so it survives the switch unchanged.
-            const double ratio =
-                (gLitresPerTrip > 0.0) ? (gWearLitres / gLitresPerTrip) : 0.0;
-            wear = fuel * ratio;
-            if (outIndex) *outIndex = 2;
-        }
-    }
-
-    if (outFuel) *outFuel = fuel;
-    if (outWear) *outWear = wear;
-
-    const double total = fuel * (1.0 + gTariffMargin) + wear;
-    return (total > 0.0) ? total : 0.0;
+    wrsre::b2b::FundsTransferCallbacks cb;
+    cb.isLivePrivate = [](void*, void* b) -> bool {
+        return IsPrivate(b) && !TsmIsDecayed(b);
+    };
+    cb.getCapital = [](void*, void* b) -> double {
+        return g_enterprise ? g_enterprise->getCompanyCapital(b) : 0.0;
+    };
+    cb.modifyCapital = [](void*, void* b, double d, int cat) {
+        if (g_enterprise) g_enterprise->modifyCompanyCapital(b, d, (TsmCapitalCategory)cat);
+    };
+    cb.getTreasury = [](void*, int) -> double {
+        return TreasuryReadable()
+            ? g_currency->getTreasuryBalance(TsmCurrencyActive(g_currency)) : 0.0;
+    };
+    cb.moveTreasury = [](void*, double amount, const char* label) {
+        if (g_currency) g_currency->moveTreasury(amount, label);
+    };
+    cb.checkSellerKey = [](void*, void* b, std::uint64_t key) -> bool {
+        if (key == 0) return true;
+        std::uint64_t current = 0; int type = 0;
+        return AutoBuildingKey(b, &current, &type) && current == key;
+    };
+    cb.allowBuyerOverdraft = g_allowBuyerOverdraft != 0;
+    cb.buyerOverdraftLimit = g_buyerOverdraftLimit;
+    cb.minPayment = g_minPayment;
+    cb.dryRun = g_dryRun != 0 || g_billing == 0;
+    cb.skipBuyerInsolvent = insolvent;
+    cb.skipTreasury = treasurySkip;
+    return cb;
 }
 
 // v0.5: remember who was paid, so the close can show their cash position.
@@ -1016,7 +527,6 @@ static void TrackCarrier(void* b)
     if (!known && g_balCarrierCount < BAL_CARRIERS) {
         g_balCarrier[g_balCarrierCount]     = b;
         g_balCarrierPrev[g_balCarrierCount] = -1.0;   // -1 = no baseline yet
-        g_balCarrierFuel[g_balCarrierCount] = -1.0;   // first read is a baseline
         g_balCarrierCount++;
     }
     LeaveCriticalSection(&g_lock);
@@ -1031,106 +541,6 @@ static void AppendShipment(const Shipment& s)
     g_ledger[g_ledgerHead % cap] = s;
     g_ledgerHead = (g_ledgerHead + 1) % cap;
     g_ledgerTotal++;
-}
-
-// ---------------------------------------------------------------------------
-// paying
-// ---------------------------------------------------------------------------
-//
-// One place that moves money, so there is exactly one place to look when a
-// balance changes. dry_run decides whether the call lands.
-//
-//   payee  - the building whose company is credited
-//   amount - positive RUB
-//   cat    - what the movement is for (enterprise_base's own classification)
-//   label  - appears verbatim in currency's flow ledger
-
-static bool Pay(void* payee, double amount, TsmCapitalCategory cat,
-                const char* label, const char* kind, void* res, float tons)
-{
-    // v0.4: every refusal is counted HERE, where the reason is known, so the
-    // daily line can say which one it was instead of lumping them together.
-    if (!(amount >= (double)g_minPayment)) {
-        EnterCriticalSection(&g_lock); g_skipSmall++;    LeaveCriticalSection(&g_lock);
-        return false;
-    }
-    if (!g_enterprise || !g_currency) {
-        EnterCriticalSection(&g_lock); g_skipNoPayee++;  LeaveCriticalSection(&g_lock);
-        return false;
-    }
-
-    char bname[64], rname[64];
-    BuildingName(payee, bname, sizeof(bname));
-    ResourceName(res, rname, sizeof(rname));
-
-    if (g_dailyPayCap > 0.0 && g_paidToday + amount > g_dailyPayCap) {
-        EnterCriticalSection(&g_lock);
-        g_payCapped++;
-        LeaveCriticalSection(&g_lock);
-        return false;
-    }
-
-    // v0.4 AFFORDABILITY GATE.
-    //
-    // moveTreasury takes a signed amount and has no floor: crediting a
-    // private company and debiting the treasury by more than it holds would
-    // simply drive the balance negative. The state is the payer until Ship 2,
-    // so it has to be able to say no. Reads the ACTIVE currency's treasury
-    // (RUB by default), the same one moveTreasury writes.
-    {
-        double have = 0.0;
-        if (g_currency->getTreasuryBalance &&
-            g_currency->structSize >= offsetof(TsmCurrencyApi, getTreasuryBalance) +
-                                      sizeof(g_currency->getTreasuryBalance))
-            have = g_currency->getTreasuryBalance(TsmCurrencyActive(g_currency));
-        if (have < amount) {
-            EnterCriticalSection(&g_lock); g_skipTreasury++; LeaveCriticalSection(&g_lock);
-            return false;
-        }
-    }
-
-    if (g_dryRun) {
-        Logf("[PAY] would %s %s %+.2f (%s %.3ft) - dry_run",
-             kind, bname, amount, rname, (double)tons);
-    } else {
-        // v0.5 (H33): the treasury is read on both sides of the move. This is
-        // the only isolated proof of the payer leg that exists - it cannot be
-        // contaminated by wages or taxes, because nothing else runs between
-        // the two reads.
-        const int cur   = TsmCurrencyActive(g_currency);
-        const bool sample = TreasuryReadable();
-        double before = 0.0, after = 0.0;
-        if (sample) before = g_currency->getTreasuryBalance(cur);
-
-        g_enterprise->modifyCompanyCapital(payee, amount, cat);
-        g_currency->moveTreasury(-amount, label);
-
-        if (sample) {
-            after = g_currency->getTreasuryBalance(cur);
-            const double gap = (after - before) + amount;   // 0 = exact
-            const double mag = (gap < 0.0) ? -gap : gap;
-            EnterCriticalSection(&g_lock);
-            g_treasuryChecked++;
-            if (mag <= 0.005) {
-                g_treasuryExact++;
-            } else {
-                g_treasuryOff++;
-                if (mag > g_treasuryMaxGap) g_treasuryMaxGap = mag;
-            }
-            LeaveCriticalSection(&g_lock);
-        }
-
-        Logf("[PAY] %s %s %+.2f (%s %.3ft) paid by the state",
-             kind, bname, amount, rname, (double)tons);
-    }
-
-    EnterCriticalSection(&g_lock);
-    g_paidToday += amount;
-    g_payCount++;
-    if (cat == TSM_CAP_PRODUCTION) g_paidFactory += amount;
-    else                          g_paidCarrier += amount;
-    LeaveCriticalSection(&g_lock);
-    return true;
 }
 
 // ---------------------------------------------------------------------------
@@ -1228,35 +638,48 @@ static int DetourTransfer(void* game, void* p2, unsigned mode, void* res,
     bool     emitSite   = false;
     bool     emitAttrib = false;
     unsigned shipId     = 0;
-    void*    carrier    = nullptr;
-    bool     carrierMatched = false;
+
+    // Pre-compute source building identity outside the lock on load legs so
+    // VehCargoLot carries the exact same AutoBuildingKey verified at delivery.
+    const bool loadLegMode0 = (committed && mode == 0 && tons < 0.0f &&
+                               building && known != SITE_REFUEL);
+    const bool loadSrcPriv  = loadLegMode0 ? IsPrivate(building) : false;
+    std::uint64_t loadSellerKey = 0;
+    if (loadSrcPriv) {
+        int btype = 0;
+        if (!AutoBuildingKey(building, &loadSellerKey, &btype))
+            loadSellerKey = 0;
+    }
+
+    // p9 == vehicleHome is tautological on the verified vehicle-delivery
+    // site, not a reason to discard its cargo or its only delivery join.
+    // Other staging legs remain excluded, and refuelling is never cargo.
+    const bool trackMode1Cargo = wrsre::b2b::ShouldTrackMode1Cargo(
+        committed, mode, p2 != nullptr, isStaging,
+        known == SITE_REFUEL, siteRva);
+    const uint32_t mode1VehSlot = trackMode1Cargo ? VehSlotIdx(p2) : 0;
 
     EnterCriticalSection(&g_lock);
 
-    if (committed && mode != 0 && vehicleHome) {
-        CarrierNote& n = g_carrier[g_carrierHead % CARRIER_RING];
-        n.res  = res;
-        n.tons = fabsf(tons);
-        n.home = vehicleHome;
-        n.t  = NowSeconds();
-        g_carrierHead = (g_carrierHead + 1) % CARRIER_RING;
+    // Record PendingLoad on mode-0 load leg (0x694F40).
+    if (loadLegMode0) {
+        g_b2bLoadsMode0++;
+        g_b2bEngine.recordMode0Load((std::uintptr_t)building, (std::uintptr_t)res,
+                                   fabsf(tons), NowSeconds(), loadSrcPriv, loadSellerKey, unitPrice);
+    }
+    // Match PendingLoad on mode-1 load leg (0x6953C4).
+    if (committed && mode != 0 && tons > 0.0f && p2 && !isStaging && known != SITE_REFUEL) {
+        if (g_b2bEngine.matchMode1Load((std::uintptr_t)p2, mode1VehSlot,
+                                       (std::uintptr_t)res, tons, NowSeconds(), false, 0))
+            ++g_b2bLoadsMatched;
     }
 
-    if (committed && mode == 0 && tons < 0.0f && !owner) {
-        // The load leg: param_9 is NULL, so find the vehicle that took these
-        // goods from the mode-1 call that follows within a few milliseconds.
-        const double now = NowSeconds();
-        for (int i = 1; i <= CARRIER_RING; i++) {
-            const int k = ((g_carrierHead - i) % CARRIER_RING + CARRIER_RING) % CARRIER_RING;
-            const CarrierNote& n = g_carrier[k];
-            if (!n.home || n.res != res) continue;
-            if (now - n.t > 2.0) continue;
-            const float tol = (fabsf(tons) > 0.01f) ? fabsf(tons) * 0.005f : 0.0005f;
-            if (fabsf(n.tons - fabsf(tons)) > tol) continue;
-            carrier = n.home;
-            carrierMatched = true;
-            break;
-        }
+    // Record PendingDelivery on mode-0 delivery leg (0x68F792).
+    if (committed && mode == 0 && tons > 0.0f && building && known != SITE_REFUEL) {
+        g_b2bDelivMode0++;
+        g_b2bEngine.recordMode0Delivery((std::uintptr_t)building,
+                                        (std::uintptr_t)(owner ? owner : nullptr),
+                                        (std::uintptr_t)res, tons, NowSeconds());
     }
 
     if (committed) g_callsCommitted++;
@@ -1282,7 +705,6 @@ static int DetourTransfer(void* game, void* p2, unsigned mode, void* res,
 
         if (s.kind == SHIP_FUEL)                    { g_wouldPayFuel    += s.value;
                                                       g_fuelEvents++; }
-        if (s.kind == SHIP_DELIVERY && s.value > 0.0) g_wouldPayFreight += s.value;
 
         s.id  = g_ledgerSeq++;
         s.seq = g_ledgerTotal;
@@ -1323,123 +745,6 @@ static int DetourTransfer(void* game, void* p2, unsigned mode, void* res,
              ClassName(known));
     }
 
-    // ---- billing ---------------------------------------------------------
-    //
-    // MODE 0 ONLY. A mode-1 call is the vehicle side of a movement a mode-0
-    // call has already described; billing both would charge it twice.
-    // v0.5: the probe runs even with billing off. It is a measurement, and
-    // measuring a cost must not depend on whether money is being moved.
-    if ((g_billing || g_tariffProbe || g_tripTariff) && committed && mode == 0 && building) {
-
-        char rname[64];
-        ResourceName(res, rname, sizeof(rname));
-
-        double freightPaid   = 0.0;
-        double probeTariff   = 0.0;
-        double probeCost     = 0.0;
-        double probeShare    = 0.0;
-        int    probeIndex    = 0;
-        bool   probeLine     = false;
-
-        if (tons > 0.0f) {
-
-            // ---- v0.7 THE TRIP TARIFF (this IS the money) -----------------
-            // v0.6 computed this and paid the value share anyway. v0.7 pays
-            // it. `trip_tariff = 0` puts the value share back untouched.
-            if (g_tariffProbe || g_tripTariff) {
-                probeTariff = TariffFor((double)tons, &probeCost, &probeShare,
-                                        &probeIndex);
-
-                EnterCriticalSection(&g_lock);
-                if (probeTariff > 0.0) {
-                    g_tariffCount++;
-                    g_tariffSum       += probeTariff;
-                    g_tariffCostSum   += probeCost * (1.0 + gTariffMargin);
-                    g_tariffShareSum  += probeShare;
-                    if (probeIndex == 1)      g_tariffFuelIndex++;
-                    else if (probeIndex == 2) g_tariffCpiIndex++;
-                    if (g_tariffLoggedToday < (unsigned)g_tariffLogPerDay) {
-                        g_tariffLoggedToday++;
-                        probeLine = true;
-                    }
-                } else {
-                    g_tariffNoIndex++;
-                }
-                LeaveCriticalSection(&g_lock);
-            }
-
-            if (g_billing && g_payCarrier) {
-                // H2 - freight on a delivery into `building`.
-                // The fleet owner is param_9 on this family; if the site does
-                // not carry one, fall back to the ring.
-                void* paid = nullptr;
-                if (owner && owner != building && IsPrivate(owner))      paid = owner;
-                else if (!owner && carrier && carrier != building &&
-                         IsPrivate(carrier))                             paid = carrier;
-
-                if (paid) {
-                    // v0.7: the trip price. The value share survives only for
-                    // the comparison path (trip_tariff = 0).
-                    const double freight = g_tripTariff
-                        ? probeTariff
-                        : FreightFor((double)tons, unitPrice);
-                    if (freight <= 0.0) {
-                        EnterCriticalSection(&g_lock); g_skipNoPrice++; LeaveCriticalSection(&g_lock);
-                    } else if (Pay(paid, freight, TSM_CAP_WHOLESALE,
-                                   "b2b_freight", "freight", res, tons)) {
-                        freightPaid = freight;
-                        TrackCarrier(paid);
-                        NoteCarrierIncome(paid, freight);
-                        BurnProbe(paid);              // v0.11: per-delivery tank sample
-                    }
-                } else {
-                    EnterCriticalSection(&g_lock); g_skipNoPayee++; LeaveCriticalSection(&g_lock);
-                }
-            }
-
-            // One line carries both numbers, so the calibration is a
-            // subtraction the reader can do in their head.
-            if (probeLine) {
-                char bname[64];
-                BuildingName(building, bname, sizeof(bname));
-                Logf("[TARIFF] %s %.3ft @%.2f = %.2f -> %s: %.2f = fuel %.2f x%.2f "
-                     "+ wear %.2f (index %s) | charged %.2f by the state",
-                     rname, (double)tons, unitPrice, (double)tons * unitPrice, bname,
-                     probeTariff, probeCost, 1.0 + (double)gTariffMargin, probeShare,
-                     probeIndex == 1 ? "fuel" : (probeIndex == 2 ? "cpi" : "none"),
-                     freightPaid);
-            }
-        }
-
-        if (g_billing && tons < 0.0f && g_payFactory) {
-            // H1 - the private building the goods leave is paid for them.
-            if (IsPrivate(building)) {
-                if (unitPrice > 0.0) {
-                    const double value =
-                        fabs((double)tons) * unitPrice * (double)g_factoryShare;
-                    Pay(building, value, TSM_CAP_PRODUCTION,
-                        "b2b_factory", "factory", res, tons);
-                } else {
-                    // A private building shipping goods this build cannot
-                    // price. Count it and say so once per day-cap window:
-                    // silence here would look like "nothing happened".
-                    char bname[64];
-                    BuildingName(building, bname, sizeof(bname));
-                    EnterCriticalSection(&g_lock);
-                    g_skipNoPrice++;
-                    const bool say = (g_payLoggedToday < (unsigned)g_logCapPerDay);
-                    if (say) g_payLoggedToday++;
-                    LeaveCriticalSection(&g_lock);
-                    if (say)
-                        Logf("[PAY] skipped %s: no price for %s (unitPrice 0.00) - "
-                             "resource_pricing absent or unpriced", bname, rname);
-                }
-            }
-        }
-
-        (void)carrierMatched;
-    }
-
     if (emitAttrib) {
         char bname[64], rname[64];
         BuildingName(building, bname, sizeof(bname));
@@ -1448,6 +753,78 @@ static int DetourTransfer(void* game, void* p2, unsigned mode, void* res,
              "(site 0x%06X, mode %u)",
              shipId, KindName(s.kind), building, bname, IsPrivate(building) ? 1 : 0,
              rname, (double)s.tons, s.unitPrice, s.value, siteRva, mode);
+    }
+
+    // ---- Ship 2 counterparty settlement (mode-1 delivery commit: 0x68F7F9) --
+    // trackMode1Cargo admits that verified site even when p9 == vehicleHome;
+    // the mode-0 building leg is only recorded, so it cannot settle twice.
+    if (g_counterpartySettlement && trackMode1Cargo && tons < 0.0f) {
+        wrsre::b2b::MatchedDelivery md;
+        EnterCriticalSection(&g_lock);
+        const bool mdMatched = g_b2bEngine.matchMode1Delivery(
+            (std::uintptr_t)p2, mode1VehSlot,
+            (std::uintptr_t)vehicleHome, (std::uintptr_t)res,
+            fabsf(tons), NowSeconds(), &md);
+        if (mdMatched) g_b2bDelivMatched++;
+        LeaveCriticalSection(&g_lock);
+
+        if (mdMatched && md.destBld != 0 && (g_billing || g_dryRun)) {
+            const std::uintptr_t buyerBld = md.destBld;
+            const bool buyerPriv = IsPrivate((void*)buyerBld);
+            char buyerName[64], resourceName[64];
+            BuildingName((void*)buyerBld, buyerName, sizeof(buyerName));
+            ResourceName(res, resourceName, sizeof(resourceName));
+
+            // Goods only. Each physical seller lot keeps its own quantity and
+            // global market quote locked at loading. DO fuel is settled by the
+            // observed assignment lifecycle, never by a transfer fragment.
+            double dryBuyerAlreadySpent = 0.0;
+            for (unsigned i = 0; md.cargoFound && i < md.partCount; ++i) {
+                const auto& part = md.parts[i];
+                const bool sellerPriv = part.origin == wrsre::b2b::ORIGIN_PRIVATE &&
+                                        part.sellerBld != 0 && IsPrivate((void*)part.sellerBld);
+                const double goodsValue = (double)part.tons * part.unitPrice;
+                unsigned localInsolvent = 0, localTreasurySkip = 0;
+                auto cb = MakeTransferCallbacks(&localInsolvent, &localTreasurySkip);
+                auto plan = wrsre::b2b::planSettlement(
+                    part.origin, part.sellerBld, sellerPriv, part.sellerKey,
+                    buyerBld, buyerPriv, goodsValue);
+                plan.allowBuyerOverdraft = g_allowBuyerOverdraft != 0;
+                plan.buyerOverdraftLimit = g_buyerOverdraftLimit;
+                const auto exec = wrsre::b2b::executeAtomicTransfer(plan, cb, dryBuyerAlreadySpent);
+                if (cb.dryRun) dryBuyerAlreadySpent += exec.goodsPaid;
+
+                bool emitSettleLog = false;
+                EnterCriticalSection(&g_lock);
+                g_skipBuyerInsolvent += localInsolvent;
+                g_skipTreasury += localTreasurySkip;
+                if (exec.goodsPaid > 0.0) {
+                    ++g_b2bSettleCount;
+                    g_b2bPrincipalSum += exec.goodsPaid;
+                    g_b2bStateNetSum += exec.stateDelta;
+                }
+                if (g_payLoggedToday < (unsigned)g_logCapPerDay) {
+                    ++g_payLoggedToday;
+                    emitSettleLog = true;
+                } else ++g_paySuppressed;
+                LeaveCriticalSection(&g_lock);
+
+                if (emitSettleLog) {
+                    char sellerName[64];
+                    BuildingName(part.sellerBld ? (void*)part.sellerBld : nullptr,
+                                 sellerName, sizeof(sellerName));
+                    Logf("[B2B GOODS] %s: Buyer \"%s\"%s -> Seller \"%s\"%s %.2f "
+                         "(%s %.3ft @ %.2f locked_global_at_load) | State delta = %+.2f",
+                         cb.dryRun ? "dry_run" : "live",
+                         buyerName, buyerPriv ? " [P]" : " [S]",
+                         part.sellerBld ? sellerName :
+                            (part.origin == wrsre::b2b::ORIGIN_STATE ? "State" : "Unknown"),
+                         sellerPriv ? " [P]" : "", exec.goodsPaid, resourceName,
+                         (double)part.tons, part.unitPrice, exec.stateDelta);
+                }
+            }
+        }
+}
     }
 
     return r;
@@ -1568,347 +945,90 @@ static void PatchAllSites(void)
 static void OnDay(void*, int day, int month, int year)
 {
     (void)year;
-
-    // Snapshot under the lock, clear everything, print outside it.
-    //
-    // v0.3 BUGFIX: v0.2 snapshotted these counters without zeroing them, so
-    // its "[B2B] day N" line was cumulative since load while the per-site
-    // table was genuinely per-day. Both are per-day now.
+    (void)month;
     static SiteTally snap[MAX_SITES];
-    unsigned calls, committed, noop, unknown, stag, nonPriv;
-    unsigned siteSupp, attrSupp, paySupp, payCount, payCap, total;
-    unsigned skNoPayee, skNoPrice, skSmall, skTreasury;
-    unsigned tCount, tNoIndex, tFuelIdx, tCpiIdx;
-    unsigned trChecked, trExact, trOff, fuelEvents;
-    double   paidF, paidC, freight, fuel, tSum, tCostSum, tShareSum, trMaxGap;
+    unsigned calls,committed,noop,unknown,stag,nonPriv;
+    unsigned siteSupp,attrSupp,paySupp,skTreasury,skBuyerInsolv;
+    unsigned b2bLoad0,b2bLoadM,b2bDeliv0,b2bDelivM,b2bSettleN,fuelEvents;
+    double b2bPrin,b2bFrt,b2bStateNet,fuelValue;
     static double cIn[BAL_CARRIERS];
-    static void*  cPt[BAL_CARRIERS];
-    int      cCount;
-    bool     newMonth;
+    static void* cPt[BAL_CARRIERS];
+    int cCount;
 
     EnterCriticalSection(&g_lock);
-    memcpy(snap, g_tally, sizeof(snap));
-    memset(g_tally, 0, sizeof(g_tally));
-
-    calls      = g_calls;
-    committed  = g_callsCommitted;
-    noop       = g_callsNoop;
-    unknown    = g_unknownBuilding;
-    stag       = g_staging;
-    nonPriv    = g_nonPrivate;
-    siteSupp   = g_siteSuppressed;
-    attrSupp   = g_attrSuppressed;
-    paySupp    = g_paySuppressed;
-    payCount   = g_payCount;
-    payCap     = g_payCapped;
-    skNoPayee  = g_skipNoPayee;
-    skNoPrice  = g_skipNoPrice;
-    skSmall    = g_skipSmall;
-    skTreasury = g_skipTreasury;
-    tCount     = g_tariffCount;
-    tNoIndex   = g_tariffNoIndex;
-    tFuelIdx   = g_tariffFuelIndex;
-    tCpiIdx    = g_tariffCpiIndex;
-    tSum       = g_tariffSum;
-    trChecked  = g_treasuryChecked;
-    trExact    = g_treasuryExact;
-    trOff      = g_treasuryOff;
-    trMaxGap   = g_treasuryMaxGap;
-    fuelEvents = g_fuelEvents;
-    tCostSum   = g_tariffCostSum;
-    tShareSum  = g_tariffShareSum;
-    cCount     = g_balCarrierCount;
-    for (int i = 0; i < BAL_CARRIERS; i++) {
-        cPt[i] = g_balCarrier[i];
-        cIn[i] = g_balCarrierIn[i];
-        g_balCarrierIn[i] = 0.0;      // this day's income, spent by the close
+    memcpy(snap,g_tally,sizeof(snap));
+    memset(g_tally,0,sizeof(g_tally));
+    calls=g_calls;committed=g_callsCommitted;noop=g_callsNoop;
+    unknown=g_unknownBuilding;stag=g_staging;nonPriv=g_nonPrivate;
+    siteSupp=g_siteSuppressed;attrSupp=g_attrSuppressed;paySupp=g_paySuppressed;
+    skTreasury=g_skipTreasury;skBuyerInsolv=g_skipBuyerInsolvent;
+    b2bLoad0=g_b2bLoadsMode0;b2bLoadM=g_b2bLoadsMatched;
+    b2bDeliv0=g_b2bDelivMode0;b2bDelivM=g_b2bDelivMatched;
+    b2bSettleN=g_b2bSettleCount;b2bPrin=g_b2bPrincipalSum;
+    b2bFrt=g_b2bTripFuelSum;b2bStateNet=g_b2bStateNetSum;
+    fuelEvents=g_fuelEvents;fuelValue=g_wouldPayFuel;
+    cCount=g_balCarrierCount;
+    for(int i=0;i<BAL_CARRIERS;++i) {
+        cPt[i]=g_balCarrier[i];cIn[i]=g_balCarrierIn[i];g_balCarrierIn[i]=0.0;
     }
-    total      = g_ledgerTotal;
-    paidF      = g_paidFactory;
-    paidC      = g_paidCarrier;
-    freight    = g_wouldPayFreight;
-    fuel       = g_wouldPayFuel;
 
-    g_calls = g_callsCommitted = g_callsNoop = 0;
-    g_unknownBuilding = g_staging = g_nonPrivate = 0;
-    g_siteSuppressed = g_attrSuppressed = g_paySuppressed = 0;
-    g_payCount = g_payCapped = 0;
-    g_skipNoPayee = g_skipNoPrice = g_skipSmall = g_skipTreasury = 0;
-    g_tariffCount = g_tariffNoIndex = g_tariffFuelIndex = g_tariffCpiIndex = 0;
-    g_tariffCostSum = g_tariffShareSum = 0.0;
-    g_tariffSum = 0.0;
-    g_treasuryChecked = g_treasuryExact = g_treasuryOff = 0;
-    g_treasuryMaxGap = 0.0;
-    g_fuelEvents = 0;
-    g_fuelRes = nullptr;          // re-resolve the index next day
-    g_paidFactory = g_paidCarrier = 0.0;
-    g_wouldPayFreight = g_wouldPayFuel = 0.0;
-    g_paidToday = 0.0;
-
-    g_siteLoggedToday = 0;
-    g_attrLoggedToday = 0;
-    g_payLoggedToday  = 0;
-    g_tariffLoggedToday = 0;
-
-    newMonth = (month != g_lastMonth);
-    g_lastMonth = month;
-
-    // v0.4: this callback fires at the START of `day`, so everything above is
-    // the day that just ENDED. Report that day, not this one - the old label
-    // was one ahead of its own numbers.
-    // A loaded save can rewind the clock; do not report a day in the future.
-    if (g_summaryDay > day) g_summaryDay = -1;
-    const int closedDay = (g_summaryDay >= 0) ? g_summaryDay : (day - 1);
-    g_summaryDay = day;
+    g_calls=g_callsCommitted=g_callsNoop=0;
+    g_unknownBuilding=g_staging=g_nonPrivate=0;
+    g_siteSuppressed=g_attrSuppressed=g_paySuppressed=0;
+    g_skipTreasury=0;g_skipBuyerInsolvent=0;
+    g_b2bLoadsMode0=g_b2bLoadsMatched=g_b2bDelivMode0=g_b2bDelivMatched=0;
+    g_b2bSettleCount=0;g_b2bPrincipalSum=g_b2bTripFuelSum=g_b2bStateNetSum=0.0;
+    g_fuelEvents=0;g_wouldPayFuel=0.0;g_fuelRes=nullptr;
+    g_siteLoggedToday=g_attrLoggedToday=g_payLoggedToday=0;
+    if(g_summaryDay>day) g_summaryDay=-1;
+    const int closedDay=(g_summaryDay>=0)?g_summaryDay:(day-1);
+    g_summaryDay=day;
     LeaveCriticalSection(&g_lock);
 
     Logf("[B2B] day %d closed: %u calls, %u committed, %u no-op | unknown %u, "
          "staging %u, non-private %u | suppressed site %u attrib %u pay %u",
-         closedDay, calls, committed, noop, unknown, stag, nonPriv, siteSupp,
-         attrSupp, paySupp);
+         closedDay,calls,committed,noop,unknown,stag,nonPriv,siteSupp,attrSupp,paySupp);
+    Logf("[B2B DAY] day %d joins: load %u/%u, delivery %u/%u | settlements=%u "
+         "goods=%.2f observed_assignment_fuel=%.2f state_net=%+.2f "
+         "buyer_insolvent=%u treasury_skips=%u (%s)",
+         closedDay,b2bLoadM,b2bLoad0,b2bDelivM,b2bDeliv0,b2bSettleN,
+         b2bPrin,b2bFrt,b2bStateNet,skBuyerInsolv,skTreasury,
+         (g_dryRun||!g_billing)?"dry_run":"live");
 
-    // Per-site table. A site that never fired is simply absent - absence is
-    // evidence rather than a logging artefact.
-    for (int i = 0; i < g_siteCount; i++) {
-        const SiteTally& t = snap[i];
-        if (t.calls == 0) continue;
+    for(int i=0;i<g_siteCount;++i) {
+        const SiteTally& t=snap[i];if(!t.calls) continue;
         Logf("[B2B SITE] day %d  0x%06X %-9s calls=%u commit=%u in=%.3f out=%.3f "
              "value=%.2f | arg9!=0 %u home!=0 %u",
-             closedDay, g_sites[i].rva, ClassName(g_sites[i].known), t.calls,
-             t.committed, t.tonsIn, t.tonsOut, t.value, t.sawBld, t.sawHome);
+             closedDay,g_sites[i].rva,ClassName(g_sites[i].known),t.calls,
+             t.committed,t.tonsIn,t.tonsOut,t.value,t.sawBld,t.sawHome);
     }
 
-    if (g_billing) {
-        Logf("[PAY] day %d closed: %u payment(s), %u capped | skipped: no payee %u, "
-             "no price %u, too small %u, treasury %u | factory %.2f, carrier %.2f | %s",
-             closedDay, payCount, payCap, skNoPayee, skNoPrice, skSmall,
-             skTreasury, paidF, paidC,
-             g_dryRun ? "DRY RUN - nothing moved"
-                      : "PAID by the state treasury");
-    } else {
-        Logf("[PAY] day %d closed: billing off", closedDay);
-    }
-
-    // v0.5: the model's own total, beside the index it managed to use.
-    // `unindexed` is the honest failure: neither a fuel price nor a CPI
-    // basket resolved, so the probe refused to invent a figure.
-    if (g_tariffProbe || g_tripTariff) {
-        Logf("[TARIFF] day %d closed: %u delivery(ies), %s %.2f = fuel %.2f x%.2f + "
-             "wear %.2f, mean %.2f | indexed by fuel %u, by cpi %u, unindexed %u",
-             closedDay, tCount, g_tripTariff ? "charged" : "model",
-             tSum, tCostSum, 1.0 + (double)gTariffMargin, tShareSum,
-             tCount ? tSum / (double)tCount : 0.0,
-             tFuelIdx, tCpiIdx, tNoIndex);
-    }
-
-    // v0.5: THE MONEY PATH, BOTH ENDS (H33, H37).
-    //
-    // v0.4 proved the payee's account to the kopeck; it never read the payer.
-    // Here the treasury is sampled at every close, so consecutive closes give
-    // the movement, and `unexplained` is what the [PAY] lines cannot account
-    // for - zero when the books close, non-zero when something else touched
-    // the treasury in the same day.
-    //
-    // The carriers' capital is printed beside it. Income minus everything the
-    // company spent, fuel included: if the game charges a private DO for
-    // diesel, the difference between this delta and the freight it was paid
-    // IS that bill - the number Ship 2 has to price against.
-    if (g_balanceLog) {
-        const int cur = g_currency ? TsmCurrencyActive(g_currency) : 0;
-        double treas = 0.0;
-        bool   have  = false;
-        if (g_currency && g_currency->getTreasuryBalance &&
-            g_currency->structSize >= offsetof(TsmCurrencyApi, getTreasuryBalance) +
-                                      sizeof(g_currency->getTreasuryBalance)) {
-            treas = g_currency->getTreasuryBalance(cur);
-            have  = true;
-        }
-
-        const double paid = paidF + paidC;
-
-        if (!have) {
-            Logf("[BAL] day %d closed: treasury unavailable (no currency service)", closedDay);
-        } else if (!g_treasuryHaveClose) {
-            Logf("[BAL] day %d closed: treasury %.2f (baseline - the next close gives the "
-                 "movement) | paid %.2f", closedDay, treas, paid);
-        } else {
-            const double moved = treas - g_treasuryAtClose;
-            Logf("[BAL] day %d closed: treasury %.2f -> %.2f (%+.2f) | this plugin paid "
-                 "%.2f | the rest of the movement is the rest of the state's day%s",
-                 closedDay, g_treasuryAtClose, treas, moved, paid,
-                 g_dryRun ? " | DRY RUN: nothing should have moved" : "");
-        }
-        if (have) { g_treasuryAtClose = treas; g_treasuryHaveClose = true; }
-
-        // v0.5 (H33): the proof, per payment rather than per day.
-        if (trChecked > 0 || trOff > 0) {
-            Logf("[BAL] day %d treasury leg: %u payment(s) sampled either side, "
-                 "%u moved exactly the amount, %u off by any margin (largest %.2f)",
-                 closedDay, trChecked, trExact, trOff, trMaxGap);
-        }
-
-        // v0.6: the carrier's day in one line. `spent` is the arithmetic
-        // difference - freight in, minus the change in capital - and in this
-        // save it is the fuel bill, because fuel is the only thing a private
-        // DO buys (it arrives as a cat=2 FOREIGN debit on the same account).
-        for (int i = 0; i < cCount; i++) {
-            void* b = cPt[i];
-            if (!b || !g_enterprise || !g_enterprise->getCompanyCapital) continue;
-            const double cap = g_enterprise->getCompanyCapital(b);
-            char bname[64];
-            BuildingName(b, bname, sizeof(bname));
-            if (g_balCarrierPrev[i] < 0.0) {
-                Logf("[BAL] day %d   %s capital %.2f (baseline) | freight in %.2f",
-                     closedDay, bname, cap, cIn[i]);
-            } else {
-                const double delta = cap - g_balCarrierPrev[i];
-                Logf("[BAL] day %d   %s capital %.2f (%+.2f) | freight in %.2f | spent %.2f",
-                     closedDay, bname, cap, delta, cIn[i], cIn[i] - delta);
-            }
-
-            // v0.7: THE FUEL METER.
-            //
-            // monthWholesale is where enterprise_base books cat=2 FOREIGN
-            // debits, and diesel is the only foreign purchase a distribution
-            // office makes - so this is the carrier's real fuel bill for the
-            // calendar month, read back from the game rather than assumed.
-            //
-            // Fuel is bought in bulk and stored, so a day's purchases are not
-            // a day's burn. The run average is, because the tank delta washes
-            // out of a long run. That is the number the [TARIFF] model is
-            // scored against, and the number litres_per_trip should hold.
-            if (g_enterprise->describeEnterprise) {
-                TsmEnterpriseInfo info;
-                memset(&info, 0, sizeof(info));
-                info.structSize = sizeof(TsmEnterpriseInfo);
-                if (g_enterprise->describeEnterprise(b, &info) == 1) {
-                    const double bill = info.monthWholesale;
-                    double spent = 0.0;
-                    if (g_balCarrierFuel[i] < 0.0) {
-                        // First read after a load: monthWholesale already holds
-                        // whatever the save carried. Take it as the baseline and
-                        // say so - counting it would bill one day for a month.
-                        g_balCarrierFuel[i] = bill;
-                        Logf("[FUEL] day %d   %s meter baseline: month wholesale %.2f "
-                             "(not counted as this day's burn)", closedDay, bname, bill);
-                    } else {
-                        spent = (bill < g_balCarrierFuel[i])
-                              ? bill                      // month boundary: accumulators cleared
-                              : (bill - g_balCarrierFuel[i]);
-                        g_balCarrierFuel[i] = bill;
-                    }
-                    g_fuelPaidRun += (spent > 0.0) ? spent : 0.0;
-                    const double fprice = FuelUnitPrice();
-                    double litres = 0.0;
-                    if (fprice > 0.0 && gDieselDensity > 0.0)
-                        litres = ((spent > 0.0) ? spent : 0.0) / (gDieselDensity * fprice);
-                    g_fuelLitresRun += litres;
-                    Logf("[FUEL] day %d   %s diesel %.2f (measured, cat=2) = %.2f L at %.2f/%s",
-                         closedDay, bname, (spent > 0.0) ? spent : 0.0, litres, fprice,
-                         g_currency ? TsmCurrencySymbol(g_currency) : "RUB");
-                }
-            }
-            g_balCarrierPrev[i] = cap;
-        }
-
-        // v0.7: the run total, and the one number to copy into the ini.
-        g_fuelTripsRun += tCount;
-        if (g_fuelTripsRun > 0) {
-            const double perTrip = g_fuelLitresRun / (double)g_fuelTripsRun;
-            // v0.9: this counts PURCHASES, not burn. Fuel is bought in bulk
-            // and sits in tanks, so a short run and a long run give different
-            // answers from the same fleet - 3.27 L/trip over 1,100 trips,
-            // 7.14 over 214. Do not treat it as a measurement of the burn.
-            Logf("[FUEL] run: %.2f RUB = %.2f L BOUGHT over %llu delivery(ies) = %.3f L/trip "
-                 "| configured %.2f L | fuel sits in tanks: this is purchases, not burn",
-                 g_fuelPaidRun, g_fuelLitresRun, g_fuelTripsRun, perTrip, gLitresPerTrip);
-        }
-
-        // v0.10: THE BURN, from the tanks.
-        //
-        // This is the number the tariff has been missing since v0.5. It is not
-        // purchases (which include tank fill), it is not a model (which was
-        // wrong by 4x): it is what actually left the vehicles' tanks while
-        // they worked. Refills are counted separately and never subtract.
-        if (g_fuelTripsRun > 0 && g_burnTonsRun > 0.0 && gDieselDensity > 0.0) {
-            const double litres = g_burnTonsRun / gDieselDensity;
-            const double lpt    = litres / (double)g_fuelTripsRun;
-            // v0.11: L/DAY is printed beside L/trip because the physics is
-            // per-tick. L/trip moves whenever the shops order differently -
-            // the same fleet gave 3.27 and 7.14 L/trip in two runs - while
-            // L per fleet-day is the same quantity in both. Read this one.
-            const double lpd = g_tankDaysRun ? litres / (double)g_tankDaysRun : 0.0;
-            const double lvd = g_tankVehDaysRun ? litres / (double)g_tankVehDaysRun : 0.0;
-            const double lva = g_activeVehDaysRun ? litres / (double)g_activeVehDaysRun : 0.0;
-            Logf("[TANK] run: burned %.4f t = %.1f L | %.2f L/trip over %llu delivery(ies) "
-                 "| %.2f L per fleet-day over %u close(s) | %.2f L per truck-day over %u "
-                 "| %.2f L per ACTIVE truck-day over %u active / %u idle "
-                 "| %u refill(s) | configured %.2f L/trip",
-                 g_burnTonsRun, litres, lpt, g_fuelTripsRun, lpd, g_tankDaysRun, lvd,
-                 g_tankVehDaysRun, lva, g_activeVehDaysRun, g_idleVehDaysRun,
-                 g_refillsRun, gLitresPerTrip);
-            if (g_litresAuto) {
-                const double before = gLitresPerTrip;
-                gLitresPerTrip = before * 0.70 + lpt * 0.30;
-                if (gLitresPerTrip < 0.5)   gLitresPerTrip = 0.5;
-                if (gLitresPerTrip > 500.0) gLitresPerTrip = 500.0;
-                if (fabs(gLitresPerTrip - before) > 0.01)
-                    Logf("[TANK] auto-tune: litres_per_trip %.3f -> %.3f (tank says %.3f)",
-                         before, gLitresPerTrip, lpt);
-            }
+    if(g_balanceLog) {
+        const int cur=g_currency?TsmCurrencyActive(g_currency):0;
+        double treas=0.0;bool have=false;
+        if(TreasuryReadable()) {treas=g_currency->getTreasuryBalance(cur);have=true;}
+        if(!have) Logf("[BAL] day %d treasury unavailable",closedDay);
+        else if(!g_treasuryHaveClose)
+            Logf("[BAL] day %d treasury %.2f baseline",closedDay,treas);
+        else Logf("[B2B BAL] day %d treasury %.2f -> %.2f (%+.2f) | "
+                  "goods_state_net=%+.2f | %s",
+                  closedDay,g_treasuryAtClose,treas,treas-g_treasuryAtClose,b2bStateNet,
+                  g_dryRun?"dry_run":"live");
+        if(have) {g_treasuryAtClose=treas;g_treasuryHaveClose=true;}
+        for(int i=0;i<cCount;++i) {
+            void* b=cPt[i];if(!b||!g_enterprise||!g_enterprise->getCompanyCapital) continue;
+            const double capital=g_enterprise->getCompanyCapital(b);
+            char name[64];BuildingName(b,name,sizeof(name));
+            Logf("[DO BAL] day %d %s capital %.2f (%+.2f) | trip_fuel_income=%.2f",
+                 closedDay,name,capital,
+                 g_balCarrierPrev[i]<0.0?0.0:capital-g_balCarrierPrev[i],cIn[i]);
+            g_balCarrierPrev[i]=capital;
         }
     }
 
-    // v0.11: THE MEASURED BURN, per delivery rather than per day.
-    //
-    // This is the number the player asked for: diesel that actually left the
-    // tanks between one delivery and the next. It needs no purchases, no
-    // storage, and no guess about how far a truck drives. Once it has enough
-    // intervals it replaces the configured figure - one fleet, one republic,
-    // measured where it is used.
-    if (g_probeStepsRun > 0 && gDieselDensity > 0.0) {
-        const double litres = g_probeBurnRun / gDieselDensity;
-        const double lpt    = litres / (double)g_probeStepsRun;
-        Logf("[BURN] run: measured %.4f t = %.1f L between %u delivery pair(s) "
-             "= %.2f L/trip | %u interval(s) skipped (refill or fleet change) "
-             "| configured %.2f L/trip | %s",
-             g_probeBurnRun, litres, g_probeStepsRun, lpt, g_probeSkipRun,
-             gLitresPerTrip,
-             (g_probeStepsRun >= 20 && fabs(lpt - gLitresPerTrip) > 0.5)
-                 ? "SET litres_per_trip TO THE MEASURED FIGURE"
-                 : "no action");
-    }
-
-    // v0.8: who does this company actually own, and what can they carry?
     CensusFleets(closedDay);
-
-    // v0.6: re-read the index at every close. At plugin start the world has
-    // not loaded, so v0.5's "fuel NOT FOUND" and "treasury opens at 0.00" were
-    // both true for about a second and then false forever. Printing them here
-    // is the honest place.
-    if (g_tariffProbe) {
-        const double fp = FuelUnitPrice();
-        float basket = 0.0f;
-        if (g_pricing) basket = TsmPricingCpiBasket(g_pricing, 0.0f);
-        Logf("[IDX] day %d closed: fuel '%s' = %.2f/%s (%s) | cpi basket %.2f/day | "
-             "margin %.0f%%, wear %.2f L",
-             closedDay, gFuelResource, fp,
-             g_currency ? TsmCurrencySymbol(g_currency) : "RUB",
-             fp > 0.0 ? "resolved" : "NOT RESOLVED",
-             (double)basket, gTariffMargin * 100.0, gWearLitres);
-    }
-
-    // v0.5: fuel telemetry. The refuel site has been silent in every session
-    // so far; a count of 0 here after fuel is switched on is itself a result.
-    Logf("[FUEL] day %d refuel sites: %u call(s), %.2f RUB of fuel moved through "
-         "the hooked sites", closedDay, fuelEvents, fuel);
-
-    if (newMonth) {
-        Logf("[B2B] month %d: %u shipments recorded, %.2f RUB would have moved "
-             "(freight %.2f, fuel %.2f)",
-             month, total, freight + fuel, freight, fuel);
-    }
-
+    Logf("[FUEL] day %d refuel sites: %u call(s), %.2f observed fuel value",
+         closedDay,fuelEvents,fuelValue);
     AutoTargetsOnDay(day, closedDay);
 }
 
@@ -1922,12 +1042,10 @@ static void OnDay(void*, int day, int month, int year)
 #define AUTO_DO_TARGETS_END       0x0D40
 #define AUTO_DO_DIRTY             0x0D50
 #define AUTO_DO_UI_TIMER          0x0FC0
-// Conservative plugin-side bound: native add-flow supports five selections,
-// but panel+0x310 per-target control-array capacity above five is unverified.
-// This limits new auto targets without deleting/purging any manual entries.
-#define AUTO_DO_SAFE_TARGET_COUNT 5
-#define AUTO_DO_ROAD_TYPE         43
-#define AUTO_DO_RAIL_TYPE         52
+// Total-count policies live in auto_target_policy.h: road 20, rail still 5.
+// The reviewed fixed control storage/receiver chain supports this road bound;
+// it is not the native per-selection batch count or a 100-target engine policy.
+// Existing/manual entries are retained even when already over the policy limit.
 #define AUTO_STORAGE_BUILDING_TYPE 5
 #define AUTO_CUSTOMS_TYPE         20
 #define AUTO_CUSTOMS_MAX          512
@@ -1935,7 +1053,7 @@ static void OnDay(void*, int day, int month, int year)
 #define AUTO_STATE_PERMISSION_MAX 512
 #define AUTO_STATE_PREF_FILE "private_logistics_state.bin"
 struct AutoCustomSite { void* building; float x; float z; char name[64]; };
-// permission: 0=default off, 1=allowed, 2=explicitly turned off after opting in
+// permission bits: 1=load FROM site, 2=deliver INTO site; zero=deny both.
 struct AutoStateStorageSite { void* building; uint64_t key; float x; float z; char name[64]; unsigned char permission; };
 struct AutoStatePermission { uint64_t key; unsigned char mode; };
 static AutoCustomSite g_autoCustomSites[AUTO_CUSTOMS_MAX];
@@ -2081,7 +1199,7 @@ static unsigned char AutoStatePermissionGet(uint64_t key)
 
 static bool AutoStatePermissionSet(uint64_t key, unsigned char mode)
 {
-    if (!key || mode > 2) return false;
+    if (!key || mode > AUTO_ALLOW_BOTH) return false;
     EnterCriticalSection(&g_lock);
     unsigned found = g_statePermissionCount;
     for (unsigned i = 0; i < g_statePermissionCount; ++i) {
@@ -2113,71 +1231,63 @@ static bool AutoStatePermissionSet(uint64_t key, unsigned char mode)
 
 static bool AutoHasNativeStorage(void* b);
 
+static unsigned AutoBuildingCapabilities(void* building)
+{
+    int type = -1;
+    if (!AutoReadBuildingType(building, &type) || !AutoHasNativeStorage(building)) return 0;
+    char asset[128];
+    AutoBuildingName(building, asset, sizeof(asset));
+    return AutoSiteCapabilities(type, asset);
+}
+
+static void AutoDrawStatePermissions(uint64_t key, unsigned capabilities)
+{
+    const unsigned char oldMode = AutoStatePermissionGet(key);
+    unsigned char newMode = (unsigned char)(oldMode & capabilities);
+    if (capabilities & AUTO_ALLOW_LOAD) {
+        unsigned checked = AutoNativeCheckboxValue((newMode & AUTO_ALLOW_LOAD) != 0);
+        if (g_uiPanels->widgetCheckbox(&checked, L"Allow private DO loading (take goods)", 0))
+            newMode = AutoPermissionToggle(newMode, AUTO_ALLOW_LOAD, AutoNativeCheckboxChecked(checked), capabilities);
+    }
+    if (capabilities & AUTO_ALLOW_UNLOAD) {
+        unsigned checked = AutoNativeCheckboxValue((newMode & AUTO_ALLOW_UNLOAD) != 0);
+        if (g_uiPanels->widgetCheckbox(&checked, L"Allow private DO deliveries (receive goods)", 0))
+            newMode = AutoPermissionToggle(newMode, AUTO_ALLOW_UNLOAD, AutoNativeCheckboxChecked(checked), capabilities);
+    }
+    if (newMode != oldMode) {
+        if (!AutoStatePermissionSet(key, newMode)) {
+            Logf("[AUTO DO] state permission table full; change not retained");
+            return;
+        }
+        Logf("[AUTO DO] state permissions key=%016llX load=%u unload=%u",
+             (unsigned long long)key, (newMode & AUTO_ALLOW_LOAD) ? 1u : 0u,
+             (newMode & AUTO_ALLOW_UNLOAD) ? 1u : 0u);
+    }
+}
+
 static void StateStorageWidgetProvider(void* building, void*)
 {
-    static uint64_t s_lastWidgetKey = 0;
     if (!g_autoTargetsEnabled || !g_uiPanels || !TsmUiPanelsHasWidgets(g_uiPanels) ||
         !building || !TsmIsValidGamePtr(building) ||
         !ReadablePtr(building, TSM_BLD_MIN_READABLE) || !g_enterprise ||
-        !g_enterprise->isBuildingPrivate) return;
-    int type = -1;
-    if (!AutoReadBuildingType(building, &type)) {
-        Logf("[AUTO DO] storage widget: AutoReadBuildingType failed for building=%p", building);
-        return;
-    }
-    // Diagnostic: ALWAYS log first sight of any building that reaches widget pass (throttled) to prove hook fired
-    {
-        uint64_t dbgKey = 0;
-        AutoBuildingKey(building, &dbgKey, nullptr);
-        if (dbgKey != s_lastWidgetKey) {
-            s_lastWidgetKey = dbgKey;
-            const int isPriv = g_enterprise->isBuildingPrivate(building) ? 1 : 0;
-            const int hasStore = AutoHasNativeStorage(building) ? 1 : 0;
-            const int willDraw = (!isPriv && hasStore) ? 1 : 0;
-            Logf("[AUTO DO] storage widget probe: building=%p type=%d key=%016llX priv=%d nativeStorage=%d willDraw=%d (broadened: hasStore=%d)",
-                 building, type, (unsigned long long)dbgKey, isPriv, hasStore, willDraw, hasStore);
-        }
-    }
-    // v6.14: warehouse_covered_combined is type=3 in-window but state_storage=1 via world scan (has native storage). Gate on hasStore, not type==5.
-    const int hasNative = AutoHasNativeStorage(building) ? 1 : 0;
-    if (!hasNative) {
-        // not a storage-capable building at all - skip silently (still logged above as proof)
-        return;
-    }
-    if (g_enterprise->isBuildingPrivate(building)) {
-        Logf("[AUTO DO] storage widget: hasStore but isPrivate=1, skipping checkbox (building=%p type=%d)", building, type);
-        return;
-    }
-    // hasNative && !private => state storage => draw checkbox even if type !=5 (e.g. warehouse type=3). Keep type log for diagnostics.
-    if (type != AUTO_STORAGE_BUILDING_TYPE) {
-        Logf("[AUTO DO] storage widget: type %d != %d but hasNative=1 -> drawing anyway (warehouse fix)", type, AUTO_STORAGE_BUILDING_TYPE);
-    }
-
+        !g_enterprise->isBuildingPrivate || g_enterprise->isBuildingPrivate(building)) return;
+    const unsigned capabilities = AutoBuildingCapabilities(building);
     uint64_t key = 0;
     if (!AutoBuildingKey(building, &key, nullptr)) return;
-    const unsigned char oldMode = AutoStatePermissionGet(key);
-    // widgetCheckbox renders inverted: sq=0 = visually checked [X], sq=1 = visually unchecked [ ]
-    unsigned sq = (oldMode == 1) ? 0u : 1u;
-    const unsigned beforeSq = sq;
-    // Add visual spacing above the checkbox by prefixing label with newline
-    if (!g_uiPanels->widgetCheckbox(&sq,
-            L"\nAllow private DOs to load here", 0)) {
-        // widgetCheckbox can return 0 when budget exhausted or widgets disabled - log once per key
-        Logf("[AUTO DO] storage widget: widgetCheckbox returned 0 for key=%016llX (budget or disabled)", (unsigned long long)key);
-        return;
+    static uint64_t lastPanelKey = 0;
+    if (lastPanelKey != key) {
+        lastPanelKey = key;
+        int type = -1; AutoReadBuildingType(building, &type);
+        char asset[128]; AutoBuildingName(building, asset, sizeof(asset));
+        const unsigned effective = AutoStatePermissionGet(key) & capabilities;
+        Logf("[AUTO DO] state panel key=%016llX type=%d asset=%s capabilities=%u permissions=%u native_load=%u native_unload=%u (native 0=checked,1=unchecked)%s",
+             (unsigned long long)key, type, asset, capabilities, effective,
+             AutoNativeCheckboxValue((effective & AUTO_ALLOW_LOAD) != 0),
+             AutoNativeCheckboxValue((effective & AUTO_ALLOW_UNLOAD) != 0),
+             capabilities ? "" : " (unsupported role: controls hidden, automatic access denied)");
     }
-    if (sq != beforeSq) {
-        Logf("[AUTO DO] storage widget: checkbox toggled key=%016llX %u -> %u", (unsigned long long)key, beforeSq, sq);
-    }
-
-    const unsigned char newMode = (sq == 0) ? 1 : ((oldMode == 1) ? 2 : 0);
-    if (!AutoStatePermissionSet(key, newMode)) {
-        Logf("[AUTO DO] state storage permission table full; toggle not retained");
-        return;
-    }
-    if (newMode != oldMode)
-        Logf("[AUTO DO] state storage permission key=%016llX -> %s",
-             (unsigned long long)key, (sq == 0) ? "load enabled" : "load disabled");
+    if (!capabilities) return; // unknown roles do not get a misleading loading control
+    AutoDrawStatePermissions(key, capabilities);
 }
 
 static bool AutoHasNativeStorage(void* b)
@@ -2333,13 +1443,18 @@ static int AutoMemoInsert(uint64_t officeKey, uint64_t targetKey)
     return -1;
 }
 
-static bool AutoAppendNativeTarget(void* office, void* target, bool loadOnly)
+static bool AutoAppendNativeTarget(void* office, void* target, unsigned directions)
 {
     if (!g_exeBase || g_exeSize <= AUTO_RVA_TASKCFG_CTOR + 1 ||
         g_exeSize <= AUTO_RVA_VECTOR_PUSH_BACK + 1) return false;
     void** oldBegin = nullptr; size_t oldCount = 0;
     if (!AutoReadTargetVector(office, &oldBegin, &oldCount)) return false;
-    (void)oldBegin; (void)oldCount;
+    (void)oldBegin;
+    // Recheck the live vector before allocating/calling native helpers. The
+    // daily snapshot is a planning budget, not permission to exceed the limit.
+    int officeType = -1;
+    if (!AutoReadBuildingType(office, &officeType) ||
+        !AutoCanAppendTarget(officeType, oldCount)) return false;
 
     typedef void* (__fastcall *TTaskCfgCtor)(void*);
     typedef void (__fastcall *TVectorPushBack)(void*, const void*);
@@ -2360,19 +1475,16 @@ static bool AutoAppendNativeTarget(void* office, void* target, bool loadOnly)
     try { cfg = ctor(cfgMem); } catch (...) { cfg = nullptr; }
     if (!cfg) { ::operator delete(entry); ::operator delete(cfgMem); return false; }
 
-    // Mirror native add initialization: a new TaskEntry starts disabled;
-    // native upkeep enables it after reachability succeeds. Do not pre-enable
-    // a target before the DO's normal connection/rebuild path has validated it.
-    *(BYTE*)entry = 0;
+    // The native UI adds entries OFF, awaiting its activation checkbox. An
+    // autonomous company must request activation itself, not only add the row.
+    // Native dirty/upkeep/planner paths still validate route compatibility.
+    AutoApplyEntryActivation(entry, directions);
     *(void**)((BYTE*)entry + 0x08) = target;
     *(void**)((BYTE*)entry + 0x10) = cfg;
     // Ghidra reports no resource-filter field in this 0x18-byte TaskEntry.
     // The planner's target/connection index is rebuilt in its working area
     // by reachability; do not invent or write a filter at entry+0x0C.
-    *(BYTE*)cfg = 1;                              // native wildcard selector
-    *(float*)((BYTE*)cfg + 0x04) = 1.0f;         // native 100% load threshold
-    *((BYTE*)cfg + 0xC8) = loadOnly ? 0 : 1;     // unload disabled for source-only state storage
-    *(float*)((BYTE*)cfg + 0xCC) = loadOnly ? 0.0f : 1.0f;
+    AutoApplyTaskDirections(cfg, directions & AUTO_ALLOW_BOTH, g_autoSourcePercent, g_autoDestinationPercent);
     *((BYTE*)cfg + 0x28) = 1;                    // native active flag
     *((BYTE*)cfg + 0xF0) = 1;                    // native validated flag
 
@@ -2388,13 +1500,20 @@ static bool AutoAppendNativeTarget(void* office, void* target, bool loadOnly)
 
 static void AutoPersistenceEvent(TsmSaveEvent event, const char* dir, void*)
 {
+    if (event == TSM_SAVE_LOADING) {
+        InterlockedIncrement(&g_fuelDiagnosticEpoch);
+        PanelObserverLoading();
+        EnterCriticalSection(&g_lock);
+        g_b2bEngine.resetAll();
+        LeaveCriticalSection(&g_lock);
+    }
     // Persist permission keys only; never retain building pointers. Save/load
     // callbacks run on the file thread, so no game-memory access is performed.
     if (!g_persistence || !dir) return;
     if (event == TSM_SAVE_WRITING) {
         if (!g_persistence->writeAtomic) return;
         BYTE data[12 + AUTO_STATE_PERMISSION_MAX * 9];
-        memcpy(data, "PLSTOR17", 8);
+        memcpy(data, "PLSTOR18", 8);
         uint32_t count = 0;
         EnterCriticalSection(&g_lock);
         count = g_statePermissionCount;
@@ -2414,7 +1533,8 @@ static void AutoPersistenceEvent(TsmSaveEvent event, const char* dir, void*)
             void* raw = g_persistence->readFile(dir, AUTO_STATE_PREF_FILE, &len);
             AutoStatePermission loaded[AUTO_STATE_PERMISSION_MAX];
             unsigned loadedCount = 0;
-            if (raw && len >= 12 && memcmp(raw, "PLSTOR17", 8) == 0) {
+            const bool legacy = raw && len >= 12 && memcmp(raw, "PLSTOR17", 8) == 0;
+            if (raw && len >= 12 && (legacy || memcmp(raw, "PLSTOR18", 8) == 0)) {
                 uint32_t count = 0;
                 memcpy(&count, (BYTE*)raw + 8, sizeof(count));
                 if (count <= AUTO_STATE_PERMISSION_MAX && len == 12 + (size_t)count * 9) {
@@ -2423,8 +1543,8 @@ static void AutoPersistenceEvent(TsmSaveEvent event, const char* dir, void*)
                         uint64_t key = 0;
                         memcpy(&key, (BYTE*)raw + at, sizeof(key));
                         at += sizeof(key);
-                        const unsigned char mode = *((BYTE*)raw + at++);
-                        if (key && (mode == 1 || mode == 2)) {
+                        const unsigned char mode = AutoMigratePermission(*((BYTE*)raw + at++), legacy);
+                        if (key && mode != 0) {
                             loaded[loadedCount].key = key;
                             loaded[loadedCount].mode = mode;
                             ++loadedCount;
@@ -2467,10 +1587,8 @@ static void AutoProbeStateInfrastructure(int closedDay, unsigned entityCount)
             !ReadablePtr((BYTE*)b + TSM_BLD_DEMOLISHED, 1) || TsmIsDemolished(b)) continue;
         int type = -1;
         if (!AutoReadBuildingType(b, &type)) continue;
-        // v6.15 Block C (§8.2/§8.7): hasNative b+0x970/0x978 stride 0xE0 is SOUND (FindDisp 970/978).
-        // Warehouse asset $TYPE_STORAGE(5) but live log type=3 shop builder → missing checkbox; do not gate on type==5.
-        // World scan now consistent with StateStorageWidgetProvider (!priv && hasNative) → warehouse willDraw=1.
-        // Broaden from type==5 to hasNative; exclude customs/DOs from storage pool (own vectors, not storage sources).
+        // Discover storage-bearing sites for enforcement; classification, not
+        // mere storage presence, determines allowed directions/visible widgets.
         if (AutoHasNativeStorage(b) && type != AUTO_CUSTOMS_TYPE &&
             type != AUTO_DO_ROAD_TYPE && type != AUTO_DO_RAIL_TYPE) {
             const bool isPrivate = g_enterprise && g_enterprise->isBuildingPrivate &&
@@ -2483,7 +1601,7 @@ static void AutoProbeStateInfrastructure(int closedDay, unsigned entityCount)
                     site.building = b;
                     site.key = 0;
                     AutoBuildingKey(b, &site.key, nullptr);
-                    site.permission = site.key ? AutoStatePermissionGet(site.key) : 0;
+                    site.permission = site.key ? (unsigned char)(AutoStatePermissionGet(site.key) & AutoBuildingCapabilities(b)) : 0;
                     site.x = 0.0f; site.z = 0.0f;
                     AutoBuildingPosition(b, &site.x, &site.z);
                     AutoBuildingName(b, site.name, sizeof(site.name));
@@ -2515,8 +1633,9 @@ static void AutoProbeStateInfrastructure(int closedDay, unsigned entityCount)
                  g_autoStateStorageSites[i].name,
                  (unsigned long long)g_autoStateStorageSites[i].key,
                  g_autoStateStorageSites[i].x, g_autoStateStorageSites[i].z,
-                 g_autoStateStorageSites[i].permission == 1 ? "LOAD-ON" :
-                 (g_autoStateStorageSites[i].permission == 2 ? "OFF-EXPLICIT" : "OFF-DEFAULT"));
+                 g_autoStateStorageSites[i].permission == AUTO_ALLOW_BOTH ? "LOAD+UNLOAD" :
+                 (g_autoStateStorageSites[i].permission == AUTO_ALLOW_LOAD ? "LOAD" :
+                  (g_autoStateStorageSites[i].permission == AUTO_ALLOW_UNLOAD ? "UNLOAD" : "DENY")));
         if (stateStoragesStored > show)
             Logf("[AUTO DO] state storage list truncated: %u of %u shown",
                  show, stateStorages);
@@ -2544,38 +1663,88 @@ static void AutoProbeStateInfrastructure(int closedDay, unsigned entityCount)
     }
 }
 
-static bool AutoSetStateTargetTaskMode(void* entry, unsigned char permission)
+static bool AutoTaskConfigValid(void* cfg)
 {
-    if (!entry || (permission != 1 && permission != 2) ||
-        !ReadablePtr(entry, AUTO_TARGET_ENTRY_SIZE)) return false;
-    void* cfg = *(void**)((BYTE*)entry + 0x10);
     if (!cfg || !TsmIsValidGamePtr(cfg) || !ReadablePtr(cfg, AUTO_TASKCFG_SIZE)) return false;
-    const float load = (permission == 1) ? 1.0f : 0.0f;
-    const BYTE unload = 0;
-    const float unloadPct = 0.0f;
-    bool changed = false;
-    // H2 FIX: re-enable disabled entry (native upkeep clears entry[0] for unreachable)
-    // when user explicitly enabled checkbox (LOAD-ON). Without this, disabled-but-present
-    // dedup keeps it counted as existing and never re-enabled after road reconnect.
-    if (permission == 1 && *(BYTE*)entry == 0) {
-        *(BYTE*)entry = 1; changed = true;
-        Logf("[AUTO DO] re-enabled disabled target entry %p for permission LOAD-ON", entry);
+    for (unsigned side = 0; side < 2; ++side) {
+        const BYTE* p = (const BYTE*)cfg + (side ? 0xC8 : 0);
+        const uintptr_t begin = *(const uintptr_t*)(p + 8);
+        const uintptr_t end = *(const uintptr_t*)(p + 16);
+        if ((!begin && end) || end < begin || (end - begin) % 16 != 0 ||
+            (end - begin) / 16 > 4096) return false;
+        if (end != begin && (!TsmIsValidGamePtr((void*)begin) ||
+                            !ReadablePtr((void*)begin, end - begin))) return false;
     }
-    // H2 FIX: ensure TaskCfg active/validated flags reflect LOAD-ON
-    if (permission == 1) {
-        if (*((BYTE*)cfg + 0x28) == 0) { *((BYTE*)cfg + 0x28) = 1; changed = true; }
-        if (*((BYTE*)cfg + 0xF0) == 0) { *((BYTE*)cfg + 0xF0) = 1; changed = true; }
+    return true;
+}
+
+static bool AutoSetTargetDirections(void* entry, unsigned directions)
+{
+    if (!entry || !ReadablePtr(entry, AUTO_TARGET_ENTRY_SIZE)) return false;
+    void* cfg = *(void**)((BYTE*)entry + 0x10);
+    if (!AutoTaskConfigValid(cfg)) {
+        Logf("[AUTO DO] invalid task config; cannot enforce direction mask=%u", directions);
+        return false;
     }
-    if (*(float*)((BYTE*)cfg + 0x04) != load) {
-        *(float*)((BYTE*)cfg + 0x04) = load; changed = true;
+    const bool audit = g_autoLogLines < (unsigned)g_autoTargetLogLimit;
+    AutoTaskAudit before = {};
+    if (audit) before = AutoReadTaskAudit(entry, cfg);
+    const bool directionsChanged = AutoApplyTaskDirections(cfg, directions & AUTO_ALLOW_BOTH, g_autoSourcePercent, g_autoDestinationPercent);
+    const bool activationChanged = AutoApplyEntryActivation(entry, directions);
+    const bool changed = directionsChanged || activationChanged;
+    if (changed && g_autoLogLines < (unsigned)g_autoTargetLogLimit) {
+        Logf("[AUTO DO] task directions target=%p load=%u unload=%u entry_enabled=%u (native route validation still required)",
+             *(void**)((BYTE*)entry + 0x08), (directions & AUTO_ALLOW_LOAD) ? 1u : 0u,
+             (directions & AUTO_ALLOW_UNLOAD) ? 1u : 0u, (unsigned)*(BYTE*)entry);
+        ++g_autoLogLines;
     }
-    if (*((BYTE*)cfg + 0xC8) != unload) {
-        *((BYTE*)cfg + 0xC8) = unload; changed = true;
-    }
-    if (*(float*)((BYTE*)cfg + 0xCC) != unloadPct) {
-        *(float*)((BYTE*)cfg + 0xCC) = unloadPct; changed = true;
+    if (changed && audit && g_autoLogLines < (unsigned)g_autoTargetLogLimit) {
+        const AutoTaskAudit after = AutoReadTaskAudit(entry, cfg);
+        Logf("[AUTO DO AUDIT] target=%p changed_fields=0x%02X enabled=%u->%u load_all=%u->%u unload_all=%u->%u load_pct=%.9g->%.9g unload_pct=%.9g->%.9g load_bits=%08X->%08X unload_bits=%08X->%08X",
+             *(void**)((BYTE*)entry + 8), AutoTaskAuditChanges(before, after),
+             (unsigned)before.enabled, (unsigned)after.enabled,
+             (unsigned)before.loadAll, (unsigned)after.loadAll,
+             (unsigned)before.unloadAll, (unsigned)after.unloadAll,
+             AutoAuditPercent(before.loadBits), AutoAuditPercent(after.loadBits),
+             AutoAuditPercent(before.unloadBits), AutoAuditPercent(after.unloadBits),
+             (unsigned)before.loadBits, (unsigned)after.loadBits,
+             (unsigned)before.unloadBits, (unsigned)after.unloadBits);
+        ++g_autoLogLines;
     }
     return changed;
+}
+
+static void AutoLogNativeTarget(void* entry, int type, unsigned requested, bool preserve)
+{
+    if (g_autoLogLines >= (unsigned)g_autoTargetLogLimit) return;
+    void* cfg = *(void**)((BYTE*)entry + 0x10);
+    if (!AutoTaskConfigValid(cfg)) return; // enforcement path reports invalid configs
+    const BYTE* p = (const BYTE*)cfg;
+    const uintptr_t lb = *(const uintptr_t*)(p + 8), le = *(const uintptr_t*)(p + 16);
+    const uintptr_t ub = *(const uintptr_t*)(p + 0xD0), ue = *(const uintptr_t*)(p + 0xD8);
+    Logf("[AUTO DO] native target=%p type=%d policy=%s requested_mask=%u enabled=%u load_all=%u load_pct=%.3f load_selectors=%llu unload_all=%u unload_pct=%.3f unload_selectors=%llu",
+         *(void**)((BYTE*)entry + 8), type, preserve ? "preserve-customs" : "managed",
+         requested, (unsigned)*(BYTE*)entry, (unsigned)p[0], (double)*(const float*)(p + 4),
+         (unsigned long long)((le - lb) / 16), (unsigned)p[0xC8], (double)*(const float*)(p + 0xCC),
+         (unsigned long long)((ue - ub) / 16));
+    ++g_autoLogLines;
+}
+
+
+// Called only from daily reconciliation; does not arm, clear or advance timers.
+static void AutoLogOfficePlanState(void* office, uint64_t key, int day,
+                                   const char* phase, bool notificationRequested)
+{
+    if (g_autoLogLines >= (unsigned)g_autoTargetLogLimit) return;
+    const BYTE* p = (const BYTE*)office;
+    const bool dirtyReadable = ReadablePtr(p + AUTO_DO_DIRTY, 1);
+    const bool timerReadable = ReadablePtr(p + AUTO_DO_UI_TIMER, sizeof(float));
+    float timer = 0.0f;
+    if (timerReadable) memcpy(&timer, p + AUTO_DO_UI_TIMER, sizeof(timer));
+    Logf("[AUTO DO AUDIT] day=%d office=%p key=%016llX phase=%s notification_requested=%u dirty=%d timer_readable=%u countdown=%.9g",
+         day, office, (unsigned long long)key, phase, notificationRequested ? 1u : 0u,
+         dirtyReadable ? (int)p[AUTO_DO_DIRTY] : -1, timerReadable ? 1u : 0u, (double)timer);
+    ++g_autoLogLines;
 }
 
 static void AutoTargetsOnDay(int day, int closedDay)
@@ -2606,14 +1775,15 @@ static void AutoTargetsOnDay(int day, int closedDay)
         uint64_t key = 0; int type = -1;
         if (!AutoBuildingKey(b, &key, &type)) continue;
         const bool isOffice = (type == AUTO_DO_ROAD_TYPE || type == AUTO_DO_RAIL_TYPE);
-        const bool hasStorage = isOffice || AutoHasNativeStorage(b);
+        const unsigned capabilities = isOffice ? 0 : AutoBuildingCapabilities(b);
+        const bool hasStorage = isOffice || capabilities != 0;
         if (!hasStorage) continue;
         g_autoEntities[entityCount].building = b;
         g_autoEntities[entityCount].key = key;
         g_autoEntities[entityCount].type = type;
         g_autoEntities[entityCount].hasStorage = isOffice ? 0 : 1;
         g_autoEntities[entityCount].isStateStorage = 0;
-        g_autoEntities[entityCount].statePermission = 0;
+        g_autoEntities[entityCount].statePermission = (unsigned char)capabilities;
         g_autoEntities[entityCount].targetPresent = 0;
         ++entityCount;
         if (isOffice) ++officeCount; else ++candidateCount;
@@ -2621,31 +1791,19 @@ static void AutoTargetsOnDay(int day, int closedDay)
 
     AutoProbeStateInfrastructure(closedDay, entityCount);
 
-    // Include every discovered public type-5 storage in the pointer index so
-    // an explicit OFF can disable a previously auto-created load task. Only
-    // explicitly opted-in storage is an auto-add candidate (default is OFF).
-    bool hasExplicitStateOff = false;
+    // Public access defaults deny. Keep denied sites indexed too: existing
+    // native/manual entries must obey the same state permissions as new ones.
     for (unsigned si = 0; si < g_autoStateStorageCount && entityCount < AUTO_ENTITY_MAX; ++si) {
         AutoStateStorageSite& site = g_autoStateStorageSites[si];
         if (!site.building || !site.key) continue;
         AutoEntity& e = g_autoEntities[entityCount++];
         e.building = site.building; e.key = site.key; e.type = AUTO_STORAGE_BUILDING_TYPE;
-        // LIVE workaround for broken storage panel: ini state_storage_always_on=1 treats every discovered state storage as enabled
-        const bool forceOn = g_stateStorageForceOn != 0;
-        e.hasStorage = (forceOn || site.permission == 1) ? 1 : 0;
+        e.hasStorage = site.permission != 0;
         e.isStateStorage = 1; e.statePermission = site.permission; e.targetPresent = 0;
-        if (forceOn || site.permission == 1) ++candidateCount;
-        if (site.permission == 2) hasExplicitStateOff = true;
-        if (forceOn && site.permission == 0) {
-            Logf("[AUTO DO] state storage candidate name=%s key=%016llX force-enabled via ini (was OFF-DEFAULT)", site.name, (unsigned long long)site.key);
-        }
+        if (site.permission != 0) ++candidateCount;
     }
 
-    if (officeCount == 0 || (candidateCount == 0 && !hasExplicitStateOff)) {
-        Logf("[AUTO DO] day %d: private offices=%u candidates=%u (nothing to sync)",
-             closedDay, officeCount, candidateCount);
-        return;
-    }
+    if (officeCount == 0) return;
     if (!AutoBuildPointerIndex(entityCount)) {
         Logf("[AUTO DO] day %d: pointer index capacity exhausted; scan aborted", closedDay);
         return;
@@ -2666,28 +1824,52 @@ static void AutoTargetsOnDay(int day, int closedDay)
                  closedDay, (unsigned long long)office.key);
             ++invalid; continue;
         }
+        AutoLogOfficePlanState(office.building, office.key, closedDay, "before-reconcile", false);
         const size_t entryCountAtStart = entryCount;
         for (unsigned ei = 0; ei < entityCount; ++ei) g_autoEntities[ei].targetPresent = 0;
         bool doConfigChanged = false;
         for (size_t ei = 0; ei < entryCount; ++ei) {
             void* entry = entries[ei];
             if (!entry || !TsmIsValidGamePtr(entry) || !ReadablePtr(entry, AUTO_TARGET_ENTRY_SIZE)) continue;
-            const int targetIndex = AutoPointerIndex(*(void**)((BYTE*)entry + 0x08));
-            if (targetIndex >= 0) {
-                AutoEntity& target = g_autoEntities[targetIndex];
-                target.targetPresent = 1;
-                // An explicit storage checkbox choice controls only this type-5
-                // target. Default OFF leaves pre-existing manual entries alone.
-                if (!g_autoTargetsDryRun && target.isStateStorage && target.statePermission != 0)
-                    doConfigChanged |= AutoSetStateTargetTaskMode(entry, target.statePermission);
+            void* targetBuilding = *(void**)((BYTE*)entry + 0x08);
+            if (!targetBuilding || !TsmIsValidGamePtr(targetBuilding) ||
+                !ReadablePtr(targetBuilding, TSM_BLD_MIN_READABLE)) continue;
+            int targetType = -1;
+            if (AutoReadBuildingType(targetBuilding, &targetType) && AutoPreserveManualCustoms(targetType)) {
+                // Border trade is not a state-enterprise permission. Preserve
+                // the user's native customs task, including its resource lists
+                // and activation. Customs auto-selection is not implemented.
+                if (g_autoLogLines < (unsigned)g_autoTargetLogLimit) {
+                    Logf("[AUTO DO] preserving manual customs target=%p entry_enabled=%u",
+                         targetBuilding, (unsigned)*(BYTE*)entry);
+                    ++g_autoLogLines;
+                }
+                AutoLogNativeTarget(entry, targetType, 0, true);
+                continue;
             }
+            const int targetIndex = AutoPointerIndex(targetBuilding);
+            if (targetIndex >= 0) g_autoEntities[targetIndex].targetPresent = 1;
+            // Enforce all targets of this PRIVATE office, including manually
+            // present public entries, unindexed/unknown roles and default OFF.
+            const unsigned capabilities = AutoBuildingCapabilities(targetBuilding);
+            const bool isPrivate = g_enterprise->isBuildingPrivate(targetBuilding) != 0;
+            unsigned permissions = 0;
+            if (!isPrivate) {
+                uint64_t key = 0;
+                permissions = AutoBuildingKey(targetBuilding, &key, nullptr) ?
+                    AutoStatePermissionGet(key) : 0;
+            }
+            const unsigned directions = AutoEffectiveDirections(isPrivate, permissions, capabilities);
+            if (!g_autoTargetsDryRun)
+                doConfigChanged |= AutoSetTargetDirections(entry, directions);
+            AutoLogNativeTarget(entry, targetType, directions, false);
         }
 
-        // Native upkeep disables unreachable entries in place; it does not
-        // remove/free their TaskEntry or TaskCfg. Therefore a present-but-
-        // disabled target remains a valid deduplication hit. The player remove
-        // path does erase/free an entry; suppress a missing generated pair for
-        // this session so daily reconciliation does not undo that removal.
+        // Native upkeep can disable an entry in place: keep deduplication for
+        // entries still present. Missing generated entries are eligible for
+        // recreation regardless of why they disappeared. A private company
+        // owns its target list; manual removal is not a persistent veto.
+        // State-building permissions remain a separate eligibility gate.
         for (int mi = AutoOfficeMemoHeadIndex(office.key); mi >= 0;
              mi = g_autoMemo[mi].nextOffice == 0xFFFFFFFFu ? -1 : (int)g_autoMemo[mi].nextOffice) {
             AutoMemo& memo = g_autoMemo[mi];
@@ -2703,18 +1885,9 @@ static void AutoTargetsOnDay(int day, int closedDay)
                 }
             }
             if (!found) {
-                if (afterLoad) {
-                    // The native loader reconstructs TaskEntry/TaskCfg objects;
-                    // an absent generated pair can be reconciled without
-                    // confusing it with a player removal in this session.
-                    memo.state = 3; // tombstone: preserve hash probe chain, but allow re-add
-                    Logf("[AUTO DO] day %d target key=%016llX absent after load; eligible for reconciliation",
-                         closedDay, (unsigned long long)memo.targetKey);
-                } else {
-                    memo.state = 2; ++suppressed;
-                    Logf("[AUTO DO] day %d target key=%016llX disappeared; suppressing retry",
-                         closedDay, (unsigned long long)memo.targetKey);
-                }
+                memo.state = 3; // preserve hash chain; allow normal eligibility/re-add
+                Logf("[AUTO DO] day %d target key=%016llX absent; eligible for automatic reconnection",
+                     closedDay, (unsigned long long)memo.targetKey);
             }
         }
 
@@ -2722,7 +1895,7 @@ static void AutoTargetsOnDay(int day, int closedDay)
         size_t projectedAdds = 0;
         // State storages were appended to g_autoEntities after private sites;
         // walk backward so an explicit state-source opt-in gets first access
-        // to the five-entry conservative safe budget.
+        // to the office-type total-count budget (road 20, rail still 5).
         for (unsigned ti = entityCount; ti > 0; --ti) {
             AutoEntity& target = g_autoEntities[ti - 1];
             if (!target.hasStorage || target.building == office.building) continue;
@@ -2730,15 +1903,12 @@ static void AutoTargetsOnDay(int day, int closedDay)
                 ++existing; ++doExisting; continue;
             }
             const int memoIndex = AutoMemoFind(office.key, target.key);
-            if (memoIndex >= 0 && g_autoMemo[memoIndex].state == 2) {
-                ++suppressed; ++doSuppressed; continue;
-            }
-            if (entryCountAtStart + projectedAdds >= AUTO_DO_SAFE_TARGET_COUNT) {
+            if (!AutoCanAppendTarget(office.type, entryCountAtStart, projectedAdds)) {
                 ++suppressed; ++doSuppressed;
                 if (g_autoLogLines < (unsigned)g_autoTargetLogLimit) {
-                    Logf("[AUTO DO] day %d target=%016llX omitted: conservative target count %u reached (existing=%llu)",
+                    Logf("[AUTO DO] day %d target=%016llX omitted: total target policy %u reached (existing=%llu)",
                          closedDay, (unsigned long long)target.key,
-                         (unsigned)AUTO_DO_SAFE_TARGET_COUNT,
+                         (unsigned)AutoTargetLimitForType(office.type),
                          (unsigned long long)entryCountAtStart);
                     ++g_autoLogLines;
                 }
@@ -2764,7 +1934,7 @@ static void AutoTargetsOnDay(int day, int closedDay)
                 }
                 continue;
             }
-            if (!AutoAppendNativeTarget(office.building, target.building, target.isStateStorage != 0)) {
+            if (!AutoAppendNativeTarget(office.building, target.building, target.statePermission)) {
                 ++invalid;
                 if (g_autoLogLines < (unsigned)g_autoTargetLogLimit) {
                     Logf("[AUTO DO] day %d append failed office=%016llX target=%016llX",
@@ -2790,12 +1960,14 @@ static void AutoTargetsOnDay(int day, int closedDay)
             }
         }
 
+        AutoLogOfficePlanState(office.building, office.key, closedDay, "before-notify", doAdded > 0 || doConfigChanged);
         if (doAdded > 0 || doConfigChanged) {
             if (ReadablePtr((BYTE*)office.building + AUTO_DO_DIRTY, 1))
                 *((BYTE*)office.building + AUTO_DO_DIRTY) = 1;
             if (ReadablePtr((BYTE*)office.building + AUTO_DO_UI_TIMER, sizeof(float)))
                 *(float*)((BYTE*)office.building + AUTO_DO_UI_TIMER) = 3.0f;
         }
+        AutoLogOfficePlanState(office.building, office.key, closedDay, "after-notify", doAdded > 0 || doConfigChanged);
         if (doPlanned || doExisting || doSuppressed || doAdded || doConfigChanged)
             Logf("[AUTO DO] day %d office=%016llX type=%d existing=%u planned=%u added=%u config_changed=%u suppressed=%u",
                  closedDay, (unsigned long long)office.key, office.type, doExisting,
@@ -2817,17 +1989,33 @@ static void ReadSettings(void)
     char v[256];
 
     g_enabled        = H->configInt(ini, "private_logistics", "enabled", 1);
-    g_billing        = H->configInt(ini, "private_logistics", "billing", 1);
+    g_billing        = H->configInt(ini, "private_logistics", "billing", 0);
+    g_panelObserverEnabled = H->configInt(ini, "private_logistics", "panel_fuel_observer", 1);
+    g_scheduleObserverEnabled = H->configInt(ini, "private_logistics", "schedule_observer", 1);
     g_dryRun         = H->configInt(ini, "private_logistics", "dry_run", 1);
-    g_payFactory     = H->configInt(ini, "private_logistics", "pay_factory", 1);
-    g_payCarrier     = H->configInt(ini, "private_logistics", "pay_carrier", 1);
+    // [b2b] section
+    g_counterpartySettlement = H->configInt(ini, "b2b", "counterparty_settlement", 1);
+    g_allowBuyerOverdraft = H->configInt(ini, "b2b", "allow_buyer_overdraft", 1);
+    if (H->configString(ini, "b2b", "buyer_overdraft_limit", v, sizeof(v), "") && v[0])
+        g_buyerOverdraftLimit = atof(v);
     g_logCapPerDay   = H->configInt(ini, "private_logistics", "log_cap_per_day", 400);
     g_ledgerCapacity = H->configInt(ini, "private_logistics", "ledger_capacity", 512);
     g_siteLog        = H->configInt(ini, "private_logistics", "site_log", 1);
-    g_autoTargetsEnabled = H->configInt(ini, "private_logistics", "auto_targets_enabled", 0);
-    g_autoTargetsDryRun  = H->configInt(ini, "private_logistics", "auto_targets_dry_run", 1);
+    g_autoTargetsEnabled = H->configInt(ini, "private_logistics", "auto_targets_enabled", 1);
+    g_autoTargetsDryRun  = H->configInt(ini, "private_logistics", "auto_targets_dry_run", 0);
     g_autoTargetLogLimit = H->configInt(ini, "private_logistics", "auto_targets_log_limit", 80);
-    g_stateStorageForceOn = H->configInt(ini, "private_logistics", "state_storage_always_on", 0);
+    g_autoSourcePercent = AutoClampSourcePercent(H->configInt(ini, "private_logistics", "auto_source_percent", 10));
+    g_autoDestinationPercent = AutoClampDestinationPercent(H->configInt(ini, "private_logistics", "auto_destination_percent", 30));
+    Logf("[AUTO DO] company thresholds: load above %d%% / deliver below %d%% (managed tasks, reconciled daily)",
+         g_autoSourcePercent, g_autoDestinationPercent);
+    if (g_autoSourcePercent != 10)
+        Logf("[AUTO DO] source threshold override=%d%% (this test ships 10%%); an explicit deployed INI setting overrides the fallback", g_autoSourcePercent);
+    Logf("[AUTO DO] permission-test profile: billing=%d auto_targets=%d apply=%d (expected 0/1/1)",
+         g_billing, g_autoTargetsEnabled, !g_autoTargetsDryRun);
+    if (g_billing || !g_autoTargetsEnabled || g_autoTargetsDryRun)
+        Logf("[AUTO DO] WARNING deployed INI overrides the permission-test defaults; rebuild/deploy the shipped INI for this test");
+    if (H->configInt(ini, "private_logistics", "state_storage_always_on", 0))
+        Logf("[AUTO DO] state_storage_always_on is obsolete and ignored; per-building permissions are required");
     if (g_autoTargetLogLimit < 0) g_autoTargetLogLimit = 0;
     if (g_autoTargetLogLimit > 1000) g_autoTargetLogLimit = 1000;
 
@@ -2836,88 +2024,19 @@ static void ReadSettings(void)
     if (g_ledgerCapacity < 1)          g_ledgerCapacity = 1;
     if (g_ledgerCapacity > LEDGER_MAX) g_ledgerCapacity = LEDGER_MAX;
 
-    if (H->configString(ini, "private_logistics", "freight_share", v, sizeof(v), ""))
-        g_freightShare = (float)atof(v);
-    if (H->configString(ini, "private_logistics", "factory_share", v, sizeof(v), ""))
-        g_factoryShare = (float)atof(v);
     if (H->configString(ini, "private_logistics", "min_payment", v, sizeof(v), ""))
         g_minPayment = (float)atof(v);
-    if (H->configString(ini, "private_logistics", "daily_pay_cap", v, sizeof(v), ""))
-        g_dailyPayCap = atof(v);
+    if (g_minPayment < 0.0f) g_minPayment = 0.0f;
 
-    // v0.5: the tariff model. Every number here is a physical quantity or a
-    // ratio - litres, tonnes per litre, a percentage. Not one of them is a
-    // price in currency units, which is what makes the model survive a
-    // currency event.
-    g_tariffProbe     = H->configInt(ini, "private_logistics", "tariff_probe", 1);
-    g_balanceLog      = H->configInt(ini, "private_logistics", "balance_log", 1);
-    g_tariffLogPerDay = H->configInt(ini, "private_logistics", "tariff_log_per_day", 60);
-
-    if (H->configString(ini, "private_logistics", "litres_per_trip", v, sizeof(v), ""))
-        gLitresPerTrip = atof(v);
-    if (H->configString(ini, "private_logistics", "litres_per_tonne", v, sizeof(v), ""))
-        gLitresPerTonne = atof(v);
-    if (H->configString(ini, "private_logistics", "tariff_margin", v, sizeof(v), ""))
-        gTariffMargin = atof(v);
-    if (H->configString(ini, "private_logistics", "diesel_density", v, sizeof(v), ""))
-        gDieselDensity = atof(v);
-    g_tripTariff = H->configInt(ini, "private_logistics", "trip_tariff", 1);
-    g_censusLog  = H->configInt(ini, "private_logistics", "census_log", 1);
-    g_vehScan    = H->configInt(ini, "private_logistics", "veh_scan", 1);
+    g_balanceLog = H->configInt(ini, "private_logistics", "balance_log", 1);
+    g_censusLog = H->configInt(ini, "private_logistics", "census_log", 1);
+    g_vehScan = H->configInt(ini, "private_logistics", "veh_scan", 1);
     g_vehScanLogPerDay = H->configInt(ini, "private_logistics", "veh_scan_log_per_day", 40);
-    // v0.11: raw cargo-vector dump, up to three vehicles per close.
-    g_cargoDump  = H->configInt(ini, "private_logistics", "cargo_dump", 1);
-    if (g_vehScanLogPerDay < 0)   g_vehScanLogPerDay = 0;
+    g_cargoDump = H->configInt(ini, "private_logistics", "cargo_dump", 1);
+    if (g_vehScanLogPerDay < 0) g_vehScanLogPerDay = 0;
     if (g_vehScanLogPerDay > 512) g_vehScanLogPerDay = 512;
-    g_litresAuto = H->configInt(ini, "private_logistics", "litres_auto", 0);
-    if (H->configString(ini, "private_logistics", "wear_litres", v, sizeof(v), ""))
-        gWearLitres = atof(v);
-
-    // v0.7: freight_share is RETIRED. Honouring it silently would make every
-    // delivery look mispriced against a tariff that no longer reads it, so a
-    // key left in the ini is reported and zeroed rather than obeyed.
-    if (H->configString(ini, "private_logistics", "freight_share", v, sizeof(v), "") && v[0]) {
-        const float f = (float)atof(v);
-        g_freightShareRetired = (f > 0.0f) ? f : 0.0f;
-        g_freightShare = 0.0f;
-    }
-    if (H->configString(ini, "private_logistics", "baskets_per_trip", v, sizeof(v), ""))
-        gBasketsPerTrip = atof(v);
-    if (H->configString(ini, "private_logistics", "baskets_per_tonne", v, sizeof(v), ""))
-        gBasketsPerTonne = atof(v);
     if (H->configString(ini, "private_logistics", "fuel_resource", v, sizeof(v), "") && v[0])
         strncpy_s(gFuelResource, sizeof(gFuelResource), v, _TRUNCATE);
-
-    // v0.4: a share is a fraction of cargo value. 0 is legal (freight off);
-    // more than half would make haulage cost more than the goods.
-    if (g_freightShare < 0.0f)   g_freightShare = 0.0f;
-    if (g_freightShare > 0.50f)  g_freightShare = 0.50f;
-    if (g_tripTariff != 0)       g_tripTariff   = 1;
-    if (gWearLitres  < 0.0)      gWearLitres    = 0.0;
-    if (gWearLitres  > 500.0)    gWearLitres    = 500.0;
-    if (g_litresAuto != 1)       g_litresAuto   = 0;
-    if (g_factoryShare  < 0.0f) g_factoryShare  = 0.0f;
-    if (g_factoryShare  > 5.0f) g_factoryShare  = 5.0f;
-    if (g_minPayment    < 0.0f) g_minPayment    = 0.0f;
-    if (g_dailyPayCap   < 0.0)  g_dailyPayCap   = 0.0;
-
-    // v0.5 clamps. Density is the one hard range: a value outside it is a
-    // typo, and a typo here would misprice every delivery by orders of
-    // magnitude, so it falls back to diesel rather than being honoured.
-    if (g_tariffLogPerDay < 0)    g_tariffLogPerDay = 0;
-    if (g_tariffLogPerDay > 5000) g_tariffLogPerDay = 5000;
-    if (gLitresPerTrip  < 0.0)   gLitresPerTrip  = 0.0;
-    if (gLitresPerTonne < 0.0)   gLitresPerTonne = 0.0;
-    if (gLitresPerTrip  > 500.0) gLitresPerTrip  = 500.0;
-    if (gLitresPerTonne > 50.0)  gLitresPerTonne = 50.0;
-    if (gTariffMargin   < 0.0)   gTariffMargin   = 0.0;
-    if (gTariffMargin   > 5.0)   gTariffMargin   = 5.0;
-    if (!(gDieselDensity > 0.0001) || gDieselDensity > 0.01)
-        gDieselDensity = 0.00084;
-    if (gBasketsPerTrip  < 0.0)  gBasketsPerTrip  = 0.0;
-    if (gBasketsPerTonne < 0.0)  gBasketsPerTonne = 0.0;
-    if (gBasketsPerTrip  > 1000.0) gBasketsPerTrip = 1000.0;
-    if (gBasketsPerTonne > 100.0)  gBasketsPerTonne = 100.0;
 
     // site_list, e.g. "0x1CB7FF" or "1CB7FF,68F792". Absent or empty = all.
     if (H->configString(ini, "private_logistics", "site_list", v, sizeof(v), "") && v[0]) {
@@ -3009,23 +2128,10 @@ static double CargoTons(void* veh, int* slots)
 }
 
 // ---------------------------------------------------------------------------
-// v0.13: WHERE THE FUEL ACTUALLY IS
+// Candidate resource-slot and display-field readers, NOT authoritative fuel.
+// The old building/upkeep report does not prove this road truck's burn or
+// refill writer, canonical store, native clamp, or physical mass conversion.
 // ---------------------------------------------------------------------------
-//
-// The follow-up Ghidra report settled it, and it corrected two of my readings.
-//
-//   AUTHORITATIVE: the cargo vector at veh+0x3B8, stride 0x10, the slot whose
-//                  +0x00 Resource* equals the diesel resource. +0x08 is the
-//                  level in tonnes and the engine clamps it at zero.
-//   MIRROR:        veh+0x5F0. Written by the refuel function (140142430) as
-//                  min(available, capacity - current) + current, and by the
-//                  drive function (14014B920) as (rate + current). NOT clamped,
-//                  which is why it went NEGATIVE eight times in one run. That
-//                  was never a mystery - it was a mirror with no floor.
-//
-// So the tank we read from now on is the slot, and +0x5F0 is kept only as a
-// cross-check that gets printed beside it. If the two ever disagree by more
-// than a few kilos, the log says so and we stop trusting the measurement.
 static void* FuelResourcePtr(void)
 {
     if (!g_pricing || !g_pricing->getByName) return nullptr;
@@ -3036,7 +2142,8 @@ static void* FuelResourcePtr(void)
     return g_fuelRes;
 }
 
-// Returns the fuel slot's tonnage. *found = 1 when the slot exists.
+// Returns raw quantity from a matching resource slot. Units/classification are
+// unverified for this road truck. *found = 1 even if the quantity is invalid.
 // -1 when the vector cannot be read at all.
 static double FuelSlotTons(void* v, int* found)
 {
@@ -3060,16 +2167,16 @@ static double FuelSlotTons(void* v, int* found)
         const BYTE* e = beg + i * 16;
         if (*(const void* const*)e != fuel) continue;
         float t = *(const float*)(e + 8);
-        if (!(t == t) || t < -1000.0f || t > 1000.0f) return -1.0;
-        if (t < 0.0f) t = 0.0f;
+        // Preserve invalid/negative raw values: diagnostics must never invent
+        // an empty tank by applying an unverified native clamp.
         *found = 1;
         return (double)t;
     }
     return 0.0;
 }
 
-// The mirror at +0x5F0, and the per-vehicle capacity the refuel code clamps to
-// (*(veh+0x1708) + 0x8684). Both are evidence, not the measurement.
+// The panel backing quantity (+0x5F0) and metadata capacity (+0x8684).
+// Display correlation alone does not establish native burn/refill semantics.
 static double MirrorTons(void* v)
 {
     const BYTE* p = (const BYTE*)v;
@@ -3112,9 +2219,10 @@ static double FleetFuelTons(void* b, int* outCount)
         if (!v) continue;
         int found = 0;
         double lvl = FuelSlotTons(v, &found);
-        if (!found) lvl = MirrorTons(v);         // fall back to +0x5F0
-        if (lvl < 0.0) continue;
-        t += lvl;
+        const auto reading = private_logistics_fuel_diagnostics::Select(
+            found != 0, lvl, MirrorTons(v));
+        if (!reading.valid) continue;
+        t += reading.value;
         c++;
     }
     *outCount = c;
@@ -3230,55 +2338,33 @@ static bool VehScanSkip(int off)
 // v0.10: read the tank
 // ---------------------------------------------------------------------------
 //
-// veh+0x5F0 is fuel in tonnes (see the evidence at the globals). This turns it
-// into the number the whole tariff has been missing: litres actually BURNED
-// per delivery, with no purchases and no tank-fill error.
-//
-// A refill shows up as an increase and is counted, not charged as negative
-// burn. A vehicle seen for the first time only sets a baseline.
+// Legacy daily candidate sampling, NOT a native deduction/refill adapter.
+// Reading, provenance and baseline changes are explicit. A negative candidate
+// is invalid, not zero; changing source, invalid reads and load reset baselines.
 static void ReadTank(int slot, void* v, int closedDay, double* burned, unsigned* refills)
 {
     if (slot < 0 || slot >= VEH_MAX) return;
-
-    // v0.13: the SLOT is the tank. +0x5F0 is the unclamped mirror, kept as a
-    // cross-check - it is the thing that went negative, and now we can show why.
+    using namespace private_logistics_fuel_diagnostics;
     int found = 0;
-    double level = FuelSlotTons(v, &found);
-    const double mirror = MirrorTons(v);
-
-    if (!found) {
-        if (level < 0.0 && mirror < 0.0) return;
-        level = (mirror > 0.0) ? mirror : 0.0;   // no fuel slot: fall back
-        if (!g_vehNoSlotWarned[slot]) {
-            g_vehNoSlotWarned[slot] = 1;
-            Logf("[TANK] day %d   v=%p has NO fuel slot in the cargo vector "
-                 "-> falling back to +0x5F0 (%.4f t)", closedDay, v, mirror);
-        }
-    }
-
-    if (!g_vehFuelValid[slot]) {
-        g_vehFuel[slot] = level;
-        g_vehFuelValid[slot] = true;
-        return;
-    }
-
-    const double prev = g_vehFuel[slot];
-    if (level > prev + 0.02) {              // a refill, not burn
-        if (refills) (*refills)++;
-    } else if (prev > level) {
-        if (burned) *burned += (prev - level);
-    }
-    g_vehFuel[slot] = level;
-
-    // v0.13: one line per vehicle per day saying WHICH source was read and how
-    // far the mirror has drifted from it. If these two ever part company by
-    // more than a few kilos, the measurement is suspect and this says so.
+    const double slotRaw = FuelSlotTons(v, &found);
+    const double displayRaw = MirrorTons(v);
+    const Reading reading = Select(found != 0, slotRaw, displayRaw);
+    const Result result = g_vehFuelSamples[slot].Observe(reading,
+        (unsigned long long)InterlockedCompareExchange(&g_fuelDiagnosticEpoch, 0, 0));
+    g_vehFuelValid[slot] = reading.valid;
+    if (reading.valid) g_vehFuel[slot] = reading.value;
+    // Legacy accumulators are candidate sample changes ONLY. No tracker feed.
+    if (burned) *burned += result.decrease;
+    if (refills && result.change == Change::Increase) ++*refills;
     if (g_tankCrossLog > 0) {
-        const double drift = (mirror >= 0.0) ? (mirror - level) : 0.0;
-        Logf("[TANK] day %d   v=%p slot %.4f t | mirror +0x5F0 %.4f t | drift %+.4f t | %s",
-             closedDay, v, level, mirror, drift,
-             (fabs(drift) > 0.01) ? "MIRROR HAS DRIFTED" : "agree");
-        g_tankCrossLog--;
+        Logf("[TANK] day %d v=%p selected_source=%s source_valid=%d "
+             "slot_found=%d slot_candidate_raw=%.9g display_5f0_raw=%.9g "
+             "drift_valid=%d drift_raw=%+.9g change=%s decrease_raw=%.9g "
+             "units=unverified exact_burn=0 verified_refill=0 billing_input=0",
+             closedDay, v, SourceName(reading.source), reading.valid ? 1 : 0,
+             found, slotRaw, displayRaw, reading.comparable ? 1 : 0,
+             reading.drift, ChangeName(result.change), result.decrease);
+        --g_tankCrossLog;
     }
 }
 
@@ -3332,6 +2418,7 @@ static void CensusFleets(int closedDay)
     // the rate the physics has; it must not double-count a fleet seen from two
     // enterprises.
     const unsigned vehDaysBefore = g_tankVehDaysRun;
+    unsigned omittedVisits = 0;
 
     for (size_t i = 0; i < n; i++) {
         void* b = g_enterprise->getEnterpriseByIndex(i);
@@ -3359,6 +2446,14 @@ static void CensusFleets(int closedDay)
             void* v = ((void* const*)beg)[k];
             if (!v || !TsmIsValidGamePtr(v)) continue;
 
+            // Legacy slots are process-lifetime: a new pointer may not fit.
+            // Skip only this visit, never index a per-slot array with -1.
+            const int s = VehSlot(v);
+            if (s < 0 || s >= VEH_MAX) {
+                ++omittedVisits;
+                continue;
+            }
+
             void* home = nullptr;
             if (ReadablePtr((const BYTE*)v + 0x4F8, 8))
                 home = *(void* const*)((const BYTE*)v + 0x4F8);
@@ -3379,17 +2474,16 @@ static void CensusFleets(int closedDay)
 
             int slots = 0;
             const double tons = CargoTons(v, &slots);
-            CargoDump(VehSlot(v), v, closedDay);
+            CargoDump(s, v, closedDay);
 
-            const int s = VehSlot(v);
             const bool first = (s >= 0 && g_vehSamples[s] == 0);
             if (s >= 0) {
                 g_vehSamples[s]++;
                 if (tons > g_vehPeakTons[s]) g_vehPeakTons[s] = tons;
             }
 
-            // v0.13: the state gate the report found. 1 and 2 = working;
-            // anything else and the engine does not even look at the truck.
+            // Retained raw words and legacy guess; disproven as road-truck
+            // activity evidence in the supplied game test. Never gate on them.
             int state = -1, mode = -1;
             if (ReadablePtr((const BYTE*)v + 0x448, 4))
                 state = *(const int*)((const BYTE*)v + 0x448);
@@ -3398,22 +2492,22 @@ static void CensusFleets(int closedDay)
             const bool active = (state == 1 || state == 2);
             if (active) g_activeVehDaysRun++; else g_idleVehDaysRun++;
 
-            // Per-vehicle tank capacity, from the field the REFUEL code clamps
-            // to. This is the "never assume an arbitrary vehicle" requirement
-            // answered with a number the game itself uses.
+            // Metadata capacity candidate used by the panel, NOT proof of a
+            // native refill clamp or physical tonnes.
             const double cap = TankCapacity(v);
             if (cap > 0.0 && s >= 0 && !g_vehCapValid[s]) {
                 g_vehCapValid[s] = 1;
                 g_vehCap[s] = cap;
-                Logf("[VEH] day %d   v=%p tank capacity %.4f t (%.0f L at 1 kg/L)",
+                Logf("[VEH] day %d v=%p capacity8684_raw=%.9g display_scale1000_estimate=%.2f "
+                     "physical_units=unverified refill_clamp=unverified",
                      closedDay, v, cap, cap * 1000.0);
             }
 
-            Logf("[VEH] day %d   v=%p home=%s cargo %.3ft in %d slot(s) kind=%d cat=%p peak %.3ft "
-                 "state=%d mode=%d %s",
+            Logf("[VEH] day %d   v=%p home=%s cargo %.3ft in %d slot(s) legacy_kind50c=%d catalogue510_candidate=%p peak %.3ft "
+                 "legacy_state448=%d legacy_mode440=%d %s native_activity=unverified",
                  closedDay, v, (home == b) ? "this" : "other",
                  tons, slots, kind, cat, (s >= 0) ? g_vehPeakTons[s] : 0.0,
-                 state, mode, active ? "ACTIVE" : "idle");
+                 state, mode, active ? "legacy_active_guess" : "legacy_idle_guess");
 
             // One dump per vehicle, ever. +0x510 is the lead for capacity,
             // speed, price and consumption; this tells us what it actually is
@@ -3426,7 +2520,8 @@ static void CensusFleets(int closedDay)
             g_refillsRun  += refills;
             if (g_vehFuelValid[s]) g_tankVehDaysRun++;
             if (burned > 0.0 || refills > 0)
-                Logf("[TANK] day %d   v=%p fuel %.4f t | burned %.4f t | refills %u",
+                Logf("[TANK SAMPLE] day %d v=%p candidate_raw=%.4f | decrease_raw=%.4f "
+                     "| sample_increases=%u units=unverified exact_burn=0 verified_refill=0",
                      closedDay, v, g_vehFuelValid[s] ? g_vehFuel[s] : 0.0,
                      burned, refills);
 
@@ -3440,6 +2535,11 @@ static void CensusFleets(int closedDay)
         }
     }
 
+    if (omittedVisits)
+        Logf("[VEH COVERAGE] day %d legacy_census_capacity_exhausted=1 max_slots=%u "
+             "omitted_visits=%u existing_slots_retained=1",
+             closedDay, (unsigned)VEH_MAX, omittedVisits);
+
     // v0.11: this close saw at least one tank -> it counts as a fleet-day.
     if (g_tankVehDaysRun > vehDaysBefore) g_tankDaysRun++;
 }
@@ -3447,6 +2547,11 @@ static void CensusFleets(int closedDay)
 // ---------------------------------------------------------------------------
 // entry points
 // ---------------------------------------------------------------------------
+
+#include "panel_fuel_runtime.h"
+#include "fleet_fuel_runtime.h"
+#include "dry_assignment_native.h"
+#include "dry_assignment_runtime.h"
 
 extern "C" __declspec(dllexport) unsigned TsmPluginApiVersion(void)
 {
@@ -3468,10 +2573,16 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
 
     g_realTransfer = (tTransfer)(g_exeBase + TSM_RVA_TRANSFER);
 
-    Logf("private_logistics  v%s - billing %s",
-         PL_VERSION,
-         g_dryRun ? "ARMED IN DRY RUN (computes every payment, moves nothing)"
+    Logf("private_logistics v%s - settlement %s", PL_VERSION,
+         !g_billing ? "OBSERVE ONLY (moves no money)" :
+         g_dryRun ? "ARMED IN DRY RUN (computes eligible transfers, moves nothing)"
                   : "LIVE (moves money)");
+    static TsmB2bLogisticsApi g_b2bLogisticsApi = { sizeof(TsmB2bLogisticsApi), nullptr };
+    g_b2bLogisticsApi.isCounterpartyBillingActive = []() -> int {
+        return (g_enabled && g_billing && !g_dryRun && g_counterpartySettlement) ? 1 : 0;
+    };
+    H->provide(TSM_SERVICE_B2B_LOGISTICS, TSM_B2B_LOGISTICS_VERSION, &g_b2bLogisticsApi);
+
     return 0;
 }
 
@@ -3494,7 +2605,7 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
                                                            TSM_ENTERPRISE_BASE_VERSION);
     if (!g_enterprise)
         Logf("private_logistics  WARN  enterprise_base is not installed - "
-             "no building can be identified as private and nothing will be paid");
+             "no private building identity is available and nothing will be paid");
 
     if (g_autoTargetsEnabled) {
         g_uiPanels = (const TsmUiPanelsApi*)H->consume(TSM_SERVICE_UI_PANELS,
@@ -3535,14 +2646,13 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
         g_pricing = (const TsmResourcePricingApi*)H->consume(TSM_SERVICE_RESOURCE_PRICING,
                                                              TSM_RESOURCE_PRICING_VERSION_V1);
     if (!g_pricing)
-        Logf("private_logistics  WARN  resource_pricing is not installed - "
-             "factory payments fall back to the raw Res+0x58 field, which read "
-             "0.00 for fabric and plants in two sessions");
+        Logf("private_logistics WARN resource_pricing is not installed - "
+             "global goods/fuel quotes are unavailable and settlement is unpriced");
 
-    if (g_billing && (!g_enterprise || !g_currency)) {
+    if (g_billing && (!g_enterprise || !g_currency || !g_pricing)) {
         g_billing = 0;
-        Logf("private_logistics  billing DISABLED: it needs both enterprise_base "
-             "and currency. Instrumentation continues normally.");
+        Logf("private_logistics billing DISABLED: enterprise_base, currency and "
+             "resource_pricing are required. Instrumentation continues normally.");
     }
 
     if (g_autoTargetsEnabled &&
@@ -3553,65 +2663,38 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
              "enterprise_base discovery/private checks");
     }
 
-    if (g_autoTargetsEnabled) {
-        g_persistence = (const TsmPersistenceApi*)H->consume(TSM_SERVICE_PERSISTENCE,
-                                                              TSM_PERSISTENCE_VERSION);
-        if (g_persistence &&
-            g_persistence->structSize >= offsetof(TsmPersistenceApi, registerHandler) +
-                                         sizeof(g_persistence->registerHandler) &&
-            g_persistence->registerHandler)
-            g_persistenceHandle = g_persistence->registerHandler("private_logistics",
-                                                                  AutoPersistenceEvent, nullptr);
-        if (!g_persistenceHandle)
-            Logf("private_logistics  [AUTO DO] WARN persistence load signal unavailable; "
-                 "reconciliation after load may wait for date rewind or restart");
-    }
+    // Settlement and observed-assignment lifecycles need load epochs even when
+    // automatic target assistance is disabled.
+    g_persistence = (const TsmPersistenceApi*)H->consume(TSM_SERVICE_PERSISTENCE,
+                                                          TSM_PERSISTENCE_VERSION);
+    if (g_persistence &&
+        g_persistence->structSize >= offsetof(TsmPersistenceApi, registerHandler) +
+                                     sizeof(g_persistence->registerHandler) &&
+        g_persistence->registerHandler)
+        g_persistenceHandle = g_persistence->registerHandler("private_logistics",
+                                                              AutoPersistenceEvent, nullptr);
+    if (!g_persistenceHandle)
+        Logf("private_logistics  WARN persistence load signal unavailable; "
+             "settlement observers stay disabled and target reconciliation may wait");
+
+    PanelObserverStart();
+    FleetObserverStart();
+    DryCostStart();
 
     PatchAllSites();
 
     if (g_simClock) g_simClock->registerDay(OnDay, nullptr);
 
-    Logf("private_logistics  live v%s: billing=%d dry_run=%d factory=%d carrier=%d, "
-         "%d sites, cap %.0f/day, price = %s, factory share %.2f",
-         PL_VERSION, g_billing, g_dryRun, g_payFactory, g_payCarrier,
-         g_siteCount, (double)g_dailyPayCap,
-         g_tripTariff ? "TRIP TARIFF (fuel x margin + wear)"
-                      : "value share (v0.6 path, for comparison)",
-         (double)g_factoryShare);
-
-    Logf("private_logistics  [AUTO DO] enabled=%d dry_run=%d cadence=once/day; "
+    Logf("private_logistics live v%s: billing=%d dry_run=%d sites=%d | "
+         "goods=locked_global_base_x_market, DO=observed_assignment_fuel_x_global_close | "
+         "no wholesale, cargo-value freight, fragment tariff, margin, wear or upkeep",
+         PL_VERSION,g_billing,g_dryRun,g_siteCount);
+    Logf("private_logistics [AUTO DO] enabled=%d dry_run=%d cadence=once/day; "
          "private endpoints -> private road/rail DOs; existing entries preserved",
-         g_autoTargetsEnabled, g_autoTargetsDryRun);
-
-    if (g_freightShareRetired > 0.0f)
-        Logf("private_logistics  WARN freight_share = %.3f is RETIRED in v0.7 and was "
-             "ignored - the trip tariff prices the delivery now. Remove the key.",
-             (double)g_freightShareRetired);
-
-    // v0.5: name both indices before a single delivery is priced. A probe that
-    // silently cannot resolve a price is worse than no probe, so the log says
-    // which index is live and what it reads.
-    if (g_tariffProbe) {
-        const double fp = FuelUnitPrice();
-        float basket = 0.0f;
-        if (g_pricing) basket = TsmPricingCpiBasket(g_pricing, 0.0f);
-
-        Logf("private_logistics  v%s tariff: %.2f L/trip + %.2f L/t, wear %.2f L, "
-             "margin %.0f%%, density %.5f t/L, index '%s', auto-tune %s",
-             PL_VERSION, gLitresPerTrip, gLitresPerTonne, gWearLitres,
-             gTariffMargin * 100.0, gDieselDensity, gFuelResource,
-             g_litresAuto ? "on" : "off");
-
-        // The world is not loaded yet at plugin start, so both of these read
-        // zero here and are re-read at every day close. Say that rather than
-        // printing a scary NOT FOUND that resolves itself a second later.
-        Logf("private_logistics  [IDX] at plugin start: fuel '%s' = %.2f, cpi basket %.2f - "
-             "the world is still loading; both are re-read at every day close",
-             gFuelResource, fp, (double)basket);
-
-        Logf("private_logistics  the tariff IS charged: every delivery is paid the "
-             "trip price, indexed to the live fuel price. Cargo value is not a basis.");
-    }
+         g_autoTargetsEnabled,g_autoTargetsDryRun);
+    Logf("private_logistics [IDX] fuel resource '%s'; global base and market are "
+         "resolved at each eligible event, never substituted with a local building quote",
+         gFuelResource);
 
     if (g_balanceLog) {
         double treas = 0.0;
@@ -3630,12 +2713,12 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
     }
 
     if (g_billing && g_dryRun)
-        Logf("private_logistics  DRY RUN: every [PAY] line says 'would'. "
-             "Set dry_run = 0 in the ini and restart to move the money.");
+        Logf("private_logistics DRY RUN: [B2B] and [DO TRIP] log planned transfers; "
+             "no balances move. Set billing=1 and dry_run=0 to move money.");
     else if (g_billing)
-        Logf("private_logistics  LIVE MONEY: the state treasury pays. Every [PAY] "
-             "line reports the amount, the payee and the shortfall gate.");
+        Logf("private_logistics LIVE MONEY: verified buyers pay sellers and private DOs. "
+             "[B2B GOODS], [DO TRIP] and [B2B DAY] report attempted and paid amounts.");
 
-    Logf("private_logistics  send back every [PAY] line and the daily [PAY] totals");
+    Logf("private_logistics native Test16 event coverage and exact burn remain unverified");
     return 0;
 }

@@ -22,6 +22,8 @@
 #include "../../src/currency_api.h"
 #include "../../src/persistence_api.h"
 #include "../../src/ui_overlay_api.h"
+#include "../../src/enterprise_base_api.h"
+#include "ledger_reconcile.h"
 
 #include <string>
 #include <vector>
@@ -34,6 +36,7 @@ static const TsmSimClockApi*    g_simClock    = nullptr;
 static const TsmCurrencyApi*    g_currency    = nullptr;
 static const TsmPersistenceApi* g_persistence = nullptr;
 static const TsmUiOverlayApi*   g_ui          = nullptr;
+static const TsmEnterpriseBaseApi* g_enterprise = nullptr;
 static int                      g_persHandle  = -1;
 
 // ---------------------------------------------------------------- config
@@ -59,6 +62,12 @@ static double g_treasuryLastObserved  = 0.0;
 static double g_flowSum               = 0.0;
 static bool   g_crossCheckWarned      = false;
 
+// v2.0 whole-economy stock tracking
+static double g_stocksTreasuryOpen = 0.0;
+static double g_stocksWalletsOpen  = 0.0;
+static double g_stocksEnterpriseOpen = 0.0;
+static double g_stocksPoolOpen     = 0.0;
+
 // HUD Display Snapshot: Keeps the most recently closed month's totals
 // visible on the overlay so the numbers don't vanish between boundaries.
 static int    g_hudClosedYear    = 0;
@@ -75,7 +84,11 @@ static char g_saveDir[MAX_PATH] = {0};
 
 static void DumpToCsv(int year, int month,
                       double openBalance, double closeBalance,
-                      double observedDelta);
+                      double observedDelta,
+                      double closeWallets, double closeEnterprise, double closePool,
+                      double openTotal, double closeTotal,
+                      double privSales, double privWages, double privTaxes, double privPool,
+                      double unexplained);
 
 // ---------------------------------------------------------------- the flow callback
 
@@ -121,6 +134,20 @@ static void OnTick(void* /*ud*/, float /*dt*/, float /*dayDelta*/)
         g_lastMonth            = month;
         g_treasuryAtMonthStart = ReadTreasury();
         g_treasuryLastObserved = g_treasuryAtMonthStart;
+        g_stocksTreasuryOpen   = g_currency->getTreasuryBalance(TsmCurrencyActive(g_currency));
+        g_stocksWalletsOpen    = g_currency->getTotalWalletBalance();
+        g_stocksEnterpriseOpen = 0.0;
+        if (g_enterprise) {
+            size_t n = g_enterprise->getEnterpriseCount();
+            double sum = 0.0;
+            for (size_t i = 0; i < n; ++i) {
+                void* b = g_enterprise->getEnterpriseByIndex(i);
+                double cap = b ? g_enterprise->getCompanyCapital(b) : 0.0;
+                if (std::isfinite(cap)) sum += cap;
+            }
+            g_stocksEnterpriseOpen = sum;
+            g_stocksPoolOpen = g_enterprise->getPrivateInvestmentPool();
+        }
         return;
     }
 
@@ -130,6 +157,21 @@ static void OnTick(void* /*ud*/, float /*dt*/, float /*dayDelta*/)
         g_lastMonth            = month;
         g_treasuryAtMonthStart = ReadTreasury();
         g_treasuryLastObserved = g_treasuryAtMonthStart;
+        g_stocksTreasuryOpen   = g_currency->getTreasuryBalance(TsmCurrencyActive(g_currency));
+        g_stocksWalletsOpen    = g_currency->getTotalWalletBalance();
+        g_stocksEnterpriseOpen = 0.0;
+        g_stocksPoolOpen       = 0.0;
+        if (g_enterprise) {
+            size_t n = g_enterprise->getEnterpriseCount();
+            double sum = 0.0;
+            for (size_t i = 0; i < n; ++i) {
+                void* b = g_enterprise->getEnterpriseByIndex(i);
+                double cap = b ? g_enterprise->getCompanyCapital(b) : 0.0;
+                if (std::isfinite(cap)) sum += cap;
+            }
+            g_stocksEnterpriseOpen = sum;
+            g_stocksPoolOpen = g_enterprise->getPrivateInvestmentPool();
+        }
         EnterCriticalSection(&g_lock);
         g_monthFlows.clear();
         g_flowSum = 0.0;
@@ -144,8 +186,36 @@ static void OnTick(void* /*ud*/, float /*dt*/, float /*dayDelta*/)
         int closedMonth = g_lastMonth;
 
         double observedDelta = closing - g_treasuryAtMonthStart;
-        double flowDelta     = g_flowSum;
+        double flowDelta = 0.0;
+        EnterCriticalSection(&g_lock);
+        flowDelta = g_flowSum;
+        LeaveCriticalSection(&g_lock);
         double divergence    = observedDelta - flowDelta;
+
+        // v2.0 stock snapshot at close
+        double closeWallets = g_currency->getTotalWalletBalance();
+        double closeEnterprise = 0.0;
+        double closePool = 0.0;
+        if (g_enterprise) {
+            size_t n = g_enterprise->getEnterpriseCount();
+            double sum = 0.0;
+            for (size_t i = 0; i < n; ++i) {
+                void* b = g_enterprise->getEnterpriseByIndex(i);
+                double cap = b ? g_enterprise->getCompanyCapital(b) : 0.0;
+                if (std::isfinite(cap)) sum += cap;
+            }
+            closeEnterprise = sum;
+            closePool = g_enterprise->getPrivateInvestmentPool();
+        }
+        double openTotal = g_stocksTreasuryOpen + g_stocksWalletsOpen + g_stocksEnterpriseOpen + g_stocksPoolOpen;
+        double closeTotal = g_currency->getTreasuryBalance(TsmCurrencyActive(g_currency)) + closeWallets + closeEnterprise + closePool;
+
+        double privSales=0, privWages=0, privTaxes=0, privPool=0;
+        if (g_enterprise) {
+            g_enterprise->getMonthlyEconomySummary(&privSales, &privWages, &privTaxes, &privPool);
+        }
+
+        double unexplained = (closing - g_treasuryAtMonthStart) - flowDelta;
 
         if (g_crossCheck && !g_crossCheckWarned &&
             (divergence > 1.0 || divergence < -1.0))
@@ -176,7 +246,11 @@ static void OnTick(void* /*ud*/, float /*dt*/, float /*dayDelta*/)
 
         DumpToCsv(closedYear, closedMonth,
                   g_treasuryAtMonthStart, closing,
-                  observedDelta);
+                  observedDelta,
+                  closeWallets, closeEnterprise, closePool,
+                  openTotal, closeTotal,
+                  privSales, privWages, privTaxes, privPool,
+                  unexplained);
 
         EnterCriticalSection(&g_lock);
         g_monthFlows.clear();
@@ -186,6 +260,11 @@ static void OnTick(void* /*ud*/, float /*dt*/, float /*dayDelta*/)
         g_treasuryAtMonthStart = closing;
         g_treasuryLastObserved = closing;
         g_crossCheckWarned     = false;
+
+        g_stocksTreasuryOpen   = g_currency->getTreasuryBalance(TsmCurrencyActive(g_currency));
+        g_stocksWalletsOpen    = closeWallets;
+        g_stocksEnterpriseOpen = closeEnterprise;
+        g_stocksPoolOpen       = closePool;
 
         g_lastYear  = year;
         g_lastMonth = month;
@@ -212,15 +291,24 @@ static std::string CsvHeader(void)
         "Year,Month,Wages,Pensions,Welfare,"
         "StateStoreSales,WholesaleB2B,"
         "VAT,ProfitTax,PropertyTax,"
-        "Other,NetTreasury,TreasuryOpen_%s,TreasuryClose_%s\r\n",
+        "Other,NetTreasury,TreasuryOpen_%s,TreasuryClose_%s,"
+        "CitizenWallets,EnterpriseCapitalSum,InvestmentPool,"
+        "TotalMoneySupplyOpen,TotalMoneySupplyClose,MoneySupplyDelta,"
+        "PrivateSales,PrivateWages,PrivateTaxes,PrivatePool,"
+        "TreasuryUnexplained\r\n",
         sym, sym);
     return std::string(h);
 }
 static const char kCsvTag[] = "Year,Month";
+static const size_t kCsvTagLen = sizeof(kCsvTag) - 1;
 
 static void DumpToCsv(int year, int month,
                       double openBalance, double closeBalance,
-                      double /*observedDelta*/)
+                      double /*observedDelta*/,
+                      double closeWallets, double closeEnterprise, double closePool,
+                      double openTotal, double closeTotal,
+                      double privSales, double privWages, double privTaxes, double privPool,
+                      double unexplained)
 {
     if (!g_csvEnabled || !g_persistence) return;
 
@@ -228,6 +316,33 @@ static void DumpToCsv(int year, int month,
         Logf("state_ledger  no save directory known - not writing %s",
              g_csvFilename);
         return;
+    }
+
+    std::string fname = g_csvFilename;
+    // detect old v1.4 header
+    // read existing using fname
+    size_t existingLen = 0;
+    void* existing = g_persistence->readFile(g_saveDir, fname.c_str(),
+                                              &existingLen);
+
+    bool oldHeader = false;
+    if (existing && existingLen >= kCsvTagLen &&
+        memcmp(existing, kCsvTag, kCsvTagLen) == 0) {
+        // check for new column
+        std::string head((const char*)existing, existingLen);
+        size_t nl = head.find('\n');
+        if (nl != std::string::npos) head = head.substr(0, nl);
+        if (head.find("TotalMoneySupplyOpen") == std::string::npos) {
+            oldHeader = true;
+        }
+    }
+
+    if (oldHeader) {
+        fname = "tesmio_ledger_v2.csv";
+        // re-read for new file
+        if (existing) { free(existing); existing = nullptr; existingLen = 0; }
+        existing = g_persistence->readFile(g_saveDir, fname.c_str(), &existingLen);
+        Logf("state_ledger  old v1.4 header detected - writing to %s", fname.c_str());
     }
 
     std::unordered_map<std::string, double> snapshot;
@@ -259,51 +374,51 @@ static void DumpToCsv(int year, int month,
 
     double net = totalSum;
 
-    char row[512];
+    char row[1024];
     _snprintf_s(row, sizeof(row), _TRUNCATE,
-        "%d,%02d,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f\r\n",
+        "%d,%02d,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,"
+        "%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f\r\n",
         year, month,
         wages, pension, welfare,
         retailSales, wholesale,
         vat, profitTax, propertyTax,
         other, net,
-        openBalance, closeBalance);
-
-    const size_t tagLen = sizeof(kCsvTag) - 1;
+        openBalance, closeBalance,
+        closeWallets, closeEnterprise, closePool,
+        openTotal, closeTotal, (closeTotal - openTotal),
+        privSales, privWages, privTaxes, privPool,
+        unexplained);
 
     std::string payload;
-    size_t existingLen = 0;
-    void* existing = g_persistence->readFile(g_saveDir, g_csvFilename,
-                                             &existingLen);
 
     if (!existing) {
         char path[MAX_PATH * 2];
-        _snprintf_s(path, sizeof(path), _TRUNCATE, "%s\\%s",
-                    g_saveDir, g_csvFilename);
+         _snprintf_s(path, sizeof(path), _TRUNCATE, "%s\\%s",
+                     g_saveDir, fname.c_str());
         if (GetFileAttributesA(path) != INVALID_FILE_ATTRIBUTES) {
             Logf("state_ledger  WARN  %s exists but could not be read - "
                  "this month's row is not written", path);
             return;
         }
         payload = CsvHeader();
-    } else if (existingLen >= tagLen &&
-               memcmp(existing, kCsvTag, tagLen) == 0) {
+    } else if (existingLen >= kCsvTagLen &&
+               memcmp(existing, kCsvTag, kCsvTagLen) == 0) {
         payload.assign((const char*)existing, existingLen);
     } else {
         if (existingLen > 0)
             Logf("state_ledger  %s\\%s does not begin with the expected "
                  "header - starting a fresh file",
-                 g_saveDir, g_csvFilename);
+                  g_saveDir, fname.c_str());
         payload = CsvHeader();
     }
     if (existing) free(existing);
 
     payload += row;
 
-    if (!g_persistence->writeAtomic(g_saveDir, g_csvFilename,
+    if (!g_persistence->writeAtomic(g_saveDir, fname.c_str(),
                                     payload.data(), payload.size())) {
         Logf("state_ledger  WARN  could not write %s\\%s",
-             g_saveDir, g_csvFilename);
+                  g_saveDir, fname.c_str());
         return;
     }
 
@@ -442,7 +557,7 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
 {
     TsmBind(host);
     info->name    = "state_ledger";
-    info->version = "1.4";
+    info->version = "2.0";
 
     ReadSettings();
     if (!g_enabled) {
@@ -485,6 +600,14 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
         if (g_persHandle <= 0)
             Logf("state_ledger  WARN  persistence refused the handler");
     }
+
+    g_enterprise = (const TsmEnterpriseBaseApi*)
+        H->consume(TSM_SERVICE_ENTERPRISE_BASE, TSM_ENTERPRISE_BASE_VERSION);
+    if (!g_enterprise)
+        g_enterprise = (const TsmEnterpriseBaseApi*)
+            H->consume(TSM_SERVICE_ENTERPRISE_BASE, TSM_ENTERPRISE_BASE_VERSION_V7);
+    if (!g_enterprise)
+        Logf("state_ledger  enterprise_base not installed - money-supply tracking degrades");
 
     if (g_showOverlay) {
         g_ui = (const TsmUiOverlayApi*)

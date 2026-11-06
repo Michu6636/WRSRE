@@ -668,7 +668,7 @@ static void ResetMonthlyEvictionCount(void)
 // bld+0xBC0, clears routes, recomputes tenant counters). A move into
 // nullptr despawns the citizen (FUN_140835D70 frees them) - the plugin
 // therefore always confirms a candidate flat first.
-#define TSM_F_RELOCATE 0x83CA50            // RVA of native FUN_14083CA50
+#define TSM_F_RELOCATE (g_tsmAddr.relocate_person) // RVA of native FUN_14083CA50
 // Person floats (docs/Citizen_Housing_Relocation.md,
 // docs/Rent_Housing_Task1_Investigation.md): 0xE4 living standard /
 // wealth (0..1, maintained by FUN_14083A6D0), 0xE8 happiness (0..1).
@@ -685,7 +685,7 @@ static void ResetMonthlyEvictionCount(void)
 static int    g_abandonEnabled    = 1;    // 1 = collapse ruins after N months
 static int    g_monthsToAbandon   = 3;    // negative-capital months before ruin
 static float  g_auctionBuyoutMult = 1.5f; // buyout = startingCapital x mult
-#define TSM_F_ABANDON 0x13FE70            // RVA of native FUN_14013FE70
+#define TSM_F_ABANDON (g_tsmAddr.abandon_building) // RVA of native FUN_14013FE70
 
 // v4: RUB-denominated bases as written in the ini. USD-effective values
 // resolve at Start via usd_divisor unless an explicit *_usd key exists.
@@ -1663,10 +1663,14 @@ static void DentHappinessRaw(void* person, float dent)
 // where no C++ object needs unwinding.
 static int InvokeRelocateRaw(void* game, void* person, void* dest)
 {
+    if (!TsmCheckExeBuild(H, "enterprise_base")) return 0;
+    const unsigned char* code = TsmCallableCodePtr(H, TSM_F_RELOCATE, "relocate_person");
+    if (!code) return 0;
+
     int ok = 0;
     __try {
         typedef void (__fastcall *t_RelocateCitizen)(void*, void*, void*);
-        t_RelocateCitizen fn = (t_RelocateCitizen)(g_exeBase + TSM_F_RELOCATE);
+        t_RelocateCitizen fn = (t_RelocateCitizen)code;
         if (TsmIsValidGamePtr(game) && TsmIsValidGamePtr(person) &&
             TsmIsValidGamePtr(dest))
             fn(game, person, dest);
@@ -2654,8 +2658,12 @@ static void EvaluateWageBidding(void)
 // so the native call lives in its own function with only raw locals.
 static void CallNativeAbandon(void* game, void* bld)
 {
+    if (!TsmCheckExeBuild(H, "enterprise_base")) return;
+    const unsigned char* code = TsmCallableCodePtr(H, TSM_F_ABANDON, "abandon_building");
+    if (!code) return;
+
     typedef void (*t_Abandon)(void*, void*);
-    t_Abandon fn = (t_Abandon)(g_exeBase + TSM_F_ABANDON);
+    t_Abandon fn = (t_Abandon)code;
     __try { fn(game, bld); }
     __except (FaultFilter("enterprise_base native abandon", GetExceptionInformation())) {
         Logf("enterprise_base  ERROR calling native abandonment at 0x%X",

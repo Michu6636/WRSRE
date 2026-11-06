@@ -153,6 +153,10 @@ typedef struct TsmUiPanelsApi {
     // widgetCheckbox draws one row: the exe's own labelled checkbox
     // (RVA 0x3956F0) with a wide-character label. value is 0/1
     // (clamped); colour 0 means the hook's default label colour.
+    // On the verified target build, native raw 0 draws CHECKED and raw 1
+    // draws UNCHECKED (observed in the private-DO permission gameplay test).
+    // Convert logical permission booleans at the caller boundary; do not
+    // assume nonzero means visually checked or invert persisted policy bits.
     // Returns 1 when *value toggled on this exact frame.
     //
     // Both consume exactly DPI*35 of window+0x250, count one row against

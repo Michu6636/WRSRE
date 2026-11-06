@@ -1,0 +1,425 @@
+{
+  "$schema": "https://json-schema.org/draft-2020-12/schema",
+  "title": "private_logistics_probe structured log schema",
+  "description": "Versioned structured log schema for the exploratory diagnostic probe. Emitted as parseable key=value [PROBE <kind>] lines through the tesmioloader log. Raw observations are kept separate from interpreted events; dropped observations invalidate derived results. SNAPSHOT records are labelled exploratory telemetry: NOT accumulated fuel burn, NOT trip-boundary verification, NOT trip-cost validation.",
+  "version": 1,
+  "schema_version": 1,
+  "line_format": "[PROBE <KIND>] seq=<u32> ts=<f64> thr=<u64> kind=<name> schema=<u32> committed=<0|1> load=<0|1> unload=<0|1> complete=<0|1> gap=<0|1> error=<0|1> synth=<0|1> <kind-specific fields...>",
+  "time": {
+    "monotonic_seconds": "GetTickCount64 / 1000.0, relative to session start",
+    "simulation_tick": "sim day/month/year and time_of_day from sim_clock getDay()/getTimeOfDay(); -1/0.0 when sim_clock unavailable"
+  },
+  "record_kinds": [
+    {
+      "kind": "SESSION",
+      "code": 1,
+      "purpose": "session generation: start, armed, disabled",
+      "fields": [
+        {
+          "name": "session_id",
+          "type": "hex16",
+          "description": "unique session id (start tick xor process id)"
+        },
+        {
+          "name": "event",
+          "type": "string",
+          "description": "start | armed | disabled"
+        },
+        {
+          "name": "day",
+          "type": "i32",
+          "description": "sim day or -1"
+        },
+        {
+          "name": "mon",
+          "type": "i32",
+          "description": "sim month or -1"
+        },
+        {
+          "name": "yr",
+          "type": "i32",
+          "description": "sim year or -1"
+        },
+        {
+          "name": "note",
+          "type": "string",
+          "description": "free-form note"
+        }
+      ]
+    },
+    {
+      "kind": "EVENT",
+      "code": 2,
+      "purpose": "raw observation of a transfer/movement call (event/call sequence, raw values)",
+      "fields": [
+        {
+          "name": "site",
+          "type": "string",
+          "description": "observation site, e.g. transfer:0x420350 or synthetic:load"
+        },
+        {
+          "name": "mode",
+          "type": "u32",
+          "description": "transfer mode (0=building side, 1=vehicle side)"
+        },
+        {
+          "name": "veh",
+          "type": "pointer",
+          "description": "vehicle identity (null if synthetic/unknown)"
+        },
+        {
+          "name": "do",
+          "type": "pointer",
+          "description": "distribution office / building identity"
+        },
+        {
+          "name": "res",
+          "type": "string",
+          "description": "resource name or ?"
+        },
+        {
+          "name": "load_site",
+          "type": "pointer",
+          "description": "load site pointer"
+        },
+        {
+          "name": "unload_site",
+          "type": "pointer",
+          "description": "unload site pointer"
+        },
+        {
+          "name": "fb",
+          "type": "f64",
+          "description": "fuel before (tonnes), -1 = unavailable"
+        },
+        {
+          "name": "fa",
+          "type": "f64",
+          "description": "fuel after (tonnes), -1 = unavailable"
+        },
+        {
+          "name": "ded",
+          "type": "f64",
+          "description": "actual fuel deduction fb - fa (tonnes), -1 = gap"
+        },
+        {
+          "name": "cb",
+          "type": "f64",
+          "description": "cargo before (tonnes)"
+        },
+        {
+          "name": "ca",
+          "type": "f64",
+          "description": "cargo after (tonnes)"
+        },
+        {
+          "name": "conf",
+          "type": "string",
+          "description": "evidence confidence: verified | partial | unverified | synthetic | unsupported"
+        },
+        {
+          "name": "day",
+          "type": "i32",
+          "description": "sim day at observation"
+        }
+      ]
+    },
+    {
+      "kind": "INTERP",
+      "code": 3,
+      "purpose": "interpreted event kept separate from raw records: trip boundary / gap / error",
+      "fields": [
+        {
+          "name": "veh",
+          "type": "pointer",
+          "description": "vehicle identity"
+        },
+        {
+          "name": "what",
+          "type": "string",
+          "description": "interpretation label, e.g. trip_open_load | trip_complete | replay_attempted | unsupported_unload | confirm_cannot_repair"
+        },
+        {
+          "name": "fb",
+          "type": "f64",
+          "description": "fuel before"
+        },
+        {
+          "name": "fa",
+          "type": "f64",
+          "description": "fuel after"
+        },
+        {
+          "name": "ded",
+          "type": "f64",
+          "description": "deduction"
+        },
+        {
+          "name": "complete",
+          "type": "0|1",
+          "description": "a complete trip resulted"
+        },
+        {
+          "name": "gap",
+          "type": "0|1",
+          "description": "evidence gap"
+        },
+        {
+          "name": "error",
+          "type": "0|1",
+          "description": "error / unsupported boundary"
+        }
+      ]
+    },
+    {
+      "kind": "TRIP",
+      "code": 4,
+      "purpose": "trip summary with settlement-time fuel price and currency",
+      "fields": [
+        {
+          "name": "veh",
+          "type": "pointer",
+          "description": "vehicle identity"
+        },
+        {
+          "name": "fuel_before",
+          "type": "f64",
+          "description": "tonnes at trip start"
+        },
+        {
+          "name": "fuel_after",
+          "type": "f64",
+          "description": "tonnes at trip end"
+        },
+        {
+          "name": "deduction",
+          "type": "f64",
+          "description": "tonnes deducted across tracked trips"
+        },
+        {
+          "name": "trips",
+          "type": "u32",
+          "description": "trips tracked for this vehicle"
+        },
+        {
+          "name": "completed",
+          "type": "u32",
+          "description": "completed trips"
+        },
+        {
+          "name": "replayed",
+          "type": "u32",
+          "description": "replay attempts (always 0: closed trips cannot replay)"
+        },
+        {
+          "name": "unsupported",
+          "type": "u32",
+          "description": "unsupported trips (cannot be repaired by confirmation)"
+        },
+        {
+          "name": "dup_loads",
+          "type": "u32",
+          "description": "additional loads that were not duplicates"
+        },
+        {
+          "name": "fuel_price",
+          "type": "string",
+          "description": "settlement-time fuel price or unavailable (Phase 1: no price source read)"
+        },
+        {
+          "name": "currency",
+          "type": "string",
+          "description": "settlement currency or unavailable (Phase 1: no currency API consumed)"
+        },
+        {
+          "name": "note",
+          "type": "string",
+          "description": "phase1_no_price_source while no live hook/pricing exists"
+        }
+      ]
+    },
+    {
+      "kind": "DROP",
+      "code": 5,
+      "purpose": "dropped observation; invalidates affected derived results",
+      "fields": [
+        {
+          "name": "reason",
+          "type": "string",
+          "description": "ring_overflow | log_cap | ..."
+        },
+        {
+          "name": "ring_drops",
+          "type": "u32",
+          "description": "ring buffer drops total"
+        },
+        {
+          "name": "today_drops",
+          "type": "u32",
+          "description": "drops today"
+        }
+      ]
+    },
+    {
+      "kind": "SYNTH",
+      "code": 6,
+      "purpose": "explicitly labelled synthetic input (selftest exercise only)",
+      "fields": "same as EVENT plus synth=1"
+    },
+    {
+      "kind": "SNAPSHOT",
+      "code": 7,
+      "purpose": "sampled vehicle snapshot (exploratory telemetry only; NOT fuel burn, NOT trip verification, NOT cost)",
+      "fields": [
+        {
+          "name": "day",
+          "type": "i32",
+          "description": "sim day at snapshot (from sim_clock getDay, -1 when no world)"
+        },
+        {
+          "name": "mon",
+          "type": "i32",
+          "description": "sim month (from sim_clock getMonth, -1 when no world)"
+        },
+        {
+          "name": "yr",
+          "type": "i32",
+          "description": "sim year (from sim_clock getYear, -1 when no world)"
+        },
+        {
+          "name": "tod",
+          "type": "f64",
+          "description": "time of day fraction (from sim_clock getTimeOfDay)"
+        },
+        {
+          "name": "veh",
+          "type": "pointer",
+          "description": "selected vehicle identity (null when no match / lost)"
+        },
+        {
+          "name": "do",
+          "type": "pointer",
+          "description": "selected DO building identity (null when no match / lost)"
+        },
+        {
+          "name": "record_type",
+          "type": "string",
+          "description": "selection | measurement | no_match | vehicle_lost | world_reset"
+        },
+        {
+          "name": "snapshot_ok",
+          "type": "0|1",
+          "description": "snapshot capture succeeded (1) or failed (0)"
+        },
+        {
+          "name": "fail_reason",
+          "type": "string",
+          "description": "no_match | vehicle_gone | selected | \"\" | world_reset"
+        },
+        {
+          "name": "fuel_slot_valid",
+          "type": "0|1",
+          "description": "fuel slot found and readable (independent of mirror)"
+        },
+        {
+          "name": "fuel_tons",
+          "type": "f64",
+          "description": "fuel slot tonnes (from cargo slot matching game+0xC3F0); -1 if unavailable"
+        },
+        {
+          "name": "mirror_valid",
+          "type": "0|1",
+          "description": "fuel mirror at veh+0x5F0 readable (does NOT validate fuel slot)"
+        },
+        {
+          "name": "mirror_tons",
+          "type": "f64",
+          "description": "fuel mirror tonnes; -1 if unavailable"
+        },
+        {
+          "name": "cargo_valid",
+          "type": "0|1",
+          "description": "cargo vector readable; missing/unreadable is unavailable, not zero"
+        },
+        {
+          "name": "cargo_slots",
+          "type": "i32",
+          "description": "non-empty cargo slots; -1 if unavailable"
+        },
+        {
+          "name": "cargo_total_tons",
+          "type": "f64",
+          "description": "total cargo tonnes; -1 if unavailable"
+        },
+        {
+          "name": "cargo",
+          "type": "string",
+          "description": "bounded cargo listing \"res=tons ...\"; empty if unavailable"
+        },
+        {
+          "name": "kind_valid",
+          "type": "0|1",
+          "description": "vehicle kind readable"
+        },
+        {
+          "name": "kind",
+          "type": "i32",
+          "description": "vehicle kind raw value (0x42 = road truck); -1 if unavailable"
+        },
+        {
+          "name": "state_valid",
+          "type": "0|1",
+          "description": "vehicle state readable"
+        },
+        {
+          "name": "state",
+          "type": "i32",
+          "description": "vehicle state raw value; -1 if unavailable; does not invalidate selection"
+        },
+        {
+          "name": "mode_valid",
+          "type": "0|1",
+          "description": "vehicle mode readable"
+        },
+        {
+          "name": "mode",
+          "type": "i32",
+          "description": "vehicle mode raw value (9 = loaded travel); -1 if unavailable; does not invalidate selection"
+        },
+        {
+          "name": "home_matches_valid",
+          "type": "0|1",
+          "description": "home depot match readable"
+        },
+        {
+          "name": "home_matches",
+          "type": "0|1",
+          "description": "vehicle home depot == selected DO; -1 if unavailable"
+        }
+      ]
+    }
+  ],
+  "constraints": [
+    "No treasury or payment API is ever consumed; no money is issued.",
+    "Raw records (EVENT) and interpreted records (INTERP) are separate record kinds.",
+    "No blocking disk IO from hooked game execution; log lines go through the loader's Logf.",
+    "Dropped observations invalidate affected results.",
+    "All synthetic input carries synth=1 and is never treated as a game observation.",
+    "Default loading (enabled=0) patches no code and dereferences no unverified game object.",
+    "SNAPSHOT records are exploratory telemetry: not accumulated fuel burn, not trip-boundary verification, not trip-cost validation.",
+    "Selection requires building type 43 (road DO) and exactly one eligible vehicle whose home depot matches that DO; zero or multiple candidates fail closed (no selection).",
+    "Identity/lifetime (pointer validity + home depot match) is separate from activity state (kind/state/mode); a selected vehicle is retained across loading/travel/unloading, and state/mode changes do not invalidate it.",
+    "Every measurement field carries a *_valid flag; missing/unreadable values are -1 (unavailable), never zero or inferred. A readable mirror does NOT validate the authoritative fuel slot.",
+    "Calendar day/month/year come directly from sim_clock accessors (getDay/getMonth/getYear); they are never derived from one another.",
+    "The sim_clock SUB_TICK subscriber is the only observation mechanism; no inline hook, no code patch, no mid-function instrumentation.",
+    "The snapshot queue owns its text and drops new samples when full or contended; worker emits DROP counters.",
+    "Enabled plugin, logger and clock modules are pinned for process lifetime; DllMain performs no cleanup or waits. Restart to remove.",
+    "First experiment: one launch and one save; no reload, reassignment or demolition. World invalidation is not verified."
+  ],
+  "coexistence": [
+    "The probe registers a sim_clock subscriber; it does not patch code, so it cannot conflict with private_logistics' call-site patches.",
+    "Two plugins consuming sim_clock simultaneously are not assumed safe; subscriber integration requires review."
+  ],
+  "prototype_version": "0.2.3-exploratory",
+  "observation_seq": "Snapshot capture sequence, distinct from serialized log seq; loss is also reported with DROP. No engine movement identity is implied."
+}

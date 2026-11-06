@@ -1,0 +1,217 @@
+// Verified renderer schedule reads ONLY. Not a native job identity/completion API.
+#ifndef PRIVATE_LOGISTICS_SCHEDULE_OBSERVER_H
+#define PRIVATE_LOGISTICS_SCHEDULE_OBSERVER_H
+#include "panel_fuel_observer.h"
+
+namespace private_logistics_schedule {
+using private_logistics_panel::Address;
+using private_logistics_panel::Memory;
+static_assert(sizeof(Address)==8,"verified schedule layout is x64 only");
+constexpr unsigned MaxRows = 16;
+constexpr Address ConfigStride = 0x198;
+enum class Status { Disabled, Ineligible, Unreadable, BadBounds, TooManyRows,
+                    MissingConfigs, NonFinite, ChangedDuringRead, GuardedFault, Complete };
+struct Row {
+    Address target = 0;
+    bool configRead = false;
+    std::uint8_t flag00 = 0, flagC8 = 0;
+    float value04 = 0, valueCC = 0;
+};
+struct Snapshot {
+    Status status = Status::Disabled;
+    Address begin = 0, end = 0, configs = 0;
+    // Opaque renderer context fields: do NOT name these job IDs or buyers.
+    Address raw4a0 = 0, raw610 = 0, raw650 = 0;
+    std::int32_t index698 = -1;
+    std::uint8_t flag5fd = 0;
+    unsigned count = 0;
+    Row rows[MaxRows]{};
+};
+inline bool Header(const Memory& m, Address root, Snapshot& s) {
+    return m.Get(root,0x680,s.begin) && m.Get(root,0x688,s.end) &&
+        m.Get(root,0x638,s.configs) && m.Get(root,0x698,s.index698) &&
+        m.Get(root,0x5FD,s.flag5fd) && m.Get(root,0x4A0,s.raw4a0) &&
+        m.Get(root,0x610,s.raw610) && m.Get(root,0x650,s.raw650);
+}
+inline bool SameHeader(const Snapshot& a,const Snapshot& b) {
+    return a.begin==b.begin && a.end==b.end && a.configs==b.configs &&
+        a.index698==b.index698 && a.flag5fd==b.flag5fd &&
+        a.raw4a0==b.raw4a0 && a.raw610==b.raw610 && a.raw650==b.raw650;
+}
+inline bool SameRow(const Row& a,const Row& b) {
+    return a.target==b.target && a.configRead==b.configRead && a.flag00==b.flag00 && a.flagC8==b.flagC8 &&
+        a.value04==b.value04 && a.valueCC==b.valueCC;
+}
+inline bool ReadRow(const Memory& m,const Snapshot& s,unsigned i,Row& r) {
+    if(!m.Get(s.begin,Address(i)*8,r.target)) return false;
+    // At 7E81B3..7E81C0 the renderer sets RSI=0 for the last row
+    // when +5FD is nonzero. Do not invent/read a configuration for it.
+    if(s.flag5fd && i+1==s.count) return true;
+    const Address offset=Address(i)*ConfigStride;
+    r.configRead=m.Get(s.configs,offset,r.flag00) && m.Get(s.configs,offset+4,r.value04) &&
+        m.Get(s.configs,offset+0xC8,r.flagC8) && m.Get(s.configs,offset+0xCC,r.valueCC);
+    return r.configRead;
+}
+inline void Capture(const Memory& m,Address root,Snapshot& s) {
+    s=Snapshot{};s.status=Status::Unreadable;
+    if(!Header(m,root,s)) return;
+    if(s.end<s.begin || (s.end-s.begin)%8 || (!s.begin && s.end)) {
+        s.status=Status::BadBounds;return;
+    }
+    const Address count=(s.end-s.begin)/8;
+    if(count>MaxRows) {s.status=Status::TooManyRows;return;}
+    s.count=static_cast<unsigned>(count);
+    if(s.count>(s.flag5fd?1u:0u) && !s.configs) {s.status=Status::MissingConfigs;return;}
+    for(unsigned i=0;i<s.count;++i) {
+        if(!ReadRow(m,s,i,s.rows[i])) return;
+        if(!std::isfinite(s.rows[i].value04) || !std::isfinite(s.rows[i].valueCC)) {
+            s.status=Status::NonFinite;return;
+        }
+    }
+    // Recheck header AND selected row fields; reject observed mutation. This
+    // is still not an atomic game snapshot (ABA/other fields remain unknown).
+    Snapshot after{};
+    if(!Header(m,root,after)) return;
+    if(!SameHeader(s,after)) {s.status=Status::ChangedDuringRead;return;}
+    for(unsigned i=0;i<s.count;++i) {
+        Row again{};
+        if(!ReadRow(m,s,i,again)) return;
+        if(!SameRow(s.rows[i],again)) {s.status=Status::ChangedDuringRead;return;}
+    }
+    s.status=Status::Complete;
+}
+inline const char* StatusName(Status s) {
+    switch(s) {
+        case Status::Disabled:return "disabled";
+        case Status::Ineligible:return "not_unique_road_fleet_root";
+        case Status::BadBounds:return "bad_bounds";
+        case Status::TooManyRows:return "too_many_rows_no_partial_table";
+        case Status::MissingConfigs:return "missing_configs";
+        case Status::NonFinite:return "nonfinite_config";
+        case Status::ChangedDuringRead:return "changed_during_read";
+        case Status::GuardedFault:return "guarded_schedule_fault_disabled";
+        case Status::Complete:return "complete_selected_fields";
+        default:return "unreadable";
+    }
+}
+enum class Baseline { None, First, Epoch, Identity, Gap, Invalid };
+inline const char* BaselineName(Baseline b) {
+    switch(b) {
+        case Baseline::None:return "none";
+        case Baseline::Epoch:return "load_epoch";
+        case Baseline::Identity:return "vehicle_or_home_change";
+        case Baseline::Gap:return "diagnostic_gap";
+        case Baseline::Invalid:return "invalid_read";
+        default:return "first_observation";
+    }
+}
+struct Delta {
+    bool emit=false, fields=false, storage=false, index=false, context=false;
+    Baseline baseline=Baseline::None;
+    // Descriptive endpoint comparison, NEVER continuous native event coverage.
+    // The original delta flags above stay false when rebaselining.
+    bool endpointCompared=false, endpointAcrossGap=false;
+    bool endpointFields=false, endpointStorage=false, endpointIndex=false, endpointContext=false;
+    unsigned previousSample=0;
+    std::uint64_t previousMs=0;
+};
+// Pure classification of captured values. These labels are NOT native jobs,
+// resource identities, refuelling states or billable trip boundaries.
+enum class Pattern { Unavailable, Empty, OfficeOnly, LoadUnload, Other };
+inline const char* PatternName(Pattern p) {
+    switch(p) {
+        case Pattern::Empty:return "empty";
+        case Pattern::OfficeOnly:return "office_only_pattern";
+        case Pattern::LoadUnload:return "load_unload_pattern";
+        case Pattern::Other:return "other_pattern";
+        default:return "unavailable";
+    }
+}
+inline Pattern ClassifyPattern(const Snapshot& s,Address home) {
+    if(s.status!=Status::Complete || s.count>MaxRows) return Pattern::Unavailable;
+    if(!s.count) return Pattern::Empty;
+    if(!home) return Pattern::Other;
+    if(s.count==1 && s.rows[0].target==home && s.rows[0].configRead &&
+       !s.rows[0].flag00 && !s.rows[0].flagC8) return Pattern::OfficeOnly;
+    bool load=false,unload=false;
+    for(unsigned i=0;i<s.count;++i) {
+        const auto& r=s.rows[i];
+        if(!r.configRead || !r.target || r.target==home) continue;
+        load=load || (r.flag00==1 && r.flagC8==0);
+        unload=unload || (r.flag00==0 && r.flagC8==1);
+    }
+    return load && unload ? Pattern::LoadUnload : Pattern::Other;
+}
+struct FieldChanges {
+    bool comparable=false,count=false,targets=false,availability=false,flags=false,scalars=false;
+    bool Structure() const {return count || targets;}
+    bool SettingsOnly() const {return (flags || scalars) && !Structure() && !availability;}
+};
+inline FieldChanges ClassifyChanges(const Snapshot& a,const Snapshot& b) {
+    FieldChanges c;
+    if(a.status!=Status::Complete || b.status!=Status::Complete ||
+       a.count>MaxRows || b.count>MaxRows) return c;
+    c.comparable=true;c.count=a.count!=b.count;
+    const unsigned common=a.count<b.count?a.count:b.count;
+    for(unsigned i=0;i<common;++i) {
+        const auto& x=a.rows[i];const auto& y=b.rows[i];
+        c.targets=c.targets || x.target!=y.target;
+        c.availability=c.availability || x.configRead!=y.configRead;
+        // Missing/suppressed config fields are not observed zeros.
+        if(!x.configRead || !y.configRead) continue;
+        c.flags=c.flags || x.flag00!=y.flag00 || x.flagC8!=y.flagC8;
+        // Preserve exact captured scalars; no epsilon or rounding policy.
+        c.scalars=c.scalars || x.value04!=y.value04 || x.valueCC!=y.valueCC;
+    }
+    return c;
+}
+// One selected vehicle's previous *values*, never a retained native object
+// consumer. Windows are transient and are deliberately not identity keys.
+class History {
+    bool known_=false, gap_=false, endpointKnown_=false;
+    std::uint64_t epoch_=0,previousMs_=0;
+    unsigned previousSample_=0;
+    Address root_=0,home_=0;
+    Snapshot previous_{};
+public:
+    void Break() {gap_=true;}
+    // Copied values only. Caller must copy BEFORE Observe replaces them and
+    // use them only if the returned Delta says endpointCompared.
+    const Snapshot& LastValidValues() const {return previous_;}
+    Delta Observe(const Snapshot& s,std::uint64_t epoch,Address root,Address home,
+                  unsigned sample=0,std::uint64_t captureMs=0) {
+        Delta d;
+        // Even an invalid observation of a different identity/load invalidates
+        // the endpoint cache; switching away and back must not join vehicles.
+        if(epoch!=epoch_ || root!=root_ || home!=home_) endpointKnown_=false;
+        if(s.status!=Status::Complete) {
+            known_=false;gap_=true;d.emit=true;d.baseline=Baseline::Invalid;return d;
+        }
+        if(!known_) d.baseline=gap_?Baseline::Gap:Baseline::First;
+        else if(epoch!=epoch_) d.baseline=Baseline::Epoch;
+        else if(root!=root_ || home!=home_) d.baseline=Baseline::Identity;
+        else if(gap_) d.baseline=Baseline::Gap;
+        if(endpointKnown_) {
+            d.endpointCompared=true;
+            d.endpointAcrossGap=d.baseline==Baseline::Gap;
+            d.previousSample=previousSample_;d.previousMs=previousMs_;
+            d.endpointFields=s.count!=previous_.count;
+            if(!d.endpointFields) for(unsigned i=0;i<s.count;++i)
+                if(!SameRow(s.rows[i],previous_.rows[i])) {d.endpointFields=true;break;}
+            d.endpointStorage=s.begin!=previous_.begin || s.end!=previous_.end || s.configs!=previous_.configs;
+            d.endpointIndex=s.index698!=previous_.index698;
+            d.endpointContext=s.raw4a0!=previous_.raw4a0 || s.raw610!=previous_.raw610 ||
+                s.raw650!=previous_.raw650 || s.flag5fd!=previous_.flag5fd;
+            if(d.baseline==Baseline::None) {
+                d.fields=d.endpointFields;d.storage=d.endpointStorage;
+                d.index=d.endpointIndex;d.context=d.endpointContext;
+            }
+        }
+        d.emit=d.baseline!=Baseline::None || d.fields || d.storage || d.index || d.context;
+        epoch_=epoch;root_=root;home_=home;previous_=s;known_=endpointKnown_=true;gap_=false;
+        previousSample_=sample;previousMs_=captureMs;
+        return d;
+    }
+};
+} // namespace private_logistics_schedule
+#endif

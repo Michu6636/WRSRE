@@ -1,9 +1,21 @@
 # Vision: `private_logistics`
 
-**Updated:** 2026-10-22  
-**Role:** private freight-market accounting and carefully bounded optional DO-target assistance.
+**Current-status review:** 2026-11-01, source **0.18.17-dry-ledger** (PR #42 merged).
+**Role now:** bounded private-DO target assistance, road-fleet observation and persistent approximate dry costs; **payments OFF**.
 
-## Purpose
+## Current contract: read this before the historical vision
+
+The [main design document, section 12](../WRSRE%20DESIGN%20DOC.md) and [current DO implementation guide](../private-logistics-runtime/DO_OFFICES.md) describe what is implemented, how it works, evidence limits and next steps. The game still owns all physical logistics. State storage/factories now have independent default-OFF loading/delivery permissions; consumers are delivery-only. Private eligible sites follow their role; managed targets reconnect daily and use source10/destination30 policy. Target application is ON in source (`auto_targets_dry_run=0`) while billing remains OFF (`billing=0`).
+
+Approximate positive-decrease costs freeze the cached quote at observed closure and retain the original unloading-target snapshot on cancellation/replacement. Outside-assignment overhead is not allocated. Closed records persist; active saved records reload interrupted/unpriced rather than being guessed onto current vehicles. Target snapshots are not verified financial payer IDs; no new debts, deductions or carrier payments exist. The legacy tariff/factory-payment settings are not the new ledger's settlement implementation.
+
+Observation is throttled to approximately one real-world second through existing ticks; price caching currently uses 30 real-world seconds. Large-save performance is unmeasured. Weekly game-clock price/cache updates are a **future idea only**, not implemented or authorized here. Host checks passed; the new Windows DLL build, native ledger reload and actual settlement remain outstanding. Earlier dispatch save/reload and Test12 named saving are not invalidated or required to be repeated. [The cumulative report](../private-logistics-runtime/VEHICLE_PANEL_FUEL_INVESTIGATION.md) retains complete evidence.
+
+## Historical vision — 2026-10-22 (not current behavior or defaults)
+
+**Everything below is preserved as the earlier vision/status snapshot.** Its load-only state-storage rule, v0.17 defaults, manual-target guarantees, tariff proposals, roadmap and open questions must not override the current contract linked above. Statements about physical-fuel billing and producer/carrier settlement describe older goals/legacy paths, not verified new-ledger payments. Do not follow the old staged live-billing settings or restart old investigation/test sequences as current instructions.
+
+### Purpose (historical)
 
 `private_logistics` makes private freight economically meaningful while leaving physical logistics to Workers & Resources. It accounts for private transport based on real game movements, charges the receiving party for freight, pays private producers when their goods enter the modeled market, and prices fuel from physical consumption. Optional target assistance helps private offices find eligible sources/sinks through the native logistics system; it does not perform transfers itself.
 

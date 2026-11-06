@@ -1,0 +1,22 @@
+[PROBE SNAPSHOT] seq=1001 ts=123.4567 thr=00000000CAFEBABE kind=snapshot schema=1 committed=0 load=0 unload=0 complete=1 gap=0 error=0 synth=0
+ day=42 mon=7 yr=2026 tod=0.8333
+ veh=000001F2A3B4C5D6 do=000001F2A3B4C7E8
+ record_type=measurement snapshot_ok=1 fail_reason=""
+ fuel_slot_valid=1 fuel_tons=9.876543
+ mirror_valid=0 mirror_tons=-1.000000
+ cargo_valid=1 cargo_slots=3 cargo_total_tons=4.567890 cargo="fuel=9.876t ore=2.345t goods=1.234t"
+ kind_valid=1 kind=66
+ state_valid=1 state=2
+ mode_valid=1 mode=9
+ home_matches_valid=1 home_matches=1
+[PROBE SNAPSHOT] seq=1002 ts=124.0000 thr=00000000CAFEBABE kind=snapshot schema=1 committed=0 load=0 unload=0 complete=0 gap=0 error=0 synth=0
+ day=42 mon=7 yr=2026 tod=0.8333
+ veh=null do=null
+ record_type=no_match snapshot_ok=0 fail_reason="no_match"
+ fuel_slot_valid=0 fuel_tons=-1.000000
+ mirror_valid=0 mirror_tons=-1.000000
+ cargo_valid=0 cargo_slots=-1 cargo_total_tons=-1.000000 cargo=""
+ kind_valid=0 kind=-1
+ state_valid=0 state=-1
+ mode_valid=0 mode=-1
+ home_matches_valid=0 home_matches=-1

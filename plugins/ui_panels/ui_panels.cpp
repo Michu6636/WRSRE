@@ -528,22 +528,22 @@
 
 // ---------------------------------------------------------------- sites (v1.1.1.9)
 
-#define RVA_DPI          0x992088  // the scale every layout constant is multiplied by
-#define RVA_FONTMGR      0x996FB0  // C3D_FONTMANAGER, by address
-#define RVA_FONT_DEFAULT 0x994200  // the C3D_FONT* shop/residence rows print with
-#define RVA_FONT_ALT_A   0x995220  // checkbox decomp default when font==NULL
-#define RVA_FONT_ALT_B   0x995228  // menucand center-print font
-#define RVA_FONT_SIZE    0x99528C  // menucand PrintCenter sizing constant
-#define RVA_ROW_STEP     0x90A9CC  // 35 - one row, and part of the x indent
-#define RVA_X_INDENT     0x90AB98  // 110
-#define RVA_X_BACK       0x90A8CC  // 15
-#define RVA_CHECK_SIZE   0x90A928  // 20 - checkbox box size (cities LAYOUT_20)
+#define RVA_DPI          (g_tsmAddr.dpi)          // the scale every layout constant is multiplied by
+#define RVA_FONTMGR      (g_tsmAddr.fontmgr)      // C3D_FONTMANAGER, by address
+#define RVA_FONT_DEFAULT (g_tsmAddr.font_default) // the C3D_FONT* shop/residence rows print with
+#define RVA_FONT_ALT_A   (g_tsmAddr.font_alt_a)   // checkbox decomp default when font==NULL
+#define RVA_FONT_ALT_B   (g_tsmAddr.font_alt_b)   // menucand center-print font
+#define RVA_FONT_SIZE    (g_tsmAddr.font_size)    // menucand PrintCenter sizing constant
+#define RVA_ROW_STEP     (g_tsmAddr.row_step)     // 35 - one row, and part of the x indent
+#define RVA_X_INDENT     (g_tsmAddr.x_indent)     // 110
+#define RVA_X_BACK       (g_tsmAddr.x_back)       // 15
+#define RVA_CHECK_SIZE   (g_tsmAddr.check_size)   // 20 - checkbox box size (cities LAYOUT_20)
 
 // v2 native widgets (UI investigation.md section 11, live in cities.cpp).
 // The exe draws, hit-tests AND mutates the value itself; the helper only
 // owns the gating (live, busy), the SEH bracket and the row advance.
-#define RVA_SLIDER       0x2727F0  // 0..100 slider with -/+ buttons
-#define RVA_CHECKBOX     0x3956F0  // labelled checkbox, wide-string caption
+#define RVA_SLIDER       (g_tsmAddr.ui_slider)    // 0..100 slider with -/+ buttons
+#define RVA_CHECKBOX     (g_tsmAddr.ui_checkbox)  // labelled checkbox, wide-string caption
 
 // window fields - docs/17 section 2, re-verified in section 10 for both hooks
 #define W_HIDDEN   0x01   // non-zero while the panel is not drawn
@@ -585,8 +585,8 @@
                             // the whole ESC-close block is skipped every frame
                             // (scratch/do_dispatcher.c:180-185) -> "ESC does
                             // nothing". Prime suspect for the live bug.
-#define RVA_ESC_EDGE 0xA54C91 // byte: ESC press-edge (input decoder param+0x69)
-#define RVA_ESC_DOWN 0xA54B91 // byte: ESC key held    (input decoder param+0x68)
+#define RVA_ESC_EDGE (g_tsmAddr.esc_edge) // byte: ESC press-edge (input decoder param+0x69)
+#define RVA_ESC_DOWN (g_tsmAddr.esc_down) // byte: ESC key held    (input decoder param+0x68)
 
 // game field - the widget currently being edited/dragged, or -1.
 // cities.cpp gates every widget call on this (P_WIDGET_BUSY).
@@ -630,8 +630,8 @@
 // 280 is about eight row pitches: wider than the values column, narrower
 // than any building panel. INI key wide_button_width.
 static float g_wideButtonW = 280.0f;
-#define RVA_TAB_BTN_SIZE 0x90AAB8  // DAT_14090AAB8 = 70 - native button edge
-                                   // (= 2 x LAYOUT_35 row pitches exactly)
+#define RVA_TAB_BTN_SIZE (g_tsmAddr.tab_btn_size) // DAT_14090AAB8 = 70 - native button edge
+                                                  // (= 2 x LAYOUT_35 row pitches exactly)
 
 // v3.9 LABEL COLOUR: opaque black, not white. The tile's chrome is the beige
 // parchment bevel, and white on beige washed the label out in the live tests.
@@ -649,9 +649,9 @@ static float g_wideButtonW = 280.0f;
 //          = W_X + W_OFFX + dpi*35 + (i*70 + 15)*dpi      (lines 58, 559-561)
 // Both are read straight from the window struct at runtime, so the tile docks
 // to the same row the natives draw regardless of header height.
-#define RVA_TAB_LEFT_PAD  0x90A9CC  // DAT_14090A9CC = 35
-#define RVA_TAB_LEFT_BACK 0x90A8CC  // DAT_14090A8CC = 15
-#define RVA_TAB_ROW_DY    0x90AB84  // DAT_14090AB84 = 105 - tab row Y term
+#define RVA_TAB_LEFT_PAD  (g_tsmAddr.row_step)     // DAT_14090A9CC = 35
+#define RVA_TAB_LEFT_BACK (g_tsmAddr.x_back)       // DAT_14090A8CC = 15
+#define RVA_TAB_ROW_DY    (g_tsmAddr.tab_row_dy)   // DAT_14090AB84 = 105 - tab row Y term
 // v4.8: residence icon-row square. The button-draw block at
 // 140762dc6-140762e52 computes dpi*70 for the flag-gated button's rect
 // globals, but the stats row's X advance is the 63-unit pitch, and the
@@ -659,38 +659,38 @@ static float g_wideButtonW = 280.0f;
 // natives "barely" bigger - so 65 (DAT_14090AAA8, the same constant
 // cluster, used by this builder at 140763286) is the minimal exact
 // match. 70 would overshoot to visibly-larger.
-#define RVA_ICON_BTN_SIZE  0x90AAA8  // DAT_14090AAA8 = 65 - icon-row square
+#define RVA_ICON_BTN_SIZE  (g_tsmAddr.icon_btn_size) // DAT_14090AAA8 = 65 - icon-row square
 // Tab slot for the TAX tile. The natives fill slots 0..3 (Family, Warehouse,
 // Exchange, Chart) in this build, so slot 4 sits immediately right of Chart.
 #define WIDGET_BUTTON_TAB 4
 
 // C3D_PANEL2D singleton draw-state globals (the exe's own widgets write
 // these every frame before Draw/DrawFrom9Patch/Collision).
-#define RVA_PANEL2D     0x9BE060  // the C3D_PANEL2D singleton
-#define RVA_P2D_RECT_W  0x9BE2E8  // current-rect width  (float)
-#define RVA_P2D_RECT_H  0x9BE2EC  // current-rect height (float)
-#define RVA_P2D_RECT_X  0x9BE2F0  // current-rect x (float)
-#define RVA_P2D_RECT_Y  0x9BE2F4  // current-rect y (float)
-#define RVA_P2D_ROT     0x9BE2F8  // rotation (float, 0)
-#define RVA_P2D_TINT    0x9BE30C  // 16-byte modulate colour (C3DFOLOR)
-#define RVA_TINT_HOVER  0x90C4C0  // 16-byte hover/active tint source
-#define RVA_TINT_NORMAL 0x90C100  // 16-byte normal tint source
-#define RVA_9P_BORDER   0x90A9A0  // 9-patch border inset, unscaled
-#define RVA_9P_UV_A     0x909D04  // 9-patch float A (labour chrome call)
-#define RVA_9P_UV_B     0x909E78  // 9-patch float B
-#define RVA_UV_FULL     0x909F58  // DAT_140909f58 - UV extent used by Draw calls
-#define RVA_PANEL_STATE 0x9EAD08  // DAT_1409ead08 - texture-set 3rd arg
-#define RVA_INPUT       0xA54B90  // C3D_INPUT singleton (GetMouseSolid)
-#define RVA_CLICK_LATCH 0xA54E91  // byte: click edge, consume by zeroing
-#define RVA_MOUSE_DOWN  0xA54E90  // byte: left button held
+#define RVA_PANEL2D     (g_tsmAddr.panel2d)     // the C3D_PANEL2D singleton
+#define RVA_P2D_RECT_W  (g_tsmAddr.p2d_rect_w)  // current-rect width  (float)
+#define RVA_P2D_RECT_H  (g_tsmAddr.p2d_rect_h)  // current-rect height (float)
+#define RVA_P2D_RECT_X  (g_tsmAddr.p2d_rect_x)  // current-rect x (float)
+#define RVA_P2D_RECT_Y  (g_tsmAddr.p2d_rect_y)  // current-rect y (float)
+#define RVA_P2D_ROT     (g_tsmAddr.p2d_rot)     // rotation (float, 0)
+#define RVA_P2D_TINT    (g_tsmAddr.p2d_tint)    // 16-byte modulate colour (C3DFOLOR)
+#define RVA_TINT_HOVER  (g_tsmAddr.tint_hover)  // 16-byte hover/active tint source
+#define RVA_TINT_NORMAL (g_tsmAddr.tint_normal) // 16-byte normal tint source
+#define RVA_9P_BORDER   (g_tsmAddr.ninep_border)// 9-patch border inset, unscaled
+#define RVA_9P_UV_A     (g_tsmAddr.ninep_uv_a)  // 9-patch float A (labour chrome call)
+#define RVA_9P_UV_B     (g_tsmAddr.ninep_uv_b)  // 9-patch float B
+#define RVA_UV_FULL     (g_tsmAddr.uv_full)     // DAT_140909f58 - UV extent used by Draw calls
+#define RVA_PANEL_STATE (g_tsmAddr.panel_state) // DAT_1409ead08 - texture-set 3rd arg
+#define RVA_INPUT       (g_tsmAddr.input)       // C3D_INPUT singleton (GetMouseSolid)
+#define RVA_CLICK_LATCH (g_tsmAddr.click_latch) // byte: click edge, consume by zeroing
+#define RVA_MOUSE_DOWN  (g_tsmAddr.mouse_down)  // byte: left button held
 #define G_TEX_9PATCH    0xB028    // game -> chrome 9-patch texture object
 #define G_CLIP_CTX      0xADB0    // game -> clip context (FUN_1404461F0)
 #define G_CLIP_ID       0xADA8    // game -> clip id int
 #define G_CLIP_PAD      0xADF0    // game -> clip id pair (native push condition)
 
 // exe-internal helpers the native widgets call themselves.
-#define FN_PLAY_GUI_SOUND 0x3FFAD0  // (game, "gui_click", 1)
-#define FN_CLIP_PUSH      0x4461F0  // (game+0xADB0, x, y, clipId)
+#define FN_PLAY_GUI_SOUND (g_tsmAddr.play_gui_sound) // (game, "gui_click", 1)
+#define FN_CLIP_PUSH      (g_tsmAddr.clip_push)      // (game+0xADB0, x, y, clipId)
 
 // The variadic printer (private_construction v3.3.4 learned the cost of
 // misspelling this: FindIatSlot compares the mangled name exactly).
@@ -879,7 +879,7 @@ static float g_tbX     = 438.0f;  // v6.3: left ~6px per tester (was 445)
 static float g_tbBaseX  = 25.0f;  // v5.9: nudged left (was 33)
 static float g_tbXPitch = 70.0f;  // native construction pitch is 85 - see note
 static float g_tbSlot   = 6.0f;
-static DWORD  g_fontRva = RVA_FONT_DEFAULT;
+static DWORD  g_fontRva = TSM_RVA_DEFAULT_FONT_DEFAULT;
 
 // ---------------------------------------------------------------- hooks
 
@@ -1106,15 +1106,15 @@ static const BYTE kCitizenExpect[] = {
 // edge the builder just set. A call-site shim gets control both before and
 // after the callee returns, so no trampoline and no reordering is needed -
 // the shim simply calls FUN_140741170 by address and then appends.
-#define RVA_DO_BUILDER      0x741170
-#define RVA_WAREHOUSE_BUILDER 0x7FC880  // v6.15: Level 1B kind==3 window builder
-#define RVA_WAREHOUSE_GUARD   0x6EA5E3  // CMP dword ptr [RSI+0x34], 3
-#define RVA_STORAGE_BUILDER 0x4CABD0
-#define RVA_STORAGE_CALLSITE 0x6EA80C
-#define RVA_WINDOW_DISPATCH 0x6E9B80
-#define DISPATCH_SCAN_LEN   0x8000   // 32 KiB - the switch plus its branches
-#define RVA_STORAGE_TD5_BUILDER 0x71D290  // FUN_14071d290: storage td+0x360==5 builder
-#define RVA_STORAGE_TD5_GUARD   0x6EAE07  // CMP dword ptr [RDX+0x360], 5 / ... / CALL 0x71D290
+#define RVA_DO_BUILDER          (g_tsmAddr.panel_do)
+#define RVA_WAREHOUSE_BUILDER   (g_tsmAddr.panel_warehouse)
+#define RVA_WAREHOUSE_GUARD     (g_tsmAddr.warehouse_guard)
+#define RVA_STORAGE_BUILDER     (g_tsmAddr.panel_storage)
+#define RVA_STORAGE_CALLSITE    (g_tsmAddr.storage_callsite)
+#define RVA_WINDOW_DISPATCH     (g_tsmAddr.window_dispatch)
+#define DISPATCH_SCAN_LEN       0x8000   // 32 KiB - the switch plus its branches
+#define RVA_STORAGE_TD5_BUILDER (g_tsmAddr.panel_storage_td5)
+#define RVA_STORAGE_TD5_GUARD   (g_tsmAddr.storage_td5_guard)
 
 static void* s_doCave      = nullptr;
 static DWORD s_doCallAt    = 0;         // RVA of the patched call, 0 = none
@@ -2752,9 +2752,19 @@ static bool InstallWarehouseCallSiteHook(void)
     }
 
     const BYTE* guard = g_exeBase + RVA_WAREHOUSE_GUARD;
-    if (memcmp(guard, kWarehouseExpect, sizeof(kWarehouseExpect)) != 0) {
+    bool guardOk = false;
+    if (!g_tsmAddr.usingIniOverrides) {
+        guardOk = (memcmp(guard, kWarehouseExpect, sizeof(kWarehouseExpect)) == 0);
+    } else {
+        // On a relocated build, JNZ rel8 (byte 5) and CALL rel32 (bytes 13..16)
+        // adjust to branch/callee distance; verify all fixed instruction bytes
+        // here and verify the CALL rel32 target immediately below.
+        guardOk = (memcmp(guard, kWarehouseExpect, 5) == 0 &&
+                   memcmp(guard + 6, kWarehouseExpect + 6, 7) == 0);
+    }
+    if (!guardOk) {
         Logf("ui_panels  warehouse: guard at 0x%06X does not match kWarehouseExpect "
-             "- the dispatcher differs from the 2026-10-23 build, nothing written",
+             "- the dispatcher differs from expected pattern, nothing written",
              RVA_WAREHOUSE_GUARD);
         return false;
     }
@@ -3076,13 +3086,30 @@ static void ReadSettings(void)
 
     H->configString(ini, "ui_panels", "font", v, sizeof(v), "0x994200");
     g_fontRva = (DWORD)strtoul(v, NULL, 0);
-    if (!ReadablePtr(g_exeBase + g_fontRva, sizeof(void*)))
+    if (g_tsmAddr.usingIniOverrides && g_fontRva == TSM_RVA_DEFAULT_FONT_DEFAULT &&
+        RVA_FONT_DEFAULT != 0) {
         g_fontRva = RVA_FONT_DEFAULT;
+    }
+    if (!g_fontRva || !ReadablePtr(g_exeBase + g_fontRva, sizeof(void*)))
+        g_fontRva = RVA_FONT_DEFAULT;
+
+    // Sync hook table RVAs from centralized `g_tsmAddr` (supports `addresses.ini`
+    // relocation overrides and per-hook `0` disable without recompiling).
+    g_hooks[0].rva = g_tsmAddr.panel_shop;
+    g_hooks[1].rva = g_tsmAddr.panel_residence;
+    g_hooks[2].rva = g_tsmAddr.panel_pub;
+    g_hooks[3].rva = g_tsmAddr.panel_factory;
+    g_hooks[4].rva = g_tsmAddr.panel_cityhall;
+    g_hooks[5].rva = g_tsmAddr.panel_citizen;
+    g_hooks[6].rva = g_tsmAddr.panel_do;
+    g_hooks[7].rva = g_tsmAddr.panel_storage;
+    g_hooks[8].rva = g_tsmAddr.panel_warehouse;
+    g_hooks[9].rva = g_tsmAddr.panel_storage_td5;
 
     H->configString(ini, "ui_panels", "enable", v, sizeof(v),
                     "shop,residence,pub,factory,cityhall,citizen,do,storage,warehouse,storage_td5");
     for (int i = 0; i < MAX_HOOKS; i++)
-        g_hooks[i].wanted = ListHas(v, g_hooks[i].name);
+        g_hooks[i].wanted = (g_hooks[i].rva != 0) ? ListHas(v, g_hooks[i].name) : 0;
 
     // v6.1: toolbar-row dock for widgetButtonSmall (construction
     // privatisation tile). Native toolbar geometry from the builder loop
@@ -3181,6 +3208,7 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
 extern "C" __declspec(dllexport) int TsmPluginStart(void)
 {
     if (!g_enabled) return 1;
+    if (!TsmCheckExeBuild(H, "ui_panels")) return 1;
 
     if (void** slot = FindIatSlot(g_exe, DLL_ENGINE, SYM_PRINT_VARIADIC))
         o_Print = (t_PrintVar)*slot;
@@ -3189,19 +3217,19 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
         return 1;
     }
 
-    if (!ReadablePtr(g_exeBase + RVA_ROW_STEP, sizeof(float))) {
+    if (!RVA_ROW_STEP || !ReadablePtr(g_exeBase + RVA_ROW_STEP, sizeof(float))) {
         Logf("ui_panels  the layout constants are not where this build puts "
              "them - inactive");
         return 1;
     }
 
-    // v2 widgets: direct RVA calls (no import slot). cities.cpp runs the
-    // same pair live on v1.1.1.9. Readability-checked so a game update
-    // degrades to "no widgets" rather than a fault.
-    if (ReadablePtr(g_exeBase + RVA_SLIDER, 16))
-        o_Slider = (t_NativeSlider)(g_exeBase + RVA_SLIDER);
-    if (ReadablePtr(g_exeBase + RVA_CHECKBOX, 16))
-        o_Checkbox = (t_NativeCheckbox)(g_exeBase + RVA_CHECKBOX);
+    // v2 widgets: direct RVA calls (no import slot). Verified through
+    // TsmCallableCodePtr so an unverified build or zeroed addresses.ini entry
+    // degrades cleanly to "no widgets" rather than faulting.
+    if (const BYTE* code = TsmCallableCodePtr(H, RVA_SLIDER, "ui_slider"))
+        o_Slider = (t_NativeSlider)code;
+    if (const BYTE* code = TsmCallableCodePtr(H, RVA_CHECKBOX, "ui_checkbox"))
+        o_Checkbox = (t_NativeCheckbox)code;
     if (!o_Slider || !o_Checkbox)
         Logf("ui_panels  WARN  native widgets unreadable - text rows only");
 
@@ -3225,10 +3253,10 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
         o_DrawPlain = (t_DrawPlain)*slot;
     if (void** slot = FindIatSlot(g_exe, DLL_ENGINE, SYM_PRINT_LEFT_NOARG))
         o_PrintNoArg = (t_PrintNoArg)*slot;
-    if (ReadablePtr(g_exeBase + FN_PLAY_GUI_SOUND, 16))
-        o_PlaySound = (t_PlayGuiSound)(g_exeBase + FN_PLAY_GUI_SOUND);
-    if (ReadablePtr(g_exeBase + FN_CLIP_PUSH, 16))
-        o_ClipPush = (t_ClipPush)(g_exeBase + FN_CLIP_PUSH);
+    if (const BYTE* code = TsmCallableCodePtr(H, FN_PLAY_GUI_SOUND, "play_gui_sound"))
+        o_PlaySound = (t_PlayGuiSound)code;
+    if (const BYTE* code = TsmCallableCodePtr(H, FN_CLIP_PUSH, "clip_push"))
+        o_ClipPush = (t_ClipPush)code;
     // v3.2: readiness is the native Draw (or 9-patch fallback) + mouse
     // pair. PrintCenter, sound and clip all have fallback paths (or are
     // cosmetic), so a missing one degrades a feature, not the whole button.

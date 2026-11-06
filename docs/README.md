@@ -1,44 +1,33 @@
-# WRSRE Mod Documentation
+# WRSRE Documentation Index
 
-**Updated:** 2026-10-22  
-**Game target:** Workers & Resources: Soviet Republic, `SOVIET64.exe` v1.1.1.9, PE timestamp `0x6A3EB6AD`; ASLR enabled. Record executable locations as RVAs; the loaded image base is `0x140000000`.
+**Game target:** Workers & Resources: Soviet Republic (`SOVIET64.exe` baseline v1.1.1.9, PE timestamp `0x6A3EB6AD`; ASLR enabled, preferred Ghidra image base `0x140000000`).
 
-This folder consolidates the current design and status for the mod, the private-logistics plugin, and the state-storage source-only task. It also records the latest supplied Ghidra findings and separates static analysis from runtime proof.
+---
 
-## Documents
+## Directory Map
 
-1. [`ghidra-do-storage-findings.md`](ghidra-do-storage-findings.md) — distribution-office TaskEntry/TaskCfg layout, save/load, native add/remove behavior, road/rail/type-5 reachability, count limits, and remaining unknowns.
-2. [`current-task-state-storage.md`](tasks/active/current-task-state-storage.md) — the active opt-in source-only state-storage feature, staged implementation, safety limits, and validation checklist.
-3. [`vision-private-logistics.md`](visions/vision-private-logistics.md) — the purpose, responsibilities, economics, invariants, and roadmap of `private_logistics`.
-4. [`vision-whole-mod.md`](visions/vision-whole-mod.md) — the broader economic model and modular architecture for the WRSRE mod.
+| Path | Contents |
+|---|---|
+| [`WRSRE DESIGN DOC.md`](WRSRE%20DESIGN%20DOC.md) | Master economic architecture, subsystem boundaries & design invariants |
+| [`DEVELOPMENT_README.md`](DEVELOPMENT_README.md) | Developer onboarding, plugin ABI conventions & debugging workflow |
+| [`DLC_UPDATE_PLAYBOOK.md`](DLC_UPDATE_PLAYBOOK.md) | Re-targeting RVAs/offsets after game updates via `tools/scan_exe_update.py` |
+| [`proposal-b2b-wholesale-counterparty-settlement.md`](proposal-b2b-wholesale-counterparty-settlement.md) | Ship 2 B2B vehicle-provenance counterparty settlement specification |
+| [`engine/`](engine/README.md) | Reverse-engineered engine structs, building vectors, local markets & fuel mechanics |
+| [`ghidra-index/`](ghidra-index/README.md) | Function-by-RVA reverse-engineering ledger (`verified` / `partial` / `contested`) |
+| [`ghidra-exports/`](ghidra-exports/README.md) | Cached raw `.c`, `.asm`, and `.txt` Ghidra exports |
+| [`private-logistics-runtime/`](private-logistics-runtime/README.md) | Autonomous DO logistics investigations, runtime evidence & [`packets/`](private-logistics-runtime/packets/README.md) |
+| [`schemas/`](schemas/telemetry_schema.json) | JSON schemas for telemetry & diagnostics |
+| [`tasks/active/`](tasks/README.md) | Active bounded engineering & verification task specs |
+| [`visions/`](visions/README.md) | Long-term design visions (`vision-whole-mod.md`, `vision-private-logistics.md`) |
+| `Archive dont read/` | Historical early-phase notes superseded by current docs |
 
-## Source material consolidated
+---
 
-- `/home/user/uploads/01_WORK_PLAN.md` — prior work plan and phase sequencing.
-- `/home/user/uploads/02_VISION_AND_DESIGN.md` — prior economy design, player constraints, decisions, and open questions.
-- `/home/user/uploads/03_ENGINE_AND_FUEL_FINDINGS.md` — prior static engine findings for transfer hooks, fuel, money, and logs.
-- `/home/user/uploads/README.md` and `/home/user/uploads/WRSRE Codebase.txt` — handover context and the supplied 15-plugin codebase listing.
-- `/home/user/implementation/` — staged candidate source/configuration and prior task notes. These files are not treated as compiled or deployed.
-- Latest Ghidra reports supplied in conversation — summarized in the findings document; this session did not independently run Ghidra.
+## Subsystem Investigations & Plans
 
-## Evidence labels used here
-
-- **Ghidra-confirmed (static):** supported by the supplied decompilation/disassembly reports for the exact executable. This does not, by itself, prove the behavior in a live save.
-- **Staged:** source/configuration exists in `/home/user/implementation`; it has not necessarily been built or deployed to the Windows checkout.
-- **Historical runtime:** backed by an older log/run, but not evidence that the current staged version is working.
-- **Unverified:** requires asset inspection, a build, or an in-game test.
-- **Design decision:** a policy choice for the mod owner, not something Ghidra can settle.
-
-## Source-of-truth and version caution
-
-The documents draw on the supplied codebase snapshot, the staged implementation, historical design documents, and Ghidra reports shared during this conversation. The external Windows project tree has not been confirmed restored or identical to the staged files. Reconcile file hashes/commit and deployed DLL/INI versions before applying any patch.
-
-The latest Ghidra report supersedes earlier contradictory reports where it provides newer evidence. In particular:
-
-- The native DO save path was initially reported as not found; the later report found it and traced TaskEntry/TaskCfg reconstruction during load.
-- Connection type 3 was initially called rail in one report; the later report identifies type 3 as road and type 6 as rail.
-- `FUN_1407496C0` was initially described as a callable writer; the later report establishes it is a per-frame UI handler, not a standalone add API.
-
-## Immediate status
-
-The state-storage feature is staged, not released. `private_logistics.ini` has `auto_targets_dry_run = 1`, so target additions and TaskCfg edits remain blocked. No full Windows build or current-version in-game test has been performed. Keep that distinction visible in any handoff.
+- **Labor & Wages:** [`Labor_and_Salary_Overhaul_Plan.md`](Labor_and_Salary_Overhaul_Plan.md), [`Labor_and_Salary_Overhaul_Specification.md`](Labor_and_Salary_Overhaul_Specification.md), [`Labor_Mobility_Investigation.md`](Labor_Mobility_Investigation.md)
+- **Retail, CPI & Standard of Living:** [`CPI_Survival_Basket_Investigation.md`](CPI_Survival_Basket_Investigation.md), [`Retail_Purchase_Block_Investigation.md`](Retail_Purchase_Block_Investigation.md), [`Citizen_SoL_Investigation.md`](Citizen_SoL_Investigation.md)
+- **Housing & Rent:** [`Rent_Housing_Task1_Investigation.md`](Rent_Housing_Task1_Investigation.md), [`Citizen_Housing_Relocation.md`](Citizen_Housing_Relocation.md)
+- **Logistics, Fuel & Storage:** [`ghidra-do-storage-findings.md`](ghidra-do-storage-findings.md), [`implementation-plan-per-trip-fuel.md`](implementation-plan-per-trip-fuel.md), [`review-per-trip-fuel-plan.md`](review-per-trip-fuel-plan.md), [`ASSOCIATION_REVIEW_COMPLETE.md`](ASSOCIATION_REVIEW_COMPLETE.md), [`FUEL PLAN/`](FUEL%20PLAN/association-investigation/report.md)
+- **Warehouses & UI Panels:** [`UI investigation.md`](UI%20investigation.md), [`analysis-warehouse-checkbox-2026-10-23.md`](analysis-warehouse-checkbox-2026-10-23.md), [`ghidra-findings-warehouse-storage-v6.15.md`](ghidra-findings-warehouse-storage-v6.15.md), [`ghidra-findings-warehouse-builder-2026-10-23.md`](ghidra-findings-warehouse-builder-2026-10-23.md)
+- **Map Expansion:** [`Map_Size_Investigation.md`](Map_Size_Investigation.md), [`Map_Expander_Test.md`](Map_Expander_Test.md)
