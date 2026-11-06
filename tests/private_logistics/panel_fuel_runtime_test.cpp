@@ -53,7 +53,8 @@ static void Logf(const char*,...) __attribute__((format(printf,1,2)));
 static void Logf(const char* format,...) {
     char line[2048];va_list args;va_start(args,format);std::vsnprintf(line,sizeof(line),format,args);va_end(args);logs.emplace_back(line);
 }
-static int g_panelObserverEnabled=1,g_scheduleObserverEnabled=0,g_billing=0,g_persistenceHandle=1;
+static int g_panelObserverEnabled=1,g_scheduleObserverEnabled=0,g_persistenceHandle=1;
+[[maybe_unused]] static int g_billing=0; // fleet uses it; panel observation does not
 static unsigned installed=0,originalCalls=0;
 static void Original(void*,void*) { ++originalCalls; }
 static bool InstallInlineHook(void*,void*,void** trampoline,const BYTE*,std::size_t n,const char*) {

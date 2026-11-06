@@ -80,7 +80,8 @@ class PanelFuelObserverTest(unittest.TestCase):
         self.assertIn('memcmp(g_exeBase + 0x8F3E98', runtime)
         self.assertIn('&g_panelTrampoline, expect, sizeof(expect)', runtime)
         self.assertIn('!g_persistenceHandle', runtime)
-        self.assertIn('if (g_billing ||', runtime)
+        self.assertIn('if (!g_simClock || !g_simClock->registerTick || !g_persistenceHandle)', runtime)
+        self.assertNotIn('if (g_billing || !g_simClock', runtime)
 
     def test_render_path_is_bounded_nonblocking_no_io(self):
         runtime = (PLUGIN / 'panel_fuel_runtime.h').read_text()
@@ -105,8 +106,8 @@ class PanelFuelObserverTest(unittest.TestCase):
     def test_gate_diagnostic_version_and_qualified_address(self):
         runtime = (PLUGIN / 'panel_fuel_runtime.h').read_text()
         cpp = (PLUGIN / 'private_logistics.cpp').read_text()
-        self.assertIn('#define PL_VERSION "0.18.20-b2b-delivery"', cpp)
-        self.assertIn('"0.18.20-b2b-delivery"', runtime)
+        self.assertIn('#define PL_VERSION "0.19.0-simplified-settlement"', cpp)
+        self.assertIn('"0.19.0-simplified-settlement"', runtime)
         self.assertIn('reinterpret_cast<std::uintptr_t>(g_exeBase)', runtime)
         self.assertNotRegex(runtime, r'\b(?:static_cast|reinterpret_cast)<Address>')
         self.assertIn('native_execution=unobserved', runtime)

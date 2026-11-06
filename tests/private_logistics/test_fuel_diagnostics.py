@@ -106,18 +106,19 @@ int main() {
         path.write_text(source)
         self.assertIn('PASS extracted_production_readtank', self.compile_and_run(path))
 
-    def test_tariff_logs_are_model_fragments_not_charged_totals(self):
-        self.assertNotIn('the tariff IS charged', self.cpp)
-        self.assertNotIn('g_tripTariff ? "charged" : "model"', self.cpp)
-        self.assertIn('priced_transfer_fragment(s)', self.cpp)
-        self.assertIn('NOT journeys or payment totals; billing=%d dry_run=%d', self.cpp)
-        self.assertIn('payment_returned=%.2f billing=%d dry_run=%d', self.cpp)
-        self.assertIn('native journey settlement OFF', self.cpp)
+    def test_fragment_tariff_and_its_logs_are_removed(self):
+        for retired in ('priced_transfer_fragment(s)', 'payment_returned=',
+                        'native journey settlement OFF', 'g_tripTariff',
+                        'gTariffMargin', 'gWearLitres'):
+            self.assertNotIn(retired, self.cpp)
+        self.assertIn('observed_assignment_fuel=%.2f', self.cpp)
+        self.assertIn('no wholesale, cargo-value freight, fragment tariff', self.cpp)
 
     def test_no_sampled_burn_calibration_or_tracker_feed(self):
         self.assertNotIn('SET litres_per_trip TO THE MEASURED FIGURE', self.cpp)
-        self.assertNotIn('gLitresPerTrip = before *', self.cpp)
-        self.assertIn('auto-tune NOT applied', self.cpp)
+        self.assertNotIn('gLitresPerTrip', self.cpp)
+        self.assertNotIn('litres_auto', self.cpp)
+        self.assertNotIn('auto-tune', self.cpp)
         self.assertNotIn('private_logistics_journey::Tracker', self.cpp)
         self.assertNotIn('has NO fuel slot', self.cpp)
         read = self.cpp.split('static void ReadTank(int slot, void* v, int closedDay, double* burned, unsigned* refills)', 1)[1].split('static void ScanVehicle', 1)[0]

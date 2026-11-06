@@ -6,7 +6,7 @@
 #include "schedule_observer.h"
 #include "schedule_assignment_ledger.h"
 
-static constexpr char kGateDiagnosticVersion[] = "0.18.20-b2b-delivery";
+static constexpr char kGateDiagnosticVersion[] = "0.19.0-simplified-settlement";
 static bool g_scheduleReady = false;
 static volatile LONG g_scheduleFault = 0;
 static private_logistics_schedule::History g_scheduleHistory; // simulation tick only
@@ -230,8 +230,10 @@ static PanelEndpointPrice DiagnosticFuelPrice()
         offsetof(TsmCurrencyApi,getCurrencySymbol)+sizeof(g_currency->getCurrencySymbol);
     q.currency=TsmCurrencyActive(currencyTail ? g_currency : nullptr); // RUB fallback.
     const float price=g_pricing->getPrice(resource,q.currency);
-    q.reason="invalid_price";if(!std::isfinite(price) || price<=0) return q;
-    q.perTonne=price;q.available=true;q.reason="quoted";
+    const double market=(double)TsmPricingMarketMult(g_pricing,resource);
+    const double quote=(double)price*market;
+    q.reason="invalid_price";if(!std::isfinite(quote) || quote<=0 || quote>1e9) return q;
+    q.perTonne=(float)quote;q.available=true;q.reason="global_market_quote";
     return q;
 }
 static PanelEndpointPrice PanelHypotheticalPrice(const private_logistics_assignment::Event& event,
@@ -517,8 +519,8 @@ static bool ScheduleTargetMatches(void)
 static void PanelObserverStart(void)
 {
     if (!g_panelObserverEnabled) { Logf("[PANEL FUEL] disabled by INI"); return; }
-    if (g_billing || !g_simClock || !g_simClock->registerTick || !g_persistenceHandle) {
-        Logf("[PANEL FUEL] unavailable: requires billing=0, sim_clock tick and registered load signal"); return;
+    if (!g_simClock || !g_simClock->registerTick || !g_persistenceHandle) {
+        Logf("[PANEL FUEL] unavailable: requires sim_clock tick and registered load signal"); return;
     }
     if (!PanelTargetMatches()) { Logf("[PANEL FUEL] target/data fingerprint mismatch; no hook installed"); return; }
     // 20 complete bytes through LEA RBP,[RSP-2EB0]; no RIP-relative operand.

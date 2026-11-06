@@ -9,6 +9,20 @@ ROOT = Path(__file__).resolve().parents[2]
 PLUGIN = ROOT / 'plugins/private_logistics'
 
 class B2bSettlementTest(unittest.TestCase):
+    def test_simplified_settlement_has_no_legacy_payment_paths(self):
+        source = (PLUGIN / 'private_logistics.cpp').read_text()
+        config = (PLUGIN / 'private_logistics.ini').read_text()
+        for retired in ('wholesale_factor', 'freight_share', 'factory_share',
+                        'trip_tariff', 'tariff_margin', 'wear_litres',
+                        'upkeep_per_vehicle_day', 'daily_pay_cap',
+                        'pay_factory', 'pay_carrier'):
+            self.assertNotIn(retired, source)
+            self.assertNotIn(retired, config)
+        for helper in ('FreightFor(', 'TariffFor(', 'static void Pay('):
+            self.assertNotIn(helper, source)
+        self.assertIn('global market quote locked at loading', (PLUGIN / 'b2b_settlement.h').read_text())
+        self.assertIn('sampled positive fuel decrease', source)
+
     def test_production_runtime(self):
         compiler = shutil.which('g++') or shutil.which('clang++')
         if not compiler:

@@ -50,12 +50,47 @@ static void* ReadCosts(const char*,const char*,size_t* n) {
     CHECK(!g_lock.busy);if(failRead || disk.empty()) return nullptr;
     auto* p=std::malloc(disk.size());CHECK(p);std::memcpy(p,disk.data(),disk.size());*n=disk.size();return p;
 }
+#include "b2b_settlement.h"
+#include <unordered_map>
+static int g_dryRun=1,g_allowBuyerOverdraft=1,g_counterpartySettlement=1;
+static double g_buyerOverdraftLimit=5000,g_b2bTripFuelSum=0,g_b2bStateNetSum=0;
+static unsigned g_b2bSettleCount=0,g_skipBuyerInsolvent=0,g_skipTreasury=0;
+static std::unordered_map<uintptr_t,double> capitals;
+static bool TsmIsDecayed(void*) {return false;}
+static bool AutoBuildingKey(void* b,std::uint64_t* key,int*) {
+    if(!b || g_lock.busy) return false;
+    *key=(std::uint64_t)(uintptr_t)b;
+    return true;
+}
+static bool IsPrivate(void* b) {return b!=nullptr;}
+static wrsre::b2b::FundsTransferCallbacks MakeTransferCallbacks(unsigned* insolvent,unsigned* treasury) {
+    wrsre::b2b::FundsTransferCallbacks cb{};
+    cb.isLivePrivate=[](void*,void* b){return b!=nullptr;};
+    cb.getCapital=[](void*,void* b){return capitals[(uintptr_t)b];};
+    cb.modifyCapital=[](void*,void* b,double d,int){capitals[(uintptr_t)b]+=d;};
+    cb.getTreasury=[](void*,int){return 1e12;};
+    cb.moveTreasury=[](void*,double,const char*){};
+    cb.checkSellerKey=[](void*,void* b,std::uint64_t key){return key==(std::uint64_t)(uintptr_t)b;};
+    cb.allowBuyerOverdraft=g_allowBuyerOverdraft!=0;cb.buyerOverdraftLimit=g_buyerOverdraftLimit;cb.minPayment=.01;
+    cb.dryRun=g_dryRun!=0 || g_billing==0;cb.skipBuyerInsolvent=insolvent;cb.skipTreasury=treasury;
+    return cb;
+}
+static void TrackCarrier(void*) {}
+static void NoteCarrierIncome(void*,double) {}
+static void BuildingName(void* b,char* out,size_t n) {
+    if(!b) {std::snprintf(out,n,"-");return;}
+    std::snprintf(out,n,"%s",ObjectName(b));
+}
 #include "dry_assignment_runtime.h"
 static void PrepareDry() {
     g_fleetCostEvent=nullptr;g_fleetCostSample=nullptr;PrepareRuntime();
     InitializeCriticalSection(&g_lock);g_panelEpoch=2;g_fleetStarted=true;
     g_dryBook.count=0;g_dryBook.next=1;g_dryReady=false;g_dryCapacityWarned=false;
     for(auto& t:g_dryTokens) t=DryToken{};
+    for(auto& t:g_assignmentTokens) t=AssignmentToken{};
+    for(auto& r:g_assignmentReceipts) r=AssignmentReceipt{};
+    g_assignmentReceiptHead=0;g_b2bSettleCount=0;g_b2bTripFuelSum=0;g_b2bStateNetSum=0;
+    g_dryRun=1;g_counterpartySettlement=1;capitals.clear();capitals[Ptr(0x20000)]=10000;capitals[Ptr(0x50000)]=0;
     fileState=0;disk.clear();writes=0;failWrite=failRead=failRegister=false;
     identityReads=0;positionX=10;positionZ=20;MakeWorld();
     std::memcpy(g_exeBase+0x80000,"factory_asset",14);enterprises.getBuildingObjectName=ObjectName;
@@ -244,6 +279,49 @@ static void simultaneous_vehicles_keep_independent_frozen_records() {
     Feed(y,empty,.3f,3000);CHECK(Near(g_dryBook.rows[0].amount/200,.2));
     CHECK(Near(g_dryBook.rows[1].amount/200,.3) && g_dryBook.rows[0].id!=g_dryBook.rows[1].id);
 }
+static void assignment_close_charges_original_buyer_once_only_when_complete() {
+    PrepareDry();ReadyQuote();g_billing=1;g_dryRun=0;
+    auto v=Truck();auto empty=Task();empty.count=0;
+    Feed(v,empty,.9f,1000);Feed(v,Task(),.8f,2000);
+    Feed(v,Task(),.6f,3000);
+    const auto closed=v.Observe(empty,Fuel(v.root,.5f),2,4000);FleetEvents(closed);
+    CHECK(std::abs(capitals[Ptr(0x20000)]-9940)<.001);
+    CHECK(std::abs(capitals[Ptr(0x50000)]-60)<.001);
+    CHECK(std::abs(g_b2bTripFuelSum-60)<.001 && g_b2bSettleCount==1);
+    const auto buyer=capitals[Ptr(0x20000)],carrier=capitals[Ptr(0x50000)];
+    FleetEvents(closed); // duplicate event delivery cannot charge twice
+    CHECK(capitals[Ptr(0x20000)]==buyer && capitals[Ptr(0x50000)]==carrier);
+
+    PrepareDry();ReadyQuote();g_billing=1;g_dryRun=0;
+    v=Truck();auto replacement=Task();
+    replacement.rows[0].target=Ptr(0x10001);replacement.rows[1].target=Ptr(0xB0000);
+    capitals[Ptr(0xB0000)]=10000;
+    Feed(v,empty,.9f,1000);Feed(v,Task(),.8f,2000);Feed(v,Task(),.7f,3000);
+    Feed(v,replacement,.6f,4000);Feed(v,empty,.5f,5000);
+    // The replacement is a different task: the original unloader pays its own
+    // 0.2 decrease (40), and the new unloader separately pays the new task's
+    // observed 0.1 decrease (20). Neither pays the other's task.
+    CHECK(std::abs(capitals[Ptr(0x20000)]-9960)<.001);
+    CHECK(std::abs(capitals[Ptr(0xB0000)]-9980)<.001);
+    CHECK(std::abs(capitals[Ptr(0x50000)]-60)<.001);
+
+    PrepareDry();ReadyQuote();g_billing=1;g_dryRun=0;g_counterpartySettlement=0;
+    v=Truck();Feed(v,empty,.9f,1000);Feed(v,Task(),.8f,2000);Feed(v,empty,.7f,3000);
+    CHECK(capitals[Ptr(0x20000)]==10000 && capitals[Ptr(0x50000)]==0);
+
+    PrepareDry();ReadyQuote();g_billing=1;g_dryRun=0;
+    v=Truck();Feed(v,Task(),.8f,1000); // adopted: native start was not observed
+    Feed(v,empty,.6f,2000);
+    CHECK(capitals[Ptr(0x20000)]==10000 && capitals[Ptr(0x50000)]==0);
+    CHECK(g_b2bSettleCount==0);
+
+    PrepareDry();ReadyQuote();g_billing=1;g_dryRun=0;
+    v=Truck();auto ambiguous=Task();ambiguous.count=4;
+    ambiguous.rows[3]={Ptr(0xB0000),true,0,1,1,1};
+    Feed(v,empty,.9f,1000);Feed(v,ambiguous,.8f,2000);Feed(v,empty,.7f,3000);
+    CHECK(capitals[Ptr(0x20000)]==10000 && capitals[Ptr(0x50000)]==0);
+    CHECK(g_b2bSettleCount==0);
+}
 int main() {
     FleetRegressionMain();
 #define RUN(name) name();std::puts("PASS " #name)
@@ -259,6 +337,7 @@ int main() {
     RUN(snapshot_key_is_pointer_independent_and_guarded);
     RUN(persistence_registration_and_capacity_fail_closed);
     RUN(simultaneous_vehicles_keep_independent_frozen_records);
+    RUN(assignment_close_charges_original_buyer_once_only_when_complete);
 #undef RUN
-    std::puts("12 dry-ledger scenarios PASS (production runtime, synthetic memory/services; no Windows/game proof)");
+    std::puts("13 dry-ledger scenarios PASS (production runtime, synthetic memory/services; no Windows/game proof)");
 }
