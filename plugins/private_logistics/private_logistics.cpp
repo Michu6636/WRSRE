@@ -824,7 +824,6 @@ static int DetourTransfer(void* game, void* p2, unsigned mode, void* res,
                 }
             }
         }
-}
     }
 
     return r;
