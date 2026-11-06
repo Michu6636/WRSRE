@@ -83,10 +83,5 @@ using FiscalPolicy = Adapter;
 using FiscalPolicyAdapter = Adapter;
 using FiscalPolicyPage = Adapter;
 
-// C-style registration helper. Heap-allocates an adapter that lives until the
-// process exits; suitable for integration. Returns the shell handle or 0.
-int register_provider(AlmanacShell* shell, const TsmTaxesApi* taxes,
-                      const TsmRepublicBankApi* bank, int currency = 0);
-
 } // namespace fiscal_policy
 } // namespace almanac

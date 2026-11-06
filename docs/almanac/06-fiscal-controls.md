@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This worktree implements the Almanac Fiscal Policy page adapter. It exposes the
+This change implements the Almanac Fiscal Policy page adapter. It exposes the
 existing tax and republic_bank controls through the Almanac shell without
 duplicating economic state or creating parallel setters. City Hall remains
 unchanged as the migration fallback.
@@ -62,8 +62,8 @@ manner:
 - `TsmTaxesHasPolicy` guards the v2 tail.
 - `TsmTaxesHasConfiguredPolicy` guards the v3 tail.
 - `plugins/taxes/taxes.cpp` publishes v1, v2, and v3 views with structSize
-  set to the appropriate prefix. Existing function offsets and behaviour are
-  unchanged.
+  set to the appropriate prefix and reports plugin version 4.6. Existing
+  function offsets and behaviour are unchanged.
 
 ## Bank normalization/readback behaviour
 
@@ -77,7 +77,10 @@ manner:
 ## Provider/userData lifetime
 
 - The adapter registers one provider on `ALMANAC_PAGE_FISCAL_POLICY` and
-  attaches one action callback to that provider.
+  attaches one action callback to that provider. If action registration fails,
+  it rolls back its own provider registration and reports itself unregistered.
+- The callback accepts only the Fiscal Policy page, so stale or misrouted page
+  commands cannot mutate economic state.
 - `Context` is the userData. `alive` is cleared before unregistration.
 - Unregistration calls `almanac_shell_unregister_provider`, preventing later
   actions into destroyed adapter state.
@@ -102,4 +105,4 @@ manner:
   remain deferred.
 - Runtime validation of displayed versus stored values on the live game build
   remains deferred.
-- No Windows DLL build or native game validation was performed in this worktree.
+- No Windows DLL build or native game validation was performed for this change.

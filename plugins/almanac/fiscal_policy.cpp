@@ -153,7 +153,7 @@ int apply_action(Context* ctx, unsigned actionId) {
 }
 
 void action(AlmanacPageId page, unsigned actionId, void* userData) {
-    (void)page;
+    if (page != ALMANAC_PAGE_FISCAL_POLICY) return;
     Context* ctx = static_cast<Context*>(userData);
     if (!ctx || !ctx->alive) return;
     apply_action(ctx, actionId);
@@ -203,7 +203,7 @@ int populate(const AlmanacHostSurface* host, AlmanacPageSnapshot* out, void* use
             int en = 0;
             if (t->isTaxEnabled) en = t->isTaxEnabled(TSM_TAX_VAT);
             if (hasRate) {
-                std::snprintf(buf, sizeof(buf), "%.0f%%", (double)r * 100.0);
+                std::snprintf(buf, sizeof(buf), "%.4g%%", (double)r * 100.0);
                 add_row("VAT rate", buf, 1, 0, 0, 0, -1, "");
             } else {
                 add_row("VAT rate", "unavailable", tAvail ? 1 : 0, 0, 0, 0, -1, "");
@@ -218,7 +218,7 @@ int populate(const AlmanacHostSurface* host, AlmanacPageSnapshot* out, void* use
             int en = 0;
             if (t->isTaxEnabled) en = t->isTaxEnabled(TSM_TAX_PROFIT);
             if (hasRate) {
-                std::snprintf(buf, sizeof(buf), "%.0f%%", (double)r * 100.0);
+                std::snprintf(buf, sizeof(buf), "%.4g%%", (double)r * 100.0);
                 add_row("Profit tax rate", buf, 1, 0, 0, 0, -1, "");
             } else {
                 add_row("Profit tax rate", "unavailable", tAvail ? 1 : 0, 0, 0, 0, -1, "");
@@ -280,7 +280,7 @@ int populate(const AlmanacHostSurface* host, AlmanacPageSnapshot* out, void* use
     if (ctx && ctx->bank) {
         if (bAvail) {
             double r = ctx->bank->getAnnualInterestRate();
-            std::snprintf(buf, sizeof(buf), "%.0f%%", r * 100.0);
+            std::snprintf(buf, sizeof(buf), "%.4g%%", r * 100.0);
             add_row("Bank interest rate", buf, 1, 0, 0, 0, -1, "");
         } else {
             add_row("Bank interest rate", "unavailable", 0, 0, 0, 0, -1, "");
@@ -308,8 +308,13 @@ Adapter::Adapter(AlmanacShell* shell, const TsmTaxesApi* taxes, const TsmRepubli
     if (shell_) {
         handle_ = almanac_shell_register_provider(shell_, ALMANAC_PAGE_FISCAL_POLICY,
                                                   &Adapter::populateThunk, &ctx_);
-        if (handle_ > 0) {
-            almanac_shell_set_provider_action(shell_, handle_, &Adapter::actionThunk);
+        if (handle_ > 0 &&
+            !almanac_shell_set_provider_action(shell_, handle_, &Adapter::actionThunk)) {
+            // Registration is transactional: do not leave an inert interactive
+            // provider installed when its action callback cannot be attached.
+            almanac_shell_unregister_provider(shell_, handle_);
+            handle_ = 0;
+            ctx_.alive = false;
         }
     }
 }
@@ -325,12 +330,6 @@ void Adapter::unregister() {
     }
     handle_ = 0;
     shell_ = nullptr;
-}
-
-int register_provider(AlmanacShell* shell, const TsmTaxesApi* taxes, const TsmRepublicBankApi* bank, int currency) {
-    Adapter* a = new Adapter(shell, taxes, bank, currency);
-    (void)a; // lifetime managed by integration in production
-    return a->handle();
 }
 
 } // namespace fiscal_policy

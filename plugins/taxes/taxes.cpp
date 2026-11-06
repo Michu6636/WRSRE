@@ -1,3 +1,7 @@
+// v4.6 updates (Almanac configured-policy ABI):
+//   - Publish taxes API v3 with append-only configured-rate, slider-step,
+//     property-ceiling, and coherent policy-snapshot accessors. Existing
+//     v1/v2 prefix views and every City Hall provider remain unchanged.
 // v4.5 updates (City Hall shared-row-budget fix):
 //   - Widget mode no longer duplicates the three rate/state text rows and
 //     the Controls help row beneath equivalent widgets. With ui_panels v6's
@@ -676,6 +680,8 @@ static int GetTaxPolicyImpl(TsmTaxPolicy* out)
     LeaveCriticalSection(&g_lock);
     return 1;
 }
+
+// Render-thread snapshot: copied under g_lock, so the widget pass calls
 // the helpers with NO lock held and commits only on change.
 struct TaxSnapshot {
     float rate[3];    // VAT, profit fractions; property flat
@@ -1181,7 +1187,7 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
 {
     TsmBind(host);
     info->name    = "taxes";
-    info->version = "4.5";
+    info->version = "4.6";
 
     g_simClock = (const TsmSimClockApi*)
         H->consume(TSM_SERVICE_SIM_CLOCK, TSM_SIM_CLOCK_VERSION);
@@ -1328,7 +1334,7 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
             Logf("taxes  WARN  persistence refused the handler");
     }
 
-    Logf("taxes  live v4.5 (currency %s, macro readouts %s, CPI %s)",
+    Logf("taxes  live v4.6 (currency %s, macro readouts %s, CPI %s)",
          CurSym(),
          g_macroIndicators ? "on" : "off",
          TsmPricingHasCpi(g_pricing) ? "live (pricing v3)"

@@ -393,6 +393,56 @@ int main() {
         almanac_shell_destroy(sh);
     }
 
+    // action callback rejects commands routed from the wrong page
+    {
+        TsmTaxesApi taxes = make_taxes_api(true);
+        TsmRepublicBankApi bank = make_bank_api();
+        Context ctx{&taxes, &bank, 0, true};
+        g_vatEnabled = 1;
+        action(ALMANAC_PAGE_OVERVIEW, ACTION_VAT_TOGGLE, &ctx);
+        CHECK(g_vatEnabled == 1);
+        action(ALMANAC_PAGE_FISCAL_POLICY, ACTION_VAT_TOGGLE, &ctx);
+        CHECK(g_vatEnabled == 0);
+    }
+
+    // failed action registration rolls back only the new provider
+    {
+        TsmTaxesApi taxes = make_taxes_api(true);
+        TsmRepublicBankApi bank = make_bank_api();
+        AlmanacShell* sh = almanac_shell_create();
+        Adapter first(sh, &taxes, &bank, 0);
+        CHECK(first.registered());
+        CHECK(almanac_shell_provider_count(sh) == 1);
+        Adapter second(sh, &taxes, &bank, 0);
+        CHECK(!second.registered());
+        CHECK(second.handle() == 0);
+        CHECK(almanac_shell_provider_count(sh) == 1);
+        CHECK(almanac_shell_provider_is_registered(sh, first.handle()));
+        first.unregister();
+        second.unregister();
+        CHECK(almanac_shell_provider_count(sh) == 0);
+        almanac_shell_destroy(sh);
+    }
+
+    // fractional configured rates are not rounded away in the snapshot
+    {
+        TsmTaxesApi taxes = make_taxes_api(true);
+        TsmRepublicBankApi bank = make_bank_api();
+        AlmanacShell* sh = almanac_shell_create();
+        g_vatRate = 0.0375f;
+        Adapter adapter(sh, &taxes, &bank, 0);
+        AlmanacHostSurface host = make_host();
+        almanac_shell_navigate(sh, ALMANAC_PAGE_FISCAL_POLICY);
+        almanac_shell_populate(sh, &host);
+        const AlmanacPageSnapshot* snap = almanac_shell_page_snapshot(sh, ALMANAC_PAGE_FISCAL_POLICY);
+        int r = find_row(snap, "VAT rate");
+        CHECK(r >= 0);
+        CHECK(std::strcmp(snap->rows[r].value, "3.75%") == 0);
+        g_vatRate = 0.20f;
+        adapter.unregister();
+        almanac_shell_destroy(sh);
+    }
+
     // bank snapping: set via api normalizes
     {
         g_bankRate = 0.0375; // legacy fraction
