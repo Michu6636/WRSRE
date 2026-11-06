@@ -629,7 +629,53 @@ static int SetTaxEnabledImpl(int taxKind, int enabled)
     return ok;
 }
 
-// Render-thread snapshot: copied under g_lock, so the widget pass calls
+static int GetTaxConfiguredRateImpl(int taxKind, float* outRate)
+{
+    if (!outRate) return 0;
+    EnterCriticalSection(&g_lock);
+    int ok = 0;
+    switch (taxKind) {
+        case TSM_TAX_VAT:      *outRate = g_vatRate;      ok = 1; break;
+        case TSM_TAX_PROFIT:   *outRate = g_profitTaxRate; ok = 1; break;
+        case TSM_TAX_PROPERTY: *outRate = g_propertyTaxFlat; ok = 1; break;
+        default: break;
+    }
+    LeaveCriticalSection(&g_lock);
+    return ok;
+}
+
+static int GetTaxSliderStepPctImpl(void)
+{
+    EnterCriticalSection(&g_lock);
+    int s = g_sliderStepPct;
+    LeaveCriticalSection(&g_lock);
+    return s;
+}
+
+static float GetTaxPropertySliderMaxImpl(void)
+{
+    EnterCriticalSection(&g_lock);
+    float m = g_propertySliderMax;
+    LeaveCriticalSection(&g_lock);
+    return m;
+}
+
+static int GetTaxPolicyImpl(TsmTaxPolicy* out)
+{
+    if (!out) return 0;
+    if (out->structSize < sizeof(TsmTaxPolicy)) return 0;
+    EnterCriticalSection(&g_lock);
+    out->vatEnabled = g_vatEnabled ? 1 : 0;
+    out->profitEnabled = g_profitEnabled ? 1 : 0;
+    out->propertyEnabled = g_propertyEnabled ? 1 : 0;
+    out->vatRate = g_vatRate;
+    out->profitRate = g_profitTaxRate;
+    out->propertyAmount = g_propertyTaxFlat;
+    out->sliderStepPct = g_sliderStepPct;
+    out->propertySliderMax = g_propertySliderMax;
+    LeaveCriticalSection(&g_lock);
+    return 1;
+}
 // the helpers with NO lock held and commits only on change.
 struct TaxSnapshot {
     float rate[3];    // VAT, profit fractions; property flat
@@ -645,6 +691,10 @@ static const TsmTaxesApi kApi = {
     IsTaxEnabledImpl,
     SetTaxRateImpl,
     SetTaxEnabledImpl,
+    GetTaxConfiguredRateImpl,
+    GetTaxSliderStepPctImpl,
+    GetTaxPropertySliderMaxImpl,
+    GetTaxPolicyImpl,
 };
 
 // ---------------------------------------------------------------- settings
@@ -1142,15 +1192,16 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
         return 1;
     }
 
-    // v2 ABI: publish both the v2 iface (full struct) and a v1 view (prefix
-    // only). A consumer built against the old header asks for v1 and reads
-    // exactly the prefix it expects; a v2 consumer asks for v2 and gets the
-    // fiscal-policy tail. Same dual-provide currency (v3/v4), citizen_labor
-    // (v2/v3) and resource_pricing (v1/v2) use.
+    // v3 ABI: publish v1 (prefix through settleNow), v2 (prefix through
+    // setTaxEnabled) and v3 (full struct) views.
     static TsmTaxesApi kApiV1;
+    static TsmTaxesApi kApiV2;
     memcpy(&kApiV1, &kApi, sizeof(kApiV1));
+    memcpy(&kApiV2, &kApi, sizeof(kApiV2));
     kApiV1.structSize = (unsigned)offsetof(TsmTaxesApi, isTaxEnabled);
+    kApiV2.structSize = (unsigned)offsetof(TsmTaxesApi, getTaxConfiguredRate);
     H->provide(TSM_SERVICE_TAXES, TSM_TAXES_VERSION_V1, &kApiV1);
+    H->provide(TSM_SERVICE_TAXES, TSM_TAXES_VERSION_V2, &kApiV2);
     H->provide(TSM_SERVICE_TAXES, TSM_TAXES_VERSION, &kApi);
     return 0;
 }

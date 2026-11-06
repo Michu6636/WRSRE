@@ -57,14 +57,31 @@ extern "C" {
 // struct). This mirrors the currency (v3/v4), citizen_labor (v2/v3) and
 // resource_pricing (v1/v2) dual-provide precedent. build.bat rebuilds every
 // in-tree consumer with this header, so a consumer asking for v2 resolves.
-#define TSM_TAXES_VERSION    2u
+#define TSM_TAXES_VERSION    3u
 #define TSM_TAXES_VERSION_V1 1u
+#define TSM_TAXES_VERSION_V2 2u
 
 // Tax categories addressed by the v2 setters/getters. A future tax on a new
 // base adds a value here, not a new API function.
 #define TSM_TAX_VAT      0
 #define TSM_TAX_PROFIT   1
 #define TSM_TAX_PROPERTY 2
+
+// Snapshot of configured fiscal policy, independent of whether collection is
+// currently suspended. Rates are the configured values (VAT/profit as
+// fractions, property as a flat active-currency amount), not the live
+// collection rates (which report 0 while suspended).
+typedef struct TsmTaxPolicy {
+    unsigned structSize;
+    int   vatEnabled;
+    int   profitEnabled;
+    int   propertyEnabled;
+    float vatRate;
+    float profitRate;
+    float propertyAmount;
+    int   sliderStepPct;
+    float propertySliderMax;
+} TsmTaxPolicy;
 
 typedef struct TsmTaxesApi {
     unsigned structSize;
@@ -134,6 +151,26 @@ typedef struct TsmTaxesApi {
     // an unknown kind.
     int (*setTaxEnabled)(int taxKind, int enabled);
 
+    // --- v3: configured policy snapshot (independent of suspension) ---------
+    //
+    // Read the configured rate/amount for `taxKind` regardless of whether the
+    // tax is currently levied. Returns 1 on success, 0 for an unknown kind or
+    // null output.
+    int (*getTaxConfiguredRate)(int taxKind, float* outRate);
+
+    // Read the configured slider step (percent points) used by the City Hall
+    // widgets. Returns 0 when unavailable.
+    int (*getTaxSliderStepPct)(void);
+
+    // Read the configured property-tax slider ceiling (flat active-currency
+    // units). Returns 0 when unavailable.
+    float (*getTaxPropertySliderMax)(void);
+
+    // Read the full configured policy snapshot into `out`. Returns 1 on
+    // success, 0 for null/undersized output. `out->structSize` must be set by
+    // the caller before the call.
+    int (*getTaxPolicy)(TsmTaxPolicy* out);
+
 } TsmTaxesApi;
 
 // --- v2 consumer guard ------------------------------------------------------
@@ -148,6 +185,16 @@ static inline int TsmTaxesHasPolicy(const TsmTaxesApi* api)
         api->structSize >= offsetof(TsmTaxesApi, setTaxEnabled) +
                               sizeof(api->setTaxEnabled) &&
         api->isTaxEnabled && api->setTaxRate && api->setTaxEnabled;
+}
+
+// v3 tail guard: configured rates and step metadata.
+static inline int TsmTaxesHasConfiguredPolicy(const TsmTaxesApi* api)
+{
+    return TsmTaxesHasPolicy(api) &&
+        api->structSize >= offsetof(TsmTaxesApi, getTaxPolicy) +
+                              sizeof(api->getTaxPolicy) &&
+        api->getTaxConfiguredRate && api->getTaxSliderStepPct &&
+        api->getTaxPropertySliderMax && api->getTaxPolicy;
 }
 
 #ifdef __cplusplus
