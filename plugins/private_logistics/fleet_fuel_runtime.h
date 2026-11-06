@@ -177,7 +177,7 @@ static void FleetTickBody() {
     }
 }
 static void FleetObserverTick(void*,float,float) {
-    if(g_fleetFault || g_billing) return;
+    if(g_fleetFault) return;
     __try {FleetTickBody();}
     __except(EXCEPTION_EXECUTE_HANDLER) {
         g_fleetFault=true;FleetBreakAll();
@@ -186,11 +186,11 @@ static void FleetObserverTick(void*,float,float) {
 }
 static void FleetObserverStart() {
     if(!g_panelObserverEnabled || !g_scheduleObserverEnabled) return; // Existing diagnostic switches only.
-    if(g_billing || !g_simClock || !g_simClock->registerTick || !g_persistenceHandle ||
+    if(!g_simClock || !g_simClock->registerTick || !g_persistenceHandle ||
        !g_enterprise || g_enterprise->structSize<offsetof(TsmEnterpriseBaseApi,getEnterpriseByIndex)+
            sizeof(g_enterprise->getEnterpriseByIndex) || !g_enterprise->getEnterpriseCount ||
        !g_enterprise->getEnterpriseByIndex || !PanelTargetMatches() || !ScheduleTargetMatches()) {
-        Logf("[FLEET FUEL] unavailable: requires billing=0, verified target, tick, load signal and private register");
+        Logf("[FLEET FUEL] unavailable: requires verified target, tick, load signal and private register");
         return;
     }
     if(!g_simClock->registerTick(FleetObserverTick,nullptr)) {

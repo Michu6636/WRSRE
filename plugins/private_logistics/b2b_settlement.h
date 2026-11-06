@@ -41,8 +41,9 @@ enum OriginKind : unsigned char {
 struct PendingLoad {
     std::uintptr_t sourceBld    = 0;
     std::uintptr_t res          = 0;
-    float          tons         = 0.0f; // positive magnitude
-    double         t            = 0.0;
+    float  tons                 = 0.0f; // positive magnitude
+    double t                    = 0.0;
+    double unitPrice            = 0.0; // global market quote locked at loading
     std::uint64_t  sellerKey    = 0;
     bool           active       = false;
     bool           sourceIsPriv = false;
@@ -59,7 +60,8 @@ struct PendingDelivery {
 
 struct VehCargoLot {
     std::uintptr_t res       = 0;
-    float          tons      = 0.0f;
+    float  tons              = 0.0f;
+    double unitPrice         = 0.0; // never repriced during transit
     std::uintptr_t sellerBld = 0;
     std::uint64_t  sellerKey = 0;
     OriginKind     origin    = ORIGIN_UNKNOWN;
@@ -70,12 +72,20 @@ struct VehCargoState {
     VehCargoLot    lots[VEH_CARGO_SLOTS];
 };
 
+struct DeliveryPart {
+    float  tons                  = 0.0f;
+    double unitPrice             = 0.0;
+    OriginKind origin            = ORIGIN_UNKNOWN;
+    std::uintptr_t sellerBld     = 0;
+    std::uint64_t  sellerKey     = 0;
+};
+
 struct MatchedDelivery {
     std::uintptr_t destBld         = 0;
     std::uintptr_t fleetOwner      = 0;
     std::uintptr_t res             = 0;
-    float          tons            = 0.0f;
-    double         t               = 0.0;
+    float  tons                    = 0.0f;
+    double t                       = 0.0;
     std::uintptr_t vehicle         = 0;
     std::uint32_t  vehSlotIdx      = 0;
     std::uintptr_t vehicleHome     = 0;
@@ -83,6 +93,9 @@ struct MatchedDelivery {
     OriginKind     origin          = ORIGIN_UNKNOWN;
     std::uintptr_t sellerBld       = 0;
     std::uint64_t  sellerKey       = 0;
+    double         unitPrice       = 0.0;
+    DeliveryPart   parts[VEH_CARGO_SLOTS]{};
+    unsigned       partCount       = 0;
     bool           deliveryMatched = false;
     bool           cargoFound      = false;
 };
@@ -94,34 +107,24 @@ struct SettlementLeg {
     int         payeeCat      = 0;
     double      amount        = 0.0;
     const char* treasuryLabel = nullptr;
-    bool        isGoods       = false;
-    bool        isFreight     = false;
 };
 
+// Goods only. Observed-assignment fuel uses TransferFunds directly; it is not
+// a delivery-value or freight component and cannot consume buyer credit twice.
 struct SettlementPlan {
     OriginKind     origin              = ORIGIN_UNKNOWN;
     std::uintptr_t sellerBld           = 0;
     std::uint64_t  sellerKey           = 0;
-    std::uintptr_t carrierBld          = 0;
     std::uintptr_t buyerBld            = 0;
     bool           sellerIsPriv        = false;
-    bool           carrierIsPriv       = false;
     bool           buyerIsPriv         = false;
     double         goodsValue          = 0.0;
-    double         freightValue        = 0.0;
     bool           internalGoods       = false;
-    bool           selfHaul            = false;
-    bool           chargeStateCarrier  = true;
-    int            inFlightReloadPolicy = 0;
     bool           allowBuyerOverdraft = false;
     double         buyerOverdraftLimit = 0.0;
-
-    bool          hasGoodsLeg   = false;
-    SettlementLeg goodsLeg;
-    bool          hasFreightLeg = false;
-    SettlementLeg freightLeg;
-
-    double stateDelta = 0.0;
+    bool           hasGoodsLeg         = false;
+    SettlementLeg  goodsLeg;
+    double         stateDelta          = 0.0;
 };
 
 // Pure POD callback table (zero heap allocations, trivially destructible so
@@ -144,10 +147,9 @@ struct FundsTransferCallbacks {
 };
 
 struct TransferExecutionSummary {
-    bool   ok          = true;
-    double goodsPaid   = 0.0;
-    double freightPaid = 0.0;
-    double stateDelta  = 0.0;
+    bool   ok         = true;
+    double goodsPaid  = 0.0;
+    double stateDelta = 0.0;
 };
 
 static inline float TonnageTolerance(float mag) {
@@ -179,12 +181,14 @@ public:
     void recordMode0Load(std::uintptr_t sourceBld, std::uintptr_t res,
                          float absTons, double nowSec,
                          bool sourceIsPriv = false,
-                         std::uint64_t sellerKey = 0) {
+                         std::uint64_t sellerKey = 0,
+                         double unitPrice = 0.0) {
         PendingLoad& e = pendingLoad_[pendingLoadHead_ % PENDING_RING];
         e.sourceBld    = sourceBld;
         e.res          = res;
         e.tons         = (absTons < 0.0f) ? -absTons : absTons;
         e.t            = nowSec;
+        e.unitPrice    = (std::isfinite(unitPrice) && unitPrice >= 0.0) ? unitPrice : 0.0;
         e.sellerKey    = sellerKey;
         e.active       = true;
         e.sourceIsPriv = sourceIsPriv;
@@ -228,9 +232,23 @@ public:
             const std::uint64_t effKey = sellerKey ? sellerKey
                                        : (pl.sellerKey ? pl.sellerKey : pl.sourceBld);
 
+            const OriginKind origin = (isPriv && pl.sourceBld != 0) ? ORIGIN_PRIVATE
+                                    : (pl.sourceBld != 0 ? ORIGIN_STATE : ORIGIN_UNKNOWN);
+            const std::uintptr_t lotSeller = origin == ORIGIN_PRIVATE ? pl.sourceBld : 0;
+            const std::uint64_t lotKey = origin == ORIGIN_PRIVATE ? effKey : 0;
+
+            // Resource alone is not a lot identity. Preserve seller and the
+            // global quote locked at loading, including residual cargo after
+            // task replacement. A full book fails closed instead of overwriting.
             int slot = -1;
             for (std::size_t j = 0; j < VEH_CARGO_SLOTS; ++j) {
-                if (vcs.lots[j].res == res) { slot = static_cast<int>(j); break; }
+                const VehCargoLot& lot = vcs.lots[j];
+                if (lot.res == res && lot.origin == origin &&
+                    lot.sellerBld == lotSeller && lot.sellerKey == lotKey &&
+                    lot.unitPrice == pl.unitPrice) {
+                    slot = static_cast<int>(j);
+                    break;
+                }
             }
             if (slot < 0) {
                 for (std::size_t j = 0; j < VEH_CARGO_SLOTS; ++j) {
@@ -240,27 +258,15 @@ public:
                     }
                 }
             }
-            if (slot < 0) slot = 0;
+            if (slot < 0) return false;
 
             VehCargoLot& lot = vcs.lots[slot];
-            if (lot.res != 0 && lot.res != res) {
-                lot = VehCargoLot{};
-            }
-            lot.res = res;
-            lot.tons += mag;
-            if (isPriv && pl.sourceBld != 0) {
-                lot.origin    = ORIGIN_PRIVATE;
-                lot.sellerBld = pl.sourceBld;
-                lot.sellerKey = effKey;
-            } else if (pl.sourceBld != 0) {
-                lot.origin    = ORIGIN_STATE;
-                lot.sellerBld = 0;
-                lot.sellerKey = 0;
-            } else {
-                lot.origin    = ORIGIN_UNKNOWN;
-                lot.sellerBld = 0;
-                lot.sellerKey = 0;
-            }
+            lot.res       = res;
+            lot.origin    = origin;
+            lot.sellerBld = lotSeller;
+            lot.sellerKey = lotKey;
+            lot.unitPrice = pl.unitPrice;
+            lot.tons     += mag;
             return true;
         }
         return false;
@@ -342,21 +348,21 @@ public:
             vcs.vehPtr = vehicle;
         }
 
-        OriginKind     origin    = ORIGIN_UNKNOWN;
-        std::uintptr_t sellerBld = 0;
-        std::uint64_t  sellerKey = 0;
-        float          remaining = mag;
-        float          popped    = 0.0f;
+        float remaining = mag;
+        float popped    = 0.0f;
 
         for (std::size_t j = 0; j < VEH_CARGO_SLOTS; ++j) {
             VehCargoLot& lot = vcs.lots[j];
             if (lot.res != res || lot.tons <= 0.0f) continue;
-            if (popped <= 0.0f) {
-                origin    = lot.origin;
-                sellerBld = lot.sellerBld;
-                sellerKey = lot.sellerKey;
-            }
             const float take = (lot.tons < remaining) ? lot.tons : remaining;
+            if (take > 0.0f && out->partCount < VEH_CARGO_SLOTS) {
+                DeliveryPart& part = out->parts[out->partCount++];
+                part.tons       = take;
+                part.unitPrice  = lot.unitPrice;
+                part.origin     = lot.origin;
+                part.sellerBld  = lot.sellerBld;
+                part.sellerKey  = lot.sellerKey;
+            }
             lot.tons  -= take;
             remaining -= take;
             popped    += take;
@@ -366,16 +372,21 @@ public:
             if (remaining <= 0.000001f) break;
         }
 
-        const bool cargoFound = (mag > 0.0f) && (popped > 0.0f) && (remaining <= tol);
-        if (!cargoFound) {
-            origin    = ORIGIN_UNKNOWN;
-            sellerBld = 0;
-            sellerKey = 0;
+        const bool cargoFound = (mag > 0.0f) && (popped > 0.0f) &&
+                                (remaining <= tol) && out->partCount > 0;
+        if (cargoFound) {
+            const DeliveryPart& first = out->parts[0];
+            out->origin     = first.origin;
+            out->sellerBld  = first.sellerBld;
+            out->sellerKey  = first.sellerKey;
+            out->unitPrice  = first.unitPrice;
+        } else {
+            out->partCount  = 0; // partial/ambiguous delivery: no financial attribution
+            out->origin     = ORIGIN_UNKNOWN;
+            out->sellerBld  = 0;
+            out->sellerKey  = 0;
+            out->unitPrice  = 0.0;
         }
-
-        out->origin     = origin;
-        out->sellerBld  = sellerBld;
-        out->sellerKey  = sellerKey;
         out->cargoFound = cargoFound;
         return true;
     }
@@ -395,124 +406,40 @@ private:
 inline SettlementPlan planSettlement(
     OriginKind origin,
     std::uintptr_t sellerBld, bool sellerIsPriv, std::uint64_t sellerKey,
-    std::uintptr_t carrierBld, bool carrierIsPriv,
     std::uintptr_t buyerBld, bool buyerIsPriv,
-    double goodsValue, double freightValue,
-    bool allowBuyerOverdraft, double buyerOverdraftLimit,
-    bool chargeStateCarrier, int inFlightReloadPolicy)
+    double goodsValue)
 {
     SettlementPlan plan;
-    plan.origin               = origin;
-    plan.sellerBld            = sellerBld;
-    plan.sellerKey            = sellerKey;
-    plan.carrierBld           = carrierBld;
-    plan.buyerBld             = buyerBld;
-    plan.sellerIsPriv         = sellerIsPriv && (sellerBld != 0);
-    plan.carrierIsPriv        = carrierIsPriv && (carrierBld != 0);
-    plan.buyerIsPriv          = buyerIsPriv && (buyerBld != 0);
-    plan.goodsValue           = (goodsValue > 0.0) ? goodsValue : 0.0;
-    plan.freightValue         = (freightValue > 0.0) ? freightValue : 0.0;
-    plan.allowBuyerOverdraft  = allowBuyerOverdraft;
-    plan.buyerOverdraftLimit  = (buyerOverdraftLimit > 0.0) ? buyerOverdraftLimit : 0.0;
-    plan.chargeStateCarrier   = chargeStateCarrier;
-    plan.inFlightReloadPolicy = inFlightReloadPolicy;
+    plan.origin=origin;plan.sellerBld=sellerBld;plan.sellerKey=sellerKey;
+    plan.buyerBld=buyerBld;
+    plan.sellerIsPriv=sellerIsPriv && sellerBld!=0;
+    plan.buyerIsPriv=buyerIsPriv && buyerBld!=0;
+    plan.goodsValue=std::isfinite(goodsValue) && goodsValue>0.0?goodsValue:0.0;
 
-    // 1. Goods principal leg (Section 3.1: Buyer -> Seller)
-    if (origin == ORIGIN_PRIVATE && plan.sellerIsPriv) {
-        if (plan.buyerIsPriv && sellerBld == buyerBld) {
-            plan.internalGoods = true;
-            plan.hasGoodsLeg   = false;
-        } else if (plan.buyerIsPriv) {
-            plan.hasGoodsLeg            = (plan.goodsValue > 0.0);
-            plan.goodsLeg.payer         = reinterpret_cast<void*>(buyerBld);
-            plan.goodsLeg.payerCat      = CAP_CAT_WHOLESALE;
-            plan.goodsLeg.payee         = reinterpret_cast<void*>(sellerBld);
-            plan.goodsLeg.payeeCat      = CAP_CAT_PRODUCTION;
-            plan.goodsLeg.amount        = plan.goodsValue;
-            plan.goodsLeg.treasuryLabel = nullptr;
-            plan.goodsLeg.isGoods       = true;
-        } else {
-            // Private A -> State Buyer
-            plan.hasGoodsLeg            = (plan.goodsValue > 0.0);
-            plan.goodsLeg.payer         = nullptr;
-            plan.goodsLeg.payerCat      = 0;
-            plan.goodsLeg.payee         = reinterpret_cast<void*>(sellerBld);
-            plan.goodsLeg.payeeCat      = CAP_CAT_PRODUCTION;
-            plan.goodsLeg.amount        = plan.goodsValue;
-            plan.goodsLeg.treasuryLabel = "b2b_state_buy";
-            plan.goodsLeg.isGoods       = true;
+    if(origin==ORIGIN_UNKNOWN) return plan; // fail closed, never guess a seller
+    if(origin==ORIGIN_PRIVATE) {
+        if(!plan.sellerIsPriv) return plan;
+        if(plan.buyerIsPriv && sellerBld==buyerBld) {
+            plan.internalGoods=true;return plan;
         }
-    } else if (origin == ORIGIN_STATE) {
-        if (plan.buyerIsPriv) {
-            // State Seller -> Private Buyer
-            plan.hasGoodsLeg            = (plan.goodsValue > 0.0);
-            plan.goodsLeg.payer         = reinterpret_cast<void*>(buyerBld);
-            plan.goodsLeg.payerCat      = CAP_CAT_WHOLESALE;
-            plan.goodsLeg.payee         = nullptr;
-            plan.goodsLeg.payeeCat      = 0;
-            plan.goodsLeg.amount        = plan.goodsValue;
-            plan.goodsLeg.treasuryLabel = "b2b_state_sell";
-            plan.goodsLeg.isGoods       = true;
-        }
-    } else {
-        // ORIGIN_UNKNOWN (mid-transit reload)
-        if (inFlightReloadPolicy == 1 && plan.buyerIsPriv) {
-            plan.hasGoodsLeg            = (plan.goodsValue > 0.0);
-            plan.goodsLeg.payer         = reinterpret_cast<void*>(buyerBld);
-            plan.goodsLeg.payerCat      = CAP_CAT_WHOLESALE;
-            plan.goodsLeg.payee         = nullptr;
-            plan.goodsLeg.payeeCat      = 0;
-            plan.goodsLeg.amount        = plan.goodsValue;
-            plan.goodsLeg.treasuryLabel = "b2b_legacy_transit";
-            plan.goodsLeg.isGoods       = true;
-        }
+        plan.hasGoodsLeg=plan.goodsValue>0.0;
+        plan.goodsLeg.payer=plan.buyerIsPriv?reinterpret_cast<void*>(buyerBld):nullptr;
+        plan.goodsLeg.payerCat=plan.buyerIsPriv?CAP_CAT_WHOLESALE:0;
+        plan.goodsLeg.payee=reinterpret_cast<void*>(sellerBld);
+        plan.goodsLeg.payeeCat=CAP_CAT_PRODUCTION;
+        plan.goodsLeg.treasuryLabel=plan.buyerIsPriv?nullptr:"b2b_state_buy";
+    } else if(origin==ORIGIN_STATE) {
+        if(!plan.buyerIsPriv) return plan;
+        plan.hasGoodsLeg=plan.goodsValue>0.0;
+        plan.goodsLeg.payer=reinterpret_cast<void*>(buyerBld);
+        plan.goodsLeg.payerCat=CAP_CAT_WHOLESALE;
+        plan.goodsLeg.payee=nullptr;
+        plan.goodsLeg.payeeCat=0;
+        plan.goodsLeg.treasuryLabel="b2b_state_sell";
     }
-
-    // 2. Freight leg (Section 3.2: Buyer -> Carrier)
-    plan.selfHaul = (carrierBld != 0 && carrierBld == buyerBld);
-    if (carrierBld != 0 && !plan.selfHaul && plan.freightValue > 0.0) {
-        if (plan.carrierIsPriv && plan.buyerIsPriv) {
-            plan.hasFreightLeg            = true;
-            plan.freightLeg.payer         = reinterpret_cast<void*>(buyerBld);
-            plan.freightLeg.payerCat      = CAP_CAT_WHOLESALE;
-            plan.freightLeg.payee         = reinterpret_cast<void*>(carrierBld);
-            plan.freightLeg.payeeCat      = CAP_CAT_WHOLESALE;
-            plan.freightLeg.amount        = plan.freightValue;
-            plan.freightLeg.treasuryLabel = nullptr;
-            plan.freightLeg.isFreight     = true;
-        } else if (plan.carrierIsPriv && !plan.buyerIsPriv) {
-            // Private Carrier -> State Buyer
-            plan.hasFreightLeg            = true;
-            plan.freightLeg.payer         = nullptr;
-            plan.freightLeg.payerCat      = 0;
-            plan.freightLeg.payee         = reinterpret_cast<void*>(carrierBld);
-            plan.freightLeg.payeeCat      = CAP_CAT_WHOLESALE;
-            plan.freightLeg.amount        = plan.freightValue;
-            plan.freightLeg.treasuryLabel = "b2b_freight";
-            plan.freightLeg.isFreight     = true;
-        } else if (!plan.carrierIsPriv && plan.buyerIsPriv && chargeStateCarrier) {
-            // State Carrier -> Private Buyer
-            plan.hasFreightLeg            = true;
-            plan.freightLeg.payer         = reinterpret_cast<void*>(buyerBld);
-            plan.freightLeg.payerCat      = CAP_CAT_WHOLESALE;
-            plan.freightLeg.payee         = nullptr;
-            plan.freightLeg.payeeCat      = 0;
-            plan.freightLeg.amount        = plan.freightValue;
-            plan.freightLeg.treasuryLabel = "b2b_state_freight";
-            plan.freightLeg.isFreight     = true;
-        }
-    }
-
-    double stateNet = 0.0;
-    if (plan.hasGoodsLeg) {
-        if (plan.goodsLeg.payer == nullptr) stateNet -= plan.goodsLeg.amount;
-        if (plan.goodsLeg.payee == nullptr) stateNet += plan.goodsLeg.amount;
-    }
-    if (plan.hasFreightLeg) {
-        if (plan.freightLeg.payer == nullptr) stateNet -= plan.freightLeg.amount;
-        if (plan.freightLeg.payee == nullptr) stateNet += plan.freightLeg.amount;
-    }
-    plan.stateDelta = stateNet;
+    plan.goodsLeg.amount=plan.hasGoodsLeg?plan.goodsValue:0.0;
+    if(plan.goodsLeg.payer==nullptr) plan.stateDelta-=plan.goodsLeg.amount;
+    if(plan.goodsLeg.payee==nullptr) plan.stateDelta+=plan.goodsLeg.amount;
     return plan;
 }
 
@@ -589,75 +516,38 @@ inline bool TransferFunds(const FundsTransferCallbacks& cb,
     return true;
 }
 
-// Executes atomic settlement for a delivery plan with Freight-first priority
-// and buyer overdraft floor capping (Section 6.2).
+// Executes the single goods leg with an optional buyer overdraft floor.
 inline TransferExecutionSummary executeAtomicTransfer(const SettlementPlan& plan,
-                                                      const FundsTransferCallbacks& cb)
+                                                      const FundsTransferCallbacks& cb,
+                                                      double dryBuyerAlreadySpent = 0.0)
 {
     TransferExecutionSummary res;
-    void* const buyerPtr = plan.buyerIsPriv ? reinterpret_cast<void*>(plan.buyerBld) : nullptr;
-    double dryBuyerSpent = 0.0;
-
-    auto capBuyerAmount = [&](double want, bool& truncatedOrBlocked) -> double {
-        truncatedOrBlocked = false;
-        if (!buyerPtr || !cb.getCapital) return want;
-        const double have = cb.getCapital(cb.userData, buyerPtr) - (cb.dryRun ? dryBuyerSpent : 0.0);
-        const double avail = plan.allowBuyerOverdraft ? (have + plan.buyerOverdraftLimit) : have;
-        if (avail + 1e-9 >= want) return want;
-        truncatedOrBlocked = true;
-        if (avail >= cb.minPayment) return avail;
-        return 0.0;
-    };
-
-    // 1. Freight Leg FIRST
-    if (plan.hasFreightLeg) {
-        const bool buyerPays = (buyerPtr != nullptr && plan.freightLeg.payer == buyerPtr);
-        bool capped = false;
-        const double amt = buyerPays ? capBuyerAmount(plan.freightLeg.amount, capped)
-                                     : plan.freightLeg.amount;
-        if (capped && cb.skipBuyerInsolvent) (*cb.skipBuyerInsolvent)++;
-
-        if (amt >= cb.minPayment) {
-            if (TransferFunds(cb, plan.freightLeg.payer, plan.freightLeg.payerCat,
-                              plan.freightLeg.payee, plan.freightLeg.payeeCat,
-                              amt, plan.freightLeg.treasuryLabel, 0)) {
-                res.freightPaid = amt;
-                if (cb.dryRun && buyerPays) dryBuyerSpent += amt;
-                if (plan.freightLeg.payer == nullptr) res.stateDelta -= amt;
-                if (plan.freightLeg.payee == nullptr) res.stateDelta += amt;
-            } else {
-                res.ok = false;
-            }
-        } else if (plan.freightLeg.amount >= cb.minPayment) {
-            res.ok = false;
+    if(!plan.hasGoodsLeg) return res;
+    void* const buyer=plan.buyerIsPriv?reinterpret_cast<void*>(plan.buyerBld):nullptr;
+    double amount=plan.goodsLeg.amount;
+    if(buyer && cb.getCapital) {
+        const double have=cb.getCapital(cb.userData,buyer) -
+            (cb.dryRun && dryBuyerAlreadySpent>0.0?dryBuyerAlreadySpent:0.0);
+        const double available=(plan.allowBuyerOverdraft?
+            have+plan.buyerOverdraftLimit:have);
+        if(available+1e-9<amount) {
+            amount=available>=cb.minPayment?available:0.0;
+            if(cb.skipBuyerInsolvent) ++*cb.skipBuyerInsolvent;
         }
     }
-
-    // 2. Goods Principal Leg SECOND (receives remaining credit capacity)
-    if (plan.hasGoodsLeg) {
-        const bool buyerPays = (buyerPtr != nullptr && plan.goodsLeg.payer == buyerPtr);
-        bool capped = false;
-        const double amt = buyerPays ? capBuyerAmount(plan.goodsLeg.amount, capped)
-                                     : plan.goodsLeg.amount;
-        if (capped && cb.skipBuyerInsolvent) (*cb.skipBuyerInsolvent)++;
-
-        const std::uint64_t keyToCheck = (plan.goodsLeg.payee != nullptr) ? plan.sellerKey : 0;
-        if (amt >= cb.minPayment) {
-            if (TransferFunds(cb, plan.goodsLeg.payer, plan.goodsLeg.payerCat,
-                              plan.goodsLeg.payee, plan.goodsLeg.payeeCat,
-                              amt, plan.goodsLeg.treasuryLabel, keyToCheck)) {
-                res.goodsPaid = amt;
-                if (cb.dryRun && buyerPays) dryBuyerSpent += amt;
-                if (plan.goodsLeg.payer == nullptr) res.stateDelta -= amt;
-                if (plan.goodsLeg.payee == nullptr) res.stateDelta += amt;
-            } else {
-                res.ok = false;
-            }
-        } else if (plan.goodsLeg.amount >= cb.minPayment) {
-            res.ok = false;
-        }
+    if(amount<cb.minPayment) {
+        if(plan.goodsLeg.amount>=cb.minPayment) res.ok=false;
+        return res;
     }
-
+    const std::uint64_t key=plan.goodsLeg.payee?plan.sellerKey:0;
+    if(!TransferFunds(cb,plan.goodsLeg.payer,plan.goodsLeg.payerCat,
+                      plan.goodsLeg.payee,plan.goodsLeg.payeeCat,amount,
+                      plan.goodsLeg.treasuryLabel,key)) {
+        res.ok=false;return res;
+    }
+    res.goodsPaid=amount;
+    if(plan.goodsLeg.payer==nullptr) res.stateDelta-=amount;
+    if(plan.goodsLeg.payee==nullptr) res.stateDelta+=amount;
     return res;
 }
 

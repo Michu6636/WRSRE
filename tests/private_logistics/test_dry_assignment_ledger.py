@@ -22,7 +22,7 @@ class DryAssignmentLedgerTest(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             result = subprocess.run([str(exe)], capture_output=True, text=True)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-            self.assertIn('12 dry-ledger scenarios PASS', result.stdout)
+            self.assertIn('13 dry-ledger scenarios PASS', result.stdout)
             self.assertIn('29 fleet scenarios PASS', result.stdout)
 
     def test_no_economic_hooks_or_pointer_wire_format(self):

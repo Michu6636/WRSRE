@@ -152,7 +152,7 @@ static void runtime_load_signal_retires_before_new_reading() {
 static void runtime_guarded_reads_and_billing_gate() {
     PrepareRuntime();throwAtRead=Ptr(0x30000+0x5F0);FleetObserverTick(nullptr,1,1);
     CHECK(!g_fleetVehicles[0].previousValid && !g_fleetFault);
-    PrepareRuntime();g_billing=1;FleetObserverTick(nullptr,1,1);CHECK(!g_fleetVehicles[0].root);
+    PrepareRuntime();g_billing=1;FleetObserverTick(nullptr,1,1);CHECK(g_fleetVehicles[0].root);
     g_billing=0;
 }
 static void runtime_start_uses_existing_tick_and_no_new_hook() {
@@ -167,8 +167,8 @@ static void runtime_start_uses_existing_tick_and_no_new_hook() {
     const auto hooks=installed;tick=nullptr;FleetObserverStart();
     CHECK(tick==FleetObserverTick && installed==hooks);
     CHECK(logs.back().find("started panel_required=0")!=std::string::npos);
-    tick=nullptr;g_billing=1;FleetObserverStart();CHECK(!tick);g_billing=0;
-    enterprises.structSize=0;FleetObserverStart();CHECK(!tick);
+    tick=nullptr;g_billing=1;FleetObserverStart();CHECK(tick==FleetObserverTick);g_billing=0;
+    tick=nullptr;enterprises.structSize=0;FleetObserverStart();CHECK(!tick);
 }
 #include "fleet_approximation_cases.h"
 #ifdef FLEET_RUNTIME_TEST_NO_MAIN

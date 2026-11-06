@@ -2,11 +2,21 @@
 #ifndef PRIVATE_LOGISTICS_DRY_ASSIGNMENT_RUNTIME_H
 #define PRIVATE_LOGISTICS_DRY_ASSIGNMENT_RUNTIME_H
 #include "dry_assignment_codec.h"
+#include "assignment_settlement.h"
 #include <new>
 namespace dry=private_logistics_dry;
 static dry::Book g_dryBook;
 struct DryToken {std::uint64_t epoch=0,id=0;uintptr_t root=0;unsigned row=dry::Limit;};
 static DryToken g_dryTokens[64]; // Ephemeral only. Never encoded or restored.
+
+struct AssignmentToken {
+    std::uint64_t epoch=0,id=0,buyerKey=0,carrierKey=0;
+    uintptr_t root=0,buyer=0,carrier=0;
+};
+static AssignmentToken g_assignmentTokens[64];
+struct AssignmentReceipt { std::uint64_t epoch=0,id=0; uintptr_t root=0; };
+static AssignmentReceipt g_assignmentReceipts[256];
+static unsigned g_assignmentReceiptHead=0;
 static LONG g_dryEpoch=0;
 static bool g_dryReady=false,g_dryCapacityWarned=false;
 static int g_dryPersistenceHandle=0;
@@ -51,7 +61,105 @@ static void DryCostLog(const dry::Record& r) {
          r.target.type,double(r.target.x),double(r.target.z),r.decrease,r.increase,r.pairs,r.flags?1:0,
          r.available?1:0,(r.available && r.target.valid)?1:0,r.amount,r.currency,r.price);
 }
+static bool AssignmentPartyCurrent(uintptr_t building,std::uint64_t expectedKey)
+{
+    if(!building || !expectedKey || TsmIsDecayed((void*)building)) return false;
+    std::uint64_t key=0;int type=0;
+    return AutoBuildingKey((void*)building,&key,&type) && key==expectedKey;
+}
+static int AssignmentTokenIndex(const fleet::a::Candidate& c)
+{
+    for(unsigned i=0;i<64;++i) if(g_assignmentTokens[i].root==c.root &&
+        g_assignmentTokens[i].id==c.id && g_assignmentTokens[i].epoch==c.epoch) return (int)i;
+    return -1;
+}
+static bool AssignmentDuplicate(const fleet::a::Candidate& c)
+{
+    for(const auto& r:g_assignmentReceipts) if(r.root==c.root && r.id==c.id && r.epoch==c.epoch) return true;
+    return false;
+}
+static void AssignmentRemember(const fleet::a::Candidate& c)
+{
+    auto& r=g_assignmentReceipts[g_assignmentReceiptHead++%256];
+    r={c.epoch,c.id,c.root};
+}
+static void AssignmentSettlementEvent(const fleet::a::Event& e,
+                                      const PanelEndpointPrice& quote,bool complete)
+{
+    if(!g_counterpartySettlement) return;
+    const auto& c=e.candidate;
+    const bool opening=e.kind==fleet::a::Kind::Opened || e.kind==fleet::a::Kind::Adopted;
+    if(opening) {
+        std::uint64_t buyerKey=0,carrierKey=0;int type=0;
+        if(c.originalTargetRows==1 && c.originalTarget && c.home &&
+           AutoBuildingKey((void*)c.originalTarget,&buyerKey,&type) &&
+           AutoBuildingKey((void*)c.home,&carrierKey,&type)) {
+            EnterCriticalSection(&g_lock);
+            if(AssignmentTokenIndex(c)<0) for(auto& t:g_assignmentTokens) if(!t.root) {
+                t={c.epoch,c.id,buyerKey,carrierKey,c.root,c.originalTarget,c.home};break;
+            }
+            LeaveCriticalSection(&g_lock);
+        }
+        return;
+    }
+    if(e.kind==fleet::a::Kind::Abandoned) {
+        EnterCriticalSection(&g_lock);
+        const int token=AssignmentTokenIndex(c);if(token>=0) g_assignmentTokens[token]=AssignmentToken{};
+        LeaveCriticalSection(&g_lock);
+        return;
+    }
+    if(e.kind!=fleet::a::Kind::Closed) return;
+
+    auto assessment=private_logistics_assignment_settlement::Assess(e,complete,quote.available,quote.amount);
+    AssignmentToken token{};
+    EnterCriticalSection(&g_lock);
+    const bool duplicate=AssignmentDuplicate(c);
+    const int index=AssignmentTokenIndex(c);
+    if(index>=0) {token=g_assignmentTokens[index];g_assignmentTokens[index]=AssignmentToken{};}
+    LeaveCriticalSection(&g_lock);
+    if(duplicate) return;
+    if(!token.root && assessment.billable) {assessment.billable=false;assessment.reason="identity_missing";}
+    if(assessment.billable && (!AssignmentPartyCurrent(token.buyer,token.buyerKey) ||
+                               !AssignmentPartyCurrent(token.carrier,token.carrierKey))) {
+        assessment.billable=false;assessment.reason="identity_changed_or_demolished";
+    }
+
+    double paid=0.0;
+    const bool dry=g_dryRun!=0 || g_billing==0;
+    if(assessment.billable) {
+        const bool buyerPriv=IsPrivate((void*)token.buyer);
+        const bool carrierPriv=IsPrivate((void*)token.carrier);
+        if(!buyerPriv || !carrierPriv) {
+            assessment.billable=false;assessment.reason="private_parties_required";
+        } else {
+            unsigned insolvent=0,treasurySkip=0;
+            auto cb=MakeTransferCallbacks(&insolvent,&treasurySkip);
+            EnterCriticalSection(&g_lock);AssignmentRemember(c);LeaveCriticalSection(&g_lock);
+            if(wrsre::b2b::TransferFunds(cb,(void*)token.buyer,wrsre::b2b::CAP_CAT_WHOLESALE,
+                                         (void*)token.carrier,wrsre::b2b::CAP_CAT_WHOLESALE,
+                                         quote.amount,"b2b_do_assignment_fuel")) paid=quote.amount;
+            else {assessment.billable=false;assessment.reason="transfer_failed";}
+            EnterCriticalSection(&g_lock);
+            g_skipBuyerInsolvent+=insolvent;g_skipTreasury+=treasurySkip;
+            if(paid>0.0) {++g_b2bSettleCount;g_b2bTripFuelSum+=paid;}
+            LeaveCriticalSection(&g_lock);
+            if(!dry && paid>0.0) {
+                TrackCarrier((void*)token.carrier);NoteCarrierIncome((void*)token.carrier,paid);
+            }
+        }
+    }
+    char buyerName[64],carrierName[64];
+    BuildingName((void*)token.buyer,buyerName,sizeof(buyerName));
+    BuildingName((void*)token.carrier,carrierName,sizeof(carrierName));
+    Logf("[DO TRIP] %s assignment=%llu buyer=\"%s\" carrier=\"%s\" "
+         "fuel_decrease_native=%.9g fuel_price_global_close=%.9g charge=%.9g paid=%.9g "
+         "eligible=%d reason=%s exact_burn=0 price_policy=global_market_at_observed_close",
+         dry?"dry_run":"live",(unsigned long long)c.id,buyerName,carrierName,
+         c.sampledDecrease,(double)quote.perTonne,quote.amount,paid,
+         assessment.billable?1:0,assessment.reason);
+}
 static void DryCostEvent(const fleet::a::Event& e,const PanelEndpointPrice& quote,bool complete) {
+    AssignmentSettlementEvent(e,quote,complete);
     const auto& c=e.candidate;
     const bool opening=e.kind==fleet::a::Kind::Opened || e.kind==fleet::a::Kind::Adopted;
     dry::Identity identity{};
@@ -105,6 +213,9 @@ static void DryCostPersistence(TsmSaveEvent event,const char* dir,void*) {
     EnterCriticalSection(&g_lock);
     g_dryReady=false;g_dryEpoch=epoch;g_dryBook.count=0;g_dryBook.next=1;
     for(auto& t:g_dryTokens) t=DryToken{};
+    for(auto& t:g_assignmentTokens) t=AssignmentToken{};
+    for(auto& r:g_assignmentReceipts) r=AssignmentReceipt{};
+    g_assignmentReceiptHead=0;
     g_dryCapacityWarned=false;
     LeaveCriticalSection(&g_lock);
     const int state=DryFileState(dir,DryCostFile);
@@ -129,7 +240,7 @@ static void DryCostPersistence(TsmSaveEvent event,const char* dir,void*) {
          (ok && current)?1:0,count,interrupted,state==0?1:0,(!ok || !current)?1:0);
 }
 static void DryCostStart() {
-    if(!g_fleetStarted || g_billing || !g_persistence ||
+    if(!g_fleetStarted || !g_persistence ||
        g_persistence->structSize<offsetof(TsmPersistenceApi,readFile)+sizeof(g_persistence->readFile) ||
        !g_persistence->registerHandler || !g_persistence->readFile || !g_persistence->writeAtomic) return;
     EnterCriticalSection(&g_lock);

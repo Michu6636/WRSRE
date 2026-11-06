@@ -124,19 +124,15 @@ int main() {
             MatchedDelivery md{};
             assert(g_testEngine.matchMode1Delivery(500, 12, 3, 77, 12.5f, t0 + 5.03, &md));
 
-            SettlementPlan plan = planSettlement(
-                md.origin,
-                md.sellerBld, true, md.sellerKey,
-                md.carrierBld, true,
-                md.destBld, true,
-                412.50, 38.20,
-                true, 5000.0, true, 0);
+            auto plan = planSettlement(md.origin, md.sellerBld, true, md.sellerKey,
+                                       md.destBld, true, 412.50);
+            plan.allowBuyerOverdraft = true;
+            plan.buyerOverdraftLimit = 5000.0;
             assert(approx(plan.stateDelta, 0.0));
             auto cb = w.makeCallbacks(true, 5000.0);
             TransferExecutionSummary ex = executeAtomicTransfer(plan, cb);
             assert(ex.ok);
             assert(approx(ex.goodsPaid, 412.50));
-            assert(approx(ex.freightPaid, 38.20));
             assert(approx(ex.stateDelta, 0.0));
         }
 
@@ -146,60 +142,36 @@ int main() {
         std::printf("3. closed-loop private conservation (50 trips) OK\n");
     }
 
-    // 4. Intra-company transfer (Seller == Buyer) and Self-haul (Carrier == Buyer) move 0.00
+    // 4. Intra-company goods transfer moves no money.
     {
-        SettlementPlan plan = planSettlement(
-            ORIGIN_PRIVATE,
-            7, true, 0x777ULL,
-            7, true,
-            7, true,
-            250.0, 40.0,
-            false, 0.0, true, 0);
+        SettlementPlan plan = planSettlement(ORIGIN_PRIVATE, 7, true, 0x777ULL,
+                                             7, true, 250.0);
         assert(plan.internalGoods);
-        assert(plan.selfHaul);
         assert(!plan.hasGoodsLeg);
-        assert(!plan.hasFreightLeg);
         assert(approx(plan.stateDelta, 0.0));
-        std::printf("4. intra-company + self-haul zero OK\n");
+        std::printf("4. intra-company goods zero OK\n");
     }
 
-    // 5. Mixed State/Private legs (including State Carrier -> Private Buyer!)
+    // 5. Mixed State/Private goods legs, with no carrier charge.
     {
         MockWorld w;
-        w.live[2] = true; w.cap[2] = 2000.0; w.keys[2] = 0x222ULL;
-        w.live[3] = true; w.cap[3] = 500.0;  w.keys[3] = 0x333ULL;
-        const double openTotal = w.treasury + w.cap[2] + w.cap[3];
+        w.live[2]=true;w.cap[2]=2000.0;w.keys[2]=0x222ULL;
+        const double openTotal=w.treasury+w.cap[2];
 
-        // 5a: State Seller -> State DO (carrier=99, !carrierIsPriv) -> Private Buyer (2)
-        SettlementPlan p1 = planSettlement(
-            ORIGIN_STATE,
-            88, false, 0,
-            99, false,
-            2, true,
-            300.0, 25.0,
-            true, 5000.0, true, 0);
-        assert(p1.hasGoodsLeg && p1.hasFreightLeg);
-        assert(approx(p1.stateDelta, +325.0));
-        auto cb = w.makeCallbacks(true, 5000.0);
-        auto ex1 = executeAtomicTransfer(p1, cb);
-        assert(ex1.ok);
-        assert(approx(w.cap[2], 2000.0 - 325.0));
-        assert(approx(w.treasury + w.cap[2] + w.cap[3], openTotal));
+        auto stateSale=planSettlement(ORIGIN_STATE,88,false,0,2,true,300.0);
+        assert(stateSale.hasGoodsLeg && approx(stateSale.stateDelta,300.0));
+        auto cb=w.makeCallbacks(true,5000.0);
+        auto sold=executeAtomicTransfer(stateSale,cb);
+        assert(sold.ok && approx(sold.goodsPaid,300.0));
+        assert(approx(w.cap[2],1700.0));
+        assert(approx(w.treasury+w.cap[2],openTotal));
 
-        // 5b: Private Seller (2) -> Private DO (3) -> State Warehouse (buyer=55, !buyerIsPriv)
-        SettlementPlan p2 = planSettlement(
-            ORIGIN_PRIVATE,
-            2, true, w.keys[2],
-            3, true,
-            55, false,
-            400.0, 30.0,
-            true, 5000.0, true, 0);
-        assert(p2.hasGoodsLeg && p2.hasFreightLeg);
-        assert(approx(p2.stateDelta, -430.0));
-        auto ex2 = executeAtomicTransfer(p2, cb);
-        assert(ex2.ok);
-        assert(approx(w.treasury + w.cap[2] + w.cap[3], openTotal));
-        std::printf("5. mixed State/Private legs + State carrier OK\n");
+        auto statePurchase=planSettlement(ORIGIN_PRIVATE,2,true,w.keys[2],55,false,400.0);
+        assert(statePurchase.hasGoodsLeg && approx(statePurchase.stateDelta,-400.0));
+        auto bought=executeAtomicTransfer(statePurchase,cb);
+        assert(bought.ok && approx(bought.goodsPaid,400.0));
+        assert(approx(w.treasury+w.cap[2],openTotal));
+        std::printf("5. mixed State/Private goods legs OK\n");
     }
 
     // 6. Demolished seller / sellerKey mismatch / silent payee drop rollback
@@ -232,30 +204,20 @@ int main() {
         std::printf("6. decay + key mismatch + silent-drop rollback OK\n");
     }
 
-    // 7. Buyer overdraft floor (-5000.0) with Freight-first priority + partial principal
+    // 7. Buyer overdraft floor truncates only the goods principal.
     {
         MockWorld w;
-        w.live[1] = true; w.cap[1] = -4850.0; w.keys[1] = 0x1ULL; // 150.0 credit room left!
-        w.live[2] = true; w.cap[2] = 0.0;     w.keys[2] = 0x2ULL; // Seller
-        w.live[3] = true; w.cap[3] = 0.0;     w.keys[3] = 0x3ULL; // Carrier
-
-        SettlementPlan plan = planSettlement(
-            ORIGIN_PRIVATE,
-            2, true, w.keys[2],
-            3, true,
-            1, true,
-            400.0, 60.0, // wants 60 freight + 400 goods = 460, only 150 room
-            true, 5000.0, true, 0);
-        auto cb = w.makeCallbacks(true, 5000.0);
-        TransferExecutionSummary ex = executeAtomicTransfer(plan, cb);
-        assert(approx(ex.freightPaid, 60.0)); // Carrier paid in full FIRST
-        assert(approx(ex.goodsPaid, 90.0));   // Seller gets remaining 90.0 capacity
-        assert(approx(w.cap[1], -5000.0));
-        assert(approx(w.cap[3], 60.0));
-        assert(approx(w.cap[2], 90.0));
-        assert(approx(w.cap[1] + w.cap[2] + w.cap[3], -4850.0)); // exact conservation!
-        assert(w.skipInsolv == 1);
-        std::printf("7. overdraft floor + freight-first partial principal OK\n");
+        w.live[1]=true;w.cap[1]=-4850.0;w.keys[1]=0x1ULL;
+        w.live[2]=true;w.cap[2]=0.0;w.keys[2]=0x2ULL;
+        auto plan=planSettlement(ORIGIN_PRIVATE,2,true,w.keys[2],1,true,400.0);
+        plan.allowBuyerOverdraft=true;plan.buyerOverdraftLimit=5000.0;
+        auto cb=w.makeCallbacks(true,5000.0);
+        auto ex=executeAtomicTransfer(plan,cb);
+        assert(ex.ok && approx(ex.goodsPaid,150.0));
+        assert(approx(w.cap[1],-5000.0) && approx(w.cap[2],150.0));
+        assert(approx(w.cap[1]+w.cap[2],-4850.0));
+        assert(w.skipInsolv==1);
+        std::printf("7. goods-only overdraft floor OK\n");
     }
 
     // 8. resetAll() on save load + ORIGIN_UNKNOWN policy (0=skip vs 1=state)
@@ -272,17 +234,10 @@ int main() {
         assert(!md.cargoFound);
         assert(md.origin == ORIGIN_UNKNOWN);
 
-        SettlementPlan pSkip = planSettlement(
-            md.origin, 0, false, 0, 3, true, 2, true, 200.0, 25.0, true, 5000.0, true, 0);
-        assert(!pSkip.hasGoodsLeg);
-        assert(pSkip.hasFreightLeg); // Freight still settles normally!
-
-        SettlementPlan pState = planSettlement(
-            md.origin, 0, false, 0, 3, true, 2, true, 200.0, 25.0, true, 5000.0, true, 1);
-        assert(pState.hasGoodsLeg);
-        assert(pState.hasFreightLeg);
-        assert(approx(pState.stateDelta, +200.0));
-        std::printf("8. resetAll + ORIGIN_UNKNOWN policy OK\n");
+        auto unknown = planSettlement(md.origin, 0, false, 0, 2, true, 200.0);
+        assert(!unknown.hasGoodsLeg);
+        assert(approx(unknown.stateDelta, 0.0));
+        std::printf("8. resetAll + unknown origin remains unpriced OK\n");
     }
 
     // 9. Runtime delivery-site routing: p9 == vehicleHome must not suppress
@@ -336,6 +291,44 @@ int main() {
         assert(g_testEngine.matchMode1Delivery(10, 9, 3, 5, 6.0f, 3.03, &md));
         assert(md.cargoFound && md.sellerKey == 0xBEEFULL);
         std::printf("9. vehicle-delivery gate + safe partial joins OK\n");
+    }
+
+    // 10. Residual same-resource cargo retains seller and loading quote.
+    {
+        g_testEngine.resetAll();
+        g_testEngine.recordMode0Load(1, 5, 4.0f, 1.0, true, 0xA1ULL, 12.0);
+        assert(g_testEngine.matchMode1Load(10, 9, 5, 4.0f, 1.03));
+        g_testEngine.recordMode0Load(2, 5, 6.0f, 2.0, true, 0xB2ULL, 20.0);
+        assert(g_testEngine.matchMode1Load(10, 9, 5, 6.0f, 2.03));
+        g_testEngine.recordMode0Delivery(3, 4, 5, 10.0f, 4.0);
+        MatchedDelivery md{};
+        assert(g_testEngine.matchMode1Delivery(10, 9, 4, 5, 10.0f, 4.03, &md));
+        assert(md.cargoFound && md.partCount == 2);
+        assert(md.parts[0].sellerBld == 1 && md.parts[0].sellerKey == 0xA1ULL);
+        assert(md.parts[1].sellerBld == 2 && md.parts[1].sellerKey == 0xB2ULL);
+        assert(approx(md.parts[0].tons, 4.0) && approx(md.parts[0].unitPrice, 12.0));
+        assert(approx(md.parts[1].tons, 6.0) && approx(md.parts[1].unitPrice, 20.0));
+        assert(approx(md.parts[0].tons * md.parts[0].unitPrice +
+                      md.parts[1].tons * md.parts[1].unitPrice, 168.0));
+        std::printf("10. residual cargo seller lots + locked global quotes OK\n");
+    }
+
+    // 11. Separate dry-run seller parts share one buyer-credit budget.
+    {
+        MockWorld w;
+        w.live[1]=w.live[2]=w.live[3]=true;
+        w.cap[3]=100.0;w.keys[1]=0xA1ULL;w.keys[2]=0xB2ULL;
+        auto cb=w.makeCallbacks(false,0.0,true);
+        auto first=planSettlement(ORIGIN_PRIVATE,1,true,w.keys[1],3,true,80.0);
+        auto second=planSettlement(ORIGIN_PRIVATE,2,true,w.keys[2],3,true,80.0);
+        auto paidFirst=executeAtomicTransfer(first,cb,0.0);
+        auto paidSecond=executeAtomicTransfer(second,cb,paidFirst.goodsPaid);
+        assert(paidFirst.ok && paidSecond.ok);
+        assert(approx(paidFirst.goodsPaid,80.0));
+        assert(approx(paidSecond.goodsPaid,20.0));
+        assert(approx(w.cap[3],100.0) && approx(w.cap[1],0.0) && approx(w.cap[2],0.0));
+        assert(w.skipInsolv==1);
+        std::printf("11. multi-lot dry-run shared buyer credit OK\n");
     }
 
     std::printf("ALL B2B SCENARIOS PASS\n");
