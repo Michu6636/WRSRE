@@ -65,9 +65,10 @@ the returned aggregates truncated rather than silently presenting a complete tot
 
 ## Integration needs (not implemented here)
 
-- Live currency/state_ledger/tax observers feeding synthetic events.
+- Live currency/state_ledger/tax observers feeding events.
 - Loader registration and native hooks.
-- UI rendering of snapshots.
+- Native-host rendering. Portable snapshot rows are implemented in
+  `07-composition.md`.
 
 ## Synthetic vs runtime
 

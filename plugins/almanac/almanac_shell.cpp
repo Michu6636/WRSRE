@@ -236,12 +236,22 @@ extern "C" int almanac_shell_populate(AlmanacShell* shell, const almanac::Almana
         temp.populated = 1;
         if (pe.populate(host, &temp, pe.userData)) {
             if (temp.coherent && temp.rowCount <= ALMANAC_MAX_ROWS) {
+                // reset_snapshot seeds a default empty state on both snapshots.
+                // A provider-specific state may replace that default; later
+                // providers cannot overwrite the first provider-specific state.
+                if (temp.emptyState[0] != '\0') {
+                    const char* defaultEmpty = almanac_page_default_empty_state(page);
+                    const int destinationIsDefault =
+                        std::strcmp(snap.emptyState, defaultEmpty) == 0;
+                    const int providerIsDefault =
+                        std::strcmp(temp.emptyState, defaultEmpty) == 0;
+                    if (success == 0 || (destinationIsDefault && !providerIsDefault)) {
+                        copy_text(snap.emptyState, ALMANAC_TEXT_LEN, temp.emptyState);
+                    }
+                }
                 ++success;
                 snap.available = snap.available || temp.available;
                 snap.stale = snap.stale || temp.stale;
-                if (snap.emptyState[0] == '\0' && temp.emptyState[0] != '\0') {
-                    copy_text(snap.emptyState, ALMANAC_TEXT_LEN, temp.emptyState);
-                }
                 for (std::size_t r = 0; r < temp.rowCount && snap.rowCount < ALMANAC_MAX_ROWS; ++r) {
                     snap.rows[snap.rowCount++] = temp.rows[r];
                 }

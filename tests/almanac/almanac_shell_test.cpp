@@ -79,6 +79,19 @@ static int populate_cb(const AlmanacHostSurface* host, AlmanacPageSnapshot* out,
     return 1;
 }
 
+static int populate_empty_cb(const AlmanacHostSurface* host, AlmanacPageSnapshot* out,
+                             void* userData) {
+    (void)host;
+    (void)userData;
+    if (!out) return 0;
+    out->populated = 1;
+    out->available = 0;
+    out->coherent = 1;
+    out->rowCount = 0;
+    std::snprintf(out->emptyState, ALMANAC_TEXT_LEN, "Provider-specific empty state");
+    return 1;
+}
+
 static unsigned g_lastActionId = 0u;
 static AlmanacPageId g_lastActionPage = ALMANAC_PAGE_INVALID;
 
@@ -172,6 +185,21 @@ int main() {
         assert(snap->rowCount == 0);
         assert(!snap->available);
         assert(snap->emptyState[0] != '\0');
+        almanac_shell_destroy(sh);
+    }
+
+    // provider-specific empty state survives the shell's default-seeded merge
+    {
+        AlmanacShell* sh = almanac_shell_create();
+        int handle = almanac_shell_register_provider(
+            sh, ALMANAC_PAGE_OVERVIEW, populate_empty_cb, nullptr);
+        assert(handle > 0);
+        AlmanacHostSurface host = make_host();
+        assert(almanac_shell_populate(sh, &host));
+        const AlmanacPageSnapshot* snap =
+            almanac_shell_page_snapshot(sh, ALMANAC_PAGE_OVERVIEW);
+        assert(snap);
+        assert(std::strcmp(snap->emptyState, "Provider-specific empty state") == 0);
         almanac_shell_destroy(sh);
     }
 

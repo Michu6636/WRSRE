@@ -103,10 +103,15 @@ See `MetricId` enum in `statistics_history.h`. Stable string IDs via `metricIdSt
   (no supporting service); integration must add a source to enable them. They are never
   estimated or presented as actual.
 
-## Integration requirements (future)
-- Wire `Sources` to public services: sim_clock, currency, enterprise_base, resource_pricing,
-  flow observers, private_logistics. Supply `PeriodSource` with exact metric
-  periods rather than deriving closed/current periods from a day-of-year.
+## Integration requirements
+
+`07-composition.md` wires the supported public services and page providers.
+Closed-period flow observers, logistics metrics, exact period sources, and
+native callback registration remain integration work.
+
+- Preserve the public-service `Sources` adapters. Supply `PeriodSource` only
+  with exact metric periods rather than deriving closed/current periods from a
+  day-of-year.
 - CPI requires `ClockSource.getDaysPerMonth` and
   `EnterpriseSource.getRentMonthly`; integration must use the same daily-rent
   convention as the existing City Hall CPI calculation.

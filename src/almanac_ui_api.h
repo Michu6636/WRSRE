@@ -1,7 +1,7 @@
 // almanac_ui_api.h - versioned mod-owned Almanac UI shell/provider contract.
 //
-// This header is the contract consumed by Almanac page providers and by the
-// future integrator (worktree 06). It exposes no native tab indices and no
+// This header is the contract consumed by Almanac page providers and the root
+// composition. It exposes no native tab indices and no
 // raw game pointers. All cross-DLL structures are fixed-capacity and
 // append-only: new fields are added at the end of structures and guarded by
 // structSize / capability checks.

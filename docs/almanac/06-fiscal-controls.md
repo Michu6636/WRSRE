@@ -96,8 +96,8 @@ manner:
 
 - Production host enablement, loader registration, and address registration are
   not performed here.
-- Root composition/integration is left to the integrator: construct the adapter
-  with the consumed taxes and republic_bank service pointers.
+- Portable root construction with consumed taxes and republic_bank services is
+  implemented in `07-composition.md`; no production plugin entry point is added.
 
 ## Deferred runtime acceptance
 

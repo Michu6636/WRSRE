@@ -191,7 +191,8 @@ int populate(const AlmanacHostSurface* host, AlmanacPageSnapshot* out, void* use
         row.valueClass = ALMANAC_VALUE_ACTUAL;
     };
 
-    const char* sym = (ctx && ctx->currency == 1) ? "USD" : "RUB";
+    const char* sym = (ctx && ctx->currency == 1) ? "USD"
+                      : (ctx && ctx->currency == 0) ? "RUB" : "";
 
     // Taxes display rows.
     if (ctx && ctx->taxes) {
@@ -251,30 +252,29 @@ int populate(const AlmanacHostSurface* host, AlmanacPageSnapshot* out, void* use
         add_row("Property tax enabled", "unavailable", 0, 0, 0, 0, -1, "");
     }
 
-    // Taxes command rows.
-    if (ctx && ctx->taxes) {
-        const int interact = tAvail ? 1 : 0;
-        const int enabled = tAvail ? 1 : 0;
-        add_row("VAT toggle", "", tAvail ? 1 : 0, interact, enabled, ACTION_VAT_TOGGLE, -1, "");
-        // rate commands only if step available
-        int stepPct = 0;
-        if (tAvail && ctx->taxes->getTaxSliderStepPct) stepPct = ctx->taxes->getTaxSliderStepPct();
-        const int rateInteract = (tAvail && stepPct > 0) ? 1 : 0;
-        add_row("VAT rate increase", "", tAvail ? 1 : 0, rateInteract, rateInteract, ACTION_VAT_RATE_UP, -1, "");
-        add_row("VAT rate decrease", "", tAvail ? 1 : 0, rateInteract, rateInteract, ACTION_VAT_RATE_DOWN, -1, "");
-
-        add_row("Profit tax toggle", "", tAvail ? 1 : 0, interact, enabled, ACTION_PROFIT_TOGGLE, -1, "");
-        add_row("Profit tax rate increase", "", tAvail ? 1 : 0, rateInteract, rateInteract, ACTION_PROFIT_RATE_UP, -1, "");
-        add_row("Profit tax rate decrease", "", tAvail ? 1 : 0, rateInteract, rateInteract, ACTION_PROFIT_RATE_DOWN, -1, "");
-
-        add_row("Property tax toggle", "", tAvail ? 1 : 0, interact, enabled, ACTION_PROPERTY_TOGGLE, -1, "");
-        // property step requires slider max too
-        float maxAmt = 0.0f;
-        if (tAvail && ctx->taxes->getTaxPropertySliderMax) maxAmt = ctx->taxes->getTaxPropertySliderMax();
-        const int propInteract = (tAvail && stepPct > 0 && maxAmt > 0.0f) ? 1 : 0;
-        add_row("Property tax amount increase", "", tAvail ? 1 : 0, propInteract, propInteract, ACTION_PROPERTY_AMOUNT_UP, -1, "");
-        add_row("Property tax amount decrease", "", tAvail ? 1 : 0, propInteract, propInteract, ACTION_PROPERTY_AMOUNT_DOWN, -1, "");
+    // Taxes command rows remain visible but disabled without a service, so a
+    // missing dependency never silently turns into an apparently absent control.
+    const int interact = tAvail ? 1 : 0;
+    int stepPct = 0;
+    if (tAvail && ctx->taxes->getTaxSliderStepPct) {
+        stepPct = ctx->taxes->getTaxSliderStepPct();
     }
+    const int rateInteract = (tAvail && stepPct > 0) ? 1 : 0;
+    add_row("VAT toggle", "", tAvail, interact, interact, ACTION_VAT_TOGGLE, -1, "");
+    add_row("VAT rate increase", "", tAvail, rateInteract, rateInteract, ACTION_VAT_RATE_UP, -1, "");
+    add_row("VAT rate decrease", "", tAvail, rateInteract, rateInteract, ACTION_VAT_RATE_DOWN, -1, "");
+    add_row("Profit tax toggle", "", tAvail, interact, interact, ACTION_PROFIT_TOGGLE, -1, "");
+    add_row("Profit tax rate increase", "", tAvail, rateInteract, rateInteract, ACTION_PROFIT_RATE_UP, -1, "");
+    add_row("Profit tax rate decrease", "", tAvail, rateInteract, rateInteract, ACTION_PROFIT_RATE_DOWN, -1, "");
+    add_row("Property tax toggle", "", tAvail, interact, interact, ACTION_PROPERTY_TOGGLE, -1, "");
+
+    float maxAmt = 0.0f;
+    if (tAvail && ctx->taxes->getTaxPropertySliderMax) {
+        maxAmt = ctx->taxes->getTaxPropertySliderMax();
+    }
+    const int propInteract = (tAvail && stepPct > 0 && maxAmt > 0.0f) ? 1 : 0;
+    add_row("Property tax amount increase", "", tAvail, propInteract, propInteract, ACTION_PROPERTY_AMOUNT_UP, -1, "");
+    add_row("Property tax amount decrease", "", tAvail, propInteract, propInteract, ACTION_PROPERTY_AMOUNT_DOWN, -1, "");
 
     // Bank display row.
     if (ctx && ctx->bank) {
@@ -289,12 +289,10 @@ int populate(const AlmanacHostSurface* host, AlmanacPageSnapshot* out, void* use
         add_row("Bank interest rate", "unavailable", 0, 0, 0, 0, -1, "");
     }
 
-    // Bank command rows.
-    if (ctx && ctx->bank) {
-        const int interact = bAvail ? 1 : 0;
-        add_row("Bank rate increase", "", bAvail ? 1 : 0, interact, interact, ACTION_BANK_RATE_UP, -1, "");
-        add_row("Bank rate decrease", "", bAvail ? 1 : 0, interact, interact, ACTION_BANK_RATE_DOWN, -1, "");
-    }
+    // Bank command rows follow the same unavailable/disabled degradation.
+    const int bankInteract = bAvail ? 1 : 0;
+    add_row("Bank rate increase", "", bAvail, bankInteract, bankInteract, ACTION_BANK_RATE_UP, -1, "");
+    add_row("Bank rate decrease", "", bAvail, bankInteract, bankInteract, ACTION_BANK_RATE_DOWN, -1, "");
 
     return 1;
 }

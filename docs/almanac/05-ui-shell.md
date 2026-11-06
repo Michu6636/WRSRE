@@ -112,7 +112,8 @@ Navigation is internal to the shell. `almanac_shell_navigate` validates the ID;
 ## Deferred / integration still required
 
 - Native hook installation and plugin entry-point registration.
-- Final economic data-provider wiring for each page.
+- Live observer feeds and sources still unavailable after the portable root
+  composition/provider wiring in `07-composition.md`.
 - Production host enablement.
 - Integration, Windows-build, and native-runtime acceptance rows remain
   deferred; mock tests do not mark them passing.

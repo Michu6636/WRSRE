@@ -357,6 +357,11 @@ int main() {
         int r = find_row(snap, "VAT rate");
         CHECK(r >= 0);
         CHECK(snap->rows[r].available == 0);
+        r = find_row(snap, "VAT toggle");
+        CHECK(r >= 0);
+        CHECK(snap->rows[r].available == 0);
+        CHECK(snap->rows[r].interactive == 0);
+        CHECK(snap->rows[r].enabled == 0);
         adapter.unregister();
         almanac_shell_destroy(sh);
     }
@@ -373,6 +378,11 @@ int main() {
         int r = find_row(snap, "Bank interest rate");
         CHECK(r >= 0);
         CHECK(snap->rows[r].available == 0);
+        r = find_row(snap, "Bank rate increase");
+        CHECK(r >= 0);
+        CHECK(snap->rows[r].available == 0);
+        CHECK(snap->rows[r].interactive == 0);
+        CHECK(snap->rows[r].enabled == 0);
         adapter.unregister();
         almanac_shell_destroy(sh);
     }
