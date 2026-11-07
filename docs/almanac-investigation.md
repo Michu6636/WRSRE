@@ -2872,3 +2872,112 @@ The same approach applies: hook at the boundary between the button loop and the 
 - docs/almanac-investigation.md (this section)
 
 No production code, configuration, saves, builds, hooks, or settings were changed.
+## 51. Click-detection correction, hook-point analysis, and state-update assessment
+
+### 51.1 Click-detection correction: -1 transition is unreliable
+
+The proposal in section 50.4 (detect native button clicks by recording game+0x10be8 and checking for a transition to -1) is flawed: if game+0x10be8 was already -1 before the native function ran, a click on an already-selected button would not change it, so no transition would be observed.
+
+Evidence from FUN_140373EA0 button loop (scratch/out/140373ea0_1403829fd_disasm.asm, lines 244-256):
+
+    140374347: CMP dword ptr [RSI + 0xc65c], EBX       ; if (selected != this)
+    14037434d: JZ 0x140374356
+    14037434f: MOV byte ptr [RSI + 0x1039a], 0x0       ; dirty flag (ONLY if selection changed)
+    140374356: MOV dword ptr [RSI + 0xc65c], EBX       ; selected = this
+    14037435c: MOV dword ptr [RSI + 0x10be8], -1       ; counter = -1 (ALWAYS on click)
+
+Side effects on click (latch set):
+- Sound playback (gui_subtab_click) — always.
+- game+0x1039a = 0 — ONLY if selection changed (game+0xC65C != EBX before).
+- game+0xC65C = EBX — always (no-op if already selected).
+- game+0x10be8 = -1 — always.
+
+For the already-selected button case, game+0x1039a is NOT written (stays at its previous value). game+0xC65C is unchanged. game+0x10be8 is set to -1 (but may already be -1). The ONLY unique side effect for the already-selected case is sound playback, which is not observable via state fields.
+
+Therefore, no state-field transition can reliably detect a click on the already-selected button. The mod must use a different signal:
+
+Candidate A — Mouse position recording: record the mouse position before the native function. After the function, check if the position falls within any native button's 64x64 rect (X = 130 + n*64, Y = 15 + game+0xAE50, for n in rendered order). This detects all clicks regardless of selection state. Requires a hook before the function or reading mouse state after.
+
+Candidate B — Hook the latch consumption point: the native code checks `DAT_0x140a54e91 != '\0'` at 0x1403742f2 but does NOT clear it. The latch is cleared elsewhere (input system or master function). The mod could hook the master function's latch-clear site, but that is not identified.
+
+Candidate C — Hook the entire button loop: the mod re-implements the button loop (draw + click detection) and skips the native one. This gives full control but requires replicating all native behavior (sound, state updates, reordering).
+
+Candidate A is the most evidence-backed and least invasive. It is a hypothesis, not a proven approach.
+
+### 51.2 Hook point at 0x1403745B6: byte-level analysis
+
+Verbatim bytes (scratch/out/1403745b0_40_disasm.asm):
+
+    1403745b0: FF 15 AA 82 4F 00        CALL qword ptr [0x14086c860]   ; (6 bytes) C3D_PANEL2D::Draw (end of button loop's last draw)
+    1403745b6: F3 44 0F 10 25 0D 64 59 00  MOVSS XMM12, dword ptr [0x14090a9cc]  ; (9 bytes, RIP-relative)
+    1403745bf: F3 0F 10 0D C1 DA 61 00  MOVSS XMM1, dword ptr [0x140992088]    ; (8 bytes, RIP-relative)
+    1403745c7: F3 41 0F 59 CC           MULSS XMM1, XMM12                                        ; (5 bytes)
+    1403745cc: F3 44 0F 58 D1           ADDSS XMM10, XMM1                                          ; (5 bytes)
+    1403745d1: 0F 28 05 E8 7E 59 00     MOVAPS XMM0, xmmword ptr [0x14090c4c0]                   ; (7 bytes, RIP-relative)
+    1403745d8: F3 44 0F 11 54 24 70     MOVSS dword ptr [RSP + 0x70], XMM10                       ; (7 bytes)
+    1403745df: 0F 11 05 26 9D 64 00     MOVUPS xmmword ptr [0x1409be30c], XMM0                    ; (7 bytes, RIP-relative)
+    1403745e6: F3 44 0F 11 7D B4        MOVSS dword ptr [RBP + -0x4c], XMM15                      ; (6 bytes)
+    1403745ec: C6 44 24 7D 00           MOV byte ptr [RSP + 0x7d], 0x0                            ; (5 bytes)
+
+The hook requires 14 bytes of contiguous whole instructions. Starting at 0x1403745B6:
+- 9 bytes (0x1403745B6-0x1403745BE): MOVSS XMM12, [RIP+0x59640d] (RIP-relative)
+- 8 bytes (0x1403745BF-0x1403745C6): MOVSS XMM1, [RIP+0x61dac1] (RIP-relative)
+Total: 17 bytes. So a 14-byte hook would steal 9 + 5 = 14 bytes, cutting through the second instruction (MULSS at 0x1403745C7). This is NOT a whole-instruction boundary.
+
+To hook at a whole-instruction boundary, the minimum stolen size is 17 bytes (both instructions). This exceeds the 14-byte patch size. The project's InstallInlineHook requires 14 bytes; 17 bytes may not be supported (the expect array and trampoline must account for the extra 3 bytes).
+
+Additionally:
+- The first instruction (0x1403745B6) is RIP-relative (MOVSS with RIP+0x59640d). Relocating it requires adjusting the RIP-relative offset.
+- The second instruction (0x1403745BF) is also RIP-relative (MOVSS with RIP+0x61dac1). Relocating it requires adjusting the RIP-relative offset.
+- The hook would need to preserve XMM12 and XMM1 (and all other registers) since the content block reads them.
+- The hook would need to preserve RSP and RBP (stack frame).
+- Incoming branches: 0x1403745b6 is reached sequentially from 0x1403745b0 (CALL C3D_PANEL2D::Draw). There is no other incoming branch to 0x1403745b6 in the cached disasm (no JMP/CALL to this address). But the function may be called from multiple sites.
+
+Safe exit: the hook must jump back to 0x1403745C7 (after the 17 stolen bytes) or 0x1403745BF (after 9 bytes) if a 9-byte hook is used. But 9 bytes is less than the 14-byte minimum.
+
+Conclusion: 0x1403745B6 is NOT a safe hook point for the project's 14-byte inline patch. The instruction boundaries do not align with 14 bytes. A different hook point or a different hooking mechanism would be needed.
+
+### 51.3 Known and unknown about skipping content state updates
+
+Known (from FUN_140373EA0 disasm):
+- Button loop (before 0x1403745b6) writes: game+0xC65C, game+0x1039a, game+0x10be8.
+- Content block (0x1403745b6 onward) writes: game+0x10F20, game+0x5E8, game+0x5EC, game+0x5E6, game+0x5F0, game+0xADB8, game+0xADC8. These writes are conditional on click (latch set) and involve FUN_14035F3E0 and FUN_140335b10.
+- Content block reads: game+0xC65C, game+0xC7DC, game+0xC7D0, game+0xC7D4, game+0xC7E8, game+0x10F18, game+0x10F1C, game+0x11728, game+0x11730.
+
+Unknown:
+- Whether any non-content function reads game+0x10F20, game+0x5E8, game+0x5EC, game+0x5E6, game+0x5F0, game+0xADB8, or game+0xADC8. If they do, skipping the content block could corrupt state.
+- Whether FUN_14035F3E0's sub-page navigation (FUN_1403613b0) is needed for game state consistency while Almanac is open. If FUN_14035F3E0 is skipped, its side effects (sub-page switch, state toggle) are lost.
+- Whether game+0x10F20, game+0x5E8, etc. are initialized before FUN_140373EA0 runs, or whether they depend on the content block's writes.
+
+### 51.4 Alternate handler (FUN_140361BB0)
+
+FUN_140361BB0 has a more complex content path (12,304 lines of disasm). Its content block begins after 0x14036225d (after the button loop). The button loop ends at 0x140362245 (JL back to loop). The content block at 0x14036225d draws a 35x35 panel and then continues with more content.
+
+The same state-update questions apply. FUN_140361BB0 has additional CMP instructions (game+0xC65C vs 1, 2) suggesting multiple sub-page branches. The content path is less traced.
+
+Whether FUN_140361BB0 needs a different approach (e.g., a different hook point, or no suppression at all) is unknown. Its larger size and more branches make it harder to assess. The same hook-point safety issue likely applies (need 14 bytes of whole instructions).
+
+### 51.5 What the evidence supports and what it does not
+
+Supported:
+- The button row and content block are in the same function with no call boundary between them.
+- The content block starts at 0x1403745b6 (after button loop + click handling).
+- The content block can be identified by its first instruction (MOVSS XMM12, [RIP+0x59640d]).
+- The button loop's state updates (game+0xC65C, game+0x1039a, game+0x10be8) occur before the content block.
+- The content block's state writes (game+0x10F20, game+0x5E8, etc.) occur only on click (latch set).
+
+Not supported:
+- That 0x1403745B6 is a safe hook point (instruction boundaries do not align with 14 bytes).
+- That skipping the content block is safe (state readers not traced).
+- That game+0x10be8 can detect all clicks (already-selected case leaves it unchanged if already -1).
+- That FUN_140361BB0 needs the same treatment (content path less traced).
+
+### 51.6 Genuine evidence blocker
+
+The hook point at 0x1403745B6 is not safe for the project's 14-byte inline patch (9+8 bytes = 17, cutting through a 5-byte instruction). A different hooking mechanism or a different hook point would be needed. The smallest next step is to find a safe hook point (14+ bytes of whole instructions with no RIP-relative operands) in FUN_140373EA0, either before the button loop or between the button loop and the content block.
+
+### 51.7 Files touched
+
+- docs/almanac-investigation.md (this section)
+
+No production code, configuration, saves, builds, hooks, or settings were changed.
