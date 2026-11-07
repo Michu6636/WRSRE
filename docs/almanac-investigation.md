@@ -976,7 +976,62 @@ Expected result:
 
 Do not implement the Almanac yet. The first acceptable release remains a global fiscal page for the existing tax controls, but the Economy & Trade host path is not proven. The smallest useful next step is either a deeper static trace of `FUN_140358A20`'s use of the selected entry and its fields, or a separately approved read-only diagnostic investigation. Passive observation alone cannot resolve the technical blocker.
 
-## 26. Final diagnostic proposal
+## 27. Fallback: new button in the Economy & Trade row
+
+### 27.1 Visual context
+
+No screenshot artifact was found in the workspace or recent picture directories. The following is based on native code and existing UI evidence, not on the screenshot.
+
+### 27.2 What the existing evidence shows
+
+Supported:
+
+- `FUN_140317DB0` (RVA `0x317DB0`) owns the global sidebar and its selected entry.
+- The selected entry name determines which page handler runs.
+- Known selected-entry names include "system", "storage", "infrastructure", "building", "workshopbuildings", "editorbuildings", "const_offi", "veh_replace", "trade", "mtlist", "list", and likely "importexport".
+- "trade" has its own handler, `FUN_140373EA0` (RVA `0x373EA0`).
+- An "importexport" entry is expected to reach `FUN_140358A20` (RVA `0x358A20`).
+- `FUN_14007C400` (RVA `0x07C400`) is a generic sub-tab widget and can write `game+0xC650` in at least one path. Its full role is unresolved.
+
+Unresolved:
+
+- Whether the visible Economy & Trade buttons correspond exactly to selected-entry names.
+- Whether a new button can be added without modifying the native panel vector or tab object.
+- Whether the button row has spare capacity, clipping, or input handling for an additional button.
+- Whether adding a button would require a new selected entry name and corresponding handler.
+- Whether `FUN_140358A20` can host a separate Almanac page without covering vanilla content.
+
+### 27.3 Assessment of the fallback
+
+A new Almanac button alongside the existing Economy & Trade buttons is preferred by the owner if a dedicated top-level section is unsafe. Static evidence does not yet establish that this is safe.
+
+Possible approaches, in increasing risk:
+
+1. Conditional content inside the existing "importexport" page:
+   - Lowest additional UI risk.
+   - Does not add a button or vector entry.
+   - Requires proving the content area and input state.
+2. New button with a new selected-entry name and handler:
+   - Matches the owner's preferred fallback.
+   - Requires a new selected-entry name, handler, and possibly vector or tab-object changes.
+   - Not established as safe.
+3. Dedicated top-level section:
+   - Still preferred if proven safe.
+   - Requires vector ownership and capacity evidence that is not yet available.
+
+### 27.4 What must be verified before this fallback
+
+- Which native structure represents the Economy & Trade button row.
+- How button clicks map to selected-entry names.
+- Whether button capacity is fixed or dynamic.
+- Whether a new button would require a new handler or can reuse `FUN_140358A20`.
+- Whether content clipping and input remain valid with an additional page.
+
+### 27.5 Diagnostic implication
+
+The diagnostic plan should first identify the Economy & Trade button handler and selected-entry mapping. If that cannot be established statically, the live diagnostic should observe which handler runs for each button and whether a new button name can be represented safely.
+
+No implementation, build, hook, or live test is authorized.
 
 ### 26.1 Preserved deciding evidence
 
