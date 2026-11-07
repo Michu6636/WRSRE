@@ -2623,7 +2623,7 @@ The button drawing uses `_DAT_1409be060` (a C3D_PANEL2D global widget) for Colli
 
 No instruction in the cached exports (FUN_140317DB0, FUN_140373EA0, FUN_140361BB0, FUN_1404465A0, FUN_1404460A0, FUN_140445EB0, FUN_1404461F0) sets a width, height, or clip rectangle for the panel or the sidebar window. The panel context dimensions are likely set during object construction (before FUN_140317DB0) or by a function not in the cached exports.
 
-Clipping is performed by C3D_PANEL2D::Draw and C3D_PANEL2D::Collision using the widget's internal dimensions, but those dimensions are not set in the examined functions. The evidence does not show which function sets them.
+Clipping is performed by C3D_PANEL2D::Draw and C3D_PANEL2D::Collision using the widget's internal dimensions, but those dimensions are not set in the examined functions. The evidence does not show which function sets them. Whether clipping actually occurs is unproven — the 64-unit geometry is scale-dependent (DPI = DAT_0x992088, default 1.0 in the binary but may differ at runtime).
 
 ### 47.3 What is static vs runtime
 
@@ -2647,6 +2647,91 @@ Runtime (not statically resolvable):
 The button drawing object (C3D_PANEL2D at 0x1409be060) is distinct from the panel context (game+0xADB0). The container's visible bounds and clip rect are not set in any examined function. The exact missing evidence is the instruction(s) that initialize the panel/sidebar dimensions. Without this, whether a 5th button (X≈386 or 450 depending on handler) is visible cannot be established. No live test was performed.
 
 ### 47.5 Files touched
+
+- docs/almanac-investigation.md (this section)
+
+No production code, configuration, saves, builds, hooks, or settings were changed.
+## 48. Native content path after the button row in FUN_140373EA0
+
+### 48.1 Where native content drawing begins
+
+The button loop ends at 0x1403743e0 (JL back to loop start). Click handling for the selected button follows (0x1403743e6-0x1403745b6). Then at 0x1403745b6, the content block begins:
+
+    1403745b6: MOVSS XMM12, dword ptr [0x14090a9cc]       ; 35.0
+    1403745bf: MOVSS XMM1, dword ptr [0x140992088]          ; DPI
+    1403745c7: MULSS XMM1, XMM12                            ; 35.0 * DPI
+    1403745cc: ADDSS XMM10, XMM1                             ; Y += 35
+    1403745d1: MOVAPS XMM0, xmmword ptr [0x14090c4c0]       ; selected overlay color
+    1403745d8: MOVSS dword ptr [RSP + 0x70], XMM10
+    1403745df: MOVUPS xmmword ptr [0x1409be30c], XMM0
+    1403745e6: MOVSS dword ptr [RBP - 0x4c], XMM15
+    1403745ec: MOV byte ptr [RSP + 0x7d], 0x0
+    1403745f1: CMP dword ptr [RSI + 0xc65c], 0x1             ; if (selected <= 1)
+    1403745f8: JA 0x14037461b
+    1403745fa: LEA R8, [RSP + 0x70]
+    1403745ff: LEA RDX, [RBP - 0x4c]
+    140374603: MOV RCX, RSI                                 ; game
+    140374606: CALL 0x14035f3e0                             ; content helper (FUN_14035F3E0)
+    14037460b: MOVSS XMM10, dword ptr [RSP + 0x70]
+    140374612: TEST AL, AL
+    140374614: MOV byte ptr [RSP + 0x40], 0x0
+    140374619: JNZ 0x140374620
+    14037461b: MOV byte ptr [RSP + 0x40], 0x1
+    140374620: MOV R13D, dword ptr [RSI + 0xc7dc]            ; content count
+    140374627: XOR AL, AL
+    140374629: MOV dword ptr [RBP - 0x54], EAX               ; (0)
+    14037462c: MOVAPS XMM13, XMM8
+    140374630: MOVAPS XMM14, XMM8
+    140374634: MOVSS dword ptr [RBP - 0x40], XMM8
+    14037463a: MOVSS dword ptr [RBP - 0x10], XMM8
+    140374640: MOVSS dword ptr [RBP - 0x38], XMM8
+    140374646: MOVSS dword ptr [RBP - 0x8], XMM8
+    14037464c: XORPS XMM0, XMM0
+    14037464f: MOVDQU xmmword ptr [RBP - 0x70], XMM0
+    140374654: MOV qword ptr [RBP - 0x60], R14               ; R14 = game
+    140374658: XORPS XMM1, XMM1
+    14037465b: MOVDQU xmmword ptr [RBP + 0x78], XMM1
+    140374660: MOV qword ptr [RBP + 0x88], R14
+    140374667: LEA RCX, [RBP - 0x70]
+    14037466b: CALL 0x14004aab0                             ; (init collection)
+    ...
+    140374793: MOV EBX, dword ptr [RSI + 0xc65c]             ; selected sub-tab
+    140374799: MOV dword ptr [RBP + 0x14], EBX
+    14037479c: MOV R8D, dword ptr [RSI + 0x10f18]           ; content index
+    1403747a3: MOV dword ptr [RBP + 0x8], R8D
+    1403747a7: MOVSXD RDX, dword ptr [RSI + 0x10f1c]         ; content count
+    1403747ae: MOV dword ptr [RBP + 0xc], EDX
+    1403747b1: MOV RCX, qword ptr [RSI + 0x11730]           ; content list end
+    1403747b8: SUB RCX, qword ptr [RSI + 0x11728]           ; content list begin
+    1403747bf: SAR RCX, 0xa                                  ; divide by 1024
+    1403747c3: CMP RDX, RCX                                  ; bounds check
+    1403747c6: JC 0x140374878                                ; skip if out of bounds
+    ...
+    1403747de: MOV byte ptr [RSP + 0x7c], 0x1                 ; set "content available" flag
+
+### 48.2 State updates alongside drawing
+
+During the button loop (0x140374144-0x1403743e0), the following state is updated:
+- `game+0xC65C` = selected sub-tab index (line 0x140374356, on click).
+- `game+0x1039a` = 0 (dirty flag, line 0x14037434f, on selection change).
+- `game+0x10be8` = -1 (line 0x14037435c, on click).
+- `game+0xC6B8` = game+0xC6B0 (line 0x140374366? actually in the FUN_140358A20 version; in FUN_140373EA0, game+0xC6B8 is not visibly written in the button loop — it may be set elsewhere).
+
+After the button loop, the content block reads game+0xC65C (line 0x140374793) and game+0xC7DC (line 0x140374620), game+0xC7D0 (line 0x140374769), game+0xC7D4 (line 0x14037477d), game+0xC7E8 (line 0x140374788), game+0x10F18/0x10F1C (lines 0x14037479c-0x1403747ae), game+0x11728/0x11730 (lines 0x1403747b1-0x1403747b8).
+
+### 48.3 Clean separation between row and body?
+
+No. The function is monolithic: the button loop and content block share the same stack frame, the same RSI (game pointer), and multiple state fields. The content block begins at 0x1403745b6 with no function call boundary — it is inline code after the button loop and its click handling. The content block reads game+0xC65C (set by the button loop) and writes game+0x1039a, game+0x10be8, and other fields that the button loop also touches.
+
+A mod that wants to suppress the native content while showing an Almanac page would need to skip or replace the entire block from 0x1403745b6 to the function end (0x140374878 and beyond). This is not a clean separation — there is no early-return point between the row and the body. The body also calls FUN_14035F3E0 (0x140374606) for sub-tabs 0/1, which may have side effects.
+
+Whether suppressing this block would corrupt game state (game+0x12800, game+0x10be8, game+0x1039a) is not established. The block writes these fields; skipping it would leave them at their previous values, which may or may not be consistent.
+
+### 48.4 Conclusion
+
+There is no clean separation between drawing the row and drawing the body in FUN_140373EA0. The content block is tightly coupled to the button loop through shared state and inline code. A mod that wants to show an Almanac page instead of native content would need to suppress or replace the entire post-row block, with unknown effects on game state.
+
+### 48.5 Files touched
 
 - docs/almanac-investigation.md (this section)
 
