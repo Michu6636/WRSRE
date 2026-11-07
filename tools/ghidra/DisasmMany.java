@@ -10,9 +10,10 @@ import java.io.PrintWriter;
 /**
  * DisasmMany - disassemble (instruction-by-instruction) a byte range.
  *
- * Usage:  DisasmMany.java <out_file.asm> <0x140start:0x140end>
- * Addresses are FILE-BASED (project base 0x140000000), so pass 0x140 + RVA.
- * The range may be given as start:end (colon-separated) or start end.
+ * Usage:  DisasmMany.java <out_file.asm> <start_VA:end_VA>
+ * Addresses are preferred-image virtual addresses, not file offsets or RVAs.
+ * Numerically add the RVA to the actual project image base. The range is
+ * inclusive and may be given as start:end (colon-separated) or start end.
  *
  * Writes: one line per instruction: address + raw bytes + mnemonic.
  */
@@ -21,7 +22,7 @@ public class DisasmMany extends GhidraScript {
     public void run() throws Exception {
         String[] a = getScriptArgs();
         if (a.length < 2) {
-            println("Usage: DisasmMany.java <out_file.asm> <0x140start:0x140end>");
+            println("Usage: DisasmMany.java <out_file.asm> <start_VA:end_VA>");
             return;
         }
         String outFile = a[0];

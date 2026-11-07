@@ -46,7 +46,7 @@ WRSRE/
 | `private_logistics` | Autonomous private DO target management, fuel/schedule observers & Ship 2 B2B counterparty settlement |
 | `private_logistics_probe` | Read-only vehicle fuel/snapshot diagnostic telemetry |
 | `private_construction` | Private construction financing, site progress & turnkey ownership transfer |
-| `taxes` | VAT, corporate profit tax, personal income tax & City Hall fiscal policy sliders |
+| `taxes` | VAT, corporate profit tax, property tax & City Hall fiscal policy sliders |
 | `state_ledger` | Monthly Treasury & full Republic money-supply reconciliation (`tesmio_ledger.csv`) |
 | `map_expander` | Map boundary expansion utilities |
 | `ui_overlay` | Top-level HUD economy & enterprise cards |
@@ -76,6 +76,24 @@ python3 tools/scan_exe_update.py path/to/SOVIET64.exe
 ```
 
 ---
+
+## Agent and reverse-engineering workflow
+
+Start with [`AGENTS.md`](AGENTS.md), then the project rules in
+[`INSTRUCTIONS.md`](INSTRUCTIONS.md) and the relevant sections of
+[`KILO_AGENT_WORKFLOW.md`](KILO_AGENT_WORKFLOW.md). Check the actual host,
+branch, tools and task authorization; Windows game and Ghidra files may not be
+present in a remote checkout. Use the function index and accessible raw exports
+before requesting another query. Verify consequential claims against the actual
+instructions or code, not a second summary, and stop repeated report-only
+passes when no new evidence is being produced.
+
+The existing [`tools/ghidra/`](tools/ghidra/README.md) scripts use Ghidra
+headlessly; a GUI window or MCP server is not required for that workflow. MCP is
+optional. For bethington GhidraMCP v7, the bridge does not load a project by
+itself: it connects to a separate GUI plugin or headless backend. Other MCP
+implementations can differ. Use one designated operator, protect the original
+project and keep runtime tests and implementation within the user's authorization.
 
 ## Key Documentation Entry Points
 
