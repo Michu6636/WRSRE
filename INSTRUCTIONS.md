@@ -30,19 +30,25 @@ operation. Follow the detailed checkpoints in KILO_AGENT_WORKFLOW.md.
 
 ## Project Overview
 
-You are developing plugins and mods in this workspace (C:\Users\EricM\Downloads\WRSRE).
+This repository contains plugins and mods for Workers & Resources: Soviet Republic.
+Check the actual checkout, branch, host, shell and available files; historical
+Windows paths are examples, not proof of local access. Preserve existing work.
 
-- Target Binary: SOVIET64.exe (v1.1.1.9, PE timestamp 0x6A3EB6AD).
-- Base Address: Dynamic (ASLR is ON). Work strictly with RVAs. Never hardcode absolute pointers.
+- Historical target: SOVIET64.exe v1.1.1.9, PE timestamp 0x6A3EB6AD. Verify the
+  actual binary/project identity for the task; an export or reported hash alone
+  does not authenticate the local executable.
+- Runtime base is dynamic (ASLR). Use RVAs for runtime addressing; never
+  hardcode absolute pointers. Label preferred-image VAs and file offsets clearly.
 
 ---
 
 ## 1. Ghidra Headless Tools
 
-You have full access to the pre-analyzed Ghidra project located in TesmioLoader.
-There is NO `$ghidraRunner` on PATH. Use the working wrapper instead - it sets
-the JDK on PATH and points at the project, the tool scripts and this
-workspace's `scratch\` scripts:
+First check whether the pre-analyzed project, executable, wrapper and JDK exist
+on the actual host. They may be on a separate Windows machine and inaccessible
+from this checkout. Do not claim a query was run unless it actually was. On a
+Windows workspace where the existing wrapper is present and configured, it sets
+the JDK and points at the project and scripts:
 
 scratch\ghidra_run.bat <Script.java> <out_file> [args...]
 
@@ -53,14 +59,27 @@ analyzeHeadless <TesmioLoader>\ghidra\proj soviet -process SOVIET64.exe
 NOTE: ONE -scriptPath flag only - a second -scriptPath flag REPLACES the
 first instead of appending. Multiple dirs go in one flag, ';' separated.
 
+MCP is optional and does not replace these scripts. For bethington GhidraMCP
+v7, the Python bridge is separate from the GUI plugin or Java headless backend;
+starting the bridge or changing its transport does not itself load Ghidra. Other
+MCP implementations may combine these components. Check the selected tool's
+version and architecture before making assumptions. Do not install, reconfigure
+or expose a server merely because a query timed out; identify the operation and
+backend first. Restrict approved services to the intended local interface and
+preserve unrelated configuration.
+
 ### Available Ghidra Scripts:
 
-Tracked repository copies of the workspace `.java` scripts live in `tools\ghidra\` (include `<workspace>\tools\ghidra` in `-scriptPath` or copy into `scratch\` as needed; cached raw exports live in `docs\ghidra-exports\`).
+Tracked Java query scripts are in `tools/ghidra/`; see its README for the
+actual inventory and argument contracts. Historical wrappers may reference
+`Xrefs.java` or `ListFuncs.java` from a separate workspace; verify each file
+before invoking it. Cached exports may be in `docs/ghidra-exports/`, a
+user-designated tracked directory, or ignored `scratch/` on the operator's host.
 
-- Decompile Function: `scratch\ghidra_run.bat DecompAt.java <out_file.c> <0x140RVA1> [0x140RVA2...]`
-- Find Cross-References: `scratch\ghidra_run.bat Xrefs.java <out_xrefs.txt> <0x140RVA>`
-- Disassemble Instruction Bytes: `scratch\ghidra_run.bat DisasmMany.java <out_disasm.asm> <0x140start:0x140end>`
-- Enumerate Functions in a range: `scratch\ghidra_run.bat ListFuncs.java <out.txt> <0x140start> <0x140end>`
+- Decompile: `scratch\ghidra_run.bat DecompAt.java <out_file.c> <preferred_VA> [preferred_VA ...]`
+- Cross-references (if locally available): `scratch\ghidra_run.bat Xrefs.java <out_xrefs.txt> <preferred_VA>`
+- Disassemble one range: `scratch\ghidra_run.bat DisasmMany.java <out_disasm.asm> <start_VA:end_VA>`
+- Enumerate functions (if locally available): `scratch\ghidra_run.bat ListFuncs.java <out.txt> <start_VA> <end_VA>`
 
 ### Operational rules (each cost a failed run the first time):
 
@@ -77,24 +96,24 @@ Tracked repository copies of the workspace `.java` scripts live in `tools\ghidra
   base + RVA (e.g. RVA 0x997590 -> VA 0x140997590). Do not concatenate prefixes
   as a general conversion rule. Runtime VA = actual loaded base + RVA; mapping
   an RVA to a raw PE file offset requires the containing section's headers.
-- Java lives at C:\Program Files\Eclipse Adoptium\jdk-21.0.12.101-hotspot.
-  Without a JDK on PATH, analyzeHeadless prints "The 'java' command could not
-  be found" and then hangs on a keypress. (If the JDK is patched or moved,
-  update the path in `scratch\ghidra_run.bat`.)
+- Verify the JDK and Ghidra versions and the wrapper's paths on the actual
+  host. One historical JDK location was `C:\Program Files\Eclipse Adoptium\jdk-21.0.12.101-hotspot`;
+  it may not exist here. Missing Java can cause the wrapper to hang. Do not
+  alter a user's wrapper or environment without task authorization.
 - The decompiler has a ~120 s budget per function. `FUN_14028c770` (a world
   writer) and `FUN_14030d1a0` (the per-frame update) time out; use
   DisasmMany on a range for those.
 
 ### Scripts are read-only (know this before you plan a workflow)
 
-`DecompAt`, `Xrefs`, `DisasmMany`, and `ListFuncs` query the database but do
-NOT rename, retype, or write back to the Ghidra project. The Ghidra project is
-a **read-only oracle** for this workflow. You cannot run the iterative
-rename -> retype -> re-decompile refinement loop inside Ghidra. Record your
-interpretations (recovered names, hypotheses about purpose, signature guesses)
-in `docs\ghidra-index\`, not in the project. If a future workflow needs in-DB
-refinement, that requires a write-back `.java` script or a Ghidra Server
-shared project with check-out/check-in - neither is in scope today.
+The intended `DecompAt`, `Xrefs`, `DisasmMany`, and `ListFuncs` query scripts
+do not intentionally rename or retype program data. Treat the Ghidra project as
+a **read-only oracle**: record interpretations in `docs/ghidra-index/`, not in
+the database. This is a workflow restriction, not an OS-enforced read-only
+boundary: verify the script and options, and account for project locks, metadata
+or cache writes. Back up both `.gpr` and its matching `.rep` and use a separate
+copy for untested tools; only copy after confirming the project is closed and
+unlocked. Do not assume an MCP tool allowlist prevents filesystem writes.
 
 ### Knowledge Base (READ THIS FIRST, WRITE HERE AFTER)
 
@@ -106,8 +125,9 @@ pass. Treat it as mandatory infrastructure, not an optional nicety.
 **Before ANY `ghidra_run.bat` call:**
 
 1. Grep `docs\ghidra-index\` for the RVA or the function name.
-2. Grep `docs\17-ui-and-integration.md` and `Tesmio Mods\docs\01-16` for the
-   subsystem the function belongs to.
+2. Search the relevant in-repository subsystem docs and the user-designated
+   report. Historical `docs\17-ui-and-integration.md` and `Tesmio Mods\docs\01-16`
+   may be on another host; verify availability instead of assuming they exist.
 3. If the index entry is `Status: verified` -> reuse its evidenced claims and
    cached exports. **DO NOT re-run Ghidra for the same available evidence.**
    This label does not verify every inferred purpose, receiver, unit or runtime
@@ -141,11 +161,17 @@ name so results are cacheable:
 - Disasm: `scratch\out\<start>_<end>_disasm.asm`
 - ListFuncs: `scratch\out\<start>_<end>_funcs.txt`
 
-Before re-running any of these for the same address/range, `Test-Path` the
-output file. If it exists and is newer than the Ghidra project, read it. Only
-re-run after a game-version re-import (which invalidates all caches) or when
-the index marks the entry as `partial`/`contested` and more data is genuinely
-needed.
+Before re-running, check whether the output actually exists on the current
+host and read it. Match its provenance to the executable/project version and
+requested range; timestamps alone do not establish identity or freshness. If
+identity is unknown, mark it unverified. Re-query only when existing evidence
+cannot answer the question or the project/version changed, following the
+single-operator rule; interpretation disputes alone do not require a rerun.
+`scratch/` is ignored by Git: an agent's completion summary or commit does not
+publish it. For review, preserve appropriately sized, permitted raw excerpts
+and their provenance in a tracked evidence location, or request the existing
+artifact from its owner. Do not publish the executable, project or large exports
+without authorization.
 
 ### Serialization across agents (Agent Manager / parallel sessions)
 
@@ -161,9 +187,11 @@ Agent Manager sessions run in parallel; if two sessions each invoke
   `scratch\.ghidra.lock` (create-exclusive) before running, and release it
   after. If the lock exists, wait or fail loudly - do not delete another
   agent's lock.
-- Never run two `analyzeHeadless` invocations concurrently, from any agent,
-  for any reason. The project lock is exclusive and has no retry semantics
-  beyond "fail".
+- Never run two `analyzeHeadless` invocations concurrently, even from separate
+  agents. Also do not operate on the same project concurrently through a Ghidra
+  GUI, MCP backend or another headless process. Treat locks as exclusive; never
+  kill processes or remove another owner's lock. Separate copies require
+  explicit ownership and do not relax the serialized-query rule.
 
 Findings from the UI/integration investigation (panel builders, the vehicle
 list, GetString retagging, save-format): workspace `docs\17-ui-and-integration.md`.
@@ -193,7 +221,11 @@ To prevent bloat and crashes as the mod grows, you MUST adhere to these boundari
   relative-control-flow instructions, ABI and receiver/event semantics. A short
   instruction/prologue does NOT automatically justify patching a caller's
   `call rel32`; that is a separate design requiring proof and authorization.
-  Always provide a verified `expect` array for an approved patch.
+  Inspect the actual helper: it accepts a whole-instruction stolen span of at
+  least 14 bytes and pads the remainder, but copies instructions without fixing
+  RIP-relative or relative-control-flow operands. A mid-function detour also
+  needs live-register/flags, stack, cleanup and output analysis. Always provide
+  a verified `expect` array for an approved patch.
 - **UNVERIFIED HOOKS:** Stop at the exact missing evidence. Do not implement or
   compile a speculative hook merely because it would default to disabled.
   Implementation, logging-only runtime validation and deployment each require
@@ -208,7 +240,9 @@ To prevent bloat and crashes as the mod grows, you MUST adhere to these boundari
 ### D. UI/UX Specific Rules
 
 - **FLOW-BASED UI ONLY:** Do not use absolute X/Y screen coordinates for UI elements.
-- **NATIVE ROWS:** Append UI rows using the native builder's bottom edge (`window+0x250`). Write back to `+0x250` to advance the cursor so native elements don't overlap your custom widgets.
+- **NATIVE ROWS:** The existing building-window widget contract appends from
+  `window+0x250`; use it only for supported, verified window types. Do not
+  assume a global sidebar or unrelated window has the same structure.
 - **DPI SCALING:** Always multiply pixel values by the game's DPI scalar (found at `0x992088`).
 
 ---
@@ -219,18 +253,26 @@ To prevent bloat and crashes as the mod grows, you MUST adhere to these boundari
 2. Threading: Never call Direct3D 11 texture mapping (TextureAccessOpen) outside of render hooks.
 3. Custom Text IDs: Any private text IDs minted for UI must start at 1,000,000 or higher.
 
-Whenever researching new game systems or writing code caves/hooks, refer to `docs/03-reverse-engineering.md` for methodology and safety rules.
+For new game-system research, start with `KILO_AGENT_WORKFLOW.md`'s native
+acceptance gates and the relevant in-repository docs. A historical
+`docs/03-reverse-engineering.md` may not be present; verify before citing it.
 
 ---
 
 ## 4. Shell & Tooling Rules
 
-### The shell is Windows PowerShell 5.1
+### Identify the actual shell
 
-- `&&` is a PARSE ERROR. Sequence with `;`. `find`, `head`, `ls`, `grep` do not exist - use `Get-ChildItem`, `Select-Object`, `Select-String`.
-- Prefix EVERY command with `cd 'C:\Users\EricM\Downloads\WRSRE';` - do not assume cwd persists between calls.
-- Command strings must be clean. A stray `"` or `)` inside an array element fails with parser errors at the CALL SITE. Use single quotes for all paths and strings; avoid embedding double quotes entirely.
-- Batch independent commands as separate array elements in one call - they run sequentially and the results come back together.
+The repository can be opened in Windows or a remote Linux workspace. Check the
+host, current directory and tool semantics before choosing commands; do not
+assume this checkout can access a separate Windows machine. Use the tool's
+working-directory option where available and do not assume shell state persists.
+
+In **Windows PowerShell 5.1**, `&&` is not supported; use PowerShell commands
+such as `Get-ChildItem`, `Select-Object` and `Select-String`, and choose error
+handling that preserves failure status. Quote paths safely. PowerShell 7, cmd
+and bash have different syntax. A previously used checkout path was
+`C:\Users\EricM\Downloads\WRSRE`; verify it rather than hardcoding it.
 
 ### Content search: prefer Select-String
 
@@ -251,21 +293,24 @@ Whenever researching new game systems or writing code caves/hooks, refer to `doc
 ### Workspace map
 
 - Plugin sources: `plugins\<name>\<name>.cpp`; shared headers: `src\`.
-- Root `docs\` holds ONLY 17/18/19. The RE knowledge base 01-16 is under `Tesmio Mods\docs\`.
-- THE GAME IS INSTALLED at `C:\Workers Resources Soviet Republic`. `media_soviet\buildings_types\*.ini` are the real recipes.
+- `docs/` contains multiple subsystem reports, an index and cached exports;
+  use `docs/README.md` and inspect the current checkout. Historical `Tesmio Mods`
+  documentation and game files may be on a different host.
+- A historical game path was `C:\Workers Resources Soviet Republic`; confirm
+  the actual installation and version before relying on its files.
 - Build: `cmd /c build.bat <plugin_name>` or `cmd /c build.bat` from workspace root. Verify DLL `LastWriteTime` under `build\plugins`.
 - INI BOM check: `[System.IO.File]::ReadAllBytes($p)[0..2]` must NOT be `239 187 191`.
 
 ### Docs read/write map
 
-- **Read:** `Tesmio Mods\docs\01-16` for methodology and the RE knowledge base;
-  `docs\17-19` for current-workspace findings; `docs\ghidra-index\` for
-  per-function lookup.
-- **Write:** new function findings -> `docs\ghidra-index\` (see §1 Knowledge
-  Base schema); current-workspace system findings -> append to the relevant
-  section of `docs\17` (or `docs\18`/`docs\19` if that is the matching file).
-  Do **not** write into `Tesmio Mods\docs\` unless you are updating methodology
-  itself, not just recording a finding.
+- **Read:** the existing task-designated report, `docs/README.md`, the relevant
+  subsystem documents, `docs/ghidra-index/` and available raw evidence. Treat
+  external or historical paths as optional until checked.
+- **Write:** update the designated current report and affected function index
+  entries. Correct misleading consequential claims where readers encounter them;
+  preserve a concise supersession note and invalidate dependent conclusions.
+  Do not append a new summary solely to restate unchanged evidence. Do not edit
+  a separate external knowledge base unless the task authorizes it.
 
 ### Verifying bug reports
 

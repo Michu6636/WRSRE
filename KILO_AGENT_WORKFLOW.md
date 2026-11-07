@@ -112,7 +112,7 @@ workflow mitigation, not a diagnosis or verified cure for the upstream defect.
 Preserve existing files. Do not rewrite large documents in full.
 
 For existing files, use narrowly targeted edits.
-For the cumulative handover, append only the new section.
+For the cumulative handover, make targeted corrections or bounded additions.
 Do not load or reproduce the entire historical handover.
 
 If either the planned content or the destination file is long, write only in
@@ -124,9 +124,10 @@ Only the parent writes shared reports; research children return findings.
 
 ### Explicit checkpoints for matrices and long additions
 
-"Append only" limits where content goes, not how much the model generates. Do not
-put an entire final matrix/section into one write, patch, shell command or chat
-reply. Changing the tool while sending the same large payload is not a reduction.
+A bounded addition limits how much the model generates; it must not prevent
+correcting a misleading current summary in place. Do not put an entire long
+matrix or section into one write, patch, shell command or chat reply. Changing
+the tool while sending the same large payload is not a reduction.
 
 1. Inspect a bounded tail and the relevant diff; confirm what actually reached
    disk. A pre-write announcement plus API504 does not prove a tool executed.
@@ -199,16 +200,48 @@ do not pretend a Linux checkout has the Windows EXE or Ghidra project.
   ownership. Establish prior-agent release before taking over.
 - Authenticate the actual native binary as required. Export consistency and
   synthetic tests do not validate runtime identity or lifecycle semantics.
-- Use the actual host shell. On the Windows host follow the PowerShell5.1 `cd`
-  prefix/semicolon rules in `INSTRUCTIONS.md`; do not claim Linux checks were
-  Windows builds or native game tests.
+- Use the actual host shell and working-directory semantics in
+  `INSTRUCTIONS.md`; Windows PowerShell 5.1, cmd and bash differ. Do not claim
+  Linux checks were Windows builds or native game tests.
 
 ## Native-evidence acceptance gates (2026-11-01)
 
-These gates address repeated fuel-report failures. They are acceptance criteria,
-not a claim that longer prompts, another model or more agents guarantee accuracy.
-Apply them to consequential claims; do not create paperwork for every trivial
-sentence. Existing task restrictions remain controlling.
+These gates address recurring native-research failures, including the
+[Almanac export review](docs/almanac-export-review.md). They are acceptance criteria,
+not a claim that longer
+prompts, another model or more agents guarantee accuracy. Apply them to
+consequential claims; do not create paperwork for every trivial sentence.
+Existing task restrictions remain controlling.
+
+### Raw evidence, progress and stop rules
+
+- Before accepting a consequential agent result, open the **actual** disassembly,
+  decompilation, implementation or test output and inspect the relevant range,
+  including surrounding branches. A completion message, commit or report that
+  merely names an ignored `scratch/` file is not that evidence. If unavailable,
+  request the existing bounded artifact and record the gap; do not silently rerun.
+- For a claim that a loop always draws, writes, increments or handles a click,
+  follow **both** sides of every relevant guard and the loop tail. Test at least
+  one skipped entry, zero entries, an already-selected item and an alternate
+  path where applicable. A test derived from a model checks the model, not the
+  original executable. Keep scale and runtime state explicit.
+- A cursor position is not a click; a value written on click is not an event
+  unless false positives, unchanged values, input timing and consumption are
+  accounted for. An inline hook is not safe merely because a span has 14 bytes:
+  inspect the actual implementation, whole-instruction boundaries, relative
+  operands, incoming targets, live state, cleanup and both execution paths.
+  A branch to the **start** of a patch differs from one into its interior.
+- When a claim changes, find and correct misleading current summaries, index
+  fields and dependent conclusions where readers encounter them. Preserve a
+  brief supersession note and exact source; do not leave a new section that
+  contradicts unchanged earlier guidance. Avoid editing historical material
+  unnecessarily when a clearly placed notice makes its status unambiguous.
+- If a pass repeats a prior assertion, adds only narrative or cannot provide
+  the deciding evidence, stop the loop. The parent should inspect the raw
+  artifact, seek an independent review with a narrow question, or report the
+  exact missing evidence. Ask for runtime observation only if needed and only
+  perform it with task authorization. Do not repeatedly send the user between
+  agents when the current agent can review the artifact directly.
 
 ### 1. Claim ledger before narrative
 
@@ -365,10 +398,10 @@ Stop on completion or an exact blocker; do not repeat unchanged queries.
 Preserve existing files and use narrowly targeted edits. If EITHER the planned
 content OR the destination file is long, write only in small, coherent chunks
 and verify each before continuing; never replace a long file for a short edit.
-Append only new sections to the cumulative handover; do not load or reproduce
-its entire history. Perform additions with explicit checkpoints: heading/header
-separately, then one complete matrix-case row or supporting paragraph per write.
-Read back and verify each before continuing. Never send the entire new section in one tool payload.
+Make targeted corrections or bounded additions to the cumulative handover; do not
+load or reproduce its entire history. Use coherent bounded writes and check the
+changed range; after an interrupted or oversized write, use smaller pieces, down
+to a heading, row or paragraph if needed. Do not blindly repeat a large payload.
 After a timeout, inspect only the relevant tail/diff before retrying; first recover
 one missing fragment and report its verified checkpoint. After success, continue
 autonomously with write/verify cycles. If that small fragment also fails, stop and
