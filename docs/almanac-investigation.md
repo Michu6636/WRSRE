@@ -9,15 +9,15 @@
 
 ## 1. Plain-language executive summary
 
-Clarified priority from the project owner: the first acceptable Almanac release should prioritize **government finances and fiscal policy**. Its essential feature is a global page where players can inspect and adjust the existing tax controls currently associated with City Hall. The broader economy, interest rates, subsidies, wages, trends, and graphs remain later-release work. The Almanac should still be a consumer/explainer, not a second authority for economic values.
+Clarified priority from the project owner: the first acceptable Almanac release must provide **adjustable tax controls on a global page**. A read-only overlay or City Hall panel can be an interim experiment or development milestone, but it does not satisfy the first acceptable release. The broader economy, interest rates, subsidies, wages, trends, and graphs remain later-release work. The Almanac must still be a consumer/explainer, not a second authority for economic values.
 
-The Almanac is best understood as a **read-only global fiscal page first**, with the three existing tax controls migrated from City Hall while preserving their current behavior and saved settings. The mod already has most of the machinery a player would want to inspect: dual-currency wallets and treasury, private enterprises and an investment pool, taxes and rent, a survival basket/CPI path, retail standard-of-living logic, market multipliers, and a monthly reconciliation ledger. What is missing is a **single, player-facing, global place** where these values are explained, compared over time, and connected causally.
+The Almanac is best understood as a **global fiscal policy page first**, with the three existing tax controls migrated from City Hall while preserving their current behavior and saved settings. The mod already has most of the machinery a player would want to inspect: dual-currency wallets and treasury, private enterprises and an investment pool, taxes and rent, a survival basket/CPI path, retail standard-of-living logic, market multipliers, and a monthly reconciliation ledger. What is missing is a **single, player-facing, global place** where these values are explained, compared over time, and connected causally.
 
-The native UI investigation has found a real global sidebar host (`FUN_140317DB0`, RVA `0x140317DB0`) and its visibility/selection structures. That makes a future **sidebar-hosted Almanac section** plausible, but it is **not yet proven safe**. The function is 84,735 bytes, its selected-panel pointer is runtime data, and adding a genuine new top-level tab would mean writing into a native `std::vector` whose ownership and capacity are not yet traced. The safest near-term path is therefore:
+The native UI investigation has found a real global sidebar host (`FUN_140317DB0`, RVA `0x317DB0`; preferred VA `0x140317DB0`) and its visibility/selection structures. That makes a future **sidebar-hosted Almanac page** plausible, but it is **not yet proven safe**. The function is 84,735 bytes, its selected-panel pointer is runtime data, and adding a genuine new top-level tab would mean writing into a native `std::vector` whose ownership and capacity are not yet traced. The safest near-term path is therefore:
 
-1. Build the **first Almanac as a read-only global overlay/HUD card** using the existing `ui_overlay` service, because that path is already proven, has no native prologue steal, and degrades gracefully.
-2. Keep the **City Hall fiscal panel** as the first interactive policy surface, because `ui_panels` widgets are already used there.
-3. Investigate, but do not yet implement, a **sidebar-hosted Almanac section** that appears only on the selected Economy & Trade sub-tab, using the proven row/widget calls with `game` as their first argument.
+1. Keep the **City Hall fiscal panel** as the proven interactive control surface while the global page is investigated.
+2. Investigate, but do not yet implement, a **sidebar-hosted Almanac page** that appears only on the selected Economy & Trade entry, using the proven row/widget calls with `game` as their first argument.
+3. A read-only global overlay may be used as an interim experiment, but it is not the accepted first release.
 4. Keep all economic values owned by their responsible subsystems. The Almanac should be a consumer and explainer, never a second authority for prices, taxes, rent, wages, or ledger balances.
 
 The biggest design risk is not drawing the UI. It is **definition drift**: the mod already has two different poverty concepts. City Hall's poverty rate counts wallets below a 7-day survival-bundle floor using real residential rent. Retail standard-of-living uses a 14-day "Low" threshold, promotes citizens by income, and uses a default rent of 0.33 RUB/day. These must be reconciled before the Almanac presents either as "poverty."
@@ -131,16 +131,16 @@ Later-release decisions:
 
 ### 6.1 What is mapped
 
-- Global sidebar host: `FUN_140317DB0`, RVA `0x140317DB0`, size 84,735 bytes.
+- Global sidebar host: `FUN_140317DB0`, RVA `0x317DB0` (preferred VA `0x140317DB0`), size 84,735 bytes.
 - Signature: `(void* game)`; `RCX` saved to `R14`; `RBX = game + 0xADB0`, the widget draw context.
 - Prologue: 18 clean position-independent bytes: `40 55 41 54 41 55 41 56 41 57 48 8D AC 24 D0 D4 FF FF`; 23 bytes are also safe if stopping before `CALL _alloca`. `/GS` cookie at `+0x9A`.
 - Visibility gate: `game + 0xFCE` (verified branch in the function). Sidebar closed should cause immediate return in any hook.
 - Selected panel pointer: `game + 0xC650`.
 - Panel vector: `game + 0xC608` begin, `game + 0xC610` end, stride `0x68` (104 bytes), entry `+0x00` active flag, `+0x01` NUL-terminated ASCII name.
 - Tab state object: 10-slot panel pointer array at `obj + 0x38`; current tab index at `obj + 0x68`.
-- Tab bar function: `FUN_1404D72C0`, RVA `0x1404D72C0`.
-- Hotkey-to-tab mapper: `FUN_1404D6DF0`, RVA `0x1404D6DF0`.
-- Sub-tab widget: `FUN_14007C400`, RVA `0x14007C400`, called from the master function.
+- Tab bar function: `FUN_1404D72C0`, RVA `0x04D72C0` (preferred VA `0x1404D72C0`).
+- Hotkey-to-tab mapper: `FUN_1404D6DF0`, RVA `0x04D6DF0` (preferred VA `0x1404D6DF0`).
+- Sub-tab widget: `FUN_14007C400`, RVA `0x7C400` (preferred VA `0x14007C400`), called from the master function.
 - Tab-name literals include `importexport`, `trade`, `loanusd`, `loanrub`, `productionconsumption`, and others. `importexport` is unique in the binary and is the likely Economy & Trade identifier.
 
 ### 6.2 Feasible host strategies
@@ -168,7 +168,7 @@ Graphs are a later bonus. No reusable native chart/graph function has been ident
 
 ### 6.5 Existing widgets in the global context
 
-- Slider `0x2727F0` (RVA `0x1402727F0`) and labelled checkbox `0x3956F0` (RVA `0x1403956F0`) are verified in panel builders and take `game` as their first argument.
+- Slider `0x2727F0` (RVA `0x02727F0` (preferred VA `0x1402727F0`)) and labelled checkbox `0x3956F0` (RVA `0x03956F0` (preferred VA `0x1403956F0`)) are verified in panel builders and take `game` as their first argument.
 - Because the global host sets `game+0xADB0`, these calls are likely usable there, but this is **not runtime-verified**.
 - The labelled checkbox has inverted raw rendering semantics in some contexts: native raw 0 can draw checked and raw 1 unchecked. Logical values must be converted at the caller boundary.
 - There is no panel-native textbox; typed entry would require overlay digit capture or a future `C3D_GUI` path.
@@ -476,13 +476,13 @@ Recommended next technical step: trace and validate the selected Economy & Trade
 
 ### 13.2 How the global sidebar selects a page
 
-- The global sidebar is drawn by `FUN_140317DB0` (RVA `0x00317DB0`; preferred VA `0x140317DB0`).
+- The global sidebar is drawn by `FUN_140317DB0` (RVA `0x317DB0` (preferred VA `0x140317DB0`)).
 - It owns a `std::vector`-like panel array at `game+0xC608` (begin) / `game+0xC610` (end), stride `0x68`.
 - Each entry has an active flag at `+0x00` and a NUL-terminated ASCII name at `+0x01`.
 - The selected entry is stored at `game+0xC650`.
-- The tab-bar function `FUN_1404D72C0` (RVA `0x004D72C0`) handles tab clicks and calls `FUN_1404D9050` to set the current tab index in a 10-slot tab object.
+- The tab-bar function `FUN_1404D72C0` (RVA `0x4D72C0` (preferred VA `0x1404D72C0`)) handles tab clicks and calls `FUN_1404D9050` to set the current tab index in a 10-slot tab object.
 - The master function later reads `game+0xC650` and draws the selected page.
-- The exact hand-off from the tab object/index to `game+0xC650` is **not fully traced**. `FUN_14007C400` (RVA `0x0007C400`), the generic sub-tab widget, can write `game+0xC650` in at least one path, but its full role and conditions are unresolved.
+- The exact hand-off from the tab object/index to `game+0xC650` is **not fully traced**. `FUN_14007C400` (RVA `0x7C400` (preferred VA `0x14007C400`)) is only a candidate: an earlier `FindDisp` hit suggested it might write `game+0xC650`, but the latest disassembly ruled out that reported store. Its full role and conditions remain unresolved.
 - Economy & Trade is likely identified by the unique string `importexport` in the selected entry, with `loanusd`/`loanrub` confirming the economy family. The index of that entry is runtime data.
 
 Implication: an Almanac page can be conditionally drawn when `game+0xC650` validates as an `importexport` entry. It should not replace or remove that entry.
@@ -497,7 +497,7 @@ Implication: an Almanac page can be conditionally drawn when `game+0xC650` valid
 
 ### 13.4 Can the slider and checkbox be used globally?
 
-The slider (`0x002727F0`, RVA `0x002727F0`) and labelled checkbox (`0x003956F0`, RVA `0x003956F0`) are verified in building-panel builders and take `game` as their first argument. That makes them candidates, not proven global widgets.
+The slider (`0x002727F0`, RVA `0x2727F0` (preferred VA `0x1402727F0`)) and labelled checkbox (`0x003956F0`, RVA `0x3956F0` (preferred VA `0x1403956F0`)) are verified in building-panel builders and take `game` as their first argument. That makes them candidates, not proven global widgets.
 
 Required conditions from the verified code:
 
@@ -530,7 +530,7 @@ Conclusion: likely usable, but this must be treated as unproven until a bounded 
 
 ### 13.6 Candidate hook (investigation only)
 
-- Candidate: post-hook `FUN_140317DB0` (RVA `0x00317DB0`).
+- Candidate: post-hook `FUN_140317DB0` (RVA `0x317DB0` (preferred VA `0x140317DB0`)).
 - Prologue has 18 clean position-independent bytes; 23 bytes are also safe if stopping before `CALL _alloca`.
 - `/GS` cookie is at `+0x9A`, outside the stolen span.
 - The function runs every frame while the sidebar is up; any hook must gate on `game+0xFCE` and validate the selected entry.
@@ -621,16 +621,66 @@ Keeping City Hall controls temporarily is the safer approach. It preserves exist
 - No decompilation, Xrefs, or ListFuncs queries were run in this follow-up.
 - No live game tests, builds, or deployments were run.
 
-## 18. Follow-up claim ledger
+## 19. Focused static investigation of global-page blockers
 
-| Claim ID | Claim | Evidence | Status | Limit |
-|---|---|---|---|---|
-| F1 | Global sidebar selected entry is `game+0xC650` | Static disassembly and vector evidence | Supported (static) | Runtime behavior not verified |
-| F2 | Economy & Trade is identified by `importexport` entry | Unique string and panel-name table | Supported (static) | Index order is runtime data |
-| F3 | A new top-level section is unsafe | No traced owner/capacity | Unresolved/unsafe | Do not implement |
-| F4 | Almanac page inside E&T is plausible | Conditional draw path exists | Plausible | Clipping/input untraced |
-| F5 | Widgets are likely usable globally | Same `game` and draw context | Unresolved | Input state unverified |
-| F6 | Tax API lacks property getter | `taxes_api.h` and implementation | Supported by code | Could be added compatibly |
-| F7 | VAT/profit getters return effective zero when disabled | `GetVatRateImpl`/`GetProfitTaxRateImpl` | Supported by code | Policy UI needs configured value |
-| F8 | Bank has interest-rate API and City Hall control | `republic_bank_api.h` and `republic_bank.cpp` | Supported by code | Migration remains later work |
-| F9 | Native graphs are not identified | No evidence in reviewed exports | Unresolved | Separate later task |
+### 19.1 Hand-off from tab selection to selected entry
+
+Supported:
+
+- `FUN_140317DB0` (RVA `0x317DB0`) reads the selected entry from `game+0xC650` and branches on its name.
+- At RVA `0x31EACB`, if the selected entry name is "system", it calls `FUN_140337450` (RVA `0x337450`).
+- At RVA `0x338770`–`0x33877B`, `FUN_140337450` computes `RCX = [game+0xC608] + RBX` and stores it to `game+0xC650`. This is a confirmed write to the selected-entry pointer, but only in the "system" page's click-handling path.
+- `FUN_140337450` also checks the click latch at `0xA54E91`, calls a configurator lookup for "gui_click", and plays a sound. This indicates it is a click handler, not a passive renderer.
+- If the selected entry is "storage", the master function takes a different branch and does not call `FUN_140337450`.
+- If the selected entry is "infrastructure", it branches to another path.
+- Otherwise it calls `FUN_140395C90` (RVA `0x395C90`), size 55,231 bytes, as a fallback page handler.
+
+Unresolved:
+
+- The top-level hand-off from the 10-slot tab object/index to `game+0xC650` is still not fully traced. The tab bar sets the tab object and index; the selected entry is shared state used by many functions.
+- `FUN_140337450` is not the general Economy & Trade handler. It is specifically reached when the selected name is "system".
+- The RBX offset used in the write is not traced to its source. It is likely a loop index times the vector stride, but that is not yet proven.
+- Whether an Almanac page can be represented as a new sub-tab or only as conditional content inside an existing page remains unresolved.
+
+### 19.2 Drawing and input context
+
+Supported:
+
+- The master function sets `RBX = game+0xADB0`, the same widget draw context used by `ui_panels`.
+- It has a visibility branch on `game+0xFCE`; setup always runs, so a hook must test the flag itself.
+- The selected page is drawn after tab/sub-tab handling; text and widget calls occur in that path.
+- The panel vector begin/end and stride are established; the selected entry can be validated against `[begin,end)`.
+
+Unresolved:
+
+- Exact row origin, clipping, scrolling, and close behavior in the global host are not traced.
+- The selected entry is shared by many functions; an Almanac page must not disturb their assumptions.
+- The vector owner and capacity remain untraced; no write to the vector is safe.
+- Whether the global host calls widget functions with the same input/live state as building panels is unproven.
+
+### 19.3 Slider and checkbox requirements
+
+Static evidence:
+
+- Slider `0x2727F0` (RVA `0x2727F0`) and checkbox `0x3956F0` (RVA `0x3956F0`) are verified in building-panel builders.
+- Both take `game` as their first argument and use `game+0xADB0` as the draw context.
+- Both use `C3D_INPUT::GetMouseSolid` and `C3D_PANEL2D::Collision`.
+- The slider uses click latch `0xA54E91`, `game+0xAD74 == -1`, and `live` handling.
+- The checkbox uses `live`, hit-test, and can toggle on click.
+- The checkbox's raw rendering can be inverted; logical state must be converted at the caller boundary.
+
+Questions requiring a later live test:
+
+- Whether `game+0xAD74` and the panel `live` equivalent have the same meaning in the global host.
+- Whether collision rectangles and clipping are valid there.
+- Whether global input handling collides with the latch.
+- Whether widget calls affect scroll, close, or tab switching.
+- Whether the checkbox's inverted raw semantics occur in this context.
+
+### 19.4 Verdict
+
+Supported: the global sidebar host, its visibility branch, panel vector, selected-entry pointer, and widget call signatures are statically established. A conditional Almanac page on a validated Economy & Trade entry is plausible.
+
+Unresolved: top-level selection hand-off, global widget input semantics, clipping/scrolling/close behavior, and vector ownership/capacity.
+
+Smallest next action: obtain approval for a bounded live/UI test or deeper static trace of the selected Economy & Trade path. Do not implement or hook anything until that evidence is available.
