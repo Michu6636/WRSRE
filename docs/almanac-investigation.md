@@ -2811,3 +2811,64 @@ The smallest next step is to trace the body extent in FUN_140373EA0: find the la
 - docs/almanac-investigation.md (this section)
 
 No production code, configuration, saves, builds, hooks, or settings were changed.
+## 50. Candidate approach for a separate Almanac page
+
+### 50.1 Candidate approach: mod-owned button + content suppression at block boundary
+
+Keep the native button row running untouched. Hook at the boundary between the button loop (which ends at 0x1403743b6/0x1403743e0) and the content block (which begins at 0x1403745b6). When the Almanac flag is set, skip the content block; otherwise run it natively.
+
+The button loop (0x140374144-0x1403743e0) handles drawing, click detection, and state updates (game+0xC65C, game+0x1039a, game+0x10be8). The content block (0x1403745b6 to function end) handles body drawing and additional state writes (game+0x10F20, game+0x5E8/EC, game+0x5E6, game+0x5F0, game+0xADB8/ADC8, FUN_14035F3E0 sub-page). These are separable at the instruction level: there is no interleaving between the button loop's last instruction (0x1403743e0, JL loop) and the content block's first instruction (0x1403745b6).
+
+### 50.2 Requirement 1: Keep native button row working
+
+The button loop runs before the hook point. It draws all buttons (native + mod-owned button drawn separately after the loop), handles clicks, and updates game+0xC65C. The mod does not touch game+0xC65C or the native vector. The mod draws its button after the native loop returns (or in a post-hook), using the same origin (X=130, Y=15+game+0xAE50) and pitch (64). The native row continues to function.
+
+Requirement 1 is supported by static evidence. The mod button does not need to follow native insertion rules (reordering, conditional skips) because it is drawn separately with its own position calculation.
+
+### 50.3 Requirement 2: Prevent hidden vanilla content from receiving clicks
+
+When Almanac is open, the content block is skipped. This suppresses all native content click handling (FUN_14035F3E0 click handling, C3D_PANEL2D::Collision checks on content panels, latch consumption in the content block). The latch DAT_0x140a54e91 may still be set by the input system, but the native content block's `if (DAT_0x140a54e91 != '\0')` checks would not execute because the block is skipped.
+
+However: the button loop's click handling still runs (it is before the hook). If the user clicks a native button, the button loop handles it (sound, game+0xC65C update). The mod detects this and clears the Almanac flag (see requirement 3).
+
+Requirement 2 is supported IF the hook reliably skips the content block. The hook point (0x1403745b6) must be verified as a safe patch site (sufficient contiguous instructions, no RIP-relative operands that would break if relocated).
+
+### 50.4 Requirement 3: Return reliably to vanilla, including already-selected button
+
+The native button loop sets game+0xC65C = index when a button is clicked (with latch). For a different button, game+0xC65C changes. For the already-selected button, game+0xC65C does not change, but the loop still consumes the latch and runs click side effects (sound, game+0x1039a=0, game+0x10be8=-1).
+
+The mod can detect a native button click by recording game+0x10be8 before the native function and checking if it changed to -1 after. Since game+0x10be8 is set to -1 on every native button click (0x14037435c), a transition from != -1 to == -1 indicates a click occurred, regardless of whether game+0xC65C changed.
+
+This is a hypothesis, not proven. The missing evidence is whether game+0x10be8 is reliably -1 only after a native button click (i.e., whether other code paths also set it to -1). Also, the latch (DAT_0x140a54e91) is not visibly cleared by the button loop, so the mod cannot rely on latch consumption within this function.
+
+Alternative: the mod can record the mouse position before the native function and check if it falls within any native button's 64x64 rect (130+n*64, Y) after the function. This is more robust but requires a hook before the function.
+
+### 50.5 Requirement 4: Preserve native state updates
+
+The button loop's state updates (game+0xC65C, game+0x1039a, game+0x10be8) run natively and are preserved. The content block's state updates (game+0x10F20, game+0x5E8/EC, game+0x5E6, game+0x5F0, game+0xADB8/ADC8) only execute on click (latch set) and involve FUN_14035F3E0 sub-page navigation and FUN_140335b10 state setting. If Almanac is open, these updates are skipped, but they are only needed for vanilla content interaction, which is suppressed. The mod would handle its own state.
+
+Whether skipping these updates corrupts game state is unverified. The fields may be read by other functions (not traced). The missing evidence is whether any non-content function reads game+0x10F20, game+0x5E8, game+0x5EC, game+0x5E6, game+0x5F0, game+0xADB8, or game+0xADC8.
+
+### 50.6 Alternate handler (FUN_140361BB0)
+
+The same approach applies: hook at the boundary between the button loop and the content block. FUN_140361BB0 has a more complex content path (12,304 lines, multiple CMP game+0xC65C branches). The button loop ends at 0x14036220e/0x140362245. The content block begins after 0x14036225d. The same state-update and click-detection logic would apply, but with more unknowns.
+
+### 50.7 Evidence gaps (concrete)
+
+1. **Hook point safety**: 0x1403745b6 must be a safe patch site. Need to verify instruction boundaries, sufficient contiguous bytes, and no RIP-relative operands. (Static check of the disassembly is needed.)
+2. **State corruption**: whether skipping the content block corrupts game state. (Needs tracing readers of game+0x10F20, game+0x5E8, etc.)
+3. **Click detection reliability**: whether game+0x10be8 transitions to -1 only on native button clicks. (Needs tracing writers of game+0x10be8.)
+4. **Container width**: whether the Almanac button at X≈386 or 450 is visible. (Needs panel dimension initialization trace.)
+5. **Alternate handler**: same gaps apply to FUN_140361BB0.
+
+### 50.8 What is NOT a blocker
+
+- The native collection's insertion rules: the mod button is drawn separately, not inserted into the vector. No spare slot needed.
+- The image filename for the Almanac button: the mod can use its own texture (loaded via C3D_MIDDLEPOINT::CreateManagedTexture, following the City Hall widgetButton pattern).
+- The content block's internal draw calls: the mod replaces them, not extends them.
+
+### 50.9 Files touched
+
+- docs/almanac-investigation.md (this section)
+
+No production code, configuration, saves, builds, hooks, or settings were changed.
