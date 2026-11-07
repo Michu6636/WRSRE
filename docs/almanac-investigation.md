@@ -472,6 +472,8 @@ Approval requested before any implementation: yes. This report is investigation/
 
 A safe, first-release global tax page is **not yet implementation-ready**, but it is **plausibly feasible** as an Almanac page inside the existing Economy & Trade section. A dedicated new top-level sidebar section is **not yet safe** because the native vector that holds sections has not been traced for ownership, capacity, and initialization. The existing `ui_panels` tax controls prove that the tax service can be operated from a UI, but they are bound to City Hall and do not by themselves provide a global page.
 
+Poverty reconciliation and a read-only overlay are **not prerequisites** for the first acceptable tax release. They remain later work. The critical path is the Economy & Trade selection, drawing, and input path.
+
 Recommended next technical step: trace and validate the selected Economy & Trade panel path, then design a bounded global hook or page host. This requires the owner's approval before any implementation or runtime test.
 
 ### 13.2 How the global sidebar selects a page
@@ -526,7 +528,7 @@ Conclusion: likely usable, but this must be treated as unproven until a bounded 
 | Dedicated new top-level section by writing panel vector | Unsafe/unproven | Do not do; owner/capacity untraced |
 | Almanac page inside Economy & Trade selected sub-tab | Plausible | Preferred if selected-entry validation and drawing can be proven |
 | City Hall panel | Proven but wrong scope | Good fallback for controls, not global |
-| Read-only overlay | Proven | Useful interim experiment, not accepted release |
+| Read-only overlay | Proven | Useful interim experiment only, not an accepted release |
 
 ### 13.6 Candidate hook (investigation only)
 
@@ -684,3 +686,82 @@ Supported: the global sidebar host, its visibility branch, panel vector, selecte
 Unresolved: top-level selection hand-off, global widget input semantics, clipping/scrolling/close behavior, and vector ownership/capacity.
 
 Smallest next action: obtain approval for a bounded live/UI test or deeper static trace of the selected Economy & Trade path. Do not implement or hook anything until that evidence is available.
+
+## 20. Economy & Trade path and widget assessment
+
+### 20.1 Selection path
+
+Supported:
+
+- The master function compares the selected entry name in this order:
+  1. "system" -> `FUN_140337450` (RVA `0x337450`).
+  2. "storage" -> a branch that sets local state and calls RVA `0x33F9D0`.
+  3. "infrastructure" -> a branch that calls `FUN_140389F10` (RVA `0x389F10`).
+  4. "building" -> a branch that calls `FUN_140388140` (RVA `0x388140`).
+  5. "workshopbuildings" -> a branch that calls `FUN_140388140` (RVA `0x388140`).
+  6. "editorbuildings" -> a branch that calls `FUN_140384560` (RVA `0x384560`).
+  7. "timelapse" -> a branch that calls `FUN_140385210` (RVA `0x385210`).
+  8. "notifi_tab" -> a branch that calls `FUN_140383E50` (RVA `0x383E50`).
+  9. "objectives" -> a branch that calls `FUN_140387320` (RVA `0x387320`).
+  10. "scripts" -> a branch that calls `FUN_140387320` (RVA `0x387320`).
+  11. Otherwise -> `FUN_140395C90` (RVA `0x395C90`).
+
+- The strings were verified in `.rdata`: "system", "storage", "infrastructure", "building", "workshopbuildings", "editorbuildings", "timelapse", "notifi_tab", "objectives", and "scripts".
+- "importexport" is not in this explicit list. Therefore an Economy & Trade entry named "importexport" reaches the fallback handler `FUN_140395C90` unless another name or state changes the path.
+- This does **not** prove that `FUN_140395C90` is a safe or suitable host. It only identifies the likely static path.
+
+Unresolved:
+
+- Whether "importexport" is the only Economy & Trade entry name, or whether sub-tabs use other names.
+- What `FUN_140395C90` does beyond its prologue. Its size is 55,231 bytes and it was not decompiled.
+- Whether the fallback path is the correct place for an Almanac page, or whether a separate native page host would be safer.
+
+### 20.2 Content area, clipping, scrolling, and close behavior
+
+Supported:
+
+- The master function sets up `game+0xADB0` as the widget draw context.
+- It has a visibility branch on `game+0xFCE`.
+- The selected page is drawn after tab and sub-tab handling.
+- The panel vector can be validated against `[game+0xC608, game+0xC610)`.
+
+Unresolved:
+
+- Exact row origin, clipping rectangle, scroll state, and close behavior in the global host are not traced.
+- The fallback handler's use of the draw context and input state is unknown.
+- Whether adding rows or widgets there would obscure vanilla content cannot be determined statically.
+- The relationship between tab index `-1` and `game+0xC650` on close is unresolved.
+
+### 20.3 Slider and checkbox assessment
+
+Static evidence:
+
+- The slider (RVA `0x2727F0`) and checkbox (RVA `0x3956F0`) are verified in building-panel builders.
+- Both take `game` as their first argument and use `game+0xADB0`.
+- Both use `C3D_INPUT::GetMouseSolid` and `C3D_PANEL2D::Collision`.
+- The slider uses click latch `0xA54E91`, `game+0xAD74 == -1`, and commit-on-change.
+- The checkbox uses hit-test, sound playback, and toggles on click.
+- The checkbox's raw rendering can be inverted; logical state must be converted at the caller boundary.
+
+Missing evidence:
+
+- Whether `game+0xAD74` and the panel `live` equivalent have the same meaning in the global host.
+- Whether collision rectangles and clipping are valid there.
+- Whether global input handling collides with the latch.
+- Whether widget calls affect scroll, close, or tab switching.
+- Whether the checkbox's inverted raw semantics occur in this context.
+
+A later live test would need to establish at minimum:
+
+- That the slider and checkbox render in the expected location.
+- That clicks are recognized and do not steal or duplicate input.
+- That tab switching and closing still work.
+- That no vanilla content is obscured or corrupted.
+
+### 20.4 Verdict
+
+Established: Economy & Trade's selected name is not handled by the "system", "storage", "infrastructure", "building", "workshopbuildings", "editorbuildings", "timelapse", "notifi_tab", "objectives", or "scripts" branches. It reaches `FUN_140395C90` as the fallback page handler. The widget call signatures and draw context are statically understood.
+
+Unknown: whether `FUN_140395C90` is a safe host, where its content area is, how clipping/scrolling/close work, and whether widgets can receive input there.
+
+Smallest next action: either a deeper static trace of `FUN_140395C90`'s draw/input paths or a separately approved live test of the fallback page. No implementation or hook is authorized.
