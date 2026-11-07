@@ -1,0 +1,60 @@
+Close/return trace report (static evidence only)
+
+Flag:
+- 0x14031e646: CALL qword ptr [0x14086c8b8]  ; GetMouseLeftPress(RCX=0x140a54b90)
+- 0x14031e64c: TEST AL,AL
+- 0x14031e64e: JZ 0x14031e69e
+- 0x14031e650: MOV R8B,1
+- 0x14031e653: LEA RDX,[0x1408b20a0]
+- 0x14031e65a: MOV RCX,R14
+- 0x14031e65d: CALL 0x1403ffad0
+- 0x14031e662: MOV byte ptr [RBP - 0x80],1
+- 0x14031e666: MOV dword ptr [R14 + 0xae54],0xc47a0000
+- 0x14031e671: JMP 0x14031e69e
+If GetMouseLeftPress returns 0, the else branch at 0x14031e673 runs and does not set this flag.
+
+The flag is [RBP - 0x80]. It is initialized to 0 at 0x14031d71f. It is also set to 1 at 0x14031ed53, 0x14031f12e, and 0x14031f993 in other branches. On the GetMouseLeftPress-nonzero path it is set at 0x14031e662 and no instruction in 0x14031e662-0x140328264 resets it to 0.
+
+Trade-panel path:
+- The host calls FUN_140373EA0 at 0x14031edef when game+0x10398 != 0, otherwise FUN_140361BB0 at 0x14031ee13.
+- The flag-setting block at 0x14031e622-0x14031e69e is before the handler dispatch at 0x14031ede6.
+- No RET and no jump beyond 0x140328264 occur in 0x14031e662-0x140328264, so the later test is reached on this path.
+
+Test and writes:
+- 0x140328264: CMP byte ptr [RBP - 0x80],0
+- 0x140328268: JZ 0x140328300
+- 0x14032826e: if game+0xc650 == 0, jump 0x1403282e0
+- 0x140328278: RDX = selected entry
+- 0x14032827f: RCX = R15
+- 0x140328282: R8 = 0x1408793fc ("system")
+- 0x140328290-0x1403282a3: compare 7 bytes of selected entry name to "system"
+- 0x1403282a5: if all match, CALL 0x140336e50
+- 0x1403282ad: if selected entry is null, jump 0x1403282e0
+- 0x1403282b7: RCX = selected entry + 1
+- 0x1403282c1: RDX = 0x1408b3238 ("watererosion")
+- 0x1403282c8: CALL 0x14084f520
+- 0x1403282cf: JNZ 0x1403282e0
+- 0x1403282d1: set [0x1409941f0 + 0x1a] = 1 and [0x1409941f0 + 0x20] = 0
+- 0x1403282e0: if [game + 0x13bf0] + 0x14 != 0, CALL 0x14003c1c0
+- 0x1403282f2: MOV qword ptr [R14 + 0xd428],R15
+- 0x1403282f9: MOV qword ptr [R14 + 0xc650],R15
+
+R15 proof:
+- R15 is zeroed at 0x140326e6d: XOR R15D,R15D.
+- On the R12D != 2 path, 0x140326c76 jumps to 0x140326e6d.
+- On the R12D == 2 path, 0x140326ad3 zeroes R15D and jumps to 0x140326e70.
+- On the R12D == 3 path, execution falls through to 0x140326c80, then reaches 0x140326e6d.
+- No instruction between 0x140326e6d and 0x1403282f2 assigns R15; only reads occur (0x1403280dc, 0x14032827f).
+Therefore R15 = 0 at both writes, so they store 0 (null) to game+0xd428 and game+0xc650.
+
+What this does and does not establish:
+- It establishes conditional clearing of the selected-entry pointer and game+0xd428 when the local flag is nonzero and the selected entry is non-null.
+- It does not identify the clicked control as the close button.
+- It does not by itself prove a return to a vanilla tab or that the panel closed; it only shows state clearing gated by a mouse-left-press flag and selected-entry checks.
+- For a trade entry, the first name comparison to "system" fails, so 0x140336e50 is not called; the second comparison to "watererosion" also fails, so the 0x1409941f0 byte writes are not performed. The final R15=0 writes still occur if the selected entry is non-null.
+
+Original instruction check:
+- Bytes at 0x1402e7cf0: 54 24 40 E8 F8 15 16 00
+- The CALL begins at 0x1402e7cf3: E8 F8 15 16 00
+- Decoded target: 0x1402e7cf8 + 0x001615f8 = 0x1404492f0
+- This matches FUN_1404492f0.
