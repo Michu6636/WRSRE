@@ -2611,3 +2611,43 @@ The window bounds remain untraced. The exact missing evidence is the constructor
 - scratch/out/1404465a0_full_disasm.asm (new cached export)
 
 No production code, configuration, saves, builds, hooks, or settings were changed.
+## 47. Button drawing object vs panel context, and bounds status
+
+### 47.1 Button drawing object vs game+0xADB0
+
+The button drawing uses `_DAT_1409be060` (a C3D_PANEL2D global widget) for Collision, Draw, SetPosition, and SetDimensions. The backdrop dimensions are stored in `_DAT_1409be2e8` (width) and `_DAT_1409be2ec` (height), both set to 64 in both handlers. The position is `_DAT_1409be2f0` (X,Y packed). The hit-test is `C3D_PANEL2D::Collision(&_DAT_1409be060, mouse, 0, 0)`.
+
+`game+0xADB0` is a SEPARATE object passed to the setup helpers (FUN_1404460a0, FUN_140445eb0, FUN_1404461f0, FUN_1404465a0). These helpers operate on `game+0xADB0`'s internal sorted collections and scale factor (game+0xAE30). They do NOT set the C3D_PANEL2D dimensions or the button backdrop. The two objects are distinct: game+0xADB0 is a layout/scroll context, _DAT_0x1409be060 is the render/hit-test widget.
+
+### 47.2 Container bounds: not traceable from cached exports
+
+No instruction in the cached exports (FUN_140317DB0, FUN_140373EA0, FUN_140361BB0, FUN_1404465A0, FUN_1404460A0, FUN_140445EB0, FUN_1404461F0) sets a width, height, or clip rectangle for the panel or the sidebar window. The panel context dimensions are likely set during object construction (before FUN_140317DB0) or by a function not in the cached exports.
+
+Clipping is performed by C3D_PANEL2D::Draw and C3D_PANEL2D::Collision using the widget's internal dimensions, but those dimensions are not set in the examined functions. The evidence does not show which function sets them.
+
+### 47.3 What is static vs runtime
+
+Static (from binary):
+- Button backdrop: 64x64 (both handlers).
+- Pitch: 64 px (both handlers).
+- X origin: 130 (both handlers).
+- Y origin: 15 + game+0xAE50 (runtime field).
+- Reordering: FUN_140373EA0 only (static instruction-level).
+- Conditional skips: FUN_140361BB0 only (static instruction-level).
+
+Runtime (not statically resolvable):
+- game+0xAE50 (Y base).
+- game+0x10398 (handler selector).
+- Collection count (sub-entry vector size).
+- Panel/sidebar dimensions and clip rect.
+- Texture dimensions (96x96 PNGs, but render scale unknown).
+
+### 47.4 Concise result
+
+The button drawing object (C3D_PANEL2D at 0x1409be060) is distinct from the panel context (game+0xADB0). The container's visible bounds and clip rect are not set in any examined function. The exact missing evidence is the instruction(s) that initialize the panel/sidebar dimensions. Without this, whether a 5th button (X≈386 or 450 depending on handler) is visible cannot be established. No live test was performed.
+
+### 47.5 Files touched
+
+- docs/almanac-investigation.md (this section)
+
+No production code, configuration, saves, builds, hooks, or settings were changed.
