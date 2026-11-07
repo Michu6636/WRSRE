@@ -2157,3 +2157,68 @@ The non-existence of editor/importexport_*.png files is supporting evidence that
 - docs/ghidra-index/373EA0.md (call-site address corrected)
 
 No production code, configuration, saves, builds, hooks, or settings were changed.
+## 41. Comparison of the two trade handlers for the Almanac button
+
+### 41.1 Observed facts (both handlers)
+
+Both FUN_140373EA0 (RVA 0x373EA0) and FUN_140361BB0 (RVA 0x361BB0) are reached from FUN_140317DB0 when the selected entry name is "trade". The selection between them is gated by the byte at game+0x10398 (0 -> FUN_140361BB0; non-zero -> FUN_140373EA0). Both handlers:
+
+- Read the same sub-entry vector: begin = *(game+0xC650)+0x48, end = *(game+0xC650)+0x50, stride 0x50.
+- Draw each sub-entry's texture (C3DAPI_TEXTURE* at sub_entry+0x48) via vtable+0x70.
+- Use a 64x64 backdrop (DPI * DAT_0x90aaa0 = 64.0), drawn after the texture.
+- Track the selected sub-tab in game+0xC65C.
+- Draw a selected overlay when game+0xC65C == the current button's index.
+- Consume the click latch DAT_0x140a54e91 and play gui_subtab_click.
+- Use FUN_140445eb0 for panel setup and C3D_PANEL2D::Collision for hit-testing.
+
+### 41.2 Differences observed
+
+FUN_140373EA0:
+- Special index mapping: rendered order = [sub0, sub1, sub_{count-1}, sub2, sub3, ..., sub_{count-2}]. Pitch 64 px, X origin 130. Backdrop 64x64. No overlap (64 on 64).
+- Click handling: if game+0xC65C != EBX, sets game+0x1039a = 0 (dirty). Then game+0xC65C = EBX, game+0x10be8 = -1.
+- Computes game+0xAE58 = (RBP-0x10) - game+0xAE50 after the call (RBP-0x10 was 0 before call, possibly modified inside).
+- Content path uses game+0xC65C, game+0x12800, game+0x10be8.
+
+FUN_140361BB0:
+- Also reads the sub-entry vector and draws textures with 64x64 backdrop.
+- Uses ESI as the loop counter (not EDI). The index mapping is different: ESI goes 0..count-1, but the sub-entry selection uses R15 (incremented) and a complex condition (game+0x578, game+0x5e0). The exact mapping is not decoded.
+- Has additional branches: CMP game+0x578,0; CMP ESI,6; CMP game+0x5e0,0. These suggest conditional skipping or reordering based on game state.
+- Content path compares game+0xC65C to 1, 2 (multiple CMP instructions) suggesting a different sub-page dispatch.
+- Larger (12,304 lines of disasm) — likely a more feature-rich view.
+
+### 41.3 What is unknown for a mod-owned button in each path
+
+FUN_140373EA0:
+- Reordering logic fully decoded? No — the EBX mapping is known but the reason (why last sub-entry goes to position 2) and any clamping are not established.
+- Container width / clipping: unknown (not in this function).
+- Y origin: runtime field (game+0xAE50), not statically resolvable.
+- Whether an extra button at a fixed position would collide with existing buttons: pitch 64 = backdrop 64, so no overlap in the simple linear case, but the reordering means "position n" depends on count. An extra button would need its own position calculation that accounts for the reordering.
+
+FUN_140361BB0:
+- Row layout: partially traced (64x64 backdrop, sub-entry textures drawn). The full position calculation, pitch, ordering, and whether all sub-entries are drawn in one row are not decoded.
+- Whether the hit-test (Collision) uses the same 64x64 rect: yes (FUN_140445eb0 + Collision).
+- Available width / clipping: unknown.
+- Whether FUN_140361BB0 draws ALL sub-entries or a subset: the loop runs ESI 0..count-1, but with conditional skips (CMP game+0x578, game+0x5e0). So some buttons may be conditionally hidden. This makes position prediction harder.
+
+### 41.4 Hypotheses (labeled, not facts)
+
+- "Simple" vs "advanced" view: HYPOTHESIS. The two handlers share the same data model and button draw. FUN_140373EA0 has a special reordering and a dirty flag; FUN_140361BB0 is larger with more branches. Whether one is "simpler" is an interpretation, not established.
+- "User-toggled" view mode: HYPOTHESIS. game+0x10398 is toggled by input flags, but the specific input binding (key, menu item) is not identified. The toggle is real (observed in FUN_140309D80); the user-facing trigger is unknown.
+- "Unreachable" for FUN_140358A20: HYPOTHESIS. No importexport_*.png files exist, and "importexport" is not in the dispatch list. But the absence of image files alone does not prove the panel cannot exist (it could use a different texture naming or a runtime-generated name). The dispatch and texture convention together make it unlikely, but not impossible.
+
+### 41.5 Concise comparison
+
+| Aspect | FUN_140373EA0 (game+0x10398 != 0) | FUN_140361BB0 (game+0x10398 == 0) |
+|---|---|---|
+| Sub-entry draw | Yes, 64x64, pitch 64, X origin 130 | Yes, 64x64, layout not fully decoded |
+| Ordering | [sub0, sub1, sub_last, sub2, ...] | Different; conditional skips possible |
+| Selection | game+0xC65C | game+0xC65C |
+| Click latch | DAT_0x140a54e91 consumed | DAT_0x140a54e91 consumed |
+| Content | game+0x12800, game+0x10be8 | game+0x12800 (more branches) |
+| Mod button placement | Needs reordering decode + container width | Needs full layout decode + conditional logic |
+
+### 41.6 Smallest genuine blocker
+
+The two handlers draw the same buttons from the same data, but their layouts differ and neither's container width, clipping, or full position calculation is established. Before a mod-owned button can be placed in either path, the layout of the applicable handler must be decoded (including the reordering in FUN_140373EA0 and the conditional logic in FUN_140361BB0) and the container's visible width must be identified. The input binding for game+0x10398 does not block this; both handlers can be assessed independently.
+
+No implementation, build, hook, configuration change, or live test is authorized.
