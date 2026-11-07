@@ -762,11 +762,13 @@ A later live test would need to establish at minimum:
 
 ### 20.4 Verdict
 
-Established: Economy & Trade's selected name is not handled by the "system", "storage", "infrastructure", "building", "workshopbuildings", "editorbuildings", "timelapse", "notifi_tab", "objectives", or "scripts" branches. It reaches `FUN_140395C90` as the fallback page handler. The widget call signatures and draw context are statically understood.
+Correction: an Economy & Trade/importexport entry does not reach `FUN_140395C90`. The corrected handler is `FUN_140358A20` (RVA `0x358A20`). The statement above is retained only as historical evidence for `FUN_140395C90`.
 
-Unknown: whether `FUN_140395C90` is a safe host, where its content area is, how clipping/scrolling/close work, and whether widgets can receive input there.
+Established: the selected entry name is not one of the explicitly handled names before the final fallback, and `FUN_140358A20` is the likely handler. `FUN_140395C90` can call native widgets in at least one construction/building path, but that path is not the Economy & Trade path.
 
-Smallest next action: either a deeper static trace of `FUN_140395C90`'s draw/input paths or a separately approved live test of the fallback page. No implementation or hook is authorized.
+Unknown: whether `FUN_140358A20` is a safe host, where its content area is, how clipping/scrolling/close work, and whether widgets can receive input there.
+
+Smallest next action: use the corrected diagnostic plan in section 26. No implementation or hook is authorized.
 
 ## 21. Economy & Trade host assessment
 
@@ -824,11 +826,13 @@ A later live test would need to establish:
 
 ### 21.4 Verdict
 
-Established: Economy & Trade likely reaches `FUN_140395C90` as a fallback handler, and that handler can call native widgets in some paths.
+Correction: an Economy & Trade/importexport entry does not reach `FUN_140395C90`. The dispatch chain reaches `FUN_140358A20` (RVA `0x358A20`). The notes above are retained as historical evidence for `FUN_140395C90` only.
 
-Unknown: whether `FUN_140395C90` is a safe host, where its content area is, how clipping/scrolling/close work, and whether widgets can receive input there.
+Established: `FUN_140395C90` can call native widgets in at least one construction/building path. That evidence does not apply to the Economy & Trade path.
 
-Smallest next action: a deeper static trace of `FUN_140395C90`'s use of the selected entry and `[game+0xD428]`, or a separately approved live test. No implementation or hook is authorized.
+Unknown: whether `FUN_140358A20` is a safe host, where its content area is, how clipping/scrolling/close work, and whether widgets can receive input there.
+
+Smallest next action: use the corrected diagnostic plan in section 26. No implementation or hook is authorized.
 
 ## 22. Bounded widget-path evidence
 
@@ -972,7 +976,106 @@ Expected result:
 
 Do not implement the Almanac yet. The first acceptable release remains a global fiscal page for the existing tax controls, but the Economy & Trade host path is not proven. The smallest useful next step is either a deeper static trace of `FUN_140358A20`'s use of the selected entry and its fields, or a separately approved read-only diagnostic investigation. Passive observation alone cannot resolve the technical blocker.
 
-## 25. Bounded diagnostic plan
+## 26. Final diagnostic proposal
+
+### 26.1 Preserved deciding evidence
+
+The deciding evidence is preserved in `docs/almanac-native-evidence.md`, section "Dispatch evidence for the corrected Economy & Trade path." It includes the exact master-dispatch disassembly and the strings used for comparison.
+
+What the evidence establishes:
+- `FUN_140317DB0` compares the selected entry name to "system", "storage", "infrastructure", "building", "workshopbuildings", "editorbuildings", "const_offi", "veh_replace", "mtlist", "trade", and "list".
+- If none match, it calls `FUN_140358A20` at RVA `0x358A20`.
+- "importexport" is not in the explicit comparison list. Therefore an Economy & Trade/importexport entry is expected to reach `FUN_140358A20`.
+
+What is missing:
+- The runtime value of the selected entry when Economy & Trade is selected.
+- The values of `[game+0xD428]` and `[[game+0xD428]+0x48]` for that entry.
+- The content rectangle, clipping, scrolling, close behavior, and collision data for `FUN_140358A20`.
+- Whether `FUN_140358A20` is a safe host.
+
+No reconstruction should be treated as proof.
+
+### 26.2 Debugger method
+
+A debugger could identify the selected page without modifying game files:
+
+1. Launch the game under the debugger or attach to it.
+2. Set a breakpoint at RVA `0x31EE76` (the `CALL 0x140358A20` instruction in `FUN_140317DB0`), or at the entry of `FUN_140358A20` (RVA `0x358A20`).
+3. Open the global sidebar and select Economy & Trade.
+4. When the breakpoint hits, inspect:
+   - `R14` / `RCX`: game pointer.
+   - `RBX`: selected entry pointer plus one (name pointer).
+   - `game+0xC650`: selected entry pointer.
+   - `game+0xD428`: page-related pointer.
+   - `[[game+0xD428]+0x48]`: sub-field used by `FUN_140395C90`-style gates.
+   - Any coordinates or dimensions used by `FUN_140358A20`.
+
+Breakpoint behavior:
+- A software breakpoint temporarily replaces an instruction byte with `INT3` in memory. It does not change the executable file, but it does alter memory and may be detected by anti-debugging or stability checks.
+- A hardware breakpoint uses CPU debug registers and does not modify code, but it is more limited and may also be detected.
+- Either method pauses the game while the debugger is stopped.
+- This is not non-invasive merely because it is read-only.
+
+### 26.3 Question and result interpretation
+
+Question: Does an Economy & Trade/importexport entry select `FUN_140358A20`, and does that handler expose usable content coordinates and input state for a small Almanac page?
+
+Positive result:
+- The handler is `FUN_140358A20`.
+- The handler exposes a content rectangle and collision data.
+- This would make a bounded Almanac page plausible on that path.
+
+Negative result:
+- The handler is not `FUN_140358A20`, or it lacks usable content coordinates or input state.
+- This would rule out that host path.
+
+Inconclusive result:
+- The observed values do not clearly identify the handler or its layout.
+- This would require a deeper static trace or a more targeted diagnostic.
+
+This would not prove:
+- That drawing an Almanac page there is safe.
+- That clicks can be accepted without interfering with vanilla UI.
+- That the same behavior holds across saves, currencies, or game versions.
+
+### 26.4 Safeguards and rollback
+
+Safeguards:
+- Use a disposable save or session.
+- Do not change tax values, settings, or saves.
+- Prefer a hardware breakpoint if available.
+- If a software breakpoint is used, remove it immediately after observation.
+- Record only memory values and layout observations; do not patch code.
+- Keep the debugger session short.
+
+Game autosaves:
+- Disable autosaves or use a disposable save before testing.
+- Do not use the primary save.
+
+Debugger attachment:
+- Attaching a debugger may pause the game and may trigger anti-debugging or instability.
+- No debugger attachment is authorized by this plan.
+
+Logs or files:
+- Passive phase: none.
+- Debugger phase: only debugger notes or screenshots, if created manually.
+- No game files, saves, or settings should be modified.
+
+Rollback:
+- Detach the debugger.
+- Remove any software breakpoint.
+- Restart the game if behavior is altered.
+- No executable, configuration, or save rollback should be needed if the debugger was used strictly read-only.
+
+### 26.5 Static evidence still required before any hook
+
+- Verify exact prologue bytes and instruction boundaries for any candidate hook.
+- Trace incoming edges and calling convention.
+- Establish state and lifetime for the draw context and selected entry.
+- Confirm compatibility with existing UI hooks.
+- Resolve `FUN_140358A20`'s use of the selected entry and its fields.
+
+No hook, build, or live test is authorized by this plan.
 
 ### 25.1 Evidence corrections applied
 
