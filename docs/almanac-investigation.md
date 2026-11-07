@@ -1406,3 +1406,55 @@ This would not establish that implementing an Almanac page is safe, nor that nat
 - Resolve `FUN_140358A20`'s use of the selected entry and its fields.
 
 No hook, build, or live test is authorized by this plan.
+
+## 31. Almanac button-row placement and page replacement
+
+### 31.1 Evidence status
+
+Supported:
+- `FUN_14007C400` (RVA `0x07C400`) is called once by `FUN_140317DB0` at RVA `0x31BB22`, after panel dimensions are set. It reads and conditionally clears `game+0xC650`.
+- It calls `BeginDraw`, `EndDraw`, `Draw`, `SetPosition`, `SetDimensions`, `PrintLeftUnicode`, `GetMouseSolid`, and `Collision`.
+- It calls native slider and checkbox functions, but its string comparisons are construction-oriented ("system", "makecity", "objectives", "qa"). No Economy & Trade sub-tab strings were found in its string table.
+- The City Hall TAX button's current `widgetButton` implementation is content-flow: it uses `g_frame.y` (`window+0x250`) and `g_frame.left`, then advances `window+0x250`.
+
+Unresolved:
+- Which native code draws the Economy & Trade button row shown in the screenshot.
+- How button positions, sizes, spacing, scaling, and selected state are calculated.
+- How a click maps to a page and how close/section-switch behavior works.
+- Whether a mod-owned button can be inserted without overlap or obscuring vanilla content.
+- Whether `FUN_140358A20` can host a distinct Almanac page while preserving vanilla pages.
+
+### 31.2 Design assessment
+
+A mod-owned Almanac button is a candidate design, not a proven implementation.
+
+Required behavior:
+- The button must match the existing buttons in size, spacing, and selected appearance.
+- It must not overlap another button or occupy a separate bottom row.
+- Its position must be derived from the global window's actual button-row layout, not a fixed screen coordinate.
+- Clicking it must open a distinct Almanac page.
+- Selecting a vanilla button must return to that vanilla page.
+- Closing the window must not retain an unsafe pointer or override a newer player selection.
+
+Candidate approaches:
+1. Mod-owned button in the same row:
+   - Preserves all vanilla buttons and their behavior.
+   - Keeps mod-owned selection state.
+   - Requires proving the button-row layout, input handling, and non-overlap.
+2. Conditional content in the selected Economy & Trade page:
+   - Not acceptable as the first release per the owner's design decision.
+3. Dedicated top-level section:
+   - Still preferred if safe, but its vector ownership and capacity are unproven.
+
+### 31.3 If the row cannot safely accommodate another button
+
+This is a design blocker, not a silent fallback. The alternatives are:
+- A dedicated top-level Almanac section, if its native vector ownership and capacity can be proven.
+- A mod-owned button row drawn in the same visual location, if it can coexist safely with vanilla drawing and input.
+- A separately approved diagnostic to establish the button-row layout and input model.
+
+The button must not be moved to a bottom row or embedded in the trade page to satisfy this requirement.
+
+### 31.4 Smallest next step
+
+The smallest next step is a targeted static trace of the Economy & Trade button-row drawing and click handling, or a separately approved live diagnostic if static evidence cannot establish the layout. No implementation, build, hook, configuration change, or live test is authorized.
