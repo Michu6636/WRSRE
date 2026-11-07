@@ -1794,9 +1794,120 @@ Implication for a mod-owned Almanac page: the native content area is not gated b
 
 Re-read the remaining unread constants (`DAT_14090aa10`, `DAT_14090aa70`-adjacent, etc.) and trace the drawable object at `sub_entry+0x48` (its constructor/owner) to resolve the visible icon size and the backdrop-vs-icon relationship. Then, if geometry is established, a separately approved read-only live diagnostic can confirm on-screen placement and latch coexistence. No implementation, build, hook, configuration change, or live test is authorized by this report.
 
+## 37. FUN_140358A20 deeper static findings (drawable, constants, return path)
+
+### 37.1 The drawable at sub_entry+0x48 is a texture, not a separate icon widget
+
+The sidebar panel initializer `FUN_140296110` (RVA `0x296110`) builds the sub-entry vector and creates each sub-entry's drawable. Verbatim (scratch/out/140296110_decomp.c, lines 95-106):
+
+```c
+lVar11 = uVar20 * 0x50;
+sprintf(local_498, "editor/%s_%s.png",
+        lVar8 + 1 + lVar19,                          // panel name (at panel_entry+1)
+        *(longlong *)(lVar8 + 0x48 + lVar19) + lVar11); // sub-entry name (at sub_entry+0)
+lVar8 = *(longlong *)(*(longlong *)(param_1 + 0xc608) + 0x48 + lVar19);
+pCVar7 = C3D_MIDDLEPOINT::CreateManagedTexture((C3D_MIDDLEPOINT *)&DAT_1409eacd0, local_498);
+*(C3DAPI_TEXTURE **)(lVar11 + 0x48 + lVar8) = pCVar7;   // sub_entry+0x48 = texture
+plVar2 = *(longlong **)(... + 0x48 + lVar11);
+(**(code **)(*plVar2 + 0x10))(plVar2, local_498, 0, 0);   // vtable+0x10 = Load(filename)
+```
+
+So `sub_entry+0x48` is a `C3DAPI_TEXTURE*` whose filename is `"editor/<panel>_<sub>.png"` (e.g. `"editor/trade_importexport.png"`). In `FUN_140358A20` (lines 138-141) it is drawn first via its vtable `+0x70`:
+
+```c
+plVar5 = *(longlong **)(lVar33 + 0x48 + lVar25);   // sub_entry+0x48
+(**(code **)(*plVar5 + 0x70))(plVar5, 0, DAT_1409ead08);  // draw texture
+```
+
+The four section PNGs on disk (`media_soviet/editor/`) are 96x96. The backdrop panel drawn afterwards (line 181) is 92x92. Therefore the visible icon is 96x96 and the mouse-hit/selection backdrop is 92x92 - a 4 px total (2 px per side) mismatch, with the icon slightly larger than the hit rect. The PNG dimensions are runtime/asset data, not encoded in the exe; they were measured from the installed media files, not inferred.
+
+Mouse hit area: the `C3D_PANEL2D::Collision` at line 149 tests the 92x92 rect at `(fVar36, fVar38)` (position `_DAT_1409be2f0 = CONCAT44(fVar38, fVar36)`). Adjacent buttons' hit rects are 92 wide on an 85 pitch, so they overlap by 7 px on the shared edge. Click resolution: the loop processes indices 0,1,2,... in order and, on collision, writes `game+0xC65C = uVar26` (line 163), overwriting any earlier hit. Hence in a 7 px overlap zone the higher-indexed button wins. This is the native resolution rule and is not a mod-specific risk, but a mod button inserted at index 4 would participate in the same overlap rule with index 3 (and 5, if present).
+
+### 37.5 Close path: exact missing evidence
+
+This function (`FUN_140358A20`) contains no close handling. The close behavior lives in `FUN_140317DB0` (the sidebar host): visibility is gated by `game+0xFCE`, and closing is represented by tab index `-1` in the 10-slot tab object at `obj+0x68` (see `docs/almanac-investigation.md` section 6.3 / 13.3). The exact hand-off from that tab index to `game+0xC650` (the selected entry pointer) is not traced, nor is it known whether `game+0xC65C` (the sub-tab index) is cleared on close. A mod flag must be cleared on close, but the reliable trigger (visibility drop vs. selected-entry change vs. tab index -1) cannot be chosen without tracing that hand-off. This is the exact missing close-path evidence.
+
+### 37.7 Unresolved questions (cumulative)
+
+1. Runtime selected entry identity: whether the live selected entry is "importexport" is inferred, not observed.
+2. `game+0xAE50` / `game+0xAE54` owners and runtime values.
+3. Visible icon size is 96x96 (from media), but the draw position of the texture relative to the 92x92 backdrop (centered? offset?) is not in the decompile (the texture's own draw uses its internal origin).
+4. Container width, clipping, and scroll state.
+5. Body extent and clip rect.
+6. `FUN_140496DE0` accepted values (whether a new value beyond {1,4,6,8,10} works).
+7. Latch owner/clear site and whether click side effects always fire.
+8. Close hand-off (tab index -1 -> game+0xC650/game+0xC65C).
+9. Whether the runtime collection always has four entries.
+
+### 37.8 Smallest next step
+
+Trace (a) the latch `DAT_140a54e91` owner/clear site to settle click detection for the already-selected button, and (b) the close hand-off in `FUN_140317DB0` (visibility `game+0xFCE` -> tab index -1 -> `game+0xC650`). Both are pure static traces of existing exports/callers; no implementation, build, hook, configuration change, or live test is authorized. Only after those are traced can a mod reliably detect "return to vanilla" and "window closed."
+
 ### 37.9 Files touched in this refresh
 
 - `docs/almanac-investigation.md` (this section)
-- `docs/ghidra-index/358A20.md` (to be updated with 96×96 icon / 92×92 backdrop / overlap finding)
+- `docs/ghidra-index/358A20.md` (updated with 96x96 icon / 92x92 backdrop / overlap finding)
 
 No production code, configuration, saves, builds, hooks, or settings were changed.
+
+### 37.2 Constants: panel-relative vs. runtime
+
+All geometry below is in the panel-relative coordinate space of `game+0xADB0` (the widget draw context set by `FUN_140317DB0`). It is not screen space; the absolute screen origin depends on `game+0xAE50` (a runtime field of the live game object) and on the sidebar's own layout, which is not traced in this function. Static binary defaults (read from the mapped `.rdata`/`.data` sections) vs. runtime values:
+
+| Symbol | RVA | Static value | Kind |
+|---|---|---|---|
+| `DAT_140992088` | `0x992088` | `1.0` | DPI scalar; default in file, runtime value depends on display/DPI settings |
+| `DAT_14090ab14` | `0x90AB14` | `85.0` | static pitch (both axes) |
+| `DAT_14090aa0c` | `0x90AA0C` | `45.0` | static Y origin offset |
+| `DAT_14090aa44` | `0x90AA44` | `55.0` | static X origin extra offset |
+| `DAT_14090ab40` | `0x90AB40` | `92.0` | static backdrop width/height |
+| `DAT_140909ddc` | `0x909DDC` | `0.5` | static half-scale |
+| `DAT_140909f58` | `0x909F58` | `1.0` | static sound/print scale |
+| `DAT_14090a9f0` | `0x90A9F0` | `40.0` | static (content block X) |
+| `DAT_14090aa28` | `0x90AA28` | `50.0` | static (content block size) |
+| `DAT_14090ab8c` | `0x90AB8C` | `107.0` | static (content block Y delta) |
+| `DAT_14090a9dc` | `0x90A9DC` | `37.0` | static (content block label offset) |
+| `DAT_14090ab70` | `0x90AB70` | `100.0` | static (content block Y delta) |
+| `DAT_14090aa10` | `0x90AA10` | `46.0` | static (content block) |
+| `DAT_14090af08` | `0x90AF08` | `450.0` | static (body layout) |
+| `DAT_14090aafc` | `0x90AAFC` | `80.0` | static (body layout) |
+| `DAT_14090a928` | `0x90A928` | `20.0` | static (body layout) |
+| `DAT_14090ab98` | `0x90AB98` | `110.0` | static (body layout) |
+| `DAT_14090a8cc` | `0x90A8CC` | `15.0` | static (body layout) |
+| `DAT_14090a6a8` | `0x90A6A8` | `5.0` | static (body layout) |
+| `DAT_14090a828` | `0x90A828` | `10.0` | static (body layout) |
+| `game+0xAE50` | field | unknown | runtime field: Y base for the row |
+| `game+0xAE54` | field | unknown | runtime field: used as `0.5*value+85` in `local_39c` (not used in the button loop) |
+
+The formulae:
+- Button backdrop: 92 x 92 (static, DPI-scaled at runtime).
+- Button 0 origin: X = 55 + 85 = 140; Y = 45 + `game+0xAE50`.
+- Pitch: 85 (X and Y).
+- Wrap: after every 8 buttons (indices 0..7 row 0), Y += 85, X resets to 130.
+- Content header panel: 50 x 50 at X = 40 + 85 = 125; Y = (45 + `game+0xAE50`) + 107 = 152 + `game+0xAE50`. Label printed at (125, Y-37+85).
+- The body block (lines 458-614) uses 450/80/20/110/15/5/10/46 etc. for further layout; full extent not traced (see 37.6).
+
+The sidebar panel initializer `FUN_140296110` (RVA `0x296110`) builds the sub-entry vector and creates each sub-entry's drawable. Verbatim (scratch/out/140296110_decomp.c, lines 95-106):
+
+```c
+lVar11 = uVar20 * 0x50;
+sprintf(local_498, "editor/%s_%s.png",
+        lVar8 + 1 + lVar19,                          // panel name (at panel_entry+1)
+        *(longlong *)(lVar8 + 0x48 + lVar19) + lVar11); // sub-entry name (at sub_entry+0)
+lVar8 = *(longlong *)(*(longlong *)(param_1 + 0xc608) + 0x48 + lVar19);
+pCVar7 = C3D_MIDDLEPOINT::CreateManagedTexture((C3D_MIDDLEPOINT *)&DAT_1409eacd0, local_498);
+*(C3DAPI_TEXTURE **)(lVar11 + 0x48 + lVar8) = pCVar7;   // sub_entry+0x48 = texture
+plVar2 = *(longlong **)(... + 0x48 + lVar11);
+(**(code **)(*plVar2 + 0x10))(plVar2, local_498, 0, 0);   // vtable+0x10 = Load(filename)
+```
+
+So `sub_entry+0x48` is a `C3DAPI_TEXTURE*` whose filename is `"editor/<panel>_<sub>.png"` (e.g. `"editor/trade_importexport.png"`). In `FUN_140358A20` (lines 138-141) it is drawn first via its vtable `+0x70`:
+
+```c
+plVar5 = *(longlong **)(lVar33 + 0x48 + lVar25);   // sub_entry+0x48
+(**(code **)(*plVar5 + 0x70))(plVar5, 0, DAT_1409ead08);  // draw texture
+```
+
+The four section PNGs on disk (`media_soviet/editor/`) are 96x96. The backdrop panel drawn afterwards (line 181) is 92x92. Therefore the visible icon is 96x96 and the mouse-hit/selection backdrop is 92x92 - a 4 px total (2 px per side) mismatch, with the icon slightly larger than the hit rect. The PNG dimensions are runtime/asset data, not encoded in the exe; they were measured from the installed media files, not inferred.
+
+Mouse hit area: the `C3D_PANEL2D::Collision` at line 149 tests the 92x92 rect at `(fVar36, fVar38)` (position `_DAT_1409be2f0 = CONCAT44(fVar38, fVar36)`). Adjacent buttons' hit rects are 92 wide on an 85 pitch, so they overlap by 7 px on the shared edge. Click resolution: the loop processes indices 0,1,2,... in order and, on collision, writes `game+0xC65C = uVar26` (line 163), overwriting any earlier hit. Hence in a 7 px overlap zone the higher-indexed button wins. This is the native resolution rule and is not a mod-specific risk, but a mod button inserted at index 4 would participate in the same overlap rule with index 3 (and 5, if present).
