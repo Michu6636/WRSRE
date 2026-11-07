@@ -1411,26 +1411,27 @@ No hook, build, or live test is authorized by this plan.
 
 ## 34. Resolution of the FUN_1404D72C0 link
 
-### 34.1 Outcome: unresolved
+### 34.1 Outcome: supported match for the top-level section button row
 
-Existing exports do not establish that the panel array used by `FUN_1404D72C0` is the row shown directly below the Economy & Trade title, nor that it represents the four visible buttons.
+Existing exports support that `FUN_1404D72C0` (RVA `0x4D72C0`) draws the top-level section button row used by the global sidebar. It is not the City Hall TAX tile. It is not established as an in-page Economy & Trade sub-tab row, and the exact four visible buttons remain a runtime/visual mapping.
 
-Supported evidence:
-- `FUN_1404D72C0` (RVA `0x4D72C0`, size 7,553) is called by `FUN_140317DB0` at RVA `0x319E42` with `RCX = [game+0xD408]`.
+Deciding evidence:
+- Caller: `FUN_140317DB0` calls it at RVA `0x319E42` with `RCX = [game+0xD408]`.
 - It loops over `min(count+1, 10)` tabs from the array at `param_1+0x20`.
 - Each tab uses a panel pointer from that array.
 - Its texture comes from `panel+0x58` or is created from the string at `panel+0xB4`.
+- Tab X is derived from `param_1+0x74 + index * pitch`, where pitch is derived from the panel count and DPI.
 - It uses `GetMouseSolid` + `Collision` and the latch `0xA54E91`.
 - Clicking sets `param_1+0x40`, `param_1+0x68`, and `param_1+1`.
 - Selected state is tracked in `param_1+0x40`, `param_1+0x68`, `param_1+1`, and `DAT_1409E2338`.
+- The master function's selected entry names include `system`, `storage`, `infrastructure`, `building`, `workshopbuildings`, `editorbuildings`, `trade`, `population`, `objectives`, and `scripts`, matching a top-level section row.
+- The master tab-name loop at RVA `0x14031FF40` formats `maintab_<name>` from the same class of panel entries and highlights the selected panel.
 
-Not established:
-- How `[game+0xD408]` is initialized or populated.
-- The panel names, texture strings, or runtime order for the actual tab entries.
-- Whether this function draws the row directly below the Economy & Trade title or a different toolbar.
-- The row's on-screen rectangle, pitch, tab count, and available width.
-- Which of the four visible buttons, if any, correspond to this panel array.
-- Whether a mod-owned Almanac button can be added safely.
+The screenshot's four visible buttons may be a clipped subset of this row. A visual mapping such as Trade/Population/Objectives/Scripts is a hypothesis only and is not confirmed by the available exports.
+
+### 34.2 Smallest next evidence
+
+The smallest next evidence is a runtime mapping from the panel array at `game+0xD408` to visible button identities and their on-screen rectangle. No implementation, build, hook, configuration change, or live test is authorized.
 
 ### 34.2 Smallest missing evidence
 
