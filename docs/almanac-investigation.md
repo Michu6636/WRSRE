@@ -2546,3 +2546,68 @@ Container width is ONE of several blockers, not the only one.
 - docs/almanac-investigation.md (this section)
 
 No production code, configuration, saves, builds, hooks, or settings were changed.
+## 46. Panel setup helpers: no width/clip fields set
+
+### 46.1 FUN_1404460A0 (RVA 0x4460A0)
+
+Decompiled (scratch/out/1404460a0_decomp.c, 64 lines). Signature: `FUN_1404460a0(param_1*, float param_2, float param_3, undefined8 param_4)` with in_R8D as a mode selector.
+
+- If `in_R8D != -1` and `in_R8D != param_1[8]`, returns immediately (mode mismatch).
+- If `param_1[8] == 5` (special mode), adjusts param_2 and param_3 based on DAT_0x90c479c/0x90c47a0/0x90c47a4/0x90c47ac, with bounds checks that may return early.
+- Otherwise: if `param_1[1] - *param_1 < 0x20` (small collection), calls FUN_140449c00 to append, then FUN_140001a50 to free.
+- Writes `*(float *)(param_1[1] + -8) = param_2` (stores param_2 as a float in the collection's tail).
+- Does NOT read or write any width, height, or clip field of game+0xADB0. It operates on param_1's internal sorted collection.
+
+Conclusion: FUN_1404460A0 is a vertical-position/scroll helper. It does not set the row's width or clipping bounds.
+
+### 46.2 FUN_140445EB0 (RVA 0x445EB0)
+
+Decompiled (scratch/out/140445eb0_decomp.c, 84 lines). Signature: `FUN_140445eb0(param_1*, float param_2, undefined8 param_3, undefined8 param_4)`.
+
+- If `param_3 == -1` or `param_3 == param_1[8]` (mode match):
+  - If collection is small (< 0x20 bytes): rebuilds collection, inserts param_2 via FUN_140042de0.
+  - If collection is large: searches for param_2 in a sorted float array (param_1[1]-0x20..param_1[1]-0x18), deduplicates within tolerance (DAT_0x90992088 * DAT_0x90a6a8 = 5.0), and inserts param_2 if not present. Then sorts via FUN_140468180.
+- Does NOT read or write any width, height, or clip field. It is a sorted-insert/dedup helper for float arrays.
+
+Conclusion: FUN_140445EB0 is a sorted-collection helper. It does not set the row's width or clipping bounds.
+
+### 46.3 FUN_1404461F0 (RVA 0x4461F0)
+
+Decompiled (scratch/out/1404461f0_decomp.c, 145 lines). Signature: `FUN_1404461f0(param_1*, float param_2, float param_3, int param_4)`.
+
+- If `param_4 != -1` and `param_4 != param_1[8]`, returns (mode mismatch).
+- If `param_1[8] == 5` (special mode), adjusts param_3 with bounds checks.
+- Otherwise: searches a nested sorted collection (param_1[0] -> array of 0x20-byte structs, each with a sorted float sub-array) for param_3, and inserts param_2 into the matching sub-array (dedup within tolerance 5.0). Then sorts via FUN_140468180.
+- Writes `*(float *)(param_1[1] + -8) = param_3` (stores param_3 in the collection tail).
+- Does NOT read or write any width, height, or clip field. It is a nested sorted-collection insert helper.
+
+Conclusion: FUN_1404461F0 is a nested sorted-collection helper. It does not set the row's width or clipping bounds.
+
+### 46.4 FUN_1404465A0 (RVA 0x4465A0)
+
+Decompiled in part (scratch/out/1404465a0_full_disasm.asm, 0x1404465A0-0x1404467A0). Writes `game+0xAE30 = 1.0` (scale factor) if a condition is zero. Reads game+0x80, game+0x84, game+0x8c. Does not write width, height, or clip fields.
+
+Conclusion: FUN_1404465A0 sets a scale factor (game+0xAE30). It does not set the row's width or clipping bounds.
+
+### 46.5 Summary: no width/clip field identified
+
+None of the four helpers (FUN_1404465A0, FUN_1404460A0, FUN_140445EB0, FUN_1404461F0) set or pass a width, height, or clip rectangle for the panel context (game+0xADB0). They are all collection-management or scale helpers. The panel context dimensions are set elsewhere — likely during object construction (before FUN_140317DB0) or by a function not yet examined.
+
+The window bounds remain untraced. The exact missing evidence is the constructor or initialization of the sidebar/window object that creates game+0xADB0 and sets its dimension fields. No live diagnostic is proposed beyond reading those fields at runtime (which requires knowing their offsets, which are not established).
+
+### 46.6 Four vs visible (final)
+
+| Handler | Total sub-entries | Loop iterations | Buttons drawn | Last sub-entry |
+|---|---|---|---|---|
+| FUN_140373EA0 | count | count | count | Drawn (reordered to position 2) |
+| FUN_140361BB0 | count | count-1 (ESI=0..count-2) | count-1 (if no skips) | Not drawn as button; 35x35 panel after loop |
+
+### 46.7 Files touched
+
+- docs/almanac-investigation.md (this section)
+- scratch/out/1404460a0_decomp.c (new cached export)
+- scratch/out/140445eb0_decomp.c (new cached export)
+- scratch/out/1404461f0_decomp.c (new cached export)
+- scratch/out/1404465a0_full_disasm.asm (new cached export)
+
+No production code, configuration, saves, builds, hooks, or settings were changed.
