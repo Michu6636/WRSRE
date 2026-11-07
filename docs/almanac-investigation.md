@@ -976,6 +976,54 @@ Expected result:
 
 Do not implement the Almanac yet. The first acceptable release remains a global fiscal page for the existing tax controls, but the Economy & Trade host path is not proven. The smallest useful next step is either a deeper static trace of `FUN_140358A20`'s use of the selected entry and its fields, or a separately approved read-only diagnostic investigation. Passive observation alone cannot resolve the technical blocker.
 
+## 28. Selected-entry write at RVA 0x0843F3 — focused check
+
+### 28.1 Exact instruction evidence
+
+Source artifact: `scratch/out/14007c400_140084754_disasm.asm` (lines ~6758–6812).
+
+```
+140084307:  33 FF                    XOR EDI,EDI          ; RDI = 0
+...
+140084367:  MOV qword ptr [R13],RDI
+1400843f3:  49 89 BE 50 C6 00 00     MOV qword ptr [R14 + 0xc650],RDI   ; RDI = 0
+1400843fa:  41 C7 86 54 AE 00 00 00 00 7A C4 MOV dword ptr [R14 + 0xae54],0xc47a0000
+```
+
+- `R14 = game` pointer (set at function entry `0x14007c47e: MOV R14,RCX`).
+- `RDI = 0` because `XOR EDI,EDI` at RVA `0x0034307` zero-extends into RDI and nothing reassigns EDI/RDI before the write.
+- Therefore the write stores **NULL (0)** into `game+0xC650` — the selected entry pointer — i.e. it **deselects/clears** the entry. It does not write a new button/entry pointer.
+- The same block also writes `[R13] = 0` where `R13 = game + 0xd428`, and sets `[game+0xae54] = 0xc47a0000`.
+
+### 28.2 Conditions (static, unresolved where marked)
+
+Reachable only through this branch chain (all static, not runtime-proven):
+1. `[R14+0xd428]` non-null (object pointer at `game+0xd428`).
+2. Configuration read at `0x140a54b90` returns non-zero (AL != 0).
+3. `R15B != 0` at `0x14008434c`.
+4. `[game+0xC650] != 0` (an entry is currently selected).
+5. `[R13] != 0` and the object at `game+0xd428` has a 7-character name equal to **"system"** (compare against `0x1408736c4`).
+6. Selected entry name (`[game+0xC650] + 1`) matches **"makecity"** (strcmp against `0x14087c048`), **"objectives"** (strcmp against `0x14087bfd8`), or starts with **"qa"** (3-byte compare against `0x140871344`).
+
+If all conditions hold: `[game+0xd428] = 0`, `game+0xC650 = 0`, `[game+0xae54] = 0xc47a0000`, then jump to `0x140084641`.
+
+### 28.3 What this proves and what it does not
+
+- Proven: `FUN_14007C400` (RVA `0x07C400`) is called once by the sidebar host `FUN_140317DB0` at RVA `0x31BB22` during drawing, after setting panel dimensions. It reads and conditionally clears `game+0xC650` under specific entry-name conditions.
+- Proven: the reported write at RVA `0x0843F3` writes NULL, not a new entry pointer, and its conditions reference "system"/"makecity"/"objectives"/"qa" — not Economy & Trade sub-tabs ("trade", "loanusd", "loanrub", "productionconsumption", "importexport").
+- Not proven: how the Economy & Trade button row is created, how many buttons exist, how a click maps to a selected entry, whether `game+0xC650`/`game+0xC608` vector has spare capacity, whether a new Almanac button/entry can be added safely.
+- Not proven: `FUN_14007C400` iterates buttons or handles click→selection for Economy & Trade; its only confirmed caller is the master sidebar draw function.
+
+### 28.4 Missing evidence
+
+Smallest missing evidence:
+- The structure/array behind `game+0xC608` (panel/vector begin) and `game+0xC610` (end): element size, owner, capacity, initialization, and whether an Economy & Trade button entry occupies a slot there.
+- The click handler: which code reads mouse input over the button row and writes a chosen entry pointer to `game+0xC650` (or sub-tab index at `obj+0x68`).
+- Whether any spare slot exists for an additional Almanac entry without writing past the verified `0x68`-stride vector bounds.
+
+Until these are traced, adding a button "alongside the Economy & Trade buttons" cannot be established safe. A viable alternative that still gives the Almanac its own global page is conditional content inside the selected Economy & Trade/"importexport" page (handled by `FUN_140358A20`, RVA `0x358A20`), which requires no new vector entry — but its content area, clipping, scrolling, close behavior, and input state are also unresolved (see section 24/25).
+
+
 ## 27. Fallback: new button in the Economy & Trade row
 
 ### 27.1 Visual context
