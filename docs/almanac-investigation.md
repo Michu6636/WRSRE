@@ -2222,3 +2222,144 @@ FUN_140361BB0:
 The two handlers draw the same buttons from the same data, but their layouts differ and neither's container width, clipping, or full position calculation is established. Before a mod-owned button can be placed in either path, the layout of the applicable handler must be decoded (including the reordering in FUN_140373EA0 and the conditional logic in FUN_140361BB0) and the container's visible width must be identified. The input binding for game+0x10398 does not block this; both handlers can be assessed independently.
 
 No implementation, build, hook, configuration change, or live test is authorized.
+## 42. Final layout trace for both trade handlers
+
+### 42.1 FUN_140373EA0 (game+0x10398 != 0) — complete button layout
+
+Verbatim geometry instructions (scratch/out/140373ea0_1403829fd_disasm.asm):
+
+    140374114: MOVSS XMM7, dword ptr [0x140992088]          ; DPI = 1.0
+    14037411c: MOVAPS XMM6, XMM7                             ; XMM6 = 1.0
+    14037411f: MULSS XMM6, dword ptr [0x14090aa0c]           ; XMM6 *= 45
+    140374127: MOVAPS XMM0, XMM7                             ; XMM0 = 1.0
+    14037412a: MULSS XMM0, XMM11                            ; XMM0 *= 85 (XMM11 = DAT_0x90ab14)
+    14037412f: ADDSS XMM6, XMM0                             ; XMM6 = 45 + 85 = 130  (X origin)
+    140374138: ... (CMP game+0xc7d4, -1; JNZ skip)
+    140374140: MOVSS XMM12, dword ptr [0x14090aaa0]          ; XMM12 = 64.0
+    140374149: MULSS XMM7, XMM12                            ; XMM7 = 1.0 * 64 = 64  (pitch)
+    14037414e: LEA RCX, [RSI + 0xadb0]                      ; panel context
+    140374155: MOV R8D, 0x6                                  ; mode 6
+    14037415b: MOVAPS XMM1, XMM10                            ; XMM10 = 15 + game+0xAE50 (Y origin)
+    14037415f: CALL 0x1404460a0                             ; panel setup
+    14037419a: TEST EDX, EDX                                ; count == 0?
+    14037419c: JLE 0x1403745b6                              ; skip if no sub-entries
+    1403741a2-1403741cc: EBX mapping (see section 39.2)
+    1403741f6: MOVSXD RAX, EBX
+    1403741f9: LEA R13, [RAX + RAX*4]
+    1403741fd: SHL R13, 0x4                                 ; R13 = EBX * 0x50
+    140374201: ADD R13, qword ptr [R8]                      ; R13 = sub_entry base
+    140374204: MOV RCX, qword ptr [R13 + 0x48]              ; texture
+    140374214: CALL qword ptr [RAX + 0x70]                   ; draw texture
+    140374217: MOVSS XMM0, dword ptr [0x140992088]          ; DPI
+    14037421f: MULSS XMM0, dword ptr [0x14090aaa0]          ; 64.0
+    140374224: MOVSS dword ptr [0x1409be2e8], XMM0          ; backdrop width = 64
+    14037422c: MOVSS dword ptr [0x1409be2ec], XMM0          ; backdrop height = 64
+    140374243: MOVSD qword ptr [0x1409be2f0], XMM0          ; position (X,Y)
+    1403742a4: CALL qword ptr [0x14086c850]                 ; Collision (hit test on 64x64)
+    1403742f2: CMP byte ptr [0x140a54e91], CL                ; latch
+    1403742f8: JZ 0x140374366                               ; skip click if no latch
+    140374347: CMP dword ptr [RSI + 0xc65c], EBX             ; selection changed?
+    14037434f: MOV byte ptr [RSI + 0x1039a], 0x0             ; dirty flag
+    140374356: MOV dword ptr [RSI + 0xc65c], EBX             ; selected = this
+    14037435c: MOV dword ptr [RSI + 0x10be8], -1
+    140374366: CMP dword ptr [RSI + 0xc65c], EBX             ; selected == this?
+    14037436e: MOVUPS xmmword ptr [0x1409be30c], XMM0        ; selected overlay
+    1403743a8: ADDSS XMM6, XMM7                             ; X += 64 (pitch)
+    1403743b6: INC EDI                                      ; next button
+    1403743b8: ... (loop condition: EDI < count)
+
+For a 4-entry collection (count=4), rendered order = [sub0, sub1, sub3, sub2]:
+- Button 0 (EDI=0, EBX=0): X=130, Y=15+game+0xAE50, rect [130,194) x [Y,Y+64)
+- Button 1 (EDI=1, EBX=1): X=194, Y=same, rect [194,258)
+- Button 2 (EDI=2, EBX=3): X=258, Y=same, rect [258,322)
+- Button 3 (EDI=3, EBX=2): X=322, Y=same, rect [322,386)
+
+No overlap (64 backdrop on 64 pitch). Total row width: 4 * 64 = 256 px, from X=130 to X=386.
+
+### 42.2 FUN_140361BB0 (game+0x10398 == 0) — complete button layout
+
+Verbatim geometry instructions (scratch/ch_tab23_full.asm):
+
+    140361f1b: MOVSS XMM7, dword ptr [0x140992088]          ; DPI = 1.0
+    140361f23: MOVAPS XMM6, XMM7                             ; XMM6 = 1.0
+    140361f26: MULSS XMM6, dword ptr [0x14090aa0c]           ; XMM6 *= 45
+    140361f2e: MOVAPS XMM0, XMM7                             ; XMM0 = 1.0
+    140361f31: MULSS XMM0, XMM9                             ; XMM0 *= 85 (XMM9 = DAT_0x90ab14)
+    140361f36: ADDSS XMM6, XMM0                             ; XMM6 = 45 + 85 = 130  (X origin)
+    140361f48: MOVSS XMM10, dword ptr [0x14090aaa0]          ; XMM10 = 64.0
+    140361f51: MULSS XMM7, XMM10                            ; XMM7 = 1.0 * 64 = 64  (pitch)
+    140361f56: LEA RCX, [R14 + 0xadb0]                      ; panel context
+    140361f5d: MOV R8D, dword ptr [R14 + 0xada8]             ; count (from game+0xADA8)
+    140361f64: MOVAPS XMM1, XMM15                            ; XMM15 = 15 + game+0xAE50 (Y origin)
+    140361f68: CALL 0x1404460a0                             ; panel setup
+    140361f70: MOV R8, qword ptr [R14 + 0xc650]              ; selected entry
+    140361f77: ADD R8, 0x48                                 ; sub-entry vector begin
+    140361f7b: MOV RCX, qword ptr [R8 + 0x8]                ; end
+    140361f7f: SUB RCX, qword ptr [R8]                      ; end - begin
+    ... divide by 0x50 -> count-1 (EAX)
+    140361f9f: MOVSS XMM9, dword ptr [0x140909f58]          ; 1.0 (scale)
+    140361fb0: (loop start) CMP game+0x578, 0; JZ skip      ; conditional skip
+    140361fc8: CMP ESI, 6; JNZ ...                          ; conditional (ESI != 6?)
+    140361fd6: (if skip conditions met, jump to 0x14036220e)
+    140361fe9: MOV RAX, qword ptr [R8]                      ; sub_entry vector begin
+    140361ff0: MOV RBX, qword ptr [R15 + RAX + 0x48]        ; texture at sub_entry+0x48
+    140361ff5: MOV RDI, qword ptr [RBX]                     ; vtable
+    140361fff: CALL qword ptr [RDI + 0x70]                  ; draw texture
+    140362005: MOVSS XMM1, dword ptr [0x140992088]          ; DPI
+    140362010: MULSS XMM1, XMM10                            ; 64.0 (backdrop size)
+    14036201d: MOVAPS XMM2, XMM1
+    140362020: LEA RCX, [0x1409be060]
+    140362027: CALL 0x14086c8a8                             ; SetDimensions(64, 64)
+    140362031: MOVAPS XMM3, XMM8
+    140362035: MOVAPS XMM2, XMM15
+    140362038: MOVAPS XMM1, XMM6                            ; X position
+    14036203f: CALL 0x14086c008                             ; SetPosition
+    14036204f: CALL 0x14086c8a0                             ; Draw
+    140362066: CALL 0x140445eb0                             ; panel setup
+    14036206b-2095: Collision, latch, click handling (same pattern as FUN_140373EA0)
+    14036209b: LEA RDX, [RBP + 0xaa0]                      ; (collision rect)
+    1403620a2: LEA RCX, [0x140a54b90]                      ; GetMouseSolid
+    ...
+    14036220e: (skip target) INC ESI                         ; next iteration
+    140362214: MOV R8, qword ptr [R14 + 0xc650]             ; re-read sub-entry vector
+    14036221c-225d: loop condition (ESI < count-1)
+
+Key difference: the loop uses ESI as counter and R15 as the sub-entry pointer (incremented by 0x50 each iteration). The sub-entry index is R15/0x50 (linear, no reordering). But there are conditional skips (game+0x578, ESI==6, game+0x5e0). So some buttons may be skipped. The pitch (XMM7 = 64) is the same, but whether X is incremented by 64 per drawn button (or per iteration) depends on whether skipped buttons still advance X. From the code, XMM6 is incremented at line 14036231a (ADDSS XMM6, XMM15?) — actually let me check. Line 471: `ADDSS XMM15, XMM0` and 472: `MOVSS [RBP-0x20], XMM15`. And line 225: `MOVAPS XMM2, XMM15`. Hmm, XMM15 is Y, not X. Let me check where X (XMM6) is incremented.
+
+Actually, looking at the loop, XMM6 starts at 130 and is likely incremented by 64 per button. But the conditional skips (JZ 0x14036220e) jump to INC ESI without drawing, so if a button is skipped, X is NOT incremented (the ADDSS XMM6, XMM7 happens only after a successful draw). So skipped buttons don't consume a slot. This means the visible buttons are packed (no gaps for skipped entries).
+
+For a 4-entry collection with no skips: positions X = 130, 194, 258, 322 (same as FUN_140373EA0, since no reordering in this handler).
+
+### 42.3 Window available width and clipping
+
+Neither handler contains a container-width test or clipping rectangle. The panel context is game+0xADB0 (set by FUN_140317DB0). The absolute screen origin depends on game+0xAE50 (runtime field) and the sidebar's own layout, which is not in either handler. The clipping is handled by the D3D/render layer (C3D_PANEL2D::Draw with the panel context), not by these functions. Therefore:
+
+- Whether X=130+4*64=386 is visible cannot be established from these handlers.
+- Whether a 5th button (X=386+64=450) would fit is unknown.
+- The sidebar's actual pixel width and the panel's clip rect are the exact missing evidence for container width.
+
+### 42.4 Four-entry collection (runtime count unverified)
+
+The runtime collection count is not statically established. The screenshot shows 4 buttons, but the code reads count from the sub-entry vector at runtime. For a 4-entry collection:
+
+FUN_140373EA0: rendered order [sub0, sub1, sub3, sub2], positions X=130,194,258,322. No overlap.
+FUN_140361BB0: rendered order [sub0, sub1, sub2, sub3] (linear, no reordering observed), positions X=130,194,258,322. No overlap. (Conditional skips may remove some.)
+
+Runtime count and visibility are UNVERIFIED. The vector size depends on the "trade" panel's sub-entries, which are built by FUN_140296110 from a data table. The data table (game+0xC2B0, stride 0x340) contents are not traced.
+
+### 42.5 Mod-owned button placement (no native collection extension needed)
+
+A mod-owned button does NOT need to follow native insertion rules (reordering, conditional skips). It can be drawn at any position after the native loop, using the same coordinate origin (X=130, Y=15+game+0xAE50) and pitch (64). The mod must:
+
+1. Read count and compute the last native button's X (requires knowing which handler ran and its ordering).
+2. Place the Almanac button at the next 64-aligned slot (or at a fixed position if the layout is stable).
+3. Handle clicks via GetMouseSolid + Collision on its own 64x64 rect.
+4. Not touch game+0xC65C or the native vector.
+
+The blocker is not the insertion rule but: (a) which handler runs (game+0x10398), (b) the container width/clipping, and (c) the reordering/conditional logic that determines where the last native button lands.
+
+### 42.6 Files touched
+
+- docs/almanac-investigation.md (this section)
+
+No production code, configuration, saves, builds, hooks, or settings were changed.
