@@ -976,23 +976,61 @@ Expected result:
 
 Do not implement the Almanac yet. The first acceptable release remains a global fiscal page for the existing tax controls, but the Economy & Trade host path is not proven. The smallest useful next step is either a deeper static trace of `FUN_140358A20`'s use of the selected entry and its fields, or a separately approved read-only diagnostic investigation. Passive observation alone cannot resolve the technical blocker.
 
-## 29. Mod-owned Almanac button design
+## 30. Global button-row placement constraints
+
+### 30.1 What is known
+
+- `FUN_140317DB0` (RVA `0x317DB0`) owns the global sidebar and its selected entry.
+- `FUN_14007C400` (RVA `0x07C400`) is called after panel dimensions are set and reads/writes `game+0xC650`.
+- The global draw context is `game+0xADB0`.
+- Native geometry uses DPI scaling from `0x992088`.
+- The City Hall TAX button uses content-flow placement, not a proven tab-row dock.
+
+### 30.2 What is not known
+
+- Which structure represents the Economy & Trade button row.
+- How many buttons exist and how their positions are calculated.
+- Whether the row has spare capacity.
+- Whether a new button can be added without overwriting native data.
+- How the selected state is represented for each button.
+- How close behavior and section switching interact with a mod-owned selection.
+
+### 30.3 Design constraints
+
+- The Almanac button must match the existing buttons in size, spacing, and selected appearance.
+- It must not overlap another button or occupy a separate bottom row.
+- Its position must be derived from the global window's actual button-row layout, not a fixed screen coordinate.
+- The Almanac must open a distinct page, not paint tax controls over the trade page.
+- Vanilla buttons and close behavior must remain usable.
+
+### 30.4 If the row cannot accommodate another button
+
+If the row cannot safely accommodate another button, this is a design blocker, not a silent fallback. Alternatives to present to the owner:
+
+- A dedicated top-level Almanac section, if its vector ownership and capacity can be proven.
+- A mod-owned button row drawn in the same visual location but with mod-owned hit-testing, if it can coexist safely.
+- A separate global page launched from a different safe location, if the button row cannot be extended.
+
+### 30.5 Smallest next step
+
+The smallest next step is a targeted static trace of `FUN_140317DB0`'s button-row drawing and `FUN_14007C400`'s use of the selected entry, followed by a separately approved live test if needed. No implementation, build, hook, configuration change, or live test is authorized.
 
 ### 29.1 Design goal
 
 The owner requires a clearly identifiable Almanac button beside the existing Economy & Trade buttons, opening a distinct Almanac page. The recommended first release should not embed tax controls in the import/export page.
 
-### 29.2 Reusable City Hall TAX button precedent
+### 29.2 Reusable City Hall TAX button precedent (corrected)
 
-The City Hall TAX tile is a reusable native-button pattern, not a global-window pattern:
+The City Hall TAX tile is a useful click-handling precedent, but its current widgetButton implementation is content-flow, not tab-row docking:
 
+- `WidgetButtonImplEx` reads `g_frame.y` (window+0x250, the running bottom edge) and `g_frame.left` for placement. It advances `window+0x250` by two pitches.
+- Earlier comments describe tab-row docking, but the live code places the button below native content in the panel's content flow.
 - It uses `widgetButton` (ui_panels v3): engine 9-patch chrome from `game+0xB028`, `GetMouseSolid` + `Collision`, click latch `0xA54E91`, `gui_click` audio, hover/active tint, and sink.
-- It is a big tab tile, size 70, docked in the tab row.
-- It is INI-tunable for geometry and consumes rows only in the fallback flow.
+- It is INI-tunable for geometry and consumes rows only when a widget is actually drawn.
 - It coexists with native buttons by calibrating position, size, and hit-test to the native rect.
 - Taxes remains the sole authority; City Hall calls the same tax service.
 
-This precedent supports drawing a native-looking button, but it was calibrated in a building panel, not the global sidebar.
+This precedent supports native-looking button drawing and click handling, but it does not support placing the Almanac button in a top button row without global-window-specific layout evidence.
 
 ### 29.3 Mod-owned button approach
 
