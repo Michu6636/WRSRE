@@ -1024,7 +1024,39 @@ Smallest missing evidence:
 Until these are traced, adding a button "alongside the Economy & Trade buttons" cannot be established safe. A viable alternative that still gives the Almanac its own global page is conditional content inside the selected Economy & Trade/"importexport" page (handled by `FUN_140358A20`, RVA `0x358A20`), which requires no new vector entry — but its content area, clipping, scrolling, close behavior, and input state are also unresolved (see section 24/25).
 
 
-## 27. Fallback: new button in the Economy & Trade row
+## 29. Focused check: button-row selected-entry write
+
+### 29.1 Exact evidence
+
+Source artifact: `scratch/out/14007c400_140084754_disasm.asm`.
+
+The write at RVA `0x0843F3` is:
+
+```
+140084307: 33 FF        XOR EDI,EDI                 ; RDI = 0
+...
+140084367: MOV qword ptr [R13], RDI                ; [game+0xd428] = 0
+1400843f3: MOV qword ptr [R14 + 0xc650], RDI       ; [game+0xC650] = 0 (RDI = 0)
+1400843fa: MOV dword ptr [R14 + 0xae54], 0xc47a0000
+```
+
+`R14 = game` (set at `0x14007c47e: MOV R14,RCX`). The write therefore clears the selected entry pointer; it does not store a new button or entry pointer.
+
+### 29.2 Conditions
+
+Reachable only when:
+1. `[game+0xd428] != 0`.
+2. A configuration check at `0x140a54b90` returns non-zero.
+3. `R15B != 0`.
+4. `[game+0xC650] != 0`.
+5. `[game+0xd428]` points to an object whose name is "system".
+6. The selected entry name matches "makecity", "objectives", or starts with "qa".
+
+### 29.3 Conclusion
+
+- Supported: the write clears `game+0xC650` under narrow "system"/"makecity"/"objectives"/"qa" conditions.
+- Not supported: any connection to Economy & Trade button selection, button count, layout, capacity, or click handling.
+- Missing evidence: the structure behind `game+0xC608`/`game+0xC610`, how a button click maps to a selected entry, and whether a spare slot exists for an additional Almanac button.
 
 ### 27.1 Visual context
 
