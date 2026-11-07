@@ -1411,7 +1411,7 @@ No hook, build, or live test is authorized by this plan.
 
 ### 32.1 Evidence
 
-`FUN_1404D72C0` (RVA `0x4D72C0`, size 7,553) is the bottom toolbar tab bar. It is called by `FUN_140317DB0` at RVA `0x319E42` with `RCX = [game+0xD408]`.
+`FUN_1404D72C0` (RVA `0x4D72C0`, size 7,553) is the section button row used by the global sidebar. It is called by `FUN_140317DB0` at RVA `0x319E42` with `RCX = [game+0xD408]`. Although the UI investigation calls it a bottom toolbar, in this context it is the row of section buttons.
 
 Supported:
 - It loops over `min(count+1, 10)` tabs, where `count` comes from `param_1+0x38` at offset `+0x50`.
@@ -1421,6 +1421,8 @@ Supported:
 - It uses `GetMouseSolid` + `Collision` and the latch `0xA54E91`.
 - Clicking a tab sets `param_1+0x40` to the selected panel, `param_1+0x68` to the selected index, and `param_1+1` to 1.
 - Selected appearance and state are tracked in `param_1+0x40`, `param_1+0x68`, `param_1+1`, and `DAT_1409E2338`.
+
+The sidebar builder's `game+0xB650..B670` textures are not the source for this row; this row uses `panel+0x58` or `panel+0xB4`.
 
 ### 32.2 Mod-owned button assessment
 
