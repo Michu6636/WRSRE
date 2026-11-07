@@ -1821,7 +1821,116 @@ plVar5 = *(longlong **)(lVar33 + 0x48 + lVar25);   // sub_entry+0x48
 
 The four section PNGs on disk (`media_soviet/editor/`) are 96x96. The backdrop panel drawn afterwards (line 181) is 92x92. Therefore the visible icon is 96x96 and the mouse-hit/selection backdrop is 92x92 - a 4 px total (2 px per side) mismatch, with the icon slightly larger than the hit rect. The PNG dimensions are runtime/asset data, not encoded in the exe; they were measured from the installed media files, not inferred.
 
-Mouse hit area: the `C3D_PANEL2D::Collision` at line 149 tests the 92x92 rect at `(fVar36, fVar38)` (position `_DAT_1409be2f0 = CONCAT44(fVar38, fVar36)`). Adjacent buttons' hit rects are 92 wide on an 85 pitch, so they overlap by 7 px on the shared edge. Click resolution: the loop processes indices 0,1,2,... in order and, on collision, writes `game+0xC65C = uVar26` (line 163), overwriting any earlier hit. Hence in a 7 px overlap zone the higher-indexed button wins. This is the native resolution rule and is not a mod-specific risk, but a mod button inserted at index 4 would participate in the same overlap rule with index 3 (and 5, if present).
+### 37.3 Section count and container width (static limits)
+
+- Count is `(end - begin) / 0x50` with begin = `*(game+0xC650)+0x48`, end = `*(game+0xC650)+0x50`. There is no available-width test and no clamp in this function. The screenshot's four buttons are visual context only; the runtime collection size is not proven to be four and could differ (e.g. if a panel has more or fewer sub-entries).
+- The wrap at 8 implies the original designer expected up to 8 buttons per row, but that is a layout convention, not a capacity guarantee. The container's pixel width and clipping rectangle are not in this function (they belong to the sidebar host `FUN_140317DB0` and the draw context `game+0xADB0`, untraced here).
+- Therefore a mod button at index 4 (X = 140 + 4x85 = 480) is arithmetically inside row 0, but whether X~480+92 is visible (not clipped) cannot be established statically. This is a geometry observation, not a safety proof.
+
+### 37.4 Return to vanilla: the already-selected button case
+
+The native loop sets `game+0xC65C = index` only when a collision occurs AND the click latch `DAT_140a54e91` is set (lines 148-163). Consequences for a mod-owned flag:
+
+- If the user clicks a *different* vanilla button, `game+0xC65C` changes - the mod can detect the change and clear its flag. This works.
+- If the user clicks the *same* button that was selected when the Almanac opened, `game+0xC65C` does not change (it is already that value). The native code still consumes the latch and runs the click handler (lines 153-166: sound, state updates, label copy), but `game+0xC65C` is unchanged. Therefore comparing `game+0xC65C` against the recorded value is insufficient for this case.
+- To detect "any vanilla button clicked, including the already-selected one", the mod must observe a signal that fires on every native click regardless of selection change. Candidates: (a) consumption of the latch `DAT_140a54e91` (transitions 1->0) - but this function does not visibly clear it; the latch's owner/clear site is untraced, so relying on it is unverified; (b) the side effects that always occur on click (sound playback, `game+0xCCC8 = -1`, `game+0xCCD0 = 0`, `game+0xC6B8 = game+0xC6B0`, label copy into `game+0xD5A0`) - these are observable but require knowing their baseline values; (c) a pre-hook recording the click position (mouse coordinates) before native handling, then checking whether the point falls inside any native button rect. Option (c) is the most robust but requires a hook, which is not authorized.
+- None of these are verified; the exact missing evidence is who owns and clears `DAT_140a54e91` and whether the native click path always executes the side effects above even when the latch is already 0. This must be traced before a mod can reliably detect "return to vanilla."
+
+### 37.6 Body extent (partially traced)
+
+The body block (lines 458-614) renders further content below the sub-page: `FUN_140815760` at (DPI*5 + fVar45 = 5+130 = 135, Y-5), then loops drawing text/panels using 450/80/20/110/15/5/10/46/400/128/135/72/70/66/63/59. The full body height, clipping rectangle, and scroll state are not traced; only the header panel (50x50 at 125, 152+game+0xAE50) is fully resolved. A mod Almanac page that replaces the body must either suppress this entire block or draw over it; neither is safe without the body extent and clip rect. The body uses `game+0x12800` (a list/grid object) and `game+0xCCC8` (a counter, compared to 0x12) to decide refresh; these are vanilla state the mod should not corrupt.
+
+### 38.3 Corrected geometry for FUN_140373EA0 (actual handler)
+
+From the same disassembly (scratch/out/140373ea0_1403829fd_disasm.asm):
+
+- Backdrop: 64 x 64 (DPI * DAT_0x90aaa0 = 1.0 * 64.0). (RVA 0x90AAA0 = 64.0, verified.)
+- X origin (button 0): XMM6 = DPI * (DAT_0x90aa0c + XMM11) = 1.0 * (45 + 85) = 130. (XMM11 = DAT_0x90ab14 = 85.0, set at line 36 of the disasm.)
+- Pitch (X increment per button): XMM7 = DPI * DAT_0x90aaa0 = 1.0 * 64.0 = 64.0 (line 139: MULSS XMM7, XMM12 where XMM12 = 64.0). So adjacent buttons are spaced 64 px apart and the backdrop is 64x64: NO overlap (contrast with the erroneous FUN_140358A20 analysis which had 92x92 on 85 pitch).
+- Y origin: not fully resolved in the extracted window; the backdrop position uses XMM6 for X and a separate value for Y. The panel setup call at 0x140445eb0 takes (RSI+0xADB0, count, XMM6, 6). The exact Y base is a runtime field.
+- Backdrop-vs-icon: section PNGs are 96x96 on disk; backdrop is 64x64. So the icon (96) is larger than the hit rect (64) — opposite of the FUN_140358A20 case (92 backdrop vs 96 icon). The icon draw (vtable+0x70) happens first; the 64x64 panel (Collision/Draw) is drawn after. Whether the icon is clipped or scaled by the texture's own draw is not in this window.
+- Layout: the loop has special index mapping (EDI 0/1 -> EBX=EDI; EDI 2 -> EBX=count-1; otherwise EBX=EDI-1). This reorders sub-entries; the row is NOT a simple linear 0,1,2,... sequence. The full layout (which sub-entry lands at which position) is not decoded here. A mod button cannot be placed by simple index arithmetic without decoding this mapping.
+- Count: (end-begin)/0x50, same as before. No available-width test in this function.
+
+### 38.4 Implications for the mod-owned button approach
+
+- The target handler is `FUN_140373EA0`, not `FUN_140358A20`. Any hook/diagnostic must target `FUN_140373EA0`.
+- Geometry is 64x64 backdrop, 64 px pitch (no overlap), X origin 130. But the reordering logic means "next free slot" is not simply "index N"; the layout must be decoded first.
+- The overlap-click-winner claim from the FUN_140358A20 analysis does NOT apply here (64 backdrop on 64 pitch = no overlap). It is conditional on the handler and must be dropped for the actual handler.
+- The PNG source dimensions (96x96) are distinct from rendered dimensions (64x64 backdrop); the texture's own draw scale is untraced.
+
+### 38.5 What remains unverified
+
+1. Runtime selected entry identity: whether the live selected entry is "trade" (and whether "importexport" ever occurs as a top-level name) is inferred from texture filenames and dispatch, not observed.
+2. The reordering logic in FUN_140373EA0 (EBX mapping) and the resulting button positions.
+3. Y origin and container width/clipping.
+4. Close hand-off and latch owner (unchanged from section 37.5).
+5. Whether FUN_140358A20 is ever reached (likely dead for this page).
+
+### 38.6 Files touched in this refresh
+
+- `docs/almanac-investigation.md` (this section)
+- `docs/ghidra-index/358A20.md` (unchanged; FUN_140373EA0 index entry should be added separately)
+
+No production code, configuration, saves, builds, hooks, or settings were changed.
+
+## 38. Handler identity correction: FUN_140373EA0 draws the trade_*.png buttons
+
+### 38.2 Decisive evidence: FUN_140373EA0 uses the sub-entry vector and trade textures
+
+`FUN_140373EA0` (RVA `0x373EA0`, size 55,231 bytes) is the handler reached when the selected entry name is "trade" (dispatch at `FUN_140317DB0` RVA `0x31EB49`-`0x31EB64`, preserved in `docs/almanac-native-evidence.md`). It reads the sub-entry vector and draws each sub-entry's texture, exactly like the row renderer we need.
+
+`FUN_140373EA0` button-row evidence (scratch/out/140373ea0_1403829fd_disasm.asm):
+
+```asm
+140374167: MOV R8, qword ptr [RSI + 0xc650]     ; selected entry
+14037416e: ADD R8, 0x48                          ; -> sub-entry vector begin
+140374172: MOV RCX, qword ptr [R8 + 0x8]         ; end
+140374176: SUB RCX, qword ptr [R8]               ; end - begin
+... divide by 0x50 -> count (EDX)
+14037419a: TEST EDX, EDX
+14037419c: JLE 0x1403745b6                       ; no sub-entries -> skip
+...
+1403741f6: MOVSXD RAX, EBX
+1403741f9: LEA R13, [RAX + RAX*4]
+1403741fd: SHL R13, 0x4                          ; R13 = EBX * 0x50
+140374201: ADD R13, qword ptr [R8]               ; R13 = sub_entry base
+140374204: MOV RCX, qword ptr [R13 + 0x48]       ; texture at sub_entry+0x48
+140374208: MOV RAX, qword ptr [RCX]
+14037420b: MOV R8, qword ptr [0x1409ead08]
+140374212: XOR EDX, EDX
+140374214: CALL qword ptr [RAX + 0x70]           ; draw texture
+140374217: MOVSS XMM0, dword ptr [0x140992088]   ; DPI
+14037421f: MULSS XMM0, dword ptr [0x14090aaa0]   ; 64.0
+140374224: MOVSS dword ptr [0x1409be2e8], XMM0    ; backdrop width  = 64
+14037422c: MOVSS dword ptr [0x1409be2ec], XMM0    ; backdrop height = 64
+...
+140374243: MOVSD qword ptr [0x1409be2f0], XMM0    ; position (X, Y)
+...
+140374255: MOV R8D, 0x6
+14037425b: MOVAPS XMM1, XMM6
+14037425e: LEA RCX, [RSI + 0xadb0]
+140374265: CALL 0x140445eb0                       ; panel setup
+...
+1403742a4: CALL qword ptr [0x14086c850]           ; Collision (hit test)
+1403742aa: TEST AL, AL
+1403742ac: JZ 0x140374366
+...
+1403742f2: CMP byte ptr [0x140a54e91], CL          ; latch
+1403742f8: JZ 0x140374366
+...
+140374347: CMP dword ptr [RSI + 0xc65c], EBX       ; if selected != this
+14037434d: JZ 0x140374356
+14037434f: MOV byte ptr [RSI + 0x1039a], 0x0       ; dirty flag
+140374356: MOV dword ptr [RSI + 0xc65c], EBX       ; selected = this
+14037435c: MOV dword ptr [RSI + 0x10be8], -1
+140374366: CMP dword ptr [RSI + 0xc65c], EBX       ; if selected == this
+14037436c: JNZ 0x14037437c
+14037436e: MOVAPS XMM0, xmmword ptr [0x14090c4c0]
+140374375: MOVUPS xmmword ptr [0x1409be30c], XMM0  ; selected overlay
+```
+
+Conclusion: `FUN_140373EA0` is the handler that actually draws the trade_*.png buttons. It reads `game+0xC650` (selected panel entry), walks its sub-entry vector (stride 0x50), draws each sub-entry's texture (at `sub_entry+0x48`) with a 64x64 backdrop, and tracks the selected sub-tab in `game+0xC65C`. `FUN_140358A20` is only reached for panel names not in the explicit list; since no panel is named "importexport" (no `importexport_*.png`), `FUN_140358A20` is effectively dead/unreachable for the Economy & Trade page. The earlier geometry analysis (92x92, pitch 85, 7px overlap) applied to the wrong handler and must not be reused.
 
 ### 37.5 Close path: exact missing evidence
 
