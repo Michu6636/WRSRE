@@ -1411,7 +1411,7 @@ No hook, build, or live test is authorized by this plan.
 
 ### 32.1 Evidence
 
-`FUN_1404D72C0` (RVA `0x4D72C0`, size 7,553) is the section button row used by the global sidebar. It is called by `FUN_140317DB0` at RVA `0x319E42` with `RCX = [game+0xD408]`. Although the UI investigation calls it a bottom toolbar, in this context it is the row of section buttons.
+`FUN_1404D72C0` (RVA `0x4D72C0`, size 7,553) is a candidate tab bar for the global sidebar. It is called by `FUN_140317DB0` at RVA `0x319E42` with `RCX = [game+0xD408]`. The UI investigation labels it a bottom toolbar tab bar; whether it is the same row shown in the Economy & Trade screenshot is unresolved.
 
 Supported:
 - It loops over `min(count+1, 10)` tabs, where `count` comes from `param_1+0x38` at offset `+0x50`.
@@ -1422,7 +1422,11 @@ Supported:
 - Clicking a tab sets `param_1+0x40` to the selected panel, `param_1+0x68` to the selected index, and `param_1+1` to 1.
 - Selected appearance and state are tracked in `param_1+0x40`, `param_1+0x68`, `param_1+1`, and `DAT_1409E2338`.
 
-The sidebar builder's `game+0xB650..B670` textures are not the source for this row; this row uses `panel+0x58` or `panel+0xB4`.
+Not established:
+- Whether this tab bar is the row directly below the Economy & Trade title.
+- Which panel names or textures correspond to the four visible buttons.
+- Whether the row's geometry matches the screenshot.
+- Whether a mod-owned button can be added safely.
 
 ### 32.2 Mod-owned button assessment
 
@@ -1451,9 +1455,11 @@ Supported:
 - It calls `BeginDraw`, `EndDraw`, `Draw`, `SetPosition`, `SetDimensions`, `PrintLeftUnicode`, `GetMouseSolid`, and `Collision`.
 - It calls native slider and checkbox functions, but its string comparisons are construction-oriented ("system", "makecity", "objectives", "qa"). No Economy & Trade sub-tab strings were found in its string table.
 - The City Hall TAX button's current `widgetButton` implementation is content-flow: it uses `g_frame.y` (`window+0x250`) and `g_frame.left`, then advances `window+0x250`.
+- `FUN_1404D72C0` (RVA `0x4D72C0`) is a candidate tab bar for the same sidebar. It is called by `FUN_140317DB0` at RVA `0x319E42` and draws tabs from `param_1+0x20`, but it is not yet proven to be the row shown in the screenshot.
 
 Unresolved:
-- Which native code draws the Economy & Trade button row shown in the screenshot.
+- Whether `FUN_1404D72C0` is the row directly below the Economy & Trade title.
+- Which panel names or textures correspond to the four visible buttons.
 - How button positions, sizes, spacing, scaling, and selected state are calculated.
 - How a click maps to a page and how close/section-switch behavior works.
 - Whether a mod-owned button can be inserted without overlap or obscuring vanilla content.
