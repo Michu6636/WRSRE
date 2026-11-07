@@ -2483,3 +2483,66 @@ In both cases, whether the right edge (386 or 450) is visible is unverified beca
 - docs/almanac-investigation.md (this section)
 
 No production code, configuration, saves, builds, hooks, or settings were changed.
+## 45. Panel setup, window bounds, and four-vs-visible distinction
+
+### 45.1 FUN_1404465A0 (panel setup at FUN_140317DB0 prologue)
+
+Called at 0x140317e68: `CALL 0x1404465a0` with RCX = game+0xADB0. Verbatim (scratch/out/1404465a0_full_disasm.asm):
+
+    1404465a0: PUSH RBX
+    1404465a2: SUB RSP, 0x60
+    1404465a6: MOVSS XMM1, dword ptr [0x140909afc]       ; some constant
+    1404465ae: MOV R9B, 0x1
+    1404465b1: MOV RBX, RCX                              ; RBX = game+0xADB0
+    1404465b4: MOV qword ptr [RSP + 0x70], RDI
+    1404465b9: MOVZX R8D, R9B
+    1404465bd: MOVAPS xmmword ptr [RSP + 0x50], XMM6
+    1404465c2: LEA RCX, [0x1409d4ee0]
+    1404465c9: CALL qword ptr [0x14086c028]              ; (some init)
+    1404465cf: LEA RDX, [0x1408d1f28]
+    1404465d6: MOVAPS XMM6, XMM0
+    1404465d9: LEA RCX, [0x1409bdfc0]
+    1404465e0: CALL qword ptr [0x14086c0c0]
+    1404465e6: MOV EDI, EAX
+    1404465e8: TEST EAX, EAX
+    1404465ea: JNZ 0x1404465f6
+    1404465ec: MOV dword ptr [RBX + 0x80], 0x3f800000    ; game+0xAE30 = 1.0 (if EAX==0)
+    1404465f6: ... (continues with more setup, reads game+0x80, game+0x84, game+0x8c)
+
+This function only writes game+0xAE30 = 1.0 (a scale factor). It does not set width, height, or clip fields of game+0xADB0. The panel context dimensions are not established by this function.
+
+### 45.2 Window bounds and clipping — final status
+
+No instruction in the cached exports (FUN_140317DB0, FUN_140373EA0, FUN_140361BB0, FUN_1404465A0) sets a width, height, or clip rectangle for game+0xADB0. The panel context is passed to FUN_1404460a0 / FUN_140445eb0 / FUN_1404461f0, but those are setup/draw helpers whose full behavior is not cached. Clipping is performed by C3D_PANEL2D::Draw and C3D_PANEL2D::Collision using internal dimensions, but the field and instruction that initialize those dimensions are not identified.
+
+Exact missing evidence: the constructor or initialization of the sidebar/window object that creates game+0xADB0 and sets its width/height/clip fields. Candidate locations: (a) object constructor before FUN_140317DB0, (b) a separate init function called from FUN_140317DB0 not yet identified, (c) FUN_1404460a0 / FUN_140445eb0 (not cached).
+
+Proposed diagnostic (not executed): during a trade page render, read the panel context's width/height fields (likely at game+0xADB0+0x00 and +0x04, or +0x80/+0x84) and compare with the on-screen sidebar width. Also read game+0xAE50 to get the Y origin and verify the row position. This would establish the visible bounds. No live test is authorized.
+
+### 45.3 Four entries vs four visible buttons
+
+| Handler | Total sub-entries (count) | Buttons drawn in row | Last sub-entry disposition |
+|---|---|---|---|
+| FUN_140373EA0 | count (all) | count (no skips) | Drawn as button (reordered to position 2) |
+| FUN_140361BB0 | count | count-1 (loop ESI=0..count-2) | NOT drawn as button; separate 35x35 panel after loop |
+
+For count=4:
+- FUN_140373EA0: 4 buttons at X=130,194,258,322. All 4 sub-entries visible.
+- FUN_140361BB0: 3 buttons at X=130,194,258 (if no skips). Sub-entry 3 is not a button. A 35x35 panel follows at an undetermined position.
+
+### 45.4 Corrected blockers (not just container width)
+
+The following remain unverified and must be resolved before a mod-owned button can be placed:
+1. Container width and clip rect (exact missing evidence: panel dimension initialization, see 45.2).
+2. Which handler runs (game+0x10398 setter — input binding unknown, but both handlers can be assessed independently).
+3. Row layout decode: reordering in FUN_140373EA0 (partially decoded), conditional skips in FUN_140361BB0 (partially decoded).
+4. Content replacement: whether the body draw can be suppressed without corrupting game+0x12800 / game+0x10be8.
+5. Return-to-vanilla: click detection for the already-selected button (latch ownership unknown).
+
+Container width is ONE of several blockers, not the only one.
+
+### 45.5 Files touched
+
+- docs/almanac-investigation.md (this section)
+
+No production code, configuration, saves, builds, hooks, or settings were changed.
