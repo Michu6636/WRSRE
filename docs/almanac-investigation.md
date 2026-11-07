@@ -1867,10 +1867,10 @@ From the same disassembly (scratch/out/140373ea0_1403829fd_disasm.asm):
 4. Close hand-off and latch owner (unchanged from section 37.5).
 5. Whether FUN_140358A20 is ever reached (likely dead for this page).
 
-### 38.6 Files touched in this refresh
+### 39.7 Files touched in this refresh
 
 - `docs/almanac-investigation.md` (this section)
-- `docs/ghidra-index/358A20.md` (unchanged; FUN_140373EA0 index entry should be added separately)
+- `docs/ghidra-index/373EA0.md` (already created; no change this pass)
 
 No production code, configuration, saves, builds, hooks, or settings were changed.
 
