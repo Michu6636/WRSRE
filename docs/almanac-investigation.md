@@ -2922,9 +2922,9 @@ Verbatim bytes (scratch/out/1403745b0_40_disasm.asm):
 The hook requires 14 bytes of contiguous whole instructions. Starting at 0x1403745B6:
 - 9 bytes (0x1403745B6-0x1403745BE): MOVSS XMM12, [RIP+0x59640d] (RIP-relative)
 - 8 bytes (0x1403745BF-0x1403745C6): MOVSS XMM1, [RIP+0x61dac1] (RIP-relative)
-Total: 17 bytes. So a 14-byte hook would steal 9 + 5 = 14 bytes, cutting through the second instruction (MULSS at 0x1403745C7). This is NOT a whole-instruction boundary.
+Total: 17 bytes. The loader supports stealing up to 17 bytes, but does NOT relocate RIP-relative instructions. Both MOVSS at 0x1403745B6 and 0x1403745BF are RIP-relative. Stealing 17 bytes would include both, producing a broken trampoline. The MULSS and ADDSS (10 bytes total) are not RIP-relative but below any useful patch size. This is NOT a whole-instruction boundary that can be safely patched.
 
-To hook at a whole-instruction boundary, the minimum stolen size is 17 bytes (both instructions). This exceeds the 14-byte patch size. The project's InstallInlineHook requires 14 bytes; 17 bytes may not be supported (the expect array and trampoline must account for the extra 3 bytes).
+To hook at a whole-instruction boundary, the minimum stolen size is 17 bytes (both instructions). The loader supports 17 stolen bytes but does not relocate RIP-relative instructions, so stealing 17 bytes would produce a broken trampoline.
 
 Additionally:
 - The first instruction (0x1403745B6) is RIP-relative (MOVSS with RIP+0x59640d). Relocating it requires adjusting the RIP-relative offset.
@@ -2935,7 +2935,7 @@ Additionally:
 
 Safe exit: the hook must jump back to 0x1403745C7 (after the 17 stolen bytes) or 0x1403745BF (after 9 bytes) if a 9-byte hook is used. But 9 bytes is less than the 14-byte minimum.
 
-Conclusion: 0x1403745B6 is NOT a safe hook point for the project's 14-byte inline patch. The instruction boundaries do not align with 14 bytes. A different hook point or a different hooking mechanism would be needed.
+Conclusion: 0x1403745B6 is NOT a viable hook point. The loader supports stealing up to 17 bytes, but does NOT relocate RIP-relative instructions. Both MOVSS at 0x1403745B6 and 0x1403745BF are RIP-relative. Stealing 17 bytes would include both, producing a broken trampoline. The MULSS and ADDSS (10 bytes total) are not RIP-relative but below the 14-byte minimum. The JLE at 0x14037419C targets 0x1403745B6. A different hook point or mechanism is needed.
 
 ### 51.3 Known and unknown about skipping content state updates
 
