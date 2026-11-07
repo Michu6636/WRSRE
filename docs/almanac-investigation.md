@@ -1082,7 +1082,7 @@ Source artifact: `scratch/out/14007c400_140084754_disasm.asm` (lines ~6758–681
 ```
 
 - `R14 = game` pointer (set at function entry `0x14007c47e: MOV R14,RCX`).
-- `RDI = 0` because `XOR EDI,EDI` at RVA `0x0034307` zero-extends into RDI and nothing reassigns EDI/RDI before the write.
+- `RDI = 0` because `XOR EDI,EDI` at RVA `0x84307` (preferred VA `0x140084307`) zero-extends into RDI and nothing reassigns EDI/RDI before the write.
 - Therefore the write stores **NULL (0)** into `game+0xC650` — the selected entry pointer — i.e. it **deselects/clears** the entry. It does not write a new button/entry pointer.
 - The same block also writes `[R13] = 0` where `R13 = game + 0xd428`, and sets `[game+0xae54] = 0xc47a0000`.
 
@@ -1407,7 +1407,40 @@ This would not establish that implementing an Almanac page is safe, nor that nat
 
 No hook, build, or live test is authorized by this plan.
 
-## 31. Almanac button-row placement and page replacement
+## 32. Bottom toolbar tab bar and mod-owned Almanac button
+
+### 32.1 Evidence
+
+`FUN_1404D72C0` (RVA `0x4D72C0`, size 7,553) is the bottom toolbar tab bar. It is called by `FUN_140317DB0` at RVA `0x319E42` with `RCX = [game+0xD408]`.
+
+Supported:
+- It loops over `min(count+1, 10)` tabs, where `count` comes from `param_1+0x38` at offset `+0x50`.
+- Each tab uses a panel pointer from the array at `param_1+0x20`.
+- Its texture comes from `panel+0x58` or is created from the string at `panel+0xB4`.
+- Tab X is derived from `param_1+0x74 + index * pitch`, where pitch is derived from the panel count and DPI.
+- It uses `GetMouseSolid` + `Collision` and the latch `0xA54E91`.
+- Clicking a tab sets `param_1+0x40` to the selected panel, `param_1+0x68` to the selected index, and `param_1+1` to 1.
+- Selected appearance and state are tracked in `param_1+0x40`, `param_1+0x68`, `param_1+1`, and `DAT_1409E2338`.
+
+### 32.2 Mod-owned button assessment
+
+A mod-owned Almanac button could be drawn beside the last tab without adding a native vector entry, provided the row has enough width. However, this is not proven safe.
+
+Required verification:
+- The actual row width and available space at the target resolution and DPI.
+- The tab pitch and tab size.
+- Whether the mod-owned button's hit rectangle collides with vanilla tabs.
+- Whether the mod can track selected state without changing `game+0xC650`.
+- Whether the mod can show a distinct Almanac page while the vanilla page is not drawn.
+- Whether close and section switching restore state without overriding a newer player choice.
+
+### 32.3 Page replacement
+
+The game's selected page is driven by `game+0xC650`. A mod-owned Almanac button would need a mod-owned `almanacSelected` flag. While that flag is set, the mod would need to prevent the vanilla page from drawing or replace it with the Almanac page, then restore the previous selected entry when the user selects a vanilla button or closes the window. This requires a hook or equivalent interception and is not established as safe.
+
+### 32.4 Smallest next step
+
+The smallest next step is a targeted static trace of the tab bar's geometry and click handling, or a separately approved live diagnostic. No implementation, build, hook, configuration change, or live test is authorized.
 
 ### 31.1 Evidence status
 
