@@ -871,7 +871,19 @@ Unresolved: whether those calls are reachable for Economy & Trade, and whether t
 
 Smallest next action: a separately approved live test or a deeper static trace of `FUN_140395C90`'s use of `[RSI+0xD428]` and `[selected entry+0x48]`. No implementation or hook is authorized.
 
-## 23. Stopping-point deliverable
+## 24. Correction: actual Economy & Trade handler
+
+The earlier inference that Economy & Trade reaches `FUN_140395C90` was incomplete. `FUN_140395C90` is reached for "infrastructure" and possibly other names, but the fallback chain continues through "const_offi", "veh_replace", "trade", "mtlist", and "list". An entry named "importexport" does not match any of those names and reaches `FUN_140358A20` (RVA `0x358A20`), size 10,143 bytes.
+
+Consequences:
+
+- `FUN_140395C90` is not the correct handler for an Economy & Trade/importexport entry.
+- Its slider and checkbox calls do not establish that widgets are available on the Economy & Trade page.
+- `FUN_140358A20`'s CallsIn list does not include `FUN_1402727F0` (slider) or `FUN_1403956F0` (checkbox). It calls `PrintLeftUnicode`, `PrintCenterUnicode`, `Draw`, `SetPosition`, `SetDimensions`, `GetMouseSolid`, and `Collision`, but no native tax slider or checkbox call was found.
+- Therefore, a global Almanac page cannot rely on native sliders or checkboxes being present on the Economy & Trade path.
+- The content area, clipping, scrolling, close behavior, and input safety of `FUN_140358A20` remain unresolved.
+
+This correction does not change the first-release scope: government finances and tax controls remain the priority. It does mean the UI host question is still open and must not be treated as solved.
 
 ### 23.1 Handoff and changed files
 
@@ -911,12 +923,18 @@ A diagnostic plugin or hook could answer more, but it is not harmless and is not
 - A rollback plan and no persistent game or save changes.
 - No change to tax behavior or economic authority.
 
-What it would do:
+Comparison of approaches:
+
+1. Passive observation of the unmodified game: least invasive and no code changes. It can document visible layout, scrolling, and tab behavior, but it cannot identify selected-entry pointers, handler addresses, content rectangles, or hook safety.
+2. Read-only observation with an existing debugger, if available: more informative without modifying game files, but still live and intrusive. It may be blocked by anti-debugging or game stability concerns, and it requires a separate approval. It can inspect memory and registers but cannot by itself establish safe code modification.
+3. Temporary diagnostic plugin or hook: most informative, but highest risk. It should be used only if passive observation and debugger inspection cannot answer the question. It requires safety evidence that is not yet complete.
+
+Recommended least invasive capable approach: begin with passive observation for the UX baseline. If that cannot answer the technical host question, use a separately approved read-only debugger session before considering any hook. A diagnostic hook is not authorized by this plan.
 
 1. Open the global sidebar and select Economy & Trade.
 2. Record the selected entry pointer, its name, `[RSI+0xD428]`, and `[[RSI+0xD428]+0x48]`.
-3. Record the values used for content position, dimensions, clipping, and mouse collision if they can be read without modifying game state.
-4. Optionally log whether the widget gates evaluate true or false for that entry.
+3. Record values used for content position, dimensions, clipping, and mouse collision if they can be read without modifying game state.
+4. Record whether any native slider or checkbox call occurs on that path. The current static evidence says `FUN_140358A20` has no such calls, so a positive widget observation would contradict the static evidence and require re-analysis.
 
 What it would not do:
 
@@ -942,10 +960,115 @@ Undo:
 
 Expected result:
 
-- If Economy & Trade has the required non-null fields and an allowed type value, the widget path is reachable.
-- If it does not, `FUN_140395C90` is not a suitable host for an Almanac page through that path.
+- If Economy & Trade selects `FUN_140358A20` and exposes usable content coordinates, a bounded Almanac page may be feasible there.
+- If it does not, `FUN_140358A20` is not a suitable host for an Almanac page through that path.
 - Either result would determine whether to pursue a deeper static trace or a different UI surface.
 
 ### 23.4 Recommendation
 
-Do not implement the Almanac yet. The first acceptable release remains a global fiscal page for the existing tax controls, but the Economy & Trade host path is not proven. The smallest useful next step is either a deeper static trace of `FUN_140395C90`'s use of `[RSI+0xD428]` and the selected entry, or a separately approved read-only diagnostic investigation. Passive observation alone cannot resolve the technical blocker.
+Do not implement the Almanac yet. The first acceptable release remains a global fiscal page for the existing tax controls, but the Economy & Trade host path is not proven. The smallest useful next step is either a deeper static trace of `FUN_140358A20`'s use of the selected entry and its fields, or a separately approved read-only diagnostic investigation. Passive observation alone cannot resolve the technical blocker.
+
+## 25. Bounded diagnostic plan
+
+### 25.1 Evidence corrections applied
+
+- R15 is 0 on the observed master path to the fallback handlers. The master function executes `XOR R15D, R15D` at RVA `0x31EAD5` before dispatch. This is static evidence, not a runtime measurement.
+- The slider-path gates in `FUN_140395C90` are construction/building-oriented. They do not establish availability on the Economy & Trade path.
+- `FUN_140395C90` is not the handler for an Economy & Trade/importexport entry. The dispatch chain reaches `FUN_140358A20` for that name.
+- `FUN_140358A20` has no native slider or checkbox calls in its reviewed call list. This removes the widget-reuse claim for the Economy & Trade path.
+- The suitability of the entire Economy & Trade page remains unresolved. The slider-path evidence only resolves one narrow path.
+
+### 25.2 Comparison of approaches
+
+1. Passive observation of the unmodified game:
+   - Can establish: visible tab names, whether pages scroll, approximate content placement, and whether widgets are visible.
+   - Cannot establish: selected-entry pointers, handler identity, content rectangles, clipping, collision, or hook safety.
+   - Changes: none.
+2. Read-only observation with an existing debugger:
+   - Can establish: selected entry, handler identity, field values, and possibly content coordinates without modifying game files.
+   - Cannot establish: safe code modification or long-term compatibility.
+   - Changes: none to game files if used read-only, but debugger attachment is intrusive and may affect stability.
+3. Temporary diagnostic plugin or hook:
+   - Can establish: runtime field values, handler identity, layout coordinates, input state, and widget reachability.
+   - Cannot establish: that modifying the host is safe, or that the same behavior holds across saves, currencies, or versions.
+   - Changes: runtime code or a temporary build; requires separate approval and rollback.
+
+### 25.3 Recommended approach
+
+Recommended sequence:
+
+1. Passive observation first, to establish the UX baseline.
+2. If passive observation cannot answer the host question, use a separately approved read-only debugger session.
+3. Use a temporary diagnostic plugin or hook only if the debugger cannot obtain the needed values.
+
+This is the least invasive sequence capable of progressing. Passive observation alone cannot resolve the technical host question.
+
+### 25.4 Exact diagnostic question
+
+Does an Economy & Trade/importexport entry select `FUN_140358A20`, and if so, what are its content rectangle, clipping, scrolling, close behavior, and input state? Can a small Almanac page be drawn there without obscuring vanilla content or stealing input?
+
+Observations needed:
+
+- Selected entry pointer and name.
+- Handler address reached.
+- Values of `[game+0xD428]` and `[[game+0xD428]+0x48]`.
+- Content position and dimensions.
+- Collision rectangle used by `GetMouseSolid` and `C3D_PANEL2D::Collision`.
+- Whether scroll state exists.
+- Whether any native widget call occurs on that path.
+- Whether tab switching and closing still work after adding only observation.
+
+### 25.5 Plain-language tester steps
+
+1. Start the game normally with no mod changes.
+2. Open the global sidebar.
+3. Select Economy & Trade.
+4. Observe and record visible rows, scrollbars, clipping, and content boundaries.
+5. Switch between Economy & Trade sub-tabs if present.
+6. Close and reopen the sidebar.
+7. If approved later, attach a debugger read-only and inspect the selected entry and handler fields without changing them.
+
+### 25.6 Tools, permissions, and changes
+
+- Passive phase: no tools, code, build, hook, configuration, or save changes.
+- Debugger phase: requires an existing debugger, separate approval, and a disposable session.
+- Diagnostic hook phase: requires verified prologue bytes, ABI and incoming-edge review, a temporary build, and separate approval.
+
+Files or game state that could change:
+
+- Passive phase: none.
+- Debugger phase: none if used strictly read-only.
+- Diagnostic phase: temporary runtime patch or build, log files, and possibly a disposable save if the tester chooses to test save/load.
+
+### 25.7 Risks and safeguards
+
+- A wrong assumption about the handler can make the diagnostic target the wrong code path.
+- Any hook can crash the game or corrupt UI state.
+- Logging in a render path can affect performance.
+- Use a disposable save or session.
+- Keep the diagnostic read-only.
+- Do not change tax values, settings, or saves.
+
+### 25.8 Rollback
+
+- Passive phase: no rollback needed.
+- Debugger phase: detach the debugger; no game files should change.
+- Diagnostic phase: remove the temporary hook or build and restore the original executable. No save or settings changes should remain.
+
+### 25.9 Result interpretation
+
+- Positive: Economy & Trade selects `FUN_140358A20` and exposes usable content coordinates and collision data. This would make a bounded Almanac page plausible, but would not prove hook safety or compatibility.
+- Negative: the handler lacks usable content coordinates or input state. This would rule out that host path.
+- Inconclusive: the observed values do not clearly answer the question. This would require a deeper static trace or a more targeted diagnostic.
+
+This would not establish that implementing an Almanac page is safe, nor that native widgets can be reused there.
+
+### 25.10 Static evidence still required before any hook
+
+- Verify the exact prologue bytes and instruction boundaries for any candidate hook.
+- Trace incoming edges and calling convention.
+- Establish state and lifetime for the draw context and selected entry.
+- Confirm compatibility with existing UI hooks.
+- Resolve `FUN_140358A20`'s use of the selected entry and its fields.
+
+No hook, build, or live test is authorized by this plan.
