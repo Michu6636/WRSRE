@@ -1407,7 +1407,30 @@ This would not establish that implementing an Almanac page is safe, nor that nat
 
 No hook, build, or live test is authorized by this plan.
 
-## 32. Bottom toolbar tab bar and mod-owned Almanac button
+## 33. Reconciliation of sections 31 and 32
+
+### 33.1 What the existing evidence supports
+
+- `FUN_1404D72C0` (RVA `0x4D72C0`) is called by `FUN_140317DB0` at RVA `0x319E42` with `RCX = [game+0xD408]`.
+- It loops over `min(count+1, 10)` tabs from the array at `param_1+0x20`.
+- Each tab uses a panel pointer and draws a texture from `panel+0x58` or from the string at `panel+0xB4`.
+- It handles clicks with `GetMouseSolid` + `Collision` and the latch `0xA54E91`.
+- It updates selected state in `param_1+0x40`, `param_1+0x68`, `param_1+1`, and `DAT_1409E2338`.
+
+### 33.2 What is not established
+
+- Whether this function draws the row shown directly below the Economy & Trade title.
+- Whether its tabs are the four visible section buttons.
+- Whether the UI investigation's "bottom toolbar" label applies to the screenshot row.
+- Whether a mod-owned button can be added without overlap or capacity problems.
+
+### 33.3 Conclusion
+
+`FUN_1404D72C0` is a candidate section-button row, not a proven match for the screenshot row. Sections 31 and 32 are now aligned: the row's native owner, layout, identities, and click mapping remain unresolved.
+
+### 33.4 Smallest missing evidence
+
+The smallest missing evidence is a static or runtime mapping from the panel array at `game+0xD408` to the visible button identities and their on-screen rectangle. No implementation, build, hook, or live test is authorized.
 
 ### 32.1 Evidence
 
