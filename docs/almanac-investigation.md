@@ -1409,27 +1409,29 @@ No hook, build, or live test is authorized by this plan.
 
 ## 34. Resolution of the FUN_1404D72C0 link
 
-### 34.1 Outcome: unresolved
+### 34.1 Outcome: supported match for the top-level section button row
 
-Existing exports do not establish that the panel array used by `FUN_1404D72C0` is the row shown directly below the Economy & Trade title.
+Existing exports support that `FUN_1404D72C0` (RVA `0x4D72C0`) draws the section button row used by the global sidebar. It is not established as the in-page Economy & Trade sub-tab row, and it is not proven to be the exact screenshot's four visible buttons.
 
-Supported evidence:
-- `FUN_1404D72C0` is called by `FUN_140317DB0` at RVA `0x319E42` with `RCX = [game+0xD408]`.
-- It loops over `min(count+1, 10)` tabs from the array at `param_1+0x20`.
+Deciding evidence:
+- Caller: `FUN_140317DB0` calls it at RVA `0x319E42` with `RCX = [game+0xD408]`.
+- It loops over `min(count+1, 10)` tab entries from the array at `param_1+0x20`.
 - Each tab uses a panel pointer from that array.
 - Its texture comes from `panel+0x58` or is created from the string at `panel+0xB4`.
 - It uses `GetMouseSolid` + `Collision` and the latch `0xA54E91`.
 - Clicking sets `param_1+0x40`, `param_1+0x68`, and `param_1+1`.
 - Selected state is tracked in `param_1+0x40`, `param_1+0x68`, `param_1+1`, and `DAT_1409E2338`.
+- The master function's selected entry names include `system`, `storage`, `infrastructure`, `building`, `workshopbuildings`, `editorbuildings`, `trade`, `population`, `objectives`, and `scripts`, matching a top-level section row.
 
-Missing evidence:
-- How `[game+0xD408]` is initialized and populated.
-- The panel names or texture strings for the actual tab entries.
-- Whether the row drawn by this function is the screenshot's row below the title or the UI investigation's "bottom toolbar" row.
-- The row's on-screen rectangle, tab count, pitch, and available width.
-- Whether a mod-owned Almanac button can be inserted without overlap or capacity problems.
+What remains unresolved:
+- The runtime panel names/textures and their on-screen order.
+- The row's exact rectangle, pitch, and available width.
+- Whether the screenshot's four visible buttons are a clipped subset of this row.
+- Whether a mod-owned Almanac button can be added safely.
 
-Conclusion: this is unresolved, not a supported match. The smallest next evidence is a runtime or static mapping from the panel array at `game+0xD408` to visible button identities and their on-screen rectangle. No implementation, build, hook, configuration change, or live test is authorized.
+### 34.2 Smallest next evidence
+
+The smallest next evidence is a runtime mapping from the panel array at `game+0xD408` to visible button identities and their on-screen rectangle. No implementation, build, hook, configuration change, or live test is authorized.
 
 ### 33.1 What the existing evidence supports
 
