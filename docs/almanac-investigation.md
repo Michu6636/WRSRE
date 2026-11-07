@@ -689,7 +689,9 @@ Smallest next action: obtain approval for a bounded live/UI test or deeper stati
 
 ## 20. Economy & Trade path and widget assessment
 
-### 20.1 Selection path
+### 20.1 Selection path (superseded by section 24)
+
+Correction: an Economy & Trade/importexport entry does not reach `FUN_140395C90`. The dispatch chain reaches `FUN_140358A20` (RVA `0x358A20`). The list below is retained as historical evidence for `FUN_140395C90` only.
 
 Supported:
 
@@ -768,7 +770,9 @@ Smallest next action: either a deeper static trace of `FUN_140395C90`'s draw/inp
 
 ## 21. Economy & Trade host assessment
 
-### 21.1 Path verification
+### 21.1 Path verification (superseded by section 24)
+
+Correction: an Economy & Trade/importexport entry does not reach `FUN_140395C90`. The dispatch chain reaches `FUN_140358A20` (RVA `0x358A20`). The notes below are retained as historical evidence for `FUN_140395C90` only.
 
 Supported:
 
