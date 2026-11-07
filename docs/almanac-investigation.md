@@ -2736,3 +2736,78 @@ There is no clean separation between drawing the row and drawing the body in FUN
 - docs/almanac-investigation.md (this section)
 
 No production code, configuration, saves, builds, hooks, or settings were changed.
+## 49. Content separation assessment and branch verification
+
+### 49.1 FUN_14035F3E0 (RVA 0x35F3E0)
+
+Called from FUN_140373EA0 at 0x140374606 when game+0xC65C <= 1 (selected sub-tab is 0 or 1). Decmpiled (scratch/out/14035f3e0_decomp.c, 737 lines).
+
+Signature: `char FUN_14035f3e0(game, float *param_2, float *param_3)` where param_2 = &Y (RBP-0x4c), param_3 = &X (RSP+0x70). Returns a char (cVar4).
+
+Key behavior:
+- Draws a panel at (X, Y) with dimensions computed from iVar18/iVar16/iVar17/iVar15 (a rectangle from piVar8, a font metrics result).
+- Draws 6 sub-items in a loop (iVar15 = 0..5), each with a C3D_LANGUAGE string (IDs 0x68B..0x690, or 0x2B6 for index 5), a C3D_FONTMANAGER::PrintLeftUnicode label, and a C3D_PANEL2D::DrawFrom9Patch button.
+- Each sub-item has click handling: if the mouse is within the item's rect and the latch is set, calls FUN_1402fd840(param_1, iVar15, 0) and plays gui_click.
+- If iVar15 == 4 and game+0x10F20 == 4, sets bVar6 = false (disables one sub-item).
+- Returns cVar4, which is '\x01' if a click occurred on a specific sub-item (index 4 or 5 with certain conditions), '\0' otherwise.
+- Calls FUN_1404461f0 (sorted insert) for layout.
+- Calls FUN_140335bc0 / FUN_140335500 (state checks) and FUN_140335b10 (state setter).
+- On click of the last sub-item: FUN_1403613b0(param_1, 0xffffffff, 1, local_148) and sets game+0x10F20 = 4. Or FUN_1403613b0(param_1, 0xfffffffe, 1, local_148) for sub-item 5.
+
+This is a complex content sub-view (likely a graph/detail panel with 6 clickable sub-items). It is NOT a simple draw — it has its own click handling, state updates, and sub-page navigation (FUN_1403613b0).
+
+### 49.2 Branch at 0x1403747C6 — verified
+
+    140374793: MOV EBX, dword ptr [RSI + 0xc65c]            ; selected sub-tab
+    140374799: MOV dword ptr [RBP + 0x14], EBX
+    14037479c: MOV R8D, dword ptr [RSI + 0x10f18]          ; content index
+    1403747a3: MOV dword ptr [RBP + 0x8], R8D
+    1403747a7: MOVSXD RDX, dword ptr [RSI + 0x10f1c]       ; content count (signed)
+    1403747ae: MOV dword ptr [RBP + 0xc], EDX
+    1403747b1: MOV RCX, qword ptr [RSI + 0x11730]          ; content list end
+    1403747b8: SUB RCX, qword ptr [RSI + 0x11728]          ; content list begin
+    1403747bf: SAR RCX, 0xa                                ; list size / 1024
+    1403747c3: CMP RDX, RCX                                ; content count vs list size/1024
+    1403747c6: JC 0x140374878                              ; if (unsigned RDX < RCX) skip refresh
+
+JC = "jump if carry" = unsigned less-than. If content count < (list size / 1024), jump to 0x140374878 (skip the refresh block). If content count >= list size/1024, fall through to refresh (set game+0x1039a=0, game+0x10be8=-1, etc.).
+
+This is a "need more data" trigger: refresh only when the content count has reached or exceeded the current list's capacity. The annotation in section 48 ("JC skips refresh when in bounds") is correct.
+
+### 49.3 Approaches for separating content from row
+
+Approach A — Skip the entire post-row block (0x1403745b6 to end):
+- Would suppress all native content, state updates, and click handling.
+- Risk: game+0x12800 (content list), game+0x10be8 (counter), game+0x1039a (dirty flag), game+0x10F20 (sub-page state) would not be updated. Their consistency is unverified.
+- Also skips FUN_14035F3E0, which has its own click handling and sub-page navigation (FUN_1403613b0). Skipping it would disable vanilla sub-page interaction.
+
+Approach B — Replace only the body draw, keep state updates:
+- The button loop (state updates: game+0xC65C, game+0x1039a, game+0x10be8) is separate from the content block. The content block (0x1403745b6+) does additional state updates and drawing.
+- A mod could run the button loop (native, untouched) and then replace only the content block with Almanac rendering. But the content block includes FUN_14035F3E0 (for sub-tabs 0/1) and multiple panel draws. Identifying which instructions are "pure draw" vs "state write" requires decoding the entire block.
+- The state writes in the content block (game+0x10F20, game+0x5E8, game+0x5EC, game+0x5E6, game+0x5F0, game+0xADB8, game+0xADC8) are tied to click handling (only execute when DAT_0x140a54e91 is set). A mod that detects clicks itself might not need them.
+
+Approach C — Mod-owned button with mod-owned page, no native content suppression:
+- The mod draws the Almanac button in the row and, when selected, renders Almanac content on top of (or beside) the native content. This avoids suppressing native state updates.
+- Risk: overlap/clipping with native content. The native content rectangle is not established (body extent unknown).
+
+### 49.4 Alternate handler (FUN_140361BB0) content path
+
+FUN_140361BB0 (RVA 0x361BB0) is much larger (12,304 lines of disasm). It also uses game+0xC65C and game+0x12800. It has more branches (CMP game+0xC65C, 1 and 2 at lines 0x14036252b and 0x1403626d7). The content path is more complex, with multiple sub-page dispatches. The exact content rectangle and state updates are not traced. The same approaches (A, B, C) apply, but with more unknowns.
+
+### 49.5 What each approach still needs to prove
+
+- Approach A: that skipping the entire block does not corrupt game state (game+0x12800, game+0x10be8, game+0x1039a, game+0x10F20, game+0x5E8/EC/6, game+0xADB8/ADC8). Also that FUN_14035F3E0's sub-page navigation (FUN_1403613b0) is not needed while Almanac is open.
+- Approach B: which instructions in the content block are pure draw vs state write, and whether the state writes can be replicated or skipped.
+- Approach C: the native content rectangle (X, Y, width, height) to avoid overlap. Body extent is unknown.
+
+### 49.6 Genuine evidence blocker
+
+The body extent and clip rectangle are unknown in both handlers. The content block draws panels at multiple positions (using _DAT_1409be060 with 64-wide backdrops, and FUN_14035F3E0 draws its own panels). The full rendered extent (bottom edge of the last drawn element) is not traced. Without this, no approach (A, B, or C) can be assessed for overlap.
+
+The smallest next step is to trace the body extent in FUN_140373EA0: find the last draw call's Y position and dimensions, and whether a clip rect is applied by C3D_PANEL2D::Draw. This is a pure static trace of the existing disassembly (0x1403745b6 to 0x140374878 and beyond).
+
+### 49.7 Files touched
+
+- docs/almanac-investigation.md (this section)
+
+No production code, configuration, saves, builds, hooks, or settings were changed.
