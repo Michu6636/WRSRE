@@ -870,3 +870,82 @@ Supported: `FUN_140395C90` can call the native slider and checkbox in at least o
 Unresolved: whether those calls are reachable for Economy & Trade, and whether their input/layout state is valid there.
 
 Smallest next action: a separately approved live test or a deeper static trace of `FUN_140395C90`'s use of `[RSI+0xD428]` and `[selected entry+0x48]`. No implementation or hook is authorized.
+
+## 23. Stopping-point deliverable
+
+### 23.1 Handoff and changed files
+
+This report is the single authoritative investigation artifact. The related native evidence is preserved in `docs/almanac-native-evidence.md` so the deciding disassembly is accessible without relying on ignored scratch files.
+
+Files changed in this investigation:
+
+- `docs/almanac-investigation.md`
+- `docs/ghidra-index/007C400.md`
+- `docs/ghidra-index/317DB0.md`
+- `docs/ghidra-index/337450.md`
+- `docs/ghidra-index/395C90.md`
+- `docs/almanac-native-evidence.md`
+
+No production code, configuration, saves, builds, hooks, or settings were changed.
+
+### 23.2 Claim review
+
+| Claim | Status | Evidence and limitation |
+|---|---|---|
+| `FUN_140395C90` can call the native slider and checkbox | Supported | CallsIn list and disassembly show calls at multiple sites, including RVA `0x396AB5` for the slider. |
+| The slider call at RVA `0x396AB5` requires `[RSI+0x1090] == 0` | Supported, with register caveat | The disassembly compares to `R15B`; R15 is 0 on the observed master path to `FUN_140395C90`. This is not independently runtime-verified. |
+| The slider call requires `[RSI+0xD428] != 0` and `[[RSI+0xD428]+0x48] != 0` | Supported | Direct disassembly. |
+| The slider call requires building type/subtype values `0x03`, `0x22`, `0x2D`, `0x00` with subtype `0x13`/`0x21`, `0x01` with subtype `0x13`/`0x21`, or `0x17` | Supported | Direct disassembly. |
+| The slider path is not reachable for Economy & Trade/importexport | Unresolved | The gates are construction/building-oriented, but the field values for an Economy & Trade entry are not established. |
+| `FUN_140395C90` is a safe host for an Almanac page | Unresolved | No content rectangle, clipping, scrolling, close behavior, or input safety has been established. |
+| Native widgets can coexist with vanilla controls in this host | Unresolved | Static signatures match, but live input state and collision behavior are unproven. |
+
+### 23.3 Smallest useful live investigation
+
+Passive observation of the unmodified game can establish a user-facing baseline: which sidebar pages scroll, where content appears, and whether Economy & Trade has visible rows or controls. It cannot establish memory offsets, selected-entry identity, clipping rectangles, hook safety, or whether a diagnostic write would be safe. Therefore passive observation alone cannot answer the technical host question.
+
+A diagnostic plugin or hook could answer more, but it is not harmless and is not implementation-ready. It would require:
+
+- A separately approved, logging-only diagnostic build or runtime patch.
+- Verified prologue bytes and instruction boundaries for any hooked function.
+- A rollback plan and no persistent game or save changes.
+- No change to tax behavior or economic authority.
+
+What it would do:
+
+1. Open the global sidebar and select Economy & Trade.
+2. Record the selected entry pointer, its name, `[RSI+0xD428]`, and `[[RSI+0xD428]+0x48]`.
+3. Record the values used for content position, dimensions, clipping, and mouse collision if they can be read without modifying game state.
+4. Optionally log whether the widget gates evaluate true or false for that entry.
+
+What it would not do:
+
+- It would not change tax values, settings, saves, or native vectors.
+- It would not install a permanent hook or deploy a mod without separate approval.
+
+Risks:
+
+- Any hook can crash the game or corrupt UI state if the prologue or calling convention is wrong.
+- Logging in a render path can affect performance.
+- A diagnostic build must be clearly separated from release code.
+
+Safeguards:
+
+- Use the already verified 18-byte prologue only as a candidate, with full edge and ABI review first.
+- Keep the diagnostic read-only and temporary.
+- Test in a disposable session with no save changes.
+- Provide an immediate rollback to the unmodified executable.
+
+Undo:
+
+- Remove the diagnostic hook or build and restore the original executable. No save or settings changes should remain.
+
+Expected result:
+
+- If Economy & Trade has the required non-null fields and an allowed type value, the widget path is reachable.
+- If it does not, `FUN_140395C90` is not a suitable host for an Almanac page through that path.
+- Either result would determine whether to pursue a deeper static trace or a different UI surface.
+
+### 23.4 Recommendation
+
+Do not implement the Almanac yet. The first acceptable release remains a global fiscal page for the existing tax controls, but the Economy & Trade host path is not proven. The smallest useful next step is either a deeper static trace of `FUN_140395C90`'s use of `[RSI+0xD428]` and the selected entry, or a separately approved read-only diagnostic investigation. Passive observation alone cannot resolve the technical blocker.
