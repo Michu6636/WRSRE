@@ -1407,7 +1407,29 @@ This would not establish that implementing an Almanac page is safe, nor that nat
 
 No hook, build, or live test is authorized by this plan.
 
-## 33. Reconciliation of sections 31 and 32
+## 34. Resolution of the FUN_1404D72C0 link
+
+### 34.1 Outcome: unresolved
+
+Existing exports do not establish that the panel array used by `FUN_1404D72C0` is the row shown directly below the Economy & Trade title.
+
+Supported evidence:
+- `FUN_1404D72C0` is called by `FUN_140317DB0` at RVA `0x319E42` with `RCX = [game+0xD408]`.
+- It loops over `min(count+1, 10)` tabs from the array at `param_1+0x20`.
+- Each tab uses a panel pointer from that array.
+- Its texture comes from `panel+0x58` or is created from the string at `panel+0xB4`.
+- It uses `GetMouseSolid` + `Collision` and the latch `0xA54E91`.
+- Clicking sets `param_1+0x40`, `param_1+0x68`, and `param_1+1`.
+- Selected state is tracked in `param_1+0x40`, `param_1+0x68`, `param_1+1`, and `DAT_1409E2338`.
+
+Missing evidence:
+- How `[game+0xD408]` is initialized and populated.
+- The panel names or texture strings for the actual tab entries.
+- Whether the row drawn by this function is the screenshot's row below the title or the UI investigation's "bottom toolbar" row.
+- The row's on-screen rectangle, tab count, pitch, and available width.
+- Whether a mod-owned Almanac button can be inserted without overlap or capacity problems.
+
+Conclusion: this is unresolved, not a supported match. The smallest next evidence is a runtime or static mapping from the panel array at `game+0xD408` to visible button identities and their on-screen rectangle. No implementation, build, hook, configuration change, or live test is authorized.
 
 ### 33.1 What the existing evidence supports
 
