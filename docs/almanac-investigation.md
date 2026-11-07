@@ -991,7 +991,8 @@ Supported:
 - Known selected-entry names include "system", "storage", "infrastructure", "building", "workshopbuildings", "editorbuildings", "const_offi", "veh_replace", "trade", "mtlist", "list", and likely "importexport".
 - "trade" has its own handler, `FUN_140373EA0` (RVA `0x373EA0`).
 - An "importexport" entry is expected to reach `FUN_140358A20` (RVA `0x358A20`).
-- `FUN_14007C400` (RVA `0x07C400`) is a generic sub-tab widget and can write `game+0xC650` in at least one path. Its full role is unresolved.
+- `FUN_14007C400` (RVA `0x07C400`) is called by `FUN_140317DB0` at RVA `0x31BB22` after setting panel dimensions. It is 33,620 bytes and reads `game+0xC650`. It can write `game+0xC650` at RVA `0x843F3`.
+- `FUN_14007C400` calls `BeginDraw`, `EndDraw`, `Draw`, `SetPosition`, `SetDimensions`, `PrintLeftUnicode`, `GetMouseSolid`, and `Collision`, plus native slider and checkbox functions. It is therefore a likely sub-tab/button-row renderer, but its exact button count and layout are not established.
 
 Unresolved:
 
