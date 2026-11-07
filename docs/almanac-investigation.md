@@ -2020,3 +2020,86 @@ plVar5 = *(longlong **)(lVar33 + 0x48 + lVar25);   // sub_entry+0x48
 The four section PNGs on disk (`media_soviet/editor/`) are 96x96. The backdrop panel drawn afterwards (line 181) is 92x92. Therefore the visible icon is 96x96 and the mouse-hit/selection backdrop is 92x92 - a 4 px total (2 px per side) mismatch, with the icon slightly larger than the hit rect. The PNG dimensions are runtime/asset data, not encoded in the exe; they were measured from the installed media files, not inferred.
 
 Mouse hit area: the `C3D_PANEL2D::Collision` at line 149 tests the 92x92 rect at `(fVar36, fVar38)` (position `_DAT_1409be2f0 = CONCAT44(fVar38, fVar36)`). Adjacent buttons' hit rects are 92 wide on an 85 pitch, so they overlap by 7 px on the shared edge. Click resolution: the loop processes indices 0,1,2,... in order and, on collision, writes `game+0xC65C = uVar26` (line 163), overwriting any earlier hit. Hence in a 7 px overlap zone the higher-indexed button wins. This is the native resolution rule and is not a mod-specific risk, but a mod button inserted at index 4 would participate in the same overlap rule with index 3 (and 5, if present).
+## 39. FUN_140373EA0 dispatch condition, row ordering, and content path
+
+### 39.1 Dispatch condition at game+0x10398 (both branches)
+
+When the selected entry name is "trade", FUN_140317DB0 (RVA 0x317DB0) reaches (scratch/out/14031eddf_14031edf5_disasm.asm, 0x14031ede3-0x14031ee18):
+
+    14031ede3: MOV RCX, R14                          ; game
+    14031ede6: CMP byte ptr [R14 + 0x10398], R15B     ; R15B = 0
+    14031eded: JZ 0x14031ee10                          ; if (game+0x10398 == 0) -> alternative
+    14031edef: CALL 0x140373ea0                        ; else -> FUN_140373EA0 (button-row handler)
+    14031edf4: MOVSS XMM0, dword ptr [RBP + -0x10]     ; (RBP-0x10 was 0 before call)
+    14031edf9: SUBSS XMM0, dword ptr [R14 + 0xae50]    ; XMM0 -= game+0xAE50
+    14031ee02: MOVSS dword ptr [R14 + 0xae58], XMM0     ; game+0xAE58 = (RBP-0x10) - game+0xAE50
+    14031ee0b: JMP 0x14031f018
+    14031ee10: XOR R9D, R9D
+    14031ee13: CALL 0x140361bb0                        ; alternative handler (FUN_140361BB0)
+    14031ee18: JMP 0x14031f018
+
+- game+0x10398 is a byte flag. When 0, the alternative handler FUN_140361BB0 (RVA 0x361BB0, a large function with a 0x1B38 stack frame) runs. When non-zero, FUN_140373EA0 runs (the button-row handler) and then computes game+0xAE58.
+- What sets game+0x10398 is not traced. It is likely a runtime state (possibly a "trade UI enabled" or "advanced view" flag). The alternative handler FUN_140361BB0 may be a simpler/read-only view. This is the exact missing edge: the condition under which the button-row handler actually runs is not established.
+- FUN_140361BB0 was not decompiled (DecompAt timed out; only a 64-byte disasm prologue is cached). Its purpose is unresolved.
+
+### 39.2 Row ordering (special index mapping)
+
+In FUN_140373EA0, the loop counter is EDI (0..count-1) but the sub-entry index drawn is EBX, computed as (scratch/out/140373ea0_1403829fd_disasm.asm, lines 159-174):
+
+    1403741a2: CMP EDI, 0x2
+    1403741a5: JGE 0x1403741ab
+    1403741a7: MOV EBX, EDI          ; if EDI < 2: EBX = EDI  (positions 0,1 -> sub-entries 0,1)
+    1403741a9: JMP 0x1403741cf
+    1403741ab: JNZ 0x1403741cc
+    1403741ad: ...                    ; if EDI == 2: EBX = count-1 (last sub-entry)
+    1403741c8: DEC EBX                ; EBX = count-1
+    1403741ca: JMP 0x1403741cf
+    1403741cc: LEA EBX, [RDI - 0x1]  ; if EDI >= 3: EBX = EDI - 1  (positions 3.. -> sub-entries 2..)
+
+So the rendered order is: [sub0, sub1, sub_{count-1}, sub2, sub3, ..., sub_{count-2}]. The last sub-entry is pulled into position 2 (index 2). The purpose is not established (possibly a "back"/"summary" button pinned to a fixed slot).
+
+Consequences for a mod button:
+- There is no simple "append at the end" position. Adding a sub-entry changes count and shifts every EBX >= 3 mapping.
+- A mod-owned button at a fixed screen position would need to know count, the reordering, and the resulting X. The X increment per button is 64 px (pitch = backdrop = 64), X origin 130, so position n (in rendered order) is X = 130 + n*64. But "n" depends on the reordering and count.
+- Whether an additional button would remain visible and aligned cannot be established without decoding the full layout and the container width. The reordering means even the count of visible buttons per row is not a simple function of count.
+### 39.3 Normal page-content path
+
+After the button row, FUN_140373EA0 renders content driven by game+0xC65C (selected sub-tab). Evidence:
+- At line 0x140374347: if game+0xC65C != EBX (selection changed), sets game+0x1039a = 0 (dirty flag).
+- At line 0x140374356: game+0xC65C = EBX (selected = this button).
+- At line 0x14037435c: game+0x10be8 = -1.
+- At line 0x140374366: if game+0xC65C == EBX, draw selected overlay.
+- The body then uses game+0x12800 (a list/grid object) and game+0x10be8 (compared to values later) for content.
+
+Missing evidence for replacing content with an Almanac page:
+- The full content rectangle, clipping, and scroll state are not traced.
+- Whether game+0xC65C can be left untouched (mod flag only) while suppressing the body draw is unverified — the body is not gated by any mod-settable flag.
+- Whether the body's use of game+0x12800/game+0x10be8 would be corrupted if the mod skips the draw is unverified.
+- The alternative path (game+0x10398 == 0 -> FUN_140361BB0) is unresolved; if the mod targets only FUN_140373EA0, it may miss the alternative view entirely.
+
+### 39.4 Corrected/marked superseded claims
+
+- docs/almanac-investigation.md sections 35-37 and docs/ghidra-index/358A20.md described the row as FUN_140358A20 with 92x92 backdrop, 85 pitch, 7px overlap, and wrap-at-8. These are SUPERSEDED for the Economy & Trade row: the actual handler is FUN_140373EA0 with 64x64 backdrop, 64 pitch, no overlap, and a special reordering. The FUN_140358A20 analysis remains valid only for the (likely unreachable) "importexport" fallback path.
+- docs/ghidra-index/358A20.md status remains partial and now notes the supersession. docs/ghidra-index/373EA0.md (new) records the actual handler.
+- The "trade_importexport.png" texture is a sub-entry of the "trade" panel, not evidence of a top-level "importexport" panel. However, the non-existence of importexport_*.png files alone does not prove "importexport" cannot be a panel name; it is supporting evidence only. The dispatch and texture-naming convention together make "trade" the panel name.
+- The overlap-click-winner claim is conditional on the handler: it does not apply to FUN_140373EA0 (64 on 64 = no overlap).
+
+### 39.5 Remaining runtime uncertainties
+
+1. What sets game+0x10398 and whether FUN_140373EA0 is the normal path.
+2. The reordering logic and resulting button positions (statically decodable but not yet decoded).
+3. Y origin, container width, clipping, scroll.
+4. Body extent and clip rect.
+5. Close hand-off and latch owner.
+6. Whether the runtime collection always has the expected entries.
+
+### 39.6 Smallest next step
+
+Decode the reordering loop in FUN_140373EA0 (the EBX mapping and any position clamping) from the existing disassembly, and trace what sets game+0x10398. Both are pure static reads; no implementation, build, hook, configuration change, or live test is authorized.
+
+### 39.7 Files touched in this refresh
+
+- docs/almanac-investigation.md (this section)
+- docs/ghidra-index/373EA0.md (already created; no change this pass)
+
+No production code, configuration, saves, builds, hooks, or settings were changed.
