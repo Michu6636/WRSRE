@@ -2442,3 +2442,44 @@ The container's visible width and clip rect (the field in game+0xADB0 or the sid
 - docs/almanac-investigation.md (this section)
 
 No production code, configuration, saves, builds, hooks, or settings were changed.
+## 44. Corrected four-entry tables and window-bounds status
+
+### 44.1 Corrected four-entry tables
+
+FUN_140373EA0 (game+0x10398 != 0): draws ALL count buttons with reordering [sub0, sub1, sub_{count-1}, sub2, ...]. Pitch 64, X origin 130.
+
+| Entries (count=4) | Rendered order | Positions (X) | Rects [X, X+64) |
+|---|---|---|---|
+| sub0, sub1, sub2, sub3 | sub0, sub1, sub3, sub2 | 130, 194, 258, 322 | [130,194), [194,258), [258,322), [322,386) |
+
+FUN_140361BB0 (game+0x10398 == 0): draws count-1 buttons (sub-entries 0..count-2) in linear order, skipping conditionally. Pitch 64, X origin 130. Last sub-entry (count-1) is NOT a button.
+
+| Entries (count=4) | Loop iterations (ESI=0..2) | Drawn if no skips | Positions (X) | Rects [X, X+64) |
+|---|---|---|---|---|
+| sub0, sub1, sub2, sub3 | ESI=0,1,2 | sub0, sub1, sub2 | 130, 194, 258 | [130,194), [194,258), [258,322) |
+
+If entries are skipped (game+0x578 != 0 and ESI not in {0,1,2} with ESI-3 in {0,1}; or ESI==6 and game+0x5e0==0), those buttons are omitted and X does not advance (packed layout). The 4th sub-entry (sub3) is never drawn as a button; a separate 35x35 panel is drawn after the loop.
+
+### 44.2 Window bounds and clipping — status
+
+The panel context (game+0xADB0) is initialized by FUN_1404465a0 (RVA 0x4465A0) during FUN_140317DB0 prologue. That function sets game+0xAE30 = 1.0 (a scale factor, written only if a condition is zero) and performs additional setup (not fully disassembled here). No width, height, or clip-rectangle field is written in the portions examined. The panel context dimensions are likely set during object construction (before FUN_140317DB0) or by a separate initialization not in the cached exports.
+
+Clipping is performed by C3D_PANEL2D::Draw and C3D_PANEL2D::Collision using the panel context's internal dimensions, which are not set in these handlers. The exact field and instruction that set the visible bounds are NOT identified.
+
+Exact missing evidence: the instruction(s) that write the panel width/height/clip fields of game+0xADB0 (or the sidebar host's equivalent). Candidate locations: (a) the constructor of the sidebar/window object (before FUN_140317DB0), (b) an initialization function called from FUN_140317DB0 before the trade handlers, (c) FUN_1404465a0 (partially disassembled, needs full decomp).
+
+Proposed diagnostic (not performed): read game+0xADB0's width/height fields at runtime during a trade page render and compare with the on-screen sidebar width. This would establish the visible bounds. No live test is authorized.
+
+### 44.3 Fifth button assessment (corrected)
+
+Under four-entry, scale-1, no-skip assumptions:
+- FUN_140373EA0: last button right edge = 386. Fifth button at X=386, right edge 450.
+- FUN_140361BB0: last loop button right edge = 322 (only 3 buttons). Fifth button at X=322, right edge 386. (If a 4th button were needed, it would be at X=386.)
+
+In both cases, whether the right edge (386 or 450) is visible is unverified because the container width is unknown.
+
+### 44.4 Files touched
+
+- docs/almanac-investigation.md (this section)
+
+No production code, configuration, saves, builds, hooks, or settings were changed.
