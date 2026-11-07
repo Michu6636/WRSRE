@@ -1553,6 +1553,8 @@ The smallest next step is a targeted static trace of the Economy & Trade button-
 
 ## 35. Economy & Trade section-button row: identified (2026-11-07 refresh)
 
+> SUPERSEDED (2026-11-07 later pass): The handler identified here as drawing the row is FUN_140358A20, reached only for panel names not in the explicit dispatch list. The ACTUAL handler for the Economy & Trade row (panel name "trade") is FUN_140373EA0 (RVA 0x373EA0). Sections 35-37 geometry (92x92 backdrop, 85 pitch, 7px overlap, wrap-at-8) applies only to the unreachable FUN_140358A20 fallback. See sections 38-40 for the corrected analysis. Underlying evidence (dispatch, texture names, sub-entry vector) is preserved.
+
 ### 35.1 Plain-language verdict
 
 The row of section buttons directly below the Economy & Trade window title is drawn by **`FUN_140358A20` (RVA `0x358A20`)**, the Economy & Trade page handler. Its first loop iterates a vector of sub-entries attached to the selected sidebar panel (`game+0xC650` → `+0x48` begin / `+0x50` end, stride `0x50` = 80 bytes). Each sub-entry contributes one button: its text ID at `+0x40`, a drawable object pointer at `+0x48`, and its texture (resolved from that drawable or created from a name string). The binary contains the corresponding texture names `editor/trade_importexport.png`, `editor/trade_productionconsumption.png`, `editor/trade_tourism.png`, and `editor/trade_crime.png`.
@@ -1643,6 +1645,8 @@ Derive the exact button rect and pitch from the decompiled `FUN_140358A20` geome
 No production code, configuration, saves, builds, hooks, or settings were changed.
 
 ## 36. FUN_140358A20 button-row geometry and content path (static)
+
+> SUPERSEDED (see section 38-40): geometry here (92x92, 85 pitch, 7px overlap) applies to the unreachable FUN_140358A20 fallback, not the actual Economy & Trade row (FUN_140373EA0: 64x64, 64 pitch, no overlap).
 
 ### 36.1 Constants resolved from the authenticated executable
 
@@ -1795,6 +1799,8 @@ Implication for a mod-owned Almanac page: the native content area is not gated b
 Re-read the remaining unread constants (`DAT_14090aa10`, `DAT_14090aa70`-adjacent, etc.) and trace the drawable object at `sub_entry+0x48` (its constructor/owner) to resolve the visible icon size and the backdrop-vs-icon relationship. Then, if geometry is established, a separately approved read-only live diagnostic can confirm on-screen placement and latch coexistence. No implementation, build, hook, configuration change, or live test is authorized by this report.
 
 ## 37. FUN_140358A20 deeper static findings (drawable, constants, return path)
+
+> SUPERSEDED (see section 38-40): applies to the unreachable FUN_140358A20 fallback only.
 
 ### 37.1 The drawable at sub_entry+0x48 is a texture, not a separate icon widget
 
@@ -2101,5 +2107,53 @@ Decode the reordering loop in FUN_140373EA0 (the EBX mapping and any position cl
 
 - docs/almanac-investigation.md (this section)
 - docs/ghidra-index/373EA0.md (already created; no change this pass)
+
+No production code, configuration, saves, builds, hooks, or settings were changed.
+## 40. game+0x10398 dispatch and FUN_140361BB0 row path
+
+### 40.1 What sets game+0x10398
+
+`game+0x10398` is toggled by `FUN_140309D80` (RVA 0x309D80; cached export scratch/ms_cam_309d80.c, lines 135-138):
+
+    if (((*(char *)(param_1 + 9) != '\0') && (DAT_0x140a54bad != '\0')) &&
+       (DAT_0x140a54cc0 != '\0')) {
+      *(bool *)(param_1 + 0x10398) = *(char *)(param_1 + 0x10398) == '\0';
+    }
+
+So it toggles when param_1+9 (a "UI active" byte) is set and two input flags (DAT_0x140a54bad, DAT_0x140a54cc0) are set. These are likely key-press/input flags. The exact key or menu that triggers the toggle is not identified; the precise missing evidence is which input binding sets DAT_0x140a54bad / DAT_0x140a54cc0. This is a user-toggled "trade view mode": when game+0x10398 is 0, FUN_140361BB0 runs; when non-zero, FUN_140373EA0 runs.
+
+### 40.2 FUN_140361BB0 row-drawing path
+
+FUN_140361BB0 (RVA 0x361BB0) also reads the sub-entry vector (scratch/ch_tab23_full.asm, lines 183-218):
+
+    140361f70: MOV R8, qword ptr [R14 + 0xc650]     ; selected entry
+    140361f77: ADD R8, 0x48                          ; sub-entry vector begin
+    140361f7b: MOV RCX, qword ptr [R8 + 0x8]         ; end
+    140361f7f: SUB RCX, qword ptr [R8]               ; end - begin
+    ... divide by 0x50 -> count-1 (EAX)
+    140361ff0: MOV RBX, qword ptr [R15 + RAX*1 + 0x48]  ; sub_entry+0x48 (texture)
+    140361ff5: MOV RDI, qword ptr [RBX]               ; vtable
+    140361fff: CALL qword ptr [RDI + 0x70]             ; draw texture
+    140362010: MOVSS XMM1, dword ptr [0x140992088]    ; DPI
+    140362018: MULSS XMM1, XMM10                      ; XMM10 = DAT_0x90aaa0 = 64
+    ... backdrop size = 64 (same as FUN_140373EA0)
+    ... panel setup at 0x140445eb0, Collision at 0x14086c850
+
+So FUN_140361BB0 draws the same sub-entry textures with the same 64x64 backdrop and uses the same sub-entry vector and game+0xC65C. The two handlers share the data model; they differ in overall page layout (FUN_140361BB0 is the "simple" view, FUN_140373EA0 the "advanced"/button-row view). The precise layout differences (whether FUN_140361BB0 also reorders) are not decoded here; only the shared sub-entry draw is confirmed.
+
+### 40.3 Supersession notices
+
+- Sections 35-37 of docs/almanac-investigation.md and docs/ghidra-index/358A20.md describe the row as FUN_140358A20 with 92x92 backdrop, 85 pitch, 7px overlap, wrap-at-8. These are SUPERSEDED for the Economy & Trade row. The actual handler is FUN_140373EA0 with 64x64 backdrop, 64 pitch, no overlap, special reordering. The FUN_140358A20 analysis applies only to the (likely unreachable) "importexport" fallback path.
+- docs/ghidra-index/358A20.md: status remains partial; notes now state supersession.
+- docs/ghidra-index/373EA0.md: call-site corrected to 0x14031EDEF (gated by game+0x10398 != 0). The alternative (game+0x10398 == 0) calls FUN_140361BB0 at 0x14031EE13.
+
+### 40.4 Corrected claims about image filenames
+
+The non-existence of editor/importexport_*.png files is supporting evidence that "importexport" is a sub-entry of "trade", not proof that "importexport" cannot be a panel name. The dispatch (game+0x10398 gating) and the texture-naming convention together make "trade" the panel name. Both facts (filename absence + dispatch) are needed; neither alone is sufficient.
+
+### 40.5 Files touched
+
+- docs/almanac-investigation.md (this section)
+- docs/ghidra-index/373EA0.md (call-site address corrected)
 
 No production code, configuration, saves, builds, hooks, or settings were changed.
