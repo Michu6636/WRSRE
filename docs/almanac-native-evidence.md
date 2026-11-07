@@ -1,6 +1,91 @@
-# Almanac Native Evidence: FUN_140395C90 Widget Path
+# Almanac Native Evidence: FUN_140358A20 Sub-Tab Row (Economy & Trade)
+
+## Source artifacts
+- `scratch/out/140358a20_decomp.c` (DecompAt, RVA `0x140358A20`, 10,143 bytes)
+- `scratch/out/140358a20_calls.txt`
+- `scratch/out/14031eb5f_14031ec80_disasm.asm` (master dispatch around 0x14031EB5F–0x14031EC80)
+- `scratch/out/14031edaf_14031ede0_disasm.asm`
+- `scratch/out/14031ee1d_14031ee30_disasm.asm`
+- `scratch/out/14031ee70_14031ee80_disasm.asm`
+
+## Deciding dispatch (master function FUN_140317DB0, RVA 0x317DB0)
+
+The selected entry name is compared to "system", "storage", "infrastructure", "building", "workshopbuildings", "editorbuildings", "const_offi", "veh_replace", "trade", "mtlist", "list". If none match, the master calls `FUN_140358A20` at RVA `0x31EE76`:
+
+```asm
+14031ee73: MOV RCX, R14
+14031ee76: CALL 0x140358a20          ; Economy & Trade page handler
+14031ee7b: JMP 0x14031f018
+```
+
+"importexport" is not in the explicit comparison list, so an Economy & Trade entry reaches `FUN_140358A20`. `FUN_140395C90` is reached only for "infrastructure" (RVA `0x31EB5F`), not for "importexport".
+
+## Sub-tab / section-button row (first loop in FUN_140358A20)
+
+```c
+lVar16 = (*(game+0xC650)+0x50 - *(game+0xC650)+0x48) / 0x50;   // count
+if (0 < (int)lVar16) {
+  lVar33 = 0; uVar26 = 0;
+  do {
+    lVar25 = *(game+0xC650)+0x48;                 // vector begin
+    FUN_1404461f0(game+0xADB0, lVar16, fVar38, 6);  // panel setup
+    plVar5 = *(longlong **)(lVar33 + 0x48 + lVar25); // drawable at sub_entry+0x48
+    (**(code **)(*plVar5 + 0x70))(plVar5, 0, ...);   // draw
+    ...
+    if (collision with mouse) {
+      if (latch 0xA54E91) {
+        game+0xC65C = uVar26;                     // selected sub-tab index
+        game+0xCCC8 = -1; game+0xCCD0 = 0;
+        game+0xC6B8 = game+0xC6B0;
+        play gui_subtab_click sound;
+      }
+      copy C3D_LANGUAGE::GetString(sub_entry+0x40) into game+0xD5A0; // label
+    }
+    if (game+0xC65C == uVar26) { selected overlay }
+    C3D_PANEL2D::Draw(...);
+    // pitch / wrap
+    uVar14 = uVar26 & 7;
+    if (uVar14 == 7) { fVar38 += fVar41; fVar36 = fVar45; }  // next row
+    else { fVar36 += fVar41; }                              // next column
+    uVar26++;
+    lVar33 += 0x50;
+  } while (uVar26 < lVar16);
+}
+```
+
+Fields:
+- Selected sidebar entry: `game+0xC650` (pointer).
+- Sub-collection: begin `*(entry)+0x48`, end `*(entry)+0x50`, stride `0x50` (80 bytes).
+- Per sub-entry: text ID at `+0x40`; drawable pointer at `+0x48`.
+- Selected sub-tab index stored at `game+0xC65C`.
+- Geometry: horizontal pitch `fVar41 = DPI * DAT_0x14090ab14`; Y origin `fVar38 = DPI * DAT_0x14090aa0c + (game+0xAE50)`; wrap every 8 buttons to the next row (`uVar26 & 7 == 7`).
+
+## Content-area selection (later in the same function)
+
+```c
+iVar4 = game+0xC65C;
+if (iVar4 == 0) iVar32 = 1;
+else if (iVar4 == 1) iVar32 = 4;
+else if (iVar4 == 2) iVar32 = 6;
+else if (iVar4 == 3) iVar32 = 8;
+else if (iVar4 == 4) iVar32 = 10;
+FUN_140497050(...);  // uses iVar32
+...
+FUN_140494F60(..., iVar32, 0x12, ...);
+```
+
+So clicking section button `i` changes `game+0xC65C`, which drives the main content area to a different sub-page. This is the "page or selection it opens."
+
+## Claim status
+- Supported: `FUN_140358A20` is the Economy & Trade page handler reached for "importexport".
+- Supported: its first loop draws one button per sub-entry in the selected panel's sub-collection, with selected highlighting and click handling.
+- Supported: click sets `game+0xC65C` and drives a distinct sub-page via the `0/1/2/3/4 -> 1/4/6/8/10` mapping.
+- Supported: texture names for the four sections exist in the binary.
+- Unresolved: exact button rect (width/height/pitch in pixels), content-area rectangle, clipping, scrolling, close behavior, vector ownership/capacity, latch coexistence, and whether `FUN_140496DE0` accepts a new value.
 
 This is a small, committed evidence excerpt for the Almanac investigation. It is not a full export.
+
+# Almanac Native Evidence: FUN_140395C90 Widget Path
 
 ## Dispatch evidence for the corrected Economy & Trade path
 

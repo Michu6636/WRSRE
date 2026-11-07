@@ -1550,3 +1550,94 @@ The button must not be moved to a bottom row or embedded in the trade page to sa
 ### 31.4 Smallest next step
 
 The smallest next step is a targeted static trace of the Economy & Trade button-row drawing and click handling, or a separately approved live diagnostic if static evidence cannot establish the layout. No implementation, build, hook, configuration change, or live test is authorized.
+
+## 35. Economy & Trade section-button row: identified (2026-11-07 refresh)
+
+### 35.1 Plain-language verdict
+
+The row of section buttons directly below the Economy & Trade window title is drawn by **`FUN_140358A20` (RVA `0x358A20`)**, the Economy & Trade page handler. Its first loop iterates a vector of sub-entries attached to the selected sidebar panel (`game+0xC650` → `+0x48` begin / `+0x50` end, stride `0x50` = 80 bytes). Each sub-entry contributes one button: its text ID at `+0x40`, a drawable object pointer at `+0x48`, and its texture (resolved from that drawable or created from a name string). The binary contains the corresponding texture names `editor/trade_importexport.png`, `editor/trade_productionconsumption.png`, `editor/trade_tourism.png`, and `editor/trade_crime.png`.
+
+This is **not** `FUN_1404D72C0` (RVA `0x4D72C0`), which is the top-level sidebar tab bar drawn by `FUN_140317DB0` at RVA `0x319E42` from `game+0xD408`; it is a different collection and a different visual row. It is also **not** `FUN_14007C400` (RVA `0x7C400`), which is the sub-tab/button-row widget whose only confirmed write to `game+0xC650` clears the selected entry under narrow "system"/"makecity"/"objectives"/"qa" conditions and is unrelated to Economy & Trade selection. It is **not** `FUN_140395C90` (RVA `0x395C90`), which is not reached for an "importexport" entry at all.
+
+Button click → selection: clicking a sub-tab button sets `game+0xC65C` to its index, plays the `gui_subtab_click` sound, and updates `game+0xCCC8 = -1`, `game+0xCCD0 = 0`, `game+0xC6B8 = game+0xC6B0`. The main content area then maps the selected index `0..4` to values `1 / 4 / 6 / 8 / 10` and drives `FUN_140496DE0` / `FUN_140494F60`, switching the displayed sub-page. Thus each section button opens a distinct sub-page within Economy & Trade.
+
+Geometry (from the decompiled handler): horizontal pitch `fVar41 = DPI * DAT_0x14090ab14`; Y origin `fVar38 = DPI * DAT_0x14090aa0c + (game+0xAE50)`; buttons wrap to a new row every 8. The exact pixel width/height of an individual button and the content-area rectangle are **not** yet extracted from the decompile and remain the smallest missing geometry evidence.
+
+### 35.2 Evidence linking the row to Economy & Trade, not another toolbar
+
+1. Dispatch (master function `FUN_140317DB0`, RVA `0x317DB0`): the selected entry name is compared against "system", "storage", "infrastructure", "building", "workshopbuildings", "editorbuildings", "const_offi", "veh_replace", "trade", "mtlist", "list"; if none match, it calls `FUN_140358A20` at RVA `0x31EE76`. "importexport" is not in that list, so an Economy & Trade entry reaches `FUN_140358A20`. Preserved disassembly: `docs/almanac-native-evidence.md` ("Dispatch evidence for the corrected Economy & Trade path") and `scratch/out/14031eb5f_14031ec80_disasm.asm` etc.
+2. Texture names present in the binary (file offsets `0x899E07`, `0x899E27`): `editor/trade_importexport.png`, `editor/trade_productionconsumption.png`, `editor/trade_tourism.png`, `editor/trade_crime.png` — the four section icons. These are the same names referenced by the UI investigation; they are section icons, not the top-level sidebar tabs.
+3. `FUN_140358A20` sub-tab loop: reads `*(game+0xC650)+0x48` (vector begin) and `+0x50` (end), stride `0x50`; per sub-entry text ID at `+0x40` and drawable at `+0x48`; click sets `game+0xC65C`; selected overlay drawn when `game+0xC65C == index`. This matches a section-button row with selected appearance.
+4. `FUN_1404D72C0` is a different collection: it is driven by `game+0xD408` (a tab-state object with a pointer array at `+0x20` and count at `+0x38/+0x50`), iterates up to 10 top-level tabs, and its selected state is `param_1+0x40/+0x68/+1` and `DAT_0x1409E2338` — not `game+0xC65C`. It is the sidebar's top-level section bar, not the in-page row.
+5. `FUN_14007C400`'s only confirmed write to `game+0xC650` stores NULL under "system"/"makecity"/"objectives"/"qa" conditions (see section 28/29); it does not enumerate or select Economy & Trade sub-tabs.
+
+### 35.3 Native approach: extend the native button/page system
+
+Supported:
+- The row is data-driven: button count = size of the sub-entry vector attached to the selected sidebar panel. Adding a button means adding an entry to that vector (or to whatever initializer builds it).
+- The click→sub-page mapping (index → `1/4/6/8/10` via `FUN_140496DE0`) shows there is a native dispatch for sub-pages; a new index would need a new case or a reused value.
+- Text labels come from `C3D_LANGUAGE::GetString(id)` using the sub-entry's `+0x40` ID, so a new button needs a new string ID (or reuse an existing one).
+
+Unproved / blockers:
+- Who owns and initializes the sub-entry vector (`*(game+0xC650)+0x48/+0x50`). Capacity, allocator, and init timing are not traced. Writing into it without ownership proof risks heap corruption.
+- Whether the vector is a `std::vector` (realloc on push) or a fixed array; whether there is spare capacity.
+- Whether the game's content dispatcher has a slot for a 5th/6th sub-page value, or whether `FUN_140496DE0`/`FUN_140494F60` accept an arbitrary new value.
+- Whether adding an entry changes vanilla sub-tab count/positions/selected indices in a way that breaks existing saves or muscle memory.
+- The exact button rect (width, height, X/Y origin, pitch) is not yet extracted, so an "aligned" native addition cannot be verified against vanilla geometry.
+
+Smallest missing evidence for the native approach: the initializer/owner of the sub-entry vector (who creates the 4 entries, when, and with what capacity), plus the exact button rect. Without that, extending the native collection is not safe.
+
+### 35.4 Mod-owned approach: draw a button without extending a native collection
+
+Supported:
+- `FUN_140358A20` is a per-frame render function called from the sidebar host; a mod can hook or post-render after it returns and draw an extra button using the same native primitives (`Draw`, `SetPosition`, `SetDimensions`, `GetMouseSolid`, `Collision`, texture from `C3D_MIDDLEPOINT::CreateManagedTexture` or a mod texture), matching the City Hall `widgetButton` precedent (9-patch chrome, hover/active tint, click latch `0xA54E91`, `gui_click` audio).
+- The mod can keep its own `almanacSelected` state and render a distinct Almanac page in the content area, without touching `game+0xC65C` or the native vector.
+- The mod can detect clicks via `GetMouseSolid` + `Collision` on its own button rect, exactly as native buttons do.
+- The mod can reuse the existing `taxes` service getters/setters; City Hall stays a temporary fallback.
+
+Unproved / blockers:
+- The exact button rect (X, Y, width, height) and pitch in DPI units is not yet extracted from the decompile; the mod cannot align without it (must derive from the same `fVar41`/`fVar38` expressions, which reference `DAT_0x14090ab14`, `DAT_0x14090aa0c`, `game+0xAE50`).
+- Whether the mod can draw in the same pass after `FUN_140358A20` returns without the native content area overwriting or clipping it (Z/order, draw context state `game+0xADB0`).
+- Whether the click latch `0xA54E91` coexists with the native sub-tab click handling (both read the same latch; consumption order matters).
+- Whether the mod's content area (the Almanac page) avoids overlapping native content when a vanilla sub-tab is selected, or whether the mod must suppress native content rendering while `almanacSelected` is true (which requires intercepting the native content path — not yet proven safe).
+- Close/section-switch restoration: the mod must clear `almanacSelected` and restore prior state when a vanilla button is selected or the window closes; the close path (`game+0xC650` hand-off, tab index `-1`) is unresolved.
+- Whether drawing a 5th button overflows the row width at the target resolution/DPI; native wraps at 8, but visual row width is unmeasured.
+
+Smallest missing evidence for the mod-owned approach: the exact button rect and pitch (pixels/DPI) and the native content-area bounds, plus confirmation that a post-return draw call can land on top without being clipped. The click-latch coexistence and close-path restoration also need a separately approved live diagnostic.
+
+### 35.5 Comparison summary
+
+| Aspect | Native extend | Mod-owned button |
+|---|---|---|
+| Button count / capacity | Must extend native vector; owner/capacity untraced (high risk) | No native vector change (lower structural risk) |
+| Alignment / appearance | Native geometry guaranteed if vector entry is valid | Must reverse-engineer pitch/rect; alignment risk |
+| Selection state | Native `game+0xC65C` | Mod-owned flag; no native state mutation |
+| Page content | Native sub-page dispatch; needs new case | Mod renders Almanac; must avoid native content overlap |
+| Click handling | Native latch already consumed | Must coexist with native latch consumption order |
+| Vanilla preservation | Risk of corrupting vector/capacity | Risk of overlap/clipping; vanilla untouched structurally |
+| Smallest next evidence | Vector initializer/owner + button rect | Button rect + content-area bounds + latch coexistence |
+
+Neither approach is implementation-ready. Both require the same first artifact: an exact, measured button rect (X, Y, width, height, pitch) for the native section buttons, derived from the decompiled geometry expressions. That is the single smallest next step common to both.
+
+### 35.6 Remaining blockers (exact)
+
+1. Button geometry: exact width/height/pitch/Y-origin in DPI-scaled pixels (from `fVar41`, `fVar38`, `fVar36`, `DAT_0x14090ab14`, `DAT_0x14090aa0c`, `game+0xAE50`). Not yet extracted.
+2. Content area: the rectangle `FUN_140358A20` uses for the sub-page body, its clipping, and scroll state. Not traced.
+3. Vector ownership/capacity (native approach only): who builds `*(game+0xC650)+0x48/+0x50`. Not traced.
+4. Sub-page dispatch values: whether `FUN_140496DE0` accepts a new value or needs a new case. Not traced.
+5. Latch coexistence: order of `0xA54E91` consumption between native sub-tab click and a mod button. Not verified.
+6. Close/section-switch path: how `game+0xC650` is cleared/restored and whether a mod flag can be cleared safely. Not traced.
+7. Text IDs: a new string ID (>= 1,000,000 per project rule) for "Almanac", or reuse of an existing ID. Not allocated (investigation only; no implementation).
+
+### 35.7 Smallest next step
+
+Derive the exact button rect and pitch from the decompiled `FUN_140358A20` geometry expressions (a pure static read of `scratch/out/140358a20_decomp.c` already in hand), recording the constants `DAT_0x14090ab14` and `DAT_0x14090aa0c` and the role of `game+0xAE50`. Then, if the rect is established, a separately approved read-only live diagnostic can confirm on-screen placement and latch coexistence. No implementation, build, hook, configuration change, or live test is authorized by this report.
+
+### 35.8 Files touched in this refresh
+
+- `docs/almanac-investigation.md` (this section)
+- `docs/almanac-native-evidence.md` (appended deciding dispatch + sub-tab loop excerpts)
+- `docs/ghidra-index/358A20.md` (refined with sub-tab row findings)
+- `scratch/out/140358a20_decomp.c` (new cached export, RVA `0x358A20`)
+
+No production code, configuration, saves, builds, hooks, or settings were changed.
