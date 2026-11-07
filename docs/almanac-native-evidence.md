@@ -237,3 +237,62 @@ Source artifact: `scratch/out/140396900_140396ac0_disasm.asm`.
 - Unresolved: whether an Economy & Trade/importexport entry has the field values required by those gates.
 - Unresolved: whether `FUN_140395C90` is a safe or suitable host for an Almanac page.
 - Unresolved: content rectangle, clipping, scrolling, close behavior, and input safety.
+
+## Selected-entry write at RVA 0x843F3 in `FUN_14007C400`
+
+Source artifact: `scratch/out/14007c400_140084754_disasm.asm` (uncommitted scratch output).
+Referenced strings verified in `.rdata`: `0x14087bfd8` = "objectives", `0x140871344`–`0x140871346` = "qa" + null, `0x14087c000` = "makecity".
+
+```asm
+1400843bc: CMP AL,byte ptr [0x140871344]      ; [RBX+0] == 'q'?
+1400843c2: JNZ 0x1400843dc                   ; if not, compare to "objectives"
+1400843c4: MOVZX EAX,byte ptr [RBX + 0x1]    ; [RBX+1]
+1400843c8: CMP AL,byte ptr [0x140871345]      ; == 'a'?
+1400843ce: JNZ 0x1400843dc                   ; if not, compare to "objectives"
+1400843d0: MOVZX EAX,byte ptr [RBX + 0x2]    ; [RBX+2]
+1400843d4: CMP AL,byte ptr [0x140871346]      ; == 0x00 (name == "qa")?
+1400843da: JZ 0x14008440a                     ; if "qa", go to "makecity" compare
+1400843dc: LEA RDX,[0x14087bfd8]              ; "objectives"
+1400843e3: MOV RCX,RBX                        ; RCX = entry name to compare
+1400843e6: CALL 0x14084f520                   ; strcmp(entry_name, "objectives")
+1400843eb: TEST EAX,EAX
+1400843ed: JZ 0x14008440a                     ; if "objectives", go to "makecity" compare
+1400843ef: MOV qword ptr [R13],RDI
+1400843f3: MOV qword ptr [R14 + 0xc650],RDI   ; SELECTED ENTRY WRITE
+1400843fa: MOV dword ptr [R14 + 0xae54],0xc47a0000
+140084405: JMP 0x140084641
+14008440a: LEA RDX,[0x14087c000]              ; "makecity"
+140084411: MOV RCX,RBX
+140084414: CALL 0x14084f520                   ; strcmp(entry_name, "makecity")
+140084419: TEST EAX,EAX
+14008441b: JNZ 0x140084641
+```
+
+Registers/objects:
+- `R14` = `game` pointer (set at `0x14007c47e`: `MOV R14,RCX`).
+- `[R14 + 0xc650]` = global selected entry pointer (the object being changed at 0x1400843F3).
+- `RBX` = pointer to an entry name being compared against fixed strings.
+- `RDI` = candidate entry pointer written into `game+0xC650` and `[R13]`.
+
+Interpretation:
+- `FUN_14007C400` is called by `FUN_140317DB0` at RVA `0x31BB22` during sidebar drawing, after setting panel dimensions (`0x14031BB1F`–`0x14031BB27`).
+- `FUN_14007C400` reads `game+0xC650` and conditionally writes it at `0x1400843F3`.
+- The write is guarded by entry-name string comparisons ("qa", "objectives", "makecity"). It fires for entry names that do not match those special cases.
+- This is part of the sub-tab/button-row renderer path, but the click→write connection (mouse latch/collision) is NOT shown in this window.
+
+Claim status:
+- Supported: `FUN_14007C400` writes `game+0xC650` (selected entry) at RVA `0x843F3` (preferred VA `0x1400843F3`) when called from the master sidebar function.
+- Supported: `R14` is the game pointer; `[R14 + 0xc650]` is the selected entry pointer being changed; `RDI` is the new selected entry.
+- Supported: the write is reachable only through the string-comparison gates shown above.
+- Unresolved: whether `RBX` iteration corresponds to clicking visible section buttons (no click latch/collision shown in this window).
+- Unresolved: what `RDI` points to and how entries are enumerated/counted before this write.
+- Unresolved: whether adding a new button/entry name is safe (button capacity, vector ownership, array bounds not established).
+- Unresolved: whether `FUN_14007C400` alone can host a separate Almanac page without covering vanilla content.
+
+## Claim status summary
+
+- Supported: Economy & Trade ("importexport") is not matched by the explicit dispatch branches and reaches `FUN_140358A20`.
+- Supported: `FUN_140358A20` has no native slider/checkbox calls.
+- Supported: `FUN_14007C400` is the master-called button-row renderer and writes the selected entry.
+- Unresolved: button count/capacity and safe extensibility.
+- Unresolved: whether `FUN_140358A20` is a safe host for an Almanac page.
