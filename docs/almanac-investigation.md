@@ -976,7 +976,60 @@ Expected result:
 
 Do not implement the Almanac yet. The first acceptable release remains a global fiscal page for the existing tax controls, but the Economy & Trade host path is not proven. The smallest useful next step is either a deeper static trace of `FUN_140358A20`'s use of the selected entry and its fields, or a separately approved read-only diagnostic investigation. Passive observation alone cannot resolve the technical blocker.
 
-## 28. Selected-entry write at RVA 0x0843F3 — focused check
+## 29. Mod-owned Almanac button design
+
+### 29.1 Design goal
+
+The owner requires a clearly identifiable Almanac button beside the existing Economy & Trade buttons, opening a distinct Almanac page. The recommended first release should not embed tax controls in the import/export page.
+
+### 29.2 Reusable City Hall TAX button precedent
+
+The City Hall TAX tile is a reusable native-button pattern, not a global-window pattern:
+
+- It uses `widgetButton` (ui_panels v3): engine 9-patch chrome from `game+0xB028`, `GetMouseSolid` + `Collision`, click latch `0xA54E91`, `gui_click` audio, hover/active tint, and sink.
+- It is a big tab tile, size 70, docked in the tab row.
+- It is INI-tunable for geometry and consumes rows only in the fallback flow.
+- It coexists with native buttons by calibrating position, size, and hit-test to the native rect.
+- Taxes remains the sole authority; City Hall calls the same tax service.
+
+This precedent supports drawing a native-looking button, but it was calibrated in a building panel, not the global sidebar.
+
+### 29.3 Mod-owned button approach
+
+A mod-owned button can be drawn in the global host without extending a native vector:
+
+1. Draw the button in `FUN_140317DB0` (RVA `0x317DB0`) after the Economy & Trade row, using the same native draw/hit-test primitives as ui_panels.
+2. Keep a mod-owned `almanacOpen` / `selectedPage` state. Do not rely on `game+0xC650` for Almanac selection.
+3. When the mod button is clicked, set `almanacOpen = true` and store the previous selected entry so it can be restored.
+4. While `almanacOpen` is true, draw the Almanac page instead of, or after, the vanilla page. The exact mechanism must be chosen to avoid obscuring vanilla content.
+5. When a vanilla button is selected or the window closes, clear `almanacOpen` and restore the previous selected entry.
+6. Reuse the existing tax service getters/setters. City Hall remains a temporary fallback.
+
+### 29.4 Required verification for the global window
+
+- The global draw context `game+0xADB0` must be valid for the button draw and hit-test.
+- `GetMouseSolid` and `Collision` must behave correctly in the global host.
+- The click latch `0xA54E91` must be available and not collide with vanilla input.
+- The window close path must restore state and not leave a dangling selection.
+- The button must not obscure vanilla content at different resolutions and DPI scales.
+- The button must appear selected and unselected correctly.
+
+### 29.5 Evidence status
+
+Supported:
+- Native button drawing and hit-test primitives are well understood in building panels.
+- The tax service and City Hall controls are implemented.
+- `FUN_140317DB0` is the global sidebar host.
+
+Unresolved:
+- Whether the mod-owned button can be drawn safely in the global host.
+- Whether the global input state matches the building-panel assumptions.
+- Whether the mod can avoid obscuring vanilla content.
+- Whether the mod can restore state cleanly on close or section switch.
+
+### 29.6 Smallest next step
+
+The smallest next step is a read-only diagnostic or static trace of `FUN_140317DB0`'s button-row drawing and input handling, followed by a separately approved live test if needed. No implementation, build, hook, configuration change, or live test is authorized.
 
 ### 28.1 Exact instruction evidence
 
