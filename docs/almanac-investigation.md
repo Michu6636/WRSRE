@@ -465,3 +465,172 @@ Open questions:
 5. Approve separate native graph investigation later.
 
 Approval requested before any implementation: yes. This report is investigation/planning only.
+
+## 13. First-release global tax page: detailed findings
+
+### 13.1 Plain-language answer
+
+A safe, first-release global tax page is **not yet implementation-ready**, but it is **plausibly feasible** as an Almanac page inside the existing Economy & Trade section. A dedicated new top-level sidebar section is **not yet safe** because the native vector that holds sections has not been traced for ownership, capacity, and initialization. The existing `ui_panels` tax controls prove that the tax service can be operated from a UI, but they are bound to City Hall and do not by themselves provide a global page.
+
+Recommended next technical step: trace and validate the selected Economy & Trade panel path, then design a bounded global hook or page host. This requires the owner's approval before any implementation or runtime test.
+
+### 13.2 How the global sidebar selects a page
+
+- The global sidebar is drawn by `FUN_140317DB0` (RVA `0x00317DB0`; preferred VA `0x140317DB0`).
+- It owns a `std::vector`-like panel array at `game+0xC608` (begin) / `game+0xC610` (end), stride `0x68`.
+- Each entry has an active flag at `+0x00` and a NUL-terminated ASCII name at `+0x01`.
+- The selected entry is stored at `game+0xC650`.
+- The tab-bar function `FUN_1404D72C0` (RVA `0x004D72C0`) handles tab clicks and calls `FUN_1404D9050` to set the current tab index in a 10-slot tab object.
+- The master function later reads `game+0xC650` and draws the selected page.
+- The exact hand-off from the tab object/index to `game+0xC650` is **not fully traced**. `FUN_14007C400` (RVA `0x0007C400`), the generic sub-tab widget, can write `game+0xC650` in at least one path, but its full role and conditions are unresolved.
+- Economy & Trade is likely identified by the unique string `importexport` in the selected entry, with `loanusd`/`loanrub` confirming the economy family. The index of that entry is runtime data.
+
+Implication: an Almanac page can be conditionally drawn when `game+0xC650` validates as an `importexport` entry. It should not replace or remove that entry.
+
+### 13.3 Drawing location and behavior
+
+- The master function sets up `game+0xADB0` as the widget draw context, the same context used by `ui_panels`.
+- It has a visibility branch on `game+0xFCE`; the function does not early-return, so setup always runs and a hook must test the flag.
+- The selected page is drawn after tab/sub-tab handling; row origin and clipping behavior in this global host are **not fully traced**.
+- The vector's capacity and owner are **not traced**; writing a new entry is unsafe.
+- Closing is represented by tab index `-1` in the tab state object, but its hand-off to `game+0xC650` is unresolved.
+
+### 13.4 Can the slider and checkbox be used globally?
+
+The slider (`0x002727F0`, RVA `0x002727F0`) and labelled checkbox (`0x003956F0`, RVA `0x003956F0`) are verified in building-panel builders and take `game` as their first argument. That makes them candidates, not proven global widgets.
+
+Required conditions from the verified code:
+
+- `game` pointer.
+- Widget draw context at `game+0xADB0`.
+- Hit-test through `C3D_INPUT::GetMouseSolid` and `C3D_PANEL2D::Collision`.
+- Click latch `0xA54E91`, consumed per click.
+- Live gate `game+0xAD74 == -1`.
+- Input/live state `live = window+0x20` in panel context.
+- Commit-on-change only.
+- Checkbox raw rendering can be inverted: logical state must be converted at the caller boundary.
+
+Unknown in the global host:
+
+- Whether `game+0xAD74` and `window+0x20` have the same meaning and safe values there.
+- Whether collision rectangles and clipping are correct.
+- Whether global input handling collides with the latch.
+- Whether widget calls affect scroll or close behavior.
+
+Conclusion: likely usable, but this must be treated as unproven until a bounded live test or deeper static trace is approved.
+
+### 13.5 Placement comparison
+
+| Option | Feasibility | Assessment |
+|---|---|---|
+| Dedicated new top-level section by writing panel vector | Unsafe/unproven | Do not do; owner/capacity untraced |
+| Almanac page inside Economy & Trade selected sub-tab | Plausible | Preferred if selected-entry validation and drawing can be proven |
+| City Hall panel | Proven but wrong scope | Good fallback for controls, not global |
+| Read-only overlay | Proven | Useful interim experiment, not accepted release |
+
+### 13.6 Candidate hook (investigation only)
+
+- Candidate: post-hook `FUN_140317DB0` (RVA `0x00317DB0`).
+- Prologue has 18 clean position-independent bytes; 23 bytes are also safe if stopping before `CALL _alloca`.
+- `/GS` cookie is at `+0x9A`, outside the stolen span.
+- The function runs every frame while the sidebar is up; any hook must gate on `game+0xFCE` and validate the selected entry.
+- This is not permission to implement. Incoming edges, exact function identity across builds, widget input safety, and runtime behavior remain unverified.
+
+## 14. Tax migration and shared API gaps
+
+### 14.1 Current City Hall tax controls
+
+The City Hall fiscal panel already provides:
+
+- VAT slider: 0–50% in 1% steps (`RateToSlider`/`SliderToRate`).
+- Profit tax slider: 0–50% in 1% steps.
+- Property tax slider: 0–`property_slider_max` (default 500) flat units.
+- Enable/disable checkbox for each tax.
+- Read-only macro dashboard: cost of living, poverty rate, evictions, commercial solvency.
+
+Behavior:
+
+- Widget commits call `SetTaxRateImpl`/`SetTaxEnabledImpl` immediately.
+- `SetTaxRate` validates VAT/profit `[0,1]`, property `>=0`, and rejects NaN.
+- A disabled tax reports an effective rate of 0 for VAT/profit, so new accrual stops.
+- Prior liabilities accrued before disabling are held and can settle when re-enabled.
+- Settlement occurs on monthly/quarterly/yearly boundaries.
+- `settleNow` forces immediate settlement of all outstanding accruals.
+
+### 14.2 Shared API gaps
+
+1. **No property-tax getter.** `taxes_api.h` exposes `setTaxRate(PROPERTY)` but no `getPropertyTaxRate`/`getPropertyTaxFlat`. The City Hall UI works around this by snapshotting `g_propertyTaxFlat` directly inside the same plugin, but a global Almanac in another plugin cannot authoritatively read the configured amount.
+2. **VAT/profit getters return effective zero when disabled.** `GetVatRateImpl` and `GetProfitTaxRateImpl` return 0 if the tax is disabled. This is correct for accrual callers, but a policy UI needs the configured rate to display and edit.
+3. **No policy snapshot struct.** There is no single authoritative read of configured rates, enabled flags, and schedules.
+4. **Tax persistence is partial.** `tesmio_taxes.dat` v1 saves rates and enabled flags only. Schedules and land-value scaling come from INI and are not saved.
+5. **Property tax is a flat amount, not a rate.** Any UI must distinguish percentage taxes from flat amounts.
+
+Recommended smallest compatible service change:
+
+- Add an append-only policy snapshot/getter to `taxes` v2 or a new v3, following existing struct-size/version conventions.
+- Expose configured rates independent of enabled state: for example `getConfiguredVatRate`, `getConfiguredProfitTaxRate`, and `getPropertyTaxFlat`.
+- Optionally expose a single `getTaxPolicySnapshot` that returns configured rate, enabled flag, schedule, and land-value setting.
+- Preserve existing getters' effective-zero behavior for accrual consumers.
+- Do not create a second tax authority or duplicate saved settings.
+
+### 14.3 Migration plan
+
+1. Keep City Hall controls as the authority during migration.
+2. Add the same three tax controls to the global Almanac page using the existing `taxes` setters.
+3. Both surfaces read from and write to the same tax service; no duplicated state.
+4. Preserve `tesmio_taxes.dat` v1; do not change its meaning.
+5. Keep City Hall controls temporarily as a compatibility fallback.
+6. Synchronize by reading service state on each render and committing only on change.
+7. Remove or de-emphasize City Hall controls only after a full release cycle and evidence that the global page works across save/load, currencies, and missing services.
+
+### 14.4 City Hall fallback assessment
+
+Keeping City Hall controls temporarily is the safer approach. It preserves existing player behavior and mixed-version compatibility. The main cost is duplicated UI code, which must be kept thin and call the same service functions. The global page should not maintain its own tax state.
+
+## 15. First-release acceptance checklist
+
+- Global Almanac page is reachable without opening a building.
+- Page clearly identifies itself as Almanac, not City Hall.
+- VAT, profit tax, and property tax values and enabled states are displayed.
+- Values match City Hall values.
+- Sliders/checkboxes change the same tax service values.
+- Disabled tax shows configured value separately from effective zero where applicable.
+- Property tax is shown as a flat amount, not a percentage.
+- Save/load preserves rates and enabled flags.
+- Missing `taxes` service degrades gracefully.
+- No vanilla UI corruption or input deadlock.
+- No change to settlement timing or liability handling.
+
+## 16. Future validation plan
+
+- Verify RVAs against the measured PE before implementation.
+- Verify hook prologue bytes and boundaries.
+- Validate selected-entry detection and Economy & Trade identification.
+- Test widget input in the global host.
+- Test clipping, scrolling, and close behavior.
+- Test with large populations and long sessions.
+- Test save/load, currency switching, and backward compatibility.
+- Test disabled taxes and held liabilities.
+- Test synchronization between City Hall and Almanac.
+- Test missing services and mixed plugin versions.
+- Test vanilla UI compatibility.
+
+## 17. Ghidra queries actually run in this follow-up
+
+- `DisasmMany 0x14007C3C0:0x14007C400` and `0x14007C3E0:0x14007C430` to inspect the reported `game+0xC650` write site. Result: the reported address is not a store; the displacement hit was a false positive/overlapping instruction. This removes one apparent selection-write lead.
+- No decompilation, Xrefs, or ListFuncs queries were run in this follow-up.
+- No live game tests, builds, or deployments were run.
+
+## 18. Follow-up claim ledger
+
+| Claim ID | Claim | Evidence | Status | Limit |
+|---|---|---|---|---|
+| F1 | Global sidebar selected entry is `game+0xC650` | Static disassembly and vector evidence | Supported (static) | Runtime behavior not verified |
+| F2 | Economy & Trade is identified by `importexport` entry | Unique string and panel-name table | Supported (static) | Index order is runtime data |
+| F3 | A new top-level section is unsafe | No traced owner/capacity | Unresolved/unsafe | Do not implement |
+| F4 | Almanac page inside E&T is plausible | Conditional draw path exists | Plausible | Clipping/input untraced |
+| F5 | Widgets are likely usable globally | Same `game` and draw context | Unresolved | Input state unverified |
+| F6 | Tax API lacks property getter | `taxes_api.h` and implementation | Supported by code | Could be added compatibly |
+| F7 | VAT/profit getters return effective zero when disabled | `GetVatRateImpl`/`GetProfitTaxRateImpl` | Supported by code | Policy UI needs configured value |
+| F8 | Bank has interest-rate API and City Hall control | `republic_bank_api.h` and `republic_bank.cpp` | Supported by code | Migration remains later work |
+| F9 | Native graphs are not identified | No evidence in reviewed exports | Unresolved | Separate later task |
