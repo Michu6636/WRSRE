@@ -1,5 +1,12 @@
 # Almanac Native Evidence: FUN_140358A20 Sub-Tab Row (Economy & Trade)
 
+> **Historical, contested dispatch interpretation:** The sections below identify
+> `FUN_140358A20` as the Economy & Trade handler, but later research identifies
+> two candidate handlers in the `trade` dispatch branch. The actual selected
+> entry and runtime path are not verified. See the
+> [independent export review](almanac-export-review.md) before relying on this
+> document's handler, layout or click conclusions.
+
 ## Source artifacts
 - `scratch/out/140358a20_decomp.c` (DecompAt, RVA `0x140358A20`, 10,143 bytes)
 - `scratch/out/140358a20_calls.txt`
