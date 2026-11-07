@@ -2363,3 +2363,82 @@ The blocker is not the insertion rule but: (a) which handler runs (game+0x10398)
 - docs/almanac-investigation.md (this section)
 
 No production code, configuration, saves, builds, hooks, or settings were changed.
+## 43. Final layout resolution for both trade handlers
+
+### 43.1 FUN_140361BB0 button loop — exact X advancement
+
+Verbatim loop (scratch/ch_tab23_full.asm, lines 199-333):
+
+    140361fb0: (loop body start)
+    140361fc0: CMP dword ptr [R14 + 0x578], 0x0          ; skip condition 1
+    140361fc8: JZ 0x140361fd6
+    140361fca: LEA EAX, [RSI - 0x3]
+    140361fcd: CMP EAX, 0x1
+    140361fd0: JBE 0x14036220e                          ; skip (jump to INC ESI)
+    140361fd6: CMP ESI, 0x6                               ; skip condition 2
+    140361fd9: JNZ 0x140361fe9
+    140361fdb: CMP dword ptr [R14 + 0x5e0], 0x0
+    140361fe3: JZ 0x14036220e                           ; skip (jump to INC ESI)
+    140361fe9: (draw button: texture, backdrop 64x64, position XMM6)
+    ...
+    14036220a: ADDSS XMM6, XMM7                           ; X += 64 (ONLY on draw path)
+    14036220e: INC ESI                                    ; skip target: advance counter only
+    140362210: ADD R15, 0x50                              ; advance sub-entry pointer
+    140362214: ... recompute count
+    140362243: CMP ESI, EAX                               ; EAX = count-1
+    140362245: JL 0x140361fc0                             ; loop if ESI < count-1
+
+Key findings:
+- Skipped entries (JZ 0x14036220e) do NOT advance X (ADDSS is before the skip target). Drawn buttons are packed (no gaps).
+- Loop runs ESI = 0..count-2 (count-1 iterations). The last sub-entry (index count-1) is NOT drawn as a button in the row.
+- After the loop (0x14036225d), a separate 35x35 panel is drawn (dimensions = DPI * DAT_0x90a9cc = 35). This is a different UI element, not part of the section-button row.
+- No button is drawn outside the loop for the row itself.
+
+### 43.2 FUN_140373EA0 button loop — exact X advancement (already traced)
+
+Verbatim (scratch/out/140373ea0_1403829fd_disasm.asm, lines 159-199):
+
+    14037419a: TEST EDX, EDX                              ; count == 0?
+    14037419c: JLE 0x1403745b6                            ; skip entirely
+    1403741a2: CMP EDI, 0x2                               ; EDI = loop counter
+    1403741a5: JGE 0x1403741ab
+    1403741a7: MOV EBX, EDI                              ; if EDI < 2: EBX = EDI
+    1403741a9: JMP 0x1403741cf
+    1403741ab: JNZ 0x1403741cc
+    1403741ad-1403741c8: EBX = count-1                  ; if EDI == 2: EBX = count-1
+    1403741cc: LEA EBX, [RDI - 0x1]                     ; if EDI >= 3: EBX = EDI - 1
+    1403741cf: (draw button at XMM6, advance X by 64)
+    1403743a8: ADDSS XMM6, XMM7                           ; X += 64 (after every drawn button)
+    1403743b6: INC EDI                                    ; next button
+    1403743b8: ... (loop condition: EDI < count)
+
+No skip conditions — every iteration draws a button. X advances by 64 after each. Rendered order: [sub0, sub1, sub_{count-1}, sub2, sub3, ..., sub_{count-2}].
+
+### 43.3 Window available width and clipping
+
+Neither handler contains a container-width test, clipping rectangle, or visible-bounds field. The panel context is game+0xADB0 (a C3D_PANEL2D or similar widget). The absolute screen origin depends on game+0xAE50 (runtime field) and the sidebar's own layout, which is set during window creation in FUN_140317DB0 or earlier — not in these handlers. Clipping is performed by C3D_PANEL2D::Draw / Collision using the panel context's internal dimensions, which are not set in these functions.
+
+Exact missing evidence: the field in game+0xADB0 (or the sidebar host) that holds the panel width/clip rect, and the instruction that initializes it. Without this, whether X=386 (or X=450 for a 5th button) is visible cannot be established.
+
+The sidebar host (FUN_140317DB0) at lines 29, 1874, 2052, 2458, 3349, 3495, 3766, 5987, 6264, 6270 references game+0xADB0 (LEA RCX/RBX/R15, [game+0xadb0]) but only passes it to FUN_1404460a0 / FUN_140445eb0 / FUN_1404461f0. No width field is visible in these references.
+
+### 43.4 Fifth button assessment (four-entry, scale-1)
+
+Under the stated assumptions (4 entries, DPI=1, no skips, no reordering):
+- FUN_140373EA0: last native button at X=322, right edge 386. Fifth button at X=386, right edge 450.
+- FUN_140361BB0: last drawn button at X=322 (sub2, since sub3 is not drawn in the row), right edge 386. Fifth button at X=386, right edge 450.
+
+Both handlers use the same X origin (130) and pitch (64), so the arithmetic is identical. However:
+- In FUN_140373EA0, the reordering means "sub3" is at position 2 (X=258), not position 3. A mod button at X=386 would be after all 4 native buttons regardless.
+- In FUN_140361BB0, if entries are skipped, the last drawn button may be at a lower X than 322 (packed layout). The 5th button position would then be lower than 386.
+- The container width is unknown, so whether X=450 is visible is unverified in both handlers.
+
+### 43.5 Smallest genuine blocker
+
+The container's visible width and clip rect (the field in game+0xADB0 or the sidebar host that sets it). This is the single missing piece that prevents assessing whether a 5th button (X≈450) fits. It can be traced by finding the instruction that initializes game+0xADB0's dimensions (likely in FUN_140317DB0 or an earlier window-creation function). No live test is authorized.
+
+### 43.6 Files touched
+
+- docs/almanac-investigation.md (this section)
+
+No production code, configuration, saves, builds, hooks, or settings were changed.
