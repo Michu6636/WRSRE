@@ -801,7 +801,7 @@ Unresolved:
 Static evidence:
 
 - `FUN_140395C90` calls both the slider (RVA `0x2727F0`) and checkbox (RVA `0x3956F0`) at multiple sites.
-- This shows the native widgets can be called from this function in at least some paths.
+- The slider call at RVA `0x396AB5` is gated by `[RSI+0x1090] == 0`, `[RSI+0xD428] != 0`, `[[RSI+0xD428]+0x48] != 0`, and building type/subtype conditions (`0x03`, `0x22`, `0x2D`, `0x00` with subtype `0x13`/`0x21`, `0x01` with subtype `0x13`/`0x21`, or `0x17`). These are construction/building conditions, not Economy & Trade/importexport.
 
 Missing evidence:
 
@@ -825,3 +825,48 @@ Established: Economy & Trade likely reaches `FUN_140395C90` as a fallback handle
 Unknown: whether `FUN_140395C90` is a safe host, where its content area is, how clipping/scrolling/close work, and whether widgets can receive input there.
 
 Smallest next action: a deeper static trace of `FUN_140395C90`'s use of the selected entry and `[game+0xD428]`, or a separately approved live test. No implementation or hook is authorized.
+
+## 22. Bounded widget-path evidence
+
+### 22.1 Exact call sites
+
+Slider call site:
+- RVA `0x396AB5`: `CALL 0x1402727F0` (FUN_1402727F0).
+- Supporting disassembly artifact: `scratch/out/140396a80_140396ae0_disasm.asm`.
+
+Checkbox call sites in the same function include RVA `0x395F7E`, `0x396089`, `0x3961DA`, `0x396337`, `0x3964CC`, `0x396813`, `0x396A11`, and `0x396BCA` (from `scratch/out/140395c90_calls.txt`).
+
+### 22.2 Conditions for the slider call
+
+Exact disassembly from `scratch/out/140396900_140396ac0_disasm.asm`:
+
+```asm
+140396909: CMP byte ptr [RSI + 0x1090], R15B
+140396910: JNZ 0x140396d2e
+140396916: MOV RCX, qword ptr [RSI + 0xd428]
+14039691d: TEST RCX, RCX
+140396920: JZ 0x140396d2e
+140396926: MOV RCX, qword ptr [RCX + 0x48]
+14039692a: TEST RCX, RCX
+14039692d: JZ 0x140396d2e
+140396933: MOV EAX, dword ptr [RCX + 0x360]
+140396939: CMP EAX, 0x3
+14039693c: JZ 0x14039699e
+14039693e: CMP EAX, 0x22
+140396941: JZ 0x14039699e
+140396943: CMP EAX, 0x2d
+140396946: JNZ 0x14039695a
+...
+14039699e: ...
+140396ab5: CALL 0x1402727f0
+```
+
+Interpretation: the slider call is reachable only when `[RSI+0x1090] == 0`, `[RSI+0xD428] != 0`, `[[RSI+0xD428]+0x48] != 0`, and the value at `+0x360` is one of the construction/building types listed above. This is not established for an Economy & Trade/importexport entry.
+
+### 22.3 Conclusion
+
+Supported: `FUN_140395C90` can call the native slider and checkbox in at least one construction/building path.
+
+Unresolved: whether those calls are reachable for Economy & Trade, and whether their input/layout state is valid there.
+
+Smallest next action: a separately approved live test or a deeper static trace of `FUN_140395C90`'s use of `[RSI+0xD428]` and `[selected entry+0x48]`. No implementation or hook is authorized.
