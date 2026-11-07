@@ -1641,3 +1641,162 @@ Derive the exact button rect and pitch from the decompiled `FUN_140358A20` geome
 - `scratch/out/140358a20_decomp.c` (new cached export, RVA `0x358A20`)
 
 No production code, configuration, saves, builds, hooks, or settings were changed.
+
+## 36. FUN_140358A20 button-row geometry and content path (static)
+
+### 36.1 Constants resolved from the authenticated executable
+
+Image base `0x140000000`; PE timestamp `0x6A3EB6AD`; SHA-256 `296644A9F207D609031FC2AE73FED2DCB34619A1D55A35D1C7B51965CE6841B8` (matches). Values read directly from the mapped sections (RVA → file offset via section headers; see `INSTRUCTIONS.md` §1):
+
+| Symbol | RVA | Value | Role |
+|---|---|---|---|
+| `DAT_140992088` | `0x992088` | `1.0` | DPI scalar (default; may differ at runtime) |
+| `DAT_14090ab14` | `0x90AB14` | `85.0` | horizontal pitch (button stride) |
+| `DAT_14090aa0c` | `0x90AA0C` | `45.0` | Y origin offset / row height |
+| `DAT_14090aa44` | `0x90AA44` | `55.0` | X origin extra offset |
+| `DAT_14090ab40` | `0x90AB40` | `92.0` | button backdrop width and height |
+| `DAT_140909ddc` | `0x909DDC` | `0.5` | half-scale (used for `game+0xAE54`) |
+| `DAT_140909f58` | `0x909F58` | `1.0` | sound/print scale |
+| `DAT_14090a9f0` | `0x90A9F0` | `40.0` | (content block, see 36.4) |
+| `DAT_14090aa28` | `0x90AA28` | `50.0` | (content block) |
+| `DAT_14090ab8c` | `0x90AB8C` | `107.0` | (content block) |
+| `DAT_14090a9dc` | `0x90A9DC` | `37.0` | (content block) |
+| `DAT_14090ab70` | `0x90AB70` | `100.0` | (content block) |
+| `DAT_14090a9f0`-adjacent `DAT_14090aa10` | `0x90AA10` | not read here | — |
+
+Note: `DAT_14090aa10` was not in the read list; if needed, re-read. Runtime values of `game+0xAE50` and `game+0xAE54` are not statically resolvable (they are fields of the live game object).
+
+### 36.2 Button-row geometry (verbatim excerpts)
+
+From `scratch/out/140358a20_decomp.c` lines 93–106 and 127–131:
+
+```c
+fVar39 = DAT_140992088;          // DPI = 1.0
+fVar7  = DAT_14090ab14;          // 85.0
+fVar37 = DAT_14090aa0c;          // 45.0
+...
+fVar41 = DAT_140992088 * DAT_14090ab14;   // 85.0  (pitch)
+fVar45 = fVar41 + DAT_140992088 * DAT_14090aa0c;  // 85+45 = 130.0  (X reset on wrap)
+local_39c = *(float *)(param_1 + 0xae54) * DAT_140909ddc * DAT_140992088 + fVar41;  // 0.5*game+0xAE54 + 85
+fVar38 = DAT_140992088 * DAT_14090aa0c + *(float *)(param_1 + 0xae50);  // 45 + game+0xAE50  (Y origin)
+...
+fVar43 = fVar39 * DAT_14090ab40;   // 92.0  (button width and height)
+fVar36 = fVar39 * DAT_14090aa44 + fVar41;  // 55 + 85 = 140.0  (X origin, first button)
+```
+
+From lines 137–199 (the button loop):
+
+```c
+lVar25 = *(longlong *)(*(longlong *)(param_1 + 0xc650) + 0x48);   // vector begin
+FUN_1404461f0(param_1 + 0xadb0, lVar16, fVar38, 6);             // panel setup (count, Y, mode 6)
+plVar5 = *(longlong **)(lVar33 + 0x48 + lVar25);                  // drawable at sub_entry+0x48
+(**(code **)(*plVar5 + 0x70))(plVar5, 0, DAT_1409ead08);          // draw icon
+...
+_DAT_1409be2f0 = CONCAT44(fVar38, fVar36);   // position (Y, X)
+_DAT_1409be2e8 = fVar43;                     // width  = 92
+_DAT_1409be2ec = fVar43;                     // height = 92
+uVar17 = C3D_INPUT::GetMouseSolid(...);
+bVar12 = C3D_PANEL2D::Collision(...);         // hit-test against the 92x92 rect
+if (bVar12) {
+  if (DAT_140a54e91 != '\0') {               // click latch
+    *(uint *)(param_1 + 0xc65c) = uVar26;     // selected sub-tab index
+    *(undefined4 *)(param_1 + 0xccc8) = 0xffffffff;
+    *(undefined4 *)(param_1 + 0xccd0) = 0;
+    *(undefined8 *)(param_1 + 0xc6b8) = *(undefined8 *)(param_1 + 0xc6b0);
+    // play gui_subtab_click sound
+  }
+  // copy C3D_LANGUAGE::GetString(sub_entry+0x40) into game+0xD5A0  (label)
+}
+if (*(uint *)(param_1 + 0xc65c) == uVar26) {
+  _DAT_1409be30c = _DAT_14090c4c0;          // selected overlay
+  uRam00000001409be314 = _UNK_14090c4c8;
+}
+C3D_PANEL2D::Draw((C3D_PANEL2D *)&DAT_1409be060, 0.0, 0.0, fVar8, fVar8, 0.0, true);
+uVar14 = uVar26 & 0x80000007;                 // wrap every 8 buttons
+if ((int)uVar14 < 0) { uVar14 = (uVar14 - 1 | 0xfffffff8) + 1; }
+if (uVar14 == 7) {
+  fVar38 = fVar38 + fVar41;                   // next row: Y += 85
+  fVar36 = fVar45;                            // X resets to 130
+} else {
+  fVar36 = fVar36 + fVar41;                   // next column: X += 85
+}
+uVar26 = uVar26 + 1;
+lVar33 = lVar33 + 0x50;                      // stride 0x50 (80 bytes)
+```
+
+Derived row geometry (at DPI = 1.0; scales linearly with `DAT_140992088`):
+- Button backdrop: 92 × 92 (collision/hover rect).
+- Origin of button 0: X = 140, Y = 45 + `game+0xAE50`.
+- Horizontal stride (pitch): 85. Vertical stride (row height): 85.
+- Wrap: after every 8 buttons (indices 0..7 in row 0; 8..15 in row 1, ...).
+- X reset on wrap: 130 (10 less than the first button's X of 140 — a minor asymmetry in the native code).
+- Button count: `(end - begin) / 0x50` where begin = `*(game+0xC650)+0x48`, end = `*(game+0xC650)+0x50`. With 4 sections, indices 0–3 occupy X = 140, 225, 310, 395 in row 0.
+- A 5th button (Almanac) would land at index 4: X = 140 + 4×85 = 480, Y = 45 + `game+0xAE50` — still in row 0, before the wrap at index 7→8. So by the native wrap rule it fits in the existing first row. However, the backdrop rects are 92 wide on an 85 pitch, so adjacent backdrops overlap by 7 px in every existing case as well; the mod button would reproduce the same overlap pattern, not avoid it. The actual on-screen icon size comes from the unresolved drawable object at `sub_entry+0x48` (drawn first via its vtable `+0x70`), so the visible icon may be smaller than 92. Whether the container is wide enough for X≈480+92 at the user's resolution/DPI is not established.
+- `game+0xAE50` (Y base) and `game+0xAE54` (used as `0.5*value+85` in `local_39c`) are runtime fields of the live game object; their values are not statically resolvable. `local_39c` is computed but not used in the button loop shown (it is used later, line 564+), so it does not affect button placement in this loop.
+
+### 36.3 Count and available width
+
+The count is not bounded by an available-width check in this function. It is purely the size of the sub-entry vector, and the layout wraps at a fixed 8-per-row. There is no "does it fit" test. Therefore:
+- The native code already assumes up to 8 buttons per row and wraps beyond that.
+- A mod-owned button does not need a spare native vector slot if it is drawn after the native loop at the next grid position (index 4 → X 480), using the same pitch/origin expressions and the same backdrop dimensions.
+- Whether that position is visible (not clipped by the window) and whether it collides with existing buttons at the user's resolution/DPI is not established. The native wrap at 8 implies the designer expected up to 8, but the container's actual pixel width is unknown.
+
+### 36.4 Content area that must be suppressed or replaced while the Almanac is open
+
+After the button row, the function renders a content area driven by `game+0xC65C` (the selected sub-tab index). Verbatim (lines 202–292):
+
+```c
+fVar38 = fVar39 * fVar37 + *(float *)(param_1 + 0xae50);   // 45 + game+0xAE50 (Y)
+fVar37 = fVar39 * DAT_14090a9f0 + fVar39 * fVar7;         // 40 + 85 = 125 (X)
+iVar4 = *(int *)(param_1 + 0xc65c);                         // selected sub-tab
+if ((-1 < iVar4) && (iVar4 < (end-begin)/0x50)) {
+  C3D_LANGUAGE::GetString(..., *(int *)(iVar4*0x50 + begin + 0x40));   // label
+  C3D_FONTMANAGER::PrintLeftUnicode(..., fVar37, ..., (fVar38 - DPI*37) + 85);  // print label
+}
+fVar38 = fVar38 + DPI*107;                                 // 107
+fVar41 = DPI*50;                                            // 50
+fVar39 = DPI*0.5 + fVar41;                                  // 50.5
+FUN_1404461f0(param_1 + 0xadb0);                            // panel setup
+... Draw panel at (fVar37=125, fVar38) size 50 ...
+// hit-test panel; on click with latch:
+//   map game+0xC65C (0..4) -> uVar30 (1,4,6,8,10)
+//   lVar16 = FUN_140496de0(game+0x12800, uVar30);   // find content entry
+//   if found: FUN_1406ee2a0(param_1, 2, lVar16);    // open content
+//   else: play cancel sound
+```
+
+Then (lines 353–477) a second, larger content block is rendered unconditionally:
+- A panel at `(fVar37, fVar38 + 3*fVar39 + ...)` (size `fVar41 = 50`) with its own hit-test and "line_addstop_copy2" toggle handling (lines 303–352).
+- `FUN_140497050` / `FUN_140494F60` (called twice) populate `game+0x12800` with `iVar32` (the mapped value `1/4/6/8/10`) and a constant `0x12`.
+- `FUN_140815760(...)` and further text/panel drawing (lines 527–614) render the body.
+
+Implication for a mod-owned Almanac page: the native content area is not gated by anything a mod can set without modifying `game+0xC65C` (which would change the vanilla selection and be visible to vanilla logic). To show an Almanac page without obscuring/changing vanilla pages, the mod must either (a) suppress the native content draw calls in this function while `almanacSelected` is true, or (b) draw the Almanac over them and accept overlap. Option (a) requires hooking inside this function or replacing its content path; option (b) requires knowing the content rectangle (X≈125, Y≈45+game+0xAE50+107+..., size ≈50 for the header panel, plus the body below) so the Almanac can be sized/placed without collision. The content rectangle's full extent (body height, clipping) is not traced. The function also writes `game+0xC6B8 = game+0xC6B0` and toggles `game+0x12800` state on vanilla clicks, so a mod that only sets a flag (and does not touch these) leaves vanilla state consistent, but the native content will still draw unless suppressed.
+
+### 36.5 Return of control to vanilla
+
+- Vanilla button click: the native loop (section 36.2) sets `game+0xC65C = index` on latch consumption. A mod-owned Almanac button must NOT write `game+0xC65C`; it sets only a mod-owned flag. To detect "user returned to vanilla", the mod compares the current `game+0xC65C` against the value it recorded when it opened the Almanac: if it changed, a vanilla button was clicked, so the mod clears its flag. This avoids restoring a stale selection over a newer player choice (no raw-pointer restore).
+- Close: this function does not contain the close path. Close is handled elsewhere (likely in `FUN_140317DB0` via visibility `game+0xFCE` and tab index `-1`). The mod must clear its flag when visibility drops or when the selected entry changes away from the Economy & Trade entry. The exact close hand-off (`game+0xC650` vs tab index `-1`) is unresolved (see `docs/almanac-investigation.md` §6.3 / §13.3).
+- Because the mod keeps its own flag and never mutates `game+0xC650`/`game+0xC65C` or the native vector, vanilla selection and close behavior remain authoritative; the mod only adds rendering and a flag.
+
+### 36.6 Unresolved questions
+
+1. Runtime identity: whether the selected entry is actually "importexport" at runtime is not verified (static inference only). The binary strings and dispatch make it likely, but no runtime observation exists.
+2. `game+0xAE50` / `game+0xAE54` runtime values and their ownership (who writes them, when) are untraced.
+3. The drawable object at `sub_entry+0x48` (vtable `+0x70` draw) — its type, size, and how its texture is resolved — is untraced; the visible icon dimensions are therefore unknown, and the 92×92 backdrop overlap cannot be reconciled with icon size.
+4. Container width / clipping: no available-width test exists; whether X≈480+92 is visible is unverified.
+5. Content rectangle full extent (body height, scroll, clipping) for the sub-page area — untraced.
+6. Whether `FUN_140496DE0` accepts a value not in {1,4,6,8,10} or whether a new sub-page value requires a new case — untraced.
+7. Close path and how to detect it reliably from a mod hook — untraced.
+8. Latch coexistence: `0xA54E91` is read (not necessarily consumed) in this function; whether a mod button's click handling races the native sub-tab click handling is unverified.
+9. `DAT_14090aa10` and several `DAT_14090a*` constants used in the content block were not read; if exact content geometry is needed, re-read them.
+
+### 36.7 Smallest next step
+
+Re-read the remaining unread constants (`DAT_14090aa10`, `DAT_14090aa70`-adjacent, etc.) and trace the drawable object at `sub_entry+0x48` (its constructor/owner) to resolve the visible icon size and the backdrop-vs-icon relationship. Then, if geometry is established, a separately approved read-only live diagnostic can confirm on-screen placement and latch coexistence. No implementation, build, hook, configuration change, or live test is authorized by this report.
+
+### 36.8 Files touched in this refresh
+
+- `docs/almanac-investigation.md` (this section)
+- `docs/ghidra-index/358A20.md` (to be updated with geometry summary)
+
+No production code, configuration, saves, builds, hooks, or settings were changed.
