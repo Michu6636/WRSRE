@@ -1794,9 +1794,9 @@ Implication for a mod-owned Almanac page: the native content area is not gated b
 
 Re-read the remaining unread constants (`DAT_14090aa10`, `DAT_14090aa70`-adjacent, etc.) and trace the drawable object at `sub_entry+0x48` (its constructor/owner) to resolve the visible icon size and the backdrop-vs-icon relationship. Then, if geometry is established, a separately approved read-only live diagnostic can confirm on-screen placement and latch coexistence. No implementation, build, hook, configuration change, or live test is authorized by this report.
 
-### 36.8 Files touched in this refresh
+### 37.9 Files touched in this refresh
 
 - `docs/almanac-investigation.md` (this section)
-- `docs/ghidra-index/358A20.md` (to be updated with geometry summary)
+- `docs/ghidra-index/358A20.md` (to be updated with 96×96 icon / 92×92 backdrop / overlap finding)
 
 No production code, configuration, saves, builds, hooks, or settings were changed.
