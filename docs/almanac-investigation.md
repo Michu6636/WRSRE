@@ -1,5 +1,14 @@
 # Almanac Investigation Report
 
+> **Evidence update:** This historical report contains superseded and conflicting
+> conclusions about dispatch, row skips, click detection, geometry and hooks.
+> Before using its summaries or proposed sites, see the bounded
+> [independent export review](almanac-export-review.md) and the cited raw
+> instructions. In particular, §42's four-entry example for `361BB0` ignores
+> its `count - 1` loop bound; §43's claim that `373EA0` draws all entries ignores
+> conditional skips. The applicable runtime handler, clipping and safe
+> interception remain unverified.
+
 **Project:** Workers & Resources: Soviet Republic mod suite (WRSRE)  
 **Requested artifact:** `docs/almanac-investigation.md`  
 **Scope:** Investigation and planning only. No implementation, gameplay change, hook, runtime diagnostic, build, deployment, settings change, or save modification.  
