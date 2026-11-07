@@ -765,3 +765,63 @@ Established: Economy & Trade's selected name is not handled by the "system", "st
 Unknown: whether `FUN_140395C90` is a safe host, where its content area is, how clipping/scrolling/close work, and whether widgets can receive input there.
 
 Smallest next action: either a deeper static trace of `FUN_140395C90`'s draw/input paths or a separately approved live test of the fallback page. No implementation or hook is authorized.
+
+## 21. Economy & Trade host assessment
+
+### 21.1 Path verification
+
+Supported:
+
+- In `FUN_140317DB0` (RVA `0x317DB0`), the selected entry name is compared to "system", "storage", "infrastructure", "building", "workshopbuildings", "editorbuildings", "timelapse", "notifi_tab", "objectives", and "scripts".
+- If none of those names match, the function calls `FUN_140395C90` (RVA `0x395C90`).
+- The Economy & Trade entry is commonly identified by the unique string "importexport", which is not in that explicit comparison list. Therefore it is likely that an "importexport" entry reaches `FUN_140395C90`.
+
+Not established:
+
+- `FUN_140395C90`'s string table contains construction and tool names, not "importexport", "trade", "population", or "resources". This means either the function handles Economy & Trade through a different sub-field, or it is not a suitable host for that page.
+- The function uses `[RSI+0xD428]` and `[selected entry+0x48]`. The meaning of these fields and their values for an Economy & Trade entry are not established by static evidence.
+- The function may early-exit or render unrelated content for non-construction entries.
+
+### 21.2 Content area, clipping, scrolling, and close behavior
+
+Supported:
+
+- `FUN_140395C90` calls `PrintLeftUnicode`, `GetMouseSolid`, `Collision`, `Draw`, `SetPosition`, and `SetDimensions`.
+- It does not call an obvious BeginDraw/EndDraw or scroll function in the reviewed call list.
+- The master function sets up `game+0xADB0` as the draw context and branches on `game+0xFCE`.
+
+Unresolved:
+
+- Exact content rectangle, clipping, and scroll state are not traced.
+- Close behavior is not established in this function; it may be handled elsewhere.
+- Whether an Almanac page could appear without obscuring vanilla content is not established.
+
+### 21.3 Slider and checkbox coexistence
+
+Static evidence:
+
+- `FUN_140395C90` calls both the slider (RVA `0x2727F0`) and checkbox (RVA `0x3956F0`) at multiple sites.
+- This shows the native widgets can be called from this function in at least some paths.
+
+Missing evidence:
+
+- Whether those widget calls occur on the Economy & Trade path.
+- Whether their input state and collision rectangles are valid there.
+- Whether they collide with vanilla controls.
+- Whether the checkbox's inverted raw rendering occurs there.
+
+A later live test would need to establish:
+
+- That the page renders in the expected location.
+- That sliders and checkboxes are visible and clickable.
+- That clicks do not duplicate or steal input.
+- That tab switching and closing still work.
+- That no vanilla content is obscured.
+
+### 21.4 Verdict
+
+Established: Economy & Trade likely reaches `FUN_140395C90` as a fallback handler, and that handler can call native widgets in some paths.
+
+Unknown: whether `FUN_140395C90` is a safe host, where its content area is, how clipping/scrolling/close work, and whether widgets can receive input there.
+
+Smallest next action: a deeper static trace of `FUN_140395C90`'s use of the selected entry and `[game+0xD428]`, or a separately approved live test. No implementation or hook is authorized.
