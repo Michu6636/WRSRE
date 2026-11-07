@@ -2981,3 +2981,96 @@ The hook point at 0x1403745B6 is not safe for the project's 14-byte inline patch
 - docs/almanac-investigation.md (this section)
 
 No production code, configuration, saves, builds, hooks, or settings were changed.
+## 52. Audit of sections 50-51: corrected hook-point analysis
+
+### 52.1 Corrected 17-byte / instruction-boundary description
+
+The bytes at 0x1403745B0-0x1403745F0 (scratch/out/1403745b0_40_disasm.asm):
+
+    1403745b0: FF 15 AA 82 4F 00        CALL qword ptr [0x14086c860]   ; 6 bytes
+    1403745b6: F3 44 0F 10 25 0D 64 59 00  MOVSS XMM12, dword ptr [0x14090a9cc]  ; 9 bytes (RIP-rel)
+    1403745bf: F3 0F 10 0D C1 DA 61 00  MOVSS XMM1, dword ptr [0x140992088]    ; 8 bytes (RIP-rel)
+    1403745c7: F3 41 0F 59 CC           MULSS XMM1, XMM12                                        ; 5 bytes
+    1403745cc: F3 44 0F 58 D1           ADDSS XMM10, XMM1                                          ; 5 bytes
+
+Correction to section 51.2: the 14-byte patch does not "cut through" the MULSS. The first instruction is 9 bytes, the second is 8 bytes. 9 + 5 = 14, which means a 14-byte patch would steal 9 bytes (first instruction) + 5 bytes (first 5 of the second instruction), cutting through the 8-byte MOVSS. The MULSS at 0x1403745C7 is NOT cut; it is entirely within the second 8-byte instruction's tail. The patch would split the second MOVSS instruction, not the MULSS.
+
+The minimum whole-instruction stolen size starting at 0x1403745B6 is 9 + 8 = 17 bytes (both MOVSS instructions). This exceeds the 14-byte patch. The next boundary after 14 bytes is at 0x1403745C4 (9+5), which is inside the second MOVSS. So no 14-byte whole-instruction boundary exists starting at 0x1403745B6.
+
+Incoming branch: 0x1403745B6 is the target of a JLE at 0x14037419C (`0F 8E 14 04 00 00 JLE 0x1403745b6`). This branch is taken when the sub-entry count is 0 (EDX <= 0). So 0x1403745B6 is hit both by sequential execution (from the button loop) and by the JLE (when count is 0). A hook here must handle both paths: when count is 0, the button loop was skipped entirely, and the content block runs without any buttons having been drawn.
+
+The loader's InstallInlineHook requires 14 bytes of contiguous whole instructions. Since no 14-byte whole-instruction boundary exists at 0x1403745B6, this address is NOT a valid hook point for the project's inline patch.
+
+### 52.2 Native row click conditions
+
+From FUN_140373EA0 disasm (scratch/out/140373ea0_1403829fd_disasm.asm):
+
+Mouse hit (per button, lines 148-149):
+    14037429d: LEA RCX, [0x1409be060]          ; C3D_PANEL2D widget
+    1403742a4: CALL qword ptr [0x14086c850]     ; Collision (hit test on 64x64 rect at X,Y)
+
+Click signal (lines 233-234):
+    1403742f2: CMP byte ptr [0x140a54e91], CL    ; CL = 0 (from XOR or similar)
+    1403742f8: JZ 0x140374366                   ; skip click if latch == 0
+
+Visibility/input gates (lines 235-237):
+    1403742fa: CMP byte ptr [RSI + 0x14], CL     ; if (game+0x14 == 0)  (live mode)
+    1403742fd: JNZ 0x140374347                   ; skip sound if not live
+    1403742ff: ... GetValueExist("gui_subtab_click") ; sound config check
+    140374347: CMP dword ptr [RSI + 0xc65c], EBX ; selection changed?
+
+Timing: the latch DAT_0x140a54e91 is checked but NOT cleared by this function. It must be cleared by the input system or the master function after the frame. The mod cannot detect latch consumption within this function.
+
+For the already-selected button: the latch check passes (latch != 0), the sound plays, game+0xC65C is set to EBX (no-op), game+0x10be8 = -1. The dirty flag (game+0x1039a) is NOT written because game+0xC65C == EBX (JZ skips it). So the only observable side effect is sound playback and game+0x10be8 = -1. Neither is uniquely identifiable (sound is audio, game+0x10be8 may already be -1).
+
+Conclusion: there is NO evidence-backed state-field way to detect a click on the already-selected button. Mouse-position recording (Candidate A from section 51.1) remains the most viable approach, but it requires a hook before the function, not at 0x1403745B6.
+
+### 52.3 State preservation when suppressing native content
+
+Known (button loop, before content block):
+- game+0xC65C: selected sub-tab index. Set on click. Needed for content selection.
+- game+0x1039a: dirty flag. Set to 0 on selection change. Likely a UI dirty flag.
+- game+0x10be8: counter. Set to -1 on click. Likely a render/refresh counter.
+
+Known (content block, on click only):
+- game+0x10F20: sub-page state. Written when specific sub-items are clicked.
+- game+0x5E8, game+0x5EC: position floats. Written on click.
+- game+0x5E6: toggle. Written on click.
+- game+0x5F0: pointer. Written on click.
+- game+0xADB8, game+0xADC8: list pointers. Written on click (via FUN_140450b50).
+- FUN_14035F3E0: called for sub-tabs 0/1. Has its own click handling (FUN_1403613b0 sub-page switch, FUN_140335b10 state setter).
+
+If content block is skipped:
+- Button loop state (game+0xC65C, game+0x1039a, game+0x10be8) is preserved (set before content block).
+- Content block state (game+0x10F20, etc.) is NOT updated. These are only needed for vanilla content interaction.
+- FUN_14035F3E0 is not called. Its sub-page navigation (FUN_1403613b0) is lost, but this is only needed for vanilla content.
+
+Whether skipping corrupts state: unknown. The fields game+0x10F20, game+0x5E8, etc. may be read by other functions. Their readers are not traced. If they are read by the button loop or other UI code, skipping could cause stale values.
+
+Alternate handler (FUN_140361BB0): same state fields, but more complex content path. The same unknowns apply. Whether it needs a different approach (e.g., no suppression, just overlay) is unknown.
+
+### 52.4 Go/no-go assessment
+
+NO-GO for hooking at 0x1403745B6. The instruction boundaries do not support a 14-byte whole-instruction patch. The incoming JLE makes it worse (branch target inside the patch).
+
+NO-GO for click detection via game+0x10be8 transition. The already-selected case leaves the field unchanged if already -1.
+
+CONDITIONAL-GO for the overall approach (mod-owned button + content suppression) IF:
+1. A safe hook point is found (14+ bytes of whole instructions, no RIP-relative operands, no incoming branches).
+2. State readers of game+0x10F20, game+0x5E8, etc. are traced to confirm skipping is safe.
+3. Mouse-position-based click detection is implemented (Candidate A).
+4. The alternate handler (FUN_140361BB0) is assessed for the same gaps.
+
+### 52.5 Remaining unknowns (specific)
+
+1. Safe hook point in FUN_140373EA0 (before button loop or between loop and content block).
+2. Readers of game+0x10F20, game+0x5E8, game+0x5EC, game+0x5E6, game+0x5F0, game+0xADB8, game+0xADC8.
+3. Whether FUN_14035F3E0's FUN_1403613b0 call is needed for game state consistency.
+4. Container width / clip rect (panel dimension initialization).
+5. FUN_140361BB0 content path (less traced, more complex).
+
+### 52.6 Files touched
+
+- docs/almanac-investigation.md (this section)
+
+No production code, configuration, saves, builds, hooks, or settings were changed.
