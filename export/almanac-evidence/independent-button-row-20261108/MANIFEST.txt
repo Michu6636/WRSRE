@@ -1,0 +1,22 @@
+# MANIFEST - independent-button-row-20261108
+
+Scope: focused investigation of whether an independently drawn Almanac button can fit
+and receive clicks alongside the eight visible Economy & Trade icons in the same row,
+on the 0x140373EA0 normal row path. Investigation and planning only.
+
+Reused exports (LF-normalized checkout; Git may normalize line endings):
+- export/140373ea0_1403829fd_disasm.asm  SHA256 d31e75552949bac551f77a38943181881f4e74c9df4d63b6dc0db8251172b7d3
+- export/140317db0_full_disasm.asm        SHA256 a77d64462a79b7c3aeac148d817d060dfd91c60535d9a946b4d47c3df01b8670
+- export/almanac-evidence/REVIEW.md        SHA256 2d1140b7b3c44053c94ff774b902ce5de73550bf7c25fbf0f7d886fa852f7c86
+- docs/almanac-export-review.md            SHA256 3ee4d44dedae04ebc4bb9b33cb09bcb917327ea67c9d2e25b9935376d6b1cf16
+
+New raw Ghidra exports: none. This step reuses the existing exports above and does not
+run new Ghidra queries. The recommended next read-only observation (serialized Xrefs on
+VA 0x1409be060) is listed in REPORT.md section 5 but not executed here.
+
+New file in this subfolder:
+- REPORT.md  (this investigation's report)
+
+Provenance note: preferred-image VAs (image base 0x140000000), not runtime addresses.
+Executable hash/version not independently verified here (see docs/almanac-export-review.md).
+No game executable or Ghidra project was copied. No commit or push performed.
