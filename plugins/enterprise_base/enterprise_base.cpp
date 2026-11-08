@@ -3023,14 +3023,13 @@ static int OnRetail(void* shop, void* person, float stateCost,
     // Apply VAT on top of the marked-up retail price
     float finalPrice = markedUp * (1.0f + vatRate);
 
-    // v9.5: PRE-CHECK BEFORE ANY CHARGE - confirmed against
-    // src/currency_api.h and plugins/currency/currency.cpp:
-    //   - Api_ChargeCitizen -> WalletTake, which unconditionally writes
-    //     balance - min(balance, maxAmount) and only THEN reports
-    //     success or failure; the shortfall is destroyed on failure.
-    //   - Api_ChargeCitizenPartial -> WalletTake, which keeps whatever
-    //     was available (partial take is real and not refunded).
-    // Refusing a sale after either call would leave the citizen poorer
+    // v9.5: PRE-CHECK BEFORE ANY CHARGE. The old currency implementation
+    // partially debited even a failed full charge. Currency now fixes that
+    // contract atomically; retain this precheck and refund path because this
+    // interceptor deliberately uses chargeCitizenPartial, and because older
+    // compatible currency DLLs may still have the historical behavior.
+    // A partial take is real and must be refunded when dispense is refused.
+    // Refusing a sale after a partial charge would leave the citizen poorer
     // with no goods - wallet theft. So verify the full private price
     // while nothing has been taken; only then charge.
     float wallet = g_currency->getWalletBalance(person);

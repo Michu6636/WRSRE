@@ -82,9 +82,10 @@ extern "C" {
 // paid out. A caller that fires this directly passes the same signed
 // delta it just applied to the treasury.
 //
-// Runs on the caller's thread, inside currency's lock scope but after
-// the balance changes are committed. Must not block. A faulting observer
-// is disabled for the session and the others carry on.
+// Runs on the caller's thread after the balance changes are committed and
+// currency's transaction lock has been released. Must not block. A faulting
+// observer is disabled for the session and the others carry on. No event is
+// emitted for rejected, zero, or failed native-memory transactions.
 typedef void (*TsmMoneyFlowCallback)(void* userData,
                                      const char* category,
                                      double signedAmount,
@@ -129,6 +130,11 @@ typedef struct TsmCurrencyApi {
     // from fields the caller has already had to validate to read the
     // person at all, so a bad pointer here is the caller's bug and not
     // a case worth throwing over.
+    //
+    // All mutators reject NaN/infinite amounts and nonfinite/overflowing
+    // results without moving money or emitting flow events. Positive paired
+    // wallet/treasury transfers require both native legs to be available.
+    // Finite non-positive amounts remain no-ops (not reverse transfers).
 
     float (*getWalletBalance)(void* person);
 
@@ -184,7 +190,10 @@ typedef struct TsmCurrencyApi {
     //
     // Operations that move money between citizens and state. Both fire
     // every registered flow observer, in registration order, after the
-    // balance changes have been committed.
+    // balance changes have been committed. citizenToState is all-or-nothing;
+    // failure leaves the wallet, spent counter and treasury unchanged.
+    // Only citizenToStatePartial may collect less than the requested amount.
+    // stateToCitizen never debits the treasury for an invalid recipient.
     int   (*citizenToState)(void* person, float amount, const char* category);
     float (*citizenToStatePartial)(void* person, float maxAmount,
                                    const char* category);

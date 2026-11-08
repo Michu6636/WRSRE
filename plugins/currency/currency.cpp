@@ -1,5 +1,9 @@
 // currency - the money service.
 //
+// v4.1: full charges and paired treasury transfers commit atomically under
+// the currency lock. Nonfinite/overflowing mutations are refused; labelled
+// observers run only after successful native commits. Public ABI is unchanged.
+//
 // B5 bound (v1.1): g_wallets no longer grows forever. WalletGet is a
 // pure read (miss returns the starting wallet, no key); keys are born
 // on real money movement. New memory-only lastSeenAbsDay (absolute
@@ -24,6 +28,7 @@
 #include <stddef.h>
 #include <unordered_map>
 #include <vector>
+#include <cmath>
 
 #define RVA_GAME_OBJECT     (g_tsmAddr.game_object)
 #define TREASURY_OFFSET_USD 0x580
@@ -124,115 +129,8 @@ static bool ValidPerson(const void* p)
     return IsValidGamePtr(p) && ReadablePtr(p, PERSON_MIN_READABLE);
 }
 
-static float WalletGet(void* person)
-{
-    if (!ValidPerson(person)) return 0.0f;
-
-    uint64_t id = TsmCitizenID(person);
-    if (!id) return 0.0f;
-
-    // B5: pure read - a miss returns the starting wallet WITHOUT
-    // creating a permanent key. Keys are born on real money movement.
-    EnterCriticalSection(&g_lock);
-    auto it = g_wallets.find(id);
-    float balance;
-    if (it == g_wallets.end()) {
-        balance = g_startingWallet;
-    } else {
-        balance = it->second.balance;
-        if (!(balance == balance) || balance > 1e18f || balance < -1e18f) {
-            balance = it->second.balance = g_startingWallet;
-        } else if (balance < 0.0f) {
-            balance = it->second.balance = 0.0f;
-        }
-        int now = CurrentAbsDay();
-        if (now >= 0) it->second.lastSeenAbsDay = now;
-    }
-    LeaveCriticalSection(&g_lock);
-    return balance;
-}
-
-static int WalletAdd(void* person, float amount)
-{
-    if (!ValidPerson(person)) return 0;
-    if (!(amount == amount) || amount <= 0.0f) return 1;
-
-    uint64_t id = TsmCitizenID(person);
-    if (!id) return 0;
-
-    EnterCriticalSection(&g_lock);
-    auto it = g_wallets.find(id);
-    if (it == g_wallets.end()) {
-        WalletEntry e;
-        e.balance        = g_startingWallet + amount;
-        e.lastSeenAbsDay = CurrentAbsDay();
-        g_wallets.emplace(id, e);
-    } else {
-        if (!(it->second.balance == it->second.balance) || it->second.balance < 0.0f)
-            it->second.balance = 0.0f;
-        it->second.balance += amount;
-        int now = CurrentAbsDay();
-        if (now >= 0) it->second.lastSeenAbsDay = now;
-    }
-    LeaveCriticalSection(&g_lock);
-    return 1;
-}
-
-static float WalletTake(void* person, float maxAmount)
-{
-    if (!ValidPerson(person)) return 0.0f;
-    if (!(maxAmount == maxAmount) || maxAmount <= 0.0f) return 0.0f;
-
-    uint64_t id = TsmCitizenID(person);
-    if (!id) return 0.0f;
-
-    EnterCriticalSection(&g_lock);
-
-    float balance;
-    auto it = g_wallets.find(id);
-    if (it == g_wallets.end()) {
-        balance = g_startingWallet;
-        WalletEntry e;
-        e.balance        = balance;
-        e.lastSeenAbsDay = CurrentAbsDay();
-        g_wallets.emplace(id, e);
-        it = g_wallets.find(id);
-    } else {
-        balance = it->second.balance;
-        if (!(balance == balance) || balance > 1e18f || balance < -1e18f) {
-            balance = it->second.balance = g_startingWallet;
-        } else if (balance < 0.0f) {
-            balance = it->second.balance = 0.0f;
-        }
-    }
-
-    float taken = (balance >= maxAmount) ? maxAmount : balance;
-    // B5 review rule: any transaction attempt proves liveness, even a
-    // broke citizen's taken == 0.0f. Always Touch an existing key so a
-    // long stretch of poverty is not mistaken for death (which would
-    // respawn them with a fresh starting wallet on next miss).
-    int now = CurrentAbsDay();
-    if (now >= 0) it->second.lastSeenAbsDay = now;
-    if (taken > 0.0f) {
-        it->second.balance = balance - taken;
-        *(float*)((BYTE*)person + PERSON_SPENT_OFFSET) += taken;
-    }
-    LeaveCriticalSection(&g_lock);
-    return taken;
-}
-
-static float Api_GetWalletBalance(void* person)          { return WalletGet(person); }
-static int   Api_AddWalletBalance(void* person, float a) { return WalletAdd(person, a); }
-static int   Api_ChargeCitizen(void* person, float a)
-{
-    if (!(a == a) || a <= 0.0f) return 1;
-    float taken = WalletTake(person, a);
-    return (taken >= a) ? 1 : 0;
-}
-static float Api_ChargeCitizenPartial(void* person, float maxA)
-{
-    return WalletTake(person, maxA);
-}
+#include "transaction_native.h"
+#include "transaction_wallet.h"
 
 static void Api_ForEachWallet(TsmWalletVisitor cb, void* userData)
 {
@@ -257,85 +155,7 @@ static double Api_GetTotalWalletBalance(void)
     return total;
 }
 
-static double TreasuryOffset(int currency)
-{
-    return (currency == TSM_CURRENCY_USD)
-        ? (double)TREASURY_OFFSET_USD
-        : (double)TREASURY_OFFSET_RUB;
-}
-
-static double Api_GetTreasuryBalance(int currency)
-{
-    BYTE* game = GameObject();
-    if (!game || !ReadablePtr(game, 0x600)) return 0.0;
-
-    EnterCriticalSection(&g_lock);
-    double v = *(double*)(game + (size_t)TreasuryOffset(currency));
-    LeaveCriticalSection(&g_lock);
-    return v;
-}
-
-static void Api_ModifyTreasury(double delta, int currency)
-{
-    BYTE* game = GameObject();
-    if (!game || !ReadablePtr(game, 0x600)) return;
-
-    EnterCriticalSection(&g_lock);
-    *(double*)(game + (size_t)TreasuryOffset(currency)) += delta;
-    LeaveCriticalSection(&g_lock);
-}
-
-static void Api_MoveTreasury(double signedAmount, const char* category)
-{
-    if (!(signedAmount == signedAmount)) return;
-    if (signedAmount == 0.0) return;
-
-    // v4: unified global currency - labelled operations route to the
-    // active treasury (USD game+0x580 vs RUB game+0x588), and the flow
-    // event carries the active code so the ledger reads the same leg.
-    Api_ModifyTreasury(signedAmount, g_activeCurrency);
-    FireFlow(category ? category : "?", signedAmount, g_activeCurrency);
-}
-
-static int Api_GetActiveCurrency(void) { return g_activeCurrency; }
-static const char* Api_GetCurrencySymbol(void)
-{
-    return (g_activeCurrency == TSM_CURRENCY_USD) ? "USD" : "RUB";
-}
-
-static int Api_CitizenToState(void* person, float amount, const char* category)
-{
-    if (!(amount == amount) || amount <= 0.0f) return 1;
-
-    float taken = WalletTake(person, amount);
-    if (taken < amount) {
-        WalletAdd(person, taken);
-        return 0;
-    }
-
-    Api_MoveTreasury((double)amount, category ? category : "?");
-    return 1;
-}
-
-static float Api_CitizenToStatePartial(void* person, float maxAmount,
-                                       const char* category)
-{
-    if (!(maxAmount == maxAmount) || maxAmount <= 0.0f) return 0.0f;
-
-    float taken = WalletTake(person, maxAmount);
-    if (taken <= 0.0f) return 0.0f;
-
-    Api_MoveTreasury((double)taken, category ? category : "?");
-    return taken;
-}
-
-static void Api_StateToCitizen(void* person, float amount, const char* category)
-{
-    if (!(amount == amount) || amount <= 0.0f) return;
-
-    WalletAdd(person, amount);
-    Api_MoveTreasury(-(double)amount, category ? category : "?");
-}
+#include "transaction_treasury.h"
 
 // ---------------------------------------------------------------- persistence
 
@@ -568,7 +388,7 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host, TsmPlugi
 {
     TsmBind(host);
     info->name    = "currency";
-    info->version = "4.0";
+    info->version = "4.1";
 
     ReadSettings();
     if (!g_enabled) {
