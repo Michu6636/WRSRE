@@ -73,23 +73,81 @@ Transferable design ideas (verified where marked):
 
 Key distinction (important): the Reputation mod's sidebar button sits in the **left column**, not among the **eight visible Economy & Trade icons in the same row**. Its optional `sidebar_item` path puts an item inside the Economy & Trade panel (config `sidebar_item = 0`, OFF), where the game draws items generically ("one button each, icon from item+0x48") — but that door is shipped closed and is described as "a SECOND door into the same room ... clutter in a window that is not ours." Do not assume the Almanac button uses that exact row.
 
-## 6. What remains unknown / limits
+## 6. The sidebar_item path (Economy & Trade row item) — traced
 
-- The sidebar **vector location and record layout** (8 fields, 3 undecoded constants) — not independently verified in the binary.
-- The **helper functions** registered via `[RAX+0x48]` (e.g. `0x180067fa0`, `0x180068090`, `0x180068140`, `0x180067bf0`, `0x180067da0`, `0x180067f10`) that implement the sidebar clone, tab append, click detection, and in-panel drawing were **not disassembled**.
-- Exact **click detection** for the sidebar button: `C3D_INPUT+0x301` is a config claim; not yet traced in disassembly.
-- Whether the eight Economy & Trade icons use the same vector/mechanism as the left sidebar (config asserts they do, uncorroborated in the DLL).
-- Decompilation via headless Ghidra script was **unavailable**: `DecompAt.java`/`DecompAt2.java` fail to compile (`ghidra.app.decompiler.DecompileInterface` not on the headless script classpath); `ListFuncs.java` and `DisasmMany.java` work only when combined with `-import` into a fresh project (re-import into an already-imported project conflicts). Only disassembly was captured, not decompilation.
+**Config** (`reputation.ini` lines 1628–1631):
+- `sidebar_item = 0` (OFF by default; shipped off because it is "a SECOND door into the same room" — the mod already has its own left-sidebar button).
+- `sidebar_item_panel = trade`, `sidebar_item_name = reputation`. Requires `sidebar = 1`.
+- **Config claim (not runtime-observed):** "the tab appears in Economy and trade, the game draws and highlights it, and clicking it opens our window."
+- **Config claim (texture):** icon `media_soviet/editor/trade_reputation.png`, 96x96; renderer binds the texture **without a null check** → missing file crashes; item taken back out if texture does not arrive.
+- **Config claim (vector):** "It also writes into a game vector, which should be a deliberate choice."
 
-## 7. Evidence files preserved (non-ignored; DLL itself NOT copied)
+**Insertion** (verified instructions, `TsmPluginStart`, `rep_TsmPluginStart.asm`):
+- Reads DLL global `0x1800c3090` (the `sidebar_item` enabled flag). If clear, skips the whole path.
+- Looks up/creates the item through the TesmioLoader API (`[RAX+0x40]`, handler `0x18008e968`, name `0x18008e958`) and stores the item's function pointer at DLL global `0x1800d9498`.
+- Registers four mod callbacks into four item-vtable function-pointer slots via `[RAX+0x48]`:
+  - `FUN_180068a20` → `[0x180187dd0]` (item create/draw; calls `[0x180187dd0]` then `0x1800303e0`)
+  - `FUN_180068a80` → `[0x180187dc8]` (item draw/label; calls `[0x180187dc8]` then `0x1800303e0`)
+  - `FUN_180068ae0` → `[0x180187de0]` (is-selected; returns nonzero else `0x1800303e0`)
+  - `FUN_180068b40` → `[0x180187dd8]` (open/activate; returns nonzero else `0x1800303e0`)
+- Verified disassembly: `rep_sidebar_item_asm.asm` (98 instructions, VA `0x180068a20`–`0x180068bd9`).
+
+**Click / selection detection** (verified instructions, fallback `FUN_1800303e0`, `rep_fallback_303e0.asm`, 210 instructions VA `0x1800303e0`–`0x180030710`):
+- Entry `(RCX=item name/path, RDX=context)`. First checks `sidebar_item` flag `0x1800c3090` — if 0, returns without handling (so the path is fully gated on the config flag).
+- Scans the item name for `\`/`/` path separators to extract the basename, then compares it against known strings via strcmp-like `0x18006daf0` (`0x180188090`, `0x180090790`, `0x1800907a8`).
+- On match with `0x180090790`: calls `0x180064790` (panel manager), then `0x180007ed0` with `EDX=1` (open/switch panel).
+- On match with `0x1800907a8`: stores `EAX` into selection-index global `0x1801a3f90`, calls `0x180064790`, then `0x180007fd0`.
+- Length guard: names longer than `0x102` (258) bytes are rejected.
+- Falls through to cleanup logging via `[0x18008d0c0]`.
+
+**Opening the panel:** `0x180064790` → panel manager → `0x180007ed0`/`0x180007fd0` (open/switch functions). The mod does not reimplement the row renderer; it pushes an item into the game's `trade` vector and notices the click.
+
+**Close / return** (verified instructions, `FUN_180068ba0`, `rep_sidebar_item_asm.asm` lines 86–99):
+- When `EDX==0` (item not selected / close): resets selection flag `0x1800c3e80 = 0`, XCHGs selection atom `0x180448f5c`, swaps panel pointer `0x180448f30` (old → RAX, new → RDX), and if the old panel is non-null calls virtual `[0x18008d2e8]` on it (cleanup/release). Returns 1 (handled).
+
+**Native Economy & Trade content when the item is selected:**
+- The game's generic renderer draws items from the vector (one button each, icon from `item+0x48`), highlights on hover, and writes the clicked item INDEX to a global. The mod only notices and opens its own window — it does not suppress or replace native content.
+- The mod's separate left-sidebar section (`sidebar = 1`) is a distinct button; the `sidebar_item` row item is explicitly "clutter in a window that is not ours" and is shipped disabled.
+
+**Comparison with WRSRE trade-handler evidence** (`docs/almanac-investigation.md`, `docs/ghidra-index/373EA0.md`, `docs/almanac-export-review.md`):
+- WRSRE row drawer `FUN_140373EA0` reads `game+0xC650` (selected panel entry), walks its sub-entry vector (stride `0x50`, begin/end at `[P+0x48]`/`[P+0x50]`), draws each sub-entry's texture at `sub_entry+0x48` with a 64x64 backdrop, tracks selected sub-tab in `game+0xC65C`. Tile positions written at `0x14037423c`–`0x14037424f`; `0x140445eb0` receives `game+0xADB0`.
+- WRSRE selects between **two** trade handlers based on a game-state flag; `FUN_140358A20` (importexport) is effectively dead because no panel is named "importexport".
+- Reputation's `+0x48` icon offset matches WRSRE's `sub_entry+0x48` texture offset — both reuse the game's generic row rendering. Reputation pushes into the game vector; WRSRE's row is built by `FUN_140296110` from a data table (`game+0xC2B0`, stride `0x340`).
+- WRSRE unknowns that apply here too: exact panel width/height/clip write location (candidate: `game+0xADB0`), hit-test bounds vs visual clipping (separate unknowns), runtime count/visibility unverified.
+
+**Risks relevant to a safe WRSRE design:**
+- **Texture null-check crash:** missing icon file crashes rather than draws blank (config claim; uncorroborated in binary).
+- **Vector ownership:** mod writes into the game's `trade` vector — if the vector reallocates or the mod unloads, dangling pointers; no cleanup path verified in the DLL for the `sidebar_item` vector write beyond `FUN_180068ba0` panel swap.
+- **Handler ambiguity:** WRSRE's two trade handlers mean the same-row button must work under whichever handler is active; `FUN_140358A20` is dead but `FUN_140373EA0` is the verified row drawer.
+- **Close/return:** `FUN_180068ba0` swaps panel pointer and calls a virtual cleanup — but whether native panel state is fully restored is unverified.
+
+## 7. What remains unknown / limits
+
+- Whether the `sidebar_item` path actually renders a ninth Economy & Trade icon at runtime (vector capacity / `FUN_140296110` data-table contents not traced).
+- Whether both WRSRE trade handlers can display and select the item, or only `FUN_140373EA0` (the verified row drawer).
+- Exact instruction(s) that write the panel width/height/clip fields (`game+0xADB0` candidate; hit-test bounds vs visual clipping are separate unknowns).
+- Whether `FUN_1800303e0` fallback is reached at runtime, or the mod's registered vtable handlers handle the click first.
+- Whether native panel state is fully restored on close (`FUN_180068ba0` cleanup unverified).
+- In-game read-only snapshot of trade row geometry and selection state is still needed (not authorized to execute).
+- Headless Ghidra decompilation remains unavailable (`DecompileInterface` not on the script classpath); only disassembly captured.
+
+## 8. Evidence files preserved (non-ignored; DLL itself NOT copied)
 
 Folder: `C:\WRSRE\export\almanac-evidence\reputation-mod\`
 - `report.md` — this report.
 - `reputation_peinfo.txt` — full PE header, sections, exports, imports, image base, and interesting-string excerpts with RVAs.
 - `rep_funcs.txt` — Ghidra function list (1154 functions) for `reputation.dll`.
-- `rep_TsmPluginStart.asm` — verified instruction-level disassembly of `TsmPluginStart` (VA `0x180068bf0`–`0x180069c40`), including build-stamp check, hook targets `0x31e478`/`0x31e509`/`0x31f03c`, and title-string swap.
+- `rep_TsmPluginStart.asm` — verified instruction-level disassembly of `TsmPluginStart` (VA `0x180068bf0`–`0x180069c40`), including build-stamp check, hook targets `0x31e478`/`0x31e509`/`0x31f03c`, title-string swap, and the `sidebar_item` callback registration block.
+- `rep_sidebar_item_asm.asm` — verified disassembly of the four `sidebar_item` vtable callbacks and close handler (VA `0x180068a20`–`0x180068bd9`).
+- `rep_fallback_303e0.asm` — verified disassembly of the click/selection/panel-open fallback `FUN_1800303e0` (VA `0x1800303e0`–`0x180030710`).
 - The DLL binary was **not** copied into the repository (per the `*.dll` ignore rule and redistribution caution); only hashes and small excerpts are preserved.
 
 ## Bottom line
 
-The Reputation mod demonstrates, at both config and verified-instruction level, the exact pattern the Almanac needs: a new left-sidebar button beside Economy & Trade, opening a panel the mod fills itself, push-button open/close, GetString label override, and a PE-timestamp version gate — all on SOVIET64.exe 1.1.1.9 via fixed hook addresses (`exe+0x31E478/+0x31E509`) and `g_ui` panel-rect offsets (`+0xAE50/+0xAE54/+0xAE58`). It is directly relevant evidence. Remaining work: confirm the sidebar vector/record layout, click detection, and whether the eight Economy & Trade icons share that vector; those were not reached in this static pass.
+The Reputation mod demonstrates, at both config and verified-instruction level, two patterns relevant to the Almanac:
+
+1. **Left-sidebar button** (`sidebar = 1`): a new button beside Economy & Trade opening a self-drawn panel, push-button open/close, GetString label override (`0x187A` → "Diplomacy"), PE-timestamp version gate — verified in `TsmPluginStart` disassembly (`rep_TsmPluginStart.asm`) on SOVIET64.exe 1.1.1.9 via fixed hook addresses (`exe+0x31E478/+0x31E509`) and `g_ui` panel-rect offsets (`+0xAE50/+0xAE54/+0xAE58`).
+
+2. **Same-row Economy & Trade item** (`sidebar_item = 1`, shipped OFF): the mod pushes an item into the game's `trade` panel vector; the game's generic renderer draws it (icon at `item+0x48`) and highlights/clicks it; the mod intercepts via four item-vtable callbacks (`FUN_180068a20/a80/ae0/b40` → slots `[0x180187dd0/dc8/de0/dd8]`) with `FUN_1800303e0` as the click/selection/panel-open fallback, and `FUN_180068ba0` as the close/return handler that swaps the panel pointer and calls virtual cleanup.
+
+This is directly relevant evidence for a ninth same-row button, but the `sidebar_item` path is shipped disabled, texture loading lacks a null check (crash risk), vector-ownership cleanup is unverified, and WRSRE's two trade handlers (only `FUN_140373EA0` verified as the row drawer) mean same-row placement must work under the active handler. The sidebar button and the same-row item are two separate doors; the Almanac must pick one and verify the other independently. Remaining work: runtime read-only snapshot of trade row geometry/selection, clip/write-location confirmation, and whether both trade handlers can select the item — none authorized to execute.
