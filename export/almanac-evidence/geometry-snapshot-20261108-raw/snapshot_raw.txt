@@ -1,0 +1,38 @@
+﻿Almanac read-only geometry snapshot
+Timestamp (UTC): 2026-11-08T20:47:45.635Z
+Target PID: 8140
+Exe path: C:\Workers Resources Soviet Republic\SOVIET64.exe
+Exe size: 10308608 bytes
+Exe SHA-256: 296644a9f207d609031fc2ae73fed2dcb34619a1d55a35d1c7b51965ce6841b8
+Previously reported hash: 296644a9f207d609031fc2ae73fed2dcb34619a1d55a35d1c7b51965ce6841b8
+Hash matches previous report: True
+Process name: SOVIET64
+Process start time: 11/08/2026 20:40:40
+Module base (MainModule.BaseAddress): 0x7FF7E7F90000
+Opened process handle (VM_READ+QUERY): 0x00000AB8
+Call-site bytes @ base+0x31EDEF: E8 AC 50 05 00 F3 0F 10
+Call-site bytes @ base+0x31EE13: E8 98 2D 04 00 E9 FB 01
+Computed game base (module_base + 0x9d4f10): 0x7FF7E8964F10
+FLOAT base+0x992088 raw=CD CC 4C 3F decoded=0.8
+FLOAT base+0x90AA0C raw=00 00 34 42 decoded=45
+FLOAT base+0x90AB14 raw=00 00 AA 42 decoded=85
+FLOAT base+0x90AAA0 raw=00 00 80 42 decoded=64
+FLOAT base+0x90ADC4 raw=00 00 80 43 decoded=256
+FLOAT base+0x90A9CC raw=00 00 0C 42 decoded=35
+BYTE game+0x10398 raw=01 value=1 READ_OK
+DWORD game+0xC7D4 raw=FF FF FF FF i32=-1 u32=0xFFFFFFFF READ_OK
+DWORD game+0x578 raw=00 00 00 00 i32=0 u32=0x00000000 READ_OK
+DWORD game+0x5E0 raw=01 00 00 00 i32=1 u32=0x00000001 READ_OK
+DWORD game+0xC65C raw=00 00 00 00 i32=0 u32=0x00000000 READ_OK
+FLOAT game+0xAE50 raw=00 00 38 43 decoded=184 READ_OK
+FLOAT game+0xAE54 raw=00 40 44 44 decoded=785 READ_OK
+QWORD game+0xc650 (subvector base ptr P): 0x000001D8103C6550 READ_OK
+QWORD [P+0x0] (subvector begin): 0x6E00656461727401 READ_OK
+QWORD [P+0x8] (subvector end): 0x0065727574630067 READ_OK
+Subvector span (end-begin): 0x92650D1112F08C66 bytes
+Subvector count (span/0x50): -9.87236500567617E+16
+MainWindowHandle: 0x00020934
+Window visible: True
+Window title: 'Workers & Resources: Soviet Republic'
+WINDOW_READ_FAILED: Cannot find type [[Win+RECT]]: verify that the assembly containing this type is loaded.
+END snapshot

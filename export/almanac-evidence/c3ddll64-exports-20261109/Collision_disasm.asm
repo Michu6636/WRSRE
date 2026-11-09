@@ -1,0 +1,4 @@
+; Range: 0x180BC690 to 0x180BC900
+
+; Range: 0x180BAF40 to 0x180BB100
+
