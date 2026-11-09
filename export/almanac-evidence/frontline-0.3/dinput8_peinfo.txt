@@ -1,0 +1,339 @@
+=== PE summary ===
+file: dinput8.dll  size: 4635648 bytes
+machine: 0x8664 (x64)  sections: 8  characteristics: 0x2022 DLL
+time date stamp: 0x6af1d90f
+optional header magic: 0x020b (PE32+)
+number of rva+size entries: 0
+.text        vaddr=0x00000074 vsize=0x7865742e raddr=0x00001000 rsize=0x38d2aa ptr=0x38d400 chars=0x00000000
+.rdata       vaddr=0x00006174 vsize=0x6164722e raddr=0x0038f000 rsize=0x0a0262 ptr=0x0a0400 chars=0x00000000
+.data        vaddr=0x00000061 vsize=0x7461642e raddr=0x00430000 rsize=0x019468 ptr=0x00b000 chars=0x00000000
+.pdata       vaddr=0x00006174 vsize=0x6164702e raddr=0x0044a000 rsize=0x02b77c ptr=0x02b800 chars=0x00000000
+.idata       vaddr=0x00006174 vsize=0x6164692e raddr=0x00476000 rsize=0x002ab5 ptr=0x002c00 chars=0x00000000
+.tls         vaddr=0x00000000 vsize=0x736c742e raddr=0x00479000 rsize=0x000309 ptr=0x000400 chars=0x00000000
+.00cfg       vaddr=0x00006766 vsize=0x6330302e raddr=0x0047a000 rsize=0x000175 ptr=0x000200 chars=0x00000000
+.reloc       vaddr=0x0000636f vsize=0x6c65722e raddr=0x0047b000 rsize=0x004591 ptr=0x004600 chars=0x00000000
+
+=== data directories ===
+
+=== exports ===
+=== PE summary ===
+file: dinput8.dll  size: 4635648 bytes
+machine: 0x8664 (x64)  sections: 8  characteristics: 0x2022 DLL
+time date stamp: 0x6af1d90f
+optional header magic: 0x020b (PE32+)
+number of rva+size entries: 16
+=== PE summary ===
+file: dinput8.dll  size: 4635648 bytes
+machine: 0x8664 (x64)  sections: 8  characteristics: 0x2022 DLL
+time date stamp: 0x6af1d90f
+optional header magic: 0x020b (PE32+)
+number of rva+size entries: 16
+=== PE summary ===
+file: dinput8.dll  size: 4635648 bytes
+machine: 0x8664 (x64)  sections: 8  characteristics: 0x2022 DLL
+time date stamp: 0x6af1d90f
+optional header magic: 0x020b (PE32+)
+number of rva+size entries: 16
+.text        vaddr=0x00001000 vsize=0x38d2aa raddr=0x0038d400 rsize=0x000400 ptr=0x000400 chars=0x60000020 CODE
+.rdata       vaddr=0x0038f000 vsize=0x0a0262 raddr=0x000a0400 rsize=0x38d800 ptr=0x38d800 chars=0x40000040 DATA
+.data        vaddr=0x00430000 vsize=0x019468 raddr=0x0000b000 rsize=0x42dc00 ptr=0x42dc00 chars=0xc0000040 DATA
+.pdata       vaddr=0x0044a000 vsize=0x02b77c raddr=0x0002b800 rsize=0x438c00 ptr=0x438c00 chars=0x40000040 DATA
+.idata       vaddr=0x00476000 vsize=0x002ab5 raddr=0x00002c00 rsize=0x464400 ptr=0x464400 chars=0x40000040 DATA
+.tls         vaddr=0x00479000 vsize=0x000309 raddr=0x00000400 rsize=0x467000 ptr=0x467000 chars=0xc0000040 DATA
+.00cfg       vaddr=0x0047a000 vsize=0x000175 raddr=0x00000200 rsize=0x467400 ptr=0x467400 chars=0x40000040 DATA
+.reloc       vaddr=0x0047b000 vsize=0x004591 raddr=0x00004600 rsize=0x467600 ptr=0x467600 chars=0x42000040 DATA
+
+=== data directories ===
+EXPORT          rva=0x0042f0c0 size=0x0001a2
+IMPORT          rva=0x00476b28 size=0x0000c8
+RESOURCE        rva=0x00000000 size=0x000000
+EXCEPTION       rva=0x0044a000 size=0x0279c0
+SECURITY        rva=0x00000000 size=0x000000
+BASERELOC       rva=0x0047b000 size=0x00137c
+DEBUG           rva=0x003dcb80 size=0x000038
+COPYRIGHT       rva=0x00000000 size=0x000000
+GLOBALPTR       rva=0x00000000 size=0x000000
+TLS             rva=0x003dec20 size=0x000028
+LOAD_CONFIG     rva=0x003dca00 size=0x000140
+BOUND_IMPORT    rva=0x00000000 size=0x000000
+IAT             rva=0x00476000 size=0x000b28
+DELAY_IMPORT    rva=0x00000000 size=0x000000
+COM_DESCRIPTOR  rva=0x00000000 size=0x000000
+
+=== exports ===
+=== PE summary ===
+file: dinput8.dll  size: 4635648 bytes
+machine: 0x8664 (x64)  sections: 8  characteristics: 0x2022 DLL
+time date stamp: 0x6af1d90f
+optional header magic: 0x020b (PE32+)
+number of rva+size entries: 16
+.text        vaddr=0x00001000 vsize=0x38d2aa raddr=0x0038d400 rsize=0x000400 ptr=0x000400 chars=0x60000020 CODE
+.rdata       vaddr=0x0038f000 vsize=0x0a0262 raddr=0x000a0400 rsize=0x38d800 ptr=0x38d800 chars=0x40000040 DATA
+.data        vaddr=0x00430000 vsize=0x019468 raddr=0x0000b000 rsize=0x42dc00 ptr=0x42dc00 chars=0xc0000040 DATA
+.pdata       vaddr=0x0044a000 vsize=0x02b77c raddr=0x0002b800 rsize=0x438c00 ptr=0x438c00 chars=0x40000040 DATA
+.idata       vaddr=0x00476000 vsize=0x002ab5 raddr=0x00002c00 rsize=0x464400 ptr=0x464400 chars=0x40000040 DATA
+.tls         vaddr=0x00479000 vsize=0x000309 raddr=0x00000400 rsize=0x467000 ptr=0x467000 chars=0xc0000040 DATA
+.00cfg       vaddr=0x0047a000 vsize=0x000175 raddr=0x00000200 rsize=0x467400 ptr=0x467400 chars=0x40000040 DATA
+.reloc       vaddr=0x0047b000 vsize=0x004591 raddr=0x00004600 rsize=0x467600 ptr=0x467600 chars=0x42000040 DATA
+
+=== data directories ===
+EXPORT          rva=0x0042f0c0 size=0x0001a2
+IMPORT          rva=0x00476b28 size=0x0000c8
+RESOURCE        rva=0x00000000 size=0x000000
+EXCEPTION       rva=0x0044a000 size=0x0279c0
+SECURITY        rva=0x00000000 size=0x000000
+BASERELOC       rva=0x0047b000 size=0x00137c
+DEBUG           rva=0x003dcb80 size=0x000038
+COPYRIGHT       rva=0x00000000 size=0x000000
+GLOBALPTR       rva=0x00000000 size=0x000000
+TLS             rva=0x003dec20 size=0x000028
+LOAD_CONFIG     rva=0x003dca00 size=0x000140
+BOUND_IMPORT    rva=0x00000000 size=0x000000
+IAT             rva=0x00476000 size=0x000b28
+DELAY_IMPORT    rva=0x00000000 size=0x000000
+COM_DESCRIPTOR  rva=0x00000000 size=0x000000
+
+=== exports ===
+dll name: dinput8.dll  ordinal base 1, 3 funcs, 3 named
+  exp DirectInput8Create                            ord=0 rva=0x00000000
+  exp DllCanUnloadNow                               ord=1 rva=0x00005592
+  exp DllGetClassObject                             ord=2 rva=0x000137c8
+
+=== imports ===
+dll: USER32.dll
+   CreateWindowExW
+   RegisterClassExW
+   CallWindowProcW
+   SetCapture
+   IsWindow
+   DestroyWindow
+   SetWindowLongPtrW
+   IsWindowVisible
+   GetAsyncKeyState
+   GetForegroundWindow
+   SetProcessDPIAware
+   MonitorFromWindow
+   LoadCursorA
+   ScreenToClient
+   ClientToScreen
+   GetCursorPos
+   SetCursor
+   SetCursorPos
+   ReleaseDC
+   GetDC
+   IsWindowUnicode
+   ReleaseCapture
+   DefWindowProcW
+   GetCapture
+   GetMessageExtraInfo
+   TrackMouseEvent
+   GetKeyboardLayout
+   EmptyClipboard
+   GetClipboardData
+   SetClipboardData
+   CloseClipboard
+   OpenClipboard
+   GetKeyState
+   GetWindow
+   GetWindowThreadProcessId
+   EnumWindows
+   GetClientRect
+dll: d3d11.dll
+   D3D11CreateDeviceAndSwapChain
+dll: ole32.dll
+   CoInitializeEx
+   CoCreateInstance
+dll: KERNEL32.dll
+   GetOEMCP
+   GetACP
+   IsValidCodePage
+   FindNextFileW
+   FindFirstFileExW
+   GetTimeZoneInformation
+   HeapReAlloc
+   SetConsoleCtrlHandler
+   OutputDebugStringW
+   EnumSystemLocalesW
+   GetUserDefaultLCID
+   IsValidLocale
+   GetLocaleInfoW
+   LCMapStringW
+   CompareStringW
+   GetTimeFormatW
+   GetDateFormatW
+   FlsFree
+   FlsSetValue
+   FlsGetValue
+   FlsAlloc
+   ReadConsoleW
+   HeapAlloc
+   HeapFree
+   SetFilePointerEx
+   GetFileSizeEx
+   GetConsoleMode
+   GetConsoleOutputCP
+   WriteFile
+   FlushFileBuffers
+   GetCurrentThread
+   ExitProcess
+   ReleaseSRWLockExclusive
+   AcquireSRWLockExclusive
+   GetLocalTime
+   MultiByteToWideChar
+   GetTickCount64
+   GetFileAttributesA
+   GetModuleHandleA
+   GetProcAddress
+dll: SHELL32.dll
+   ShellExecuteW
+dll: IMM32.dll
+   ImmSetCompositionWindow
+   ImmReleaseContext
+   ImmGetContext
+   ImmSetCandidateWindow
+dll: D3DCOMPILER_47.dll
+   D3DCompile
+dll: GDI32.dll
+   CreateRectRgn
+   DeleteObject
+   GetDeviceCaps
+dll: dwmapi.dll
+   DwmGetColorizationColor
+   DwmEnableBlurBehindWindow
+   DwmIsCompositionEnabled
+import descriptors: 9
+
+=== interesting strings ===
+0x0038f590: buildingfall2
+0x0038faa0: aid: the game's vehicles could not be created ([FL] types missing or no customs building), no window
+0x00391c80: ?Collision2DBBox@C3D_BUILDING@@QEAA_NVC3DVECTOR3@@PEAH1HH_NM@Z
+0x00391cd0: buildings: engine=%p collision2D=%p
+0x00391d00: buildings: %d types: %s
+0x00391d30: buildings: %zu fortifications on the map
+0x00391d68: buildings: destroyed at (%.0f %.0f)
+0x00391f90: /building.
+0x00391fe8: /buildings/
+0x00392010: media_soviet/buildings_types/
+0x00392070: $BORDER_BUILDING
+0x00392110: buildings: border building %s: %s (%s)
+0x00392150: buildings: %s has no fire points (%s): never set alight, demolished when destroyed
+0x003922d0: buildings: fortification %s hit (he %.1f): %.0f / %.0f
+0x00392318: buildings: fire %s
+0x00392330: buildings: demolish %s
+0x00392350: buildingfall3
+0x00392360: buildings: %d damaged buildings no longer on the map, dropped
+0x00392988: buildmenu: no srwar_* building types loaded, no defence tab
+0x003929d0: buildmenu: tab %s added as #%zu with %d buildings
+0x00392a40: buildmenu: GetString not hooked, the tab shows no label
+0x00392a90: buildmenu: menu builder call not found (other game version), no defence tab
+0x00392af0: buildmenu: no memory near the exe for the stub
+0x00392ba0: buildmenu: menu builder call redirected
+0x00392be8: ?SetColor@C3D_PANEL2D@@QEAAXAEBVC3DFCOLOR@@@Z
+0x00392c20: buildmenu: industry frame rect %d %d %d %d, pitch %d
+0x00393718: buildingfall1
+0x00396798: game: world=%p buildings=%d
+0x00396848: game: %s skipped, building gone
+0x00396c18: building[%d] %p pos candidates:%s
+0x00397458: debug button
+0x00399390: %s%s%s###hqmenu
+0x00399c38: %s%s%s###ptmenu
+0x0039a770: buildings
+0x0039abf8: Frontline %s active, game dir %s
+0x0039ac20: build: %s
+0x0039ad78: ?Draw@C3D_PANEL2D@@QEAAXMMMMM_N@Z
+0x0039adb8: ?DrawFrom9Patch@C3D_PANEL2D@@QEAAXUC3DRECT@@MMMMMM@Z
+0x0039ae00: ?DrawFromNew9Patch@C3D_PANEL2D@@QEAAXUC3DRECT@@MMMMMM@Z
+0x0039ae40: ?DrawFromNew3PatchHorizontal@C3D_PANEL2D@@QEAAXUC3DRECT@@MM_N@Z
+0x0039ae90: ?DrawFrom3Patch@C3D_PANEL2D@@QEAAXUC3DRECT@@MMMM@Z
+0x0039b687: ?Frontline|0.3|public
+0x0039ba88: \dinput8.dll
+0x0039d510: trade: resource records not found: sales for dollars are not cut
+0x0039d560: trade with the West cut for the war
+0x0039d590: trade with the West restored
+0x0039d5b8: trade: %s (permissions before the cut %s)
+0x0039d778: ?DrawFromNew3PatchVertical@C3D_PANEL2D@@QEAAXUC3DRECT@@MM_N@Z
+0x0039d990: trade: the permission bytes don't look right (other game version?): trade is not cut
+0x0039da28: trade_cut 
+0x0039da38: trade_factor
+0x0039da50: trade_cut
+0x0039ee87: @debug: no building near (%.0f %.0f)
+0x0039eec0: debug: %s building #%d at (%.0f %.1f %.0f)
+0x0039f078: city test: no buildings near (%.0f %.0f)
+0x0039f0b0: city test: densest cell (%.0f %.0f) with %d buildings
+0x0039f1b8: garrison test: building #%d %s at (%.0f %.0f), hp %.0f%%
+0x0039f230: debug panel: %d
+0x0039f2c0: srveh: building #%d %s at (%.0f %.0f %.0f)
+0x0039f4a8: Frontline active
+0x0039f4c0: Frontline 
+0x0039f4f0: menu: Frontline %s active indicator drawn
+0x003a0458: zones: capital %s (%s), the sector with most buildings
+0x003a04a0: zones: %zu sectors from %zu buildings, %zu border crossings
+0x003a04f0: zones: sector %s%s%s: %d buildings, %zu cells, centre (%.0f %.0f)
+0x003a0940: zones: saved sector %s at (%.0f %.0f) has no buildings now
+0x003a1f40: (Main menu bar)
+0x003a3020: MenuBarBg
+0x003a30bc: Button
+0x003a30c8: ButtonHovered
+0x003a30d8: ButtonActive
+0x003a44b8: #%d entered building at (%.0f %.0f)
+0x003a6378: [io] %s: MouseButton %d %s (%s)
+0x003a7cb8: Missing EndMenuBar()
+0x003a8320: Empty label e.g. Button("") == same ID as parent widget/node. Use Button("##xx") instead!
+0x003a8390: Set io.ConfigDebugHighlightIdConflicts=false to disable this warning in non-programmers builds.
+0x003a9008: %s###Menu_%02d
+0x003a9f08: ##MainMenuBar
+0x003aa708: LogButtons
+0x003aad40: Show "Debug Break" buttons in other sections (io.ConfigDebugIsDebuggerPresent)
+0x003ab350: Menu;
+0x003ac470: Font are currently rendered into bitmaps at a given size at the time of building the atlas. You may oversample them to get some flexibility with scaling. You can also render at multiple sizes and select which one to use at runtime.
+0x003acaf0: ChildMenu 
+0x003ad090: Remap w/ Ctrl+Shift: click anywhere to select new mouse button.
+0x003ad0e0: Click %s Button to break in debugger! (remap w/ Ctrl+Shift)
+0x003b9338: ##ContextMenu
+0x003bc4a8: ##ColorButton
+0x003bd7d0: ##MenuBar
+0x003bd940: Calling EndMainMenuBar() not from a menu-bar!
+0x003e10b4: C:\SR_Frontline\mod\build\dinput8.pdb
+0x0042d906: dinput8.dll
+0x00437800: .?AVerror_category@std@@
+0x00437838: .?AV_Iostream_error_category2@std@@
+0x00437aa8: .?AV_Generic_error_category@std@@
+
+=== UTF-16LE interesting strings ===
+0x0039b530: SRWarDummy
+0x003a1fb0: C:\SR_Frontline\mod\third_party\imgui\imgui.h
+0x003a2060: C:\SR_Frontline\mod\third_party\imgui\imgui_internal.h
+0x003a2100: button >= 0 && button < ImGuiMouseButton_COUNT
+0x003a21c0: C:\SR_Frontline\mod\third_party\imgui\imgui.cpp
+0x003a23f0: mouse_button >= 0 && mouse_button < ImGuiMouseButton_COUNT
+0x003a35c0: hook->Callback != 0 && hook->HookId == 0 && hook->Type != ImGuiContextHookType_PendingRemoval_
+0x003a36a8: hook_id != 0
+0x003a5e20: button >= 0 && button < ((int)(sizeof(g.IO.MouseDown) / sizeof(*(g.IO.MouseDown))))
+0x003a7520: g.Style.WindowMenuButtonPosition == ImGuiDir_None || g.Style.WindowMenuButtonPosition == ImGuiDir_Left || g.Style.WindowMenuButtonPosition == ImGuiDir_Right
+0x003a76a0: g.Style.ColorButtonPosition == ImGuiDir_Left || g.Style.ColorButtonPosition == ImGuiDir_Right
+0x003a7cd8: (0) && "Missing EndMenuBar()"
+0x003a8ef0: (extra_window_flags & ImGuiWindowFlags_ChildMenu) == 0
+0x003a8f90: extra_window_flags & ImGuiWindowFlags_ChildMenu
+0x003a9500: nav_layer == ImGuiNavLayer_Main || nav_layer == ImGuiNavLayer_Menu
+0x003a9950: g.NavLayer == ImGuiNavLayer_Main || g.NavLayer == ImGuiNavLayer_Menu
+0x003b1660: C:\SR_Frontline\mod\third_party\imgui\imstb_rectpack.h
+0x003b1820: C:\SR_Frontline\mod\third_party\imgui\imstb_truetype.h
+0x003b1e90: C:\SR_Frontline\mod\third_party\imgui\imgui_draw.cpp
+0x003b70c0: C:\SR_Frontline\mod\third_party\imgui\imgui_tables.cpp
+0x003ba1a0: C:\SR_Frontline\mod\third_party\imgui\imgui_widgets.cpp
+0x003ba4b0: (flags & (ImGuiComboFlags_NoArrowButton | ImGuiComboFlags_NoPreview)) != (ImGuiComboFlags_NoArrowButton | ImGuiComboFlags_NoPreview)
+0x003bb430: C:\SR_Frontline\mod\third_party\imgui\imstb_textedit.h
+0x003bc800: button_flags & ImGuiButtonFlags_PressedOnDragDropHold
+0x003bd788: !window->DC.MenuBarAppending
+0x003bd7e0: window->Flags & ImGuiWindowFlags_MenuBar
+0x003bd848: window->DC.MenuBarAppending
+0x003bd980: (0) && "Calling EndMainMenuBar() not from a menu-bar!"
+0x003bde10: (flags & ImGuiTabItemFlags_Button) == 0
+0x003bdf80: !p_open || !(flags & ImGuiTabItemFlags_Button)
+0x003be120: !is_tab_button || !(tab_bar->SelectedTabId == tab->ID && is_tab_button)
+0x003be3e0: C:\SR_Frontline\mod\third_party\imgui\imgui_impl_dx11.cpp
+0x003bed50: C:\SR_Frontline\mod\third_party\imgui\imgui_impl_win32.cpp
+
+=== string counts ===
+ASCII strings >=5: 12417
+UTF-16LE strings >=5: 1032

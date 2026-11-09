@@ -1,0 +1,386 @@
+=== PE summary ===
+file: reputation.dll  size: 825344 bytes
+machine: 0x8664 (x64)  sections: 6  characteristics: 0x2022 DLL
+time date stamp: 0x6ab18b03
+optional header magic: 0x020b (PE32+)
+number of rva+size entries: 16
+.text        vaddr=0x00001000 vsize=0x08bcb0 raddr=0x0008be00 rsize=0x000400 ptr=0x000400 chars=0x60000020 CODE
+.rdata       vaddr=0x0008d000 vsize=0x03569c raddr=0x00035800 rsize=0x08c200 ptr=0x08c200 chars=0x40000040 DATA
+.data        vaddr=0x000c3000 vsize=0x5e6bd8 raddr=0x00001e00 rsize=0x0c1a00 ptr=0x0c1a00 chars=0xc0000040 DATA
+.pdata       vaddr=0x006aa000 vsize=0x0054b4 raddr=0x00005600 rsize=0x0c3800 ptr=0x0c3800 chars=0x40000040 DATA
+.fptable     vaddr=0x006b0000 vsize=0x000100 raddr=0x00000200 rsize=0x0c8e00 ptr=0x0c8e00 chars=0xc0000040 DATA
+.reloc       vaddr=0x006b1000 vsize=0x0007c4 raddr=0x00000800 rsize=0x0c9000 ptr=0x0c9000 chars=0x42000040 DATA
+
+=== data directories ===
+EXPORT          rva=0x000c1b30 size=0x000088
+IMPORT          rva=0x000c1bb8 size=0x00003c
+RESOURCE        rva=0x00000000 size=0x000000
+EXCEPTION       rva=0x006aa000 size=0x0054b4
+SECURITY        rva=0x00000000 size=0x000000
+BASERELOC       rva=0x006b1000 size=0x0007c4
+DEBUG           rva=0x000b9040 size=0x00001c
+COPYRIGHT       rva=0x00000000 size=0x000000
+GLOBALPTR       rva=0x00000000 size=0x000000
+TLS             rva=0x000b9200 size=0x000028
+LOAD_CONFIG     rva=0x000b8f00 size=0x000140
+BOUND_IMPORT    rva=0x00000000 size=0x000000
+IAT             rva=0x0008d000 size=0x000338
+DELAY_IMPORT    rva=0x00000000 size=0x000000
+COM_DESCRIPTOR  rva=0x00000000 size=0x000000
+
+=== exports ===
+dll name: reputation.dll  ordinal base 1, 3 funcs, 3 named
+  exp TsmPluginApiVersion                           ord=0 rva=0x00000000
+  exp TsmPluginInit                                 ord=1 rva=0x00068be0
+  exp TsmPluginStart                                ord=2 rva=0x00068bf0
+
+=== imports ===
+dll: USER32.dll
+   GetAsyncKeyState
+   CallNextHookEx
+   UnhookWindowsHookEx
+   SetWindowsHookExW
+   GetWindow
+   GetWindowThreadProcessId
+   EnumWindows
+   GetClientRect
+   GetForegroundWindow
+   GetSystemMetrics
+   IsWindowVisible
+dll: KERNEL32.dll
+   DeleteCriticalSection
+   WriteConsoleW
+   SetEndOfFile
+   HeapSize
+   SetStdHandle
+   CreateFileW
+   GetStringTypeW
+   GetProcessHeap
+   CreateFileA
+   DeleteFileA
+   FindClose
+   FindFirstFileA
+   FindNextFileA
+   FlushFileBuffers
+   GetFileAttributesA
+   GetFileSizeEx
+   ReadFile
+   WriteFile
+   CloseHandle
+   GetLastError
+   QueryPerformanceCounter
+   QueryPerformanceFrequency
+   InitializeCriticalSection
+   EnterCriticalSection
+   LeaveCriticalSection
+   WaitForMultipleObjects
+   GetCurrentProcess
+   GetCurrentProcessId
+   CreateThread
+   GetCurrentThreadId
+   FlushInstructionCache
+   GetSystemInfo
+   GetLocalTime
+   GetTickCount64
+   VirtualProtect
+   VirtualQuery
+   GetModuleHandleA
+   GetProcAddress
+   CopyFileA
+   MoveFileExA
+import descriptors: 2
+
+=== interesting strings ===
+0x0008ce78: buildings
+0x0008ce88: building_name
+0x0008d260:   PERF  [%s] the country tags resolved %lld new label id(s) in %.0f ms during the game's 2D pass - a menu drawing workshop names for the first time. Once per id for the whole session.
+0x0008dd0e:         itself, so the panel and the tab headings read but the
+0x0008dec0:   ui    %s took the strings (it answered %d, which is neither an id nor an index), but none of the %d ids below zero reads back as our own text%s. The headings and the panel title are drawn by this plugin and are fine; only the tooltips the GAME draws keep its own words. [ui] engine_strings = 0 stops it trying.
+0x0008e0b0:   ui    %d label(s) registered with the engine, ids %d..%d - these are the ones the game draws itself, like the sidebar and the tab tooltips
+0x0008e140:   ui    the engine is not holding our words, so the bottom tab and its group headings fall back to the game's own 0x%X ("Secret police"). They CANNOT use the mod's own id: that part of the screen is drawn by C3DDLL64.dll, which does not go through this plugin's hook, and an id it cannot resolve comes back as whatever is left in a shared buffer - a random building name. Set [ui] tab_string_id to choose a different one.
+0x0008e2f0:   (the engine's own, so the tooltips read too - provisional: the game rebuilds its language table after plugins start, and these follow it)
+0x0008e3b0:   ui    labels: tab and section 0x%X, sidebar 0x%X%s
+0x0008e530:   ui    labels now: tab and section 0x%X (was 0x%X), sidebar 0x%X (was 0x%X), %d word(s) held by the engine. A tab or sidebar entry already on screen is corrected the next time it is checked.
+0x0008e5f8: reputation panel body
+0x0008e610: drawing inside the panel faulted
+0x0008e638: the panel's contents (game 2D pass)
+0x0008eee8: reput    too many building types watched, %d dropped
+0x0008ef20:   BUILDING rescan requested - forgetting every resolved building type
+0x0008ef70:   BUILDING more than %d distinct building types are standing - types past that are not counted or matched. Raise BTYPE_MAX.
+0x0008eff0:   BUILDING "%s" resolved to descriptor %p (object "%s")
+0x0008f028: reput    found building type "%s"
+0x0008f050:   BUILDING %d building type(s) read in %.0f ms (%d memory queries) - kept for as long as this world is open, so the daily count is a table lookup (step 207)
+0x0008f0f0:   BUILDING "%s" is not standing. Either none is built, or the name is wrong - it must be the OBJECT name (the folder), which for workshop content is prefixed with the item id. Section 8b of reputation-debug.txt lists every object name in the republic.
+0x0008f9b8: buildings_game.bin
+0x0008fc20:   notify  the world has nothing readable at +0x%X or +0x%X - this build's notification bar is not where [sites] says. Nothing else is affected.
+0x00090288: reputation arrivals: a building
+0x000906c0:   ARRIVE  %d from %s housed in %d building(s), %d child(ren) with them%s (%s)
+0x00090710:   ARRIVE  %.0f ms, %d building(s) with room (%d places)
+0x00090750:   ARRIVE  %d waiting and the interface pass has not come in 120 frames. They are made at its first EndDraw, where the game's own invite buttons run, and nowhere else - so they wait for it. If the interface is showing, the start of this log says whether EndDraw was hooked.
+0x000908e8:  Trade with %s resumes.
+0x00090900:  Trade with %s will stop.
+0x00091200: have %.0f finished buildings of type %d
+0x00091240: BUILD %.0f more "%s" within %d days
+0x00091268: BUILD %.0f more buildings of type %d within %d days
+0x00091ad0:   TRADE   the statistics vector shrank (%d -> %d) - a different save. Trade counting restarts from here.
+0x00091b40:     TRADE  %s %-16s went DOWN by %.3f (was %.3f, now %.3f) - the carry-forward missed a rollover
+0x00092f10:   HOOK    %s: exe+0x%X is neither this build's code nor a standard jump (%02X %02X %02X %02X) - left alone
+0x00093080:   BORDER  the %s border is SHUT - %s: no trade either way%s%s
+0x000930f0:  (the trade hook is not in: only the purchase switches apply)
+0x00093250:   CUSTOMS  refused in the last month (building ticks): selling east %ld / west %ld, buying east %ld / west %ld, arrivals east %ld / west %ld
+0x00093d00:     THE ONES MARKED "varies" ARE THE CANDIDATES. Open a citizen in game and read their loyalty, health and happiness off the panel; the column whose spread matches is the field. Then set [population] loyalty_field to that offset.
+0x00094060:           The republic holds %d people, and the last three runs say it has about 5291 buildings. A census that finds the buildings can be believed about the people.
+0x00094198:    <- about the buildings
+0x000947a0:         NONE of them is anywhere in memory, in any of the three forms. So the game does not hold this number the way it writes it - it is computed when the panel asks, or kept as something other than a proportion. The next thing to try is catching the panel drawing it: [debug] find_value on the number the screen shows, or the string hook on the population page.
+0x00098330:           nothing is lifting loyalty or holding down crime, so nothing is written. Build an Espionage HQ, or give an institution loyalty_bonus / crime_multiplier in the ini.
+0x000997ec: inline
+0x000999c8: an inline array
+0x00099c10:   PROBE   none of those is within 25%% of the population. The list the FIND scan picked is an array of something else that carries proportions - buildings and vehicles both do.
+0x0009a270: the statistics record could not be read, so trade is back to the day's net treasury change - imports will read as zero on any day the republic turned a profit. Check [sites] stats_begin / stats_end.
+0x0009a338: day: trade
+0x0009a348: day: buildings
+0x0009a640: trade mission rebate
+0x0009a930:     trade  imported %8.1f t  (%.0f rub, %.0f usd)   exported %8.1f t  (%.0f rub, %.0f usd)
+0x0009a9f0:   WORLD   closed - back to the menu
+0x0009aa20: world %p has day %d year %d at +0x%X/+0x%X - not a date, so those two offsets are wrong for this build
+0x0009ac30:   BUILDINGS type %d: %d standing
+0x0009af20: reputation panel
+0x0009af38: reput    panel faulted - panel off
+0x0009b1a8: reputation panel click
+0x0009b258: reputation panel place
+0x0009b288: panel place+draw
+0x0009b2e8: reputation sidebar
+0x0009b300: reput    sidebar faulted - off
+0x0009b320: the sidebar faulted
+0x0009b338: sidebar
+0x0009b3a0:   panel  %-16s NOT FOUND - neither imported nor exported
+0x0009b3f0: ?BeginDraw@C3D_PANEL2D@@QEAAXPEBD_N@Z
+0x0009b420: ?EndDraw@C3D_PANEL2D@@QEAAXXZ
+0x0009b448: ?Draw@C3D_PANEL2D@@QEAAXMMMMM_N@Z
+0x0009b480: ?DrawFrom9Patch@C3D_PANEL2D@@QEAAXUC3DRECT@@MMMMMM@Z
+0x0009b4c8: ?SetColor@C3D_PANEL2D@@QEAAXAEBVC3DFCOLOR@@@Z
+0x0009b508: ?SetDimensions@C3D_PANEL2D@@QEAAXMM@Z
+0x0009b540: ?SetPosition@C3D_PANEL2D@@QEAAXAEBVC3DVECTOR3@@@Z
+0x0009b588: ?SetWhiteOverlay@C3D_PANEL2D@@QEAAXM@Z
+0x0009b5c0: ?Collision@C3D_PANEL2D@@QEAA_NVC3DVECTOR3@@MM@Z
+0x0009b800:   panel  %s   panel2d @ +0x%06X   input @ +0x%06X   stage %d
+0x0009b868:   panel  texture control %s   9-patch %s
+0x0009b898:   panel  [%s] %s was "%s" - read as "%s"
+0x0009b8c8: the panel wanted more than %d textures - "%s" refused
+0x0009b900: panel texture load
+0x0009b930:   panel  texture "%s" FAILED (object %s, load returned %d) - that draw falls back to the inherited sheet
+0x0009b9a0:   panel  texture "%s" ready (load returned %d)
+0x0009b9d0: panel GetMouseSolid
+0x0009ba10:   panel  shaders: middlepoint+0x38 = %p, panel+0x278 = %p%s
+0x0009ba50: panel SetTexture
+0x0009ba68:   panel  GetMouseSolid faulted - panel off
+0x0009baa0:   panel  mouse %8.2f %8.2f %8.2f   lpress %d   over-panel %d   hook %d, %ld call(s)
+0x0009baf8: panel stage 2 calibration
+0x0009bb18:   panel  stage 2 faulted - panel off
+0x0009bb80:   panel  calibration card at %.0f,%.0f  %.0fx%.0f  ticks every 50px
+0x0009bbc8: panel stage 3 window
+0x0009bbe0:   panel  stage 3 faulted - panel off
+0x0009bc48: cursor is %s the panel
+0x0009bc60:   panel  CLICK taken on the panel - the game did not see it
+0x0009bca0: panel stage 4 ninepatch
+0x0009bcb8:   panel  stage 4 faulted - back to stage 3
+0x0009bce8: reputation panel (hooked pass)
+0x0009bd08:   panel  faulted inside the interface pass - panel off
+0x0009bd40:   panel  hook %d has not fired in 120 frames - falling back to the terrain pass. Try [ui] panel_hook = %d, or 0 to stay here.
+0x0009beb8: panel RenderingGetShader
+0x0009bed8: panel fill
+0x0009bee8: the panel's shapes (text flush)
+0x0009bfa0:   tab   vector span %llu is not a multiple of %d - that is not the tab vector on this build - declined
+0x0009c080:   tab   no building type named "%s" - skipped
+0x0009c120:   tab   the building registry pointers at +0x%X are unreadable
+0x0009c2f0:   tab   %d group(s) built from [ui] tab_buildings, %d name(s) not found, vector says %llu
+0x0009c6e0:   tab   [ui] tab_enable is on, but this is not the build the addresses were read off. Declined - set [sites] build_stamp to this build only if you know the offsets still hold.
+0x0009ce60:   menu  "%s" -> ui %d  contracts %d  blueprints %d  debug %d
+0x0009cea0:   menu  screen height unreadable - strip off
+0x0009ced0: docked in the panel
+0x0009cef8:   menu  %s at x %.0f y %.0f, %d entries in %d column(s)
+0x0009cfc0:   side  span %llu does not divide by %d - not this vector on this build - declined
+0x0009d098: reputation: another plugin's panel
+0x0009d0c0:   side  the panel registered as "%s" faulted while drawing - that one is switched off for this run, nothing else is.
+0x0009d138: reputation: another plugin's panel size
+0x0009d160:   side  panels with items:
+0x0009d288: reputation sidebar icon
+0x0009d380: reputation sidebar icons
+0x0009d3d0:   item  [ui] sidebar_item is on, but this is not the build these addresses were read off. Declined.
+0x0009d438:   item  there is no sidebar panel called "%s" - declined
+0x0009d520:   item  adding "%s" to the "%s" panel - %llu item(s) now, icon editor/%s_%s.png
+0x0009d570: reputation sidebar item
+0x0009d658:   item  "%s" is item %d of the "%s" panel
+0x0009d700:   side  [ui] sidebar is on, but this is not the build these addresses were read off. Declined.
+0x0009d760: reputation sidebar label
+0x0009d780:   side  three attempts and "%s" is still not in the sidebar - giving up rather than retrying forever
+0x0009d980: reputation sidebar push
+0x0009db10:   side  "%s" is in the sidebar
+0x0009db30:   side  panel scan armed at exe+0x%X, %u bytes: %d page(s) readable, %d not. Click two or three sidebar buttons, then F10 twice.
+0x0009dc00:   side  trace finished - a smooth ramp means the panel animates and our content can follow it; a flat line means this is not the field. [debug] panel_width_trace = N restarts it.
+0x0009dcb8: reputation panel width
+0x0009dcd0:   side  writing the panel width faulted - left alone from here
+0x0009dd10:   side  writing %.1f to g_ui+0x%04X while our panel is open ([debug] panel_width_set = 0 stops this)
+0x0009dd78:   side  panel floats for "%s":
+0x0009ddd0: reputation sidebar deselect
+0x0009ddf0:   side  clearing the selection faulted - left alone from here, and the button latches instead of pushing
+0x0009de60:   side  selection cleared after the press, so the game draws no empty panel of its own ([ui] sidebar_hides_panel = 0 stops this)
+0x0009def0:   side  [ui] in_panel off - %s. The window floats again and the button goes back to sidebar_hides_panel = %d.
+0x0009df60: reputation panel select
+0x0009df98: reputation panel deselect
+0x0009dfe0: reputation panel size
+0x0009dff8: sizing the panel faulted
+0x0009e020:   side  panel sized: right edge %.0f -> %.0f (%.0f px), bottom %.0f -> %.0f px, top %.0f px
+0x0009e080:   side  a window has been open for four seconds and the panel has not drawn it - the windows come back to the terrain pass until it does
+0x0009e110:   side  the panel is drawing again - the windows go back inside it
+0x0009e158: there is no sidebar entry to draw the panel in
+0x0009e190:   side  180 frames selected and the panel background has not been seen being drawn - in_panel has nothing to put our content inside. The rectangle hooks are at exe+0x31E478 and 0x31E509.
+0x0009e250: the panel background was never seen being drawn
+0x0009e280: the panel body hook has never once fired
+0x0009e2b0:   side  in-panel: screen %dx%d  scale %.3f.  The game drew its panel background %.0f x %.0f centred on %.0f,%.0f - so the paper runs %.0f..%.0f across, %.0f..%.0f down. Our content starts %.0f,%.0f.  (in_panel_w %.0f -> right edge %.0f)
+0x0009e3a0:   item  "%s" chosen in the "%s" panel - opening the reputation window
+0x0009e3e8:   side  another sidebar entry chosen - panel closed
+0x0009e420:   side  the selection is being re-asserted faster than a person could click it (%u presses inside 30 frames) - clearing turned off, the button latches from here
+0x0009e4d8:   side  "%s" pressed - panel %s (sub-tab %d)
+0x0009e5d0: no trade with %s%s
+0x0009e7d0:   BUILDING rescan finished - soviet %d, western %d, and every headquarters and named building with them
+0x0009eb00:    %s: %s - no trade%s%s
+0x0009edb0:    BUILD AN EMBASSY TO UNLOCK CONTRACTS
+0x0009ee20:    The two embassies are in the attractions tab of the build menu.
+0x0009ee98:    BUILD A SOVIET EMBASSY TO UNLOCK SOVIET CONTRACTS
+0x0009ef08:    BUILD A WESTERN EMBASSY TO UNLOCK WESTERN CONTRACTS
+0x0009f728: - build one for contracts
+0x0009f9c8:  1/6  SITES - every address this build depends on
+0x0009fbe0:    buildings +0x%X    %d finished, %d distinct types seen
+0x0009fde0:      once a day    one walk of the building list, for everything that asks
+0x000a0500:    import is the day's OUTFLOW, an approximation - not per-resource trade
+0x000a06e8: finished buildings of that type - CTRL+E rescans
+0x000a0720: finished buildings with that name - CTRL+E rescans
+0x000a0760: buildings of that name finished SINCE you signed - CTRL+E rescans
+0x000a07b0: buildings of that type finished SINCE you signed - CTRL+E rescans
+0x000a09e0:    republic it has nowhere to put its diplomats. Build an embassy,
+0x000a0bb0:      trade has fallen back to the treasury approximation. See the log.
+0x000a0c50:      NOT MOVING. This counts only trade in the bloc's own currency -
+0x000a1170:  REPUTATION DEBUG   build %s   PAGEUP / PAGEDOWN   F10 closes
+0x000a1340:   ui     wheel: %ld notch(es) taken and NONE spent - the hook is swallowing the camera's zoom and nothing here is using it. Handing the wheel back for the rest of this run. The panel's scrollbar and the page arrows still work; [ui] mouse_wheel = 0 stops it being tried at all. Please send this log.
+0x000a1608: building #%lld of type %d
+0x000a1628:   no finished buildings of type %d are standing
+0x000a1bb2:   or this build keeps them somewhere else.
+0x000a1e3e:       - build a church, a pub and a cinema in one town and nothing
+0x000a27bb:   buildings +0x%-8X %d finished, %d distinct types, %d with +0xEA8 set
+0x000a2e3d:   rather than a per-building setting, this is where it will show.
+0x000a2e90: 8c. THE LEFT SIDEBAR  (the vector a sidebar button would join)
+0x000a2f2b:   address is wrong for this build, or it is not built yet.
+0x000a3116:   *** dangle. A sidebar button is not possible without
+0x000a33c0: 8e. SIDEBAR SUB-ITEMS  (the vector at +0x48 - a panel's contents)
+0x000a3420:   the sidebar vector is not readable.
+0x000a3508:   panel's contents live after all.
+0x000a35d0: 8d. PANEL SCAN  (what moves when the selected sidebar entry does)
+0x000a3688:   [debug] panel_scan is 0 - nothing is being watched.
+0x000a370d:   [ui] sidebar must be 1, and TWO different sidebar buttons
+0x000a374a:   have to be clicked - Economy and trade, then ours.
+0x000a37d0:   panel geometry lives somewhere else - move [debug]
+0x000a3806:   panel_scan_at - or every page here was unreadable (see the
+0x000a39af:   *** [debug] panel_scan_at / panel_scan_bytes.
+0x000a39f0: 8b. BUILDING TYPES IN USE  (distinct descriptors among standing buildings)
+0x000a3a88:       +0x%03X inline  "%s"
+0x000a3f29:   because it means ROFF_NAME is wrong for your build.
+0x000a40c0:   side  [ui] in_panel_w = %.0f, in_panel_bottom = %.0f - put these in the ini to keep them
+0x000a4120: Posted with CTRL+SHIFT+N from the Diplomacy panel. If you can read this, the mod's events reach the notification bar.
+0x000a45a0:   side  another plugin %s the panel for sidebar entry "%s"
+0x000a4bd0: reput    event "%s" found no free building slot for prevented_by
+0x000a4c18: category
+0x000a4c28: category_cooldown
+0x000a4f38: building_type
+0x000a5130: reput    contract "%s" is kind building_name with no building_name - it can never be met
+0x000a6240:   INTEL "%s" names research "%s" which is not in [unlocks], or has no offset on this build - nothing granted
+0x000a69b0:   INTEL a %s operation is in preparation and nobody of ours has heard about it. Build a Foreign Espionage HQ.
+0x000a70f0: hq_building
+0x000a7100: post_building
+0x000a7318: needs_building
+0x000a7330: reput    operation "%s" wants building "%s" but every named slot is taken - it can never be launched. Raise MAX_NAMED.
+0x000a7c80:    Nothing available. Build an intelligence facility, or wait for points.
+0x000a82c0: reput    diplomatic action "%s" wants building "%s" but every named slot is taken. Raise MAX_NAMED.
+0x000aaa80: panel_stage
+0x000aaa90: panel_x
+0x000aaa98: panel_y
+0x000aaaa0: panel_w
+0x000aaaa8: panel_h
+0x000aaac8: panel_texture
+0x000aaaf0: panel_window
+0x000aab00: panel_hook
+0x000aab20: menu_dock
+0x000aab30: sidebar_hides_panel
+0x000aab48: sidebar_item
+0x000aab58: in_panel
+0x000aab68: in_panel_w
+0x000aab78: in_panel_bottom
+0x000aab88: in_panel_pad_x
+0x000aab98: in_panel_pad_y
+0x000aaba8: in_panel_foot
+0x000aabb8: menu_icons
+0x000aabc8: menu_icon_size
+0x000aabd8: menu_icon_gap
+0x000aac80: editor/ScrollBarScrollButton.png
+0x000aacb8: editor/ScrollBarUpButton.png
+0x000aace8: editor/ScrollBarDownButton.png
+0x000aad20: reput    [ui] in_panel needs [ui] sidebar - in_panel off, the windows float
+0x000aad70:   side  [ui] in_panel needs the game's panel on screen, so sidebar_hides_panel is off for this run
+0x000aade0:   side  [ui] in_panel puts every window in one panel, so menu_dock is on for this run
+0x000aae38: trade
+0x000aae40: sidebar_item_panel
+0x000aae58: sidebar_item_name
+0x000aae70: panel_scan
+0x000aae80: panel_width_at
+0x000aae90: panel_width_span
+0x000aaea8: panel_width_set
+0x000aaeb8: panel_width_trace
+0x000aaed0: panel_scan_at
+0x000aaee0: panel_scan_bytes
+0x000aaef8: menu_dock_col_w
+0x000aaf60: panel_title
+0x000aafe0:   ui    [ui] panel_title is empty, so the tab heading goes back to the game's own 0x187A - set tab_string_id yourself if you want a different one
+0x000ab140: tab_buildings
+0x000ab150: tab_menu
+0x000ab15c: menu_x
+0x000ab168: menu_up
+0x000ab170: menu_col_w
+0x000ab7d0: reput    [population] loyalty_field/crime_field need record_bytes (or list_stride, for an inline list) - without one there is no way to know the write lands inside a citizen. Both cleared; run [debug] citizen_probe.
+0x000abbe8: per_building
+0x000abc00: reput    deterrent framework on - %d category rule(s), and nothing yet produces a warhead
+0x000abd70: trade_vectors
+0x000ac058: border_trade
+0x000ac078: building_tail
+0x000ac120: REPUTATION TRACE   build %s
+0x000ac210: dump_sidebar_items
+0x000accf8: build_stamp
+0x000acd08: build 0x%08X - the one every offset was read off
+0x000acd40: reput    ** build 0x%08X, offsets came from 0x%08X - check [sites] **
+0x000acd88: ** build 0x%08X, offsets came from 0x%08X - check [sites] **
+0x000ad370:   RESOURCES  could not write plugins\resources.ini (error %lu) - add the lines from ADD-TO-resources.ini.txt by hand, or the arms factories will crash the build menu.
+0x000ad6c0:   VISA    could NOT hook exe+0x%X - its first bytes are not this build's, or another plugin has it. A held visa is only the once-a-day byte, which the game rebuilds at every day change, so tourists will get through.
+0x000ad798: customs trade
+0x000ad840:   CUSTOMS  the customs block is ON: trade %s, electricity %s, pipeline %s, arrivals %s; the game's permission switches %s. [borders] customs_block = 0 turns all of it off.
+0x000ada50: LIVE - this build will change game state
+0x000adb50: C3D_PANEL2D::SetDimensions
+0x000adb70: C3D_PANEL2D::SetPosition
+0x000adb90:   side  panel-rectangle hooks armed at exe+0x%X and 0x%X - the panel holds the width in_panel_w asks for, and our content is placed from the rectangle the game draws
+0x000adc40:   side  SetDimensions %s, SetPosition %s in the import table - in_panel cannot find the panel and stays off
+0x000adcb0: C3D_PANEL2D::SetReallyRender
+0x000adcd0: ?SetReallyRender@C3D_PANEL2D@@QEAAX_N@Z
+0x000adcf8:   panel  interface-pass hook installed
+0x000add20:   panel  SetReallyRender is NOT in the import table - the interface pass is unreachable, using the terrain pass
+0x000add90: C3D_PANEL2D::EndDraw
+0x000addb0:   panel  EndDraw is not in the import table - hook 2 unavailable
+0x000addf8: C3D_PANEL2D::Draw
+0x000ade10:   panel  Draw is not in the import table - hook 3 unavailable
+0x000ae0b0:   side  panel-body hook armed at exe+0x%X - our windows will draw inside the sidebar panel
+0x000c2390: editor/button_view.png
+0x000c2410: editor/trade_loanrub.png
+0x000c2490: editor/trade_loanusd.png
+
+=== UTF-16LE interesting strings ===
+
+=== string counts ===
+ASCII strings >=5: 4662
+UTF-16LE strings >=5: 375

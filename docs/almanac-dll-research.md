@@ -1,6 +1,6 @@
 # Researching other mods' DLLs for Almanac integration
 
-**Status:** Proposed read-only investigation. No third-party mod DLL has yet been supplied or analyzed for this task. No code, hook, game change, execution of a third-party DLL, commit, or redistribution is authorized by this plan alone.
+**Status:** Frontline's installer, configuration, PE report and DLL have received an [initial static triage](almanac-frontline-triage.md), including a bounded independent disassembly. No third-party code was executed. No game implementation, hook, game change, commit, or redistribution is authorized by this plan alone.
 
 ## Why this may help
 
