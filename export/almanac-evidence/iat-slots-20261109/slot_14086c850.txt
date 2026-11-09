@@ -1,0 +1,50 @@
+Program: SOVIET64.exe
+Image base: 0x140000000
+Slot: 0x14086C850
+
+External libraries:
+  ext symbol: GetMouseRelative @ EXTERNAL:00000107
+  ext symbol: GetMouseSolid @ EXTERNAL:0000010e
+  ext symbol: GetMouseLeftPressAOff @ EXTERNAL:00000117
+  ext symbol: GetMouseLeftPress @ EXTERNAL:00000118
+  ext symbol: GetMouseLeftDown @ EXTERNAL:00000119
+  ext symbol: GetMouseRightPress @ EXTERNAL:0000012e
+  ext symbol: GetMouseMiddleDown @ EXTERNAL:00000163
+  ext symbol: GetMouseRightDown @ EXTERNAL:00000164
+  ext symbol: SetMouseSolidOffset @ EXTERNAL:000001b4
+  ext symbol: GetMouseSolidWithInvZoom @ EXTERNAL:00000272
+  ext symbol: RefreshMousePositionOnly @ EXTERNAL:00000274
+  ext symbol: GetMouseRightPressAOff @ EXTERNAL:000002b2
+
+External locations at slot:
+  <none>
+
+External locations named containing GetMouseLeftPress:
+  <none>
+
+Bytes around slot (-8..+24):
+DA A2 98 00 00 00 00 00 02 A3 98 00 00 00 00 00 
+34 A3 98 00 00 00 00 00 6C A3 98 00 00 00 00 00 
+90 A3 98 00 00 00 00 00 
+
+Reference types to slot:
+  [READ] from=0x1400A9813
+  [READ] from=0x1400CA439
+  [READ] from=0x1400CAC7B
+  [READ] from=0x1400CADB4
+  [READ] from=0x1400CAECF
+  [READ] from=0x1400CB095
+  [READ] from=0x1400CB1AE
+  [READ] from=0x1400CB4E1
+  [READ] from=0x1400CB747
+  [READ] from=0x1400CBA8F
+  [READ] from=0x1400CBD1E
+  [READ] from=0x1400CE43D
+  [READ] from=0x1400CE4E9
+  [READ] from=0x1400CE649
+  [READ] from=0x1400CE810
+  [READ] from=0x1400CE90F
+  [READ] from=0x1400CE9E8
+  [READ] from=0x1400CEBA9
+  [READ] from=0x1400CEE14
+  [READ] from=0x1400CFBC8
