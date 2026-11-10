@@ -89,6 +89,15 @@ inline bool SameGate(const RowGate& a, const RowGate& b)
            a.skip578 == b.skip578 && a.skip5e0 == b.skip5e0;
 }
 
+// True when every geometry constant is the same. The values are read from
+// game memory, not computed, so exact equality is the intended test: any
+// change, however small, means the pass was built on different geometry.
+inline bool SameConstants(const RowConstants& a, const RowConstants& b)
+{
+    return a.scale == b.scale && a.originA == b.originA &&
+           a.originB == b.originB && a.pitch == b.pitch;
+}
+
 // Tracks one candidate row pass at a time. Call OnRowTile for every row-site
 // Draw, in call order, with the tile position the handler stored just before
 // the call. Call Reset() whenever the plugin cannot read the row state, so no
@@ -101,6 +110,7 @@ public:
         passCount_ = 0;
         passY_ = 0.0f;
         passGate_ = RowGate{};
+        passC_ = RowConstants{};
     }
 
     // -1 means idle or lost (waiting for a tile at the row origin).
@@ -125,22 +135,26 @@ public:
         }
 
         const float origin = c.scale * (c.originA + c.originB);
-        const float pitch  = c.scale * c.pitch;
 
         if (std::fabs(tileX - origin) <= kPositionTolerance) {
             // A tile at the origin starts a new candidate pass and drops any
-            // pass in progress. Row Y and the gate are captured from this tile.
+            // pass in progress. Constants, row Y and the gate are captured here.
             next_ = 0;
             passCount_ = g.count;
             passY_ = tileY;
             passGate_ = g;
+            passC_ = c;
         } else if (next_ < 0) {
             return Decision{Action::None, 0.0f, 0.0f, "not at row origin; idle"};
         }
 
-        // Every tile of a pass must agree with the pass's first tile: same row
-        // Y and same gate values. This is checked on every tile, including
-        // the last one that decides the draw.
+        // Every tile of a pass must agree with the pass's first tile: the same
+        // geometry constants, row Y and gate values. This is checked on every
+        // tile, including the last one that decides the draw.
+        if (!SameConstants(c, passC_)) {
+            Reset();
+            return Decision{Action::None, 0.0f, 0.0f, "scale or geometry changed mid-pass; lost"};
+        }
         if (std::fabs(tileY - passY_) > kPositionTolerance) {
             Reset();
             return Decision{Action::None, 0.0f, 0.0f, "row Y changed mid-pass; lost"};
@@ -150,7 +164,10 @@ public:
             return Decision{Action::None, 0.0f, 0.0f, "gate changed mid-pass; lost"};
         }
 
-        const float expected = origin + static_cast<float>(next_) * pitch;
+        // Positions use the constants captured at the pass's first tile.
+        const float passOrigin = passC_.scale * (passC_.originA + passC_.originB);
+        const float pitch      = passC_.scale * passC_.pitch;
+        const float expected   = passOrigin + static_cast<float>(next_) * pitch;
         if (std::fabs(tileX - expected) > kPositionTolerance) {
             Reset();
             return Decision{Action::None, 0.0f, 0.0f, "tile off sequence; lost"};
@@ -175,7 +192,7 @@ public:
         if (gate.skip5e0 == 0)         return Decision{Action::None, 0.0f, 0.0f, "skip 5E0 clear: visible count unknown"};
 
         return Decision{Action::DrawNinth,
-                        origin + static_cast<float>(count) * pitch,
+                        passOrigin + static_cast<float>(count) * pitch,
                         rowY,
                         "ok"};
     }
@@ -185,6 +202,7 @@ private:
     int passCount_ = 0;  // count captured at the pass's first tile
     float passY_ = 0.0f; // row Y captured at the pass's first tile
     RowGate passGate_{}; // gate captured at the pass's first tile
+    RowConstants passC_{}; // geometry constants captured at the pass's first tile
 };
 
 // Width of the ninth backdrop, the same as the native tile width (scale * P).

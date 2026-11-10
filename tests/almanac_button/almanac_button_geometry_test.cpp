@@ -363,6 +363,67 @@ static void TestNonFiniteTileMidPassDropsPass()
     CHECK(t.Next() == -1);
 }
 
+// Mixed state: each tile X still follows the pass's geometry (kC), but the
+// constants read for the call have changed. Only the constants check can
+// reject these. Position alone would accept them.
+static Decision TileMixed(RowTracker& t, int k, float y, const RowGate& g,
+                          const RowConstants& xGeometry, const RowConstants& readConstants)
+{
+    const float origin = xGeometry.scale * (xGeometry.originA + xGeometry.originB);
+    const float pitch  = xGeometry.scale * xGeometry.pitch;
+    return t.OnRowTile(origin + static_cast<float>(k) * pitch, y, readConstants, g);
+}
+
+// The scale read changes on the last tile, positions still follow kC.
+static void TestScaleReadChangesOnLastTileDrawsNothing()
+{
+    const RowConstants c2{0.9f, 45.0f, 85.0f, 64.0f};
+    RowTracker t;
+    for (int k = 0; k < 7; ++k) {
+        CHECK(Tile(t, k, kRowY, Good(), kC).action == Action::None);
+    }
+    CHECK(TileMixed(t, 7, kRowY, Good(), kC, c2).action == Action::None);
+    CHECK(t.Next() == -1);
+    // A clean pass on the original geometry afterwards still draws once.
+    int drawnAt = -1;
+    Decision last = RunPass(t, 8, Good(), kC, &drawnAt);
+    CHECK(drawnAt == 7);
+    CHECK(last.action == Action::DrawNinth);
+}
+
+// The scale read changes mid-pass, positions still follow kC.
+static void TestScaleReadChangesMidPassDrawsNothing()
+{
+    const RowConstants c2{0.9f, 45.0f, 85.0f, 64.0f};
+    RowTracker t;
+    for (int k = 0; k < 8; ++k) {
+        const RowConstants& read = (k >= 3) ? c2 : kC;
+        CHECK(TileMixed(t, k, kRowY, Good(), kC, read).action == Action::None);
+    }
+    CHECK(t.Next() == -1);
+}
+
+// originB and pitch reads change, positions still follow kC. These are the
+// cases where a scale-only comparison would miss the change.
+static void TestGeometryReadChangesDrawsNothing()
+{
+    const RowConstants cB{0.8f, 45.0f, 86.0f, 64.0f};   // originB read changes
+    RowTracker t;
+    for (int k = 0; k < 8; ++k) {
+        const RowConstants& read = (k >= 5) ? cB : kC;
+        CHECK(TileMixed(t, k, kRowY, Good(), kC, read).action == Action::None);
+    }
+    CHECK(t.Next() == -1);
+
+    const RowConstants cP{0.8f, 45.0f, 85.0f, 65.0f};   // pitch read changes on the last tile
+    RowTracker u;
+    for (int k = 0; k < 7; ++k) {
+        CHECK(Tile(u, k, kRowY, Good(), kC).action == Action::None);
+    }
+    CHECK(TileMixed(u, 7, kRowY, Good(), kC, cP).action == Action::None);
+    CHECK(u.Next() == -1);
+}
+
 int main()
 {
     TestEightTilePassDrawsNinthOnLastTile();
@@ -386,6 +447,9 @@ int main()
     TestCountRangeEnforced();
     TestCleanPassAfterFailedPassDraws();
     TestNonFiniteTileMidPassDropsPass();
+    TestScaleReadChangesOnLastTileDrawsNothing();
+    TestScaleReadChangesMidPassDrawsNothing();
+    TestGeometryReadChangesDrawsNothing();
     std::printf("almanac_button geometry: all tests passed\n");
     return 0;
 }
