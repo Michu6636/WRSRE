@@ -5,7 +5,8 @@ eighth tile of the Economy & Trade row. It is not clickable and handles no
 input. It is off by default (`almanac_button.ini`: `enabled = 0`).
 
 Status: the Windows glue is **not compiled or run** in the session that wrote
-it. Only `almanac_button_geometry.h` is host-tested, with g++ on Linux.
+it. There is no MSVC or `windows.h` in the sandbox. Only
+`almanac_button_geometry.h` is host-tested, with g++ on Linux.
 
 ## What the extra draw changes
 
@@ -23,8 +24,6 @@ This is **not** a change-free draw. "Draw only" means no input is handled.
   include per-widget or global draw state, hover or press state, or GPU state.
   Unverified.
 - **Plugin counters and log lines.**
-
-Known limitation: the ninth tile reuses the eighth tile's hover state.
 
 Not written by this plugin: the click latch `0xA54E91`, native selection, the
 City Hall TAX button and its layout, tax policy, saves, or game files.
@@ -87,6 +86,8 @@ frame. It only refuses to draw when the observed calls are inconsistent.
   from Init only when disabled, before anything is patched.
 - **Start non-zero:** the loader logs `started with N - inactive` and does
   **not** unload the DLL. A swap may already be in place.
+- **Start runs in a sequential loop** (`StartPlugins`, `src/tesmioloader.cpp`
+  lines 1473–1487) inside a `__try` whose filter logs the fault and returns -1.
 
 So once a swap has been written, the DLL stays loaded for the session. Start
 returns 0 when armed and 1 when inactive. The detour forwards valid calls in
@@ -99,14 +100,23 @@ both states.
 - **The swap's expected value is the pointer validated at Start**: the engine
   export, which must equal the slot at that point. The swap does not re-read the
   slot and adopt whatever it holds.
+- **The original protection is captured once**, by the first protect-set in
+  Start. Every later restore uses that recorded value. A later `VirtualProtect`
+  return value is **not** used as "the original". After a failed restore the page
+  stays `PAGE_READWRITE`, so a later call would report the wrong value.
+- Each restore is tried **twice**.
 - Three steps are reported as **separate outcomes**: making the page writable,
-  the exchange, and restoring the page protection.
+  the exchange, and restoring the original protection.
   - Page not writable: no exchange is tried, and nothing is written.
   - Exchange finds another value: nothing is written, and that value is left
-    alone. Protection is still restored, and its outcome is logged.
-  - Exchange succeeds but protection is not restored: the plugin **does not
-    arm**. It tries to undo its own write, and logs whether the undo succeeded.
-  - Arming requires **both** the exchange and the protection restore to succeed.
+    alone. The original protection is still restored, and its outcome is logged.
+  - Exchange succeeds, original protection **not** restored: the plugin **does
+    not arm**. It tries to undo its own write, using the same recorded original
+    protection. It logs whether the undo ran, what the slot held, and whether the
+    **original** protection is now in place. A failed undo leaves the page
+    writable, and the log says so.
+  - Arming requires **both** the exchange and the original protection restore to
+    succeed.
 - **This does not stop another writer.** A plain store from another plugin, from
   the engine, or from another thread can replace this plugin's detour at any
   time. Nothing here guarantees that another hook is never overwritten. The code
@@ -115,47 +125,94 @@ both states.
   came first, that copy is this detour. Its calls come from a different return
   address, so they are forwarded unchanged.
 - The detour always forwards valid calls. Once the slot has been written,
-  `g_drawOrig` is never cleared, so the detour stays correct while any copy of its
-  pointer may be reachable. The DLL is never unloaded by this plugin.
+  `g_drawOrig` is never cleared. The DLL is never unloaded by this plugin.
 - No unload entry point exists. An installed swap is undone only by
-  `RestoreOriginal`, or by restarting the game with `enabled = 0`.
+  `RestoreOriginal` (a planning fault), by the Start undo, or by ending the game.
 
-## Rect pair: failure policy
+## Rect pair: failure policy (fail-stop)
 
-The pair is 8 bytes at an 8-byte-aligned address. The plugin checks the alignment
-and readability at runtime. It then does these steps:
+The pair is 8 bytes at an 8-byte-aligned address, checked at runtime. Each step
+below ends in **FailStop** (a disposable-test fail-stop; see the next section)
+unless it succeeds:
 
 | Step | If it fails | Result |
 |---|---|---|
-| a) 8-byte load of the pair | faults | nothing written; drawing stops; ninth tile not drawn |
-| b) 8-byte store of the ninth pair | faults | a faulting aligned store writes nothing; drawing stops; ninth tile not drawn |
-| c) native ninth `Draw` | engine fault | propagates, as it would without the plugin |
-| d) 8-byte store of the saved pair | faults | **RECT DIRTY** is logged. The pair still holds the ninth-slot values. The plugin cannot undo this. |
+| a) address unreadable or misaligned | — | FAIL-STOP, before any write |
+| b) 8-byte load of the saved pair | faults | FAIL-STOP, before any write |
+| c) 8-byte store of the ninth values | faults | FAIL-STOP |
+| d) native ninth `Draw` (wrapped, see below) | engine fault | the pair is restored (step e), then FAIL-STOP |
+| e) 8-byte store of the saved pair | faults | `RECT DIRTY` is logged, then FAIL-STOP |
 
-Step (b) relies on the processor's behaviour for an aligned 8-byte store to a
-non-writable page. That behaviour is **not verified on this build**.
+Notes:
 
-Step (d) is an **unresolved residual**, not a safe failure. The plugin stops
-drawing and logs it, but the game continues with the ninth-slot values in the
-store. Treat such a session as suspect.
+- The plugin does **not** try to repair the pair or the import slot in a
+  fail-stop. Their state is **not assumed**. The pair is never read again to
+  decide anything after a failure.
+- Step (c) relies on the processor writing nothing for a faulting aligned store.
+  That is **not verified on this build**. The policy does not depend on it.
+- Step (e) is an **unresolved residual**. If it fails, the pair holds ninth-slot
+  values or an unknown mix. The plugin cannot put it back.
+- A fail-stop **is not** a safe state for the game. It is a containment step for
+  a disposable test.
 
-## Faults
+## FAIL-STOP: what the plugin does, and what it does not do
 
-- **Faults in this plugin's own code are caught.** The protected blocks contain
-  only the snapshot reads and tracker calls (`PlanRowTile`), and the 8-byte pair
-  load and store (`LoadRectPair`, `StoreRectPair`). Each handler only returns a
-  status or sets interlocked flags. Ordinary code does the cleanup.
-- **Faults inside the native `Draw` are not caught.** That covers both the eighth
-  tile (forwarded as before) and the ninth tile. They propagate as they would
-  without this plugin. Continuing after a fault in engine code can leave engine
-  state inconsistent, so this plugin does not swallow those faults.
+`FailStop` (in `almanac_button.cpp`):
+
+1. Writes `almanac_button  FAIL-STOP  <reason>` through the loader's `Logf`
+   (a direct `WriteFile` to the loader log).
+2. Writes a second FAIL-STOP line that says the pair and the import slot are not
+   assumed to be in any state.
+3. Calls `TerminateProcess(GetCurrentProcess(), 0xA1A10001)`.
+4. Calls `__fastfail(7)` as a backstop, if `TerminateProcess` returns.
+
+It does **not** restore the rect pair or the import slot. A log line alone does
+**not** stop the game. Ending the process does. Whether `TerminateProcess` ends
+the game in a Windows test is **not verified**.
+
+The ninth tile's native call is wrapped by `CallNinthNative`. Its handler only
+returns 1. It does not touch state. The caller then restores the pair and fails
+stop. This **changes** the earlier "engine faults propagate" policy **for the
+ninth tile only**. The eighth tile's native call still has no handler, and its
+faults propagate as they would without the plugin. This change needs the user's
+acknowledgement.
+
+Faults in the plugin's **own planning code** (`PlanRowTile`) are **not** a
+fail-stop. They disarm and call `RestoreOriginal`, unchanged from revision 3.
+
+## Windows-side containment (required for any test)
+
+The in-process fail-stop is the primary control. It is **not** verified in
+Windows. Use these steps as well:
+
+1. **Disposable machine or profile.** Use a disposable Windows VM with a snapshot
+   taken before the test. Install a disposable copy of the game in it. The
+   test must not use the real game folder or the real save folder.
+2. **Disposable saves.** Point the test at a save folder that holds only test
+   saves. Do not use a save that matters, because a fail-stop can happen while a
+   save is being written.
+3. **Operator watchdog.** Run a separate process, started by the operator, that
+   is not the game. It watches the loader log for `FAIL-STOP`. If it sees that
+   line, and the game process is still running after a short timeout (for
+   example 5 seconds), it ends that process by PID. This covers the case where
+   `TerminateProcess` returns or hangs. The watchdog is **not provided** in this
+   revision. It has to be written and tested on Windows.
+4. **Hang and crash handling.** If the game stops responding without a
+   `FAIL-STOP` line, the operator ends it by PID and treats the session as
+   suspect.
+5. **After any `FAIL-STOP` or `RECT DIRTY` line.** Stop the test. Revert the VM
+   snapshot. Do not reuse that save or profile.
+6. **Log lines to expect.** The loader's vectored crash logger
+   (`AddVectoredExceptionHandler`, `src/tesmioloader.cpp`) may write `=== CRASH`
+   lines for faults that this plugin then catches. A `CRASH` line alone is **not**
+   a fail-stop. The plugin's own `FAIL-STOP` line is the evidence for one.
+7. **Log file location** is set by the loader's configuration. It was **not**
+   checked in this session.
 
 ## Concurrency (assumptions, not verified)
 
 - `Draw` runs on one render thread. `Start` runs on the loader thread before the
-  first row draw. The loader runs `StartPlugins` as a sequential loop (verified in
-  `src/tesmioloader.cpp`). That the render thread does not patch the slot is an
-  assumption.
+  first row draw. That the render thread does not patch the slot is an assumption.
 - The compare-exchange removes the window between this plugin's validation and
   its write. It does not remove a concurrent writer that bypasses the check.
 
@@ -169,14 +226,19 @@ behaves as written.
 
 ## Still needs Windows testing (not authorized in this session)
 
-- Build with MSVC. Confirm the SEH blocks, `_ReturnAddress`, the compare-exchange
-  swap, `VirtualProtect`, and the import swap compile and link.
-- Enable in a disposable environment.
+- Build with MSVC. Confirm the SEH blocks, `_ReturnAddress`, `__fastfail`,
+  `TerminateProcess`, the compare-exchange swap, `VirtualProtect`, and the import
+  swap compile and link.
+- Enable in a disposable environment, following the containment steps above.
 - Confirm the ninth tile renders where expected, that all eight native buttons
   still work, that City Hall TAX is unchanged, and that there is no save
   corruption.
-- Confirm the restore path by a forced fault in the plugin's own code, and check
-  that the log records the restore result.
+- **Fail-stop test (forced).** Force one fault at a time and check that the
+  `FAIL-STOP` line appears and that the game process ends. Do this in a disposable
+  environment only. The cases: a forced rect-store fault; a forced ninth-Draw
+  fault; a forced restore fault. Check that the game process ends in each case.
+- **Protection test (forced).** Force a failed restore of the import protection
+  and check that the undo reports the original-protection outcome accurately.
 - Decide whether the RECT DIRTY residual is acceptable for a supervised test.
 - Document what the extra draw changes in the engine (see above). This is not
   established.
