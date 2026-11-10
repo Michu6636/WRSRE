@@ -32,8 +32,7 @@ Both paths converge at `0x140374356`: already-selected jumps directly here; chan
 
 | Register | Value | Volatile? | Notes |
 |----------|-------|-----------|-------|
-| RSI/RSI | game object pointer | Non-volatile | Base for selection write |
-| R14/R14 | game object pointer | Non-volatile | Base for counter write |
+| RSI/RSI | game object pointer | Non-volatile | Base for both stores |
 | EBX | clicked button index | Non-volatile (RBX low 32) | Read-only at hook point |
 | Flags | ZF set by preceding CMP | N/A | MOV does not affect flags |
 
