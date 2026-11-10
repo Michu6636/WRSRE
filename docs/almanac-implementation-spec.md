@@ -93,9 +93,9 @@ Each row is a proposal for the operator to approve, change, or reject. None is a
 4. A **press** anywhere in the native row rectangle, including a repeat press on the same tile. The trigger is the press edge, not an index change.
 5. A native section change, detected by the section identity, not by the index.
 6. Native window close, or a world or save load.
-7. Service state changing to absent or unreadable.
+7. Not a close trigger. A service state change keeps the panel open and updates the affected section per §5.0.
 
-**Return.** The Almanac never writes the native selected index or native content. On return, native state should be untouched. A PoC that shows the Almanac changes native state is a **stop condition** (§6.5). Restoration is not defined for that case.
+**Return.** The Almanac never writes the native selected index or native content. On return, native state should be untouched. Two categories are kept apart (§6.5): an **expected** native selection change follows a logged tester click on the native row, with no Almanac call between the click and the change. An **unintended, possibly mod-origin** change has no logged tester click, or follows an Almanac call. An unintended change is a **stop condition**. Restoration is not defined for that case.
 
 **State machine.** `CLOSED → OPEN(generation g)`. On each snapshot generation change while open, refresh the view. Close clears only panel state.
 
@@ -133,10 +133,10 @@ No feature rollback mechanism exists in this design. Candidates, all unproven: (
 
 ### 3.2 Persistence
 
-- **Facts (source).** Taxes persists to its own file, `tesmio_taxes.dat`, not into the game save. On load, a magic or version mismatch returns before any live value is assigned. Live values then stay at whatever Start set from `taxes.ini` [src `taxes.cpp` ~356–372].
+- **Facts (source).** Taxes persists to its own file, `tesmio_taxes.dat`, not into the game save. On load, a magic or version mismatch returns before any live value is assigned. The **prior in-memory values remain**: whatever the session already holds, set from `taxes.ini` at Start or by an earlier load or setter call. They are not assumed to be startup defaults [src `taxes.cpp` ~356–372].
 - **Scope.** The source does not show that an incompatible tax header discards the game save, and this specification does not claim it does. Whether the game's own save loader reacts to a missing or unreadable side file is **not established**.
 - **Related fact.** The taxes API header says a save written with taxes enabled and loaded with taxes disabled keeps its accrual fields, and nothing settles them [src `taxes_api.h`, "WHEN THIS PLUGIN IS ABSENT"]. Accrual fields belong to `enterprise_base`, not to the tax header.
-- **Rules for this proposal.** (a) Do not change `TaxSaveHeader` or `TAXES_VERSION`. (b) The v3 snapshot is in memory only. (c) Any future header change needs its own compatibility decision, covering what an old file does (today: live values stay at config defaults for that session) and what happens to accrued liabilities.
+- **Rules for this proposal.** (a) Do not change `TaxSaveHeader` or `TAXES_VERSION`. (b) The v3 snapshot is in memory only. (c) Any future header change needs its own compatibility decision, covering what an old file does (today: the prior in-memory values remain for that session, which may differ from config defaults) and what happens to accrued liabilities.
 - **Test, not assumed.** The legacy-file behavior is a consequence to test in the disposable copy (§6.2), not a fact to rely on.
 - The snapshot is in-memory only. `propertyStoredCurrency` is **not** re-derived from startup currency. After a save load it is `unknown`, because the file records no unit and `LoadTaxes` overwrites the live value (§1.1).
 
@@ -149,7 +149,14 @@ No feature rollback mechanism exists in this design. Candidates, all unproven: (
 ### 3.4 Unit rules
 
 - The Almanac shows the stored unit only when `propertyStoredCurrency` is known. When it is `unknown`, the value is shown as "unit unknown". The active currency is never substituted for the stored unit. Do not convert: no conversion rule exists for a running session [src §1.1].
-- The unit of a value written through `setTaxRate` is **not established** (S10). A value written by the Almanac or by City Hall is `unknown` until S10 is answered and the assignment is tracked.
+- **Setter input.** The `setTaxRate` header documents the property value as "in the active currency" [src `taxes_api.h`]. This is a documented input contract, not verified against the stored value's behavior. A value written through the setter is recorded as **documented active-currency input**, labelled as such. It is not an established unit of the stored value until S10 confirms it.
+- **Legacy saved values.** The unit of a value loaded from `tesmio_taxes.dat` is **unknown**. The file records no unit, and the load does not establish the currency it was saved in (§1.1). It is never assumed to match the active currency.
+- **Safe editing rule (proposal).**
+  1. Property editing requires a stored unit that is known and equal to the active currency. Under the current design that is not established, so property edits pass through the confirmation gate below.
+  2. Confirmation gate: the value is shown read-only with its unit label. The user re-enters the value, and the confirmation names the active currency. The entry is then written through the setter, re-read, and recorded as documented active-currency input.
+  3. A documented-input record is not treated as a known unit for editing. Each later edit passes through the gate again.
+  4. VAT and profit are fractions with no currency unit. This rule applies only to property tax.
+  5. No conversion, no derived display in a different unit, and no silent rewrite of a stored value.
 
 ### 3.5 Consumers
 
@@ -225,7 +232,7 @@ Each service is in exactly one resolution state:
 
 Rules:
 
-1. Every state other than `resolved` shows an explicit label, "unavailable: <state>", with the reason.
+1. One policy for every service. The panel stays open. The affected section shows an explicit label, "unavailable: <state>", with the reason. Other sections that remain usable are shown normally. No other section is closed or hidden because of that state.
 2. Writing controls are enabled only in `resolved`.
 3. **No tax-status claim is made from resolution.** A provider the Almanac cannot resolve means the Almanac cannot read the service. It does not mean the game charges or does not charge tax. The text "no tax is charged" is not shown for any resolution state.
 4. The taxes header says enterprise_base treats an absent taxes service as "no tax" [src `taxes_api.h`, "WHEN THIS PLUGIN IS ABSENT"]. That describes enterprise_base's behavior. The Almanac does not restate it as a fact about the current game state.
@@ -240,9 +247,9 @@ Rules:
 | Snapshot read torn (`generation` changed between two reads) | Retry once, then "unavailable" for that frame | Disabled for that frame | §3.1 |
 | `state_ledger` `unresolved` | Finance section "unavailable: ledger not resolved"; tax section still shown | Tax controls depend only on the taxes state | §5.0; the ledger provides no service today [src] |
 | `currencyMixed = 1`, `coveredFromStart = 0`, or either is `unknown` | Values marked "partial" or "unverified"; unexplained "not reconciled" | n/a | §4.3 |
-| Stored property unit `unknown`, or differs from the active currency | Value shown as "unit unknown", or with its stated unit; never converted | Enabled | §3.4; S10 |
+| Stored property unit `unknown`, or differs from the active currency | Value shown read-only with its unit label; never converted | Read-only until a confirmed re-entry (§3.4) | §3.4; S10 |
 | Setter returns 0 | "Refused: value unchanged" | Enabled | Setter contract [src `taxes_api.h`] |
-| Save loaded or generation changed | Refresh from the new snapshot | Enabled | `LoadTaxes` overwrites live values |
+| Save loaded or generation changed | Refresh from the new snapshot | Enabled | A compatible `tesmio_taxes.dat` overwrites live values; an incompatible one leaves the prior values (§3.2) |
 
 **Never** show zero for an unavailable or unreconciled figure. Show "unavailable" or "not reconciled".
 
@@ -276,7 +283,7 @@ The rules below are Almanac-side pre-checks.
 
 **PoC-1, data-focused (first).** Build the v3 taxes snapshot and the `state_ledger` snapshot. Add a probe that logs both at Start and once per in-game month. It also calls `setTaxRate` and injects a deliberate test flow, so it performs writes in the test copy. No button, no panel, no click hooks.
 
-**PoC-2, geometry and ordering (only if PoC-1 passes).** Draw the Path B button rectangle, and log its rectangle against the native tile rectangles. Log press events in the row rectangle without consuming them. This establishes A1 and A2 and tests for overlap. It draws UI, so it is not read-only. No panel.
+**PoC-2, geometry and ordering (only if PoC-1 passes).** Draw the Path B button rectangle, and log its rectangle against the native tile rectangles. Log press events in the row rectangle without consuming them. It records observations for A1 and A2 on the tested path only (one build, one mode, the examined trade-row path). It draws UI, so it is not read-only. No panel.
 
 Neither PoC is intended to change tax rules, settlement, or native selection. Any test writes happen only in the disposable test copy (§6.3). That intent is not a guarantee.
 
@@ -293,7 +300,7 @@ Neither PoC is intended to change tax rules, settlement, or native selection. An
 
 **PoC-2**
 
-- The button rectangle does not overlap any native tile at the measured geometry.
+- Observation for the tested path only: the measured button rectangle does not overlap the native tiles seen on that path. This is not proof for other game modes, resolutions, or layouts.
 - Press-event logs record whether the native handler sees a press inside the button rectangle (ordering, A1). Ordering is an unproven candidate, so the result is recorded either way and is not assumed.
 
 ### 6.3 Environment
@@ -314,8 +321,9 @@ Expected events are not failures. Each observation is classified. Only unexpecte
 
 | Observation | Class | Action |
 |---|---|---|
-| Tester's native click from the checklist, with the native selection changing as a result | Expected | Log the click and the result |
-| Native selection changes with no logged test click | Stop: unexplained, possibly mod-origin | Stop, then run §6.6 |
+| Native selection change that follows a logged tester click on the native row, with no Almanac call logged between the click and the change | Expected native behavior | Log the click, the change, and both timestamps |
+| Native selection change with no logged tester click, or one that follows an Almanac call | Stop: unintended, possibly mod-origin | Stop, then run §6.6 |
+| Native content change not explained by a logged click | Stop | Stop, then run §6.6 |
 | Native tile missing, duplicated, or moved, outside an approved Path A change set | Stop | Stop, then run §6.6 |
 | Native tile not clickable during the checklist | Stop | Stop, then run §6.6 |
 | File hash changes that match the approved build manifest (DLL or config from the approved build) | Expected | Verify each hash against the manifest |
@@ -329,6 +337,8 @@ Expected events are not failures. Each observation is classified. Only unexpecte
 | Crash, save-load failure, or City Hall regression | Stop | Stop, then run §6.6 |
 | Repo change outside the approved change set | Stop | Stop |
 | Ledger reports `unexplainedValid = 1` or a zero unexplained figure while tracking is absent (`unknown`) | Stop: false completeness | Stop, then run §6.6 |
+
+Attribution is by log correlation: a click timestamp, then a change, with no Almanac call in between. It is evidence for the tested path. It does not prove the absence of mod-origin changes in every case.
 
 On any stop: halt input, record the observation with its timestamp and the log, then run §6.6.
 
@@ -394,3 +404,9 @@ This revision changes only this specification. Raw evidence and earlier reports 
 4. One unavailable-service policy applies everywhere. No tax-status claim is made from a resolution failure (§5.0).
 5. Input ordering, global hosting, and feature rollback are unproven design candidates (§2.2, §2.3, §2.7). The City Hall slider ceiling is a UI mapping, not a tax-policy limit (§3.1, §5.2).
 6. Both same-row approaches, the first-release finance and adjustable-tax scope, and the Economy & Trade fallback are retained (§0, §2, §3, §4).
+
+## 11. Revision 3: narrow corrections
+
+1. One unavailable-service policy: the panel stays open, the affected section is labelled unavailable, and usable sections are kept. A service state change is not a close trigger (§2.4, §5.0, §5.1).
+2. An incompatible tax-file load keeps the prior in-memory values; they are not assumed to be startup defaults (§3.2). The setter's documented active-currency input is separated from unknown legacy saved-value units. A safe confirmation gate applies to property edits when the unit is unknown or mismatched (§3.4).
+3. Expected native selection changes (following a logged tester click, with no Almanac call between) are separated from unintended, possibly mod-origin changes (§2.4, §6.5). The geometry probe is an observation for the tested path, not proof for all modes (§6.1, §6.2).
