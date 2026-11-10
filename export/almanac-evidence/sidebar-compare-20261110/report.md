@@ -1,121 +1,136 @@
-# Trade handler content-call comparison — Almanac design evidence
+# Trade handler content-call comparison (bounded) — Almanac design evidence
 
-**Source:** SOVIET64.exe v1.1.1.9 disassembly, `C:\WRSRE\scratch\out/` (sections 39a–52, 46, 47, 49–51)
-**Method:** Static only. No game execution, no debugger, no hooks, no writes.
+**Source:** `C:\WRSRE\export\ch_tab23_full.asm` (FUN_140361BB0, verified by text search), `C:\WRSRE\scratch\out\140373ea0_1403829fd_disasm.asm` (FUN_140373EA0), sections 39a–52
+**Method:** Static only. No Ghidra analysis started while project locked; existing `.lock` file left untouched (stale, no ghidra process running). No game execution, no hooks, no writes.
 
-## 1. Correction: 0x1403628B8 claim
+## 1. Verified call at 0x1403628b8 (FUN_140361BB0)
 
-The user reports a conditional `FUN_14035F3E0` call at `0x1403628B8` in `FUN_140361BB0`. This address does **not** appear in any cached export or disassembly file in `scratch/out/`. The Ghidra project for SOVIET64.exe is locked from a timed-out full analysis, so this address could not be independently verified. The claim is **not confirmed**; it is recorded as user-provided but not independently evidenced.
+Confirmed in `C:\WRSRE\export\ch_tab23_full.asm` at line 655:
 
-Verified locations of `game+0xC65C` comparisons in `FUN_140361BB0` (from section49.md): `0x14036252b` and `0x1403626d7`. These are the only confirmed comparison sites in the alternate handler.
-
-## 2. Comparison table: content calls by native selection
-
-| Selection | FUN_140373EA0 (game+0x10398 != 0) | FUN_140361BB0 (game+0x10398 == 0) |
-|-----------|-----------------------------------|-----------------------------------|
-| **0** | Calls `FUN_14035F3E0` at `0x140374606` (guard: `CMP [RSI+0xc65c],0x1` / `JA 0x14037461b` skips if >1) | Content block begins after `0x14036225d`; `CMP game+0xC65C,1` at `0x14036252b`; `CMP game+0xC65C,2` at `0x1403626d7`; multiple sub-page branches (partially traced) |
-| **1** | Calls `FUN_14035F3E0` at `0x140374606` (same guard, `1 <= 1` passes) | Same content block; sub-page dispatch at `0x14036252b`/`0x1403626d7` (branches for selection 1 vs 2, details not fully decoded) |
-| **>1** | `FUN_14035F3E0` **NOT called** (`JA` jumps to `0x14037461b`); content block still runs but without `FUN_14035F3E0` sub-page | Same content block; `CMP game+0xC65C,2` suggests selection 2+ takes a different branch (details not fully decoded) |
-
-### 2a. FUN_140373EA0 — verified instruction-level content path
-
-**Content sub-view call** (verified, `140373ea0_1403829fd_disasm.asm`):
 ```
-1403745f1: CMP dword ptr [RSI + 0xc65c],0x1   ; selected sub-tab <= 1?
-1403745f8: JA 0x14037461b                      ; skip if > 1
-140374606: CALL 0x14035f3e0                    ; FUN_14035F3E0(content sub-view)
-14037460b: MOVSS XMM10,[RSP + 0x70]
-140374612: TEST AL,AL                          ; AL = click indicator return
-140374614: MOV byte ptr [RSP + 0x40],0x0
-140374619: JNZ 0x140374620                     ; if AL != 0, skip flag set
-14037461b: MOV byte ptr [RSP + 0x40],0x1       ; set flag when AL == 0
+1403628a3:  41 83 BE 5C C6 00 00 01  CMP dword ptr [R14 + 0xc65c],0x1   ; selected <= 1?
+1403628ab:  77 29                    JA 0x1403628d6                      ; skip if > 1 (unsigned)
+1403628ad:  4C 8D 45 E0              LEA R8,[RBP + -0x20]              ; arg3
+1403628b1:  48 8D 55 B4              LEA RDX,[RBP + -0x4c]             ; arg2
+1403628b5:  49 8B CE                 MOV RCX,R14                       ; arg1 = game
+1403628b8:  E8 23 CB FF FF           CALL 0x14035f3e0                   ; FUN_14035F3E0(game, &Y, &X)
+1403628bd:  0F B6 DB                 MOVZX EBX,BL
+1403628c0:  84 C0                    TEST AL,AL                         ; return value
+1403628c2:  41 0F 45 DC              CMOVNZ EBX,R12D                   ; if AL != 0, EBX = R12D
+1403628c6:  89 5D 80                 MOV dword ptr [RBP + -0x80],EBX   ; store local output
 ```
 
-**FUN_14035F3E0 behavior** (from `14035f3e0_decomp.c`, section49):
-- Draws a panel at (X, Y) with dimensions from font metrics
-- Draws 6 sub-items (indices 0–5), each with C3D_LANGUAGE string IDs 0x68B–0x690 (or 0x2B6 for index 5)
-- Each sub-item: `PrintLeftUnicode` label + `DrawFrom9Patch` button + click handling
-- Click handling: `C3D_INPUT::GetMouseSolid` + `Collision` + latch `DAT_0x140A54E91`; on match calls `FUN_1402FD840(param_1, iVar15, 0)` and plays `gui_click`
-- Sub-item 5: calls `FUN_1403613B0(param_1, 0xFFFFFFFF, 1, local_148)` and sets `game+0x10F20 = 4`; or `FUN_1403613B0(param_1, 0xFFFFFFFE, 1, local_148)` for sub-item 4
-- Return value: `AL = 0x01` if click on specific sub-item (index 4 or 5 with conditions), `0x00` otherwise
+**Guards before the call:** line 649 `TEST R15,R15` / `JNZ 0x1403628d6` (skip if R15 nonzero), then line 650-651 `CMP [R14+0xc65c],0x1` / `JA` (skip if selection > 1).
 
-**Content block state writes** (conditional on click/latch, from section51):
-- `game+0x10F20` (sub-page state), `game+0x5E8`, `game+0x5EC`, `game+0x5E6`, `game+0x5F0`, `game+0xADB8`, `game+0xADC8`
-- Content block reads: `game+0xC65C`, `game+0xC7DC`, `game+0xC7D0`, `game+0xC7D4`, `game+0xC7E8`, `game+0x10F18`, `game+0x10F1C`, `game+0x11728`, `game+0x11730`
+**Return-value handling:** `AL` = click indicator; if nonzero, `EBX` = `R12D`; stored at `[RBP-0x80]`. This local output is used downstream (section 51 noted `[RSP+0x40]` equivalent handling in FUN_140373EA0).
 
-**After content block:** computes `game+0xAE58 = (RBP-0x10) - game+0xAE50` (at `0x14031ee02`, in master dispatch)
+## 2. Selection-dependent call comparison (indices 0–6)
 
-### 2b. FUN_140361BB0 — partially verified content path
+### FUN_140373EA0 (verified, `140373ea0_1403829fd_disasm.asm`)
 
-**Verified structure** (from sections 49–51):
-- Button loop ends at `0x14036220e`/`0x140362245` (JL back to loop)
-- Content block begins after `0x14036225d` (draws a 35x35 panel first, then continues)
-- `CMP game+0xC65C,1` at `0x14036252b`; `CMP game+0xC65C,2` at `0x1403626d7`
-- Multiple sub-page branches (selection-dependent content dispatch)
-- Uses `game+0xC65C` and `game+0x12800` (content list)
-- 12,304 lines of disassembly; content path more complex than `FUN_140373EA0`
+| Selection | Calls FUN_14035F3E0? | Instruction | Notes |
+|-----------|---------------------|-------------|-------|
+| 0 | Yes | `CMP [RSI+0xc65c],0x1` / `JA 0x14037461b` skips if >1 (`0x1403745f1`-`0x140374606`) | 0 <= 1, calls |
+| 1 | Yes | Same guard | 1 <= 1, calls |
+| >1 | No | `JA` taken at `0x1403745f8` | Content block runs without sub-page |
+| 3,4,5,6 | No (same as >1) | No selection-specific calls beyond guard | No index-specific dispatch |
 
-**Not verified:**
-- Exact address of any `FUN_14035F3E0` call (the `0x1403628B8` claim is unconfirmed)
-- Which sub-page branch corresponds to selection 0 vs 1 vs >1
-- Full set of state writes in the content block
-- Return value handling
+### FUN_140361BB0 (verified, `ch_tab23_full.asm`)
 
-## 3. What a replacement boundary must preserve
+| Selection | Behavior | Instructions |
+|-----------|----------|--------------|
+| 0 | Calls FUN_14035F3E0 | `CMP [R14+0xc65c],0x1` / `JA` skips if >1 (`ch_tab23_full.asm:650-655`) | 0 <= 1, calls |
+| 1 | Calls FUN_14035F3E0 | Same guard | 1 <= 1, calls |
+| 2 | Complex branch | `CMP [R14+0xc65c],0x2` / `JNZ` skips (`ch_tab23_full.asm:1593-1594`) | Enters panel-list iteration block (lines 1593-1614+) |
+| 3 | Calls `0x1404acf50`, then JMP out | `LEA EAX,[RCX-0x3]` / `CMP EAX,0x1` / `JA` skips if >1 (`ch_tab23_full.asm:476-481`) | `3-3=0 <= 1`, calls `0x1404acf50` |
+| 4 | Calls `0x1404acf50`, then JMP out | Same (`4-3=1 <= 1`) | Calls `0x1404acf50` |
+| 5 | Calls `0x1404b0e20` | `CMP ECX,0x5` / `JNZ` skips (`ch_tab23_full.asm:482-486`) | Selection == 5 |
+| 6 | Calls `0x1404b24a0` | `CMP ECX,0x6` / `JNZ` skips (`ch_tab23_full.asm:492-498`) | Selection == 6 |
+| >1 (general) | Skips FUN_14035F3E0 | `JA` at `ch_tab23_full.asm:651` | Content block runs without sub-page |
 
-For each boundary candidate, the mod must preserve:
+### Key difference
+FUN_140373EA0 treats all selections >1 identically (no FUN_14035F3E0, no index-specific dispatch). FUN_140361BB0 has **selection-specific calls for indices 3, 4, 5, 6** that route to different functions (`0x1404acf50`, `0x1404b0e20`, `0x1404b24a0`) and a complex branch for selection 2. Any replacement boundary in FUN_140361BB0 must account for these additional paths.
 
-| Category | Items | Source |
-|----------|-------|--------|
-| **Input** | Mouse state (`C3D_INPUT`), latch `DAT_0x140A54E91`, GetMouseSolid, Collision results | Section 51.1: latch consumed at `0x1403742F2`, not cleared by button loop |
-| **Returned values** | `FUN_14035F3E0` return `AL` (click indicator) used at `0x140374612` | Section 49: `AL = 0x01` if click on sub-item 4/5 |
-| **Output locals** | `[RSP+0x40]` flag set based on `AL` at `0x140374614`–`0x14037461B` | Section 49 |
-| **State writes (always)** | `game+0xC65C` (selection index), `game+0x10BE8` (= -1 counter reset) | Section 51: always on click |
-| **State writes (conditional)** | `game+0x1039A` (= 0 only if selection changed) | Section 51: `0x14037434F` |
-| **Content state writes** | `game+0x10F20`, `game+0x5E8`, `game+0x5EC`, `game+0x5E6`, `game+0x5F0`, `game+0xADB8`, `game+0xADC8` | Section 51.3: only on click/latch |
-| **Panel height** | `game+0xAE58` (computed after content block) | Section 39.1: `0x14031EE02` |
+## 3. Output locals and state writes (both handlers)
 
-**Skipping `FUN_14035F3E0` loses:** sub-page navigation via `FUN_1403613B0`, sub-item click handling, `gui_click` sound, `game+0x10F20` sub-page state.
+### FUN_140373EA0 (verified)
+- `game+0xC65C` ← EBX (new selected index) — `0x140374356`
+- `game+0x10BE8` ← -1 (dirty counter reset) — `0x14037435c`
+- `game+0x1039A` ← 0 (dirty flag, ONLY if selection changed) — `0x14037434f`
+- `game+0xAE58` ← panel height — master dispatch `0x14031ee02`
+- `FUN_14035F3E0` return `AL` → `[RSP+0x40]` flag — `0x140374612`-`0x14037461B`
 
-## 4. Boundary assessment by selection
+### FUN_140361BB0 (verified)
+- `game+0xC65C` ← ESI — `ch_tab23_full.asm:297` (`MOV [R14+0xc65c],ESI`)
+- `[RBP-0x80]` ← FUN_14035F3E0 return-derived value — `ch_tab23_full.asm:659`
+- Various stack locals zeroed after call (`ch_tab23_full.asm:662-699`, XMM8 stores)
+- Selection 2: panel-list iteration block (`ch_tab23_full.asm:1593-1614+`)
+- Selection 3/4/5/6: respective function calls with JMP out (no fallthrough to shared tail)
 
-### Selection 0 (first sub-tab)
-- `FUN_140373EA0`: `FUN_14035F3E0` **called** (0 <= 1). Content sub-view draws 6 sub-items with click handling.
-- `FUN_140361BB0`: `CMP game+0xC65C,1` at `0x14036252b`; branch target unknown (not decoded).
-- **Boundary 2** (replace `FUN_14035F3E0` call): Valid for `FUN_140373EA0` only. For `FUN_140361BB0`, equivalent boundary not located.
+## 4. Candidate replacement boundaries
 
-### Selection 1 (second sub-tab)
-- `FUN_140373EA0`: `FUN_14035F3E0` **called** (1 <= 1). Same as selection 0.
-- `FUN_140361BB0`: `CMP game+0xC65C,1` branch; may take same path as selection 0 or different (not decoded).
-- **Boundary 2**: Same caveat as selection 0.
+### Boundary A — FUN_140373EA0 at `0x140374606` (replace FUN_14035F3E0 call)
+- **Preserves:** native row drawing, `game+0xC65C`/`game+0x10BE8`/`game+0x1039A` writes, hit-test + latch consumption, panel height computation
+- **Replaces:** content sub-view only (when selection <= 1)
+- **Skips:** `FUN_14035F3E0` return-value handling (`AL` → `[RSP+0x40]`), `game+0x10F20`/`game+0x5E8`/`0x5EC`/`0x5E6`/`0x5F0`/`game+0xADB8`/`game+0xADC8` writes, sub-page navigation `FUN_1403613B0`, `gui_click` sound
+- **Valid for:** selections 0 and 1 only. Selection >1 already skips `FUN_14035F3E0` natively.
 
-### Selection >1 (third+ sub-tab)
-- `FUN_140373EA0`: `FUN_14035F3E0` **NOT called** (`JA` jumps to `0x14037461B`). Content block runs without sub-page content.
-- `FUN_140361BB0`: `CMP game+0xC65C,2` at `0x1403626D7`; takes different branch (not decoded).
-- **Boundary 2**: `FUN_14035F3E0` call is already skipped natively. No replacement needed for `FUN_140373EA0`; `FUN_140361BB0` behavior unknown.
+### Boundary B — FUN_140361BB0 at `0x1403628b8` (replace FUN_14035F3E0 call)
+- **Preserves:** same as above for this handler
+- **Valid for:** selections 0 and 1 only (guard at `0x1403628a3`-`0x1403628ab`)
+- **Additional complexity:** selection 2 branches to panel-list iteration; selections 3/4/5/6 call different functions entirely and JMP out (never reach the content block). A single boundary here does NOT cover all selections.
 
-## 5. go / not yet assessment
+## 5. What remains after suppressing content (input, cleanup, output)
+
+| Concern | Status | Evidence |
+|---------|--------|----------|
+| Native input underneath | NOT accounted | Latch `DAT_0x140A54E91` consumed at `0x1403742F2` (FUN_140373EA0) but ownership/clear site not traced; already-selected click produces no unique state transition (section 51.1) |
+| Click detection for already-selected button | NOT proven | `game+0x10BE8` set to -1 on every click but may already be -1; no transition observable; `game+0x1039A` only written if selection changed |
+| Return value `AL` / `[RSP+0x40]` | Partially preserved | Must be replicated by replacement (FUN_140373EA0: `0x140374612`-`0x14037461B`; FUN_140361BB0: `0x1403628bd`-`0x1403628c6`) |
+| Content state writes skipped | Unverified readers | `game+0x10F20`, `game+0x5E8/0x5EC/0x5E6/0x5F0`, `game+0xADB8/0xADC8` — no traced readers outside content block |
+| Sub-page navigation (`FUN_1403613B0`) | Skipped | Disabled when `FUN_14035F3E0` replaced; game-state consistency unverified |
+| Panel height `game+0xAE58` | Preserved | Written by master dispatch after handler returns (`0x14031ee02`), not inside content block |
+| Cleanup / return-to-vanilla | NOT established | No explicit "restore native panel" instruction in any traced path; closing Almanac requires not-drawing replacement content, but native state may be inconsistent |
+
+## 6. go / not yet assessment
 
 | Aspect | Assessment | Reason |
 |--------|-----------|--------|
-| Native row drawing intact | **go** | Button loop (before content block) is separable at instruction level (section50.1) |
-| Click handling preserved | **go** | Button loop handles native clicks and latch consumption before content block |
-| `game+0xC65C` selection write preserved | **go** | Written in button loop at `0x140374356`, before content block |
-| `game+0x10BE8` counter reset preserved | **go** | Written at `0x14037435C`, before content block |
-| `FUN_14035F3E0` replacement safe | **not yet** | Return value `AL` used at `0x140374612`; flag `[RSP+0x40]` set at `0x140374614`–`0x14037461B` — mod must replicate |
-| Content state writes skipped | **not yet** | `game+0x10F20`, `game+0x5E8/0x5EC/0x5E6/0x5F0`, `game+0xADB8/0xADC8` — readers not traced (section51.3) |
-| Sub-page navigation skipped | **not yet** | `FUN_1403613B0` calls in `FUN_14035F3E0` disabled — game state consistency unverified |
-| Alternate handler `FUN_140361BB0` | **not yet** | Content block location (`0x14036225D+`) known but internal branches not decoded; `0x1403628B8` claim unverified |
-| Clip context | **not yet** | `game+0xADB0` dimensions not set in any traced function (section47) |
+| Native row drawing preserved | go | Button loop runs before content block; separable at instruction level |
+| Selection state (`game+0xC65C`) preserved | go | Written in button loop, before content block |
+| Click handling preserved | go | Native loop handles clicks + latch before content block |
+| Boundary valid for selection >1 | go (FUN_140373EA0) / n/a (FUN_140361BB0) | >1 already skips FUN_14035F3E0 natively in FUN_140373EA0; FUN_140361BB0 has index-specific calls |
+| Boundary valid for selections 0/1 | go (both handlers) | Both call FUN_14035F3E0 under `selection <= 1` guard |
+| Return value `AL` replicated | not yet | Must be handled by replacement code; not verified safe |
+| Content state corruption | not yet | Readers of `game+0x10F20` etc. not traced |
+| Already-selected click detection | not yet | No unique state transition; latch ownership unclear |
+| Cleanup / return-to-vanilla | not yet | No explicit restore instruction; state consistency unverified |
+| Clip context / overlap | not yet | `game+0xADB0` dimensions not set in any traced function |
 
-## 6. Evidence files preserved
+## 7. Conclusion: NOT YET
 
-Folder: `C:\WRSRE\export\almanac-evidence\sidebar-compare-20261110/`
-- `report.md` — this report
-- `rep_61bb0_628b8.asm` — Ghidra disassembly attempt (timed out; project locked, no output produced)
+A replacement boundary is **not yet** safe to implement because:
 
-**No new disassembly files produced.** All evidence is from existing cached exports:
-- `section39a.md`, `section40.md`, `section41.md`, `section42.md`, `section43.md`, `section44.md`, `section45.md`, `section46.md`, `section47.md`, `section49.md`, `section50.md`, `section51.md`
-- `140373ea0_1403829fd_disasm.asm`, `14035f3e0_decomp.c`, `140361bb0_64_disasm.asm`
+1. **Input not accounted:** The already-selected-button click produces no observable state transition (latch consumption site not identified as clear point; `game+0x10BE8` may already be -1). Native content underneath could still receive clicks.
+2. **Native content not suppressed at the right layer:** Boundary 2 only replaces `FUN_14035F3E0` (content below the row); the native row buttons still draw and remain clickable. If the Almanac overlay doesn't fully cover the row, native input bleeds through.
+3. **Cleanup not established:** No return-to-vanilla path, no panel-pointer restore, no state-consistency guarantee for skipped content writes.
+4. **FUN_140361BB0 has additional selection-specific calls** (indices 2–6) that a single boundary cannot cover uniformly.
 
-**Bottom line:** Boundary 2 (replace `FUN_14035F3E0` call at `0x140374606`) is viable for `FUN_140373EA0` with selections 0 and 1, **not yet** for `FUN_140361BB0` or selections >1. The mod must preserve `FUN_14035F3E0`'s return value (`AL`) and the `[RSP+0x40]` flag, and must accept that content-block state writes are skipped. The alternate handler's content path is too lightly traced to assess.
+## 8. Supporting instruction references
+
+| Purpose | VA | File |
+|---------|-----|------|
+| FUN_140361BB0: selection<=1 guard | `1403628a3`-`1403628ab` | `export/ch_tab23_full.asm:650-651` |
+| FUN_140361BB0: FUN_14035F3E0 call | `1403628b8` | `export/ch_tab23_full.asm:655` |
+| FUN_140361BB0: return-value handling | `1403628bd`-`1403628c6` | `export/ch_tab23_full.asm:656-659` |
+| FUN_140361BB0: selection==2 branch | `140363bba` | `export/ch_tab23_full.asm:1593` |
+| FUN_140361BB0: selection==3/4 call `0x1404acf50` | `14036253d` | `export/ch_tab23_full.asm:480` |
+| FUN_140361BB0: selection==5 call `0x1404b0e20` | `14036254f` | `export/ch_tab23_full.asm:485` |
+| FUN_140361BB0: selection==6 call `0x1404b24a0` | `14036258f` | `export/ch_tab23_full.asm:498` |
+| FUN_140361BB0: writes game+0xC65C | `140362193` | `export/ch_tab23_full.asm:297` |
+| FUN_140373EA0: selection<=1 guard | `0x1403745f1`-`0x1403745f8` | `scratch/out/140373ea0_1403829fd_disasm.asm` |
+| FUN_140373EA0: FUN_14035F3E0 call | `0x140374606` | `scratch/out/140373ea0_1403829fd_disasm.asm` |
+| FUN_140373EA0: selection write `game+0xC65C` | `0x140374356` | `scratch/out/140373ea0_1403829fd_disasm.asm` |
+| FUN_140373EA0: counter reset `game+0x10BE8` | `0x14037435c` | `scratch/out/140373ea0_1403829fd_disasm.asm` |
+
+**Evidence:** `C:\WRSRE\export\ch_tab23_full.asm` (FUN_140361BB0), `C:\WRSRE\scratch\out\140373ea0_1403829fd_disasm.asm` (FUN_140373EA0), sections 39a–52. All static — nothing executed, nothing modified, no Ghidra analysis started while locked.
