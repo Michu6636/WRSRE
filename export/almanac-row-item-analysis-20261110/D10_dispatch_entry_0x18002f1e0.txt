@@ -1,0 +1,12 @@
+# D10 dispatcher entry and range check
+# Source: Mods for analysis/Diplomacy/tesmioloader/the build/plugins/reputation.dll (SHA-256 fd7d94590b98c7eb80fa14ef95f2bbdf4b5e058f68d07dfa97d0db8dcbfbcb6a)
+# Range: 18002f1e0-18002f1f6
+# Static objdump excerpt, annotated by annot.py (rip-relative targets, .rdata strings). Nothing executed.
+# Purpose: cmp ecx,7 / ja tail: index 8 leaves the switch
+
+18002f1e0:	xor    r9d,r9d
+18002f1e3:	cmp    ecx,0x7
+18002f1e6:	ja     0x18002f327
+18002f1ec:	lea    r8,[rip+0xfffffffffffd0e0d]        # 0x180000000
+18002f1f3:	movsxd rax,ecx
+18002f1f6:	mov    edx,DWORD PTR [r8+rax*4+0x2f3f8]

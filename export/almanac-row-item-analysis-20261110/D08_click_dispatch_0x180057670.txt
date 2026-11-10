@@ -1,0 +1,10 @@
+# D08 dispatch call guard
+# Source: Mods for analysis/Diplomacy/tesmioloader/the build/plugins/reputation.dll (SHA-256 fd7d94590b98c7eb80fa14ef95f2bbdf4b5e058f68d07dfa97d0db8dcbfbcb6a)
+# Range: 180057670-18005767d
+# Static objdump excerpt, annotated by annot.py (rip-relative targets, .rdata strings). Nothing executed.
+# Purpose: dispatch only when all seven DLL flags are zero
+
+180057670:	jne    0x18005767d
+180057672:	mov    ecx,DWORD PTR [rip+0x3ba554]        # 0x180411bcc
+180057678:	call   0x18002f1e0
+18005767d:	lea    r8,[rip+0x6c5a4]        # 0x1800c3c28 ;; "trade"

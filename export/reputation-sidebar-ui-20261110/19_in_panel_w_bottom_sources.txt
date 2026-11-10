@@ -1,0 +1,51 @@
+# Evidence 19: sources of 0x1800C32F0 (in_panel_w), 0x1800C32FC (in_panel_bottom), 0x1800C3C68 (panel_width_at default)
+# Static, objdump disassembly + PE .data bytes. Generated from scratch/rep/disasm.txt.
+
+## File bytes (initial .data)
+0x1800C32F0 = 1280.0 (float, 0000A044)
+0x1800C32FC = 150.0 (float, bytes 00 00 16 43; overwritten by config load)
+0x1800C3C68 = 44628 (0x0000AE54)
+
+## Config loader stores (0x180048xxx)
+   1800484a1:	call   QWORD PTR [rax+0x70]
+   1800484a4:	movss  xmm2,DWORD PTR [rip+0x7ae44]        # 0x1800c32f0
+   1800484ac:	lea    rdx,[rip+0x634b5]        # 0x1800ab968    ;; "in_panel_w"
+   1800484b3:	cvtps2pd xmm2,xmm2
+   1800484b6:	lea    rcx,[rip+0x633cf]        # 0x1800ab88c
+   1800484bd:	mov    DWORD PTR [rip+0x7ae29],eax        # 0x1800c32ec
+   1800484c3:	mov    DWORD PTR [rip+0x2388ab],eax        # 0x180280d74
+   1800484c9:	call   0x18000ca60
+   1800484ce:	movss  xmm2,DWORD PTR [rip+0x15bace]        # 0x1801a3fa4
+   1800484d6:	lea    rdx,[rip+0x6349b]        # 0x1800ab978    ;; "in_panel_bottom"
+   1800484dd:	xorps  xmm1,xmm1
+   1800484e0:	lea    rcx,[rip+0x633a5]        # 0x1800ab88c
+   1800484e7:	cvtsd2ss xmm1,xmm0
+   1800484eb:	cvtps2pd xmm2,xmm2
+   1800484ee:	movss  DWORD PTR [rip+0x7adfa],xmm1        # 0x1800c32f0
+
+## Bottom store
+   180048550:	call   0x18000ca60
+   180048555:	xorps  xmm1,xmm1
+   180048558:	movss  xmm2,DWORD PTR [rip+0x7ad9c]        # 0x1800c32fc
+   180048560:	lea    rdx,[rip+0x63441]        # 0x1800ab9a8    ;; "in_panel_foot"
+   180048567:	cvtsd2ss xmm1,xmm0
+   18004856b:	lea    rcx,[rip+0x6331a]        # 0x1800ab88c
+   180048572:	cvtps2pd xmm2,xmm2
+   180048575:	movss  DWORD PTR [rip+0x7ad7b],xmm1        # 0x1800c32f8
+   18004857d:	call   0x18000ca60
+   180048582:	mov    rax,QWORD PTR [rip+0x7c7e7]        # 0x1800c4d70
+   180048589:	lea    r8,[rip+0x63428]        # 0x1800ab9b8    ;; "menu_icons"
+   180048590:	xorps  xmm1,xmm1
+   180048593:	lea    rdx,[rip+0x632f2]        # 0x1800ab88c
+   18004859a:	cvtsd2ss xmm1,xmm0
+   18004859e:	mov    r9d,ebx
+   1800485a1:	lea    rcx,[rip+0x45870]        # 0x18008de18    ;; "plugins\reputation.ini"
+   1800485a8:	movss  DWORD PTR [rip+0x7ad4c],xmm1        # 0x1800c32fc
+
+## Live nudge (+25.0 constant at 0x1800AF67C = 0x41C80000)
+   18003b0b1:	mov    esi,edi
+   18003b0b3:	cmp    DWORD PTR [rip+0x4e4766],0x0        # 0x18051f820
+   18003b0ba:	jne    0x18003b153
+   18003b0c0:	movss  xmm0,DWORD PTR [rip+0x88228]        # 0x1800c32f0
+   18003b0c8:	addss  xmm0,DWORD PTR [rip+0x745ac]        # 0x1800af67c
+   18003b0d0:	movss  DWORD PTR [rip+0x88218],xmm0        # 0x1800c32f0

@@ -1,0 +1,21 @@
+# N03 normal row handler: loop increment and bound
+# Source: export/140373ea0_1403829fd_disasm.asm (preserved repo listing; game binary not in workspace, hash unverified)
+# Range: 1403743a8-1403743e0
+# Static listing excerpt, copied verbatim by address. Nothing executed.
+# Purpose: loop bound EDI < count (all entries drawn)
+
+1403743a8:  F3 0F 58 F7              ADDSS XMM6,XMM7
+1403743ac:  49 BD 67 66 66 66 66 66 66 66 MOV R13,0x6666666666666667
+1403743b6:  FF C7                    INC EDI
+1403743b8:  4C 8B 86 50 C6 00 00     MOV R8,qword ptr [RSI + 0xc650]
+1403743bf:  49 83 C0 48              ADD R8,0x48
+1403743c3:  49 8B 48 08              MOV RCX,qword ptr [R8 + 0x8]
+1403743c7:  49 2B 08                 SUB RCX,qword ptr [R8]
+1403743ca:  49 8B C5                 MOV RAX,R13
+1403743cd:  48 F7 E9                 IMUL RCX
+1403743d0:  48 C1 FA 05              SAR RDX,0x5
+1403743d4:  48 8B C2                 MOV RAX,RDX
+1403743d7:  48 C1 E8 3F              SHR RAX,0x3f
+1403743db:  48 03 D0                 ADD RDX,RAX
+1403743de:  3B FA                    CMP EDI,EDX
+1403743e0:  0F 8C BC FD FF FF        JL 0x1403741a2

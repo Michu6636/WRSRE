@@ -1,0 +1,22 @@
+# D16 main sidebar entry append (copy constructor exe+0x459530)
+# Source: Mods for analysis/Diplomacy/tesmioloader/the build/plugins/reputation.dll (SHA-256 fd7d94590b98c7eb80fa14ef95f2bbdf4b5e058f68d07dfa97d0db8dcbfbcb6a)
+# Range: 180056ea0-180056ef0
+# Static objdump excerpt, annotated by annot.py (rip-relative targets, .rdata strings). Nothing executed.
+# Purpose: exe+0x9E1520 += 0x68 after copy
+
+180056ea0:	mov    QWORD PTR [rsp+0x20],rbx
+180056ea5:	mov    rdx,rbx
+180056ea8:	lea    rcx,[rip+0x47861]        # 0x18009e710 ;; "  side  appending "%s" - cloned from entry %llu, %llu entries now, icon editor/maintab_%s."
+180056eaf:	call   0x180053ef0
+180056eb4:	mov    rcx,QWORD PTR [rip+0x6c325]        # 0x1800c31e0
+180056ebb:	cmp    rcx,0xffffffffffffffff
+180056ebf:	je     0x180056ec8
+180056ec1:	call   QWORD PTR [rip+0x361a1]        # 0x18008d068 ;; [KERNEL32.dll!FlushFileBuffers]
+180056ec7:	nop
+180056ec8:	mov    rax,QWORD PTR [rip+0x6deb1]        # 0x1800c4d80
+180056ecf:	add    rax,0x459530
+180056ed5:	lea    rdx,[rsp+0x60]
+180056eda:	mov    rcx,QWORD PTR [rsi+0x9e1520]
+180056ee1:	call   rax
+180056ee3:	add    QWORD PTR [rsi+0x9e1520],0x68
+180056eeb:	cmp    QWORD PTR [rip+0x22f1fd],0x0        # 0x1802860f0

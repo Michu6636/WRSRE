@@ -1,0 +1,86 @@
+# D04 icon load, texture check, rollback, index store
+# Source: Mods for analysis/Diplomacy/tesmioloader/the build/plugins/reputation.dll (SHA-256 fd7d94590b98c7eb80fa14ef95f2bbdf4b5e058f68d07dfa97d0db8dcbfbcb6a)
+# Range: 180058100-180058260
+# Static objdump excerpt, annotated by annot.py (rip-relative targets, .rdata strings). Nothing executed.
+# Purpose: editor/%s_%s.png, texture at last entry +0x48, rollback end-=0x50, index to 0x1800c3c5c
+
+180058100:	mov    QWORD PTR [rsp+0x20],r14
+180058105:	lea    r9,[rip+0x462b4]        # 0x18009e3c0 ;; "editor/%s_%s.png"
+18005810c:	mov    edx,0x60
+180058111:	mov    r8,0xffffffffffffffff
+180058118:	lea    rcx,[rip+0x486791]        # 0x1804de8b0
+18005811f:	call   0x180069a50
+180058124:	lea    rcx,[rip+0x486785]        # 0x1804de8b0
+18005812b:	call   0x1800594c0
+180058130:	mov    r15,rax
+180058133:	test   rax,rax
+180058136:	je     0x1800581a7
+180058138:	mov    rcx,QWORD PTR [rip+0x6cc41]        # 0x1800c4d80
+18005813f:	mov    rsi,QWORD PTR [rcx+0x9e1518]
+180058146:	lea    rdi,[rsi+r12*1]
+18005814a:	mov    edx,0x18
+18005814f:	lea    rcx,[rdi+0x48]
+180058153:	mov    r8,QWORD PTR [rip+0x6cc16]        # 0x1800c4d70
+18005815a:	call   QWORD PTR [r8+0x60]
+18005815e:	test   eax,eax
+180058160:	je     0x1800581a7
+180058162:	mov    rcx,QWORD PTR [rdi+0x48]
+180058166:	test   rcx,rcx
+180058169:	je     0x1800581a7
+18005816b:	mov    rdx,QWORD PTR [rsi+r12*1+0x50]
+180058170:	cmp    rdx,rcx
+180058173:	jbe    0x1800581a7
+180058175:	sub    rdx,rcx
+180058178:	mov    rax,r13
+18005817b:	mul    rdx
+18005817e:	shr    rdx,0x6
+180058182:	lea    rax,[rdx+rdx*4]
+180058186:	add    rax,rax
+180058189:	mov    QWORD PTR [rcx+rax*8-0x8],r15
+18005818e:	jmp    0x1800581a7
+180058190:	mov    DWORD PTR [rip+0x6bac6],edx        # 0x1800c3c5c
+180058196:	jmp    0x1800582e0
+18005819b:	lea    rcx,[rip+0x46232]        # 0x18009e3d4 ;; "item"
+1800581a2:	call   0x180057d00
+1800581a7:	mov    rax,QWORD PTR [rip+0x6cbd2]        # 0x1800c4d80
+1800581ae:	mov    rdi,QWORD PTR [rax+0x9e1518]
+1800581b5:	lea    rsi,[rdi+r12*1]
+1800581b9:	mov    edx,0x18
+1800581be:	lea    rcx,[rsi+0x48]
+1800581c2:	mov    rax,QWORD PTR [rip+0x6cba7]        # 0x1800c4d70
+1800581c9:	call   QWORD PTR [rax+0x60]
+1800581cc:	test   eax,eax
+1800581ce:	je     0x1800582e0
+1800581d4:	mov    r9,QWORD PTR [rsi+0x48]
+1800581d8:	test   r9,r9
+1800581db:	je     0x1800582e0
+1800581e1:	mov    r10,QWORD PTR [rdi+r12*1+0x50]
+1800581e6:	cmp    r10,r9
+1800581e9:	jbe    0x1800582e0
+1800581ef:	mov    rcx,r10
+1800581f2:	sub    rcx,r9
+1800581f5:	mov    rax,r13
+1800581f8:	mul    rcx
+1800581fb:	shr    rdx,0x6
+1800581ff:	lea    rax,[rdx+rdx*4]
+180058203:	add    rax,rax
+180058206:	cmp    QWORD PTR [r9+rax*8-0x8],0x0
+18005820c:	jne    0x180058238
+18005820e:	lea    rax,[r10-0x50]
+180058212:	mov    QWORD PTR [rdi+r12*1+0x50],rax
+180058217:	mov    DWORD PTR [rip+0x22f92b],0x1        # 0x180287b4c
+180058221:	mov    r9,rbx
+180058224:	mov    r8,r14
+180058227:	mov    rdx,rbx
+18005822a:	lea    rcx,[rip+0x461af]        # 0x18009e3e0 ;; "  item  "%s" has no texture - taken back out before the game could draw it. media_soviet/e"
+180058231:	call   0x180053ef0
+180058236:	jmp    0x180058255
+180058238:	lea    r8d,[rdx-0x1]
+18005823c:	mov    DWORD PTR [rip+0x6ba19],r8d        # 0x1800c3c5c
+180058243:	mov    r9,r14
+180058246:	mov    rdx,rbx
+180058249:	lea    rcx,[rip+0x46208]        # 0x18009e458 ;; "  item  "%s" is item %d of the "%s" panel"
+180058250:	call   0x180053ef0
+180058255:	mov    rcx,QWORD PTR [rip+0x6af84]        # 0x1800c31e0
+18005825c:	cmp    rcx,0xffffffffffffffff
+180058260:	je     0x1800582e0

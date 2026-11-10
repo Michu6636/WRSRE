@@ -1,0 +1,40 @@
+# D02 trade record search and sub-vector size check
+# Source: Mods for analysis/Diplomacy/tesmioloader/the build/plugins/reputation.dll (SHA-256 fd7d94590b98c7eb80fa14ef95f2bbdf4b5e058f68d07dfa97d0db8dcbfbcb6a)
+# Range: 180057f50-180057fe9
+# Static objdump excerpt, annotated by annot.py (rip-relative targets, .rdata strings). Nothing executed.
+# Purpose: record+0x48 header, exact 0x50 multiple check
+
+180057f50:	mov    DWORD PTR [rip+0x22fbf2],0x1        # 0x180287b4c
+180057f5a:	mov    rdx,r14
+180057f5d:	lea    rcx,[rip+0x462d4]        # 0x18009e238 ;; "  item  there is no sidebar panel called "%s" - declined"
+180057f64:	call   0x180053ef0
+180057f69:	jmp    0x1800582e0
+180057f6e:	cmp    rdx,0xffffffffffffffff
+180057f72:	je     0x180057f50
+180057f74:	lea    r15,[rbx+0x48]
+180057f78:	mov    edx,0x18
+180057f7d:	mov    rcx,r15
+180057f80:	mov    rax,QWORD PTR [rip+0x6cde9]        # 0x1800c4d70
+180057f87:	call   QWORD PTR [rax+0x60]
+180057f8a:	test   eax,eax
+180057f8c:	je     0x1800582bb
+180057f92:	mov    rcx,QWORD PTR [r15]
+180057f95:	test   rcx,rcx
+180057f98:	je     0x1800582bb
+180057f9e:	mov    r8,QWORD PTR [rbx+0x50]
+180057fa2:	cmp    r8,rcx
+180057fa5:	jb     0x1800582bb
+180057fab:	sub    r8,rcx
+180057fae:	je     0x18005829a
+180057fb4:	movabs r13,0xcccccccccccccccd
+180057fbe:	mov    rax,r13
+180057fc1:	mul    r8
+180057fc4:	mov    rsi,rdx
+180057fc7:	shr    rsi,0x6
+180057fcb:	lea    rdx,[rsi+rsi*4]
+180057fcf:	shl    rdx,0x4
+180057fd3:	cmp    r8,rdx
+180057fd6:	jne    0x18005829a
+180057fdc:	cmp    r8,0x10000
+180057fe3:	ja     0x18005829a
+180057fe9:	mov    rdx,r8
