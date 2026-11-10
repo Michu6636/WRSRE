@@ -21,16 +21,27 @@
 //   at RVA 0x9BE060. Every call is forwarded. Only the row's own eighth-tile
 //   call takes the extra path, and only while armed.
 //
+// BUILD GUARD: WHAT TsmCheckExeBuild ACCEPTS (src/game_addresses.h)
+//   It returns true when any of these holds:
+//   - the PE TimeDateStamp equals the repo baseline 0x6A3EB6AD;
+//   - addresses.ini [build] target_stamp equals the loaded stamp. The operator
+//     chooses that value, and the loader then applies addresses.ini RVA
+//     overrides to its own table;
+//   - tesmioloader.ini [tesmioloader] allow_unverified_exe = 1, for any build;
+//   - no PE image is mapped (test harness).
+//   The stamp is one header field. It is not a whole-file check.
+//   This plugin reads its RVAs from compile-time macros, not from the loader's
+//   runtime table, so addresses.ini RVA overrides do not change this plugin's
+//   addresses. The byte and value checks below are therefore the only layout
+//   guard, and they run in every case above.
+//
 // VERIFIED AT START (static checks against this build; refuses otherwise)
-//   - The PE TimeDateStamp equals the repo baseline (TsmCheckExeBuild). That is
-//     one header field, NOT a whole-file check. tesmioloader.ini
-//     allow_unverified_exe = 1 bypasses it.
 //   - Two call-site byte sequences: E8 AC 50 05 00 at RVA 0x31EDEF (CALL
 //     FUN_140373EA0), and FF 15 B8 84 4F 00 at RVA 0x3743A2 (CALL [0x86C860]).
 //   - The import slot is at RVA 0x86C860 and holds the engine's exported Draw.
 //   - Three constants read 45 (origin A), 85 (origin B) and 64 (pitch).
-//   These checks do NOT authenticate the executable as a whole, and they do
-//   NOT prove the row layout.
+//   These checks do NOT authenticate the executable as a whole, do NOT prove the
+//   row layout, and do NOT prove what the rect store means.
 //
 // CONSTANTS DURING A PASS
 //   The row tracker captures scale, origin A, origin B and pitch on a pass's
@@ -38,55 +49,75 @@
 //   that decides the draw. A changed value drops the pass.
 //
 // SHARED STATE WRITTEN BY THE EXTRA DRAW
-//   - RVA 0x9BE2E8..0x9BE2FB (rect store, 20 bytes). The ninth X and Y are
-//     written for the one call, and the saved bytes are restored afterwards.
-//     The native Draw may write this store itself, and the restore does not
-//     undo writes made during that call.
+//   - RVA 0x9BE2F0..0x9BE2F7: the X and Y floats of the rect store. The ninth
+//     pair is written with ONE 8-byte store. The saved pair is written back with
+//     ONE 8-byte store. The native Draw may write this pair itself during the
+//     call. The restore sets back the pre-call pair, so any such write is
+//     reverted. Whether the native Draw writes the pair is NOT verified.
+//   - RVA 0x9BE2E8..0x9BE2EF (W, H) and RVA 0x9BE2F8.. are not written by this
+//     plugin.
 //   - Whatever the engine's C3D_PANEL2D::Draw writes internally while drawing
 //     the ninth tile. NOT identified. It may include per-widget or global draw
 //     state, hover or press state, or GPU state. UNVERIFIED.
 //   - This plugin's own counters and log lines.
 //   Known limitation: the ninth tile reuses the eighth tile's hover state.
 //
-// SLOT OWNERSHIP AND RESTORE
+// SLOT OWNERSHIP AND PROTECTION
 //   - Swap and restore are each one interlocked compare-exchange on the slot.
-//     The write happens only if the slot still holds the value we observed.
-//     This plugin never overwrites a value it did not see.
+//     The expected value for the swap is the exact pointer validated at Start:
+//     the engine export, which must equal the slot at that point. The swap does
+//     not re-read the slot and adopt whatever it holds.
+//   - Three steps are reported as separate outcomes: making the page writable,
+//     the exchange, and restoring the page protection.
+//     * Page not writable: no exchange is tried and nothing is written.
+//     * Exchange finds another value: nothing is written. The other value is left
+//       alone. The protection is still restored and its outcome logged.
+//     * Exchange succeeds but protection is not restored: the plugin does NOT arm.
+//       It tries to undo its own write, and logs whether the undo succeeded.
+//     * Arming requires BOTH the exchange and the protection restore to succeed.
 //   - This does NOT stop another writer from replacing the slot. Plain stores
 //     from another plugin, from the engine, or from another thread can replace
-//     our detour at any time. Nothing here guarantees that another hook is
-//     never overwritten. The code reports what it observes.
+//     our detour at any time. Nothing here guarantees that another hook is never
+//     overwritten. The code reports what it observes.
 //   - Our detour may still be reachable through another hook's chain, so it
-//     always forwards valid calls to the engine's Draw, and the DLL is never
-//     unloaded by this plugin.
-//   - RestoreOriginal runs from ordinary code, never inside an exception
-//     handler. It logs what it observed and what it did.
+//     always forwards valid calls to the engine's Draw. Once the slot has been
+//     written, g_drawOrig is never cleared. The DLL is never unloaded by this
+//     plugin.
 //
 // LOADER LIFECYCLE (verified in src/tesmioloader.cpp)
 //   - Init non-zero: the loader calls FreeLibrary. This plugin returns non-zero
 //     from Init only when disabled, before anything is patched.
 //   - Start non-zero: the loader logs "started with N - inactive" and does NOT
 //     unload the DLL. A swap may already be in place.
-//   So once a swap has succeeded, the DLL stays loaded for the session. Start
-//   returns 0 when armed and 1 when the plugin is inactive. Forwarding stays
-//   valid in both states.
+//   So once a swap has been written, the DLL stays loaded for the session. Start
+//   returns 0 when armed and 1 when inactive. Forwarding stays valid in both.
 //
-// FAULTS
-//   - Faults in this plugin's own code are caught: the snapshot reads and the
-//     tracker (PlanRowTile), and the rect-store write (WriteNinthSlot). Those
-//     handlers only set interlocked flags. Ordinary code then resets the
-//     tracker, restores the store, and calls RestoreOriginal.
-//   - Faults inside the native Draw, eighth or ninth, are NOT caught here. They
-//     propagate as they would without this plugin. Continuing after a fault in
-//     engine code can leave engine state inconsistent, so this plugin does not
-//     swallow them.
+// FAULTS AND FAILURE POLICY
+//   - Protected blocks contain only: the snapshot reads and tracker calls
+//     (PlanRowTile), and the single 8-byte rect-pair load and store (LoadRectPair,
+//     StoreRectPair). Each handler only returns a status or sets interlocked
+//     flags.
+//   - Rect pair policy (the pair is 8 bytes, 8-byte aligned, checked at runtime):
+//       a) The load faults. Nothing has been written. Stop drawing and do not
+//          draw the ninth tile.
+//       b) The ninth store faults. An aligned 8-byte store either completes or
+//          faults, and a faulting store writes nothing. Stop drawing and do not
+//          draw the ninth tile. (This is the processor's behavior for an aligned
+//          store to a non-writable page; it is not verified on this build.)
+//       c) The native ninth Draw runs, outside any handler.
+//       d) The restore store faults. The pair still holds the ninth-slot values.
+//          This plugin cannot undo that. It logs RECT DIRTY and stops drawing.
+//          THIS IS AN UNRESOLVED RESIDUAL, not a safe failure. The session should
+//          be treated as suspect.
+//   - The native Draw calls, eighth and ninth, are outside every handler. Engine
+//     faults propagate as they would without the plugin.
 //
 // CONCURRENCY (ASSUMPTIONS, NOT VERIFIED)
 //   - Draw is assumed to run on one render thread. Start is assumed to run on
 //     the loader thread before the first row draw. The loader runs StartPlugins
 //     as a sequential loop (verified in tesmioloader.cpp).
-//   - The compare-exchange removes the window between our check and our write.
-//     It does not remove a concurrent writer that bypasses the check.
+//   - The compare-exchange removes the window between our validation and our
+//     write. It does not remove a concurrent writer that bypasses the check.
 //
 // RESTORATION FOR A TESTER
 //   Set enabled = 0 and restart the game.
@@ -96,8 +127,9 @@
 //   compiled or run in this session. The ninth position, its visibility, and its
 //   clipping are NOT established.
 //
-// Version 1.2: compare-exchange swap and restore; constants captured per pass;
-// native ninth draw outside exception handlers; corrected lifecycle notes.
+// Version 1.3: rect pair as one 8-byte store and restore; expected-value swap
+// from the validated export; protection outcomes reported separately; build
+// guard wording includes addresses.ini.
 
 #include <stdint.h>
 #include "../../src/tesmio_plugin.h"
@@ -269,25 +301,36 @@ static bool VerifyBuild(void)
 
 // ---------------------------------------------------------------- slot swap
 
-// Replaces *slot with `repl` only if it still holds `expect`, in one interlocked
-// compare-exchange. Returns the value found in the slot. The caller compares it
-// with `expect`: equal means the write happened, and anything else means no
-// write was made. *protectOk is false if the page could not be made writable.
-static void* CompareSwapSlot(void** slot, void* expect, void* repl, bool* protectOk)
+// The outcome of one compare-exchange attempt, with its protection steps kept
+// separate. If protectSetOk is 0, no exchange was tried and nothing was written.
+typedef struct SlotSwap {
+    int   protectSetOk;      // the page was made writable
+    int   protectRestoreOk;  // the original page protection was put back
+    void* was;               // value found in the slot at the exchange
+} SlotSwap;
+
+// Exchanges *slot from `expect` to `repl` in one interlocked compare-exchange,
+// bracketed by making the page writable and restoring its protection. The
+// caller compares `was` with `expect`: equal means the write happened.
+static SlotSwap CompareSwapSlot(void** slot, void* expect, void* repl)
 {
+    SlotSwap r;
     DWORD oldProt = 0;
-    *protectOk = VirtualProtect(slot, sizeof(void*), PAGE_READWRITE, &oldProt) != 0;
-    if (!*protectOk) return NULL;
-    void* was = InterlockedCompareExchangePointer((PVOID volatile*)slot, repl, expect);
     DWORD ignored = 0;
-    if (!VirtualProtect(slot, sizeof(void*), oldProt, &ignored))
-        Logf("almanac_button  WARNING  could not restore page protection on the import slot");
-    return was;
+    r.protectRestoreOk = 0;
+    r.was = NULL;
+    r.protectSetOk = VirtualProtect(slot, sizeof(void*), PAGE_READWRITE, &oldProt) != 0;
+    if (!r.protectSetOk) return r;
+    r.was = InterlockedCompareExchangePointer((PVOID volatile*)slot, repl, expect);
+    r.protectRestoreOk = VirtualProtect(slot, sizeof(void*), oldProt, &ignored) != 0;
+    return r;
 }
+
+static const char* ProtText(int ok) { return ok ? "restored" : "NOT restored"; }
 
 // Puts the engine's original Draw back, but only if the slot still holds our
 // detour. Never overwrites a value it did not observe. Stops drawing first.
-// Runs from ordinary code only.
+// Ordinary code only.
 static bool RestoreOriginal(const char* why)
 {
     InterlockedExchange(&g_active, 0);
@@ -298,28 +341,30 @@ static bool RestoreOriginal(const char* why)
         return false;
     }
 
-    bool protectOk = false;
-    void* was = CompareSwapSlot(g_slot, (void*)Detour, (void*)g_drawOrig, &protectOk);
-    if (!protectOk) {
-        Logf("almanac_button  NOT RESTORED (%s): import slot not writable; drawing stopped", why);
+    SlotSwap r = CompareSwapSlot(g_slot, (void*)Detour, (void*)g_drawOrig);
+    if (!r.protectSetOk) {
+        Logf("almanac_button  NOT RESTORED (%s): import page not writable; no write made; "
+             "drawing stopped", why);
         return false;
     }
-    if (was == (void*)g_drawOrig) {
-        Logf("almanac_button  restore (%s): slot already holds the original", why);
-        return true;
+    if (r.was == (void*)Detour) {
+        if (*g_slot != (void*)g_drawOrig) {
+            Logf("almanac_button  WARNING (%s): exchange reported success but the slot does "
+                 "not read back as the original", why);
+            return false;
+        }
+        Logf("almanac_button  restored original Draw pointer (%s); page protection %s",
+             why, ProtText(r.protectRestoreOk));
+        return r.protectRestoreOk != 0;
     }
-    if (was != (void*)Detour) {
-        Logf("almanac_button  NOT RESTORED (%s): slot holds another value %p; no write made; "
-             "our detour forwards only and the DLL stays loaded", why, was);
-        return false;
+    if (r.was == (void*)g_drawOrig) {
+        Logf("almanac_button  restore (%s): slot already holds the original; page protection %s",
+             why, ProtText(r.protectRestoreOk));
+        return r.protectRestoreOk != 0;
     }
-    if (*g_slot != (void*)g_drawOrig) {
-        Logf("almanac_button  WARNING (%s): compare-exchange reported a swap but the slot "
-             "does not read back as the original", why);
-        return false;
-    }
-    Logf("almanac_button  restored original Draw import (%s)", why);
-    return true;
+    Logf("almanac_button  NOT RESTORED (%s): slot holds another value %p; no write made; "
+         "our detour forwards only and the DLL stays loaded", why, r.was);
+    return false;
 }
 
 // ---------------------------------------------------------------- row logic
@@ -355,15 +400,24 @@ static void PlanRowTile(NinthPlan* plan)
     }
 }
 
-// Writes the ninth X and Y into the rect store. The only protected code is the
-// two stores, which lie in the same 4 KB page (0x9BE000..0x9BEFFF). A faulting
-// store therefore changed nothing, so the caller does not write back.
-// Returns 0 if a store faulted.
-static int WriteNinthSlot(uint8_t* rect, float x, float y)
+// ---------------------------------------------------------------- rect pair
+
+// The rect pair is X at +8 and Y at +12 (0x9BE2F0 and 0x9BE2F4). It is 8 bytes
+// and 8-byte aligned, so one 8-byte access reads or writes both. Little-endian:
+// X is the low half.
+static uint64_t PackPair(float x, float y)
+{
+    uint32_t xb = 0, yb = 0;
+    memcpy(&xb, &x, sizeof(xb));
+    memcpy(&yb, &y, sizeof(yb));
+    return (uint64_t)xb | ((uint64_t)yb << 32);
+}
+
+// One 8-byte load. Returns 0 if it faulted. Nothing is written.
+static int LoadRectPair(const uint8_t* at, uint64_t* out)
 {
     __try {
-        *(float*)(rect + 8)  = x;   // 0x9BE2F0
-        *(float*)(rect + 12) = y;   // 0x9BE2F4
+        *out = *(const volatile uint64_t*)at;
         return 1;
     }
     __except (EXCEPTION_EXECUTE_HANDLER) {
@@ -371,25 +425,49 @@ static int WriteNinthSlot(uint8_t* rect, float x, float y)
     }
 }
 
-// Draws the ninth backdrop tile. Ordinary code: the native call is not inside
-// any handler. The rect store is read, changed for the one call, and restored.
+// One 8-byte store. Returns 0 if it faulted. A faulting store writes nothing.
+static int StoreRectPair(uint8_t* at, uint64_t value)
+{
+    __try {
+        *(volatile uint64_t*)at = value;
+        return 1;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        return 0;
+    }
+}
+
+// Draws the ninth backdrop tile. Ordinary code, so the native call is not inside
+// any handler. Only the rect pair is touched, and each access is one 8-byte
+// operation. Every failure path stops drawing through RestoreOriginal.
 static void DrawNinthTile(void* self, float a1, float a2, float a3, float a4,
                           float a5, bool a6, float x, float y)
 {
-    uint8_t* rect = (uint8_t*)(Base() + TSM_RVA_DEFAULT_P2D_RECT_W);
-    uint8_t saved[20];
-    if (!ReadablePtr(rect, sizeof(saved))) {
-        RestoreOriginal("rect store unreadable");
+    uint8_t* at = (uint8_t*)(Base() + TSM_RVA_DEFAULT_P2D_RECT_X);
+    if (((uintptr_t)at & 7u) != 0 || !ReadablePtr(at, sizeof(uint64_t))) {
+        RestoreOriginal("rect pair unreadable or misaligned; ninth tile not drawn");
         return;
     }
-    memcpy(saved, rect, sizeof(saved));
-    if (!WriteNinthSlot(rect, x, y)) {
-        // Nothing changed (see WriteNinthSlot). Stop drawing and restore the slot.
-        RestoreOriginal("rect store write faulted");
+
+    uint64_t saved = 0;
+    if (!LoadRectPair(at, &saved)) {
+        RestoreOriginal("rect pair load faulted; nothing written; ninth tile not drawn");
         return;
     }
-    g_drawOrig(self, a1, a2, a3, a4, a5, a6);         // native ninth draw
-    memcpy(rect, saved, sizeof(saved));
+    if (!StoreRectPair(at, PackPair(x, y))) {
+        RestoreOriginal("rect pair store faulted; nothing written; ninth tile not drawn");
+        return;
+    }
+
+    g_drawOrig(self, a1, a2, a3, a4, a5, a6);          // native ninth draw
+
+    if (!StoreRectPair(at, saved)) {
+        // The pair still holds the ninth-slot values. This plugin cannot undo that.
+        Logf("almanac_button  RECT DIRTY: restoring the rect pair at 0x9BE2F0 faulted; the "
+             "ninth-slot X/Y remain in the store. Treat this session as suspect.");
+        RestoreOriginal("rect restore faulted");
+        return;
+    }
     g_ninthDrawn++;
     if (g_ninthDrawn == 1)
         Logf("almanac_button  ninth tile drawn (first row pass)");
@@ -445,7 +523,7 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
 {
     TsmBind(host);
     info->name    = "almanac_button";
-    info->version = "1.2";
+    info->version = "1.3";
 
     ReadSettings();
     if (!g_enabled) {
@@ -472,36 +550,52 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
         Logf("almanac_button  REFUSED  Draw import is not at RVA 0x86C860");
         return 1;
     }
-    FARPROC engine = g_engine ? GetProcAddress(g_engine, ALM_DRAW_SYM) : NULL;
-    if (!engine || (void*)engine != *slot) {
-        Logf("almanac_button  REFUSED  Draw import differs from the engine export");
+    FARPROC engineProc = g_engine ? GetProcAddress(g_engine, ALM_DRAW_SYM) : NULL;
+    if (!engineProc) {
+        Logf("almanac_button  REFUSED  no engine export for C3D_PANEL2D::Draw");
         return 1;
     }
 
-    // Record the original first, so Detour can forward as soon as the slot
-    // holds it. Stays inactive until the last step.
-    t_Draw original = (t_Draw)*slot;
+    // The validated pointer is the engine export. It is the one expected value
+    // for the exchange, and the original that Detour forwards to. It is never
+    // re-read from the slot and adopted.
+    void* validated = (void*)engineProc;
+    if (*slot != validated) {
+        Logf("almanac_button  REFUSED  Draw import differs from the engine export; no write made");
+        return 1;
+    }
+
     g_slot = slot;
-    g_drawOrig = original;
+    g_drawOrig = (t_Draw)validated;
 
-    bool protectOk = false;
-    void* was = CompareSwapSlot(slot, (void*)original, (void*)Detour, &protectOk);
-    if (!protectOk) {
-        g_slot = NULL;
-        g_drawOrig = NULL;
-        Logf("almanac_button  REFUSED  import slot not writable; nothing written");
+    SlotSwap s = CompareSwapSlot(slot, validated, (void*)Detour);
+    if (!s.protectSetOk) {
+        Logf("almanac_button  REFUSED  import page not writable; no write made");
         return 1;
     }
-    if (was != (void*)original) {
-        g_slot = NULL;
-        g_drawOrig = NULL;
-        Logf("almanac_button  REFUSED  import slot changed before the swap (now %p); "
-             "no write made", was);
+    if (s.was != validated) {
+        // No write made. The slot holds another value, and it is left alone.
+        Logf("almanac_button  REFUSED  import changed before the swap (found %p); no write "
+             "made; page protection %s", s.was, ProtText(s.protectRestoreOk));
+        return 1;
+    }
+
+    // The exchange wrote our detour, so the slot points into this DLL, and the
+    // DLL stays loaded for the session from here on.
+    if (!s.protectRestoreOk) {
+        SlotSwap u = CompareSwapSlot(slot, (void*)Detour, validated);
+        int undone = u.protectSetOk && u.was == (void*)Detour;
+        Logf("almanac_button  WARNING  swap written but import page protection NOT restored; "
+             "undo %s; page protection %s; NOT ARMED. %s",
+             undone ? "done" : "NOT done", ProtText(u.protectRestoreOk),
+             undone ? "The detour was removed from the slot."
+                    : "The detour remains in the slot as a forwarder.");
+        InterlockedExchange(&g_active, 0);
         return 1;
     }
     if (*slot != (void*)Detour) {
         InterlockedExchange(&g_active, 0);
-        Logf("almanac_button  WARNING  slot changed right after our swap; not armed; "
+        Logf("almanac_button  WARNING  import changed right after our swap; NOT ARMED; "
              "forwarding only");
         return 1;
     }
