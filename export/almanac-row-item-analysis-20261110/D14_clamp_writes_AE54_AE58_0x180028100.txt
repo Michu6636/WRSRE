@@ -1,0 +1,34 @@
+# D14 clamp writing AE54/AE58
+# Source: Mods for analysis/Diplomacy/tesmioloader/the build/plugins/reputation.dll (SHA-256 fd7d94590b98c7eb80fa14ef95f2bbdf4b5e058f68d07dfa97d0db8dcbfbcb6a)
+# Range: 180028100-180028183
+# Static objdump excerpt, annotated by annot.py (rip-relative targets, .rdata strings). Nothing executed.
+# Purpose: exe+0x9DFD64 and exe+0x9DFD68 writes
+
+180028105:	movss  xmm1,DWORD PTR [rcx+rdx*8+0x24]
+18002810b:	xorps  xmm0,xmm0
+18002810e:	comiss xmm0,xmm2
+180028111:	jb     0x180028118
+180028113:	comiss xmm0,xmm1
+180028116:	jae    0x18002817e
+180028118:	mov    DWORD PTR [rsp+0x50],eax
+18002811c:	mov    rax,QWORD PTR [rip+0x9cc5d]        # 0x1800c4d80
+180028123:	comiss xmm2,xmm0
+180028126:	jbe    0x180028130
+180028128:	movss  DWORD PTR [rax+0x9dfd64],xmm2
+180028130:	comiss xmm1,xmm0
+180028133:	jbe    0x180028151
+180028135:	movss  xmm0,DWORD PTR [rax+0x9dfd60]
+18002813d:	addss  xmm0,DWORD PTR [rip+0x8758b]        # 0x1800af6d0
+180028145:	maxss  xmm1,xmm0
+180028149:	movss  DWORD PTR [rax+0x9dfd68],xmm1
+180028151:	jmp    0x18002817e
+180028153:	movsxd rdx,DWORD PTR [rsp+0x50]
+180028158:	lea    rcx,[rdx+rdx*4]
+18002815c:	lea    rax,[rip+0x18c5bd]        # 0x1801b4720
+180028163:	mov    DWORD PTR [rax+rcx*8+0x24],0x0
+18002816b:	lea    rcx,[rdx+rdx*4]
+18002816f:	lea    rax,[rip+0x18c5aa]        # 0x1801b4720
+180028176:	mov    DWORD PTR [rax+rcx*8+0x20],0x0
+18002817e:	add    rsp,0x48
+180028182:	ret
+180028183:	int3

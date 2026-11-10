@@ -1,0 +1,51 @@
+# C01 reputation.ini: optional Economy & Trade row item block (verbatim lines 1586-1632)
+# Source: Mods for analysis/Diplomacy/tesmioloader/the build/plugins/reputation.ini
+# Purpose: configuration claims about sidebar_item (these are author claims, not runtime observations)
+
+; touches the bar under the panel; lower it to fit another row or two.
+rows_reserve    = 12
+
+; ------------------------------------------- AN ITEM IN A GAME PANEL
+;
+; A panel BODY is chosen by a hardcoded chain of name comparisons in
+; the exe - about twenty-five branches, one per panel. Our name is in
+; none of them, so our own panel falls through to a branch that draws
+; the frame and the title and nothing else. That is the empty Secret
+; police panel, and pushing items into it would not help either,
+; because the loop that would draw them belongs to the body that never
+; runs. in_panel fills that panel with our own drawing instead; this
+; is the other way in, and the two are independent.
+;
+; The game own panels are different: they render their items
+; GENERICALLY - count straight from the vector, one button each, icon
+; from item+0x48, and on a click the item INDEX is written to a
+; global. No name comparison in that loop at all. So an item pushed
+; into one of THEIR vectors is drawn, highlighted and clicked by the
+; game itself, and all this plugin does is notice and open a window.
+;
+; The host is `trade` - Economy and trade - because foreign relations
+; belong there and its eight items are already that window icon row.
+; Do NOT use `system`: its renderer hardcodes a count of five and
+; would simply not draw a ninth item.
+;
+; IT NEEDS AN ICON: media_soviet/editor/<panel>_<name>.png, 96x96.
+; The renderer binds that texture without a null check, so a missing
+; file would crash rather than draw a blank. The item is taken back
+; out if the texture does not arrive.
+;
+; OFF, and the shipped answer is 0.
+;
+; It works - the tab appears in Economy and trade, the game draws
+; and highlights it, and clicking it opens our window. It is off
+; because it is a SECOND door into the same room: the mod already
+; has its own button in the sidebar, and a duplicate tab sitting in
+; somebody else panel is clutter in a window that is not ours.
+; Turn it on if you would rather reach the panel from there.
+;
+; It also writes into a game vector, which should be a deliberate
+; choice. Needs sidebar = 1.
+sidebar_item       = 0
+sidebar_item_panel = trade
+sidebar_item_name  = reputation
+
+; ------------------------------------------ WHAT THE PANEL IS CALLED

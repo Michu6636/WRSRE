@@ -1,0 +1,30 @@
+# N01 host section dispatch: normal vs alternate row handler, AE58 write
+# Source: export/140317db0_full_disasm.asm (preserved repo listing; game binary not in workspace, hash unverified)
+# Range: 14031edaf-14031ee18
+# Static listing excerpt, copied verbatim by address. Nothing executed.
+# Purpose: CMP [R14+0x10398],R15B; JZ -> 0x14031EE10 -> CALL 0x140361BB0; else CALL 0x140373EA0 then AE58 = Y - AE50
+
+14031edaf:  49 8B CF                 MOV RCX,R15
+14031edb2:  48 8D 15 DB 33 59 00     LEA RDX,[0x1408b2194]
+14031edb9:  0F 1F 80 00 00 00 00     NOP dword ptr [RAX]
+14031edc0:  0F B6 04 0B              MOVZX EAX,byte ptr [RBX + RCX*0x1]
+14031edc4:  48 FF C1                 INC RCX
+14031edc7:  3A 44 0A FF              CMP AL,byte ptr [RDX + RCX*0x1 + -0x1]
+14031edcb:  75 50                    JNZ 0x14031ee1d
+14031edcd:  48 83 F9 06              CMP RCX,0x6
+14031edd1:  75 ED                    JNZ 0x14031edc0
+14031edd3:  44 89 7D 48              MOV dword ptr [RBP + 0x48],R15D
+14031edd7:  44 89 7D F0              MOV dword ptr [RBP + -0x10],R15D
+14031eddb:  4C 8D 45 F0              LEA R8,[RBP + -0x10]
+14031eddf:  48 8D 55 48              LEA RDX,[RBP + 0x48]
+14031ede3:  49 8B CE                 MOV RCX,R14
+14031ede6:  45 38 BE 98 03 01 00     CMP byte ptr [R14 + 0x10398],R15B
+14031eded:  74 21                    JZ 0x14031ee10
+14031edef:  E8 AC 50 05 00           CALL 0x140373ea0
+14031edf4:  F3 0F 10 45 F0           MOVSS XMM0,dword ptr [RBP + -0x10]
+14031edf9:  F3 41 0F 5C 86 50 AE 00 00 SUBSS XMM0,dword ptr [R14 + 0xae50]
+14031ee02:  F3 41 0F 11 86 58 AE 00 00 MOVSS dword ptr [R14 + 0xae58],XMM0
+14031ee0b:  E9 08 02 00 00           JMP 0x14031f018
+14031ee10:  45 33 C9                 XOR R9D,R9D
+14031ee13:  E8 98 2D 04 00           CALL 0x140361bb0
+14031ee18:  E9 FB 01 00 00           JMP 0x14031f018
