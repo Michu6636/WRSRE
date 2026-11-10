@@ -1,0 +1,6 @@
+DLL .rdata string extraction; raw file offset = RVA - 0xe00; preferred image base 0x180000000.
+VA 0x1800a16f0 offset 0xa08f0 b' CONTRACTS      %d running, %d offered      page %d of %d'
+VA 0x1800a1730 offset 0xa0930 b'   Nothing running and nothing offered.'
+VA 0x1800a1758 offset 0xa0958 b'   The board is redrawn every few weeks.'
+VA 0x1800a1790 offset 0xa0990 b'   You have no missions built, and no bloc offers contracts to a'
+VA 0x18009be08 offset 0x9b008 b'reput    contract window faulted - window off'

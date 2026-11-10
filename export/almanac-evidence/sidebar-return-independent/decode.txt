@@ -1,0 +1,7 @@
+Independent decode from supplied report dumps; source ef07903.
+Item raw counts: [8, 0, 8]
+State 1 and state 3: byte-identical eight raw records: True
+State 1: P=0x000001F3103F26D0, index=0x00000001, AE50 floats=(184.0, 785.0, 732.39990234375, 0.0), ADB0 bytes=a0 14 0a 96 f3 01 00 00 a0 14 0a 96 f3 01 00 00
+State 2: P=0x000001F3103F2598, index=0xFFFFFFFF, AE50 floats=(184.0, 785.0, 904.0, 0.0), ADB0 bytes=a0 14 0a 96 f3 01 00 00 a0 14 0a 96 f3 01 00 00
+State 3: P=0x000001F3103F26D0, index=0x00000000, AE50 floats=(184.0, 785.0, 916.7998046875, 0.0), ADB0 bytes=a0 14 0a 96 f3 01 00 00 a0 14 0a 96 f3 01 00 00
+No raw selected panel record, parent name, or vector header bytes in these files; state 2 vector values are decoded reports only.

@@ -1,0 +1,10 @@
+Independent arithmetic checks for source report 29056b2; not a runtime measurement.
+For positive span: signed high 64 bits of span * 0x6666666666666667, then arithmetic shift right 5:
+span=80 (0x50): high=0x20; result=1; expected n/80=1
+span=640 (0x280): high=0x100; result=8; expected n/80=8
+span=720 (0x2d0): high=0x120; result=9; expected n/80=9
+Snapshot spans: end-begin=0x280 (8 entries); capacity-begin=0x2d0 (9 entries); spare=80 bytes.
+Mapping before skips:
+8: [0, 1, 7, 2, 3, 4, 5, 6]
+9: [0, 1, 8, 2, 3, 4, 5, 6, 7]
+PE mapping arithmetic: 0x8b21e4 - 0x86c000 + 0x86b000 = 0x8b11e4. Mapping and source hash are agent-reported, not authenticated by arithmetic.
