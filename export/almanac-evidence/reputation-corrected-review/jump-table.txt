@@ -1,0 +1,10 @@
+8 little-endian 32-bit RVAs at DLL file offset 0x2e7f8 (RVA 0x2f3f8), after function RET:
+03 f2 02 00 28 f2 02 00 46 f2 02 00 74 f2 02 00 a2 f2 02 00 c7 f2 02 00 ee f2 02 00 15 f3 02 00
+case 0: RVA 0x2f203 VA 0x18002f203
+case 1: RVA 0x2f228 VA 0x18002f228
+case 2: RVA 0x2f246 VA 0x18002f246
+case 3: RVA 0x2f274 VA 0x18002f274
+case 4: RVA 0x2f2a2 VA 0x18002f2a2
+case 5: RVA 0x2f2c7 VA 0x18002f2c7
+case 6: RVA 0x2f2ee VA 0x18002f2ee
+case 7: RVA 0x2f315 VA 0x18002f315

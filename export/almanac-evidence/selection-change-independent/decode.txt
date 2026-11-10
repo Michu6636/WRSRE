@@ -1,0 +1,15 @@
+Independent decode of supplied reported raw captures; non-atomic, source commit 6e436f2.
+All 8 records present, length 80 bytes, per-entry raw data match between captures: True.
+Name is bytes before first NUL in first 24 bytes; not a localized display label.
+index  name  u32@0x40  u64@0x48
+0: importexport  1501  0x000001f361595760
+1: productionconsumption  1511  0x000001f3615973e0
+2: prices  1664  0x000001f361597e60
+3: loanrub  1683  0x000001f3615976e0
+4: loanusd  1684  0x000001f361598a60
+5: tourism  37554  0x000001f361596660
+6: crime  67066  0x000001f361595ee0
+7: resources  1530  0x000001f361598d60
+selection raw 00 00 00 00 -> 0, AE floats (184.0, 785.0, 916.7998046875, 0.0)
+selection raw 01 00 00 00 -> 1, AE floats (184.0, 785.0, 732.39990234375, 0.0)
+Reported 10bd8 - 10bd0 = 0x50; host signed magic divide by 0x28 implies 2, if both values from consistent snapshot.

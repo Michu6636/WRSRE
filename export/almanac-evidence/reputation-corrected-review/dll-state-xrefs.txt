@@ -1,0 +1,270 @@
+GNU objdump text scan: RIP-relative reference comments; not exhaustive for indirect addressing. DLL base 0x180000000.
+   180001c80:	83 3d d1 14 0c 00 00 	cmp    DWORD PTR [rip+0xc14d1],0x0        # 0x1800c3158
+   180001c89:	83 3d f0 43 28 00 00 	cmp    DWORD PTR [rip+0x2843f0],0x0        # 0x180286080
+   180001c92:	83 3d 7f bd 1c 00 00 	cmp    DWORD PTR [rip+0x1cbd7f],0x0        # 0x1801cda18
+   180001c9b:	83 3d 72 bd 1c 00 00 	cmp    DWORD PTR [rip+0x1cbd72],0x0        # 0x1801cda14
+   180001ca4:	83 3d 09 32 18 00 00 	cmp    DWORD PTR [rip+0x183209],0x0        # 0x180184eb4
+   180001cad:	83 3d 68 bd 1c 00 00 	cmp    DWORD PTR [rip+0x1cbd68],0x0        # 0x1801cda1c
+   180001cb6:	83 3d 93 2f 0c 00 00 	cmp    DWORD PTR [rip+0xc2f93],0x0        # 0x1800c4c50
+   180008c80:	39 35 d2 a4 0b 00    	cmp    DWORD PTR [rip+0xba4d2],esi        # 0x1800c3158
+   18000950f:	83 3d 42 9c 0b 00 02 	cmp    DWORD PTR [rip+0xb9c42],0x2        # 0x1800c3158
+   18000bef0:	8b 05 be 8f 17 00    	mov    eax,DWORD PTR [rip+0x178fbe]        # 0x180184eb4
+   18001cb4d:	44 8b 05 04 66 0a 00 	mov    r8d,DWORD PTR [rip+0xa6604]        # 0x1800c3158
+   18001cb70:	44 39 0d 09 95 26 00 	cmp    DWORD PTR [rip+0x269509],r9d        # 0x180286080
+   18001cb92:	44 39 0d 7f 0e 1b 00 	cmp    DWORD PTR [rip+0x1b0e7f],r9d        # 0x1801cda18
+   18001cbab:	44 39 0d 62 0e 1b 00 	cmp    DWORD PTR [rip+0x1b0e62],r9d        # 0x1801cda14
+   18001cbc4:	44 39 0d e9 82 16 00 	cmp    DWORD PTR [rip+0x1682e9],r9d        # 0x180184eb4
+   18001cbdd:	44 39 0d 38 0e 1b 00 	cmp    DWORD PTR [rip+0x1b0e38],r9d        # 0x1801cda1c
+   18001cbf6:	44 39 0d 53 80 0a 00 	cmp    DWORD PTR [rip+0xa8053],r9d        # 0x1800c4c50
+   18001cc17:	44 89 0d 3a 65 0a 00 	mov    DWORD PTR [rip+0xa653a],r9d        # 0x1800c3158
+   18001cc23:	44 89 0d 56 94 26 00 	mov    DWORD PTR [rip+0x269456],r9d        # 0x180286080
+   18001cc36:	44 89 0d db 0d 1b 00 	mov    DWORD PTR [rip+0x1b0ddb],r9d        # 0x1801cda18
+   18001cc42:	44 89 0d cb 0d 1b 00 	mov    DWORD PTR [rip+0x1b0dcb],r9d        # 0x1801cda14
+   18001cc4e:	44 89 0d 5f 82 16 00 	mov    DWORD PTR [rip+0x16825f],r9d        # 0x180184eb4
+   18001cc5a:	44 89 0d bb 0d 1b 00 	mov    DWORD PTR [rip+0x1b0dbb],r9d        # 0x1801cda1c
+   18001cc66:	44 89 0d e3 7f 0a 00 	mov    DWORD PTR [rip+0xa7fe3],r9d        # 0x1800c4c50
+   18001cca3:	8b 15 0b 82 16 00    	mov    edx,DWORD PTR [rip+0x16820b]        # 0x180184eb4
+   18001d99c:	83 3d 79 00 1b 00 00 	cmp    DWORD PTR [rip+0x1b0079],0x0        # 0x1801cda1c
+   18001e0c3:	83 3d b6 7f 26 00 00 	cmp    DWORD PTR [rip+0x267fb6],0x0        # 0x180286080
+   18001ee9c:	83 3d ad 5d 0a 00 00 	cmp    DWORD PTR [rip+0xa5dad],0x0        # 0x1800c4c50
+   18001f0ff:	8b 0d 4b 5b 0a 00    	mov    ecx,DWORD PTR [rip+0xa5b4b]        # 0x1800c4c50
+   18001f1d3:	83 3d 3e e8 1a 00 00 	cmp    DWORD PTR [rip+0x1ae83e],0x0        # 0x1801cda18
+   18001fe73:	83 3d 9a db 1a 00 00 	cmp    DWORD PTR [rip+0x1adb9a],0x0        # 0x1801cda14
+   18002158d:	83 3d c4 1b 0a 00 00 	cmp    DWORD PTR [rip+0xa1bc4],0x0        # 0x1800c3158
+   18002da6c:	39 05 e6 56 09 00    	cmp    DWORD PTR [rip+0x956e6],eax        # 0x1800c3158
+   18002da7d:	89 15 d5 56 09 00    	mov    DWORD PTR [rip+0x956d5],edx        # 0x1800c3158
+   18002f141:	39 05 11 40 09 00    	cmp    DWORD PTR [rip+0x94011],eax        # 0x1800c3158
+   18002f14d:	39 05 2d 6f 25 00    	cmp    DWORD PTR [rip+0x256f2d],eax        # 0x180286080
+   18002f160:	83 3d b1 e8 19 00 00 	cmp    DWORD PTR [rip+0x19e8b1],0x0        # 0x1801cda18
+   18002f178:	83 3d 95 e8 19 00 00 	cmp    DWORD PTR [rip+0x19e895],0x0        # 0x1801cda14
+   18002f189:	83 3d 24 5d 15 00 01 	cmp    DWORD PTR [rip+0x155d24],0x1        # 0x180184eb4
+   18002f196:	83 3d 17 5d 15 00 02 	cmp    DWORD PTR [rip+0x155d17],0x2        # 0x180184eb4
+   18002f1a3:	39 05 73 e8 19 00    	cmp    DWORD PTR [rip+0x19e873],eax        # 0x1801cda1c
+   18002f1af:	39 05 9b 5a 09 00    	cmp    DWORD PTR [rip+0x95a9b],eax        # 0x1800c4c50
+   18002f203:	44 39 0d 4e 3f 09 00 	cmp    DWORD PTR [rip+0x93f4e],r9d        # 0x1800c3158
+   18002f21d:	89 15 35 3f 09 00    	mov    DWORD PTR [rip+0x93f35],edx        # 0x1800c3158
+   18002f232:	39 05 48 6e 25 00    	cmp    DWORD PTR [rip+0x256e48],eax        # 0x180286080
+   18002f23b:	89 05 3f 6e 25 00    	mov    DWORD PTR [rip+0x256e3f],eax        # 0x180286080
+   18002f260:	39 05 b2 e7 19 00    	cmp    DWORD PTR [rip+0x19e7b2],eax        # 0x1801cda18
+   18002f269:	89 05 a9 e7 19 00    	mov    DWORD PTR [rip+0x19e7a9],eax        # 0x1801cda18
+   18002f28e:	39 05 80 e7 19 00    	cmp    DWORD PTR [rip+0x19e780],eax        # 0x1801cda14
+   18002f297:	89 05 77 e7 19 00    	mov    DWORD PTR [rip+0x19e777],eax        # 0x1801cda14
+   18002f2ab:	83 3d 02 5c 15 00 01 	cmp    DWORD PTR [rip+0x155c02],0x1        # 0x180184eb4
+   18002f2bf:	89 05 ef 5b 15 00    	mov    DWORD PTR [rip+0x155bef],eax        # 0x180184eb4
+   18002f2dc:	39 15 d2 5b 15 00    	cmp    DWORD PTR [rip+0x155bd2],edx        # 0x180184eb4
+   18002f2e6:	89 15 c8 5b 15 00    	mov    DWORD PTR [rip+0x155bc8],edx        # 0x180184eb4
+   18002f304:	39 05 12 e7 19 00    	cmp    DWORD PTR [rip+0x19e712],eax        # 0x1801cda1c
+   18002f30d:	89 05 09 e7 19 00    	mov    DWORD PTR [rip+0x19e709],eax        # 0x1801cda1c
+   18002f318:	39 05 32 59 09 00    	cmp    DWORD PTR [rip+0x95932],eax        # 0x1800c4c50
+   18002f321:	89 05 29 59 09 00    	mov    DWORD PTR [rip+0x95929],eax        # 0x1800c4c50
+   18002f335:	44 39 0d 1c 3e 09 00 	cmp    DWORD PTR [rip+0x93e1c],r9d        # 0x1800c3158
+   18002f33e:	44 89 0d 13 3e 09 00 	mov    DWORD PTR [rip+0x93e13],r9d        # 0x1800c3158
+   18002f359:	44 39 0d 20 6d 25 00 	cmp    DWORD PTR [rip+0x256d20],r9d        # 0x180286080
+   18002f362:	44 89 0d 17 6d 25 00 	mov    DWORD PTR [rip+0x256d17],r9d        # 0x180286080
+   18002f370:	44 89 0d a5 e6 19 00 	mov    DWORD PTR [rip+0x19e6a5],r9d        # 0x1801cda1c
+   18002f377:	44 89 0d 36 5b 15 00 	mov    DWORD PTR [rip+0x155b36],r9d        # 0x180184eb4
+   18002f37e:	44 89 0d 8f e6 19 00 	mov    DWORD PTR [rip+0x19e68f],r9d        # 0x1801cda14
+   18002f385:	44 89 0d 8c e6 19 00 	mov    DWORD PTR [rip+0x19e68c],r9d        # 0x1801cda18
+   18002f38c:	44 89 0d bd 58 09 00 	mov    DWORD PTR [rip+0x958bd],r9d        # 0x1800c4c50
+   18002f39e:	44 39 0d db 6c 25 00 	cmp    DWORD PTR [rip+0x256cdb],r9d        # 0x180286080
+   18002f3a7:	44 89 0d d2 6c 25 00 	mov    DWORD PTR [rip+0x256cd2],r9d        # 0x180286080
+   18002f3ba:	44 89 0d 57 e6 19 00 	mov    DWORD PTR [rip+0x19e657],r9d        # 0x1801cda18
+   18002f3c9:	44 89 0d 44 e6 19 00 	mov    DWORD PTR [rip+0x19e644],r9d        # 0x1801cda14
+   18002f3d5:	44 89 0d d8 5a 15 00 	mov    DWORD PTR [rip+0x155ad8],r9d        # 0x180184eb4
+   18002f3e1:	44 89 0d 34 e6 19 00 	mov    DWORD PTR [rip+0x19e634],r9d        # 0x1801cda1c
+   18002f3ed:	44 89 0d 5c 58 09 00 	mov    DWORD PTR [rip+0x9585c],r9d        # 0x1800c4c50
+   18002f7ce:	8b 05 7c 54 09 00    	mov    eax,DWORD PTR [rip+0x9547c]        # 0x1800c4c50
+   18002f7db:	44 8b 0d 9e 68 25 00 	mov    r9d,DWORD PTR [rip+0x25689e]        # 0x180286080
+   18002f7e8:	44 8b 05 69 39 09 00 	mov    r8d,DWORD PTR [rip+0x93969]        # 0x1800c3158
+   18002f7fb:	8b 05 b3 56 15 00    	mov    eax,DWORD PTR [rip+0x1556b3]        # 0x180184eb4
+   18002f845:	44 39 25 0c 39 09 00 	cmp    DWORD PTR [rip+0x9390c],r12d        # 0x1800c3158
+   18002f84e:	44 39 25 2b 68 25 00 	cmp    DWORD PTR [rip+0x25682b],r12d        # 0x180286080
+   18002f857:	44 39 25 ba e1 19 00 	cmp    DWORD PTR [rip+0x19e1ba],r12d        # 0x1801cda18
+   18002f860:	44 39 25 ad e1 19 00 	cmp    DWORD PTR [rip+0x19e1ad],r12d        # 0x1801cda14
+   18002f869:	44 39 25 44 56 15 00 	cmp    DWORD PTR [rip+0x155644],r12d        # 0x180184eb4
+   18002f872:	44 39 25 a3 e1 19 00 	cmp    DWORD PTR [rip+0x19e1a3],r12d        # 0x1801cda1c
+   18002f87b:	44 39 25 ce 53 09 00 	cmp    DWORD PTR [rip+0x953ce],r12d        # 0x1800c4c50
+   18003b50e:	83 3d 43 7c 08 00 00 	cmp    DWORD PTR [rip+0x87c43],0x0        # 0x1800c3158
+   18003b518:	89 05 3a 7c 08 00    	mov    DWORD PTR [rip+0x87c3a],eax        # 0x1800c3158
+   18003b563:	83 3d e6 96 08 00 00 	cmp    DWORD PTR [rip+0x896e6],0x0        # 0x1800c4c50
+   18003b56d:	89 05 dd 96 08 00    	mov    DWORD PTR [rip+0x896dd],eax        # 0x1800c4c50
+   18003b577:	89 1d 97 24 19 00    	mov    DWORD PTR [rip+0x192497],ebx        # 0x1801cda14
+   18003b57d:	89 1d fd aa 24 00    	mov    DWORD PTR [rip+0x24aafd],ebx        # 0x180286080
+   18003b583:	89 1d 2b 99 14 00    	mov    DWORD PTR [rip+0x14992b],ebx        # 0x180184eb4
+   18003b589:	89 1d 89 24 19 00    	mov    DWORD PTR [rip+0x192489],ebx        # 0x1801cda18
+   18003b58f:	89 1d 87 24 19 00    	mov    DWORD PTR [rip+0x192487],ebx        # 0x1801cda1c
+   18003b5fd:	83 3d b0 98 14 00 01 	cmp    DWORD PTR [rip+0x1498b0],0x1        # 0x180184eb4
+   18003b607:	89 05 a7 98 14 00    	mov    DWORD PTR [rip+0x1498a7],eax        # 0x180184eb4
+   18003b617:	89 1d f7 23 19 00    	mov    DWORD PTR [rip+0x1923f7],ebx        # 0x1801cda14
+   18003b61d:	89 1d 5d aa 24 00    	mov    DWORD PTR [rip+0x24aa5d],ebx        # 0x180286080
+   18003b623:	89 1d 27 96 08 00    	mov    DWORD PTR [rip+0x89627],ebx        # 0x1800c4c50
+   18003b629:	89 1d e9 23 19 00    	mov    DWORD PTR [rip+0x1923e9],ebx        # 0x1801cda18
+   18003b62f:	89 1d e7 23 19 00    	mov    DWORD PTR [rip+0x1923e7],ebx        # 0x1801cda1c
+   18003b66d:	39 05 41 98 14 00    	cmp    DWORD PTR [rip+0x149841],eax        # 0x180184eb4
+   18003b676:	89 05 38 98 14 00    	mov    DWORD PTR [rip+0x149838],eax        # 0x180184eb4
+   18003b686:	89 1d 88 23 19 00    	mov    DWORD PTR [rip+0x192388],ebx        # 0x1801cda14
+   18003b68c:	89 1d ee a9 24 00    	mov    DWORD PTR [rip+0x24a9ee],ebx        # 0x180286080
+   18003b692:	89 1d b8 95 08 00    	mov    DWORD PTR [rip+0x895b8],ebx        # 0x1800c4c50
+   18003b698:	89 1d 7a 23 19 00    	mov    DWORD PTR [rip+0x19237a],ebx        # 0x1801cda18
+   18003b69e:	89 1d 78 23 19 00    	mov    DWORD PTR [rip+0x192378],ebx        # 0x1801cda1c
+   18003b6e5:	83 3d 94 a9 24 00 00 	cmp    DWORD PTR [rip+0x24a994],0x0        # 0x180286080
+   18003b6ef:	89 05 8b a9 24 00    	mov    DWORD PTR [rip+0x24a98b],eax        # 0x180286080
+   18003b6ff:	89 1d 0f 23 19 00    	mov    DWORD PTR [rip+0x19230f],ebx        # 0x1801cda14
+   18003b705:	89 1d a9 97 14 00    	mov    DWORD PTR [rip+0x1497a9],ebx        # 0x180184eb4
+   18003b70b:	89 1d 3f 95 08 00    	mov    DWORD PTR [rip+0x8953f],ebx        # 0x1800c4c50
+   18003b711:	89 1d 01 23 19 00    	mov    DWORD PTR [rip+0x192301],ebx        # 0x1801cda18
+   18003b717:	89 1d ff 22 19 00    	mov    DWORD PTR [rip+0x1922ff],ebx        # 0x1801cda1c
+   18003b75e:	83 3d af 22 19 00 00 	cmp    DWORD PTR [rip+0x1922af],0x0        # 0x1801cda14
+   18003b768:	89 05 a6 22 19 00    	mov    DWORD PTR [rip+0x1922a6],eax        # 0x1801cda14
+   18003b772:	89 1d 08 a9 24 00    	mov    DWORD PTR [rip+0x24a908],ebx        # 0x180286080
+   18003b778:	89 1d 36 97 14 00    	mov    DWORD PTR [rip+0x149736],ebx        # 0x180184eb4
+   18003b77e:	89 1d cc 94 08 00    	mov    DWORD PTR [rip+0x894cc],ebx        # 0x1800c4c50
+   18003b784:	89 1d 8e 22 19 00    	mov    DWORD PTR [rip+0x19228e],ebx        # 0x1801cda18
+   18003b78a:	89 1d 8c 22 19 00    	mov    DWORD PTR [rip+0x19228c],ebx        # 0x1801cda1c
+   18003b7d4:	83 3d a5 a8 24 00 00 	cmp    DWORD PTR [rip+0x24a8a5],0x0        # 0x180286080
+   18003b7e1:	83 3d cc 96 14 00 00 	cmp    DWORD PTR [rip+0x1496cc],0x0        # 0x180184eb4
+   18003b7ee:	83 3d 5b 94 08 00 00 	cmp    DWORD PTR [rip+0x8945b],0x0        # 0x1800c4c50
+   18003b89e:	83 3d 0f 96 14 00 00 	cmp    DWORD PTR [rip+0x14960f],0x0        # 0x180184eb4
+   18003b8a7:	83 3d a2 93 08 00 00 	cmp    DWORD PTR [rip+0x893a2],0x0        # 0x1800c4c50
+   18003b8b0:	83 3d a1 78 08 00 02 	cmp    DWORD PTR [rip+0x878a1],0x2        # 0x1800c3158
+   18003b919:	83 3d 94 95 14 00 02 	cmp    DWORD PTR [rip+0x149594],0x2        # 0x180184eb4
+   18003b939:	44 8b 35 74 95 14 00 	mov    r14d,DWORD PTR [rip+0x149574]        # 0x180184eb4
+   18003b977:	4c 8d 05 d2 92 08 00 	lea    r8,[rip+0x892d2]        # 0x1800c4c50
+   18003b9a4:	8b 05 a6 92 08 00    	mov    eax,DWORD PTR [rip+0x892a6]        # 0x1800c4c50
+   18003b9b2:	8b 05 98 92 08 00    	mov    eax,DWORD PTR [rip+0x89298]        # 0x1800c4c50
+   18003b9bf:	89 05 8b 92 08 00    	mov    DWORD PTR [rip+0x8928b],eax        # 0x1800c4c50
+   18003b9d2:	89 05 78 92 08 00    	mov    DWORD PTR [rip+0x89278],eax        # 0x1800c4c50
+   18003b9e0:	8b 05 6a 92 08 00    	mov    eax,DWORD PTR [rip+0x8926a]        # 0x1800c4c50
+   18003ba04:	8b 05 46 92 08 00    	mov    eax,DWORD PTR [rip+0x89246]        # 0x1800c4c50
+   18003ba17:	89 05 33 92 08 00    	mov    DWORD PTR [rip+0x89233],eax        # 0x1800c4c50
+   18003bb85:	44 39 2d 28 93 14 00 	cmp    DWORD PTR [rip+0x149328],r13d        # 0x180184eb4
+   18003bc63:	39 05 4b 92 14 00    	cmp    DWORD PTR [rip+0x14924b],eax        # 0x180184eb4
+   18003be4b:	83 3d 62 90 14 00 00 	cmp    DWORD PTR [rip+0x149062],0x0        # 0x180184eb4
+   18003be54:	83 3d f5 8d 08 00 00 	cmp    DWORD PTR [rip+0x88df5],0x0        # 0x1800c4c50
+   18003be6c:	8b 05 42 90 14 00    	mov    eax,DWORD PTR [rip+0x149042]        # 0x180184eb4
+   18003befd:	83 3d b0 8f 14 00 00 	cmp    DWORD PTR [rip+0x148fb0],0x0        # 0x180184eb4
+   18003bf3d:	83 3d 70 8f 14 00 00 	cmp    DWORD PTR [rip+0x148f70],0x0        # 0x180184eb4
+   18003bfa3:	83 3d 0a 8f 14 00 00 	cmp    DWORD PTR [rip+0x148f0a],0x0        # 0x180184eb4
+   18003c010:	83 3d 9d 8e 14 00 00 	cmp    DWORD PTR [rip+0x148e9d],0x0        # 0x180184eb4
+   18003c08c:	83 3d 21 8e 14 00 00 	cmp    DWORD PTR [rip+0x148e21],0x0        # 0x180184eb4
+   18003c108:	83 3d a5 8d 14 00 00 	cmp    DWORD PTR [rip+0x148da5],0x0        # 0x180184eb4
+   18003c190:	83 3d 1d 8d 14 00 00 	cmp    DWORD PTR [rip+0x148d1d],0x0        # 0x180184eb4
+   18003c218:	83 3d 95 8c 14 00 00 	cmp    DWORD PTR [rip+0x148c95],0x0        # 0x180184eb4
+   18003c2a0:	83 3d 0d 8c 14 00 00 	cmp    DWORD PTR [rip+0x148c0d],0x0        # 0x180184eb4
+   18003c328:	83 3d 85 8b 14 00 00 	cmp    DWORD PTR [rip+0x148b85],0x0        # 0x180184eb4
+   18003c3b0:	83 3d fd 8a 14 00 00 	cmp    DWORD PTR [rip+0x148afd],0x0        # 0x180184eb4
+   18004a91a:	44 89 35 2f a3 07 00 	mov    DWORD PTR [rip+0x7a32f],r14d        # 0x1800c4c50
+   18004d7a4:	44 8b 0d ad 59 07 00 	mov    r9d,DWORD PTR [rip+0x759ad]        # 0x1800c3158
+   18004d7d7:	89 05 7b 59 07 00    	mov    DWORD PTR [rip+0x7597b],eax        # 0x1800c3158
+   18004d7e9:	89 3d 69 59 07 00    	mov    DWORD PTR [rip+0x75969],edi        # 0x1800c3158
+   1800575b1:	39 1d a1 bb 06 00    	cmp    DWORD PTR [rip+0x6bba1],ebx        # 0x1800c3158
+   1800575c9:	39 1d b1 ea 22 00    	cmp    DWORD PTR [rip+0x22eab1],ebx        # 0x180286080
+   1800575d1:	39 1d 41 64 17 00    	cmp    DWORD PTR [rip+0x176441],ebx        # 0x1801cda18
+   1800575d9:	39 1d 35 64 17 00    	cmp    DWORD PTR [rip+0x176435],ebx        # 0x1801cda14
+   1800575e1:	39 1d cd d8 12 00    	cmp    DWORD PTR [rip+0x12d8cd],ebx        # 0x180184eb4
+   1800575e9:	39 1d 2d 64 17 00    	cmp    DWORD PTR [rip+0x17642d],ebx        # 0x1801cda1c
+   1800575f1:	39 1d 59 d6 06 00    	cmp    DWORD PTR [rip+0x6d659],ebx        # 0x1800c4c50
+   180057617:	44 89 05 ae a5 3b 00 	mov    DWORD PTR [rip+0x3ba5ae],r8d        # 0x180411bcc
+   18005763a:	39 1d 18 bb 06 00    	cmp    DWORD PTR [rip+0x6bb18],ebx        # 0x1800c3158
+   180057642:	39 1d 38 ea 22 00    	cmp    DWORD PTR [rip+0x22ea38],ebx        # 0x180286080
+   18005764a:	39 1d c8 63 17 00    	cmp    DWORD PTR [rip+0x1763c8],ebx        # 0x1801cda18
+   180057652:	39 1d bc 63 17 00    	cmp    DWORD PTR [rip+0x1763bc],ebx        # 0x1801cda14
+   18005765a:	39 1d 54 d8 12 00    	cmp    DWORD PTR [rip+0x12d854],ebx        # 0x180184eb4
+   180057662:	39 1d b4 63 17 00    	cmp    DWORD PTR [rip+0x1763b4],ebx        # 0x1801cda1c
+   18005766a:	39 1d e0 d5 06 00    	cmp    DWORD PTR [rip+0x6d5e0],ebx        # 0x1800c4c50
+   180057672:	8b 0d 54 a5 3b 00    	mov    ecx,DWORD PTR [rip+0x3ba554]        # 0x180411bcc
+   18005772a:	39 1d 50 e9 22 00    	cmp    DWORD PTR [rip+0x22e950],ebx        # 0x180286080
+   180057732:	89 1d 48 e9 22 00    	mov    DWORD PTR [rip+0x22e948],ebx        # 0x180286080
+   180057745:	89 1d 05 d5 06 00    	mov    DWORD PTR [rip+0x6d505],ebx        # 0x1800c4c50
+   18005774b:	89 1d cb 62 17 00    	mov    DWORD PTR [rip+0x1762cb],ebx        # 0x1801cda1c
+   180057751:	89 1d 5d d7 12 00    	mov    DWORD PTR [rip+0x12d75d],ebx        # 0x180184eb4
+   180057757:	89 1d b7 62 17 00    	mov    DWORD PTR [rip+0x1762b7],ebx        # 0x1801cda14
+   18005775d:	89 1d b5 62 17 00    	mov    DWORD PTR [rip+0x1762b5],ebx        # 0x1801cda18
+   180057763:	89 1d ef b9 06 00    	mov    DWORD PTR [rip+0x6b9ef],ebx        # 0x1800c3158
+   1800577aa:	8b 0d 1c a4 3b 00    	mov    ecx,DWORD PTR [rip+0x3ba41c]        # 0x180411bcc
+   18005783a:	44 89 05 8b a3 3b 00 	mov    DWORD PTR [rip+0x3ba38b],r8d        # 0x180411bcc
+   180057841:	39 1d 39 e8 22 00    	cmp    DWORD PTR [rip+0x22e839],ebx        # 0x180286080
+   180057849:	89 1d 31 e8 22 00    	mov    DWORD PTR [rip+0x22e831],ebx        # 0x180286080
+   180057855:	89 1d f5 d3 06 00    	mov    DWORD PTR [rip+0x6d3f5],ebx        # 0x1800c4c50
+   18005785b:	89 1d bb 61 17 00    	mov    DWORD PTR [rip+0x1761bb],ebx        # 0x1801cda1c
+   180057861:	89 1d 4d d6 12 00    	mov    DWORD PTR [rip+0x12d64d],ebx        # 0x180184eb4
+   180057867:	89 1d a7 61 17 00    	mov    DWORD PTR [rip+0x1761a7],ebx        # 0x1801cda14
+   18005786d:	89 1d a5 61 17 00    	mov    DWORD PTR [rip+0x1761a5],ebx        # 0x1801cda18
+   180057873:	89 1d df b8 06 00    	mov    DWORD PTR [rip+0x6b8df],ebx        # 0x1800c3158
+   1800578a1:	39 1d b1 b8 06 00    	cmp    DWORD PTR [rip+0x6b8b1],ebx        # 0x1800c3158
+   1800578a9:	39 1d d1 e7 22 00    	cmp    DWORD PTR [rip+0x22e7d1],ebx        # 0x180286080
+   1800578b1:	39 1d 61 61 17 00    	cmp    DWORD PTR [rip+0x176161],ebx        # 0x1801cda18
+   1800578b9:	39 1d 55 61 17 00    	cmp    DWORD PTR [rip+0x176155],ebx        # 0x1801cda14
+   1800578c1:	39 1d ed d5 12 00    	cmp    DWORD PTR [rip+0x12d5ed],ebx        # 0x180184eb4
+   1800578c9:	39 1d 4d 61 17 00    	cmp    DWORD PTR [rip+0x17614d],ebx        # 0x1801cda1c
+   1800578d1:	39 1d 79 d3 06 00    	cmp    DWORD PTR [rip+0x6d379],ebx        # 0x1800c4c50
+   1800578de:	44 8b 0d e7 a2 3b 00 	mov    r9d,DWORD PTR [rip+0x3ba2e7]        # 0x180411bcc
+   180058ac7:	8b 05 8b a6 06 00    	mov    eax,DWORD PTR [rip+0x6a68b]        # 0x1800c3158
+   180058c4f:	39 3d 03 a5 06 00    	cmp    DWORD PTR [rip+0x6a503],edi        # 0x1800c3158
+   180058c57:	39 3d 23 d4 22 00    	cmp    DWORD PTR [rip+0x22d423],edi        # 0x180286080
+   180058c5f:	39 3d b3 4d 17 00    	cmp    DWORD PTR [rip+0x174db3],edi        # 0x1801cda18
+   180058c67:	39 3d a7 4d 17 00    	cmp    DWORD PTR [rip+0x174da7],edi        # 0x1801cda14
+   180058c6f:	39 3d 3f c2 12 00    	cmp    DWORD PTR [rip+0x12c23f],edi        # 0x180184eb4
+   180058c77:	39 3d 9f 4d 17 00    	cmp    DWORD PTR [rip+0x174d9f],edi        # 0x1801cda1c
+   180058c7f:	39 3d cb bf 06 00    	cmp    DWORD PTR [rip+0x6bfcb],edi        # 0x1800c4c50
+   180058e2b:	39 3d 4f d2 22 00    	cmp    DWORD PTR [rip+0x22d24f],edi        # 0x180286080
+   180058e33:	89 3d 47 d2 22 00    	mov    DWORD PTR [rip+0x22d247],edi        # 0x180286080
+   180058e3f:	89 3d 0b be 06 00    	mov    DWORD PTR [rip+0x6be0b],edi        # 0x1800c4c50
+   180058e45:	89 3d d1 4b 17 00    	mov    DWORD PTR [rip+0x174bd1],edi        # 0x1801cda1c
+   180058e4b:	89 3d 63 c0 12 00    	mov    DWORD PTR [rip+0x12c063],edi        # 0x180184eb4
+   180058e51:	89 3d bd 4b 17 00    	mov    DWORD PTR [rip+0x174bbd],edi        # 0x1801cda14
+   180058e57:	89 3d bb 4b 17 00    	mov    DWORD PTR [rip+0x174bbb],edi        # 0x1801cda18
+   180058e5d:	89 3d f5 a2 06 00    	mov    DWORD PTR [rip+0x6a2f5],edi        # 0x1800c3158
+   180059267:	39 3d eb 9e 06 00    	cmp    DWORD PTR [rip+0x69eeb],edi        # 0x1800c3158
+   180059278:	89 0d da 9e 06 00    	mov    DWORD PTR [rip+0x69eda],ecx        # 0x1800c3158
+   18005c221:	8b 05 31 6f 06 00    	mov    eax,DWORD PTR [rip+0x66f31]        # 0x1800c3158
+   18005c7af:	44 8b 0d ca 98 22 00 	mov    r9d,DWORD PTR [rip+0x2298ca]        # 0x180286080
+   18005c7cc:	44 8b 05 85 69 06 00 	mov    r8d,DWORD PTR [rip+0x66985]        # 0x1800c3158
+   18005c7dd:	8b 05 6d 84 06 00    	mov    eax,DWORD PTR [rip+0x6846d]        # 0x1800c4c50
+   18005c7e7:	8b 05 c7 86 12 00    	mov    eax,DWORD PTR [rip+0x1286c7]        # 0x180184eb4
+   180060f27:	c7 05 27 22 06 00 00 	mov    DWORD PTR [rip+0x62227],0x0        # 0x1800c3158
+   18006105b:	c7 05 eb 3b 06 00 00 	mov    DWORD PTR [rip+0x63beb],0x0        # 0x1800c4c50
+   180061092:	c7 05 18 3e 12 00 00 	mov    DWORD PTR [rip+0x123e18],0x0        # 0x180184eb4
+   1800610d3:	c7 05 a3 4f 22 00 00 	mov    DWORD PTR [rip+0x224fa3],0x0        # 0x180286080
+   18006110a:	c7 05 00 c9 16 00 00 	mov    DWORD PTR [rip+0x16c900],0x0        # 0x1801cda14
+   180061141:	c7 05 cd c8 16 00 00 	mov    DWORD PTR [rip+0x16c8cd],0x0        # 0x1801cda18
+   180061178:	c7 05 9a c8 16 00 00 	mov    DWORD PTR [rip+0x16c89a],0x0        # 0x1801cda1c
+   180063ca1:	83 3d b0 f4 05 00 00 	cmp    DWORD PTR [rip+0x5f4b0],0x0        # 0x1800c3158
+   180063caa:	83 3d cf 23 22 00 00 	cmp    DWORD PTR [rip+0x2223cf],0x0        # 0x180286080
+   180063cb3:	83 3d 5e 9d 16 00 00 	cmp    DWORD PTR [rip+0x169d5e],0x0        # 0x1801cda18
+   180063cbc:	83 3d 51 9d 16 00 00 	cmp    DWORD PTR [rip+0x169d51],0x0        # 0x1801cda14
+   180063cc5:	83 3d e8 11 12 00 00 	cmp    DWORD PTR [rip+0x1211e8],0x0        # 0x180184eb4
+   180063cce:	83 3d 47 9d 16 00 00 	cmp    DWORD PTR [rip+0x169d47],0x0        # 0x1801cda1c
+   180063cd7:	83 3d 72 0f 06 00 00 	cmp    DWORD PTR [rip+0x60f72],0x0        # 0x1800c4c50
+   18006437c:	39 1d d6 ed 05 00    	cmp    DWORD PTR [rip+0x5edd6],ebx        # 0x1800c3158
+   180064497:	89 1d bb ec 05 00    	mov    DWORD PTR [rip+0x5ecbb],ebx        # 0x1800c3158
+   1800644e0:	39 1d 6a 07 06 00    	cmp    DWORD PTR [rip+0x6076a],ebx        # 0x1800c4c50
+   180064505:	8b 05 a9 09 12 00    	mov    eax,DWORD PTR [rip+0x1209a9]        # 0x180184eb4
+   18006452d:	39 1d 4d 1b 22 00    	cmp    DWORD PTR [rip+0x221b4d],ebx        # 0x180286080
+   180064543:	39 1d cb 94 16 00    	cmp    DWORD PTR [rip+0x1694cb],ebx        # 0x1801cda14
+   180064556:	39 1d bc 94 16 00    	cmp    DWORD PTR [rip+0x1694bc],ebx        # 0x1801cda18
+   180064569:	39 1d ad 94 16 00    	cmp    DWORD PTR [rip+0x1694ad],ebx        # 0x1801cda1c
+   18006461b:	39 1d 2f 06 06 00    	cmp    DWORD PTR [rip+0x6062f],ebx        # 0x1800c4c50
+   180064623:	89 1d 27 06 06 00    	mov    DWORD PTR [rip+0x60627],ebx        # 0x1800c4c50
+   18006462b:	39 1d 83 08 12 00    	cmp    DWORD PTR [rip+0x120883],ebx        # 0x180184eb4
+   180064633:	89 1d 7b 08 12 00    	mov    DWORD PTR [rip+0x12087b],ebx        # 0x180184eb4
+   18006463b:	39 1d 3f 1a 22 00    	cmp    DWORD PTR [rip+0x221a3f],ebx        # 0x180286080
+   180064643:	89 1d 37 1a 22 00    	mov    DWORD PTR [rip+0x221a37],ebx        # 0x180286080
+   18006464b:	39 1d c3 93 16 00    	cmp    DWORD PTR [rip+0x1693c3],ebx        # 0x1801cda14
+   180064653:	89 1d bb 93 16 00    	mov    DWORD PTR [rip+0x1693bb],ebx        # 0x1801cda14
+   18006465b:	39 1d b7 93 16 00    	cmp    DWORD PTR [rip+0x1693b7],ebx        # 0x1801cda18
+   180064663:	89 1d af 93 16 00    	mov    DWORD PTR [rip+0x1693af],ebx        # 0x1801cda18
+   18006466b:	89 1d ab 93 16 00    	mov    DWORD PTR [rip+0x1693ab],ebx        # 0x1801cda1c
+   18006468d:	8b 05 bd 05 06 00    	mov    eax,DWORD PTR [rip+0x605bd]        # 0x1800c4c50
+   1800646aa:	44 89 35 9f 05 06 00 	mov    DWORD PTR [rip+0x6059f],r14d        # 0x1800c4c50
+   1800646bf:	44 89 35 8a 05 06 00 	mov    DWORD PTR [rip+0x6058a],r14d        # 0x1800c4c50
+   1800646d5:	39 1d d9 07 12 00    	cmp    DWORD PTR [rip+0x1207d9],ebx        # 0x180184eb4
+   1800646ed:	39 1d 29 93 16 00    	cmp    DWORD PTR [rip+0x169329],ebx        # 0x1801cda1c
+   1800682ef:	8b 05 5b c9 05 00    	mov    eax,DWORD PTR [rip+0x5c95b]        # 0x1800c4c50
+   180068398:	8b 05 ba ad 05 00    	mov    eax,DWORD PTR [rip+0x5adba]        # 0x1800c3158
+   1800683a5:	8b 05 d5 dc 21 00    	mov    eax,DWORD PTR [rip+0x21dcd5]        # 0x180286080
+   1800683b2:	8b 05 60 56 16 00    	mov    eax,DWORD PTR [rip+0x165660]        # 0x1801cda18
+   1800683bf:	8b 05 4f 56 16 00    	mov    eax,DWORD PTR [rip+0x16564f]        # 0x1801cda14
+   1800683cc:	8b 05 e2 ca 11 00    	mov    eax,DWORD PTR [rip+0x11cae2]        # 0x180184eb4
+   1800683d9:	8b 05 3d 56 16 00    	mov    eax,DWORD PTR [rip+0x16563d]        # 0x1801cda1c
+   1800683e6:	8b 05 64 c8 05 00    	mov    eax,DWORD PTR [rip+0x5c864]        # 0x1800c4c50

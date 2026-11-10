@@ -1,0 +1,117 @@
+The Import Tables (interpreted .rdata section contents)
+ vma:            Hint    Time      Forward  DLL       First
+                 Table   Stamp     Chain    Name      Thunk
+ 000c1bb8	000c1ed0 00000000 00000000 000c2002 0008d2d8
+
+	DLL Name: USER32.dll
+	vma:  Hint/Ord Member-Name Bound-To
+	c1f42	  296  GetAsyncKeyState
+	c1ff0	   32  CallNextHookEx
+	c1fda	  983  UnhookWindowsHookEx
+	c1fc6	  930  SetWindowsHookExW
+	c1fba	  489  GetWindow
+	c1f9e	  518  GetWindowThreadProcessId
+	c1f90	  273  EnumWindows
+	c1f80	  314  GetClientRect
+	c1f6a	  354  GetForegroundWindow
+	c1f56	  469  GetSystemMetrics
+	c1f30	  604  IsWindowVisible
+
+ 000c1bcc	000c1bf8 00000000 00000000 000c22d4 0008d000
+
+	DLL Name: KERNEL32.dll
+	vma:  Hint/Ord Member-Name Bound-To
+	c2368	  306  DeleteCriticalSection
+	c268c	 1634  WriteConsoleW
+	c267c	 1369  SetEndOfFile
+	c2670	  904  HeapSize
+	c2660	 1430  SetStdHandle
+	c2652	  233  CreateFileW
+	c2640	  779  GetStringTypeW
+	c262e	  743  GetProcessHeap
+	c200e	  225  CreateFileA
+	c201c	  310  DeleteFileA
+	c202a	  416  FindClose
+	c2036	  420  FindFirstFileA
+	c2048	  437  FindNextFileA
+	c2058	  459  FlushFileBuffers
+	c206c	  622  GetFileAttributesA
+	c2082	  635  GetFileSizeEx
+	c2092	 1196  ReadFile
+	c209e	 1635  WriteFile
+	c20aa	  160  CloseHandle
+	c20b8	  656  GetLastError
+	c20c8	 1156  QueryPerformanceCounter
+	c20e2	 1157  QueryPerformanceFrequency
+	c20fe	  920  InitializeCriticalSection
+	c211a	  346  EnterCriticalSection
+	c2132	 1011  LeaveCriticalSection
+	c214a	 1574  WaitForMultipleObjects
+	c2164	  580  GetCurrentProcess
+	c2178	  581  GetCurrentProcessId
+	c218e	  274  CreateThread
+	c219e	  585  GetCurrentThreadId
+	c21b4	  460  FlushInstructionCache
+	c21cc	  791  GetSystemInfo
+	c21dc	  657  GetLocalTime
+	c21ec	  832  GetTickCount64
+	c21fe	 1565  VirtualProtect
+	c2210	 1567  VirtualQuery
+	c2220	  677  GetModuleHandleA
+	c2234	  736  GetProcAddress
+	c2246	  195  CopyFileA
+	c2252	 1054  MoveFileExA
+	c2260	  797  GetSystemTimeAsFileTime
+	c227a	  925  InitializeSListHead
+	c2290	 1467  SetUnhandledExceptionFilter
+	c22ae	  772  GetStartupInfoW
+	c22c0	  680  GetModuleHandleW
+	c22e2	 1306  RtlUnwindEx
+	c22f0	  929  InterlockedFlushSList
+	c2308	 1403  SetLastError
+	c2318	  453  FlsAlloc
+	c2324	  455  FlsGetValue
+	c2332	  457  FlsSetValue
+	c2340	  454  FlsFree
+	c234a	  922  InitializeCriticalSectionEx
+	c2380	 1300  RtlLookupFunctionEntry
+	c239a	  342  EncodePointer
+	c23aa	 1179  RaiseException
+	c23bc	 1302  RtlPcToFileHeader
+	c23d0	  393  ExitProcess
+	c23de	 1499  TerminateProcess
+	c23f2	  471  FreeLibrary
+	c2400	  679  GetModuleHandleExW
+	c2416	  676  GetModuleFileNameW
+	c242c	  955  IsProcessorFeaturePresent
+	c2448	 1292  RtlCaptureContext
+	c245c	 1307  RtlVirtualUnwind
+	c2470	  947  IsDebuggerPresent
+	c2484	 1534  UnhandledExceptionFilter
+	c24a0	  899  HeapFree
+	c24ac	  552  GetConsoleMode
+	c24be	 1193  ReadConsoleW
+	c24ce	 1388  SetFilePointerEx
+	c24e2	  774  GetStdHandle
+	c24f2	  637  GetFileType
+	c2500	  556  GetConsoleOutputCP
+	c2516	  895  HeapAlloc
+	c2522	  902  HeapReAlloc
+	c2530	  422  FindFirstFileExW
+	c2544	  439  FindNextFileW
+	c2554	  961  IsValidCodePage
+	c2566	  478  GetACP
+	c2570	  713  GetOEMCP
+	c257c	  493  GetCPInfo
+	c2588	  514  GetCommandLineA
+	c259a	  515  GetCommandLineW
+	c25ac	 1062  MultiByteToWideChar
+	c25c2	 1615  WideCharToMultiByte
+	c25d8	  613  GetEnvironmentStringsW
+	c25f2	  470  FreeEnvironmentStringsW
+	c260c	 1017  LoadLibraryExW
+	c261e	  999  LCMapStringW
+
+ 000c1be0	00000000 00000000 00000000 00000000 00000000
+
+There is an export table in .rdata at 0x1800c1b30
