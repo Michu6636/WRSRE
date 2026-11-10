@@ -1,45 +1,80 @@
 // almanac_button - draw-only ninth backdrop beside the Economy & Trade row.
 //
 // WHAT IT DOES
-//   In the verified normal configuration the native trade row draws eight
-//   tiles. This plugin draws one more game-style tile backdrop after the
-//   eighth, at the next slot. Nothing else. It has no click handling, no input
-//   observer, no reads or writes of the click latch (0xA54E91), no writes to
-//   native selection, no panel and no content. The ninth tile is NOT
-//   interactive.
+//   In the normal eight-tile configuration the native trade row draws eight
+//   tiles. After the eighth tile this plugin makes one more call to the
+//   engine's own C3D_PANEL2D::Draw, with the rect store set to the next slot.
+//   It has no click handling, and it does not read or write the click latch
+//   (0xA54E91). It does not write native selection, City Hall, tax policy, or
+//   saves.
+//
+//   This is NOT a change-free draw. "Draw only" means no input is handled. The
+//   extra engine call can change shared UI state (see SHARED STATE below).
 //
 // DEFAULT
-//   plugins\almanac_button.ini: enabled = 0. With the default, Init declines,
-//   the loader unloads the DLL, and nothing is patched.
+//   plugins\almanac_button.ini: enabled = 0. Init then declines, the loader
+//   unloads the DLL, and nothing is patched.
 //
 // MECHANISM
-//   One import swap. The row handler (FUN_140373EA0) calls
-//   C3D_PANEL2D::Draw through the import slot at RVA 0x86C860, from the call
-//   at RVA 0x3743A2. The detour forwards every call unchanged. It acts only
-//   when the return address is 0x3743A8 (the row's own call) and `this` is the
-//   trade widget at RVA 0x9BE060. The tile position is read from the rect
-//   store at RVA 0x9BE2F0/0x9BE2F4. Row decisions come from
-//   almanac_button_geometry.h.
+//   One import swap: C3D_PANEL2D::Draw at IAT slot RVA 0x86C860, called by the
+//   row handler from RVA 0x3743A2 (return address 0x3743A8) on the trade widget
+//   at RVA 0x9BE060. Every call is forwarded unchanged. Only the row's own
+//   eighth-tile call takes the extra path.
 //
-// VERIFIED AT START (refuses with a log line otherwise)
-//   - exe stamp matches the repo baseline (TsmCheckExeBuild);
+// VERIFIED AT START (static checks against this build; refuses otherwise)
+//   - PE stamp equals the repo baseline (TsmCheckExeBuild). This is the only
+//     whole-file check, and tesmioloader.ini allow_unverified_exe = 1 bypasses
+//     it.
 //   - bytes at RVA 0x31EDEF are E8 AC 50 05 00 (CALL FUN_140373EA0);
-//   - bytes at RVA 0x3743A2 are FF 15 B8 84 4F 00 (CALL [slot 0x86C860]);
-//   - the import slot is at RVA 0x86C860 and holds the engine's exported
-//     C3D_PANEL2D::Draw;
+//   - bytes at RVA 0x3743A2 are FF 15 B8 84 4F 00 (CALL [0x86C860]);
+//   - the import slot is at RVA 0x86C860 and holds the engine's exported Draw;
 //   - the origin and pitch constants read as 45, 85 and 64.
+//   These checks do NOT authenticate the executable as a whole, and they do NOT
+//   prove the row layout. They cover three call sites and three constants.
 //
-// RESTORATION
-//   The loader has no shutdown hook for IAT swaps. On any fault the detour
-//   restores the original import pointer and stops drawing for the session.
-//   To turn the feature off: set enabled = 0, then restart the game.
+// SHARED STATE WRITTEN BY THE EXTRA DRAW
+//   - RVA 0x9BE2E8..0x9BE2FB (rect store, 20 bytes). The ninth X and Y are
+//     written for the one call and the saved bytes are restored afterwards.
+//     The native Draw may write this store itself; the restore does not undo
+//     writes made during the call.
+//   - Whatever the engine's C3D_PANEL2D::Draw writes internally while drawing
+//     the ninth tile. That is NOT identified. It may include per-widget or
+//     global draw state, hover or press state, or GPU state. UNVERIFIED.
+//   - This plugin's own counters and log lines.
+//   Known limitation: the ninth tile reuses the eighth tile's hover state.
+//
+// OWNERSHIP AND RESTORATION
+//   - Start records the original pointer before any write. It swaps only after
+//     every check passes, then checks that the slot holds our detour and logs
+//     the actual result.
+//   - Start never returns non-zero after a swap. A non-zero return unloads the
+//     DLL, and the slot would then point into unloaded code.
+//   - RestoreOriginal writes the original pointer back only if the slot still
+//     holds our detour. If another hook has taken the slot, it writes nothing,
+//     logs NOT RESTORED, and our detour forwards only. Another hook may still
+//     chain to our detour, so the DLL is never unloaded.
+//   - No unload entry point exists, so an installed swap cannot be removed
+//     from inside this DLL except by RestoreOriginal.
+//
+// CONCURRENCY AND FAULTS (ASSUMPTIONS, NOT VERIFIED)
+//   - Draw is assumed to run on one render thread, and Start is assumed to run
+//     on the loader thread before the first row draw. Shared flags use
+//     Interlocked operations.
+//   - The check-then-write on the slot is not atomic against another plugin's
+//     patch. The residual race is limited by the check after the write and by
+//     refusing to overwrite a foreign value.
+//   - Faults in this plugin's own code are caught. Faults inside the native
+//     Draw are NOT caught here and crash the game as before.
+//
+// RESTORATION FOR A TESTER
+//   Set enabled = 0 and restart the game.
 //
 // STATUS
 //   Only the pure geometry logic is host-tested (g++). This Windows glue is
-//   NOT compiled or run in this session. The ninth position, its visibility
+//   NOT compiled or run in this session. The ninth position, its visibility,
 //   and its clipping are NOT established.
 //
-// Version 1.0: first draw-only prototype.
+// Version 1.1: owner-checked restore, one-byte selector, row-pass consistency.
 
 #include <stdint.h>
 #include "../../src/tesmio_plugin.h"
@@ -55,17 +90,19 @@
 #define ALM_RVA_K_ORIGIN_B 0x90AB14u   // float, expected 85
 #define ALM_RVA_K_PITCH    0x90AAA0u   // float, expected 64
 #define ALM_OFF_SUBVEC     0xC650u     // game+0xC650: pointer to trade subvector
-#define ALM_OFF_SELECTOR   0x10398u
-#define ALM_OFF_C7D4       0xC7D4u
-#define ALM_OFF_SKIP578    0x578u
-#define ALM_OFF_SKIP5E0    0x5E0u
+#define ALM_OFF_SELECTOR   0x10398u    // ONE BYTE: CMP byte ptr [R14+0x10398],R15B
+#define ALM_OFF_C7D4       0xC7D4u     // dword
+#define ALM_OFF_SKIP578    0x578u      // dword
+#define ALM_OFF_SKIP5E0    0x5E0u      // dword
 
 typedef void (*t_Draw)(void* self, float a1, float a2, float a3,
                        float a4, float a5, bool a6);
 
 static int                        g_enabled;
-static volatile LONG              g_active;      // 0 = pure forwarder
-static t_Draw                     g_drawOrig;    // the engine's Draw
+static volatile LONG              g_active;    // 1 = armed: the ninth tile is wanted
+static volatile LONG              g_faulted;   // set by an SEH handler, read by Detour
+static t_Draw                     g_drawOrig;  // engine's Draw, recorded before the swap
+static void**                     g_slot;      // the import slot we swapped
 static almanac_button::RowTracker g_tracker;
 static int                        g_ninthDrawn;
 static int                        g_noteCount;
@@ -78,7 +115,19 @@ typedef struct NinthPlan {
     float y;
 } NinthPlan;
 
+__declspec(noinline) static void Detour(void* self, float a1, float a2, float a3,
+                                        float a4, float a5, bool a6);
+
 static uintptr_t Base(void) { return (uintptr_t)g_exeBase; }
+
+static bool IsArmed(void) { return InterlockedCompareExchange(&g_active, 1, 1) != 0; }
+
+static bool ReadU8(uintptr_t addr, uint8_t* out)
+{
+    if (!ReadablePtr((const void*)addr, sizeof(uint8_t))) return false;
+    *out = *(const uint8_t*)addr;
+    return true;
+}
 
 static bool ReadF32(uintptr_t addr, float* out)
 {
@@ -119,10 +168,12 @@ static bool ReadRowConstants(almanac_button::RowConstants* c)
            ReadF32(Base() + ALM_RVA_K_PITCH, &c->pitch);
 }
 
-// Game-object fields. The count is derived from the trade subvector the
-// handler uses: (end - begin) / 0x50, with begin at +0x48 and end at +0x50.
-// Reading this layout is an assumption from the static trace, so a bad read
-// yields a count other than 8 and the tracker stays idle (fails safe).
+// Game-object fields. The count is (end - begin) / 0x50, with begin at
+// [P+0x48] and end at [P+0x50], where P = [game+0xC650]. The handler's own
+// arithmetic matches this (ADD R8,0x48; SUB RCX,[R8]; /0x50 by multiply-high
+// and SAR 5), so the layout is supported by the export. The live values were
+// read only once. This check also rejects any span that is not a multiple of
+// 0x50, which is stricter than the handler's floor division.
 static bool ReadGate(almanac_button::RowGate* g)
 {
     uintptr_t game = Base() + TSM_RVA_DEFAULT_GAME_OBJECT;
@@ -135,8 +186,12 @@ static bool ReadGate(almanac_button::RowGate* g)
     uintptr_t count = span / 0x50;
     if (count > 64) return false;
     g->count = (int32_t)count;
-    return ReadI32(game + ALM_OFF_SELECTOR, &g->selector) &&
-           ReadI32(game + ALM_OFF_C7D4, &g->c7d4) &&
+
+    uint8_t selector = 0;
+    if (!ReadU8(game + ALM_OFF_SELECTOR, &selector)) return false;
+    g->selector = selector;
+
+    return ReadI32(game + ALM_OFF_C7D4, &g->c7d4) &&
            ReadI32(game + ALM_OFF_SKIP578, &g->skip578) &&
            ReadI32(game + ALM_OFF_SKIP5E0, &g->skip5e0);
 }
@@ -170,8 +225,9 @@ static bool VerifyFloat(uintptr_t rva, float expect, const char* label)
     return true;
 }
 
-// Byte and value checks for this exact build. Nothing is patched unless all
-// of them pass.
+// Byte and value checks for this exact build. These are static checks on three
+// call sites and three constants. They are not a whole-executable check, and
+// they do not prove the row layout. Nothing is patched unless all of them pass.
 static bool VerifyBuild(void)
 {
     static const unsigned char kHostCall[5] = {0xE8, 0xAC, 0x50, 0x05, 0x00};
@@ -187,17 +243,43 @@ static bool VerifyBuild(void)
     return true;
 }
 
-// ---------------------------------------------------------------- fault path
+// ---------------------------------------------------------------- restore
 
-// Puts the engine's Draw back in the import slot and stops all drawing. Called
-// only from exception handlers. Idempotent.
-static void DisarmAfterFault(const char* where)
+// Restores the engine's original Draw in the import slot, but only if the slot
+// still holds our detour. Returns true only when the slot is verified to hold
+// the original afterwards. Never overwrites a value it does not own. Always
+// stops drawing first.
+static bool RestoreOriginal(const char* why)
 {
-    if (InterlockedExchange(&g_active, 0) == 0) return;
+    InterlockedExchange(&g_active, 0);
+    InterlockedExchange(&g_faulted, 0);
+
+    if (!g_slot || !g_drawOrig) {
+        Logf("almanac_button  NOT RESTORED (%s): no slot recorded; drawing stopped", why);
+        return false;
+    }
+    void* now = *g_slot;
+    if (now == (void*)g_drawOrig) {
+        Logf("almanac_button  restore (%s): slot already holds the original", why);
+        return true;
+    }
+    if (now != (void*)Detour) {
+        Logf("almanac_button  NOT RESTORED (%s): slot now holds another hook; "
+             "our detour forwards only and the DLL stays loaded", why);
+        return false;
+    }
+
     void* dummy = NULL;
-    PatchIat(g_exe, DLL_ENGINE, ALM_DRAW_SYM, (void*)g_drawOrig, &dummy,
-             "restore C3D_PANEL2D::Draw");
-    Logf("almanac_button  FAULT in %s - original Draw restored, drawing stopped", where);
+    bool call = PatchIat(g_exe, DLL_ENGINE, ALM_DRAW_SYM, (void*)g_drawOrig, &dummy,
+                         "restore C3D_PANEL2D::Draw");
+    if (*g_slot != (void*)g_drawOrig) {
+        Logf("almanac_button  NOT RESTORED (%s): restore call %s and the slot still "
+             "holds our detour; forwarding only, DLL stays loaded", why,
+             call ? "returned success" : "failed");
+        return false;
+    }
+    Logf("almanac_button  restored original Draw import (%s)", why);
+    return true;
 }
 
 // ---------------------------------------------------------------- row logic
@@ -215,7 +297,8 @@ static void PlanRowTile(NinthPlan* plan)
         almanac_button::RowConstants c;
         almanac_button::RowGate g;
         if (!ReadTileRect(&tx, &ty) || !ReadRowConstants(&c) || !ReadGate(&g)) {
-            Note("row state unreadable; idle");
+            g_tracker.Reset();          // an unreadable frame cannot continue a pass
+            Note("row state unreadable; pass reset");
             return;
         }
         almanac_button::Decision d = g_tracker.OnRowTile(tx, ty, c, g);
@@ -227,23 +310,29 @@ static void PlanRowTile(NinthPlan* plan)
         }
     }
     __except (EXCEPTION_EXECUTE_HANDLER) {
-        DisarmAfterFault("PlanRowTile");
         plan->draw = 0;
+        g_tracker.Reset();
+        InterlockedExchange(&g_active, 0);
+        InterlockedExchange(&g_faulted, 1);   // Detour performs the restore
     }
 }
 
 // Draws the ninth backdrop tile through the engine's own Draw, with the rect
 // store set to the ninth slot for that one call. The store range
 // 0x9BE2E8..0x9BE2FB (20 bytes) is saved first and restored afterwards.
-// Limitation: the ninth tile reuses the eighth tile's hover state.
+// SEH function: the handler only sets flags. The restore runs in Detour.
 static void DrawNinthTile(void* self, float a1, float a2, float a3, float a4,
                           float a5, bool a6, float x, float y)
 {
     uint8_t saved[20];
     uint8_t* rect = (uint8_t*)(Base() + TSM_RVA_DEFAULT_P2D_RECT_W);
-    int savedOk = 0;
+    volatile int savedOk = 0;
     __try {
-        if (!ReadablePtr(rect, sizeof(saved))) return;
+        if (!ReadablePtr(rect, sizeof(saved))) {
+            InterlockedExchange(&g_active, 0);
+            InterlockedExchange(&g_faulted, 1);
+            return;
+        }
         memcpy(saved, rect, sizeof(saved));
         savedOk = 1;
         *(float*)(rect + 8)  = x;   // 0x9BE2F0
@@ -256,29 +345,39 @@ static void DrawNinthTile(void* self, float a1, float a2, float a3, float a4,
     }
     __except (EXCEPTION_EXECUTE_HANDLER) {
         if (savedOk) memcpy(rect, saved, sizeof(saved));
-        DisarmAfterFault("DrawNinthTile");
+        InterlockedExchange(&g_active, 0);
+        InterlockedExchange(&g_faulted, 1);
     }
 }
 
 // ---------------------------------------------------------------- detour
 
 // Replacement import for C3D_PANEL2D::Draw. Every call is forwarded. The one
-// call that does more is the trade row's own draw of its eighth tile.
+// call that does more is the trade row's own draw of its eighth tile, and only
+// while armed.
 __declspec(noinline) static void Detour(void* self, float a1, float a2, float a3,
                                         float a4, float a5, bool a6)
 {
     void* ret = _ReturnAddress();
-    if (InterlockedCompareExchange(&g_active, 1, 1) == 0 || !g_drawOrig ||
+    if (!IsArmed() || !g_drawOrig ||
         ret != (void*)(Base() + ALM_RVA_ROW_RET) ||
         self != (void*)(Base() + TSM_RVA_DEFAULT_PANEL2D)) {
         if (g_drawOrig) g_drawOrig(self, a1, a2, a3, a4, a5, a6);
         return;
     }
+
     NinthPlan plan;
     PlanRowTile(&plan);
-    g_drawOrig(self, a1, a2, a3, a4, a5, a6);          // native tile, always
-    if (plan.draw && InterlockedCompareExchange(&g_active, 1, 1) != 0)
+    if (InterlockedCompareExchange(&g_faulted, 0, 0) != 0)
+        RestoreOriginal("fault while planning the row tile");
+
+    g_drawOrig(self, a1, a2, a3, a4, a5, a6);          // native eighth tile, always
+
+    if (plan.draw && IsArmed()) {
         DrawNinthTile(self, a1, a2, a3, a4, a5, a6, plan.x, plan.y);
+        if (InterlockedCompareExchange(&g_faulted, 0, 0) != 0)
+            RestoreOriginal("fault while drawing the ninth tile");
+    }
 }
 
 // ---------------------------------------------------------------- lifecycle
@@ -299,7 +398,7 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
 {
     TsmBind(host);
     info->name    = "almanac_button";
-    info->version = "1.0";
+    info->version = "1.1";
 
     ReadSettings();
     if (!g_enabled) {
@@ -330,12 +429,33 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
         return 1;
     }
 
-    if (!PatchIat(g_exe, DLL_ENGINE, ALM_DRAW_SYM, (void*)Detour,
-                  (void**)&g_drawOrig, "C3D_PANEL2D::Draw")) {
-        Logf("almanac_button  REFUSED  could not swap the Draw import");
+    // Record the original before any write. Nothing has changed yet, so a
+    // refusal up to here can still unload the DLL safely.
+    g_slot = slot;
+    g_drawOrig = (t_Draw)*slot;
+
+    void* recorded = NULL;
+    bool call = PatchIat(g_exe, DLL_ENGINE, ALM_DRAW_SYM, (void*)Detour, &recorded,
+                         "C3D_PANEL2D::Draw");
+    if (*slot != (void*)Detour) {
+        // The slot does not hold our detour, so nothing of ours is in the import
+        // table and unloading the DLL is safe.
+        g_slot = NULL;
+        g_drawOrig = NULL;
+        Logf("almanac_button  REFUSED  swap did not take effect (call %s); import unchanged",
+             call ? "returned success" : "failed");
         return 1;
     }
+
+    // From here the slot points into this DLL. The DLL must stay loaded, so
+    // every path below returns 0.
+    if (!call || recorded != (void*)g_drawOrig) {
+        InterlockedExchange(&g_active, 0);
+        Logf("almanac_button  WARNING  swap call %s; detour is in the slot but NOT armed; "
+             "forwarding only, DLL stays loaded", call ? "returned success" : "failed");
+        return 0;
+    }
     InterlockedExchange(&g_active, 1);
-    Logf("almanac_button  armed  draw-only ninth backdrop after row tile 8");
+    Logf("almanac_button  armed  draw-only ninth backdrop after row tile 8 (import verified)");
     return 0;
 }

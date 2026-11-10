@@ -3,20 +3,23 @@
 //   g++ -std=c++17 -Wall -Wextra -Werror -pedantic -Iplugins/almanac_button tests/almanac_button/almanac_button_geometry_test.cpp -o build/almanac_button_geometry_test
 //   build/almanac_button_geometry_test
 // Pure logic only. The plugin's Windows glue is not exercised here.
+// Passing these tests does not prove that a pass is one native invocation or
+// one frame; see the header comment.
 
 #include "almanac_button_geometry.h"
 
 #include <cmath>
 #include <cstdio>
-#include <initializer_list>
 #include <cstdlib>
 #include <cstring>
+#include <initializer_list>
 
 using namespace almanac_button;
 
 #define CHECK(x) do { if (!(x)) { std::fprintf(stderr, "FAIL line %d: %s\n", __LINE__, #x); std::exit(1); } } while (0)
 
 static const RowConstants kC{0.8f, 45.0f, 85.0f, 64.0f};
+static const float kRowY = 196.0f;
 
 static RowGate Good(int count = 8)
 {
@@ -29,15 +32,23 @@ static RowGate Good(int count = 8)
     return g;
 }
 
-// Feeds one pass of `n` tiles at the origin, pitch step, in visual order.
-// Returns the decision of the last tile.
-static Decision RunPass(RowTracker& t, int n, const RowGate& g, const RowConstants& c, int* drawnAt = nullptr)
+// Feeds one tile, at its nominal X for slot k, with the given Y and gate.
+static Decision Tile(RowTracker& t, int k, float y, const RowGate& g,
+                     const RowConstants& c = kC)
 {
     const float origin = c.scale * (c.originA + c.originB);
     const float pitch  = c.scale * c.pitch;
+    return t.OnRowTile(origin + static_cast<float>(k) * pitch, y, c, g);
+}
+
+// Feeds one pass of `n` tiles at the origin, pitch step, in visual order.
+// Returns the decision of the last tile.
+static Decision RunPass(RowTracker& t, int n, const RowGate& g, const RowConstants& c,
+                        int* drawnAt = nullptr)
+{
     Decision last{Action::None, 0.0f, 0.0f, "none"};
     for (int k = 0; k < n; ++k) {
-        Decision d = t.OnRowTile(origin + static_cast<float>(k) * pitch, 196.0f, c, g);
+        Decision d = Tile(t, k, kRowY, g, c);
         if (d.action == Action::DrawNinth && drawnAt) *drawnAt = k;
         last = d;
     }
@@ -52,7 +63,7 @@ static void TestEightTilePassDrawsNinthOnLastTile()
     CHECK(drawnAt == 7);                          // only the eighth call decides
     CHECK(last.action == Action::DrawNinth);
     CHECK(std::fabs(last.x - 513.6f) < 0.01f);    // scale * (45 + 85 + 8 * 64)
-    CHECK(std::fabs(last.y - 196.0f) < 0.01f);
+    CHECK(std::fabs(last.y - kRowY) < 0.01f);
     CHECK(t.Next() == -1);
     CHECK(std::fabs(TileWidth(kC) - 51.2f) < 1e-4f);
 }
@@ -96,7 +107,7 @@ static void TestStrayStartIsIdleUntilOrigin()
     const float origin = kC.scale * (kC.originA + kC.originB);
     const float pitch  = kC.scale * kC.pitch;
     // Enter mid-row: first call is the second slot, not the origin.
-    Decision d = t.OnRowTile(origin + pitch, 196.0f, kC, Good());
+    Decision d = t.OnRowTile(origin + pitch, kRowY, kC, Good());
     CHECK(d.action == Action::None);
     CHECK(t.Next() == -1);
     // A full pass afterwards still draws exactly once.
@@ -125,16 +136,16 @@ static void TestOffSequenceLosesThePass()
     RowTracker t;
     const float origin = kC.scale * (kC.originA + kC.originB);
     const float pitch  = kC.scale * kC.pitch;
-    Decision d0 = t.OnRowTile(origin, 196.0f, kC, Good());
+    Decision d0 = t.OnRowTile(origin, kRowY, kC, Good());
     CHECK(d0.action == Action::None);
     // Second call lands on a slot that is not origin + pitch: the pass is lost.
-    Decision d1 = t.OnRowTile(origin + 3.0f * pitch, 196.0f, kC, Good());
+    Decision d1 = t.OnRowTile(origin + 3.0f * pitch, kRowY, kC, Good());
     CHECK(d1.action == Action::None);
     CHECK(t.Next() == -1);
     // The rest of that pass draws nothing.
     int drawnAt = -1;
     for (int k = 2; k < 8; ++k) {
-        Decision d = t.OnRowTile(origin + static_cast<float>(k) * pitch, 196.0f, kC, Good());
+        Decision d = Tile(t, k, kRowY, Good());
         if (d.action == Action::DrawNinth) drawnAt = k;
     }
     CHECK(drawnAt == -1);
@@ -143,11 +154,9 @@ static void TestOffSequenceLosesThePass()
 static void TestCountChangeMidPassDrawsNothing()
 {
     RowTracker t;
-    const float origin = kC.scale * (kC.originA + kC.originB);
-    const float pitch  = kC.scale * kC.pitch;
     for (int k = 0; k < 7; ++k) {
         int count = (k < 3) ? 8 : 7;   // count changes after three tiles
-        Decision d = t.OnRowTile(origin + static_cast<float>(k) * pitch, 196.0f, kC, Good(count));
+        Decision d = Tile(t, k, kRowY, Good(count));
         CHECK(d.action == Action::None);
     }
     CHECK(t.Next() == -1);
@@ -158,12 +167,13 @@ static void TestInvalidInputsDrawNothing()
     RowTracker t;
     const float origin = kC.scale * (kC.originA + kC.originB);
     RowConstants nan{0.8f, std::nanf(""), 85.0f, 64.0f};
-    CHECK(t.OnRowTile(origin, 196.0f, nan, Good()).action == Action::None);
+    CHECK(t.OnRowTile(origin, kRowY, nan, Good()).action == Action::None);
     RowConstants zeroPitch{0.8f, 45.0f, 85.0f, 0.0f};
-    CHECK(t.OnRowTile(origin, 196.0f, zeroPitch, Good()).action == Action::None);
+    CHECK(t.OnRowTile(origin, kRowY, zeroPitch, Good()).action == Action::None);
     RowConstants bigScale{5.0f, 45.0f, 85.0f, 64.0f};
-    CHECK(t.OnRowTile(origin, 196.0f, bigScale, Good()).action == Action::None);
-    CHECK(t.OnRowTile(std::nanf(""), 196.0f, kC, Good()).action == Action::None);
+    CHECK(t.OnRowTile(origin, kRowY, bigScale, Good()).action == Action::None);
+    CHECK(t.OnRowTile(std::nanf(""), kRowY, kC, Good()).action == Action::None);
+    CHECK(t.OnRowTile(origin, std::nanf(""), kC, Good()).action == Action::None);
     CHECK(t.Next() == -1);
 }
 
@@ -179,6 +189,180 @@ static void TestTwoPassesDrawTwice()
     CHECK(total == 2);
 }
 
+// Row Y changes on an interior tile: the pass is dropped and nothing is drawn.
+static void TestRowYChangeMidPassDrawsNothing()
+{
+    RowTracker t;
+    for (int k = 0; k < 8; ++k) {
+        float y = (k >= 4) ? kRowY + 1.0f : kRowY;   // Y moves at tile 4
+        CHECK(Tile(t, k, y, Good()).action == Action::None);
+    }
+    CHECK(t.Next() == -1);
+}
+
+// Row Y changes only on the decision tile: still nothing is drawn.
+static void TestRowYChangeOnLastTileOnlyDrawsNothing()
+{
+    RowTracker t;
+    for (int k = 0; k < 8; ++k) {
+        float y = (k == 7) ? kRowY + 0.5f : kRowY;
+        CHECK(Tile(t, k, y, Good()).action == Action::None);
+    }
+    CHECK(t.Next() == -1);
+}
+
+// A skip flag set mid-pass drops the pass; flipping it back does not revive it.
+static void TestSkip578ChangeMidPassDrawsNothing()
+{
+    RowTracker t;
+    for (int k = 0; k < 8; ++k) {
+        RowGate g = Good();
+        if (k >= 3) g.skip578 = 1;                    // stays set
+        CHECK(Tile(t, k, kRowY, g).action == Action::None);
+    }
+    CHECK(t.Next() == -1);
+
+    RowTracker u;
+    for (int k = 0; k < 8; ++k) {
+        RowGate g = Good();
+        g.skip578 = (k == 3) ? 1 : 0;                 // set once, then cleared
+        CHECK(Tile(u, k, kRowY, g).action == Action::None);
+    }
+    CHECK(u.Next() == -1);
+}
+
+// skip5e0 cleared mid-pass, and cleared only on the decision tile.
+static void TestSkip5e0ChangeMidPassDrawsNothing()
+{
+    RowTracker t;
+    for (int k = 0; k < 8; ++k) {
+        RowGate g = Good();
+        g.skip5e0 = (k == 6) ? 0 : 1;                 // cleared on tile 6, back on 7
+        CHECK(Tile(t, k, kRowY, g).action == Action::None);
+    }
+
+    RowTracker u;
+    for (int k = 0; k < 8; ++k) {
+        RowGate g = Good();
+        g.skip5e0 = (k == 7) ? 0 : 1;                 // cleared only on the decision tile
+        CHECK(Tile(u, k, kRowY, g).action == Action::None);
+    }
+    CHECK(u.Next() == -1);
+}
+
+// Selector byte changed mid-pass, then restored: the pass stays dropped.
+static void TestSelectorChangeMidPassDrawsNothing()
+{
+    RowTracker t;
+    for (int k = 0; k < 8; ++k) {
+        RowGate g = Good();
+        g.selector = (k == 2) ? 0 : 1;
+        CHECK(Tile(t, k, kRowY, g).action == Action::None);
+    }
+    CHECK(t.Next() == -1);
+}
+
+static void TestC7d4ChangeMidPassDrawsNothing()
+{
+    RowTracker t;
+    for (int k = 0; k < 8; ++k) {
+        RowGate g = Good();
+        g.c7d4 = (k == 5) ? 0 : -1;
+        CHECK(Tile(t, k, kRowY, g).action == Action::None);
+    }
+    CHECK(t.Next() == -1);
+}
+
+// The gate is captured at the pass's first tile; a later tile that differs
+// from that snapshot drops the pass, even if the decision-tile gate is good.
+static void TestGateSnapshotComesFromFirstTile()
+{
+    RowTracker t;
+    for (int k = 0; k < 8; ++k) {
+        RowGate g = Good();
+        g.skip578 = (k == 0) ? 1 : 0;
+        CHECK(Tile(t, k, kRowY, g).action == Action::None);
+    }
+    CHECK(t.Next() == -1);
+}
+
+// Reset() in the middle of a pass drops it. The remaining tiles draw nothing.
+static void TestResetMidPassDropsPass()
+{
+    RowTracker t;
+    for (int k = 0; k < 4; ++k) {
+        CHECK(Tile(t, k, kRowY, Good()).action == Action::None);
+    }
+    t.Reset();
+    CHECK(t.Next() == -1);
+    for (int k = 4; k < 8; ++k) {
+        CHECK(Tile(t, k, kRowY, Good()).action == Action::None);
+    }
+    CHECK(t.Next() == -1);
+}
+
+// The selector is one byte, as the game reads it. Any non-zero byte dispatches.
+static void TestSelectorIsOneByte()
+{
+    static_assert(sizeof(RowGate::selector) == 1, "selector must be one byte");
+    for (int v : {1, 2, 127, 255}) {
+        RowGate g = Good();
+        g.selector = static_cast<uint8_t>(v);
+        RowTracker t;
+        int drawnAt = -1;
+        Decision last = RunPass(t, 8, g, kC, &drawnAt);
+        CHECK(drawnAt == 7);
+        CHECK(last.action == Action::DrawNinth);
+    }
+}
+
+// Count outside 1..kMaxCount is rejected, both at the start and mid-pass.
+static void TestCountRangeEnforced()
+{
+    RowTracker t;
+    CHECK(Tile(t, 0, kRowY, Good(0)).action == Action::None);
+    CHECK(Tile(t, 0, kRowY, Good(kMaxCount + 1)).action == Action::None);
+    CHECK(t.Next() == -1);
+
+    RowTracker u;
+    CHECK(Tile(u, 0, kRowY, Good(8)).action == Action::None);
+    CHECK(Tile(u, 1, kRowY, Good(kMaxCount + 1)).action == Action::None);
+    CHECK(u.Next() == -1);
+}
+
+// A failed pass does not poison the next clean pass.
+static void TestCleanPassAfterFailedPassDraws()
+{
+    RowTracker t;
+    RowGate bad = Good();
+    bad.skip578 = 1;
+    for (int k = 0; k < 8; ++k) {
+        CHECK(Tile(t, k, kRowY, (k == 3) ? bad : Good()).action == Action::None);
+    }
+    int drawnAt = -1;
+    Decision last = RunPass(t, 8, Good(), kC, &drawnAt);
+    CHECK(drawnAt == 7);
+    CHECK(last.action == Action::DrawNinth);
+}
+
+// An unreadable (non-finite) tile in the middle of a pass drops the pass. The
+// tile that would have continued it, at the expected slot, must not draw.
+static void TestNonFiniteTileMidPassDropsPass()
+{
+    RowTracker t;
+    for (int k = 0; k < 4; ++k) {
+        CHECK(Tile(t, k, kRowY, Good()).action == Action::None);
+    }
+    const float origin = kC.scale * (kC.originA + kC.originB);
+    const float pitch  = kC.scale * kC.pitch;
+    CHECK(t.OnRowTile(origin + 4.0f * pitch, std::nanf(""), kC, Good()).action == Action::None);
+    CHECK(t.Next() == -1);
+    for (int k = 4; k < 8; ++k) {
+        CHECK(Tile(t, k, kRowY, Good()).action == Action::None);
+    }
+    CHECK(t.Next() == -1);
+}
+
 int main()
 {
     TestEightTilePassDrawsNinthOnLastTile();
@@ -190,6 +374,18 @@ int main()
     TestCountChangeMidPassDrawsNothing();
     TestInvalidInputsDrawNothing();
     TestTwoPassesDrawTwice();
+    TestRowYChangeMidPassDrawsNothing();
+    TestRowYChangeOnLastTileOnlyDrawsNothing();
+    TestSkip578ChangeMidPassDrawsNothing();
+    TestSkip5e0ChangeMidPassDrawsNothing();
+    TestSelectorChangeMidPassDrawsNothing();
+    TestC7d4ChangeMidPassDrawsNothing();
+    TestGateSnapshotComesFromFirstTile();
+    TestResetMidPassDropsPass();
+    TestSelectorIsOneByte();
+    TestCountRangeEnforced();
+    TestCleanPassAfterFailedPassDraws();
+    TestNonFiniteTileMidPassDropsPass();
     std::printf("almanac_button geometry: all tests passed\n");
     return 0;
 }
