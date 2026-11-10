@@ -1,0 +1,113 @@
+# D05 selection handler
+# Source: Mods for analysis/Diplomacy/tesmioloader/the build/plugins/reputation.dll (SHA-256 fd7d94590b98c7eb80fa14ef95f2bbdf4b5e058f68d07dfa97d0db8dcbfbcb6a)
+# Range: 1800575c9-180057780
+# Static objdump excerpt, annotated by annot.py (rip-relative targets, .rdata strings). Nothing executed.
+# Purpose: calls to 0x180057e40, 0x180058310, 0x180057d50, 0x1800593b0, 0x18002f1e0
+
+1800575c9:	cmp    DWORD PTR [rip+0x22eab1],ebx        # 0x180286080
+1800575cf:	jne    0x1800575f9
+1800575d1:	cmp    DWORD PTR [rip+0x176441],ebx        # 0x1801cda18
+1800575d7:	jne    0x1800575f9
+1800575d9:	cmp    DWORD PTR [rip+0x176435],ebx        # 0x1801cda14
+1800575df:	jne    0x1800575f9
+1800575e1:	cmp    DWORD PTR [rip+0x12d8cd],ebx        # 0x180184eb4
+1800575e7:	jne    0x1800575f9
+1800575e9:	cmp    DWORD PTR [rip+0x17642d],ebx        # 0x1801cda1c
+1800575ef:	jne    0x1800575f9
+1800575f1:	cmp    DWORD PTR [rip+0x6d659],ebx        # 0x1800c4c50
+1800575f7:	je     0x18005761e
+1800575f9:	mov    r8d,ebx
+1800575fc:	nop    DWORD PTR [rax+0x0]
+180057600:	mov    ecx,r8d
+180057603:	call   0x18002f120
+180057608:	test   eax,eax
+18005760a:	jne    0x180057617
+18005760c:	inc    r8d
+18005760f:	cmp    r8d,0x8
+180057613:	jl     0x180057600
+180057615:	jmp    0x18005761e
+180057617:	mov    DWORD PTR [rip+0x3ba5ae],r8d        # 0x180411bcc
+18005761e:	call   0x180057e40
+180057623:	call   0x180058310
+180057628:	cmp    eax,DWORD PTR [rip+0x487352]        # 0x1804de980
+18005762e:	je     0x180057697
+180057630:	mov    DWORD PTR [rip+0x48734a],eax        # 0x1804de980
+180057636:	test   eax,eax
+180057638:	je     0x180057697
+18005763a:	cmp    DWORD PTR [rip+0x6bb18],ebx        # 0x1800c3158
+180057640:	jne    0x18005767d
+180057642:	cmp    DWORD PTR [rip+0x22ea38],ebx        # 0x180286080
+180057648:	jne    0x18005767d
+18005764a:	cmp    DWORD PTR [rip+0x1763c8],ebx        # 0x1801cda18
+180057650:	jne    0x18005767d
+180057652:	cmp    DWORD PTR [rip+0x1763bc],ebx        # 0x1801cda14
+180057658:	jne    0x18005767d
+18005765a:	cmp    DWORD PTR [rip+0x12d854],ebx        # 0x180184eb4
+180057660:	jne    0x18005767d
+180057662:	cmp    DWORD PTR [rip+0x1763b4],ebx        # 0x1801cda1c
+180057668:	jne    0x18005767d
+18005766a:	cmp    DWORD PTR [rip+0x6d5e0],ebx        # 0x1800c4c50
+180057670:	jne    0x18005767d
+180057672:	mov    ecx,DWORD PTR [rip+0x3ba554]        # 0x180411bcc
+180057678:	call   0x18002f1e0
+18005767d:	lea    r8,[rip+0x6c5a4]        # 0x1800c3c28 ;; "trade"
+180057684:	lea    rdx,[rip+0x6c5b5]        # 0x1800c3c40 ;; "reputation"
+18005768b:	lea    rcx,[rip+0x47b0e]        # 0x18009f1a0 ;; "  item  "%s" chosen in the "%s" panel - opening the reputation window"
+180057692:	call   0x180053ef0
+180057697:	call   0x180057d50
+18005769c:	cmp    DWORD PTR [rip+0x6bc4a],ebx        # 0x1800c32ec
+1800576a2:	mov    edi,eax
+1800576a4:	je     0x1800576d0
+1800576a6:	test   eax,eax
+1800576a8:	jne    0x1800576d0
+1800576aa:	cmp    DWORD PTR [rip+0x3ba518],ebx        # 0x180411bc8
+1800576b0:	jne    0x1800576fa
+1800576b2:	call   0x180001c80
+1800576b7:	test   eax,eax
+1800576b9:	je     0x1800576fa
+1800576bb:	call   0x180058310
+1800576c0:	test   eax,eax
+1800576c2:	jne    0x1800576fa
+1800576c4:	call   0x1800593b0
+1800576c9:	call   0x180057d50
+1800576ce:	mov    edi,eax
+1800576d0:	test   edi,edi
+1800576d2:	je     0x1800576fa
+1800576d4:	cmp    DWORD PTR [rip+0x3ba4ee],ebx        # 0x180411bc8
+1800576da:	je     0x1800576fa
+1800576dc:	cmp    DWORD PTR [rip+0x6c592],ebx        # 0x1800c3c74
+1800576e2:	jne    0x1800576fa
+1800576e4:	call   0x180001c80
+1800576e9:	test   eax,eax
+1800576eb:	jne    0x1800576fa
+1800576ed:	call   0x1800571c0
+1800576f2:	mov    DWORD PTR [rip+0x14c8b0],ebx        # 0x1801a3fa8
+1800576f8:	mov    edi,ebx
+1800576fa:	cmp    edi,DWORD PTR [rip+0x3ba4c8]        # 0x180411bc8
+180057700:	je     0x180057778
+180057702:	mov    DWORD PTR [rip+0x3ba4c0],edi        # 0x180411bc8
+180057708:	test   edi,edi
+18005770a:	jne    0x180057799
+180057710:	cmp    DWORD PTR [rip+0x6c55e],ebx        # 0x1800c3c74
+180057716:	jne    0x180057778
+180057718:	call   0x180001c80
+18005771d:	test   eax,eax
+18005771f:	je     0x180057778
+180057721:	call   0x180058310
+180057726:	test   eax,eax
+180057728:	jne    0x180057778
+18005772a:	cmp    DWORD PTR [rip+0x22e950],ebx        # 0x180286080
+180057730:	je     0x18005773e
+180057732:	mov    DWORD PTR [rip+0x22e948],ebx        # 0x180286080
+180057738:	mov    DWORD PTR [rip+0x22e946],ebx        # 0x180286084
+18005773e:	lea    rcx,[rip+0x47aa3]        # 0x18009f1e8 ;; "  side  another sidebar entry chosen - panel closed"
+180057745:	mov    DWORD PTR [rip+0x6d505],ebx        # 0x1800c4c50
+18005774b:	mov    DWORD PTR [rip+0x1762cb],ebx        # 0x1801cda1c
+180057751:	mov    DWORD PTR [rip+0x12d75d],ebx        # 0x180184eb4
+180057757:	mov    DWORD PTR [rip+0x1762b7],ebx        # 0x1801cda14
+18005775d:	mov    DWORD PTR [rip+0x1762b5],ebx        # 0x1801cda18
+180057763:	mov    DWORD PTR [rip+0x6b9ef],ebx        # 0x1800c3158
+180057769:	mov    DWORD PTR [rip+0x6b9fd],0x1        # 0x1800c3170
+180057773:	call   0x180053ef0
+180057778:	mov    rdi,QWORD PTR [rsp+0x240]
+180057780:	mov    rcx,QWORD PTR [rsp+0x200]

@@ -1,0 +1,22 @@
+# N06 alternate row handler: X advance, loop bound count-1
+# Source: export/ch_tab23_full.asm (preserved repo listing; game binary not in workspace, hash unverified)
+# Range: 14036220a-140362245
+# Static listing excerpt, copied verbatim by address. Nothing executed.
+# Purpose: INC ESI; DEC EAX; CMP ESI,EAX; JL -> entries 0..count-2 only
+
+14036220a:  F3 0F 58 F7              ADDSS XMM6,XMM7
+14036220e:  FF C6                    INC ESI
+140362210:  49 83 C7 50              ADD R15,0x50
+140362214:  4D 8B 86 50 C6 00 00     MOV R8,qword ptr [R14 + 0xc650]
+14036221b:  49 83 C0 48              ADD R8,0x48
+14036221f:  49 8B 48 08              MOV RCX,qword ptr [R8 + 0x8]
+140362223:  49 2B 08                 SUB RCX,qword ptr [R8]
+140362226:  48 B8 67 66 66 66 66 66 66 66 MOV RAX,0x6666666666666667
+140362230:  48 F7 E9                 IMUL RCX
+140362233:  48 C1 FA 05              SAR RDX,0x5
+140362237:  48 8B C2                 MOV RAX,RDX
+14036223a:  48 C1 E8 3F              SHR RAX,0x3f
+14036223e:  48 03 C2                 ADD RAX,RDX
+140362241:  FF C8                    DEC EAX
+140362243:  3B F0                    CMP ESI,EAX
+140362245:  0F 8C 75 FD FF FF        JL 0x140361fc0

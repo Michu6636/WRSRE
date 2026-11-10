@@ -1,0 +1,47 @@
+# D11 dispatcher common tail
+# Source: Mods for analysis/Diplomacy/tesmioloader/the build/plugins/reputation.dll (SHA-256 fd7d94590b98c7eb80fa14ef95f2bbdf4b5e058f68d07dfa97d0db8dcbfbcb6a)
+# Range: 18002f327-18002f3e0
+# Static objdump excerpt, annotated by annot.py (rip-relative targets, .rdata strings). Nothing executed.
+# Purpose: common tail reached for index 8
+
+18002f327:	cmp    DWORD PTR [rip+0x94452],r9d        # 0x1800c3780
+18002f32e:	je     0x18002f394
+18002f330:	cmp    ecx,0x1
+18002f333:	jl     0x18002f351
+18002f335:	cmp    DWORD PTR [rip+0x93e1c],r9d        # 0x1800c3158
+18002f33c:	je     0x18002f399
+18002f33e:	mov    DWORD PTR [rip+0x93e13],r9d        # 0x1800c3158
+18002f345:	mov    DWORD PTR [rip+0x93e21],0x1        # 0x1800c3170
+18002f34f:	jmp    0x18002f399
+18002f351:	test   ecx,ecx
+18002f353:	jne    0x18002f3f4
+18002f359:	cmp    DWORD PTR [rip+0x256d20],r9d        # 0x180286080
+18002f360:	je     0x18002f370
+18002f362:	mov    DWORD PTR [rip+0x256d17],r9d        # 0x180286080
+18002f369:	mov    DWORD PTR [rip+0x256d14],r9d        # 0x180286084
+18002f370:	mov    DWORD PTR [rip+0x19e6a5],r9d        # 0x1801cda1c
+18002f377:	mov    DWORD PTR [rip+0x155b36],r9d        # 0x180184eb4
+18002f37e:	mov    DWORD PTR [rip+0x19e68f],r9d        # 0x1801cda14
+18002f385:	mov    DWORD PTR [rip+0x19e68c],r9d        # 0x1801cda18
+18002f38c:	mov    DWORD PTR [rip+0x958bd],r9d        # 0x1800c4c50
+18002f393:	ret
+18002f394:	cmp    ecx,0x1
+18002f397:	jl     0x18002f3f4
+18002f399:	cmp    ecx,0x1
+18002f39c:	je     0x18002f3ba
+18002f39e:	cmp    DWORD PTR [rip+0x256cdb],r9d        # 0x180286080
+18002f3a5:	je     0x18002f3b5
+18002f3a7:	mov    DWORD PTR [rip+0x256cd2],r9d        # 0x180286080
+18002f3ae:	mov    DWORD PTR [rip+0x256ccf],r9d        # 0x180286084
+18002f3b5:	cmp    ecx,0x2
+18002f3b8:	je     0x18002f3c6
+18002f3ba:	mov    DWORD PTR [rip+0x19e657],r9d        # 0x1801cda18
+18002f3c1:	cmp    ecx,0x3
+18002f3c4:	je     0x18002f3d5
+18002f3c6:	lea    eax,[rcx-0x4]
+18002f3c9:	mov    DWORD PTR [rip+0x19e644],r9d        # 0x1801cda14
+18002f3d0:	cmp    eax,0x1
+18002f3d3:	jbe    0x18002f3e1
+18002f3d5:	mov    DWORD PTR [rip+0x155ad8],r9d        # 0x180184eb4
+18002f3dc:	cmp    ecx,0x6
+18002f3df:	je     0x18002f3ed

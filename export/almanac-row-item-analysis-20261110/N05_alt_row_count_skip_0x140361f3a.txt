@@ -1,0 +1,42 @@
+# N05 alternate row handler: count, loop start, skips, direct index
+# Source: export/ch_tab23_full.asm (preserved repo listing; game binary not in workspace, hash unverified)
+# Range: 140361f3a-140361fe9
+# Static listing excerpt, copied verbatim by address. Nothing executed.
+# Purpose: ESI used directly as index; bound count-1 (see N06)
+
+140361f3a:  41 83 BE D4 C7 00 00 FF  CMP dword ptr [R14 + 0xc7d4],-0x1
+140361f42:  0F 85 5A 03 00 00        JNZ 0x1403622a2
+140361f48:  F3 44 0F 10 15 4F 8B 5A 00 MOVSS XMM10,dword ptr [0x14090aaa0]
+140361f51:  F3 41 0F 59 FA           MULSS XMM7,XMM10
+140361f56:  49 8D 8E B0 AD 00 00     LEA RCX,[R14 + 0xadb0]
+140361f5d:  45 8B 86 A8 AD 00 00     MOV R8D,dword ptr [R14 + 0xada8]
+140361f64:  41 0F 28 CF              MOVAPS XMM1,XMM15
+140361f68:  E8 33 41 0E 00           CALL 0x1404460a0
+140361f6d:  41 8B F4                 MOV ESI,R12D
+140361f70:  4D 8B 86 50 C6 00 00     MOV R8,qword ptr [R14 + 0xc650]
+140361f77:  49 83 C0 48              ADD R8,0x48
+140361f7b:  49 8B 48 08              MOV RCX,qword ptr [R8 + 0x8]
+140361f7f:  49 2B 08                 SUB RCX,qword ptr [R8]
+140361f82:  48 B8 67 66 66 66 66 66 66 66 MOV RAX,0x6666666666666667
+140361f8c:  48 F7 E9                 IMUL RCX
+140361f8f:  48 C1 FA 05              SAR RDX,0x5
+140361f93:  48 8B C2                 MOV RAX,RDX
+140361f96:  48 C1 E8 3F              SHR RAX,0x3f
+140361f9a:  48 03 C2                 ADD RAX,RDX
+140361f9d:  FF C8                    DEC EAX
+140361f9f:  F3 44 0F 10 0D B0 7F 5A 00 MOVSS XMM9,dword ptr [0x140909f58]
+140361fa8:  85 C0                    TEST EAX,EAX
+140361faa:  0F 8E AD 02 00 00        JLE 0x14036225d
+140361fb0:  4D 8B FC                 MOV R15,R12
+140361fb3:  F3 44 0F 10 1D 20 7E 5A 00 MOVSS XMM11,dword ptr [0x140909ddc]
+140361fbc:  0F 1F 40 00              NOP dword ptr [RAX]
+140361fc0:  41 83 BE 78 05 00 00 00  CMP dword ptr [R14 + 0x578],0x0
+140361fc8:  74 0C                    JZ 0x140361fd6
+140361fca:  8D 46 FD                 LEA EAX,[RSI + -0x3]
+140361fcd:  83 F8 01                 CMP EAX,0x1
+140361fd0:  0F 86 38 02 00 00        JBE 0x14036220e
+140361fd6:  83 FE 06                 CMP ESI,0x6
+140361fd9:  75 0E                    JNZ 0x140361fe9
+140361fdb:  41 83 BE E0 05 00 00 00  CMP dword ptr [R14 + 0x5e0],0x0
+140361fe3:  0F 84 25 02 00 00        JZ 0x14036220e
+140361fe9:  49 8B 00                 MOV RAX,qword ptr [R8]

@@ -1,0 +1,9 @@
+# N07 alternate row handler: click write of selected index
+# Source: export/ch_tab23_full.asm (preserved repo listing; game binary not in workspace, hash unverified)
+# Range: 140362193-1403621a5
+# Static listing excerpt, copied verbatim by address. Nothing executed.
+# Purpose: MOV [R14+0xC65C],ESI
+
+140362193:  41 89 B6 5C C6 00 00     MOV dword ptr [R14 + 0xc65c],ESI
+14036219a:  41 C7 86 E8 0B 01 00 FF FF FF FF MOV dword ptr [R14 + 0x10be8],0xffffffff
+1403621a5:  41 39 B6 5C C6 00 00     CMP dword ptr [R14 + 0xc65c],ESI

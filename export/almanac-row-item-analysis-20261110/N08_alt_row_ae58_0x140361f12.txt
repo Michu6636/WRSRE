@@ -1,0 +1,7 @@
+# N08 alternate row handler: AE58 write
+# Source: export/ch_tab23_full.asm (preserved repo listing; game binary not in workspace, hash unverified)
+# Range: 140361f12-140361f12
+# Static listing excerpt, copied verbatim by address. Nothing executed.
+# Purpose: MOVSS [R14+0xAE58],XMM15 (before skip tests)
+
+140361f12:  F3 45 0F 11 BE 58 AE 00 00 MOVSS dword ptr [R14 + 0xae58],XMM15
