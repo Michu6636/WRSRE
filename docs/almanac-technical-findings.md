@@ -33,7 +33,7 @@ An independent button in the same row and a separate global page are the preferr
 - [`currency_api.h`](../src/currency_api.h) exposes treasury and active-currency access. Consumers must handle unavailable services and version/size compatibility.
 - [`state_ledger`](../plugins/state_ledger/state_ledger.cpp) holds its flow aggregation and closed-period HUD values privately; it does not currently publish a general snapshot service. Its flow total and the observed treasury change are separate values. A versioned snapshot with period, currency, validity, tracked flows, observed change, and unexplained difference is a **design candidate**, not an implemented API.
 - [`taxes_api.h`](../src/taxes_api.h) exposes enabled flags and policy setters for VAT, profit, and property tax. VAT and profit getters report **effective zero when suspended**, and the public API has no generic configured property-value getter. A future configured-policy snapshot/getter is needed to show the stored values accurately while suspended; preserve existing consumers and exact-version service behavior.
-- Property tax is a flat amount per enterprise. Read the existing tax service for current rules; the Almanac should call the authoritative setters rather than inventing parallel behavior.
+- The property-tax control sets a base amount per enterprise, not a percentage. `SettlePropertyAll` scales that base by attractiveness when `property_land_value` is enabled (the shipped INI default), and uses it flat when disabled. The Almanac should present the active rule and call the authoritative setters rather than inventing parallel behavior.
 
 ## Evidence and limits
 

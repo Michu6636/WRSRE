@@ -29,7 +29,7 @@ The first acceptable release must provide **government finance information and d
 
 - Provide controls for VAT, corporate profit tax, and property tax, including their enabled/suspended status and configured values.
 - Preserve the existing tax service as the authority for validation, settlement, saved policy, and scheduling. Do not implement a second set of tax rules in the Almanac.
-- Label VAT and profit as rates; property tax is a **flat amount per enterprise**, not a percentage. Explain when changes take effect and the behavior of suspended taxes and outstanding liabilities according to the existing service.
+- Label VAT and profit as rates; the property-tax control sets a **base amount per enterprise**, not a percentage. In the existing service the actual charge can be scaled by land attractiveness when the land-value option is enabled (the shipped default); when it is disabled the base is a flat amount. Show the applicable basis accurately rather than changing tax behavior. Explain when changes take effect and the behavior of suspended taxes and outstanding liabilities according to the existing service.
 - Keep existing City Hall behavior usable during a safe migration; do not remove it until compatibility and the replacement have been verified and removal is authorized.
 
 ### Later expansion
@@ -60,7 +60,7 @@ These stages are planning gates, not authorization to implement.
 - [ ] Clicking it opens the global Almanac. The existing button interaction can be reused; verify that the new placement receives input in this sidebar context and does not steal or duplicate native clicks.
 - [ ] Vanilla buttons, selection, page content, close, and return behavior still work. Almanac content does not mix with native content when it should replace it.
 - [ ] Treasury and recent financial information are correctly labeled by period and currency; tracked flows are not confused with the total treasury change.
-- [ ] VAT, profit tax, and flat property tax can be adjusted and enabled/suspended from the Almanac. Configured values survive suspension and normal save/load behavior.
+- [ ] VAT, profit tax, and the property-tax base can be adjusted and enabled/suspended from the Almanac, with the active land-value basis accurately represented. Configured values survive suspension and normal save/load behavior.
 - [ ] Missing or incompatible services show a safe unavailable state; no unrelated economic policy, saves, or vanilla state are changed.
 - [ ] Integration is validated for the supported game build, layout modes, window sizes and UI scales, including relevant compatibility and regression testing.
 

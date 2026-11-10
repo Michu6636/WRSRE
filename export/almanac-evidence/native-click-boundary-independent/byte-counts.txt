@@ -1,0 +1,16 @@
+Independent count from tracked disassembly bytes; not a hook-safety assessment.
+0x140374356: 6 bytes: 140374356:  89 9E 5C C6 00 00        MOV dword ptr [RSI + 0xc65c],EBX
+0x14037435c: 10 bytes: 14037435c:  C7 86 E8 0B 01 00 FF FF FF FF MOV dword ptr [RSI + 0x10be8],0xffffffff
+0x140374366: 6 bytes: 140374366:  39 9E 5C C6 00 00        CMP dword ptr [RSI + 0xc65c],EBX
+First two instructions = 6+10 = 16 bytes; next boundary = 0x140374366.
+Reference in same export: 1403742ac:  0F 84 B4 00 00 00        JZ 0x140374366
+Reference in same export: 1403742f8:  74 6C                    JZ 0x140374366
+Reference in same export: 14037434d:  74 07                    JZ 0x140374356
+0x140362193: 7 bytes: 140362193:  41 89 B6 5C C6 00 00     MOV dword ptr [R14 + 0xc65c],ESI
+0x14036219a: 11 bytes: 14036219a:  41 C7 86 E8 0B 01 00 FF FF FF FF MOV dword ptr [R14 + 0x10be8],0xffffffff
+0x1403621a5: 7 bytes: 1403621a5:  41 39 B6 5C C6 00 00     CMP dword ptr [R14 + 0xc65c],ESI
+First two instructions = 7+11 = 18 bytes; next boundary = 0x1403621a5.
+Reference in same export: 1403620c9:  0F 84 D6 00 00 00        JZ 0x1403621a5
+Reference in same export: 140362143:  74 60                    JZ 0x1403621a5
+Reference in same export: 14036214a:  75 47                    JNZ 0x140362193
+Reference in same export: 140362165:  74 2C                    JZ 0x140362193
