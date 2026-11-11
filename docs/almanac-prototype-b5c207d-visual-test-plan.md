@@ -1,6 +1,6 @@
 # Visual-check plan: Almanac draw-only prototype `b5c207d`
 
-**Status: plan only. This is not approval to install, enable, or run the prototype.** No game test has been performed. The user must explicitly approve any execution after reviewing this plan.
+**Status: one visual-only test is approved under this plan but has not yet been run.** The approval covers only the single disposable visual pass described here. Any wider testing, fault injection, deployment to the normal game, or change of scope requires separate approval.
 
 ## What this check can answer
 
