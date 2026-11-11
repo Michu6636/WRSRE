@@ -134,8 +134,10 @@
 //
 // STATUS
 //   Pure geometry logic is host-tested (g++). KiloCode reported an MSVC build of
-//   revision b5c207d; this default-on follow-up has not yet been rebuilt or run.
-//   No game test has established the ninth position, visibility, or clipping.
+//   revision b5c207d; this default-on follow-up has no independently supplied
+//   MSVC build artifact. A user-provided screenshot/log for plugin v1.5 shows the
+//   extra draw in one view, with the crime-button artwork repeated. The exact DLL
+//   hash/source revision is not recorded. No click or input test was performed.
 //
 // Version 1.5: prototype defaults on (shipped INI and missing-key fallback); an
 //   explicit enabled = 0 remains the opt-out. The b5c207d fail-stop and shared-

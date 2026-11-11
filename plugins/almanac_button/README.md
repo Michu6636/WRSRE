@@ -7,12 +7,24 @@ An existing INI with `enabled = 0` remains an explicit opt-out.
 
 **Caution:** when installed, this experimental plugin attempts its guarded draw
 hook automatically. It can end the game process on certain faults. It is not a
-finished Almanac button and has not had the approved visual check yet. Disable
-it with `enabled = 0` in the active INI and restart.
+finished Almanac button. In the one user-performed visual check, the added tile
+appeared in the row but the user reports crime-button artwork; it has no click
+handling. The supplied log contains 259 `game.ERROR` lines, many for missing
+save/workshop/game content. The user confirms a disposable copy/profile, copied save,
+cloud sync off, no intentional game-state changes, and a normal close; they say
+the `saved_last` errors at exit are expected when not saving. These log lines
+are not attributed to the plugin. Disable the plugin with `enabled = 0` in the
+active INI and restart.
 
-Status: KiloCode reports an MSVC compile/link of revision `b5c207d`. This
-default-on follow-up still needs its own rebuild. The hook has not been run in
-the game. Only `almanac_button_geometry.h` is host-tested with g++ on Linux.
+The screenshot, loader log and result note are preserved at
+[`export/almanac-evidence/almanac-button-visual-test-run1/result.md`](../../export/almanac-evidence/almanac-button-visual-test-run1/result.md).
+The log reports plugin version 1.5 armed and the extra draw ran, but does not
+record the DLL SHA-256 or exact source revision. KiloCode's MSVC build report
+covers `b5c207d`, not the default-on follow-up. No independent MSVC build for
+the exact tested binary is available. The visual check did not test input,
+clickability, or behavior at other scales. The one-run approval has been used;
+any additional game run requires separate approval. Only
+`almanac_button_geometry.h` is host-tested with g++ on Linux.
 
 ## What the extra draw changes
 
