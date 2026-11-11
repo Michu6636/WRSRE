@@ -58,4 +58,8 @@ This remains **not approved or ready for a live game test**. Specific caveats:
 
 KiloCode reports that it built exact commit `b5c207dd865e7c9cc124d528323182dc17687e5a` in a detached scratch worktree, using Visual Studio 2022 Community, MSVC toolset 14.51 / compiler 19.51.36257.0 and Windows SDK 10. `build.bat almanac_button` returned 0 and reported `built: 1`, `skipped: 0`; KiloCode reports a 120,320-byte `almanac_button.dll` and copied INI. No compiler or linker errors were shown. The pasted output includes a `vswhere.exe` PATH diagnostic; KiloCode says the script used the absolute Installer path and the build completed. This is a successful **reported compile/link**, not a runtime test. The binary and full build log were not supplied here, so I have not independently verified them. No build artifacts were committed.
 
-The Windows MSVC compile/link gate is therefore **reported complete**. It does not make this prototype a finished Almanac button or clear it for a live game test. Any deployment or live test, including the fail-stop behavior, still requires separate review and approval.
+The Windows MSVC compile/link gate for **`b5c207d`** is therefore **reported complete**. It does not make this prototype a finished Almanac button or establish runtime behavior.
+
+### Follow-up: default-on request
+
+The user has asked that the prototype be on by default. Follow-up commit `31a9da3e4bbbcd7ef64044ca6a8a2d1142655046` changes both the shipped INI and the missing-key fallback to `enabled = 1` and bumps the plugin version to 1.5; an explicit existing `enabled = 0` remains an opt-out. This means an installed plugin will attempt the guarded import swap automatically on supported builds. The default-on revision has **not** yet been rebuilt with MSVC or run in-game. The previously approved one-time visual check is pending and covers only a disposable copy; it does not establish clickability or general safety.

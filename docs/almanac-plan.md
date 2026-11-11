@@ -1,6 +1,6 @@
 # Global Almanac: product and delivery plan
 
-**Status:** Investigation and planning. No Almanac game implementation is authorized yet. This is the current product direction; for evidence and open technical questions see [Technical findings](almanac-technical-findings.md). Earlier investigations may contain superseded conclusions.
+**Status:** The product Almanac is not implemented. Research and planning are documented, and a separate draw-only ninth-backdrop prototype has been merged. A follow-up changes that prototype's default to on; one visual-only test is approved but pending. The prototype has no click handling or Almanac page and does not meet the product acceptance criteria below. This is the current product direction; for evidence and open technical questions see [Technical findings](almanac-technical-findings.md). Earlier investigations may contain superseded conclusions.
 
 ## 1. Purpose
 
