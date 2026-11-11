@@ -19,7 +19,7 @@ It cannot validate a finished Almanac button: this prototype has **no icon, labe
 
 ## Before launch
 
-1. Record the exact commit of the default-on follow-up being tested (not `b5c207d`), test-game build, rebuilt DLL SHA-256, Windows display resolution, game UI scale and loader/plugin versions.
+1. Record the exact prototype commit (`31a9da3e4bbbcd7ef64044ca6a8a2d1142655046`), test-game build, rebuilt DLL SHA-256, Windows display resolution, game UI scale and loader/plugin versions. This is the default-on follow-up, not `b5c207d`.
 2. Preserve a clean VM snapshot and place one copied test save in the isolated save location. Confirm cloud sync is off and recovery works without using the original game/save folders.
 3. Capture a **baseline** screenshot of the Economy & Trade row with the prototype absent or disabled, at the chosen resolution and UI scale. Record that all eight vanilla tiles appear in one row.
 4. Prepare the isolated copy with a fresh build of the default-on follow-up. Confirm its INI resolves to `enabled = 1`; do not change the normal install or its INI. Confirm the normal saves remain untouched.
