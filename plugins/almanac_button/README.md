@@ -186,34 +186,16 @@ acknowledgement.
 Faults in the plugin's **own planning code** (`PlanRowTile`) are **not** a
 fail-stop. They disarm and call `RestoreOriginal`, unchanged from revision 3.
 
-## Windows-side containment (required for any test)
+## Disposable visual check
 
-The in-process fail-stop is the primary control. It is **not** verified in
-Windows. Use these steps as well:
-
-1. **Disposable machine or profile.** Use a disposable Windows VM with a snapshot
-   taken before the test. Install a disposable copy of the game in it. The
-   test must not use the real game folder or the real save folder.
-2. **Disposable saves.** Point the test at a save folder that holds only test
-   saves. Do not use a save that matters, because a fail-stop can happen while a
-   save is being written.
-3. **Operator watchdog.** Run a separate process, started by the operator, that
-   is not the game. It watches the loader log for `FAIL-STOP`. If it sees that
-   line, and the game process is still running after a short timeout (for
-   example 5 seconds), it ends that process by PID. This covers the case where
-   `TerminateProcess` returns or hangs. The watchdog is **not provided** in this
-   revision. It has to be written and tested on Windows.
-4. **Hang and crash handling.** If the game stops responding without a
-   `FAIL-STOP` line, the operator ends it by PID and treats the session as
-   suspect.
-5. **After any `FAIL-STOP` or `RECT DIRTY` line.** Stop the test. Revert the VM
-   snapshot. Do not reuse that save or profile.
-6. **Log lines to expect.** The loader's vectored crash logger
-   (`AddVectoredExceptionHandler`, `src/tesmioloader.cpp`) may write `=== CRASH`
-   lines for faults that this plugin then catches. A `CRASH` line alone is **not**
-   a fail-stop. The plugin's own `FAIL-STOP` line is the evidence for one.
-7. **Log file location** is set by the loader's configuration. It was **not**
-   checked in this session.
+One supervised, visual-only check is approved but has not been run. The plugin
+can terminate or hang the game on certain faults, so use only a disposable game
+copy/profile with a copied save and cloud sync off. Do not use valuable saves,
+save, advance time, or change policies. A VM is optional if the test copy can be
+discarded and recreated. Stay present; if the test crashes or hangs, close only
+the test game process and discard the copy. Do not force faults or retry after
+an error. If the game build guard refuses to arm, stop rather than bypass it.
+Capture the baseline/after screenshots and loader/plugin logs.
 
 ## Concurrency (assumptions, not verified)
 
