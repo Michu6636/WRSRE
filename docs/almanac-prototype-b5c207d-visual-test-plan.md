@@ -1,6 +1,6 @@
 # Visual-check plan: Almanac draw-only prototype, default-on follow-up
 
-**Status:** The one visual-only test previously approved under this plan was performed by the user. The supplied screenshot shows the extra tile at the end of the Economy & Trade row; the user reports that it repeats the crime-button artwork. The log also contains 259 `game.ERROR` lines, including save-path errors, so this was **not a clean visual/safety pass**. Error causation and the disposable status of the game/profile are unknown. **Any further game run, even after an icon/rendering fix, requires separate explicit approval.**
+**Status:** The one visual-only test previously approved under this plan was performed by the user in a disposable game/profile with a copied test save and cloud sync off. The user reports no intentional save, time advance, policy change, or button click, and a normal close. The screenshot shows the extra tile at the end of the Economy & Trade row, but the user reports that it repeats the crime-button artwork. The log contains 259 `game.ERROR` lines, many for missing game/save/workshop content; the user clarifies that the `saved_last` open/write errors at close are expected when exiting without saving. This is a one-view placement pass, not a working Almanac button or a general safety test. **Any further game run, even after an icon/rendering fix, requires separate explicit approval.**
 
 ## What the original check could answer
 
@@ -12,12 +12,12 @@ The user's original screenshot and loader log are preserved byte-for-byte in [`e
 
 Observed in the supplied files:
 
-- The log identifies loader b0.3.6, game v1.1.1.9, and plugin v1.5. It reports the plugin armed, `ninth tile drawn (first row pass)`, and subsequent `row ok` entries.
-- There is no `FAIL-STOP` or `RECT DIRTY` line, but the log contains **259 `game.ERROR` lines**, including missing save/workshop content, 158 `IO_Building_Read BuildingType is NULL - temp` entries, read errors for files under `5643 - Test`, and repeated open/write errors under `media_soviet/saved_last`. Their cause is not attributed to this plugin. The `saved_last` errors mean the supplied log alone does not establish that no save-related operation was attempted.
-- The log reports `Workshop subscribed items num 0` and missing workshop/resource files. This may explain some errors, but without a baseline or environment details that remains unconfirmed.
-- The screenshot shows an extra tile in the same visible row, with the eight native tiles still visible and no obvious second row or overlap in this capture. The user reports that the new tile appears to use the crime-button image.
+- The log identifies loader b0.3.6, game v1.1.1.9, and plugin v1.5. It reports the plugin armed, `ninth tile drawn (first row pass)`, and subsequent `row ok` entries. There is no `FAIL-STOP` or `RECT DIRTY` line.
+- The screenshot shows an extra tile in the same visible row, with the eight native tiles still visible and no obvious second row or overlap in this capture. The user reports the extra image looks like the crime button.
+- The log contains **259 `game.ERROR` lines**, including 158 `IO_Building_Read BuildingType is NULL - temp` entries, missing resources/workshop files, two read errors under `5643 - Test`, and `setfocus` errors. It says `Workshop subscribed items num 0`. These entries point to missing game/save/workshop content in the run environment; they are not attributed to `almanac_button` by the available evidence.
+- The log records open/write errors under `media_soviet/saved_last` around shutdown. Per the user, these are expected on a no-save exit and are not a failure by themselves. The user confirms this run used a disposable copy/profile and copied save with cloud sync off, made no intentional game-state changes or button clicks, and closed normally.
 
-**Outcome:** placement is a **single-view visual pass**. Distinct Almanac artwork is a **visual failure / unresolved design requirement**. The **overall test is inconclusive and fails the plan's no-unexpected-game-errors criterion**. No click test is established. The log references a save named `5643 - Test`, but does not verify that the whole game profile was disposable, cloud sync was off, or normal saves remained untouched. The exact DLL SHA-256/source revision is not recorded. Do not infer those results.
+**Outcome:** placement is a **single-view visual pass**. Distinct Almanac artwork is a **visual failure / unresolved design requirement**. The user-reported disposable setup and normal close satisfy the containment intent for the one approved run; the log's unrelated/missing-content errors are not proof that the plugin caused a fault. They also do not establish safety in general. The exact DLL SHA-256/source revision is not recorded. No click test is established. Do not infer more than this.
 
 ## Boundaries for any separately authorized follow-up
 
@@ -29,7 +29,7 @@ Observed in the supplied files:
 
 ## Preparation checklist for a separately approved visual-only retest
 
-1. Review the 259 `game.ERROR` entries and establish a clean, reproducible disposable environment before any new game launch.
+1. Review the missing game/save/workshop-content errors and establish a clean, reproducible disposable environment before any new game launch.
 2. Record the exact reviewed source commit, test-game build, rebuilt DLL SHA-256, Windows display resolution, game UI scale, and loader/plugin versions.
 3. Confirm the test copy/profile and copied save are disposable, cloud sync is off, and the normal game/save locations remain untouched.
 4. Capture a baseline Economy & Trade row without the candidate build, at the chosen resolution and UI scale; confirm the eight vanilla tiles appear in one row.
@@ -41,7 +41,7 @@ Observed in the supplied files:
 - `FAIL-STOP` or `RECT DIRTY`, a hang, crash, or unresponsive game;
 - plugin does not arm, the added tile is missing/misplaced, or any native tile moves, disappears, overlaps, wraps, or is clipped;
 - the added tile shows unintended/borrowed vanilla artwork rather than a reviewed distinct Almanac visual;
-- any unexpected game, UI, rendering, loader, hook, or save-related error occurs.
+- any unexpected game, UI, rendering, loader, hook, or save-related error occurs. The `saved_last` open/write errors observed at shutdown in run 1 are expected per the user when exiting without saving; by themselves, those lines are not a stop condition.
 
 After any stop condition, do not continue playing or reuse the test save. Preserve logs and screenshots if available, close only the isolated game process if needed, and discard/recreate the copy. Do not repeat the test until the failure has been reviewed and a new test is separately approved.
 
