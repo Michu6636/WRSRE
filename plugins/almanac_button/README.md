@@ -1,12 +1,18 @@
-# almanac_button (prototype, disabled by default)
+# almanac_button (experimental prototype, enabled by default)
 
-A draw-only prototype. It draws one extra game-style backdrop tile after the
-eighth tile of the Economy & Trade row. It is not clickable and handles no
-input. It is off by default (`almanac_button.ini`: `enabled = 0`).
+A draw-only prototype. It attempts to draw one extra game-style backdrop tile
+after the eighth tile of the Economy & Trade row. It is not clickable and
+handles no input. The shipped INI and missing-key fallback set `enabled = 1`.
+An existing INI with `enabled = 0` remains an explicit opt-out.
 
-Status: the Windows glue is **not compiled or run** in the session that wrote
-it. There is no MSVC or `windows.h` in the sandbox. Only
-`almanac_button_geometry.h` is host-tested, with g++ on Linux.
+**Caution:** when installed, this experimental plugin attempts its guarded draw
+hook automatically. It can end the game process on certain faults. It is not a
+finished Almanac button and has not had the approved visual check yet. Disable
+it with `enabled = 0` in the active INI and restart.
+
+Status: KiloCode reports an MSVC compile/link of revision `b5c207d`. This
+default-on follow-up still needs its own rebuild. The hook has not been run in
+the game. Only `almanac_button_geometry.h` is host-tested with g++ on Linux.
 
 ## What the extra draw changes
 
@@ -224,21 +230,14 @@ copies the `.ini`. A successful build shows only that the file compiles. It does
 executable is the expected one. The host tests show only that the row logic
 behaves as written.
 
-## Still needs Windows testing (not authorized in this session)
+## Remaining Windows validation
 
-- Build with MSVC. Confirm the SEH blocks, `_ReturnAddress`, `__fastfail`,
-  `TerminateProcess`, the compare-exchange swap, `VirtualProtect`, and the import
-  swap compile and link.
-- Enable in a disposable environment, following the containment steps above.
-- Confirm the ninth tile renders where expected, that all eight native buttons
-  still work, that City Hall TAX is unchanged, and that there is no save
-  corruption.
-- **Fail-stop test (forced).** Force one fault at a time and check that the
-  `FAIL-STOP` line appears and that the game process ends. Do this in a disposable
-  environment only. The cases: a forced rect-store fault; a forced ninth-Draw
-  fault; a forced restore fault. Check that the game process ends in each case.
-- **Protection test (forced).** Force a failed restore of the import protection
-  and check that the undo reports the original-protection outcome accurately.
-- Decide whether the RECT DIRTY residual is acceptable for a supervised test.
-- Document what the extra draw changes in the engine (see above). This is not
-  established.
+- Rebuild this default-on follow-up with MSVC; the successful KiloCode report
+  covers base revision `b5c207d`, not this change.
+- Run the one user-approved visual-only check in a disposable environment,
+  following the containment steps above. Check whether the extra backdrop appears
+  beside the eight existing tiles at the tested resolution and scale.
+- The current visual-test approval does **not** include forced-fault or
+  protection-failure tests. Do not add those tests without separate approval.
+- The visual check cannot establish clickability, general hook coexistence,
+  re-entrancy safety, or all effects of the extra native Draw; these remain open.

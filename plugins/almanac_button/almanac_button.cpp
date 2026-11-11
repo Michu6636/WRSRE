@@ -12,8 +12,10 @@
 //   extra engine call can change shared UI state (see SHARED STATE below).
 //
 // DEFAULT
-//   plugins\almanac_button.ini: enabled = 0. Init then returns non-zero, and
-//   the loader calls FreeLibrary (the only unload path). Nothing is patched.
+//   The shipped INI and missing-key fallback are enabled = 1. If installed,
+//   Init accepts the plugin and Start attempts the guarded import swap. Set
+//   enabled = 0 in the active INI and restart to opt out. This experimental
+//   hook is active by default on supported builds.
 //
 // MECHANISM
 //   One import swap: C3D_PANEL2D::Draw at IAT slot RVA 0x86C860, called by the
@@ -131,13 +133,13 @@
 //   Set enabled = 0 and restart the game, on a disposable copy. See README.md.
 //
 // STATUS
-//   Only the pure geometry logic is host-tested (g++). This Windows glue is NOT
-//   compiled or run in this session. The ninth position, its visibility, and its
-//   clipping are NOT established.
+//   Pure geometry logic is host-tested (g++). KiloCode reported an MSVC build of
+//   revision b5c207d; this default-on follow-up has not yet been rebuilt or run.
+//   No game test has established the ninth position, visibility, or clipping.
 //
-// Version 1.4: original import-page protection captured once and reused by every
-// restore (including the undo); ninth-tile faults and rect failures end the
-// process (FailStop); the unverified hover-state claim is removed.
+// Version 1.5: prototype defaults on (shipped INI and missing-key fallback); an
+//   explicit enabled = 0 remains the opt-out. The b5c207d fail-stop and shared-
+//   state limitations still apply.
 
 #include <stdint.h>
 #include <intrin.h>
@@ -565,7 +567,7 @@ __declspec(noinline) static void Detour(void* self, float a1, float a2, float a3
 static void ReadSettings(void)
 {
     const char* ini = "plugins\\almanac_button.ini";
-    g_enabled = (H->configInt(ini, "almanac_button", "enabled", 0) == 1) ? 1 : 0;
+    g_enabled = (H->configInt(ini, "almanac_button", "enabled", 1) == 1) ? 1 : 0;
 }
 
 extern "C" __declspec(dllexport) unsigned TsmPluginApiVersion(void)
@@ -578,7 +580,7 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
 {
     TsmBind(host);
     info->name    = "almanac_button";
-    info->version = "1.4";
+    info->version = "1.5";
 
     ReadSettings();
     if (!g_enabled) {

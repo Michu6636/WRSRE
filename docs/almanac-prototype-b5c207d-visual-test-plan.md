@@ -1,6 +1,6 @@
-# Visual-check plan: Almanac draw-only prototype `b5c207d`
+# Visual-check plan: Almanac draw-only prototype, default-on follow-up
 
-**Status: one visual-only test is approved under this plan but has not yet been run.** The approval covers only the single disposable visual pass described here. Any wider testing, fault injection, deployment to the normal game, or change of scope requires separate approval.
+**Status: one visual-only test is approved under this plan but has not yet been run.** Test the rebuilt default-on follow-up, not the earlier `b5c207d` binary. Approval covers only the single disposable visual pass described here; any wider testing, fault injection, deployment to the normal game, or scope change requires separate approval.
 
 ## What this check can answer
 
@@ -19,10 +19,10 @@ It cannot validate a finished Almanac button: this prototype has **no icon, labe
 
 ## Before launch
 
-1. Record the exact prototype commit (`b5c207dd865e7c9cc124d528323182dc17687e5a`), test-game build, DLL SHA-256, Windows display resolution, game UI scale and loader/plugin versions.
+1. Record the exact commit of the default-on follow-up being tested (not `b5c207d`), test-game build, rebuilt DLL SHA-256, Windows display resolution, game UI scale and loader/plugin versions.
 2. Preserve a clean VM snapshot and place one copied test save in the isolated save location. Confirm cloud sync is off and recovery works without using the original game/save folders.
 3. Capture a **baseline** screenshot of the Economy & Trade row with the prototype absent or disabled, at the chosen resolution and UI scale. Record that all eight vanilla tiles appear in one row.
-4. Prepare the isolated copy with the compiled prototype and change only its `almanac_button.ini` to `enabled = 1`. Confirm the normal install and saves remain untouched.
+4. Prepare the isolated copy with a fresh build of the default-on follow-up. Confirm its INI resolves to `enabled = 1`; do not change the normal install or its INI. Confirm the normal saves remain untouched.
 5. Start the PID-specific watchdog, then launch the isolated game copy.
 
 ## One visual pass
@@ -45,4 +45,4 @@ After any stop condition, do not continue playing or reuse the test save. Preser
 
 A **visual pass** means only that, in this one test setup, an extra backdrop was visible in the same row, without an obvious overlap or loss of the eight existing tiles, and the game remained responsive through the observation. A **visual fail** is any stop condition above. Record inconclusive results as inconclusive rather than changing the pass criteria.
 
-Even a visual pass does not show that the ninth item is clickable, that all eight vanilla items still respond to input, that the layout works at other resolutions/scales, or that the hook is safe under re-entrancy, other mods, later frames or other game builds. The prototype remains experimental and must not be merged or treated as the finished Almanac UI on the strength of this check alone.
+Even a visual pass does not show that the ninth item is clickable, that all eight vanilla items still respond to input, that the layout works at other resolutions/scales, or that the hook is safe under re-entrancy, other mods, later frames or other game builds. The source prototype is already merged; this check does not establish that it is a finished or production-ready Almanac UI.
