@@ -213,9 +213,6 @@ static int                        g_contentSuppressionEnabled; // INI: suppress 
 
 #define ALM_OFF_SELECTION   0xC65Cu   // game+0xC65C: selected sub-tab index (read-only)
 #define ALM_OFF_CONTENT_SUPPRESS 0x5E6u // game+0x5E6: content suppress flag (write-only)
-#define ALM_TEXT_ID         1000000u  // private UI text ID >= 1,000,000 (INSTRUCTIONS.md §3)
-#define ALM_TEX_BIND_OFFSET 0x70u     // vtable[0x70] = TexBind method
-#define ALM_PANEL_STATE_OFF 0xEAD08u  // game+0xEAD08: panel state passed to TexBind
 
 // Plain-old-data plan, filled before the native call and used after it.
 typedef struct NinthPlan {
@@ -662,24 +659,6 @@ static void DrawNinthTile(void* self, float a1, float a2, float a3, float a4,
         FailStop("rect pair store of the ninth values faulted");
 
     drawFault = CallNinthNative(self, a1, a2, a3, a4, a5, a6);
-
-    // Point 1: bind custom texture via vtable[0x70] before native Draw.
-    // Pattern from native handler: vtable[0x70](texture_obj, 0, panel_state).
-    if (g_textureLoaded && g_almanacTexture) {
-        uintptr_t vptr = *(uintptr_t*)g_almanacTexture;
-        void* texBind = *(void**)(vptr + ALM_TEX_BIND_OFFSET);
-        void* panelState = (void*)(Base() + TSM_RVA_DEFAULT_GAME_OBJECT + ALM_PANEL_STATE_OFF);
-        ((void(__thiscall*)(void*, int, void*))texBind)(g_almanacTexture, 0, panelState);
-    }
-
-    // Point 2: render text label on ninth tile.
-    if (g_fontLoaded && g_almanacFont && g_printLeftUnicode) {
-        void* fontMgr = (void*)(Base() + TSM_RVA_DEFAULT_FONTMGR);
-        wchar_t label[] = L"Almanac";
-        g_printLeftUnicode(fontMgr, g_almanacFont,
-                           x + w * 0.25f, y + h * 0.25f,
-                           0xFFFFFFFFu, label);
-    }
 
     // Click detection while the ninth tile's bounds are active (Path D: read-only).
     ninthClicked = CheckNinthClick(x, y, w, h);

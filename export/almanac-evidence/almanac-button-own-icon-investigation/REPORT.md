@@ -515,6 +515,29 @@ plugin   almanac_button started with -1 - inactive
 
 The plugin loads this via `C3D_MIDDLEPOINT::CreateManagedTexture` at C3DDLL64.dll RVA `0x99`. If the file format is not accepted by `CreateManagedTexture`, the plugin logs "texture failed to load" and the ninth tile shows repeated native artwork (no crash).
 
+### Test run 3 — crash when opening maintab (sidebar)
+
+**Observation**: After v3.2, clicking the maintab (sidebar) caused a crash:
+```
+=== CRASH: ACCESS_VIOLATION at 00007FF956F61780 ===
+    C3DDLL64.dll + 0xD1780
+    reading address 00007FF957082078
+```
+Stack return address included `SOVIET64.exe + 0x3743A8` (right after our ninth-tile Draw call).
+
+**Root cause**: Post-Draw texture binding via `vtable[0x70]` on the `CreateManagedTexture` result, and post-Draw text rendering via `PrintLeftUnicode`. The texture/font objects returned by the engine creation APIs don't have the expected vtable layout at offset `0x70`, or the objects themselves are invalid. The crash occurs after the native Draw returns, when we try to bind the texture or render text.
+
+**Fix applied** (v3.3):
+- Removed post-Draw texture binding via `vtable[0x70]` — the texture object's vtable layout is unknown and unsafe to call
+- Removed post-Draw text rendering via `PrintLeftUnicode` — font object's method layout is unknown
+- Texture/font lazy loading is retained (loads on first draw, caches in `g_almanacTexture`/`g_almanacFont`) but the loaded objects are not yet used for binding/rendering
+- Ninth tile renders with whatever texture is currently bound by the native handler (typically repeated native artwork)
+- Ninth tile remains clickable — click detection (`GetMouseSolid` + rect test + read-only latch) is unaffected
+- Removed unused defines `ALM_TEX_BIND_OFFSET` and `ALM_PANEL_STATE_OFF`
+- Rebuilt; `build.bat almanac_button` succeeds
+
+**Custom icon path forward**: To bind a custom texture, we need to determine the correct vtable offset for `TexBind` on the `C3DAPI_TEXTURE` object returned by `CreateManagedTexture`, or find an alternative texture binding API. Currently unknown — requires further Ghidra investigation of `C3DAPI_TEXTURE` vtable layout.
+
 ## 14. Implementation readiness assessment (v3.2)
 
 | Item | Status | Notes |
@@ -527,14 +550,15 @@ The plugin loads this via `C3D_MIDDLEPOINT::CreateManagedTexture` at C3DDLL64.dl
 | Close on native click | IMPLEMENTED | Reads `game+0xC65C` changes (0..7) |
 | Read-only (no latch consumption) | PASS | Never writes `0xA54E91`, `game+0xC65C`, `game+0x10BE8`, `game+0x1039A` |
 | Native buttons preserved | PASS | All 8 unchanged; City Hall TAX not moved |
-| Distinct icon | IMPLEMENTED (code) | `CreateManagedTexture` resolved; lazy-loaded on first draw; INI `texture_asset` defaults to `icon_inspectnumbers.png` |
-| Text label | IMPLEMENTED (code) | `PrintLeftUnicode` resolved; lazy-loaded on first draw; font path via INI `font_asset` (empty by default) |
+| Distinct icon | LOADED NOT BOUND | `CreateManagedTexture` resolved; lazy-loaded on first draw; INI `texture_asset` defaults to `icon_inspectnumbers.png`. Texture object loaded but NOT bound via vtable[0x70] — vtable layout unknown, caused crash. Ninth tile shows repeated native artwork. |
+| Text label | LOADED NOT RENDERED | `PrintLeftUnicode` resolved; lazy-loaded on first draw; font path via INI `font_asset` (empty by default). Font object loaded but NOT used for rendering — method layout unknown, caused crash. No text label on ninth tile. |
 | Ninth-tile clipping | RESOLVED (mechanism known) | DrawFrom9Patch/3Patch check `panel+0x6760` flag + COMISS bounds |
 | Content suppression | IMPLEMENTED | `game+0x5E6` write every frame when open (INI `content_suppression`, default 1) |
 
 ## 15. Remaining work (requires separate authorization)
 
-1. **In-game testing**: Click detection now has the correct mangled name, but the button has not been retested in-game after the fix. Requires game launch authorization.
-2. **Texture format verification**: `icon_inspectnumbers.png` may or may not be accepted by `CreateManagedTexture`. If not, a DDS or other format may be needed.
-3. **Content suppression validation**: Depends on `FUN_140335bc0()` returning non-zero (unknown behavior).
-4. **Runtime verification of clipping**: Observe whether panel+0x6760 is set and whether the ninth tile is clipped at runtime.
+1. **In-game testing**: Click detection has the correct mangled name, crash fix applied, but the button has not been retested in-game after v3.3. Requires game launch authorization.
+2. **Texture binding vtable layout**: `CreateManagedTexture` returns a `C3DAPI_TEXTURE*` but the vtable offset for `TexBind` is unknown. Our assumption of offset `0x70` caused a crash. Need to trace `C3DAPI_TEXTURE` vtable in C3DDLL64.dll to find the correct bind method offset, or find an alternative texture binding API.
+3. **Texture format verification**: `icon_inspectnumbers.png` may or may not be accepted by `CreateManagedTexture`. If not, a DDS or other format may be needed.
+4. **Content suppression validation**: Depends on `FUN_140335bc0()` returning non-zero (unknown behavior).
+5. **Runtime verification of clipping**: Observe whether panel+0x6760 is set and whether the ninth tile is clipped at runtime.
