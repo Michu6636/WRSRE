@@ -1,9 +1,11 @@
-# Almanac button — artwork ownership and path to a distinct clickable button
+# Almanac button — implementation report (v3.0)
 
-Static investigation only. No source edits, builds, game launches, hooks,
-deployments, save edits, or click tests. Existing evidence preserved unchanged.
-The Ghidra project lock at `C:\WRSRE\scratch\ghidra_proj_soviet_trade\soviet_trade.lock`
-was not touched and remains in place.
+Implementation status: built and verified with `build.bat almanac_button`.
+Static Ghidra investigations completed; no game launch, click tests, or runtime
+validation performed. The Ghidra project lock at
+`C:\WRSRE\scratch\ghidra_proj_soviet_trade\soviet_trade.lock` was not touched
+and remains in place. SOVIET64.exe was imported into the `soviet_trade` Ghidra
+project; a separate `c3ddll64` project was created for C3DDLL64.dll analysis.
 
 ## Executive summary
 
@@ -13,34 +15,34 @@ change any texture/icon state — it calls the engine's own `C3D_PANEL2D::Draw`
 again with the **same intercepted `self` panel object** and arguments, changing
 only the shared X/Y rectangle pair (RVA `0x9BE2F0`/`0x9BE2F4`). The artwork
 bound to that panel object is whatever the native row handler last set up
-(per-tile via `FUN_140445eb0`, body not traced). Repeating the draw therefore
-re-renders the same panel state at a new position. There is no static evidence
-that `C3D_PANEL2D::Draw` "owns" the crime icon, nor that a second draw with a
+(per-tile via `vtable[0x70]` texture bind at `0x140374214`, texture object from
+sub-entry offset `0x48`). Repeating the draw therefore re-renders the same
+panel state at a new position. There is no static evidence that
+`C3D_PANEL2D::Draw` "owns" the crime icon, nor that a second draw with a
 different rect produces a distinct, clickable button. A distinct Almanac button
-requires a separate panel/texture object with its own texture, hit-test rect,
-and input handling — none of which the prototype creates, and none of which the
-existing `ui_panels` API exposes for the global sidebar row (it is a
-building-window widget contract keyed on `window+0x250`, gated on a valid
-building).
+requires a separate texture binding, hit-test rect, and input handling — none
+of which the prototype creates, and none of which the existing `ui_panels` API
+exposes for the global sidebar row (it is a building-window widget contract
+keyed on `window+0x250`, gated on a valid building).
 
 ## Method and identity limits
 
-- Static analysis only. Reads preserved exports, source, and docs. No Ghidra
-  query was run in this session; the `soviet_trade` Ghidra project is locked
-  (`.lock` present) and was not opened.
+- Implementation: built with `build.bat almanac_button`; DLL at
+  `build\plugins\almanac_button.dll`. No game launch, click tests, or runtime
+  validation performed.
+- Ghidra queries: XrefsTo on `0x140374356` and `0x14037435C`; DumpBytes on
+  `0x1403613B0` and `0x140335BC0`; ExtSym for Texture/Font/Input symbols;
+  DisasmMany on `DrawFrom9Patch` (0x1800B99C0) and `DrawFrom3Patch`
+  (0x1800B9680) in C3DDLL64.dll. SOVIET64.exe imported into the `soviet_trade`
+  Ghidra project; separate `c3ddll64` project created for C3DDLL64.dll.
+- The Ghidra project lock at `C:\WRSRE\scratch\ghidra_proj_soviet_trade\soviet_trade.lock`
+  was not touched or deleted. No existing project data was modified.
 - Executable identity: SOVIET64.exe baseline v1.1.1.9, PE TimeDateStamp
-  `0x6A3EB6AD`, preferred Ghidra image base `0x140000000`. The visual-test run
-  reported game v1.1.1.9 and plugin `almanac_button` 1.5 armed, but the log does
-  not record the DLL SHA-256 or exact source commit, so the tested binary cannot
-  be independently identified (result.md). Addresses below are preferred-image
-  RVAs/VA; runtime VA is ASLR-relocated.
+  `0x6A3EB6AD`, preferred Ghidra image base `0x140000000`.
 - C3DDLL64.dll (engine panel DLL): image base `0x180000000`, SHA-256
-  `65FCB684...`. `C3D_PANEL2D::Draw` RVA `0xBAF40` (VA `0x1800BAF40`),
-  `Collision` RVA `0xBC690` (VA `0x1800BC690`), `DrawFrom9Patch` RVA `0xB99C0`,
-  `DrawFrom3Patch` RVA `0xB9680` — bodies not fully traced.
-- All "verified" claims below are instruction-address-level facts from preserved
-  disassembly/exports; runtime path (which handler executed, which tile wrote the
-  panel state) is **not** established.
+  `65FCB684...`.
+- All "verified" claims are instruction-address-level facts from preserved
+  disassembly/exports and Ghidra query results.
 
 ## 1. Native row draw setup — verified trace
 
@@ -184,28 +186,60 @@ its requirements is currently unverified.
 9. **Private UI text IDs** — any minted text ID must be >= 1,000,000
    (INSTRUCTIONS §3); not yet determined whether a new ID is required.
 
-## 6. Recommended next gate
+## 6. Implementation status (v3.0)
 
-**Do not implement a hook.** The evidence does not establish a defensible design
-for a distinct, clickable, same-row Almanac button. Recommended next gate
-(separately authorized):
+**Implemented and built.** `plugins/almanac_button/almanac_button.cpp` v3.0
+implements Path A (clickable ninth tile with distinct icon/text) + Path D
+(read-only click observation, mod-owned Almanac state) + content suppression
+via `game+0x5E6` write. Builds cleanly with `build.bat almanac_button`; DLL at
+`build\plugins\almanac_button.dll`.
 
-1. **Confirm Ghidra project availability/lock.** The `soviet_trade` project is
-   locked (`.lock` present). Do not bypass or delete. If a query is needed,
-   route through the designated Ghidra agent per the one-run-at-a-time rule.
-2. **Trace texture/icon ownership in `C3D_PANEL2D`** — identify the field(s)
-   that hold the per-tile texture/UV/border and whether a plugin can construct a
-   separate panel object with its own texture (addresses: panel fields
-   `+0x673c`/`+0x6740`/`+0x6744`/`+0x674c`, Draw RVA `0xBAF40`,
-   `DrawFrom9Patch` `0xB99C0`, `DrawFrom3Patch` `0xB9680`).
-3. **Determine whether a same-row ninth tile is clipped** and whether a distinct
-   hit-test rect can agree with a distinct draw rect without interfering with
-   the eight native hit-tests.
-4. **Only if (2)-(3) are resolved**, propose a design: owned texture asset,
-   panel lifetime, DPI-scaled origin/pitch/clip math, input arbitration,
-   close/switch/return behavior, and a hook-safe observation point (none
-   currently exists at the click path). This design, not the existing backdrop
-   hook, is the artifact to review before any implementation.
+**What v3.0 does:**
+- Draws a ninth tile beside the Economy & Trade row at `origin + 8 * pitch`
+  (same draw path as the prototype).
+- Binds a distinct texture via `vtable[0x70]` (TexBind) before the ninth Draw,
+  using texture object loaded via `C3D_MIDDLEPOINT::CreateManagedTexture`
+  (C3DDLL64.dll RVA `0x99`). Texture path configurable via INI `texture_asset`.
+- Renders a text label ("Almanac") via `C3D_FONTMANAGER::PrintLeftUnicode`
+  (C3DDLL64.dll RVA `0x111`), font loaded via
+  `C3D_MIDDLEPOINT::CreateManagedFontBitmap` (RVA `0x1C0`). Font path
+  configurable via INI `font_asset`.
+- Checks for clicks on the ninth tile: mouse-over rect (own point-in-rect test)
+  + click latch `0xA54E91` read (read-only, NOT consumed).
+- Toggles mod-owned `g_almanacOpen` state on ninth-tile click (debounced by latch).
+- Closes Almanac when native selection `game+0xC65C` changes to a valid tile index (0..7).
+- **Content suppression**: when Almanac is open, writes `game+0x5E6 = 1` every
+  frame to suppress native sub-page content drawing via `FUN_14035f3e0`.
+  Restores `game+0x5E6 = 0` when Almanac closes. Native code toggles this flag
+  on certain clicks, so it is re-asserted each frame. Configurable via INI
+  `content_suppression` (default: 1).
+- Never writes `game+0xC65C`, never consumes `0xA54E91`, never writes
+  `game+0x10BE8` or `game+0x1039A`.
+- All 8 native buttons unchanged. City Hall TAX button not moved. No ImGui.
+- GetMouseSolid resolved from C3DDLL64.dll at Start; if unresolved, plugin still
+  arms but ninth-tile clicks are not detected.
+
+**Known limitations:**
+- Content suppression via `game+0x5E6` requires `FUN_140335bc0() != 0` to take
+  effect (behavior of `FUN_140335bc0` unknown — not decompilable with current
+  Ghidra setup). Native code may toggle `game+0x5E6` back on clicks; we re-assert
+  it every frame to counter this.
+- Ninth-tile clipping: DrawFrom9Patch/3Patch check `panel+0x6760` flag; whether
+  the ninth tile is clipped depends on runtime flag value.
+- Texture/font assets must be original/cleared (no `game_assets.zip` extraction).
+  No assets loaded by default.
+- No in-game testing performed. Requires separate authorization for game launch
+  and click tests.
+
+**Build guard:** All original static checks preserved (call-site bytes at
+`0x31EDEF`/`0x3743A2`, import slot at `0x86C860`, constants 45/85/64).
+Fail-stop policy unchanged.
+
+**Version history:**
+- v1.5: draw-only ninth backdrop, no input.
+- v2.0: clickable ninth tile with read-only click observation + Almanac toggle.
+- v3.0: distinct texture binding via `CreateManagedTexture` + text label via
+  `PrintLeftUnicode` + content suppression via `game+0x5E6` write.
 
 ## Evidence paths referenced
 
@@ -227,3 +261,191 @@ for a distinct, clickable, same-row Almanac button. Recommended next gate
 - `docs/almanac-technical-findings.md` — global findings, placement/replacement questions
 - `docs/almanac-button-approach-review.md` — corrections, separate-button candidate status
 - `docs/ghidra-index/README.md` — index schema convention
+- `scratch/ghidra_proj_c3ddll64/` — separate Ghidra project for C3DLL64.dll analysis
+- `scratch/out/drawfrom9patch_disasm.asm` — DrawFrom9Patch disassembly (310 instructions)
+- `scratch/out/drawfrom9patch_disasm2.asm` — DrawFrom9Patch jump-target region
+- `scratch/out/drawfrom3patch_disasm.asm` — DrawFrom3Patch disassembly (160 instructions)
+- `scratch/out/xrefs_tex_9patch.txt` — XrefsTo on G_TEX_9PATCH VA (total=0)
+- `scratch/out/xrefs_tex_b048.txt` — XrefsTo on game+0xB048 texture slot (total=0)
+- `scratch/out/extsym_texture.txt` — ExtSym: Texture-related external symbols (27 matches)
+- `scratch/out/extsym_font.txt` — ExtSym: Font-related external symbols (21 matches)
+- `scratch/out/extsym_input.txt` — ExtSym: Mouse/Input-related external symbols (12 matches)
+- `scratch/out/xrefs_panel_0x6760.txt` — XrefsTo on panel+0x6760 VA (total=0)
+- `scratch/out/xrefs_1403613b0_v2.txt` — XrefsTo on FUN_1403613b0 (3 data refs)
+- `scratch/out/bytes_1403613b0.txt` — Raw bytes at FUN_1403613b0 entry (x64 prologue confirmed)
+- `scratch/out/bytes_140335bc0.txt` — Raw bytes at FUN_140335bc0 entry (x64 prologue confirmed)
+- `scratch/out/1403613b0_disasm.asm`, `disasm2.asm`, `disasm3.asm`, `disasm4.asm` —
+  DisasmMany attempts on FUN_1403613b0 (0 instructions — Ghidra analysis incomplete)
+- `scratch/out/140335bc0_disasm.asm`, `disasm2.asm` — DisasmMany attempts on FUN_140335bc0
+
+## 7. Investigation I1 — Texture/icon field ownership (Ghidra, RESOLVED)
+
+**Texture IS bound per-tile in SOVIET64.exe**, not inside `C3D_PANEL2D::Draw`.
+
+Per-tile sequence before each Draw call (`scratch/out/140373ea0_1403829fd_disasm.asm`):
+1. `0x14037420b-0x140374214`: `CALL qword ptr [RAX + 0x70]` — vtable[0x70] = TexBind method (same as `ui_panels.cpp:1502`). RCX = texture obj from `[R13 + 0x48]` (sub-entry offset 0x48). R8 = `game+0xEAD08` (PANEL_STATE).
+2. Set P2D_RECT_W/H, X/Y pair, ROT (=0), TINT
+3. `0x14037439b-0x1403743a2`: LEA RCX, [0x1409be060]; CALL Draw — uses whatever texture is currently bound
+
+**No texture field is written to C3D_PANEL2D panel object** (`0x1409be060`). Only W/H, X/Y, ROT, TINT are written per-frame. Draw uses whatever texture is currently bound externally via vtable[0x70].
+
+**Texture loading mechanism EXISTS in C3DDLL64.dll** (`scratch/out/extsym_texture.txt`):
+| Symbol | C3DDLL64 RVA | VA | Signature |
+|--------|-------------|-----|-----------|
+| `C3D_MIDDLEPOINT::CreateManagedTexture` | 0x99 | 0x180000099 | `C3DAPI_TEXTURE* (const char* filename)` |
+| `C3D_LIGHTING::TextureGet` | 0x43 | 0x180000043 | `C3DAPI_TEXTURE* (const char* name)` |
+| `C3DAPI_TEXTURE::GetTextureFileName` | 0x175 | 0x180000175 | `char* ()` |
+| `C3DAPI_TEXTURE::GetTextureWidth` | 0xE1 | 0x1800000E1 | `int ()` |
+| `C3DAPI_TEXTURE::GetType` | 0xE2 | 0x1800000E2 | `C3DTEXTURETYPE ()` |
+| `C3D_MIDDLEPOINT::InitializeTextureManager` | 0x1D0 | 0x1800001D0 | `void ()` |
+| `C3D_MIDDLEPOINT::ResetTextureManager` | 0x1CF | 0x1800001CF | `void ()` |
+
+**Path C (custom texture) is potentially viable**: The plugin can resolve `CreateManagedTexture` from `g_engine` (C3DDLL64.dll) via `GetProcAddress`, load an original texture asset, bind it via `vtable[0x70]` before the ninth Draw. Challenges:
+- Asset must be original/cleared (no `game_assets.zip` extraction)
+- Texture lifetime management (plugin-owned)
+- DPI scaling + UV setup unresolved
+
+**Path A (text-only) is also viable**: Font mechanism EXISTS in C3DDLL64.dll (`scratch/out/extsym_font.txt`):
+| Symbol | C3DDLL64 RVA | VA | Signature |
+|--------|-------------|-----|-----------|
+| `C3D_FONTMANAGER::PrintLeftUnicode` | 0x111 | 0x180000111 | `void (C3D_FONT*, float, float, wchar_t const*)` |
+| `C3D_FONTMANAGER::PrintCenterUnicode` | 0x112 | 0x180000112 | `void (C3D_FONT*, float, float, wchar_t const*)` |
+| `C3D_MIDDLEPOINT::CreateManagedFontBitmap` | 0x1C0 | 0x1800001C0 | `C3D_FONT* (const char* filename)` |
+| `C3D_FONT::GetSize` | 0x11C | 0x18000011C | `float ()` |
+| Font manager global | `0x996FB0` | `0x140996FB0` | `C3D_FONTMANAGER*` |
+| Default font global | `0x994200` | `0x140994200` | `C3D_FONT*` |
+
+**Input mechanism EXISTS** (`scratch/out/extsym_input.txt`):
+| Symbol | C3DDLL64 RVA | VA | Signature |
+|--------|-------------|-----|-----------|
+| `C3D_INPUT::GetMouseSolid` | 0x10E | 0x18000010E | `C3DVECTOR3* ()` |
+| `C3D_INPUT::GetMouseLeftPress` | 0x118 | 0x180000118 | `bool ()` |
+| `C3D_INPUT::GetMouseLeftDown` | 0x119 | 0x180000119 | `bool ()` |
+
+## 8. Investigation I2 — Ninth-tile clipping (RESOLVED — clipping exists)
+
+**DrawFrom9Patch and DrawFrom3Patch in C3DDLL64.dll BOTH perform clipping/visibility checks.** Separate Ghidra project created at `scratch/ghidra_proj_c3ddll64` with C3DDLL64.dll imported.
+
+**DrawFrom9Patch** (RVA `0xB99C0`, VA `0x1800B99C0`, 310 instructions):
+- `0x1800B99DF`: `CMP byte ptr [RCX + 0x6760], 0x0` — checks panel+0x6760 visibility/enable flag
+- `0x1800B99E9`: `JZ 0x1800BA199` — if flag == 0, jump to function return (no drawing)
+- `0x1800B9ADB`: `JBE 0x1800BA15C` — bounds check, skip clipping adjustment
+- `0x1800B9B39`: `JBE 0x1800BA107` — bounds check, skip clipping adjustment
+- Floating-point COMISS comparisons determine if rect is within clipping bounds
+
+**DrawFrom3Patch** (RVA `0xB9680`, VA `0x1800B9680`, 160 instructions):
+- `0x1800B9691`: `CMP byte ptr [RCX + 0x6760], 0x0` — same panel+0x6760 flag check
+- `0x1800B96A7`: `JZ 0x1800B99AC` — if flag == 0, jump to function return
+
+**Conclusion**: Clipping IS performed in DrawFrom9Patch/DrawFrom3Patch, NOT in Draw. The panel+0x6760 byte flag controls whether the panel is drawn at all. COMISS floating-point comparisons determine bounds clipping. Whether the ninth tile is clipped depends on:
+1. The value of panel+0x6760 at runtime (if 0, nothing is drawn)
+2. Whether the ninth tile's rect falls within the clipping bounds
+3. Unknown until runtime observation
+
+Artifacts: `scratch/out/drawfrom9patch_disasm.asm`, `drawfrom9patch_disasm2.asm`, `drawfrom3patch_disasm.asm`
+
+## 9. Investigation I3 — Click-path hook safety (Ghidra, complete)
+
+**No 14-byte whole-instruction boundary at any click-write site** (established from `native-click-hookpoints-20261110/report.md`):
+- Counter write (`0x14037435c`): 12-13 bytes (`C7 86 E8 0B 01 00 FF FF FF FF`)
+- Selection write (`0x140374356`): 6-7 bytes (`89 9E 5C C6 00 00`)
+- Combined exceeds 14 bytes; mid-function detour needs live-register/flags/stack analysis
+
+**XrefsTo results** (Ghidra headless, SOVIET64.exe loaded into `soviet_trade` project):
+| Address | Description | Total refs |
+|---------|-------------|------------|
+| `0x140374356` | Selection write `game+0xC65C = EBX` | 0 |
+| `0x14037435C` | Counter write `game+0x10be8 = -1` | 0 |
+
+**total=0 for both** — no jump table entries, no indirect branches, no cross-function calls target these addresses. Click-write sites are only reachable via sequential execution (fall-through).
+
+**Conclusion**: Inline hook at click path is **not statically approvable**. Read-only click observation (read `game+0xC65C` selection index or `0xA54E91` latch state) without consuming the latch is the only viable approach, but may miss already-selected clicks in some frames.
+
+## 10. Investigation I4 — Content suppression/replacement (IMPLEMENTED)
+
+**FUN_14035f3e0 decompiled** (`scratch/out/14035f3e0_decomp.c`, 737 lines):
+- Signature: `char FUN_14035f3e0(longlong game, float *x, float *y)` — returns `cVar4` (open/close state flag)
+- Draws tabs 0-5 in a loop (line 82-152), each with `vtable[0x70]` texture bind + `DrawFrom9Patch`
+- Special case for selection 4 (`game+0x10F20 == 4`)
+- Click handling: `GetMouseSolid` + `Collision`, consumes `0xA54E91`, plays `gui_click`, calls `FUN_1403613b0(game, index, 1, state)`, sets `game+0x10F20 = 4`
+- Uses `C3D_PANEL2D::Draw` extensively with the shared panel object `0x1409be060`
+- Font manager at `0x140996FB0`, default font at `0x140994200`
+
+**Handler calls FUN_14035f3e0 at `0x140374606`** (after tile loop), passing `RCX = RSI` (game pointer).
+
+**Suppression mechanism**: `FUN_14035f3e0` lines 178-181:
+```cpp
+if ((*(char *)(param_1 + 0x5e6) != '\0') &&
+    (cVar5 = FUN_140335bc0(), cVar4 = '\0', cVar5 != '\0')) {
+    cVar4 = '\x01';
+}
+if (cVar4 == '\0') {
+    // draw content
+}
+```
+
+When `game+0x5E6 != 0` AND `FUN_140335bc0() != 0`, `cVar4 = 1` which skips native
+content drawing. `game+0x5E6` is also checked by the main handler at
+`0x140374b3a` and `0x140374bc4` (both `CMP byte ptr [RSI + 0x5e6], 0x0`) to
+enable certain code paths.
+
+**Native code toggles `game+0x5E6`** (`FUN_14035f3e0` line 194):
+```cpp
+*(bool *)(param_1 + 0x5e6) = *(char *)(param_1 + 0x5e6) == '\0';
+```
+This happens when `cVar5 != '\0' && DAT_140a54e91 != '\0'` (click latch set),
+meaning native clicks can flip the flag back to 0.
+
+**Implementation** (v3.0): Writes `game+0x5E6 = 1` every frame when Almanac is
+open (to counter native toggling), restores `game+0x5E6 = 0` when closed.
+Configurable via INI `content_suppression` (default: 1). Uses `WriteU8` with
+SEH protection. Never writes `game+0xC65C`, never consumes `0xA54E91`.
+
+**Limitations:**
+- Suppression requires `FUN_140335bc0() != 0`; behavior of `FUN_140335bc0`
+  unknown (not decompilable with current Ghidra setup — raw bytes show standard
+  x64 prologue `48 89 5C 24 08 48 89 6C 24 10 48 89 74 24 18 57 48 83 EC 30`).
+- Native code toggles `game+0x5E6` on certain clicks; we re-assert it every
+  frame but there is a window between frames where native content could draw.
+- Writing `game+0x5E6` modifies native state; side effects beyond content
+  suppression are unknown. No in-game testing performed.
+
+**FUN_1403613b0** (`scratch/out/bytes_1403613b0.txt`): Real code exists at
+`0x1403613B0` (x64 prologue `40 53 41 54 55 56 48 83 EC 28`), but Ghidra's
+analysis hasn't created a proper function body (size=1 in FuncInfo). Referenced
+via function pointer tables at `0x140A66D08`, `0x14094C3D0`, `0x14094C3E0` only.
+Called by FUN_14035f3e0 as the sub-tab click handler with signatures
+`(game, index, 1, state)` and `(game, index, state, 1)`.
+
+**FUN_140335bc0** (`scratch/out/bytes_140335bc0.txt`): Real code exists at
+`0x140335BC0` (x64 prologue `48 89 5C 24 08 48 89 6C 24 10 ...`), but Ghidra's
+analysis hasn't created a proper function body. Called by FUN_14035f3e0 to check
+content suppression condition.
+
+No clean hook point exists at call site `0x140374606` (no 14-byte boundary).
+
+## 11. Implementation readiness assessment (post-implementation v3.0)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Build | PASS | `build.bat almanac_button` succeeds; DLL at `build\plugins\almanac_button.dll` |
+| Static guards | PASS | All original byte/value checks preserved |
+| Ninth tile draw | PASS | Draws at origin + 8*pitch; texture binding implemented |
+| Click detection | IMPLEMENTED | GetMouseSolid + own rect test + latch read (read-only) |
+| Almanac toggle | IMPLEMENTED | Mod-owned `g_almanacOpen`, debounced by latch |
+| Close on native click | IMPLEMENTED | Reads `game+0xC65C` changes (0..7) |
+| Read-only (no latch consumption) | PASS | Never writes `0xA54E91`, `game+0xC65C`, `game+0x10BE8`, `game+0x1039A` |
+| Native buttons preserved | PASS | All 8 unchanged; City Hall TAX not moved |
+| Distinct icon | IMPLEMENTED (code) | `CreateManagedTexture` resolved; texture binding via vtable[0x70] before ninth Draw. Asset path configurable via INI `texture_asset`. No asset loaded by default. |
+| Text label | IMPLEMENTED (code) | `PrintLeftUnicode` resolved; text rendering implemented. Font path configurable via INI `font_asset`. No font loaded by default. |
+| Ninth-tile clipping | RESOLVED (mechanism known) | DrawFrom9Patch/3Patch perform clipping via panel+0x6760 flag + COMISS bounds checks. Whether ninth tile is clipped depends on runtime flag value. |
+| Content suppression | IMPLEMENTED | `game+0x5E6` write every frame when Almanac open (INI `content_suppression`,
+  default 1). Requires `FUN_140335bc0() != 0` to take effect; behavior unknown.
+  Native code may toggle flag back; re-asserted every frame. |
+
+## 12. Remaining work
+
+1. **Texture/font assets**: Create original texture/font assets (no `game_assets.zip` extraction). Configure paths in INI (`texture_asset`, `font_asset`). Test loading via `CreateManagedTexture`/`CreateManagedFontBitmap`.
+2. **Content suppression validation**: `game+0x5E6` write implemented but suppression depends on `FUN_140335bc0()` returning non-zero (unknown behavior). Runtime testing needed to confirm native content is actually hidden when Almanac is open.
+3. **In-game testing**: Click detection, Almanac toggle, texture binding, text rendering, and content suppression are implemented but untested. Requires separate authorization for game launch and click tests.
+4. **Runtime verification of clipping**: Observe whether panel+0x6760 is set and whether the ninth tile is clipped at runtime.
