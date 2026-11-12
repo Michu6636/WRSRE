@@ -443,9 +443,98 @@ No clean hook point exists at call site `0x140374606` (no 14-byte boundary).
   default 1). Requires `FUN_140335bc0() != 0` to take effect; behavior unknown.
   Native code may toggle flag back; re-asserted every frame. |
 
-## 12. Remaining work
+## 13. Test findings and fix (v3.1)
 
-1. **Texture/font assets**: Create original texture/font assets (no `game_assets.zip` extraction). Configure paths in INI (`texture_asset`, `font_asset`). Test loading via `CreateManagedTexture`/`CreateManagedFontBitmap`.
-2. **Content suppression validation**: `game+0x5E6` write implemented but suppression depends on `FUN_140335bc0()` returning non-zero (unknown behavior). Runtime testing needed to confirm native content is actually hidden when Almanac is open.
-3. **In-game testing**: Click detection, Almanac toggle, texture binding, text rendering, and content suppression are implemented but untested. Requires separate authorization for game launch and click tests.
+### Test run 1 — button rendered but not clickable
+
+**Observation**: The ninth tile rendered beside the Economy & Trade row with repeated native (crime-button) artwork. Hovering showed both the native crime button and the ninth tile highlighting. But clicking the ninth tile had no effect.
+
+**Root cause**: `tesmioloader.log` line 76:
+```
+almanac_button  NOTE  no engine export for GetMouseSolid; ninth-tile clicks not detected
+```
+
+The mangled name used in `GetProcAddress` was `?GetMouseSolid@C3D_INPUT@@QEAPEAMXZ` (return type `float*`), but the actual C3DDLL64.dll export is `?GetMouseSolid@C3D_INPUT@@QEAA?AVC3DVECTOR3@@XZ` (return type `C3DVECTOR3*`). `GetProcAddress` failed, `g_getMouseSolid` remained NULL, and `CheckNinthClick()` returned 0 on every call.
+
+**Fix applied** (v3.1):
+- Changed mangled name to `?GetMouseSolid@C3D_INPUT@@QEAA?AVC3DVECTOR3@@XZ`
+- `C3DVECTOR3` is an X/Y float pair; `CheckNinthClick` reads `mouse[0]` and `mouse[1]` as before
+- Rebuilt; `build.bat almanac_button` succeeds
+
+### Default texture asset set
+
+`almanac_button.ini` now defaults `texture_asset` to:
+```
+"C:\Workers Resources Soviet Republic\media_soviet\editor\icon_inspectnumbers.png"
+```
+
+The plugin loads this via `C3D_MIDDLEPOINT::CreateManagedTexture` at C3DDLL64.dll RVA `0x99`. If the file format is not accepted by `CreateManagedTexture`, the plugin logs "texture failed to load" and the ninth tile shows repeated native artwork (no crash).
+
+## 13. Test findings and fixes (v3.1 → v3.2)
+
+### Test run 1 — button rendered but not clickable
+
+**Observation**: The ninth tile rendered beside the Economy & Trade row with repeated native (crime-button) artwork. Hovering showed both the native crime button and the ninth tile highlighting. But clicking the ninth tile had no effect.
+
+**Root cause**: `tesmioloader.log` line 76:
+```
+almanac_button  NOTE  no engine export for GetMouseSolid; ninth-tile clicks not detected
+```
+
+The mangled name used in `GetProcAddress` was `?GetMouseSolid@C3D_INPUT@@QEAPEAMXZ` (return type `float*`), but the actual C3DDLL64.dll export is `?GetMouseSolid@C3D_INPUT@@QEAA?AVC3DVECTOR3@@XZ` (return type `C3DVECTOR3*`). `GetProcAddress` failed, `g_getMouseSolid` remained NULL, and `CheckNinthClick()` returned 0 on every call.
+
+**Fix applied** (v3.1):
+- Changed mangled name to `?GetMouseSolid@C3D_INPUT@@QEAA?AVC3DVECTOR3@@XZ`
+- `C3DVECTOR3` is an X/Y float pair; `CheckNinthClick` reads `mouse[0]` and `mouse[1]` as before
+- Rebuilt; `build.bat almanac_button` succeeds
+
+### Test run 2 — button did not render at all (crash at Start)
+
+**Observation**: After v3.1, the ninth tile did not render. The tesmioloader log showed:
+```
+FAULT    plugin start: code C0000005 at 00007FF8D7EF1735
+         inside tesmioloader.dll (base 00007FF9067C0000)
+         read from of 0000000000000000
+plugin   almanac_button started with -1 - inactive
+```
+
+**Root cause**: Texture/font loading was done in `TsmPluginStart()`, which runs before the game object is initialized. The code computed `middlepoint = Base() + TSM_RVA_DEFAULT_GAME_OBJECT + 0xB048u` (i.e., `game + 0xB048`) and passed it to `CreateManagedTexture`. At Start time, `game` (at RVA `0x9D4F10`) is NULL, so `middlepoint` was an invalid address, and `CreateManagedTexture` dereferenced it, causing a null pointer read crash.
+
+**Fix applied** (v3.2):
+- Removed texture/font loading from `TsmPluginStart()`
+- Added **lazy loading in `DrawNinthTile`** on the first draw call, when the game is active and `game+0xB048` is valid
+- Texture/font are loaded once, on the first ninth-tile draw, then cached in `g_almanacTexture`/`g_almanacFont`
+- Rebuilt; `build.bat almanac_button` succeeds
+
+### Default texture asset
+
+`almanac_button.ini` defaults `texture_asset` to:
+```
+"C:\Workers Resources Soviet Republic\media_soviet\editor\icon_inspectnumbers.png"
+```
+
+The plugin loads this via `C3D_MIDDLEPOINT::CreateManagedTexture` at C3DDLL64.dll RVA `0x99`. If the file format is not accepted by `CreateManagedTexture`, the plugin logs "texture failed to load" and the ninth tile shows repeated native artwork (no crash).
+
+## 14. Implementation readiness assessment (v3.2)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Build | PASS | `build.bat almanac_button` succeeds; DLL at `build\plugins\almanac_button.dll` |
+| Static guards | PASS | All original byte/value checks preserved |
+| Ninth tile draw | PASS | Draws at origin + 8*pitch; texture binding implemented |
+| Click detection | IMPLEMENTED | GetMouseSolid mangled name fixed; own rect test + latch read (read-only) |
+| Almanac toggle | IMPLEMENTED | Mod-owned `g_almanacOpen`, debounced by latch |
+| Close on native click | IMPLEMENTED | Reads `game+0xC65C` changes (0..7) |
+| Read-only (no latch consumption) | PASS | Never writes `0xA54E91`, `game+0xC65C`, `game+0x10BE8`, `game+0x1039A` |
+| Native buttons preserved | PASS | All 8 unchanged; City Hall TAX not moved |
+| Distinct icon | IMPLEMENTED (code) | `CreateManagedTexture` resolved; lazy-loaded on first draw; INI `texture_asset` defaults to `icon_inspectnumbers.png` |
+| Text label | IMPLEMENTED (code) | `PrintLeftUnicode` resolved; lazy-loaded on first draw; font path via INI `font_asset` (empty by default) |
+| Ninth-tile clipping | RESOLVED (mechanism known) | DrawFrom9Patch/3Patch check `panel+0x6760` flag + COMISS bounds |
+| Content suppression | IMPLEMENTED | `game+0x5E6` write every frame when open (INI `content_suppression`, default 1) |
+
+## 15. Remaining work (requires separate authorization)
+
+1. **In-game testing**: Click detection now has the correct mangled name, but the button has not been retested in-game after the fix. Requires game launch authorization.
+2. **Texture format verification**: `icon_inspectnumbers.png` may or may not be accepted by `CreateManagedTexture`. If not, a DDS or other format may be needed.
+3. **Content suppression validation**: Depends on `FUN_140335bc0()` returning non-zero (unknown behavior).
 4. **Runtime verification of clipping**: Observe whether panel+0x6760 is set and whether the ninth tile is clipped at runtime.

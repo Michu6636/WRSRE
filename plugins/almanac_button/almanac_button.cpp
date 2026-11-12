@@ -637,6 +637,23 @@ static void DrawNinthTile(void* self, float a1, float a2, float a3, float a4,
     int drawFault = 0;
     int ninthClicked = 0;
 
+    // Lazy texture/font loading on first draw (game must be active for
+    // game+0xB048 middlepoint to be valid; Start() runs before game init).
+    if (!g_textureLoaded && g_createManagedTexture && g_textureAsset[0] && !g_almanacTexture) {
+        void* middlepoint = (void*)(Base() + TSM_RVA_DEFAULT_GAME_OBJECT + 0xB048u);
+        g_almanacTexture = g_createManagedTexture(middlepoint, g_textureAsset);
+        g_textureLoaded = (g_almanacTexture != NULL) ? 1 : 0;
+        Logf("almanac_button  texture %s (asset '%s')",
+             g_textureLoaded ? "loaded" : "failed to load", g_textureAsset);
+    }
+    if (!g_fontLoaded && g_createManagedFontBitmap && g_fontAsset[0] && !g_almanacFont) {
+        void* middlepoint = (void*)(Base() + TSM_RVA_DEFAULT_GAME_OBJECT + 0xB048u);
+        g_almanacFont = g_createManagedFontBitmap(middlepoint, g_fontAsset);
+        g_fontLoaded = (g_almanacFont != NULL) ? 1 : 0;
+        Logf("almanac_button  font %s (asset '%s')",
+             g_fontLoaded ? "loaded" : "failed to load", g_fontAsset);
+    }
+
     if (((uintptr_t)at & 7u) != 0 || !ReadablePtr(at, sizeof(uint64_t)))
         FailStop("rect pair unreadable or misaligned, before any write");
     if (!LoadRectPair(at, &saved))
@@ -787,7 +804,7 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
 
     // Resolve GetMouseSolid for click detection (Path D). Not required to arm;
     // if it cannot be resolved, clicks on the ninth tile are simply not detected.
-    FARPROC mouseProc = g_engine ? GetProcAddress(g_engine, "?GetMouseSolid@C3D_INPUT@@QEAPEAMXZ") : NULL;
+    FARPROC mouseProc = g_engine ? GetProcAddress(g_engine, "?GetMouseSolid@C3D_INPUT@@QEAA?AVC3DVECTOR3@@XZ") : NULL;
     if (!mouseProc) {
         Logf("almanac_button  NOTE  no engine export for GetMouseSolid; ninth-tile clicks not detected");
     } else {
@@ -812,21 +829,6 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
         Logf("almanac_button  NOTE  no engine export for PrintLeftUnicode; no text label");
     } else {
         g_printLeftUnicode = (t_PrintLeftUnicode)printProc;
-    }
-
-    // Try to load texture/font assets if configured and creation APIs are available.
-    void* middlepoint = (void*)(Base() + TSM_RVA_DEFAULT_GAME_OBJECT + 0xB048u);
-    if (g_createManagedTexture && g_textureAsset[0] && !g_almanacTexture) {
-        g_almanacTexture = g_createManagedTexture(middlepoint, g_textureAsset);
-        g_textureLoaded = (g_almanacTexture != NULL) ? 1 : 0;
-        Logf("almanac_button  texture %s (asset '%s')",
-             g_textureLoaded ? "loaded" : "failed to load", g_textureAsset);
-    }
-    if (g_createManagedFontBitmap && g_fontAsset[0] && !g_almanacFont) {
-        g_almanacFont = g_createManagedFontBitmap(middlepoint, g_fontAsset);
-        g_fontLoaded = (g_almanacFont != NULL) ? 1 : 0;
-        Logf("almanac_button  font %s (asset '%s')",
-             g_fontLoaded ? "loaded" : "failed to load", g_fontAsset);
     }
 
     SlotSwap s = CompareSwapSlot(slot, validated, (void*)Detour, 1);
