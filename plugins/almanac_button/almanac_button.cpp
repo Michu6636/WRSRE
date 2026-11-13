@@ -191,6 +191,7 @@ static t_CreateManagedTexture     g_createManagedTexture; // C3D_MIDDLEPOINT::Cr
 static void*                      g_almanacTexture;       // plugin-owned C3DAPI_TEXTURE*
 static int                        g_textureLoaded;         // 1 if texture loaded successfully
 static int                        g_textureAttempted;      // 1 after first load attempt (prevents retry spam)
+static int                        g_contentSuppressionEnabled; // INI: suppress native content when Almanac open
 static char                       g_textureAsset[256];    // INI: texture_asset
 static void**                     g_slot;      // the import slot we swapped
 static DWORD                      g_slotProt;  // ORIGINAL protection of the import page
@@ -206,6 +207,7 @@ static volatile LONG              g_almanacDebounce; // 1 while the click latch 
 static int32_t                    g_lastSelection; // last observed game+0xC65C (native selection)
 
 #define ALM_OFF_SELECTION   0xC65Cu   // game+0xC65C: selected sub-tab index (read-only)
+#define ALM_OFF_CONTENT_SUPPRESS 0x5E6u // game+0x5E6: content suppress flag (write-only)
 
 // Plain-old-data plan, filled before the native call and used after it.
 typedef struct NinthPlan {
@@ -596,6 +598,23 @@ static void UpdateAlmanacState(int ninthClicked)
         // Click latch is clear: ready for the next ninth-tile click.
         InterlockedExchange(&g_almanacDebounce, 0);
     }
+
+    // Content suppression: when Almanac is open, write game+0x5E6 = 1 every
+    // frame to suppress native sub-page content drawing. Native code toggles
+    // this flag on certain clicks, so we re-assert it each frame. Restore to 0
+    // when Almanac closes. Never writes game+0xC65C, never consumes 0xA54E91.
+    if (g_contentSuppressionEnabled) {
+        int isOpen = InterlockedCompareExchange(&g_almanacOpen, 1, 1) != 0;
+        if (isOpen) {
+            if (!WriteU8(Base() + TSM_RVA_DEFAULT_GAME_OBJECT + ALM_OFF_CONTENT_SUPPRESS, 1)) {
+                Logf("almanac_button  WARNING  content suppression write failed");
+            }
+        } else {
+            if (!WriteU8(Base() + TSM_RVA_DEFAULT_GAME_OBJECT + ALM_OFF_CONTENT_SUPPRESS, 0)) {
+                Logf("almanac_button  WARNING  content suppression restore failed");
+            }
+        }
+    }
 }
 // Draws the ninth tile and checks for a click on it. The rect pair is touched
 // only by one 8-byte load, one 8-byte store (the ninth values), the native draw,
@@ -710,6 +729,7 @@ static void ReadSettings(void)
     g_enabled = (H->configInt(ini, "almanac_button", "enabled", 1) == 1) ? 1 : 0;
     H->configString(ini, "almanac_button", "texture_asset", g_textureAsset,
                     (int)sizeof(g_textureAsset), "icon_inspectnumbers.png");
+    g_contentSuppressionEnabled = (H->configInt(ini, "almanac_button", "content_suppression", 1) == 1) ? 1 : 0;
 }
 
 extern "C" __declspec(dllexport) unsigned TsmPluginApiVersion(void)
@@ -722,10 +742,10 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
 {
     TsmBind(host);
     info->name    = "almanac_button";
-    info->version = "2.3";
+    info->version = "2.4";
 
     ReadSettings();
-    Logf("almanac_button  init v2.3 (distinct icon via TexBind vtable[0x70], pre-Draw, panel_state RVA 0x9EAD08)");
+    Logf("almanac_button  init v2.4 (content suppression re-added: game+0x5E6)");
     if (!g_enabled) {
         Logf("almanac_button  disabled (enabled = 0)");
         return 1;                       // loader calls FreeLibrary; nothing is patched
