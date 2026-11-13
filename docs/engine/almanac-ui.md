@@ -1,4 +1,4 @@
-﻿# Almanac UI â€” Native Evidence
+﻿# Almanac UI — Native Evidence
 
 Native reverse-engineering findings for the Almanac feature's use of the
 Economy & Trade page handler and C3DDLL64.dll texture/font exports.
@@ -7,7 +7,7 @@ SOVIET64.exe v1.1.1.9, PE TimeDateStamp 0x6A3EB6AD, preferred image base
 Raw excerpts (git-tracked): docs/ghidra-exports/almanac-ui/.
 
 ## 1. UI handlers
-### 1.1 FUN_140373EA0 â€” Economy & Trade page handler
+### 1.1 FUN_140373EA0 — Economy & Trade page handler
 
 - RVA: 0x373EA0. Preferred VA 0x140373EA0. Size 55,231 bytes.
 - Caller: FUN_140317DB0 at 0x14031EDEF, inside the "trade" name-match branch,
@@ -48,11 +48,12 @@ Raw excerpts (git-tracked): docs/ghidra-exports/almanac-ui/.
   (local-only, not tracked).
 - Status: partial (Y origin, container width/clipping, reordering, close path,
   latch owner, runtime selected-entry identity unresolved).
-### 1.2 FUN_14035F3E0 â€” content sub-view
+
+### 1.2 FUN_14035F3E0 — content sub-view
 
 - RVA: 0x35F3E0. Preferred VA 0x14035F3E0.
-- Signature: char FUN_14035f3e0(game, float *param_2, float *param_3) â€” returns
-  '\\x01' if a specific sub-item was clicked, '\\x00' otherwise.
+- Signature: char FUN_14035f3e0(game, float *param_2, float *param_3) — returns
+  '\x01' if a specific sub-item was clicked, '\x00' otherwise.
 - Caller: FUN_140373EA0 at 0x140374606 when game+0xC65C <= 1.
 - Purpose: draws a content sub-view with 6 clickable sub-items (C3D_LANGUAGE
   string IDs 0x68B-0x690, or 0x2B6 for index 5). Each sub-item has a label
@@ -67,11 +68,30 @@ Raw excerpts (git-tracked): docs/ghidra-exports/almanac-ui/.
   of scratch/out/14035f3e0_decomp.c, 31,659 bytes local-only).
 - Status: partial. On click calls FUN_1403613B0 (sub-page switch) and FUN_140335B10
   (state setter); the content-suppression path additionally depends on
-  FUN_140335BC0 (predicate, not decompilable). FUN_1403613B0 and FUN_140335BC0
-  are not decompilable with current Ghidra setup (size=1, function pointer refs
-  only). FUN_140335B10 behavior also unverified here.
+  FUN_140335BC0 (predicate, now partially decoded — see docs/ghidra-index/335BC0.md).
+  FUN_1403613B0 and FUN_140335B10 are not decompilable with current Ghidra setup.
 
-### 1.3 FUN_140361BB0 â€” alternate handler
+### 1.2.1 Content suppression via game+0x5E6 (CORRECTED)
+
+IMPORTANT: game+0x5E6 is NOT a visual content suppression flag. The earlier
+description ("content suppression") was misleading. The actual behavior:
+
+- game+0x5E6 is a toggle flag written by native code on certain clicks
+  (FUN_14035F3E0 toggles it: `*(bool *)(param_1 + 0x5e6) = *(char *)(param_1 + 0x5e6) == '\0'`).
+- When game+0x5E6 != 0 AND FUN_140335BC0() returns non-zero (mouse inside a
+  specific rectangle), cVar4 is set to 1 ("suppressed mode").
+- In suppressed mode: hit-testing and click-handling on the content area are
+  SKIPPED, and tint values change (LAB_14035fcfc uses different tint).
+- C3D_PANEL2D::Draw still executes in both modes. Native content is NOT hidden.
+- FUN_140335BC0 is a mouse-rectangle hit test (4 GetMouseSolid calls, returns 1
+  only if mouse is inside the computed rectangle). It does NOT test content
+  visibility.
+- Conclusion: game+0x5E6 provides a partial, mouse-dependent input effect
+  (disabling click handling + tint change), NOT visual content suppression.
+  The almanac_exclusive_visibility requirement ("native content not visible")
+  CANNOT be met by this flag alone.
+
+### 1.3 FUN_140361BB0 — alternate handler
 
 - RVA: 0x361BB0. Preferred VA 0x140361BB0.
 - Caller: FUN_140317DB0 at 0x14031EDAF when game+0x10398 == 0 (non-trade row);
@@ -122,8 +142,8 @@ Raw excerpts (git-tracked): docs/ghidra-exports/almanac-ui/.
 ### 2.2 Texture vtable offsets (Load / TexBind)
 
 - Object returned by CreateManagedTexture is C3DAPI_TEXTURE*.
-- vtable+0x10 = Load(filename, 0, 0) â€” loads image data from file.
-- vtable+0x70 = TexBind(texture, 0, panel_state) â€” binds texture for drawing.
+- vtable+0x10 = Load(filename, 0, 0) — loads image data from file.
+- vtable+0x70 = TexBind(texture, 0, panel_state) — binds texture for drawing.
   panel_state = DAT_1409EAD08 (RVA 0x9EAD08, all zeros in static image,
   runtime-initialized).
 - Native sequence (from decompilation): Create -> store at sub_entry+0x48 ->
@@ -147,11 +167,11 @@ Raw excerpts (git-tracked): docs/ghidra-exports/almanac-ui/.
 - Mangled name: ?GetMouseSolid@C3D_INPUT@@QEAA?AVC3DVECTOR3@@XZ.
   ?AVC3DVECTOR3@@ = return by reference (hidden sret pointer).
   QEAA = non-static non-virtual member. XZ = no params beyond this.
-- Correct ABI: void (*)(void* input, C3DVec3* out) â€” this in RCX, hidden
+- Correct ABI: void (*)(void* input, C3DVec3* out) — this in RCX, hidden
   result pointer in RDX (MSVC x64 sret).
 - Plugin typedef float* (*)(void*) is WRONG (missing RDX). Same bug class
   fixed in ui_panels v6.0. Corrupts adjacent stack/registers. Latent defect
-   independent of the CreateManagedTexture crash.
+  independent of the CreateManagedTexture crash.
 
 ## 3. middlepoint resolution
 
@@ -228,7 +248,7 @@ Raw excerpts (git-tracked): docs/ghidra-exports/almanac-ui/.
 | C6 | GetMouseSolid ABI is void(*)(void*,C3DVec3*) | FOLLOW-UP.md Item 2 | supported | mangled name + ui_panels.cpp |
 | C7 | vtable+0x10=Load, +0x70=TexBind | FOLLOW-UP.md Item 4 | contested | inferred, not verified vs vtable |
 | C8 | 0x1403745B6 unsafe for 17-byte stolen region (InstallInlineHook) | almanac-export-review.md sec.4 | supported | no hook approved; 14-byte patch also not approved |
-| C9 | FUN_140335BC0/FUN_1403613B0 not decompilable | docs/ghidra-index/335BC0.md, 3613B0.md | unresolved | not decompilable |
+| C9 | FUN_140335BC0/FUN_1403613B0 not decompilable | docs/ghidra-index/335BC0.md, 3613B0.md | partial | disassembly decoded; not decompilable |
 | C10 | ninth-tile clipping | FOLLOW-UP.md Item 3 | unresolved | runtime-dependent |
 | C11 | IAT slot 0x14086C4C0 imports CreateManagedTexture | FOLLOW-UP.md Item 4 | supported | static bytes only |
 | C12 | Callsite 0x1403827E2 passes &DAT_1409EACD0 | docs/ghidra-exports/almanac-ui/callsite_0x1403827C0.txt | supported | function body unanalyzed |
@@ -261,3 +281,8 @@ Raw excerpts (git-tracked): docs/ghidra-exports/almanac-ui/.
 | C39 | 361BB0 resets game+0x10BE8 to -1 at 0x140361CBB | almanac-export-review.md sec.1 | supported | static only |
 | C40 | 35F3E0 calls FUN_1403613B0 and FUN_140335B10 on click | docs/ghidra-index/35F3E0.md | supported | partial |
 | C41 | Hook point 9+8 byte split (17 total) per review doc | almanac-export-review.md sec.4 | supported | raw bytes not tracked |
+| C42 | FUN_140335BC0 is mouse-rectangle hit test, NOT content visibility test | docs/ghidra-index/335BC0.md | supported | disassembly decoded; full size unknown |
+| C43 | game+0x5E6 toggle does not hide content; C3D_PANEL2D::Draw still executes | docs/ghidra-index/335BC0.md, 35F3E0 decomp | supported | static only |
+| C44 | Content suppression via game+0x5E6 is mouse-position-dependent | docs/ghidra-index/335BC0.md | supported | static only |
+
+(End of file - total 267 lines)
