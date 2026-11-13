@@ -581,8 +581,8 @@ static void UpdateAlmanacState(int ninthClicked)
             Logf("almanac_button  almanac %s via ninth-tile click",
                  InterlockedCompareExchange(&g_almanacOpen, 1, 1) != 0 ? "opened" : "closed");
         }
-    } else if (InterlockedCompareExchange(&g_almanacDebounce, 0, 0) == 0) {
-        // Latch is clear: allow the next click to toggle again.
+    } else if (!ReadClickLatch()) {
+        // Click latch is clear: ready for the next ninth-tile click.
         InterlockedExchange(&g_almanacDebounce, 0);
     }
 }
@@ -677,10 +677,10 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
 {
     TsmBind(host);
     info->name    = "almanac_button";
-    info->version = "2.1";
+    info->version = "2.2";
 
     ReadSettings();
-    Logf("almanac_button  init v2.1 (GetMouseSolid ABI fixed to void(*)(void*,C3DVec3*))");
+    Logf("almanac_button  init v2.2 (debounce reset gated on click-latch clear)");
     if (!g_enabled) {
         Logf("almanac_button  disabled (enabled = 0)");
         return 1;                       // loader calls FreeLibrary; nothing is patched
