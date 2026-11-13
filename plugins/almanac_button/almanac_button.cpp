@@ -176,11 +176,22 @@ typedef void (*t_Draw)(void* self, float a1, float a2, float a3,
 struct C3DVec3 { float x, y, z; };
 typedef void (*t_GetMouseSolid)(void* input, C3DVec3* out);
 
+// Texture loading (re-added with corrected binding; see commit 09dc3e0).
+typedef void* (*t_CreateManagedTexture)(void* middlepoint, const char* filename);
+#define ALM_RVA_MIDDLEPOINT 0x9EACD0u   // C3D_MIDDLEPOINT global (passed to CreateManagedTexture)
+#define ALM_TEX_BIND_OFFSET 0x70u       // vtable[0x70] = TexBind (confirmed by native code at FUN_140358A20:141)
+// panel state global is TSM_RVA_DEFAULT_PANEL_STATE (0x9EAD08), NOT game+0x9D4F10+0xEAD08
+
 static int                        g_enabled;
 static volatile LONG              g_active;    // 1 = armed: the ninth tile is wanted
 static volatile LONG              g_faulted;   // set by an SEH handler, read by Detour
 static t_Draw                     g_drawOrig;  // engine's Draw, recorded before the swap
 static t_GetMouseSolid            g_getMouseSolid; // engine's GetMouseSolid, resolved at Start
+static t_CreateManagedTexture     g_createManagedTexture; // C3D_MIDDLEPOINT::CreateManagedTexture
+static void*                      g_almanacTexture;       // plugin-owned C3DAPI_TEXTURE*
+static int                        g_textureLoaded;         // 1 if texture loaded successfully
+static int                        g_textureAttempted;      // 1 after first load attempt (prevents retry spam)
+static char                       g_textureAsset[256];    // INI: texture_asset
 static void**                     g_slot;      // the import slot we swapped
 static DWORD                      g_slotProt;  // ORIGINAL protection of the import page
 static int                        g_slotProtKnown; // set once, by the first protect-set in Start
@@ -604,6 +615,38 @@ static void DrawNinthTile(void* self, float a1, float a2, float a3, float a4,
     if (!StoreRectPair(at, PackPair(x, y)))
         FailStop("rect pair store of the ninth values faulted");
 
+    // Lazy-load the distinct icon texture (once). CreateManagedTexture returns
+    // a C3DAPI_TEXTURE* or NULL if the file is not accepted.
+    if (!g_textureAttempted && g_createManagedTexture && g_textureAsset[0] && !g_almanacTexture) {
+        g_textureAttempted = 1;
+        void* middlepoint = (void*)(Base() + ALM_RVA_MIDDLEPOINT);
+        g_almanacTexture = g_createManagedTexture(middlepoint, g_textureAsset);
+        g_textureLoaded = (g_almanacTexture != NULL) ? 1 : 0;
+        Logf("almanac_button  texture %s (%s)",
+             g_textureLoaded ? "loaded" : "failed to load", g_textureAsset);
+    }
+
+    // Bind the distinct texture pre-Draw (native binds per-sub-entry before Draw).
+    // vtable[0x70] = TexBind, signature (texture, 0, panel_state_global).
+    // panel_state global is at RVA 0x9EAD08 (TSM_RVA_DEFAULT_PANEL_STATE).
+    // SEH-wrapped: a binding failure is non-fatal (native artwork shows).
+    if (g_textureLoaded && g_almanacTexture) {
+        __try {
+            uintptr_t vptr = *(uintptr_t*)g_almanacTexture;
+            if (vptr && ReadablePtr((const void*)vptr, ALM_TEX_BIND_OFFSET + sizeof(void*))) {
+                void* texBind = *(void**)(vptr + ALM_TEX_BIND_OFFSET);
+                void* panelState = (void*)(Base() + TSM_RVA_DEFAULT_PANEL_STATE);
+                if (texBind && ReadablePtr(texBind, 1)) {
+                    ((void(__thiscall*)(void*, int, void*))texBind)(g_almanacTexture, 0, panelState);
+                }
+            }
+        }
+        __except (EXCEPTION_EXECUTE_HANDLER) {
+            Logf("almanac_button  texture bind faulted; using native artwork");
+            g_textureLoaded = 0;
+        }
+    }
+
     drawFault = CallNinthNative(self, a1, a2, a3, a4, a5, a6);
 
     // Click detection while the ninth tile's bounds are active (Path D: read-only).
@@ -665,6 +708,8 @@ static void ReadSettings(void)
 {
     const char* ini = "plugins\\almanac_button.ini";
     g_enabled = (H->configInt(ini, "almanac_button", "enabled", 1) == 1) ? 1 : 0;
+    H->configString(ini, "almanac_button", "texture_asset", g_textureAsset,
+                    (int)sizeof(g_textureAsset), "icon_inspectnumbers.png");
 }
 
 extern "C" __declspec(dllexport) unsigned TsmPluginApiVersion(void)
@@ -677,10 +722,10 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
 {
     TsmBind(host);
     info->name    = "almanac_button";
-    info->version = "2.2";
+    info->version = "2.3";
 
     ReadSettings();
-    Logf("almanac_button  init v2.2 (debounce reset gated on click-latch clear)");
+    Logf("almanac_button  init v2.3 (distinct icon via TexBind vtable[0x70], pre-Draw, panel_state RVA 0x9EAD08)");
     if (!g_enabled) {
         Logf("almanac_button  disabled (enabled = 0)");
         return 1;                       // loader calls FreeLibrary; nothing is patched
@@ -730,6 +775,18 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
         Logf("almanac_button  NOTE  no engine export for GetMouseSolid; ninth-tile clicks not detected");
     } else {
         g_getMouseSolid = (t_GetMouseSolid)mouseProc;
+    }
+
+    // Resolve CreateManagedTexture for distinct icon (corrected binding).
+    // The vtable offset 0x70 (TexBind) is confirmed by native code at
+    // FUN_140358A20:141. The earlier crash was caused by a wrong panel_state
+    // pointer (game+0x9D4F10+0xEAD08 instead of RVA 0x9EAD08) and post-Draw
+    // timing. Binding is now done pre-Draw with the correct global.
+    FARPROC texProc = g_engine ? GetProcAddress(g_engine, "?CreateManagedTexture@C3D_MIDDLEPOINT@@QEAAPEAVC3DAPI_TEXTURE@@PEBD@Z") : NULL;
+    if (!texProc) {
+        Logf("almanac_button  NOTE  no engine export for CreateManagedTexture; no distinct icon");
+    } else {
+        g_createManagedTexture = (t_CreateManagedTexture)texProc;
     }
 
     SlotSwap s = CompareSwapSlot(slot, validated, (void*)Detour, 1);
