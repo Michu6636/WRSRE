@@ -1,0 +1,58 @@
+# D06 trade-row selected predicate
+# Source: Mods for analysis/Diplomacy/tesmioloader/the build/plugins/reputation.dll (SHA-256 fd7d94590b98c7eb80fa14ef95f2bbdf4b5e058f68d07dfa97d0db8dcbfbcb6a)
+# Range: 180058310-1800583d7
+# Static objdump excerpt, annotated by annot.py (rip-relative targets, .rdata strings). Nothing executed.
+# Purpose: selected record named trade, selected index == stored item index
+
+180058310:	rex push rbx
+180058312:	sub    rsp,0x20
+180058316:	cmp    DWORD PTR [rip+0x6b93f],0x0        # 0x1800c3c5c
+18005831d:	jl     0x180058398
+18005831f:	cmp    DWORD PTR [rip+0x22f822],0x0        # 0x180287b48
+180058326:	je     0x180058398
+180058328:	mov    rbx,QWORD PTR [rip+0x6ca51]        # 0x1800c4d80
+18005832f:	mov    edx,0x8
+180058334:	mov    rax,QWORD PTR [rip+0x6ca35]        # 0x1800c4d70
+18005833b:	lea    rcx,[rbx+0x9e1560]
+180058342:	call   QWORD PTR [rax+0x60]
+180058345:	test   eax,eax
+180058347:	je     0x180058398
+180058349:	mov    rcx,QWORD PTR [rbx+0x9e1560]
+180058350:	test   rcx,rcx
+180058353:	je     0x180058398
+180058355:	mov    rax,QWORD PTR [rip+0x6ca14]        # 0x1800c4d70
+18005835c:	inc    rcx
+18005835f:	mov    edx,0x17
+180058364:	call   QWORD PTR [rax+0x60]
+180058367:	test   eax,eax
+180058369:	je     0x180058398
+18005836b:	mov    rdx,QWORD PTR [rbx+0x9e1560]
+180058372:	lea    r8,[rip+0x6b8af]        # 0x1800c3c28 ;; "trade"
+180058379:	xor    eax,eax
+18005837b:	nop    DWORD PTR [rax+rax*1+0x0]
+180058380:	movzx  ecx,BYTE PTR [rdx+rax*1+0x1]
+180058385:	cmp    cl,BYTE PTR [r8+rax*1]
+180058389:	jne    0x180058398
+18005838b:	test   cl,cl
+18005838d:	je     0x1800583a0
+18005838f:	inc    rax
+180058392:	cmp    rax,0x17
+180058396:	jb     0x180058380
+180058398:	xor    eax,eax
+18005839a:	add    rsp,0x20
+18005839e:	pop    rbx
+18005839f:	ret
+1800583a0:	mov    rbx,QWORD PTR [rip+0x6c9d9]        # 0x1800c4d80
+1800583a7:	mov    edx,0x4
+1800583ac:	mov    rax,QWORD PTR [rip+0x6c9bd]        # 0x1800c4d70
+1800583b3:	lea    rcx,[rbx+0x9e156c]
+1800583ba:	call   QWORD PTR [rax+0x60]
+1800583bd:	test   eax,eax
+1800583bf:	je     0x180058398
+1800583c1:	mov    ecx,DWORD PTR [rip+0x6b895]        # 0x1800c3c5c
+1800583c7:	xor    eax,eax
+1800583c9:	cmp    DWORD PTR [rbx+0x9e156c],ecx
+1800583cf:	sete   al
+1800583d2:	add    rsp,0x20
+1800583d6:	pop    rbx
+1800583d7:	ret

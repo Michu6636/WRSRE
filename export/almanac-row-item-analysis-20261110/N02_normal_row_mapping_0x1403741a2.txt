@@ -1,0 +1,32 @@
+# N02 normal row handler: index remap and skip conditions
+# Source: export/140373ea0_1403829fd_disasm.asm (preserved repo listing; game binary not in workspace, hash unverified)
+# Range: 1403741a2-1403741f6
+# Static listing excerpt, copied verbatim by address. Nothing executed.
+# Purpose: i==2 -> count-1; i>2 -> i-1; skips on game+0x578 and game+0x5e0
+
+1403741a2:  83 FF 02                 CMP EDI,0x2
+1403741a5:  7D 04                    JGE 0x1403741ab
+1403741a7:  8B DF                    MOV EBX,EDI
+1403741a9:  EB 24                    JMP 0x1403741cf
+1403741ab:  75 1F                    JNZ 0x1403741cc
+1403741ad:  49 8B 48 08              MOV RCX,qword ptr [R8 + 0x8]
+1403741b1:  49 2B 08                 SUB RCX,qword ptr [R8]
+1403741b4:  49 8B C5                 MOV RAX,R13
+1403741b7:  48 F7 E9                 IMUL RCX
+1403741ba:  48 C1 FA 05              SAR RDX,0x5
+1403741be:  48 8B DA                 MOV RBX,RDX
+1403741c1:  48 C1 EB 3F              SHR RBX,0x3f
+1403741c5:  48 03 DA                 ADD RBX,RDX
+1403741c8:  FF CB                    DEC EBX
+1403741ca:  EB 03                    JMP 0x1403741cf
+1403741cc:  8D 5F FF                 LEA EBX,[RDI + -0x1]
+1403741cf:  83 BE 78 05 00 00 00     CMP dword ptr [RSI + 0x578],0x0
+1403741d6:  74 0C                    JZ 0x1403741e4
+1403741d8:  8D 43 FD                 LEA EAX,[RBX + -0x3]
+1403741db:  83 F8 01                 CMP EAX,0x1
+1403741de:  0F 86 D2 01 00 00        JBE 0x1403743b6
+1403741e4:  83 FB 06                 CMP EBX,0x6
+1403741e7:  75 0D                    JNZ 0x1403741f6
+1403741e9:  83 BE E0 05 00 00 00     CMP dword ptr [RSI + 0x5e0],0x0
+1403741f0:  0F 84 C0 01 00 00        JZ 0x1403743b6
+1403741f6:  48 63 C3                 MOVSXD RAX,EBX

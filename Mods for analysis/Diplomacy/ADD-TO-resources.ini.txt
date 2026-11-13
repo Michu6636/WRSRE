@@ -1,0 +1,71 @@
+NOTE (step 213): YOU NO LONGER NEED TO DO THIS BY HAND. reputation.dll adds
+these lines to resources.ini itself when the game starts, if they are not
+already there. This file is kept only for anyone who has turned that off
+([arms] add_to_resources_ini = 0) or whose resources.ini cannot be written.
+
+ADD THESE LINES TO  tesmioloader\build\plugins\resources.ini
+============================================================
+
+This is the ONE file you cannot just copy over, because other mods put their
+resources in it too. Open your existing resources.ini and paste the block below
+into it. If you do not have one, resources.dll makes it on first run - launch
+once, then come back.
+
+Small arms, heavy weapons and munitions are not base-game resources.
+
+
+==================== PASTE ALL OF THIS. ALL OF IT. ====================
+
+The three [list] lines go under your existing [list] section. The three
+[custom:] blocks can sit anywhere below it - but they are NOT optional, and
+leaving them out is the one mistake that crashes the game rather than just
+doing nothing. Paste the whole block and you cannot get it wrong.
+
+small_arms         = eletronics, Small Arms
+large_arms         = eletronics, Heavy Weapons
+munitions          = eletronics, Munitions
+
+[custom:small_arms]
+cargo = none
+
+[custom:large_arms]
+cargo = none
+
+[custom:munitions]
+cargo = none
+
+======================= END OF THE PASTE BLOCK ========================
+
+
+IF YOU SKIP THE [custom:] BLOCKS, THE GAME CRASHES
+--------------------------------------------------
+
+Not "produces nothing" - crashes, the moment you place a building that stores
+one of these resources. The small munitions plant is usually the first one
+people hit.
+
+Why: the three are cloned from `eletronics`, which has no cargo geometry.
+Without `cargo = none` the setting defaults to `auto`, the loader loads a mesh
+that is not there and writes it through a null pointer. The crash happens
+inside C3DDLL64.dll where nothing points back at this mod. The only clue is one
+line in tesmioloader.log:
+
+    resource "small_arms": cargo mesh load faulted
+
+If your game crashes when placing an arms factory, check resources.ini for the
+three [custom:] blocks before anything else. That is the cause nine times in
+ten.
+
+
+IF THE LINES ARE MISSING ENTIRELY
+---------------------------------
+
+Different symptom, no crash: the arms factories build, staff up, and produce
+nothing at all, with no error anywhere.
+
+
+THE ICONS
+---------
+
+They travel as a crate, like eletronics does. The PNG icons are the only art
+they need, and those are already in place if you copied the tesmioloader folder.

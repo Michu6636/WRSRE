@@ -1,0 +1,15 @@
+# D15 sizer AE54/AE58 writes
+# Source: Mods for analysis/Diplomacy/tesmioloader/the build/plugins/reputation.dll (SHA-256 fd7d94590b98c7eb80fa14ef95f2bbdf4b5e058f68d07dfa97d0db8dcbfbcb6a)
+# Range: 180058b00-180058b30
+# Static objdump excerpt, annotated by annot.py (rip-relative targets, .rdata strings). Nothing executed.
+# Purpose: exe+0x9DFD64/68 writes from the sidebar-panel sizer
+
+180058b01:	addss  xmm4,DWORD PTR [rip+0x56bc7]        # 0x1800af6d0
+180058b09:	minss  xmm2,xmm3
+180058b0d:	maxss  xmm4,xmm2
+180058b11:	movss  DWORD PTR [rsp+0x58],xmm4
+180058b17:	mov    rax,QWORD PTR [rip+0x6c262]        # 0x1800c4d80
+180058b1e:	comiss xmm1,xmm7
+180058b21:	jbe    0x180058b2b
+180058b23:	movss  DWORD PTR [rax+0x9dfd64],xmm1
+180058b2b:	movss  DWORD PTR [rax+0x9dfd68],xmm4

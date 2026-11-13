@@ -1,0 +1,24 @@
+# D12 any-DLL-window-open predicate
+# Source: Mods for analysis/Diplomacy/tesmioloader/the build/plugins/reputation.dll (SHA-256 fd7d94590b98c7eb80fa14ef95f2bbdf4b5e058f68d07dfa97d0db8dcbfbcb6a)
+# Range: 180001c80-180001cc7
+# Static objdump excerpt, annotated by annot.py (rip-relative targets, .rdata strings). Nothing executed.
+# Purpose: returns 1 when any of seven DLL flags is nonzero
+
+180001c80:	cmp    DWORD PTR [rip+0xc14d1],0x0        # 0x1800c3158
+180001c87:	jne    0x180001cc2
+180001c89:	cmp    DWORD PTR [rip+0x2843f0],0x0        # 0x180286080
+180001c90:	jne    0x180001cc2
+180001c92:	cmp    DWORD PTR [rip+0x1cbd7f],0x0        # 0x1801cda18
+180001c99:	jne    0x180001cc2
+180001c9b:	cmp    DWORD PTR [rip+0x1cbd72],0x0        # 0x1801cda14
+180001ca2:	jne    0x180001cc2
+180001ca4:	cmp    DWORD PTR [rip+0x183209],0x0        # 0x180184eb4
+180001cab:	jne    0x180001cc2
+180001cad:	cmp    DWORD PTR [rip+0x1cbd68],0x0        # 0x1801cda1c
+180001cb4:	jne    0x180001cc2
+180001cb6:	cmp    DWORD PTR [rip+0xc2f93],0x0        # 0x1800c4c50
+180001cbd:	jne    0x180001cc2
+180001cbf:	xor    eax,eax
+180001cc1:	ret
+180001cc2:	mov    eax,0x1
+180001cc7:	ret

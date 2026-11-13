@@ -1,0 +1,36 @@
+# D01 trade-row insertion gates and retry
+# Source: Mods for analysis/Diplomacy/tesmioloader/the build/plugins/reputation.dll (SHA-256 fd7d94590b98c7eb80fa14ef95f2bbdf4b5e058f68d07dfa97d0db8dcbfbcb6a)
+# Range: 180057e40-180057ec7
+# Static objdump excerpt, annotated by annot.py (rip-relative targets, .rdata strings). Nothing executed.
+# Purpose: build/sidebar_item gates, retry counter 0x180287b50
+
+180057e40:	rex push rbx
+180057e42:	push   rsi
+180057e43:	push   rdi
+180057e44:	push   r12
+180057e46:	push   r13
+180057e48:	push   r14
+180057e4a:	push   r15
+180057e4c:	sub    rsp,0xb0
+180057e53:	mov    rax,QWORD PTR [rip+0x6c326]        # 0x1800c4180
+180057e5a:	xor    rax,rsp
+180057e5d:	mov    QWORD PTR [rsp+0xa0],rax
+180057e65:	cmp    DWORD PTR [rip+0x22fce0],0x0        # 0x180287b4c
+180057e6c:	jne    0x1800582e0
+180057e72:	cmp    DWORD PTR [rip+0x22fccf],0x0        # 0x180287b48
+180057e79:	je     0x1800582e0
+180057e7f:	cmp    DWORD PTR [rip+0x228efa],0x0        # 0x180280d80
+180057e86:	je     0x1800582e0
+180057e8c:	cmp    DWORD PTR [rip+0x228c91],0x0        # 0x180280b24
+180057e93:	jne    0x180057eb0
+180057e95:	mov    DWORD PTR [rip+0x22fcad],0x1        # 0x180287b4c
+180057e9f:	lea    rcx,[rip+0x4632a]        # 0x18009e1d0 ;; "  item  [ui] sidebar_item is on, but this is not the build these addresses were read off. "
+180057ea6:	call   0x180053ef0
+180057eab:	jmp    0x1800582e0
+180057eb0:	call   0x180064790
+180057eb5:	test   rax,rax
+180057eb8:	jne    0x180057ec7
+180057eba:	xor    edi,edi
+180057ebc:	mov    DWORD PTR [rip+0x22fc8e],edi        # 0x180287b50
+180057ec2:	jmp    0x1800582e0
+180057ec7:	mov    eax,DWORD PTR [rip+0x22fc83]        # 0x180287b50

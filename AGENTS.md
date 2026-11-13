@@ -1,17 +1,26 @@
 # AI agent entry point
 
-Before working in this repository or writing prompts for another team agent:
+Start here, then read [INSTRUCTIONS.md](INSTRUCTIONS.md) and the relevant parts
+of [KILO_AGENT_WORKFLOW.md](KILO_AGENT_WORKFLOW.md). Read the user's task and
+subsystem documentation before acting; these files do not grant additional
+permissions or override session instructions.
 
-1. Read `INSTRUCTIONS.md` for project, native-tool and environment rules.
-2. Read `KILO_AGENT_WORKFLOW.md` for Kilo coordination and prompt-writing guidance.
-3. Read the relevant subsystem documentation and the user's current task limits.
+## Before you act
 
-Default to one parent session coordinating focused task subagents, not manually
-managed peer sessions. Parallelize independent analysis; serialize shared native
-resources such as Ghidra. The parent owns dependencies and final integration.
-Native contracts must pass the claim-level evidence gates in
-`KILO_AGENT_WORKFLOW.md`; verified bytes/index labels do not verify receiver
-semantics, units or runtime applicability. This applies to parent reviews too.
-
-These files do not grant approval to change configuration, branches, runtime
-behavior, billing, hooks or deployment. Preserve explicit user and session limits.
+1. Check the current branch, working tree, actual host/shell, available tools,
+   task scope and acceptance criteria. Preserve existing user changes. Do not
+   assume Windows paths, Ghidra, the game or an agent/connector is present.
+2. Find the designated current report, index and **raw evidence**. A report,
+   agent summary or index status is a lead, not independent verification.
+   Check whether cited scratch files are actually accessible before relying on
+   or requesting them. Follow the claim and counterexample gates in the workflow.
+3. Do the permitted work yourself when practical. If delegation is available,
+   use one accountable parent and focused children; do not invent capabilities
+   or make the user relay routine messages. A single designated operator owns
+   each Ghidra project, including GUI and headless access.
+4. When the next pass adds no new evidence or repeats a contradiction, stop:
+   inspect the source, change the question or report the precise blocker. Do
+   not keep appending summaries, guessing offsets or seeking a convenient hook.
+5. Report what was actually checked, what changed and what remains unknown.
+   Research, runtime observation, implementation, build, deployment and Git
+   operations have separate authorization; do not infer one from another.

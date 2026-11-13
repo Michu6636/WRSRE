@@ -9,9 +9,10 @@ import java.io.PrintWriter;
 /**
  * DecompAt - decompile one or more functions by address.
  *
- * Usage:  DecompAt.java <out_file.c> <0x140RVA1> [0x140RVA2...]
- * Addresses are FILE-BASED (the project loads SOVIET64.exe at 0x140000000),
- * so pass 0x140 + RVA, e.g. 0x1404461f0 for RVA 0x4461F0.
+ * Usage:  DecompAt.java <out_file.c> <preferred_VA1> [preferred_VA2...]
+ * Addresses are preferred-image virtual addresses, not file offsets or RVAs.
+ * For the historical project base 0x140000000, add the RVA numerically:
+ * 0x140000000 + 0x4461F0 = 0x1404461F0. Verify the actual project base.
  *
  * Uses a 120s per-function decompiler budget (same as the UI).
  * Writes C pseudo-code to <out_file>, overwriting.
@@ -21,7 +22,7 @@ public class DecompAt extends GhidraScript {
     public void run() throws Exception {
         String[] a = getScriptArgs();
         if (a.length < 2) {
-            println("Usage: DecompAt.java <out_file.c> <0x140RVA1> [0x140RVA2...]");
+            println("Usage: DecompAt.java <out_file.c> <preferred_VA1> [preferred_VA2...]");
             return;
         }
         String outFile = a[0];

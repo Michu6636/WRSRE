@@ -1,0 +1,15 @@
+Reputation.dll raw .rdata strings (RVA=VA-0x180000000; file offset=RVA-0xe00):
+VA 0x1800aef98, file 0xae198: b'fopen'
+VA 0x1800aefa0, file 0xae1a0: b'api-ms-win-crt-stdio-l1-1-0.dll'
+VA 0x1800aefc0, file 0xae1c0: b'fopen_s'
+VA 0x1800aefc8, file 0xae1c8: b'engine fopen'
+VA 0x1800aefd8, file 0xae1d8: b'engine fopen_s'
+VA 0x1800906b8, file 0x8f8b8: b'save'
+VA 0x1800906c0, file 0x8f8c0: b'  open [%s] %s'
+VA 0x1800906d0, file 0x8f8d0: b'about to write standing into "%s", which already has a sidecar this session never read. If standing keeps resetting, the load is reaching the game through a path this plugin does not hook.'
+VA 0x180090790, file 0x8f990: b'runningScripts.bin'
+VA 0x1800907a8, file 0x8f9a8: b'city_names.txt'
+VA 0x1800907b8, file 0x8f9b8: b'buildings_game.bin'
+
+USER32 Import Address Table: FirstThunk RVA 0x8d2d8, ordered names GetAsyncKeyState, CallNextHookEx, UnhookWindowsHookEx, SetWindowsHookExW, ...
+IAT slot VA 0x18008d2e8 = FirstThunk + 2*8 = UnhookWindowsHookEx; disk import mapping only, runtime target unverified.

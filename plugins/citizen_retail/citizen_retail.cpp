@@ -652,7 +652,7 @@ static int CheckoutAffordabilityGate(void* shop, void* person, void* res, float 
             int handled = g_interceptor(shop, person, cost, res, g_interceptorUD);
             // v2.5: ONLY the exact v2 sentinel aborts. 0 keeps its v1
             // meaning ("state charges as usual") and falls through to
-            // citizenToStatePartial - never misread as "abort" by a
+            // the state charge - never misread as "abort" by a
             // mixed install, because a v1 interceptor documented only
             // {0, non-zero} and can never emit -1.
             if (handled == TSM_RETAIL_INSUFFICIENT) {
@@ -677,8 +677,9 @@ static int CheckoutAffordabilityGate(void* shop, void* person, void* res, float 
             if (handled != 0) return 1;   // interceptor handled it
         }
 
-        float taken = g_currency->citizenToStatePartial(person, cost, "state_store_sale");
-        if (taken < cost - 0.0001f) return 0;   // payment failed, abort
+        // Dispense is all-or-nothing: a wallet can change after the precheck.
+        // Do not collect a partial payment and then abort with no goods.
+        if (!g_currency->citizenToState(person, cost, "state_store_sale")) return 0;
         return 1;   // allow: engine completes shelf/demand write
     }
     __except (FaultFilter("citizen_retail checkout gate", GetExceptionInformation())) {

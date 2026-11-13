@@ -1,0 +1,50 @@
+# D09 eight-way case test
+# Source: Mods for analysis/Diplomacy/tesmioloader/the build/plugins/reputation.dll (SHA-256 fd7d94590b98c7eb80fa14ef95f2bbdf4b5e058f68d07dfa97d0db8dcbfbcb6a)
+# Range: 18002f120-18002f1b9
+# Static objdump excerpt, annotated by annot.py (rip-relative targets, .rdata strings). Nothing executed.
+# Purpose: case k returns true when its DLL state flag is set
+
+18002f120:	cmp    ecx,0x7
+18002f123:	ja     0x18002f1b9
+18002f129:	movsxd rax,ecx
+18002f12c:	lea    rdx,[rip+0xfffffffffffd0ecd]        # 0x180000000
+18002f133:	mov    ecx,DWORD PTR [rdx+rax*4+0x2f1bc]
+18002f13a:	add    rcx,rdx
+18002f13d:	jmp    rcx
+18002f13f:	xor    eax,eax
+18002f141:	cmp    DWORD PTR [rip+0x94011],eax        # 0x1800c3158
+18002f147:	setne  al
+18002f14a:	ret
+18002f14b:	xor    eax,eax
+18002f14d:	cmp    DWORD PTR [rip+0x256f2d],eax        # 0x180286080
+18002f153:	setne  al
+18002f156:	ret
+18002f157:	cmp    DWORD PTR [rip+0x9424a],0x0        # 0x1800c33a8
+18002f15e:	je     0x18002f1b9
+18002f160:	cmp    DWORD PTR [rip+0x19e8b1],0x0        # 0x1801cda18
+18002f167:	je     0x18002f1b9
+18002f169:	mov    eax,0x1
+18002f16e:	ret
+18002f16f:	cmp    DWORD PTR [rip+0x9422e],0x0        # 0x1800c33a4
+18002f176:	je     0x18002f1b9
+18002f178:	cmp    DWORD PTR [rip+0x19e895],0x0        # 0x1801cda14
+18002f17f:	je     0x18002f1b9
+18002f181:	mov    eax,0x1
+18002f186:	ret
+18002f187:	xor    eax,eax
+18002f189:	cmp    DWORD PTR [rip+0x155d24],0x1        # 0x180184eb4
+18002f190:	sete   al
+18002f193:	ret
+18002f194:	xor    eax,eax
+18002f196:	cmp    DWORD PTR [rip+0x155d17],0x2        # 0x180184eb4
+18002f19d:	sete   al
+18002f1a0:	ret
+18002f1a1:	xor    eax,eax
+18002f1a3:	cmp    DWORD PTR [rip+0x19e873],eax        # 0x1801cda1c
+18002f1a9:	setne  al
+18002f1ac:	ret
+18002f1ad:	xor    eax,eax
+18002f1af:	cmp    DWORD PTR [rip+0x95a9b],eax        # 0x1800c4c50
+18002f1b5:	setne  al
+18002f1b8:	ret
+18002f1b9:	xor    eax,eax

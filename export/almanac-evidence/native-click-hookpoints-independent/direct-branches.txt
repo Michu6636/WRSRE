@@ -1,0 +1,10 @@
+Direct control-flow target scan, only three text exports; not exhaustive (indirect branches, other files, exceptions and data excluded).
+
+== export/140373ea0_1403829fd_disasm.asm ==
+ENTRY 14037434d:  74 07                    JZ 0x140374356
+
+== export/ch_tab23_full.asm ==
+ENTRY 14036214a:  75 47                    JNZ 0x140362193
+ENTRY 140362165:  74 2C                    JZ 0x140362193
+
+== export/140317db0_full_disasm.asm ==

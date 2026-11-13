@@ -1,0 +1,110 @@
+# D13 SetDimensions and SetPosition detours
+# Source: Mods for analysis/Diplomacy/tesmioloader/the build/plugins/reputation.dll (SHA-256 fd7d94590b98c7eb80fa14ef95f2bbdf4b5e058f68d07dfa97d0db8dcbfbcb6a)
+# Range: 180067fa0-180068140
+# Static objdump excerpt, annotated by annot.py (rip-relative targets, .rdata strings). Nothing executed.
+# Purpose: caller return-address gates exe+0x31E478/+0x31E4B2/+0x31E509; raw and gated stores
+
+180067fa0:	rex push rbx
+180067fa2:	sub    rsp,0x40
+180067fa6:	movaps XMMWORD PTR [rsp+0x30],xmm6
+180067fab:	movaps xmm6,xmm2
+180067fae:	movaps XMMWORD PTR [rsp+0x20],xmm7
+180067fb3:	movaps xmm7,xmm1
+180067fb6:	call   QWORD PTR [rip+0x21e0fc]        # 0x1802860b8
+180067fbc:	cmp    DWORD PTR [rip+0x14c89d],0x0        # 0x1801b4860
+180067fc3:	mov    rbx,QWORD PTR [rsp+0x48]
+180067fc8:	mov    rcx,QWORD PTR [rip+0x5cdb1]        # 0x1800c4d80
+180067fcf:	je     0x18006800a
+180067fd1:	lea    rdx,[rcx+0x31e478]
+180067fd8:	cmp    rbx,rdx
+180067fdb:	je     0x180067fe9
+180067fdd:	lea    rax,[rcx+0x31e4b2]
+180067fe4:	cmp    rbx,rax
+180067fe7:	jne    0x18006800a
+180067fe9:	movss  DWORD PTR [rip+0x14c877],xmm7        # 0x1801b4868
+180067ff1:	movss  DWORD PTR [rip+0x14c873],xmm6        # 0x1801b486c
+180067ff9:	cmp    rbx,rdx
+180067ffc:	jne    0x18006800a
+180067ffe:	call   0x1800280e0
+180068003:	mov    rcx,QWORD PTR [rip+0x5cd76]        # 0x1800c4d80
+18006800a:	cmp    DWORD PTR [rip+0x218d63],0x0        # 0x180280d74
+180068011:	je     0x18006807c
+180068013:	cmp    DWORD PTR [rip+0x218d5e],0x0        # 0x180280d78
+18006801a:	je     0x18006807c
+18006801c:	lea    rax,[rcx+0x31e478]
+180068023:	cmp    rbx,rax
+180068026:	jne    0x180068060
+180068028:	cmp    DWORD PTR [rip+0x5b2bd],0x0        # 0x1800c32ec
+18006802f:	movss  DWORD PTR [rip+0x218d25],xmm7        # 0x180280d5c
+180068037:	movss  DWORD PTR [rip+0x218d21],xmm6        # 0x180280d60
+18006803f:	je     0x18006807c
+180068041:	call   0x180057d50
+180068046:	test   eax,eax
+180068048:	je     0x18006807c
+18006804a:	xor    ecx,ecx
+18006804c:	movaps xmm6,XMMWORD PTR [rsp+0x30]
+180068051:	movaps xmm7,XMMWORD PTR [rsp+0x20]
+180068056:	add    rsp,0x40
+18006805a:	pop    rbx
+18006805b:	jmp    0x180058930
+180068060:	lea    rax,[rcx+0x31e4b2]
+180068067:	cmp    rbx,rax
+18006806a:	jne    0x18006807c
+18006806c:	movss  DWORD PTR [rip+0x218ce8],xmm7        # 0x180280d5c
+180068074:	movss  DWORD PTR [rip+0x218ce4],xmm6        # 0x180280d60
+18006807c:	movaps xmm6,XMMWORD PTR [rsp+0x30]
+180068081:	movaps xmm7,XMMWORD PTR [rsp+0x20]
+180068086:	add    rsp,0x40
+18006808a:	pop    rbx
+18006808b:	ret
+18006808c:	int3
+18006808d:	int3
+18006808e:	int3
+18006808f:	int3
+180068090:	rex push rbx
+180068092:	sub    rsp,0x20
+180068096:	mov    rbx,rdx
+180068099:	call   QWORD PTR [rip+0x21e021]        # 0x1802860c0
+18006809f:	cmp    DWORD PTR [rip+0x14c7ba],0x0        # 0x1801b4860
+1800680a6:	mov    r8,QWORD PTR [rip+0x5ccd3]        # 0x1800c4d80
+1800680ad:	mov    edx,DWORD PTR [rip+0x13bf1d]        # 0x1801a3fd0
+1800680b3:	je     0x1800680ea
+1800680b5:	test   rbx,rbx
+1800680b8:	je     0x1800680ea
+1800680ba:	mov    rax,QWORD PTR [rsp+0x28]
+1800680bf:	lea    rcx,[r8+0x31e509]
+1800680c6:	cmp    rax,rcx
+1800680c9:	jne    0x1800680ea
+1800680cb:	movss  xmm0,DWORD PTR [rbx]
+1800680cf:	movss  xmm1,DWORD PTR [rbx+0x4]
+1800680d4:	movss  DWORD PTR [rip+0x14c794],xmm0        # 0x1801b4870
+1800680dc:	movss  DWORD PTR [rip+0x14c790],xmm1        # 0x1801b4874
+1800680e4:	mov    DWORD PTR [rip+0x14c78e],edx        # 0x1801b4878
+1800680ea:	cmp    DWORD PTR [rip+0x218c83],0x0        # 0x180280d74
+1800680f1:	je     0x180068131
+1800680f3:	cmp    DWORD PTR [rip+0x218c7e],0x0        # 0x180280d78
+1800680fa:	je     0x180068131
+1800680fc:	test   rbx,rbx
+1800680ff:	je     0x180068131
+180068101:	mov    rax,QWORD PTR [rsp+0x28]
+180068106:	lea    rcx,[r8+0x31e509]
+18006810d:	cmp    rax,rcx
+180068110:	jne    0x180068131
+180068112:	movss  xmm0,DWORD PTR [rbx]
+180068116:	movss  xmm1,DWORD PTR [rbx+0x4]
+18006811b:	movss  DWORD PTR [rip+0x218c41],xmm0        # 0x180280d64
+180068123:	movss  DWORD PTR [rip+0x218c3d],xmm1        # 0x180280d68
+18006812b:	mov    DWORD PTR [rip+0x218c3b],edx        # 0x180280d6c
+180068131:	add    rsp,0x20
+180068135:	pop    rbx
+180068136:	ret
+180068137:	int3
+180068138:	int3
+180068139:	int3
+18006813a:	int3
+18006813b:	int3
+18006813c:	int3
+18006813d:	int3
+18006813e:	int3
+18006813f:	int3
+180068140:	rex push rbx

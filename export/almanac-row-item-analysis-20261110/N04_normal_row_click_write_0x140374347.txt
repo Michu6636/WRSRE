@@ -1,0 +1,12 @@
+# N04 normal row handler: click write of selected index
+# Source: export/140373ea0_1403829fd_disasm.asm (preserved repo listing; game binary not in workspace, hash unverified)
+# Range: 140374347-140374366
+# Static listing excerpt, copied verbatim by address. Nothing executed.
+# Purpose: MOV [RSI+0xC65C],EBX (mapped vector index)
+
+140374347:  39 9E 5C C6 00 00        CMP dword ptr [RSI + 0xc65c],EBX
+14037434d:  74 07                    JZ 0x140374356
+14037434f:  C6 86 9A 03 01 00 00     MOV byte ptr [RSI + 0x1039a],0x0
+140374356:  89 9E 5C C6 00 00        MOV dword ptr [RSI + 0xc65c],EBX
+14037435c:  C7 86 E8 0B 01 00 FF FF FF FF MOV dword ptr [RSI + 0x10be8],0xffffffff
+140374366:  39 9E 5C C6 00 00        CMP dword ptr [RSI + 0xc65c],EBX

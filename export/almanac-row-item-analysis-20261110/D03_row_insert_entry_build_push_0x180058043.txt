@@ -1,0 +1,43 @@
+# D03 entry build (name, string id) and native push
+# Source: Mods for analysis/Diplomacy/tesmioloader/the build/plugins/reputation.dll (SHA-256 fd7d94590b98c7eb80fa14ef95f2bbdf4b5e058f68d07dfa97d0db8dcbfbcb6a)
+# Range: 180058043-1800580e0
+# Static objdump excerpt, annotated by annot.py (rip-relative targets, .rdata strings). Nothing executed.
+# Purpose: name copy, string id from 0x1800c3c58, call exe+0x4492f0
+
+180058043:	xorps  xmm0,xmm0
+180058046:	movups XMMWORD PTR [rsp+0x50],xmm0
+18005804b:	movups XMMWORD PTR [rsp+0x60],xmm0
+180058050:	movups XMMWORD PTR [rsp+0x70],xmm0
+180058055:	movups XMMWORD PTR [rsp+0x80],xmm0
+18005805d:	movups XMMWORD PTR [rsp+0x90],xmm0
+180058065:	cmp    BYTE PTR [rip+0x6bbd4],dil        # 0x1800c3c40 ;; "reputation"
+18005806c:	je     0x180058087
+18005806e:	xchg   ax,ax
+180058070:	cmp    rdi,0x17
+180058074:	jae    0x180058087
+180058076:	movzx  eax,BYTE PTR [rbx+rdi*1]
+18005807a:	mov    BYTE PTR [rsp+rdi*1+0x50],al
+18005807e:	inc    rdi
+180058081:	cmp    BYTE PTR [rbx+rdi*1],0x0
+180058085:	jne    0x180058070
+180058087:	mov    eax,DWORD PTR [rip+0x6bbcb]        # 0x1800c3c58
+18005808d:	mov    DWORD PTR [rsp+0x90],eax
+180058094:	mov    QWORD PTR [rsp+0x28],rbx
+180058099:	mov    QWORD PTR [rsp+0x20],r14
+18005809e:	mov    r9,rsi
+1800580a1:	mov    r8,r14
+1800580a4:	mov    rdx,rbx
+1800580a7:	lea    rcx,[rip+0x46272]        # 0x18009e320 ;; "  item  adding "%s" to the "%s" panel - %llu item(s) now, icon editor/%s_%s.png"
+1800580ae:	call   0x180053ef0
+1800580b3:	mov    rcx,QWORD PTR [rip+0x6b126]        # 0x1800c31e0
+1800580ba:	cmp    rcx,0xffffffffffffffff
+1800580be:	je     0x1800580c7
+1800580c0:	call   QWORD PTR [rip+0x34fa2]        # 0x18008d068 ;; [KERNEL32.dll!FlushFileBuffers]
+1800580c6:	nop
+1800580c7:	mov    rax,QWORD PTR [rip+0x6ccb2]        # 0x1800c4d80
+1800580ce:	add    rax,0x4492f0
+1800580d4:	lea    rdx,[rsp+0x50]
+1800580d9:	mov    rcx,r15
+1800580dc:	call   rax
+1800580de:	nop
+1800580df:	cmp    QWORD PTR [rip+0x22e009],0x0        # 0x1802860f0

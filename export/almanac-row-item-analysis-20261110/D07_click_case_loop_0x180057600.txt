@@ -1,0 +1,17 @@
+# D07 case loop and row-click dispatch call
+# Source: Mods for analysis/Diplomacy/tesmioloader/the build/plugins/reputation.dll (SHA-256 fd7d94590b98c7eb80fa14ef95f2bbdf4b5e058f68d07dfa97d0db8dcbfbcb6a)
+# Range: 180057600-180057623
+# Static objdump excerpt, annotated by annot.py (rip-relative targets, .rdata strings). Nothing executed.
+# Purpose: stores case index to 0x180411bcc only when a case test passes
+
+180057600:	mov    ecx,r8d
+180057603:	call   0x18002f120
+180057608:	test   eax,eax
+18005760a:	jne    0x180057617
+18005760c:	inc    r8d
+18005760f:	cmp    r8d,0x8
+180057613:	jl     0x180057600
+180057615:	jmp    0x18005761e
+180057617:	mov    DWORD PTR [rip+0x3ba5ae],r8d        # 0x180411bcc
+18005761e:	call   0x180057e40
+180057623:	call   0x180058310

@@ -18,16 +18,16 @@ import java.util.List;
  * game+0xB650 (8-byte stride); the function that *draws* the tab bar is the one
  * that READS that field. Scanning for the displacement finds it.
  *
- * Searches whole blocks byte-wise (fast) and then keeps only hits that land on
- * a real instruction start, so mid-instruction coincidences are dropped. The
- * instruction text is printed so a displacement that is really an immediate can
- * be told apart by eye.
+ * Searches blocks byte-wise and reports the instruction containing each hit.
+ * Coincidental bytes within an instruction, immediates and other operands can
+ * match; inspect the instruction, receiver and path before naming a field.
  *
  * Usage:  FindDisp.java <out_file> <disp_hex> [block_name_substring]
  *   disp_hex   the displacement, e.g. b650 for game+0xB650
  *   block      optional, default .text - limits the scan to one block
  *
- * Addresses are FILE-BASED (project base 0x140000000).
+ * Output addresses are project virtual addresses, not raw file offsets.
+ * The input is a displacement, not a function address or RVA.
  */
 public class FindDisp extends GhidraScript {
     @Override

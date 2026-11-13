@@ -1,0 +1,208 @@
+Verbatim configuration excerpts; source reputation.ini SHA-256 6dcc7479ae95c0bf14111591328e0361987767ad34c8ba0273483add89ec1e43
+Original line numbers:
+1468
+
+1469
+; ------------------------------------------------------------------ SIDEBAR
+1470
+;
+1471
+; A button of our own in the game's LEFT column, beside Settings,
+1472
+; Population and Economy. Pressing it opens the reputation panel on
+1473
+; whichever sub-tab you last had open, and pressing it again closes
+1474
+; the panel. See sidebar_hides_panel below for why it behaves like a
+1475
+; push-button rather than latching the way the game's own do.
+1476
+;
+1477
+; OFF BY DEFAULT, and for the same reason tab_enable is: turning it on
+1478
+; makes the plugin CALL INTO the game at addresses read off one specific
+1479
+; build. It checks that build first and declines if it does not match,
+1480
+; but that is a check, not a guarantee, and it should be a decision you
+1481
+; made rather than one that was made for you.
+1482
+;
+1483
+; HOW IT WORKS, briefly, because it is unusual: the entry is CLONED from
+1484
+; one of the game's own sidebar entries rather than built from scratch.
+1485
+; A sidebar record has eight populated fields and three of them are
+1486
+; values nobody has decoded - a back-pointer and two constants that are
+1487
+; byte-identical in all 32 of the game's entries. Copying a real record
+1488
+; and changing only the name, the string id and the icon means those
+1489
+; three keep whatever the game put there. The donor is chosen for having
+1490
+; an empty sub-list, so the clone shares no allocation with it.
+1491
+;
+1492
+; IT NEEDS AN ICON: media_soviet/editor/maintab_reputation.png, 96x96.
+1493
+; The game reads that texture pointer WITHOUT a null check, so a missing
+1494
+; file would be a crash rather than a blank button. The clone inherits
+1495
+; the donor's texture as a fallback and the entry is removed again if it
+1496
+; somehow still has none - but ship the PNG.
+1497
+;
+1498
+; The game DOES draw a panel for our entry - frame, paper and title -
+1499
+; and then leaves it empty, because a panel's body is chosen by a chain
+1500
+; of hardcoded name comparisons and "reputation" is in none of them.
+1501
+; in_panel below is what fills it.
+1502
+sidebar = 1
+1503
+
+1504
+; Selecting our entry makes the GAME draw a small panel with the
+1505
+; entry's name on it and then put nothing in it - it has no idea what
+1506
+; "reputation" is, and sidebar contents are not data it can fill from.
+1507
+; So an empty box appears on top of the panel we drew ourselves.
+1508
+;
+1509
+; 1 = take the click and hand the selection straight back, which is
+1510
+;     the state the game is in whenever no sidebar button is active.
+1511
+;     The button becomes a push-button: press to open, press to close,
+1512
+;     and no empty box. This is the ONLY place this plugin writes to a
+1513
+;     game global; it is guarded and switches itself off on a fault.
+1514
+; 0 = leave the selection alone. The empty box comes back and the
+1515
+;     button latches instead - it opens on selection and closes when
+1516
+;     you pick a different sidebar entry.
+1517
+; in_panel below needs the panel, so it forces this to 0 while it is
+1518
+; on and says so in the log. It is left at 1 here on purpose: that is
+1519
+; what the button falls back to if in_panel ever switches itself off.
+1520
+sidebar_hides_panel = 1
+1521
+
+1522
+; --------------------------------------------- INSIDE THE GAME'S PANEL
+1523
+;
+1524
+; in_panel = 1 draws this mod's windows INSIDE the panel the game puts
+1525
+; up for our sidebar entry, so it reads like Economy and trade rather
+1526
+; than like something floating over the map. It needs the panel on
+1527
+; screen, so it forces sidebar_hides_panel off and says so in the log.
+1528
+;
+1589
+; ------------------------------------------- AN ITEM IN A GAME PANEL
+1590
+;
+1591
+; A panel BODY is chosen by a hardcoded chain of name comparisons in
+1592
+; the exe - about twenty-five branches, one per panel. Our name is in
+1593
+; none of them, so our own panel falls through to a branch that draws
+1594
+; the frame and the title and nothing else. That is the empty Secret
+1595
+; police panel, and pushing items into it would not help either,
+1596
+; because the loop that would draw them belongs to the body that never
+1597
+; runs. in_panel fills that panel with our own drawing instead; this
+1598
+; is the other way in, and the two are independent.
+1599
+;
+1600
+; The game own panels are different: they render their items
+1601
+; GENERICALLY - count straight from the vector, one button each, icon
+1602
+; from item+0x48, and on a click the item INDEX is written to a
+1603
+; global. No name comparison in that loop at all. So an item pushed
+1604
+; into one of THEIR vectors is drawn, highlighted and clicked by the
+1605
+; game itself, and all this plugin does is notice and open a window.
+1606
+;
+1607
+; The host is `trade` - Economy and trade - because foreign relations
+1608
+; belong there and its eight items are already that window icon row.
+1609
+; Do NOT use `system`: its renderer hardcodes a count of five and
+1610
+; would simply not draw a ninth item.
+1611
+;
+1612
+; IT NEEDS AN ICON: media_soviet/editor/<panel>_<name>.png, 96x96.
+1613
+; The renderer binds that texture without a null check, so a missing
+1614
+; file would crash rather than draw a blank. The item is taken back
+1615
+; out if the texture does not arrive.
+1616
+;
+1617
+; OFF, and the shipped answer is 0.
+1618
+;
+1619
+; It works - the tab appears in Economy and trade, the game draws
+1620
+; and highlights it, and clicking it opens our window. It is off
+1621
+; because it is a SECOND door into the same room: the mod already
+1622
+; has its own button in the sidebar, and a duplicate tab sitting in
+1623
+; somebody else panel is clutter in a window that is not ours.
+1624
+; Turn it on if you would rather reach the panel from there.
+1625
+;
+1626
+; It also writes into a game vector, which should be a deliberate
+1627
+; choice. Needs sidebar = 1.
+1628
+sidebar_item       = 0
+1629
+sidebar_item_panel = trade
+1630
+sidebar_item_name  = reputation

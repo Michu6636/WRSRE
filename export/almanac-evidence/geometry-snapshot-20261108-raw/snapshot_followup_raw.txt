@@ -1,0 +1,11 @@
+﻿Module base: 0x7FF7E7F90000
+FLOAT base+0x90A8CC raw=00 00 70 41 decoded=15 READ_OK
+Trade entry object P = [game+0xc650]: 0x000001D8103C6550 READ_OK
+QWORD [P+0x48] subvector begin: 0x000001D802C77000 READ_OK
+QWORD [P+0x50] subvector end: 0x000001D802C77280 READ_OK
+Subvector span (end-begin): 0x280 bytes
+Subvector count (span/0x50): 8
+Window visible: True handle=0x00020934
+Window title: 'Workers & Resources: Soviet Republic'
+WINDOW_READ_FAILED: Exception calling "GetWindowRect" with "2" argument(s): "Cannot convert the "RECT" value of type "RECT" to type "Win+RECT"."
+END follow-up
