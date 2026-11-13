@@ -338,3 +338,108 @@ Resolve the `middlepoint` computation: the plugin must dereference
 object, then add `0xB048`. Verify what `game + 0xB048` actually contains at
 runtime (it may be a valid C3D_MIDDLEPOINT or something else entirely). Until
 this is resolved, any texture loading via `CreateManagedTexture` will crash.
+---
+
+## Item 4 — Delta check: DAT_1409EACD0 reconciliation
+
+### Facts
+
+**IAT slot 0x14086C4C0** (scratch/out/iat_0x14086C4C0.txt):
+- Bytes: 20 8E 98 00 00 00 00 00 = pointer 0x140988E20.
+- 0x140988E20 (scratch/out/iat_target_0x140988E20_bytes.txt): ASCII "CreateManagedTexture" (import name table entry for C3DDLL64.dll).
+- Conclusion: IAT slot 0x14086C4C0 imports CreateManagedTexture from C3DDLL64.dll. At runtime the loader replaces the name thunk with the actual function address (C3DDLL64.dll RVA 0xB0190).
+
+**Native callsite 0x1403827E2** (scratch/out/callsite_0x1403827C0.txt):
+```
+0x1403827E2: 48 8D 0D E7 84 66 00   LEA RCX,[0x1409EACD0]
+0x1403827E9: FF 15 D1 9C 4E 00       CALL QWORD PTR [0x14086C4C0]
+```
+- RCX = 0x1409EACD0 (passed as first arg / middlepoint to CreateManagedTexture).
+- The function containing this callsite starts at 0x140382760 (RET at 0x140382758, INT3 padding, then function prologue at 0x140382760).
+- Ghidra has not analyzed this function (FuncInfo size=0, XrefsTo total=0).
+
+**0x1409EACD0 static bytes** (scratch/out/dat_0x1409EAC00.txt):
+- Range 0x1409EAC00-0x1409EAD00: 256 bytes, all 0x00.
+- 0x1409EACD0-0x1409EACFF: 48 bytes, all 0x00 (confirmed by scratch/out/dat_0x9EACD0.txt).
+- Classification: BSS/zero-initialized global data in the .data section.
+
+**0x1409EACD0 is a C3D_MIDDLEPOINT** (confirmed by decompilation):
+- docs/almanac-investigation.md line 1824: pCVar7 = C3D_MIDDLEPOINT::CreateManagedTexture((C3D_MIDDLEPOINT *)&DAT_1409eacd0, local_498);
+- docs/UI investigation.md line 623: "then LEA RCX,[0x1409EACD0] (C3D_MIDDLEPOINT) with CALL [0x14086C4C0]"
+- docs/private-logistics-runtime/packets/TEST15_NATIVE_CLOSURE_PACKET.md line 2183: ((C3D_MIDDLEPOINT *)&DAT_1409eacd0, (char *)(lVar25 + 0x80))
+- The native code uses this global as the middlepoint argument to CreateManagedTexture in many call sites (private-logistics runtime exports show 30+ LEA RCX,[0x1409eacd0] calls).
+
+**CreateManagedTexture signature** (scratch/out/create_managed_texture.asm):
+```
+1800b0190:  48 89 74 24 18    MOV [RSP+0x18], RSI
+1800b0195:  57                PUSH RDI
+1800b0196:  48 83 EC 20       SUB RSP, 0x20
+1800b019a:  48 8B F9          MOV RDI, RCX          ; RDI = middlepoint
+1800b019d:  48 8B F2          MOV RSI, RDX          ; RSI = filename
+1800b01a0:  48 8B 49 08       MOV RCX, [RCX + 0x8]  ; RCX = *(middlepoint + 8)
+1800b01a4:  E8 87 15 02 00    CALL 0x1800d1730     ; FindElement(RCX, ...)
+```
+- First arg (RCX/middlepoint) is dereferenced at offset +8 to obtain a key.
+- If FindElement returns non-null, the existing texture is returned.
+- If null, a new 0x178-byte texture is allocated and initialized.
+
+**Native texture sequence** (docs/almanac-investigation.md lines 1824-1828):
+```c
+pCVar7 = C3D_MIDDLEPOINT::CreateManagedTexture((C3D_MIDDLEPOINT *)&DAT_1409eacd0, local_498);  // Create or find
+*(C3DAPI_TEXTURE **)(sub_entry + 0x48) = pCVar7;            // Store
+plVar2 = *(longlong **)(... + 0x48 + lVar11);
+(**(code **)(*plVar2 + 0x10))(plVar2, local_498, 0, 0);     // vtable+0x10 = Load
+// Later:
+(**(code **)(*plVar5 + 0x70))(plVar5, 0, DAT_1409ead08);    // vtable+0x70 = TexBind
+```
+- vtable+0x10 = Load(filename, 0, 0) - loads image data from file.
+- vtable+0x70 = TexBind(texture, 0, panel_state) - binds texture for drawing. DAT_1409ead08 (RVA 0x9EAD08) is the panel state global (all zeros in static image, runtime-initialized).
+
+**game+0xB048 in FUN_14035F3E0** (docs/ghidra-index/35F3E0.md):
+- "Uses game+0xB028/B038 (widget pointers), game+0xB048 (font), game+0xB4A0 (drawable)."
+- game+0xB048 is a font pointer (C3D_FONT*), not a C3D_MIDDLEPOINT. It is read from the game object at runtime.
+
+### Inferences
+
+**Classification of 0x1409EACD0**: It is a global C3D_MIDDLEPOINT instance in zero-initialized BSS/data. The static image shows 256 bytes of zeros starting at 0x1409EAC00. At runtime, an initialization function (not yet identified) populates this structure before texture-loading code runs. The decompilation explicitly casts &DAT_1409eacd0 as C3D_MIDDLEPOINT*, confirming the type.
+
+**The plugin's middlepoint computation is wrong**:
+```cpp
+// Plugin code (e949ff3):
+void* middlepoint = (void*)(Base() + TSM_RVA_DEFAULT_GAME_OBJECT + 0xB048u);
+// = exeBase + 0x9D4F10 + 0xB048 = exeBase + 0x9DFF58
+```
+Two errors:
+1. TSM_RVA_DEFAULT_GAME_OBJECT (0x9D4F10) is the RVA of a global pointer that holds the game object's runtime address. The plugin adds 0xB048 to the pointer's own address instead of dereferencing it first. Correct: *(void**)(Base() + 0x9D4F10) -> dereference -> game object pointer.
+2. Even if dereferenced, game + 0xB048 is a font field (C3D_FONT*), not a C3D_MIDDLEPOINT. Passing a font pointer to CreateManagedTexture would be type-incorrect.
+
+**The correct middlepoint** is Base() + 0x9EACD0 (i.e., &DAT_1409EACD0), which is the global C3D_MIDDLEPOINT instance used by all native texture loading code. This is a compile-time constant, not a runtime dereference.
+
+**The crash in test run 3** (C3DDLL64.dll + 0xD1780 reading C3DDLL64.dll + 0x1F2078) is explained by the wrong middlepoint: CreateManagedTexture receives exeBase + 0x9DFF58 (unmapped/zero data), dereferences *(middlepoint + 8) = *(exeBase + 0x9DFF60) = 0, passes 0 to FindElement, which computes RAX = C3DDLL64.dll + 0x1F2078 and crashes on MOVZX EDX, byte ptr [RAX].
+
+**The native vtable+0x70 TexBind call** in DrawNinthTile was NOT the primary crash cause. The crash occurred inside CreateManagedTexture -> FindElement before any vtable call. However, the plugin's v3.0 code called vtable+0x70 WITHOUT first calling vtable+0x10 (Load) - the native pattern is Create -> Load -> (later) TexBind. The plugin skipped the Load step, which may have contributed to instability even if CreateManagedTexture had succeeded.
+
+### Unresolved uncertainty
+
+1. Runtime initialization of 0x1409EACD0: The static image shows 256 bytes of zeros. The native code uses this global successfully at runtime, so it must be initialized before texture-loading code runs. The initialization function and timing are not identified. Whether 0x1409EACD0 is valid when the plugin's DrawNinthTile runs (which happens during the Economy & Trade row draw, typically after game init) is not established statically.
+
+2. C3DAPI_TEXTURE vtable layout: The native code calls vtable+0x10 (Load) and vtable+0x70 (TexBind) on the object returned by CreateManagedTexture. These offsets are inferred from the decompilation, not verified against the actual C3DAPI_TEXTURE vtable in C3DDLL64.dll. Calling the wrong offset would crash.
+
+3. FindElement behavior: The function at C3DDLL64.dll RVA 0xD1730 takes a key (from *(middlepoint + 8)) and searches a data structure. Its search logic, key format, and failure mode are not traced. If it returns null, CreateManagedTexture allocates a new texture - the plugin would need to call vtable+0x10 (Load) on it before TexBind.
+
+4. DAT_1409EAD08 (panel state): All zeros in static image. Used as the third argument to TexBind (vtable+0x70). Its runtime value and role are not established.
+
+### Status: PARTIAL (reconciled)
+
+- 0x1409EACD0 is a global C3D_MIDDLEPOINT instance (confirmed by decompilation cast, not by static bytes which are zero).
+- The native code uses &DAT_1409EACD0 as the CreateManagedTexture receiver in 30+ call sites (confirmed by disassembly LEA RCX,[0x1409EACD0]).
+- The plugin's middlepoint computation is wrong: it uses exeBase + 0x9D4F10 + 0xB048 instead of Base() + 0x9EACD0.
+- game+0xB048 is a font field, not a C3D_MIDDLEPOINT.
+- The vtable offsets (0x10 for Load, 0x70 for TexBind) are inferred from decompilation, not verified against the actual C3DAPI_TEXTURE vtable.
+- Whether 0x1409EACD0 is valid when the plugin runs is not established statically (zero-initialized, runtime-initialized).
+
+### Recommended fix (for implementation, not this investigation)
+
+1. Change middlepoint from Base() + 0x9D4F10 + 0xB048 to Base() + 0x9EACD0.
+2. Call vtable+0x10 (Load) on the returned texture before calling vtable+0x70 (TexBind).
+3. Verify the vtable offsets against the actual C3DAPI_TEXTURE type in C3DDLL64.dll before calling them.

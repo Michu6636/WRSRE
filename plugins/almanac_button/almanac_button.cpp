@@ -174,12 +174,6 @@
 typedef void (*t_Draw)(void* self, float a1, float a2, float a3,
                        float a4, float a5, bool a6);
 typedef float* (*t_GetMouseSolid)(void* input);
-typedef void* (*t_CreateManagedTexture)(void* middlepoint, const char* filename);
-typedef void* (*t_CreateManagedFontBitmap)(void* middlepoint, const char* filename);
-typedef void (*t_PrintLeftUnicode)(void* fontmgr, void* font,
-                                   float x, float y,
-                                   unsigned long color,
-                                   const wchar_t* text);
 
 static int                        g_enabled;
 static volatile LONG              g_active;    // 1 = armed: the ninth tile is wanted
@@ -199,20 +193,7 @@ static volatile LONG              g_almanacOpen;   // 0 = closed, 1 = open
 static volatile LONG              g_almanacDebounce; // 1 while the click latch is held
 static int32_t                    g_lastSelection; // last observed game+0xC65C (native selection)
 
-// Texture/font assets (points 1-2: distinct icon + text label).
-static t_CreateManagedTexture     g_createManagedTexture;  // C3D_MIDDLEPOINT::CreateManagedTexture
-static t_CreateManagedFontBitmap  g_createManagedFontBitmap; // C3D_MIDDLEPOINT::CreateManagedFontBitmap
-static t_PrintLeftUnicode         g_printLeftUnicode;      // C3D_FONTMANAGER::PrintLeftUnicode
-static void*                      g_almanacTexture;        // plugin-owned C3DAPI_TEXTURE*
-static void*                      g_almanacFont;           // plugin-owned C3D_FONT*
-static char                       g_textureAsset[MAX_PATH]; // INI-configured texture path
-static char                       g_fontAsset[MAX_PATH];   // INI-configured font path
-static int                        g_textureLoaded;         // 1 if texture loaded successfully
-static int                        g_fontLoaded;            // 1 if font loaded successfully
-static int                        g_contentSuppressionEnabled; // INI: suppress native content when Almanac open
-
 #define ALM_OFF_SELECTION   0xC65Cu   // game+0xC65C: selected sub-tab index (read-only)
-#define ALM_OFF_CONTENT_SUPPRESS 0x5E6u // game+0x5E6: content suppress flag (write-only)
 
 // Plain-old-data plan, filled before the native call and used after it.
 typedef struct NinthPlan {
@@ -591,25 +572,6 @@ static void UpdateAlmanacState(int ninthClicked)
     }
     g_lastSelection = (sel >= 0 && sel < 8) ? sel : g_lastSelection;
 
-    // Content suppression (point 4): when Almanac is open, write game+0x5E6 = 1
-    // every frame to suppress native sub-page content drawing. Native code toggles
-    // this flag on certain clicks, so we re-assert it each frame. Restore to 0
-    // when Almanac closes. Never writes game+0xC65C, never consumes 0xA54E91.
-    if (g_contentSuppressionEnabled) {
-        int isOpen = InterlockedCompareExchange(&g_almanacOpen, 1, 1) != 0;
-        if (isOpen) {
-            if (!WriteU8(Base() + TSM_RVA_DEFAULT_GAME_OBJECT + ALM_OFF_CONTENT_SUPPRESS, 1)) {
-                Logf("almanac_button  WARNING  content suppression write failed");
-            }
-        } else {
-            // Almanac closed: restore native flag so native content draws normally.
-            // Native code may have toggled it; writing 0 restores the default.
-            if (!WriteU8(Base() + TSM_RVA_DEFAULT_GAME_OBJECT + ALM_OFF_CONTENT_SUPPRESS, 0)) {
-                Logf("almanac_button  WARNING  content suppression restore failed");
-            }
-        }
-    }
-
     // Toggle on ninth-tile click (debounced by latch).
     if (ninthClicked) {
         if (InterlockedCompareExchange(&g_almanacDebounce, 1, 0) == 0) {
@@ -633,23 +595,6 @@ static void DrawNinthTile(void* self, float a1, float a2, float a3, float a4,
     uint64_t saved = 0;
     int drawFault = 0;
     int ninthClicked = 0;
-
-    // Lazy texture/font loading on first draw (game must be active for
-    // game+0xB048 middlepoint to be valid; Start() runs before game init).
-    if (!g_textureLoaded && g_createManagedTexture && g_textureAsset[0] && !g_almanacTexture) {
-        void* middlepoint = (void*)(Base() + TSM_RVA_DEFAULT_GAME_OBJECT + 0xB048u);
-        g_almanacTexture = g_createManagedTexture(middlepoint, g_textureAsset);
-        g_textureLoaded = (g_almanacTexture != NULL) ? 1 : 0;
-        Logf("almanac_button  texture %s (asset '%s')",
-             g_textureLoaded ? "loaded" : "failed to load", g_textureAsset);
-    }
-    if (!g_fontLoaded && g_createManagedFontBitmap && g_fontAsset[0] && !g_almanacFont) {
-        void* middlepoint = (void*)(Base() + TSM_RVA_DEFAULT_GAME_OBJECT + 0xB048u);
-        g_almanacFont = g_createManagedFontBitmap(middlepoint, g_fontAsset);
-        g_fontLoaded = (g_almanacFont != NULL) ? 1 : 0;
-        Logf("almanac_button  font %s (asset '%s')",
-             g_fontLoaded ? "loaded" : "failed to load", g_fontAsset);
-    }
 
     if (((uintptr_t)at & 7u) != 0 || !ReadablePtr(at, sizeof(uint64_t)))
         FailStop("rect pair unreadable or misaligned, before any write");
@@ -719,11 +664,6 @@ static void ReadSettings(void)
 {
     const char* ini = "plugins\\almanac_button.ini";
     g_enabled = (H->configInt(ini, "almanac_button", "enabled", 1) == 1) ? 1 : 0;
-    g_contentSuppressionEnabled = (H->configInt(ini, "almanac_button", "content_suppression", 1) == 1) ? 1 : 0;
-    H->configString(ini, "almanac_button", "texture_asset",
-                    g_textureAsset, (int)sizeof(g_textureAsset), "");
-    H->configString(ini, "almanac_button", "font_asset",
-                    g_fontAsset, (int)sizeof(g_fontAsset), "");
 }
 
 extern "C" __declspec(dllexport) unsigned TsmPluginApiVersion(void)
@@ -790,26 +730,6 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
         g_getMouseSolid = (t_GetMouseSolid)mouseProc;
     }
 
-    // Resolve texture/font creation and text printing (points 1-2).
-    FARPROC texProc = g_engine ? GetProcAddress(g_engine, "?CreateManagedTexture@C3D_MIDDLEPOINT@@QEAAPEAVC3DAPI_TEXTURE@@PEBD@Z") : NULL;
-    if (!texProc) {
-        Logf("almanac_button  NOTE  no engine export for CreateManagedTexture; no distinct icon");
-    } else {
-        g_createManagedTexture = (t_CreateManagedTexture)texProc;
-    }
-    FARPROC fontProc = g_engine ? GetProcAddress(g_engine, "?CreateManagedFontBitmap@C3D_MIDDLEPOINT@@QEAAPEAVC3D_FONT@@PEBD@Z") : NULL;
-    if (!fontProc) {
-        Logf("almanac_button  NOTE  no engine export for CreateManagedFontBitmap; no text label");
-    } else {
-        g_createManagedFontBitmap = (t_CreateManagedFontBitmap)fontProc;
-    }
-    FARPROC printProc = g_engine ? GetProcAddress(g_engine, "?PrintLeftUnicode@C3D_FONTMANAGER@@QEAAXPEAVC3D_FONT@@MMKPEB_WZZ") : NULL;
-    if (!printProc) {
-        Logf("almanac_button  NOTE  no engine export for PrintLeftUnicode; no text label");
-    } else {
-        g_printLeftUnicode = (t_PrintLeftUnicode)printProc;
-    }
-
     SlotSwap s = CompareSwapSlot(slot, validated, (void*)Detour, 1);
     if (!s.protectSetOk) {
         Logf("almanac_button  REFUSED  import page not writable; no write made");
@@ -843,9 +763,7 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
     }
 
     InterlockedExchange(&g_active, 1);
-    Logf("almanac_button  armed  clickable ninth tile after row tile 8 (import verified; GetMouseSolid %s; texture %s; font %s)",
-         g_getMouseSolid ? "resolved" : "not found",
-         g_textureLoaded ? "loaded" : "not loaded",
-         g_fontLoaded ? "loaded" : "not loaded");
+    Logf("almanac_button  armed  clickable ninth tile after row tile 8 (import verified; GetMouseSolid %s)",
+         g_getMouseSolid ? "resolved" : "not found");
     return 0;
 }
