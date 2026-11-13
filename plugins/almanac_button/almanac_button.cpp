@@ -1,15 +1,19 @@
-// almanac_button - draw-only ninth backdrop beside the Economy & Trade row.
+// almanac_button - clickable ninth tile beside the Economy & Trade row.
 //
 // WHAT IT DOES
 //   In the normal eight-tile configuration the native trade row draws eight
 //   tiles. After the eighth tile this plugin makes one more call to the
 //   engine's own C3D_PANEL2D::Draw, with the rect store set to the next slot.
-//   It has no click handling, and it does not read or write the click latch
-//   (0xA54E91). It does not write native selection, City Hall, tax policy, or
-//   saves.
+//   It then checks for a click on that ninth tile (mouse over rect + click
+//   latch set, read-only) and toggles a mod-owned Almanac open/close state.
+//   Clicking another native row button closes the Almanac. It does not read or
+//   write the click latch (0xA54E91), does not write native selection
+//   (game+0xC65C), City Hall, tax policy, or saves.
 //
-//   This is NOT a change-free draw. "Draw only" means no input is handled. The
-//   extra engine call can change shared UI state (see SHARED STATE below).
+//   The ninth tile still renders the native panel's current artwork (the
+//   prototype's shared `self` Draw call); a distinct icon requires resolving
+//   the texture-icon ownership question (see REPORT.md). The button is
+//   clickable regardless.
 //
 // DEFAULT
 //   The shipped INI and missing-key fallback are enabled = 1. If installed,
@@ -21,7 +25,9 @@
 //   One import swap: C3D_PANEL2D::Draw at IAT slot RVA 0x86C860, called by the
 //   row handler from RVA 0x3743A2 (return address 0x3743A8) on the trade widget
 //   at RVA 0x9BE060. Every call is forwarded. Only the row's own eighth-tile
-//   call takes the extra path, and only while armed.
+//   call takes the extra path, and only while armed. GetMouseSolid is resolved
+//   from C3DDLL64.dll for click detection; if unresolved, clicks are not
+//   detected but the plugin still arms.
 //
 // BUILD GUARD: WHAT TsmCheckExeBuild ACCEPTS (src/game_addresses.h)
 //   It returns true when any of these holds:
@@ -133,15 +139,17 @@
 //   Set enabled = 0 and restart the game, on a disposable copy. See README.md.
 //
 // STATUS
-//   Pure geometry logic is host-tested (g++). KiloCode reported an MSVC build of
-//   revision b5c207d; this default-on follow-up has no independently supplied
-//   MSVC build artifact. A user-provided screenshot/log for plugin v1.5 shows the
-//   extra draw in one view, with the crime-button artwork repeated. The exact DLL
-//   hash/source revision is not recorded. No click or input test was performed.
+//   Pure geometry logic is host-tested (g++). Draw hook and click detection
+//   implemented; no independently supplied MSVC build artifact. The ninth tile
+//   draws the native panel's current artwork (repeated crime-button artwork)
+//   until the texture-icon ownership question is resolved. Click detection and
+//   Almanac toggle are implemented but untested in-game. No click or input test
+//   was performed.
 //
-// Version 1.5: prototype defaults on (shipped INI and missing-key fallback); an
-//   explicit enabled = 0 remains the opt-out. The b5c207d fail-stop and shared-
-//   state limitations still apply.
+// Version 2.0: adds clickable ninth tile with read-only click observation
+//   (Path D) and mod-owned Almanac open/close state. GetMouseSolid resolved
+//   from C3DDLL64.dll for click detection. Ninth tile still shows repeated
+//   native artwork (I1 texture blocker unresolved).
 
 #include <stdint.h>
 #include <intrin.h>
@@ -165,11 +173,19 @@
 
 typedef void (*t_Draw)(void* self, float a1, float a2, float a3,
                        float a4, float a5, bool a6);
+typedef float* (*t_GetMouseSolid)(void* input);
+typedef void* (*t_CreateManagedTexture)(void* middlepoint, const char* filename);
+typedef void* (*t_CreateManagedFontBitmap)(void* middlepoint, const char* filename);
+typedef void (*t_PrintLeftUnicode)(void* fontmgr, void* font,
+                                   float x, float y,
+                                   unsigned long color,
+                                   const wchar_t* text);
 
 static int                        g_enabled;
 static volatile LONG              g_active;    // 1 = armed: the ninth tile is wanted
 static volatile LONG              g_faulted;   // set by an SEH handler, read by Detour
 static t_Draw                     g_drawOrig;  // engine's Draw, recorded before the swap
+static t_GetMouseSolid            g_getMouseSolid; // engine's GetMouseSolid, resolved at Start
 static void**                     g_slot;      // the import slot we swapped
 static DWORD                      g_slotProt;  // ORIGINAL protection of the import page
 static int                        g_slotProtKnown; // set once, by the first protect-set in Start
@@ -178,12 +194,37 @@ static int                        g_ninthDrawn;
 static int                        g_noteCount;
 static const char*                g_lastNote;
 
+// Almanac state (Path D: read-only observation, mod-owned state).
+static volatile LONG              g_almanacOpen;   // 0 = closed, 1 = open
+static volatile LONG              g_almanacDebounce; // 1 while the click latch is held
+static int32_t                    g_lastSelection; // last observed game+0xC65C (native selection)
+
+// Texture/font assets (points 1-2: distinct icon + text label).
+static t_CreateManagedTexture     g_createManagedTexture;  // C3D_MIDDLEPOINT::CreateManagedTexture
+static t_CreateManagedFontBitmap  g_createManagedFontBitmap; // C3D_MIDDLEPOINT::CreateManagedFontBitmap
+static t_PrintLeftUnicode         g_printLeftUnicode;      // C3D_FONTMANAGER::PrintLeftUnicode
+static void*                      g_almanacTexture;        // plugin-owned C3DAPI_TEXTURE*
+static void*                      g_almanacFont;           // plugin-owned C3D_FONT*
+static char                       g_textureAsset[MAX_PATH]; // INI-configured texture path
+static char                       g_fontAsset[MAX_PATH];   // INI-configured font path
+static int                        g_textureLoaded;         // 1 if texture loaded successfully
+static int                        g_fontLoaded;            // 1 if font loaded successfully
+static int                        g_contentSuppressionEnabled; // INI: suppress native content when Almanac open
+
+#define ALM_OFF_SELECTION   0xC65Cu   // game+0xC65C: selected sub-tab index (read-only)
+#define ALM_OFF_CONTENT_SUPPRESS 0x5E6u // game+0x5E6: content suppress flag (write-only)
+#define ALM_TEXT_ID         1000000u  // private UI text ID >= 1,000,000 (INSTRUCTIONS.md §3)
+#define ALM_TEX_BIND_OFFSET 0x70u     // vtable[0x70] = TexBind method
+#define ALM_PANEL_STATE_OFF 0xEAD08u  // game+0xEAD08: panel state passed to TexBind
+
 // Plain-old-data plan, filled before the native call and used after it.
 typedef struct NinthPlan {
     int   draw;
     int   reset;   // unreadable state: the pass must be dropped
     float x;
     float y;
+    float w;   // ninth tile width  (scale * pitch)
+    float h;   // ninth tile height (scale * pitch)
 } NinthPlan;
 
 __declspec(noinline) static void Detour(void* self, float a1, float a2, float a3,
@@ -197,6 +238,18 @@ static bool ReadU8(uintptr_t addr, uint8_t* out)
 {
     if (!ReadablePtr((const void*)addr, sizeof(uint8_t))) return false;
     *out = *(const uint8_t*)addr;
+    return true;
+}
+
+// Writes a single byte with SEH fault protection. Returns false on fault.
+static bool WriteU8(uintptr_t addr, uint8_t value)
+{
+    __try {
+        *(uint8_t*)addr = value;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        return false;
+    }
     return true;
 }
 
@@ -424,6 +477,8 @@ static void PlanRowTile(NinthPlan* plan)
             plan->draw = 1;
             plan->x = d.x;
             plan->y = d.y;
+            plan->w = c.scale * c.pitch;
+            plan->h = c.scale * c.pitch;
         }
     }
     __except (EXCEPTION_EXECUTE_HANDLER) {
@@ -499,15 +554,105 @@ static int CallNinthNative(void* self, float a1, float a2, float a3, float a4,
     }
 }
 
-// Draws the ninth backdrop tile. The rect pair is touched only by one 8-byte load,
-// one 8-byte store (the ninth values), the native draw, and one 8-byte store (the
-// saved pair). Every failure ends in FailStop.
+// Reads the click latch (read-only, does NOT consume it) and returns 1 if set.
+static int ReadClickLatch(void)
+{
+    uint8_t v = 0;
+    if (!ReadU8(Base() + TSM_RVA_DEFAULT_CLICK_LATCH, &v)) return 0;
+    return v != 0 ? 1 : 0;
+}
+
+// Returns 1 if the mouse is over the ninth-tile rect and the click latch is set.
+// Read-only: does not write game+0xC65C, does not consume 0xA54E91.
+static int CheckNinthClick(float x, float y, float w, float h)
+{
+    if (!g_getMouseSolid) return 0;
+    void* input = (void*)(Base() + TSM_RVA_DEFAULT_INPUT);
+    float* mouse = g_getMouseSolid(input);
+    if (!ReadablePtr(mouse, sizeof(float) * 2)) return 0;
+    float mx = mouse[0];
+    float my = mouse[1];
+    if (mx < x || mx >= x + w) return 0;
+    if (my < y || my >= y + h) return 0;
+    return ReadClickLatch() ? 1 : 0;
+}
+
+// Manages Almanac open/close state. Toggles on ninth-tile click; closes when the
+// native selection index changes to a valid row button (0..7). Never writes
+// game+0xC65C, never consumes 0xA54E91.
+static void UpdateAlmanacState(int ninthClicked)
+{
+    int32_t sel = 0;
+    if (!ReadI32(Base() + TSM_RVA_DEFAULT_GAME_OBJECT + ALM_OFF_SELECTION, &sel)) return;
+
+    // Close on another native row click (selection changed to a valid tile index).
+    if (sel >= 0 && sel < 8 && sel != g_lastSelection) {
+        if (g_lastSelection >= 0 && g_lastSelection < 8 && InterlockedCompareExchange(&g_almanacOpen, 1, 1) != 0) {
+            InterlockedExchange(&g_almanacOpen, 0);
+            Logf("almanac_button  almanac closed by native row click (selection %d)", (int)sel);
+        }
+    }
+    g_lastSelection = (sel >= 0 && sel < 8) ? sel : g_lastSelection;
+
+    // Content suppression (point 4): when Almanac is open, write game+0x5E6 = 1
+    // every frame to suppress native sub-page content drawing. Native code toggles
+    // this flag on certain clicks, so we re-assert it each frame. Restore to 0
+    // when Almanac closes. Never writes game+0xC65C, never consumes 0xA54E91.
+    if (g_contentSuppressionEnabled) {
+        int isOpen = InterlockedCompareExchange(&g_almanacOpen, 1, 1) != 0;
+        if (isOpen) {
+            if (!WriteU8(Base() + TSM_RVA_DEFAULT_GAME_OBJECT + ALM_OFF_CONTENT_SUPPRESS, 1)) {
+                Logf("almanac_button  WARNING  content suppression write failed");
+            }
+        } else {
+            // Almanac closed: restore native flag so native content draws normally.
+            // Native code may have toggled it; writing 0 restores the default.
+            if (!WriteU8(Base() + TSM_RVA_DEFAULT_GAME_OBJECT + ALM_OFF_CONTENT_SUPPRESS, 0)) {
+                Logf("almanac_button  WARNING  content suppression restore failed");
+            }
+        }
+    }
+
+    // Toggle on ninth-tile click (debounced by latch).
+    if (ninthClicked) {
+        if (InterlockedCompareExchange(&g_almanacDebounce, 1, 0) == 0) {
+            int wasOpen = InterlockedCompareExchange(&g_almanacOpen, 1, 1) != 0;
+            InterlockedExchange(&g_almanacOpen, wasOpen ? 0 : 1);
+            Logf("almanac_button  almanac %s via ninth-tile click",
+                 InterlockedCompareExchange(&g_almanacOpen, 1, 1) != 0 ? "opened" : "closed");
+        }
+    } else if (InterlockedCompareExchange(&g_almanacDebounce, 0, 0) == 0) {
+        // Latch is clear: allow the next click to toggle again.
+        InterlockedExchange(&g_almanacDebounce, 0);
+    }
+}
+// Draws the ninth tile and checks for a click on it. The rect pair is touched
+// only by one 8-byte load, one 8-byte store (the ninth values), the native draw,
+// and one 8-byte store (the saved pair). Every failure ends in FailStop.
 static void DrawNinthTile(void* self, float a1, float a2, float a3, float a4,
-                          float a5, bool a6, float x, float y)
+                          float a5, bool a6, float x, float y, float w, float h)
 {
     uint8_t* at = (uint8_t*)(Base() + TSM_RVA_DEFAULT_P2D_RECT_X);
     uint64_t saved = 0;
     int drawFault = 0;
+    int ninthClicked = 0;
+
+    // Lazy texture/font loading on first draw (game must be active for
+    // game+0xB048 middlepoint to be valid; Start() runs before game init).
+    if (!g_textureLoaded && g_createManagedTexture && g_textureAsset[0] && !g_almanacTexture) {
+        void* middlepoint = (void*)(Base() + TSM_RVA_DEFAULT_GAME_OBJECT + 0xB048u);
+        g_almanacTexture = g_createManagedTexture(middlepoint, g_textureAsset);
+        g_textureLoaded = (g_almanacTexture != NULL) ? 1 : 0;
+        Logf("almanac_button  texture %s (asset '%s')",
+             g_textureLoaded ? "loaded" : "failed to load", g_textureAsset);
+    }
+    if (!g_fontLoaded && g_createManagedFontBitmap && g_fontAsset[0] && !g_almanacFont) {
+        void* middlepoint = (void*)(Base() + TSM_RVA_DEFAULT_GAME_OBJECT + 0xB048u);
+        g_almanacFont = g_createManagedFontBitmap(middlepoint, g_fontAsset);
+        g_fontLoaded = (g_almanacFont != NULL) ? 1 : 0;
+        Logf("almanac_button  font %s (asset '%s')",
+             g_fontLoaded ? "loaded" : "failed to load", g_fontAsset);
+    }
 
     if (((uintptr_t)at & 7u) != 0 || !ReadablePtr(at, sizeof(uint64_t)))
         FailStop("rect pair unreadable or misaligned, before any write");
@@ -518,6 +663,27 @@ static void DrawNinthTile(void* self, float a1, float a2, float a3, float a4,
 
     drawFault = CallNinthNative(self, a1, a2, a3, a4, a5, a6);
 
+    // Point 1: bind custom texture via vtable[0x70] before native Draw.
+    // Pattern from native handler: vtable[0x70](texture_obj, 0, panel_state).
+    if (g_textureLoaded && g_almanacTexture) {
+        uintptr_t vptr = *(uintptr_t*)g_almanacTexture;
+        void* texBind = *(void**)(vptr + ALM_TEX_BIND_OFFSET);
+        void* panelState = (void*)(Base() + TSM_RVA_DEFAULT_GAME_OBJECT + ALM_PANEL_STATE_OFF);
+        ((void(__thiscall*)(void*, int, void*))texBind)(g_almanacTexture, 0, panelState);
+    }
+
+    // Point 2: render text label on ninth tile.
+    if (g_fontLoaded && g_almanacFont && g_printLeftUnicode) {
+        void* fontMgr = (void*)(Base() + TSM_RVA_DEFAULT_FONTMGR);
+        wchar_t label[] = L"Almanac";
+        g_printLeftUnicode(fontMgr, g_almanacFont,
+                           x + w * 0.25f, y + h * 0.25f,
+                           0xFFFFFFFFu, label);
+    }
+
+    // Click detection while the ninth tile's bounds are active (Path D: read-only).
+    ninthClicked = CheckNinthClick(x, y, w, h);
+
     if (!StoreRectPair(at, saved)) {
         Logf("almanac_button  RECT DIRTY: restoring the saved rect pair faulted. The pair holds "
              "ninth-slot values or an unknown mix. It is not read again.");
@@ -525,6 +691,8 @@ static void DrawNinthTile(void* self, float a1, float a2, float a3, float a4,
     }
     if (drawFault)
         FailStop("native ninth Draw faulted; the rect pair was restored before the stop");
+
+    UpdateAlmanacState(ninthClicked);
 
     g_ninthDrawn++;
     if (g_ninthDrawn == 1)
@@ -561,7 +729,9 @@ __declspec(noinline) static void Detour(void* self, float a1, float a2, float a3
     g_drawOrig(self, a1, a2, a3, a4, a5, a6);          // native eighth tile
 
     if (plan.draw && IsArmed())
-        DrawNinthTile(self, a1, a2, a3, a4, a5, a6, plan.x, plan.y);
+        DrawNinthTile(self, a1, a2, a3, a4, a5, a6, plan.x, plan.y, plan.w, plan.h);
+    else
+        UpdateAlmanacState(0);                          // close-on-native-click every frame
 }
 
 // ---------------------------------------------------------------- lifecycle
@@ -570,6 +740,11 @@ static void ReadSettings(void)
 {
     const char* ini = "plugins\\almanac_button.ini";
     g_enabled = (H->configInt(ini, "almanac_button", "enabled", 1) == 1) ? 1 : 0;
+    g_contentSuppressionEnabled = (H->configInt(ini, "almanac_button", "content_suppression", 1) == 1) ? 1 : 0;
+    H->configString(ini, "almanac_button", "texture_asset",
+                    g_textureAsset, (int)sizeof(g_textureAsset), "");
+    H->configString(ini, "almanac_button", "font_asset",
+                    g_fontAsset, (int)sizeof(g_fontAsset), "");
 }
 
 extern "C" __declspec(dllexport) unsigned TsmPluginApiVersion(void)
@@ -582,7 +757,7 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
 {
     TsmBind(host);
     info->name    = "almanac_button";
-    info->version = "1.5";
+    info->version = "2.0";
 
     ReadSettings();
     if (!g_enabled) {
@@ -627,6 +802,35 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
     g_slot = slot;
     g_drawOrig = (t_Draw)validated;
 
+    // Resolve GetMouseSolid for click detection (Path D). Not required to arm;
+    // if it cannot be resolved, clicks on the ninth tile are simply not detected.
+    FARPROC mouseProc = g_engine ? GetProcAddress(g_engine, "?GetMouseSolid@C3D_INPUT@@QEAA?AVC3DVECTOR3@@XZ") : NULL;
+    if (!mouseProc) {
+        Logf("almanac_button  NOTE  no engine export for GetMouseSolid; ninth-tile clicks not detected");
+    } else {
+        g_getMouseSolid = (t_GetMouseSolid)mouseProc;
+    }
+
+    // Resolve texture/font creation and text printing (points 1-2).
+    FARPROC texProc = g_engine ? GetProcAddress(g_engine, "?CreateManagedTexture@C3D_MIDDLEPOINT@@QEAAPEAVC3DAPI_TEXTURE@@PEBD@Z") : NULL;
+    if (!texProc) {
+        Logf("almanac_button  NOTE  no engine export for CreateManagedTexture; no distinct icon");
+    } else {
+        g_createManagedTexture = (t_CreateManagedTexture)texProc;
+    }
+    FARPROC fontProc = g_engine ? GetProcAddress(g_engine, "?CreateManagedFontBitmap@C3D_MIDDLEPOINT@@QEAAPEAVC3D_FONT@@PEBD@Z") : NULL;
+    if (!fontProc) {
+        Logf("almanac_button  NOTE  no engine export for CreateManagedFontBitmap; no text label");
+    } else {
+        g_createManagedFontBitmap = (t_CreateManagedFontBitmap)fontProc;
+    }
+    FARPROC printProc = g_engine ? GetProcAddress(g_engine, "?PrintLeftUnicode@C3D_FONTMANAGER@@QEAAXPEAVC3D_FONT@@MMKPEB_WZZ") : NULL;
+    if (!printProc) {
+        Logf("almanac_button  NOTE  no engine export for PrintLeftUnicode; no text label");
+    } else {
+        g_printLeftUnicode = (t_PrintLeftUnicode)printProc;
+    }
+
     SlotSwap s = CompareSwapSlot(slot, validated, (void*)Detour, 1);
     if (!s.protectSetOk) {
         Logf("almanac_button  REFUSED  import page not writable; no write made");
@@ -660,6 +864,9 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
     }
 
     InterlockedExchange(&g_active, 1);
-    Logf("almanac_button  armed  draw-only ninth backdrop after row tile 8 (import verified)");
+    Logf("almanac_button  armed  clickable ninth tile after row tile 8 (import verified; GetMouseSolid %s; texture %s; font %s)",
+         g_getMouseSolid ? "resolved" : "not found",
+         g_textureLoaded ? "loaded" : "not loaded",
+         g_fontLoaded ? "loaded" : "not loaded");
     return 0;
 }

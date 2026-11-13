@@ -7,6 +7,7 @@
 *.txt text eol=lf
 # Preserve the user's original CRLF loader log byte-for-byte.
 export/almanac-evidence/almanac-button-visual-test-run1/tesmioloader-log.txt -text !eol
+export/almanac-evidence/almanac-button-own-icon-investigation/tesmioloader-crash-run2.txt -text !eol
 *.py text eol=lf
 *.json text eol=lf
 # Windows batch files keep CRLF

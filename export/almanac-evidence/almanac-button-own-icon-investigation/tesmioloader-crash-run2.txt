@@ -1,0 +1,989 @@
+[19:50:43.863] tesmioloader phase B
+[19:50:43.863] exe base  00007FF6F25D0000    engine base 00007FF956E90000
+[19:50:43.863] vfs root  C:\Workers Resources Soviet Republic\build\vfs (on)
+[19:50:43.863] ---
+[19:50:43.863] hook ok      ReadFileIntoBuffer     orig=00007FF956F079B0
+[19:50:43.863] hook ok      CheckIfFileExist       orig=00007FF956F07B80
+[19:50:43.863] hook ok      C3DLog_PrintInfo       orig=00007FF956F2C700
+[19:50:43.863] hook ok      C3DLog_PrintWarning    orig=00007FF956F2C7F0
+[19:50:43.863] hook ok      C3DLog_PrintError      orig=00007FF956F2C8E0
+[19:50:43.863] hook ok      fopen                  orig=00007FF996B95C00
+[19:50:43.863] hook ok      fopen_s                orig=00007FF996B61AD0
+[19:50:43.863] hook ok      _wfopen                orig=00007FF996B8DFA0
+[19:50:43.863] hook ok      _wfopen_s              orig=00007FF996B61B30
+[19:50:43.863] hook ok      fread                  orig=00007FF996B1DE00
+[19:50:43.863] hook ok      engine fopen           orig=00007FF996B95C00
+[19:50:43.863] hook ok      engine fopen_s         orig=00007FF996B61AD0
+[19:50:43.863] hook ok      engine _wfopen         orig=00007FF996B8DFA0
+[19:50:43.863] hook ok      engine fread           orig=00007FF996B1DE00
+[19:50:43.863] hook ok      engine CreateFileA     orig=00007FF9989572B0
+[19:50:43.863] hook ok      engine CreateFile2     orig=00007FF998957290
+[19:50:43.863] hook ok      CreateFileW            orig=00007FF9989572C0
+[19:50:43.863] texel  vtable hooked: Load2DFromFile=00007FF956EA79F0 GetTexel=00007FF956EA9080
+[19:50:43.863] menu     version line -> "v%d.%d.%d.%d (64 bit DX11.1 - GPU: %ls) | tesmioloader v. b0.3.6"
+[19:50:43.870] plugin   almanac_button   2.0      from almanac_button.dll
+[19:50:43.973] plugin   service "citizen_labor" v2 from citizen_labor.dll
+[19:50:43.973] plugin   service "citizen_labor" v3 from citizen_labor.dll
+[19:50:43.973] plugin   service "citizen_labor" v4 from citizen_labor.dll
+[19:50:43.973] plugin   service "citizen_labor" v5 from citizen_labor.dll
+[19:50:43.973] plugin   citizen_labor    4.9      from citizen_labor.dll
+[19:50:43.978] plugin   service "citizen_retail" v1 from citizen_retail.dll
+[19:50:43.978] plugin   service "citizen_retail" v2 from citizen_retail.dll
+[19:50:43.978] plugin   citizen_retail   2.9      from citizen_retail.dll
+[19:50:43.987] plugin   service "currency" v3 from currency.dll
+[19:50:43.987] plugin   service "currency" v4 from currency.dll
+[19:50:43.987] plugin   currency         4.1      from currency.dll
+[19:50:43.987] plugin   daynight.dll     off in tesmioloader.ini [plugins]
+[19:50:43.994] plugin   service "enterprise_base" v7 from enterprise_base.dll
+[19:50:43.994] plugin   service "enterprise_base" v8 from enterprise_base.dll
+[19:50:43.994] plugin   enterprise_base  9.18     from enterprise_base.dll
+[19:50:43.994] plugin   map_expander.dll off in tesmioloader.ini [plugins]
+[19:50:44.004] plugin   service "persistence" v1 from persistence.dll
+[19:50:44.004] plugin   persistence      1.0      from persistence.dll
+[19:50:44.018] plugin   private_construction 3.6.1    from private_construction.dll
+[19:50:44.026] [AUTO DO] company thresholds: load above 10% / deliver below 30% (managed tasks, reconciled daily)
+[19:50:44.026] [AUTO DO] permission-test profile: billing=0 auto_targets=1 apply=1 (expected 0/1/1)
+[19:50:44.026] private_logistics v0.19.0-simplified-settlement - settlement OBSERVE ONLY (moves no money)
+[19:50:44.026] plugin   service "b2b_logistics" v1 from private_logistics.dll
+[19:50:44.026] plugin   private_logistics 0.19.0-simplified-settlement from private_logistics.dll
+[19:50:44.036] [PROBE SESSION] seq=1 ts=0.0000 thr=00000000000034F0 kind=event schema=1 committed=0 load=0 unload=0 complete=0 gap=0 error=0 synth=0
+[19:50:44.036]  session_id=00002E6802BF6F39 event=armed day=-1 mon=-1 yr=-1 note="probe enabled; awaiting sim_clock subscription at Start"
+[19:50:44.036] private_logistics_probe  ARMED (exploratory): tick_interval=30 max_snapshots=1000 max_queue=256
+[19:50:44.036] plugin   private_logistics_probe 0.2.3-exploratory from private_logistics_probe.dll
+[19:50:44.043] plugin   private_shops    3.4      from private_shops.dll
+[19:50:44.047] plugin   service "republic_bank" v1 from republic_bank.dll
+[19:50:44.047] plugin   republic_bank    1.2      from republic_bank.dll
+[19:50:44.059] plugin   service "resource_pricing" v1 from resource_pricing.dll
+[19:50:44.059] plugin   service "resource_pricing" v2 from resource_pricing.dll
+[19:50:44.059] plugin   service "resource_pricing" v3 from resource_pricing.dll
+[19:50:44.059] plugin   service "resource_pricing" v4 from resource_pricing.dll
+[19:50:44.059] plugin   resource_pricing 4.0      from resource_pricing.dll
+[19:50:44.063] plugin   service "sim_clock" v1 from sim_clock.dll
+[19:50:44.063] plugin   sim_clock        1.1      from sim_clock.dll
+[19:50:44.072] plugin   state_ledger     2.0      from state_ledger.dll
+[19:50:44.079] plugin   service "taxes" v1 from taxes.dll
+[19:50:44.079] plugin   service "taxes" v2 from taxes.dll
+[19:50:44.079] plugin   taxes            4.5      from taxes.dll
+[19:50:44.084] plugin   service "ui_overlay" v1 from ui_overlay.dll
+[19:50:44.084] plugin   ui_overlay       1.0      from ui_overlay.dll
+[19:50:44.093] plugin   service "ui_panels" v1 from ui_panels.dll
+[19:50:44.093] plugin   service "ui_panels" v2 from ui_panels.dll
+[19:50:44.093] plugin   service "ui_panels" v3 from ui_panels.dll
+[19:50:44.093] plugin   service "ui_panels" v4 from ui_panels.dll
+[19:50:44.093] plugin   service "ui_panels" v5 from ui_panels.dll
+[19:50:44.093] plugin   service "ui_panels" v6 from ui_panels.dll
+[19:50:44.093] plugin   ui_panels        6.14     from ui_panels.dll
+[19:50:44.093] almanac_button  armed  clickable ninth tile after row tile 8 (import verified; GetMouseSolid resolved; texture not loaded; font not loaded)
+[19:50:44.093] persistence  registered handler "citizen_labor" (#1)
+[19:50:44.093] ui_panels  row provider 1 registered
+[19:50:44.093] citizen_labor  in-window wage rows registered (slider span min 10.00 RUB, step 2 pct), widgets on
+[19:50:44.093] ui_panels  widget provider 1 registered
+[19:50:44.093] citizen_labor  in-window wage widgets registered
+[19:50:44.093] citizen_labor  [WAGE STUB] size=132 stub=00007FF6F25B0000 target=00007FF6F27A37A9 next=00007FF6F25B0084 rel32=2045733
+[19:50:44.093] citizen_labor  [WAGE STUB] expect target=exeBase+0x1D37A9 (00007FF6F27A37A9)  tail[0x78..0x87]=2F 84 8E 1C 12 00 00 E9 25 37 1F 00 00 00 00 
+[19:50:44.093] hook ok      citizen_labor wage mobility target=00007FF6F27A3797 tramp=0000022ACB610000 (18 bytes stolen)
+[19:50:44.093] citizen_labor  wage mobility hook installed at RVA 0x1D3797
+[19:50:44.093] citizen_labor  no world loaded yet - payday will begin on the first day event
+[19:50:44.093] citizen_labor  live v4.8: 16 wage entries, payday 3, persistent, wage_mobility 1, workplace range 3..200, days_per_month 30, prune_after_days 90, employment_grace_days 14, currency RUB (divisor 50.0), poison=removed, workers_control=0xDEC+0x822FD0
+[19:50:44.093] citizen_labor    minimum wage floor 2.50 RUB (RUB base 2.50); default 3.00, welfare 1.00, stipend 1.50, pension 2.00
+[19:50:44.093] citizen_labor    type 19   = 3.20 per day (RUB base, legacy fallback)
+[19:50:44.093] citizen_labor    type 6    = 3.20 per day (RUB base, legacy fallback)
+[19:50:44.093] citizen_labor    type 7    = 3.40 per day (RUB base, legacy fallback)
+[19:50:44.093] citizen_labor    type 17   = 3.40 per day (RUB base, legacy fallback)
+[19:50:44.093] citizen_labor    type 18   = 3.20 per day (RUB base, legacy fallback)
+[19:50:44.093] citizen_labor    type 24   = 2.80 per day (RUB base, legacy fallback)
+[19:50:44.093] citizen_labor    type 27   = 2.80 per day (RUB base, legacy fallback)
+[19:50:44.093] citizen_labor    sector heavy_industry       = 3.80 per day (RUB base 3.80)
+[19:50:44.093] citizen_labor    sector infrastructure       = 3.50 per day (RUB base 3.50)
+[19:50:44.093] citizen_labor    sector healthcare_education = 3.20 per day (RUB base 3.20)
+[19:50:44.093] citizen_labor    sector light_industry       = 3.00 per day (RUB base 3.00)
+[19:50:44.093] citizen_labor    sector services_retail      = 2.80 per day (RUB base 2.80)
+[19:50:44.093] citizen_labor    sector agriculture          = 2.60 per day (RUB base 2.60)
+[19:50:44.093] citizen_retail  Republic market book available - retail demands feed it, prices carry the live multiplier
+[19:50:44.093] citizen_retail  CPI runway engine available (pricing v3)
+[19:50:44.093] citizen_retail  citizen_labor available - flow + stock SoL matrix live
+[19:50:44.093] hook ok      citizen_retail checkout target=00007FF6F27425DE tramp=0000022ACB630000 (18 bytes stolen)
+[19:50:44.093] citizen_retail  [CHECKOUT STUB] size=185 stub=0000022ACB620000 allow=00007FF6F27425F0 abort=00007FF6F274293A
+[19:50:44.093] citizen_retail  [CHECKOUT STUB] jz/stolen[+0x86..+0x9C]=45 84 DB 74 20 F3 0F 10 44 1A 08 4D 8D 85 20 14 01 00 F3 41 0F 59 D7 
+[19:50:44.093] citizen_retail  [CHECKOUT STUB] jz@+0x8A rel8=0x20 target=stub+0xAB (expect .abort @ stub+0xAB)
+[19:50:44.093] citizen_retail  checkout hook installed at RVA 0x1725DE (atomic gate+charge)
+[19:50:44.093] persistence  registered handler "citizen_retail" (#2)
+[19:50:44.093] citizen_retail  live v2.9: interval 250 ms, minimum charge 0.01 RUB, 1 shop type(s)
+[19:50:44.093] citizen_retail  SoL flow+stock: on, Affluent PPR>=2.0 && runway>=30 d, Middle PPR>=1.0 || runway>=7 d, Low < 7 d, bread 0.0020 t v3 CPI
+[19:50:44.093] persistence  registered handler "currency" (#3)
+[19:50:44.093] currency  live v4.0: primary RUB, starting wallet 15.00, prune_after_days 90, persistent
+[19:50:44.093] persistence  registered handler "enterprise_base" (#4)
+[19:50:44.093] ui_panels  row provider 2 registered
+[19:50:44.093] enterprise_base  in-window enterprise rows registered
+[19:50:44.093] ui_panels  widget provider 2 registered
+[19:50:44.093] enterprise_base  privatisation tile registered (full-width bar on every finished building)
+[19:50:44.093] enterprise_base  live v9.18 (unified currency RUB, privatisation bar everywhere, net-profit siphon, attractiveness rent, park-cap, economic eviction + destitute bread-day, atomic retail charge+credit, in-window rows, wage bidding, phased insolvency, market-condition row, full-private-price retail pre-check, refusal-triggered capital watch, honest audit baseline, payroll affordability, wage provenance, visible revenue, wage contract cap on, rate ceiling 8x minimum)
+[19:50:44.093] enterprise_base  *** BUILD v9.18 - wholesale income counts as revenue, every privatise click logged ***
+[19:50:44.093] enterprise_base      [WATCH n]      armed by a refusal; logs every movement on that shop for 4000 ms
+[19:50:44.093] enterprise_base      [WATCH n CAP]  a capital movement on the watched shop, with by=<caller>
+[19:50:44.093] enterprise_base      [WATCH n SALE] a completed sale on the watched shop, with the buyer
+[19:50:44.093] enterprise_base      [WATCH n END]  the shop's balance, the movement count, and the residual gap
+[19:50:44.093] enterprise_base      [AUDIT GAP]    capital changed without a traced operation - this is a bug
+[19:50:44.093] enterprise_base  Task 1 rent: base 10.00 x attr 0.50..2.00; Task 3 insolvency: on, ruin after 3 month(s), buyout 1.50x
+[19:50:44.093] enterprise_base  Task 1 eviction: on, burden > 35% of wallet, happiness dent 0.15, park cap on
+[19:50:44.093] enterprise_base  M2 wage bidding: on, premium cap +50%, understaffed < 75%, step +/-5.0%, wage floor active (labor v3)
+[19:50:44.093] hook ok      fopen                  orig=00007FF9572260A0
+[19:50:44.093] hook ok      fopen_s                orig=00007FF957226220
+[19:50:44.093] hook ok      _wfopen                orig=00007FF9572263F0
+[19:50:44.093] hook ok      _wfopen_s              orig=00007FF9572264A0
+[19:50:44.093] persistence  live: stats.ini (write) / workers.bin (read)
+[19:50:44.093] persistence  registered handler "private_construction" (#5)
+[19:50:44.093] hook ok      private_construction PrintLeftUnicodeNoArg orig=00007FF956EE7D30
+[19:50:44.093] hook ok      private_construction PrintLeftUnicode orig=00007FF956EE7BD0
+[19:50:44.093] hook ok      private_construction panel builder target=00007FF6F2D538E0 tramp=0000022ACCCD0000 (14 bytes stolen)
+[19:50:44.093] private_construction  panel builder hooked at rva 0x7838E0 (14 byte(s) stolen) - building binding is direct and language-independent
+[19:50:44.093] private_construction  native phase layout verified (typedesc+0x370, stride 0x21B8, cost vector at phase+0x08)
+[19:50:44.093] private_construction  live v3.6.1 (cost_source=auto, accept_currency=rub, currency RUB, native layout ok, 15 text pattern(s), builder hook on, max_tick_advance 0.020, finish_handoff_frac 0.99, handoff_timeout_days 0.0, probe_completion 1)
+[19:50:44.093] ui_panels  widget provider 3 registered
+[19:50:44.093] persistence  registered handler "private_logistics" (#6)
+[19:50:44.093] [PANEL SCHEDULE] enabled=1 fingerprint=matched mode=read_only_selected_fields max_rows=16 last_flag5fd_row_config=not_read gap_endpoints=enabled_cached_values_only classification=enabled_captured_values assignment_ledger=selected_panel_dry_run job_lifecycle=unverified billing=off
+[19:50:44.093] hook ok      private_logistics panel fuel observer target=00007FF6F2DA5460 tramp=0000022ACCCE0000 (20 bytes stolen)
+[19:50:44.093] [PANEL FUEL] installed renderer=0x7D5460 stolen=20 scale=1000 format=%.2fl interval_ms=1000 cap=240 queue=16 paused_coalescing=keep_latest_same_window_root; logs drain on unpaused ticks; candidate_home fleet comparison only; accepted sample IDs do not prove coverage; no exact burn, tracker or billing
+[19:50:44.093] [FLEET FUEL] started panel_required=0 source=private_enterprise_road_office_fleets interval_ms=1000 max_enterprises=32 max_vehicles=64 max_fleet=256 new_hooks=0 coverage=sampled_not_continuous units=unverified refill_coverage=unverified exact_burn=0 actual_cost=not_computed settlement=none billing=off
+[19:50:44.093] persistence  registered handler "private_logistics_costs" (#7)
+[19:50:44.093] [DRY COST] started file=private_logistics_costs.bin max_records=4096 closed_quotes_immutable=1 open_save_policy=interrupted_unpriced no_money_writes=1 billing=off
+[19:50:44.093] private_logistics  hook 0x141F33 -> transfer ok (cave 00007FF6F25A0000)
+[19:50:44.093] private_logistics  hook 0x16F831 -> transfer ok (cave 00007FF6F2590000)
+[19:50:44.093] private_logistics  hook 0x1B2898 -> transfer ok (cave 00007FF6F2580000)
+[19:50:44.093] private_logistics  hook 0x1B484B -> transfer ok (cave 00007FF6F2570000)
+[19:50:44.093] private_logistics  hook 0x1B5EC0 -> transfer ok (cave 00007FF6F2560000)
+[19:50:44.093] private_logistics  hook 0x1B653B -> transfer ok (cave 00007FF6F2550000)
+[19:50:44.093] private_logistics  hook 0x1B6833 -> transfer ok (cave 00007FF6F2540000)
+[19:50:44.093] private_logistics  hook 0x1B75ED -> transfer ok (cave 00007FF6F2530000)
+[19:50:44.093] private_logistics  hook 0x1B7981 -> transfer ok (cave 00007FF6F2520000)
+[19:50:44.093] private_logistics  hook 0x1CB7FF -> transfer ok (cave 00007FF6F2510000)
+[19:50:44.093] private_logistics  hook 0x68EECA -> transfer ok (cave 00007FF6F3070000)
+[19:50:44.093] private_logistics  hook 0x68F792 -> transfer ok (cave 00007FF6F3080000)
+[19:50:44.093] private_logistics  hook 0x68F7F9 -> transfer ok (cave 00007FF6F3090000)
+[19:50:44.093] private_logistics  hook 0x6945B3 -> transfer ok (cave 00007FF6F30A0000)
+[19:50:44.096] private_logistics  hook 0x694F40 -> transfer ok (cave 00007FF6F30B0000)
+[19:50:44.096] private_logistics  hook 0x6953C4 -> transfer ok (cave 00007FF6F30C0000)
+[19:50:44.096] private_logistics  patched 16 of 16 transfer call sites
+[19:50:44.096] private_logistics live v0.19.0-simplified-settlement: billing=0 dry_run=1 sites=16 | goods=locked_global_base_x_market, DO=observed_assignment_fuel_x_global_close | no wholesale, cargo-value freight, fragment tariff, margin, wear or upkeep
+[19:50:44.096] private_logistics [AUTO DO] enabled=1 dry_run=0 cadence=once/day; private endpoints -> private road/rail DOs; existing entries preserved
+[19:50:44.096] private_logistics [IDX] fuel resource 'fuel'; global base and market are resolved at each eligible event, never substituted with a local building quote
+[19:50:44.096] private_logistics  [BAL] treasury opens at 0.00
+[19:50:44.096] private_logistics native Test16 event coverage and exact burn remain unverified
+[19:50:44.096] [PROBE SESSION] seq=2 ts=0.0620 thr=00000000000034F0 kind=interp schema=1 committed=0 load=0 unload=0 complete=0 gap=0 error=0 synth=0
+[19:50:44.096]  session_id=00002E6802BF6F39 event=starting day=-1 mon=-1 yr=-1 note="process-lifetime snapshot probe; one save only; restart before another run"
+[19:50:44.096] private_logistics_probe  tick subscriber registered (handle=12)
+[19:50:44.096] private_shops  Republic market book available - dispatches and imports feed supply
+[19:50:44.096] persistence  registered handler "private_shops" (#8)
+[19:50:44.096] private_shops  live v3.3: interval 300 ms, slot-identity snapshots, restock all (0 type(s)), retail 8 type(s), 2 service fee(s), wholesale 0.70, procurement 0.90 (flag fallback on), foreign off (target 10%, markup 1.05), taxes on, currency RUB
+[19:50:44.096] private_shops    retail types: 3,4,10,23,24,25,26,28
+[19:50:44.096] private_shops    service: type 23   demand kind 3   3.50 RUB/visit
+[19:50:44.096] private_shops    service: type 24   demand kind 3   3.50 RUB/visit
+[19:50:44.096] persistence  registered handler "republic_bank" (#9)
+[19:50:44.096] ui_panels  row provider 3 registered
+[19:50:44.096] ui_panels  widget provider 4 registered
+[19:50:44.096] republic_bank  live
+[19:50:44.096] persistence  registered handler "resource_pricing" (#10)
+[19:50:44.096] resource_pricing  live: default 500.00, 5 fallback price(s), market on (clamp 0.35..2.00, gain 0.75)
+[19:50:44.096] resource_pricing    cpi basket v3: food 0.0020 t, meat 0.0006 t, clothes 0.0005 t, rent 0.330 RUB/day -> 1.880 RUB/day
+[19:50:44.096] resource_pricing    food                 = 350.00
+[19:50:44.096] resource_pricing    meat                 = 700.00
+[19:50:44.096] resource_pricing    clothes              = 1400.00
+[19:50:44.096] resource_pricing    eletronics           = 3800.00
+[19:50:44.096] resource_pricing    alcohol              = 600.00
+[19:50:44.096] hook ok      C3D_TIMER::PowerTime   orig=00007FF956F8D670
+[19:50:44.096] sim_clock  live v1.1: days_per_month = 30, day length 60.0, dispatch at +0x334AB3
+[19:50:44.097] persistence  registered handler "state_ledger" (#11)
+[19:50:44.097] state_ledger  live v1.4: currency RUB, csv=on, overlay=on, persistence=on, cross_check=off
+[19:50:44.097] ui_panels  row provider 4 registered
+[19:50:44.097] taxes  City Hall fiscal-policy panel registered (type 39, step 2 pct, collapsible, square button header), widgets on
+[19:50:44.097] ui_panels  widget provider 5 registered
+[19:50:44.097] taxes  City Hall fiscal widgets registered
+[19:50:44.097] persistence  registered handler "taxes" (#12)
+[19:50:44.097] taxes  live v4.5 (currency RUB, macro readouts on, CPI live (pricing v3))
+[19:50:44.097] taxes    VAT 20% (3, on), profit 15% (4, on), property 250.00 flat (5, on, land-value)
+[19:50:44.097] hook ok      C3D_TERRAIN::Render    orig=00007FF956F87560
+[19:50:44.097] ui_overlay  live: toggle 0x77, column (28, 85), line 17.5
+[19:50:44.097] ui_panels  storage diag: dumping dispatcher 0x6E9B80..+0x8000 E8 targets (warehouse variant hunt)
+[19:50:44.097] ui_panels  dispatcher E8 at 0x6E9B94 -> 0x84F450  head 48 83 EC 10 4C 89 14 24
+[19:50:44.097] ui_panels  dispatcher E8 at 0x6E9BE4 -> 0x25C710  head 48 83 EC 78 33 C0 C6 01
+[19:50:44.106] ui_panels  dispatcher E8 at 0x6E9EF4 -> 0x84F520  head FF 25 42 EB 01 00 CC CC
+[19:50:44.106] ui_panels  dispatcher E8 at 0x6E9F36 -> 0x493980  head 44 88 4C 24 20 4C 89 44
+[19:50:44.106] ui_panels  dispatcher E8 at 0x6E9F7C -> 0x6EE2A0  head 48 8B C4 44 89 48 20 89
+[19:50:44.106] ui_panels  dispatcher E8 at 0x6E9FB0 -> 0x224FA0  head 40 53 57 41 56 48 83 EC
+[19:50:44.110] ui_panels  dispatcher E8 at 0x6EA075 -> 0x6ED310  head 48 85 D2 0F 84 4A 03 00
+[19:50:44.110] ui_panels  dispatcher E8 at 0x6EA09A -> 0x442B40  head 40 53 48 83 EC 30 33 C0
+[19:50:44.110] ui_panels  dispatcher E8 at 0x6EA0A2 -> 0x25C600  head 48 89 5C 24 08 48 89 74
+[19:50:44.110] ui_panels  dispatcher E8 at 0x6EA0AF -> 0x84DFE0  head E9 F3 FF FF FF CC CC CC
+[19:50:44.113] ui_panels  dispatcher E8 at 0x6EA164 -> 0x6EF830  head 48 8B C4 55 53 56 48 8D
+[19:50:44.115] ui_panels  dispatcher E8 at 0x6EA2FC -> 0x6F0070  head 48 8B C4 55 53 41 55 41
+[19:50:44.123] ui_panels  dispatcher E8 at 0x6EA504 -> 0x7F2660  head 48 89 5C 24 10 48 89 6C
+[19:50:44.123] ui_panels  dispatcher E8 at 0x6EA512 -> 0x7F2BD0  head 48 89 5C 24 08 57 48 83
+[19:50:44.123] ui_panels  dispatcher E8 at 0x6EA523 -> 0x7FC3F0  head 48 89 5C 24 10 57 48 81
+[19:50:44.123] ui_panels  dispatcher E8 at 0x6EA534 -> 0x7F2D50  head 48 8B C4 56 57 41 56 48
+[19:50:44.123] ui_panels  dispatcher E8 at 0x6EA545 -> 0x7FD2B0  head 48 89 5C 24 18 57 48 81
+[19:50:44.123] ui_panels  dispatcher E8 at 0x6EA556 -> 0x7F3490  head 48 8B C4 48 89 50 10 48
+[19:50:44.123] ui_panels  dispatcher E8 at 0x6EA567 -> 0x7F4160  head 48 89 5C 24 20 57 48 81
+[19:50:44.123] ui_panels  dispatcher E8 at 0x6EA578 -> 0x7FAC60  head 48 89 5C 24 20 57 48 81
+[19:50:44.123] ui_panels  dispatcher E8 at 0x6EA589 -> 0x7FA6C0  head 48 89 5C 24 18 57 48 81
+[19:50:44.123] ui_panels  dispatcher E8 at 0x6EA59A -> 0x7FB3D0  head 40 53 55 56 57 41 57 48
+[19:50:44.123] ui_panels  dispatcher E8 at 0x6EA5AB -> 0x7FBA50  head 48 89 5C 24 10 48 89 6C
+[19:50:44.123] ui_panels  dispatcher E8 at 0x6EA5BC -> 0x7FBF50  head 48 89 5C 24 10 57 48 81
+[19:50:44.123] ui_panels  dispatcher E8 at 0x6EA5CD -> 0x7F6B50  head 48 8B C4 48 89 50 10 48
+[19:50:44.123] ui_panels  dispatcher E8 at 0x6EA5DE -> 0x7F7BB0  head 48 8B C4 55 57 41 55 48
+[19:50:44.123] ui_panels  dispatcher E8 at 0x6EA5EF -> 0x7FC880  head 48 8B C4 55 56 57 41 56
+[19:50:44.123] ui_panels  dispatcher E8 at 0x6EA600 -> 0x7FE200  head 48 89 5C 24 10 57 48 81
+[19:50:44.123] ui_panels  dispatcher E8 at 0x6EA611 -> 0x7FD810  head 48 89 5C 24 10 57 48 81
+[19:50:44.123] ui_panels  dispatcher E8 at 0x6EA622 -> 0x7FDCD0  head 48 89 5C 24 18 57 48 81
+[19:50:44.123] ui_panels  dispatcher E8 at 0x6EA636 -> 0x7FE6D0  head 40 53 57 41 56 48 81 EC
+[19:50:44.123] ui_panels  dispatcher E8 at 0x6EA64D -> 0x7FE6D0  head 40 53 57 41 56 48 81 EC
+[19:50:44.123] ui_panels  dispatcher E8 at 0x6EA65E -> 0x7FECE0  head 48 89 5C 24 10 57 48 81
+[19:50:44.127] ui_panels  dispatcher E8 at 0x6EA66F -> 0x7FF180  head 40 55 56 48 81 EC 88 00
+[19:50:44.127] ui_panels  dispatcher E8 at 0x6EA680 -> 0x7FF780  head 40 53 57 48 81 EC A8 04
+[19:50:44.127] ui_panels  dispatcher E8 at 0x6EA691 -> 0x7FFDA0  head 48 89 5C 24 18 57 48 81
+[19:50:44.127] ui_panels  dispatcher E8 at 0x6EA6A2 -> 0x800280  head 48 89 5C 24 18 57 48 81
+[19:50:44.127] ui_panels  dispatcher E8 at 0x6EA6B3 -> 0x80B550  head 40 53 57 48 81 EC 88 00
+[19:50:44.127] ui_panels  dispatcher E8 at 0x6EA6C4 -> 0x80BC80  head 40 56 57 48 81 EC A8 00
+[19:50:44.127] ui_panels  dispatcher E8 at 0x6EA6D5 -> 0x80C510  head 40 55 53 57 48 8D AC 24
+[19:50:44.127] ui_panels  dispatcher E8 at 0x6EA6E6 -> 0x800880  head 48 89 5C 24 20 55 56 57
+[19:50:44.127] ui_panels  dispatcher E8 at 0x6EA6F7 -> 0x801300  head 48 8B C4 55 56 57 41 55
+[19:50:44.127] ui_panels  dispatcher E8 at 0x6EA708 -> 0x806FC0  head 48 89 5C 24 18 48 89 6C
+[19:50:44.127] ui_panels  dispatcher E8 at 0x6EA719 -> 0x807AE0  head 48 89 5C 24 08 57 48 83
+[19:50:44.127] ui_panels  dispatcher E8 at 0x6EA72A -> 0x8075B0  head 48 85 D2 0F 84 24 05 00
+[19:50:44.127] ui_panels  dispatcher E8 at 0x6EA73B -> 0x808060  head 48 8B C4 48 89 50 10 57
+[19:50:44.127] ui_panels  dispatcher E8 at 0x6EA74C -> 0x807BF0  head 48 89 5C 24 10 57 48 81
+[19:50:44.127] ui_panels  dispatcher E8 at 0x6EA75D -> 0x808830  head 48 8B C4 48 89 58 18 55
+[19:50:44.127] ui_panels  dispatcher E8 at 0x6EA76E -> 0x8030F0  head 4C 8B DC 55 53 57 41 56
+[19:50:44.127] ui_panels  dispatcher E8 at 0x6EA77F -> 0x804740  head 4C 8B DC 49 89 5B 18 57
+[19:50:44.127] ui_panels  dispatcher E8 at 0x6EA790 -> 0x8054A0  head 48 8B C4 48 89 50 10 48
+[19:50:44.127] ui_panels  dispatcher E8 at 0x6EA79E -> 0x804E80  head 40 53 48 81 EC A0 00 00
+[19:50:44.131] ui_panels  dispatcher E8 at 0x6EA7AF -> 0x803AC0  head 4C 8B DC 49 89 5B 18 49
+[19:50:44.131] ui_panels  dispatcher E8 at 0x6EA7D1 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.131] ui_panels  dispatcher E8 at 0x6EA7DC -> 0x7838E0  head FF 25 00 00 00 00 80 90
+[19:50:44.133] ui_panels  dispatcher E8 at 0x6EA7F7 -> 0x48D600  head 40 55 56 57 41 54 41 55
+[19:50:44.134] ui_panels  dispatcher E8 at 0x6EA80C -> 0x4CABD0  head 40 55 57 41 54 41 56 41  <- storage-range
+[19:50:44.134] ui_panels  storage builder 0x4CABD0 prologue 21: 40 55 57 41 54 41 56 41 57 48 8D AC 24 B0 C9 FF FF B8 50 37 00
+[19:50:44.135] ui_panels  dispatcher E8 at 0x6EA86F -> 0x1BBFE0  head 83 B9 B0 05 00 00 00 0F
+[19:50:44.135] ui_panels  dispatcher E8 at 0x6EA8B0 -> 0x7CEF60  head 48 8B C4 55 56 57 41 54
+[19:50:44.137] ui_panels  dispatcher E8 at 0x6EA8D0 -> 0x7CEF60  head 48 8B C4 55 56 57 41 54
+[19:50:44.137] ui_panels  dispatcher E8 at 0x6EA8EF -> 0x72DBF0  head 4C 8B DC 55 56 57 41 54
+[19:50:44.138] ui_panels  dispatcher E8 at 0x6EA919 -> 0x7CEF60  head 48 8B C4 55 56 57 41 54
+[19:50:44.138] ui_panels  dispatcher E8 at 0x6EA931 -> 0x7CEEB0  head 48 8B C4 53 48 83 EC 40
+[19:50:44.138] ui_panels  dispatcher E8 at 0x6EA958 -> 0x7D5460  head FF 25 00 00 00 00 40 1C
+[19:50:44.138] ui_panels  dispatcher E8 at 0x6EA96D -> 0x7CFF50  head 48 85 D2 0F 84 FB 54 00
+[19:50:44.138] ui_panels  dispatcher E8 at 0x6EA982 -> 0x758420  head 48 8B C4 55 56 57 41 54
+[19:50:44.138] ui_panels  dispatcher E8 at 0x6EA997 -> 0x75C470  head 48 8B C4 48 89 50 10 48
+[19:50:44.140] ui_panels  dispatcher E8 at 0x6EAAA2 -> 0x409330  head 48 8B C4 48 89 58 08 48
+[19:50:44.143] ui_panels  dispatcher E8 at 0x6EAB1A -> 0x409330  head 48 8B C4 48 89 58 08 48
+[19:50:44.144] ui_panels  dispatcher E8 at 0x6EABDC -> 0x80CC60  head 40 55 56 57 41 54 41 55
+[19:50:44.144] ui_panels  dispatcher E8 at 0x6EAC00 -> 0x711D50  head 48 8B C4 55 56 57 41 54
+[19:50:44.144] ui_panels  dispatcher E8 at 0x6EAC18 -> 0x715A60  head 48 8B C4 55 56 57 41 54
+[19:50:44.146] ui_panels  dispatcher E8 at 0x6EAC51 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.146] ui_panels  dispatcher E8 at 0x6EAC5C -> 0x757110  head 48 8B C4 55 56 57 41 54
+[19:50:44.146] ui_panels  dispatcher E8 at 0x6EAC82 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.146] ui_panels  dispatcher E8 at 0x6EAC8D -> 0x79E020  head 4C 8B DC 55 56 41 55 41
+[19:50:44.146] ui_panels  dispatcher E8 at 0x6EACA9 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.146] ui_panels  dispatcher E8 at 0x6EACB4 -> 0x7A0C90  head 4C 8B DC 55 56 41 55 41
+[19:50:44.146] ui_panels  dispatcher E8 at 0x6EACD0 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.146] ui_panels  dispatcher E8 at 0x6EACDB -> 0x7A9B20  head 48 8B C4 55 53 56 57 41
+[19:50:44.148] ui_panels  dispatcher E8 at 0x6EACF7 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.148] ui_panels  dispatcher E8 at 0x6EAD02 -> 0x7C6D70  head 48 8B C4 55 56 57 41 54
+[19:50:44.148] ui_panels  dispatcher E8 at 0x6EAD1A -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.148] ui_panels  dispatcher E8 at 0x6EAD25 -> 0x72C360  head 4C 8B DC 49 89 5B 18 57
+[19:50:44.148] ui_panels  dispatcher E8 at 0x6EAD3D -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.148] ui_panels  dispatcher E8 at 0x6EAD48 -> 0x72C460  head 4C 8B DC 55 56 57 41 57
+[19:50:44.148] ui_panels  dispatcher E8 at 0x6EAD60 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.148] ui_panels  dispatcher E8 at 0x6EAD6B -> 0x7787B0  head 40 55 53 56 41 54 41 56
+[19:50:44.148] ui_panels  dispatcher E8 at 0x6EAD83 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.148] ui_panels  dispatcher E8 at 0x6EAD8E -> 0x77A6F0  head 48 8B C4 55 56 57 41 54
+[19:50:44.148] ui_panels  dispatcher E8 at 0x6EADA6 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.148] ui_panels  dispatcher E8 at 0x6EADB1 -> 0x77F3C0  head 40 55 56 57 41 54 41 55
+[19:50:44.148] ui_panels  dispatcher E8 at 0x6EADC9 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.148] ui_panels  dispatcher E8 at 0x6EADD4 -> 0x7815D0  head 48 8B C4 55 56 57 41 54
+[19:50:44.148] ui_panels  dispatcher E8 at 0x6EADEC -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.148] ui_panels  dispatcher E8 at 0x6EAE07 -> 0x71C9B0  head 4C 8B DC 55 56 41 55 41
+[19:50:44.148] ui_panels  dispatcher E8 at 0x6EAE14 -> 0x71D290  head 48 8B C4 55 56 57 41 54
+[19:50:44.148] ui_panels  dispatcher E8 at 0x6EAE2C -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.148] ui_panels  dispatcher E8 at 0x6EAE37 -> 0x71E800  head 4C 8B DC 55 53 57 41 56
+[19:50:44.148] ui_panels  dispatcher E8 at 0x6EAE4F -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.148] ui_panels  dispatcher E8 at 0x6EAE5A -> 0x71EDD0  head 48 8B C4 55 56 57 41 54
+[19:50:44.148] ui_panels  dispatcher E8 at 0x6EAE72 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.152] ui_panels  dispatcher E8 at 0x6EAE7D -> 0x71B410  head 48 8B C4 55 56 57 41 54
+[19:50:44.152] ui_panels  dispatcher E8 at 0x6EAEA1 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.153] ui_panels  dispatcher E8 at 0x6EAEAC -> 0x71A540  head 4C 8B DC 55 56 57 41 56
+[19:50:44.153] ui_panels  dispatcher E8 at 0x6EAEC4 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.153] ui_panels  dispatcher E8 at 0x6EAECF -> 0x728A10  head 48 8B C4 55 56 57 41 54
+[19:50:44.153] ui_panels  dispatcher E8 at 0x6EAEE7 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.153] ui_panels  dispatcher E8 at 0x6EAEF2 -> 0x729C30  head 48 8B C4 55 56 57 41 54
+[19:50:44.153] ui_panels  dispatcher E8 at 0x6EAF0A -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.153] ui_panels  dispatcher E8 at 0x6EAF15 -> 0x72B230  head 48 8B C4 55 56 57 41 54
+[19:50:44.153] ui_panels  dispatcher E8 at 0x6EAF2D -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.153] ui_panels  dispatcher E8 at 0x6EAF38 -> 0x723950  head 48 8B C4 55 56 57 41 54
+[19:50:44.154] ui_panels  dispatcher E8 at 0x6EAF50 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.154] ui_panels  dispatcher E8 at 0x6EAF5B -> 0x75D310  head 48 8B C4 55 56 57 41 54
+[19:50:44.154] ui_panels  dispatcher E8 at 0x6EAF73 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.154] ui_panels  dispatcher E8 at 0x6EAF7E -> 0x7272F0  head 48 8B C4 55 56 57 41 54
+[19:50:44.154] ui_panels  dispatcher E8 at 0x6EAF96 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.154] ui_panels  dispatcher E8 at 0x6EAFA1 -> 0x72F2D0  head 48 8B C4 55 56 57 41 54
+[19:50:44.154] ui_panels  dispatcher E8 at 0x6EAFB9 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.154] ui_panels  dispatcher E8 at 0x6EAFC7 -> 0x72DBF0  head 4C 8B DC 55 56 57 41 54
+[19:50:44.154] ui_panels  dispatcher E8 at 0x6EAFDF -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.157] ui_panels  dispatcher E8 at 0x6EAFEA -> 0x7326C0  head 48 8B C4 55 56 57 41 54
+[19:50:44.157] ui_panels  dispatcher E8 at 0x6EB002 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.157] ui_panels  dispatcher E8 at 0x6EB00D -> 0x730CF0  head 48 8B C4 55 56 57 41 54
+[19:50:44.157] ui_panels  dispatcher E8 at 0x6EB025 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.157] ui_panels  dispatcher E8 at 0x6EB030 -> 0x734430  head 48 8B C4 55 56 57 41 54
+[19:50:44.157] ui_panels  dispatcher E8 at 0x6EB048 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.157] ui_panels  dispatcher E8 at 0x6EB053 -> 0x755960  head 48 8B C4 55 56 57 41 54
+[19:50:44.157] ui_panels  dispatcher E8 at 0x6EB06B -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.157] ui_panels  dispatcher E8 at 0x6EB076 -> 0x73C5A0  head 48 8B C4 55 56 57 41 54
+[19:50:44.157] ui_panels  dispatcher E8 at 0x6EB08E -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.157] ui_panels  dispatcher E8 at 0x6EB099 -> 0x7362B0  head 48 8B C4 55 56 57 41 54
+[19:50:44.157] ui_panels  dispatcher E8 at 0x6EB0B1 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.157] ui_panels  dispatcher E8 at 0x6EB0BC -> 0x73AEC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.157] ui_panels  dispatcher E8 at 0x6EB0D4 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.157] ui_panels  dispatcher E8 at 0x6EB0DF -> 0x737F00  head 48 8B C4 55 56 57 41 54
+[19:50:44.157] ui_panels  dispatcher E8 at 0x6EB0F7 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.157] ui_panels  dispatcher E8 at 0x6EB102 -> 0x739700  head 4C 8B DC 55 41 54 41 55
+[19:50:44.161] ui_panels  dispatcher E8 at 0x6EB11A -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.161] ui_panels  dispatcher E8 at 0x6EB125 -> 0x75DCB0  head 4C 8B DC 55 56 41 55 41
+[19:50:44.161] ui_panels  dispatcher E8 at 0x6EB13D -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.161] ui_panels  dispatcher E8 at 0x6EB148 -> 0x78C1A0  head 4C 8B DC 55 41 55 41 57
+[19:50:44.161] ui_panels  dispatcher E8 at 0x6EB175 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.161] ui_panels  dispatcher E8 at 0x6EB180 -> 0x794FB0  head 48 8B C4 55 56 57 41 54
+[19:50:44.161] ui_panels  dispatcher E8 at 0x6EB198 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.161] ui_panels  dispatcher E8 at 0x6EB1A3 -> 0x793130  head 48 8B C4 55 56 57 41 54
+[19:50:44.161] ui_panels  dispatcher E8 at 0x6EB1BB -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.161] ui_panels  dispatcher E8 at 0x6EB1C6 -> 0x71FED0  head 48 8B C4 55 56 57 41 54
+[19:50:44.163] ui_panels  dispatcher E8 at 0x6EB1DE -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.163] ui_panels  dispatcher E8 at 0x6EB1E9 -> 0x7A22C0  head 4C 8B DC 49 89 73 20 55
+[19:50:44.163] ui_panels  dispatcher E8 at 0x6EB201 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.163] ui_panels  dispatcher E8 at 0x6EB20C -> 0x7217D0  head 4C 8B DC 53 56 57 48 81
+[19:50:44.163] ui_panels  dispatcher E8 at 0x6EB22E -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.163] ui_panels  dispatcher E8 at 0x6EB239 -> 0x721C80  head 4C 8B DC 55 41 55 41 56
+[19:50:44.163] ui_panels  dispatcher E8 at 0x6EB262 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.163] ui_panels  dispatcher E8 at 0x6EB26D -> 0x799630  head 48 8B C4 55 56 57 41 54
+[19:50:44.165] ui_panels  dispatcher E8 at 0x6EB285 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.165] ui_panels  dispatcher E8 at 0x6EB2A0 -> 0x78EDC0  head 40 55 57 41 57 48 8D AC
+[19:50:44.165] ui_panels  dispatcher E8 at 0x6EB2AD -> 0x792C50  head 4C 8B DC 55 56 57 48 81
+[19:50:44.165] ui_panels  dispatcher E8 at 0x6EB2CE -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.166] ui_panels  dispatcher E8 at 0x6EB2E9 -> 0x789F30  head 4C 8B DC 55 41 55 41 57
+[19:50:44.166] ui_panels  dispatcher E8 at 0x6EB2F6 -> 0x789320  head 4C 8B DC 55 41 55 41 57
+[19:50:44.166] ui_panels  dispatcher E8 at 0x6EB30E -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.166] ui_panels  dispatcher E8 at 0x6EB319 -> 0x78A780  head 48 8B C4 41 56 41 57 48
+[19:50:44.166] ui_panels  dispatcher E8 at 0x6EB331 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.166] ui_panels  dispatcher E8 at 0x6EB33C -> 0x78AC90  head 48 8B C4 55 41 55 41 57
+[19:50:44.166] ui_panels  dispatcher E8 at 0x6EB354 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.166] ui_panels  dispatcher E8 at 0x6EB35F -> 0x78B4C0  head 4C 8B DC 55 41 55 41 57
+[19:50:44.166] ui_panels  dispatcher E8 at 0x6EB377 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.166] ui_panels  dispatcher E8 at 0x6EB382 -> 0x786BE0  head 48 8B C4 55 56 57 41 54
+[19:50:44.166] ui_panels  dispatcher E8 at 0x6EB39A -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.166] ui_panels  dispatcher E8 at 0x6EB3A5 -> 0x79F550  head 4C 8B DC 55 57 41 56 49
+[19:50:44.166] ui_panels  dispatcher E8 at 0x6EB3BD -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.166] ui_panels  dispatcher E8 at 0x6EB3C8 -> 0x761300  head 40 55 56 57 41 56 48 8D
+[19:50:44.166] ui_panels  dispatcher E8 at 0x6EB3E0 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.166] ui_panels  dispatcher E8 at 0x6EB3EB -> 0x7214A0  head 4C 8B DC 53 56 57 48 81
+[19:50:44.166] ui_panels  dispatcher E8 at 0x6EB403 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.166] ui_panels  dispatcher E8 at 0x6EB40E -> 0x725130  head 48 8B C4 55 56 57 41 54
+[19:50:44.169] ui_panels  dispatcher E8 at 0x6EB430 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.169] ui_panels  dispatcher E8 at 0x6EB43B -> 0x7C92A0  head 48 8B C4 55 56 57 41 54
+[19:50:44.169] ui_panels  dispatcher E8 at 0x6EB452 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.169] ui_panels  dispatcher E8 at 0x6EB45D -> 0x7CDC40  head 48 8B C4 55 56 57 41 54
+[19:50:44.169] ui_panels  dispatcher E8 at 0x6EB472 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.169] ui_panels  dispatcher E8 at 0x6EB47D -> 0x7CBB30  head 48 8B C4 55 56 57 41 54
+[19:50:44.170] ui_panels  dispatcher E8 at 0x6EB492 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.170] ui_panels  dispatcher E8 at 0x6EB49D -> 0x7496C0  head 48 8B C4 55 56 57 41 54
+[19:50:44.170] ui_panels  dispatcher E8 at 0x6EB4B2 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.170] ui_panels  dispatcher E8 at 0x6EB4BD -> 0x754FD0  head 4C 8B DC 55 56 41 55 41
+[19:50:44.170] ui_panels  dispatcher E8 at 0x6EB4D2 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.170] ui_panels  dispatcher E8 at 0x6EB4DD -> 0x7534F0  head 48 8B C4 55 56 57 41 54
+[19:50:44.171] ui_panels  dispatcher E8 at 0x6EB4F2 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.171] ui_panels  dispatcher E8 at 0x6EB4FD -> 0x741170  head 48 8B C4 55 56 57 41 54
+[19:50:44.171] ui_panels  dispatcher E8 at 0x6EB512 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.171] ui_panels  dispatcher E8 at 0x6EB51D -> 0x745350  head 48 8B C4 55 56 57 41 54
+[19:50:44.171] ui_panels  dispatcher E8 at 0x6EB532 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.171] ui_panels  dispatcher E8 at 0x6EB53D -> 0x73FE90  head 4C 8B DC 55 56 41 54 41
+[19:50:44.171] ui_panels  dispatcher E8 at 0x6EB552 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.171] ui_panels  dispatcher E8 at 0x6EB55D -> 0x74C500  head 48 8B C4 55 56 57 41 54
+[19:50:44.171] ui_panels  dispatcher E8 at 0x6EB572 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.173] ui_panels  dispatcher E8 at 0x6EB57D -> 0x74F910  head 48 8B C4 55 56 57 41 54
+[19:50:44.173] ui_panels  dispatcher E8 at 0x6EB592 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.173] ui_panels  dispatcher E8 at 0x6EB59D -> 0x78CC00  head 4C 8B DC 55 56 49 8D AB
+[19:50:44.173] ui_panels  dispatcher E8 at 0x6EB5AA -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.173] ui_panels  dispatcher E8 at 0x6EB5B5 -> 0x6F4740  head 48 89 5C 24 08 57 48 83
+[19:50:44.173] ui_panels  dispatcher E8 at 0x6EB5C8 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.173] ui_panels  dispatcher E8 at 0x6EB5D3 -> 0x723190  head 4C 8B DC 55 56 57 41 56
+[19:50:44.173] ui_panels  dispatcher E8 at 0x6EB5E3 -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.173] ui_panels  dispatcher E8 at 0x6EB5EE -> 0x718FC0  head 4C 8B DC 55 56 41 56 41
+[19:50:44.173] ui_panels  dispatcher E8 at 0x6EB5FE -> 0x6F8CC0  head 48 8B C4 55 56 57 41 54
+[19:50:44.173] ui_panels  dispatcher E8 at 0x6EB613 -> 0x77C940  head 48 8B C4 55 56 57 41 54
+[19:50:44.173] ui_panels  dispatcher E8 at 0x6EB61D -> 0x7838E0  head FF 25 00 00 00 00 80 90
+[19:50:44.173] ui_panels  dispatcher E8 at 0x6EB62D -> 0x70FEE0  head 4C 8B DC 55 56 41 55 41
+[19:50:44.173] ui_panels  dispatcher E8 at 0x6EB63D -> 0x80CC60  head 40 55 56 57 41 54 41 55
+[19:50:44.173] ui_panels  dispatcher E8 at 0x6EB6D5 -> 0x7B7FA0  head 48 8B C4 55 53 56 57 41
+[19:50:44.177] ui_panels  dispatcher E8 at 0x6EB7AB -> 0x7B7FA0  head 48 8B C4 55 53 56 57 41
+[19:50:44.177] ui_panels  dispatcher E8 at 0x6EB7DA -> 0x7B7960  head 48 8B C4 55 53 56 57 41
+[19:50:44.181] ui_panels  dispatcher E8 at 0x6EB8A4 -> 0x493980  head 44 88 4C 24 20 4C 89 44
+[19:50:44.183] ui_panels  dispatcher E8 at 0x6EB9E2 -> 0x6EBAC7  head CB FF 15 22 0F 18 00 48
+[19:50:44.187] ui_panels  dispatcher E8 at 0x6EBB9C -> 0x409330  head 48 8B C4 48 89 58 08 48
+[19:50:44.190] ui_panels  dispatcher E8 at 0x6EBC77 -> 0x409330  head 48 8B C4 48 89 58 08 48
+[19:50:44.194] ui_panels  dispatcher E8 at 0x6EBD59 -> 0x409330  head 48 8B C4 48 89 58 08 48
+[19:50:44.194] ui_panels  dispatcher E8 at 0x6EBE3B -> 0x409330  head 48 8B C4 48 89 58 08 48
+[19:50:44.198] ui_panels  dispatcher E8 at 0x6EBFAB -> 0x409330  head 48 8B C4 48 89 58 08 48
+[19:50:44.198] ui_panels  dispatcher E8 at 0x6EC050 -> 0x409330  head 48 8B C4 48 89 58 08 48
+[19:50:44.204] ui_panels  dispatcher E8 at 0x6EC118 -> 0x409330  head 48 8B C4 48 89 58 08 48
+[19:50:44.204] ui_panels  dispatcher E8 at 0x6EC1DF -> 0x409330  head 48 8B C4 48 89 58 08 48
+[19:50:44.207] ui_panels  dispatcher E8 at 0x6EC321 -> 0x409330  head 48 8B C4 48 89 58 08 48
+[19:50:44.211] ui_panels  dispatcher E8 at 0x6EC3F5 -> 0x409330  head 48 8B C4 48 89 58 08 48
+[19:50:44.213] ui_panels  dispatcher E8 at 0x6EC4C8 -> 0x409330  head 48 8B C4 48 89 58 08 48
+[19:50:44.215] ui_panels  dispatcher E8 at 0x6EC59B -> 0x409330  head 48 8B C4 48 89 58 08 48
+[19:50:44.215] ui_panels  dispatcher E8 at 0x6EC60A -> 0x409330  head 48 8B C4 48 89 58 08 48
+[19:50:44.215] ui_panels  dispatcher E8 at 0x6EC699 -> 0x6EC74B  head 1B 2D 00 E4 CB 96 40 0F
+[19:50:44.226] ui_panels  dispatcher E8 at 0x6ECAF8 -> 0x7AB9B0  head 40 55 53 41 54 41 55 41
+[19:50:44.239] ui_panels  dispatcher E8 at 0x6ECF24 -> 0x7AAE80  head 40 55 57 41 54 41 57 48
+[19:50:44.243] ui_panels  dispatcher E8 at 0x6ED0F4 -> 0x6ED120  head 48 89 5C 24 10 57 48 83
+[19:50:44.243] ui_panels  dispatcher E8 at 0x6ED10C -> 0x84DEA0  head 48 3B 0D A1 41 14 00 F2
+[19:50:44.243] ui_panels  dispatcher E8 at 0x6ED172 -> 0x01E140  head 4C 89 4C 24 20 4C 89 44
+[19:50:44.247] ui_panels  dispatcher E8 at 0x6ED29D -> 0x6ED310  head 48 85 D2 0F 84 4A 03 00
+[19:50:44.247] ui_panels  dispatcher E8 at 0x6ED2BA -> 0x6ED310  head 48 85 D2 0F 84 4A 03 00
+[19:50:44.247] ui_panels  dispatcher E8 at 0x6ED36C -> 0x001A50  head 48 83 EC 28 4C 8B CA 48
+[19:50:44.250] ui_panels  dispatcher E8 at 0x6ED384 -> 0x84DFE0  head E9 F3 FF FF FF CC CC CC
+[19:50:44.250] ui_panels  dispatcher E8 at 0x6ED395 -> 0x4929D0  head 48 89 5C 24 08 57 48 83
+[19:50:44.250] ui_panels  dispatcher E8 at 0x6ED3BF -> 0x228190  head 48 89 5C 24 08 57 48 83
+[19:50:44.252] ui_panels  dispatcher E8 at 0x6ED3FD -> 0x001A50  head 48 83 EC 28 4C 8B CA 48
+[19:50:44.252] ui_panels  dispatcher E8 at 0x6ED415 -> 0x84DFE0  head E9 F3 FF FF FF CC CC CC
+[19:50:44.254] ui_panels  dispatcher E8 at 0x6ED47A -> 0x001A50  head 48 83 EC 28 4C 8B CA 48
+[19:50:44.255] ui_panels  dispatcher E8 at 0x6ED492 -> 0x84DFE0  head E9 F3 FF FF FF CC CC CC
+[19:50:44.255] ui_panels  dispatcher E8 at 0x6ED4DE -> 0x202A20  head 48 89 5C 24 10 56 48 83
+[19:50:44.255] ui_panels  dispatcher E8 at 0x6ED4EB -> 0x84DFE0  head E9 F3 FF FF FF CC CC CC
+[19:50:44.255] ui_panels  dispatcher E8 at 0x6ED50E -> 0x001A50  head 48 83 EC 28 4C 8B CA 48
+[19:50:44.255] ui_panels  dispatcher E8 at 0x6ED526 -> 0x84DFE0  head E9 F3 FF FF FF CC CC CC
+[19:50:44.259] ui_panels  dispatcher E8 at 0x6ED591 -> 0x03ABF0  head 48 89 5C 24 08 57 48 83
+[19:50:44.259] ui_panels  dispatcher E8 at 0x6ED5A9 -> 0x03ABF0  head 48 89 5C 24 08 57 48 83
+[19:50:44.259] ui_panels  dispatcher E8 at 0x6ED5C1 -> 0x03ABF0  head 48 89 5C 24 08 57 48 83
+[19:50:44.259] ui_panels  dispatcher E8 at 0x6ED5D9 -> 0x03ABF0  head 48 89 5C 24 08 57 48 83
+[19:50:44.259] ui_panels  dispatcher E8 at 0x6ED620 -> 0x03ABF0  head 48 89 5C 24 08 57 48 83
+[19:50:44.259] ui_panels  dispatcher E8 at 0x6ED633 -> 0x84DFE0  head E9 F3 FF FF FF CC CC CC
+[19:50:44.259] ui_panels  dispatcher E8 at 0x6ED64D -> 0x84DFE0  head E9 F3 FF FF FF CC CC CC
+[19:50:44.263] ui_panels  dispatcher E8 at 0x6ED70B -> 0x001A50  head 48 83 EC 28 4C 8B CA 48
+[19:50:44.263] ui_panels  dispatcher E8 at 0x6ED723 -> 0x84DFE0  head E9 F3 FF FF FF CC CC CC
+[19:50:44.267] ui_panels  dispatcher E8 at 0x6ED771 -> 0x001A50  head 48 83 EC 28 4C 8B CA 48
+[19:50:44.267] ui_panels  dispatcher E8 at 0x6ED789 -> 0x84DFE0  head E9 F3 FF FF FF CC CC CC
+[19:50:44.268] ui_panels  dispatcher E8 at 0x6ED7AC -> 0x001A50  head 48 83 EC 28 4C 8B CA 48
+[19:50:44.268] ui_panels  dispatcher E8 at 0x6ED7C4 -> 0x84DFE0  head E9 F3 FF FF FF CC CC CC
+[19:50:44.270] ui_panels  dispatcher E8 at 0x6ED80B -> 0x001A50  head 48 83 EC 28 4C 8B CA 48
+[19:50:44.272] ui_panels  dispatcher E8 at 0x6ED823 -> 0x84DFE0  head E9 F3 FF FF FF CC CC CC
+[19:50:44.273] ui_panels  dispatcher E8 at 0x6ED86B -> 0x202A20  head 48 89 5C 24 10 56 48 83
+[19:50:44.273] ui_panels  dispatcher E8 at 0x6ED878 -> 0x84DFE0  head E9 F3 FF FF FF CC CC CC
+[19:50:44.273] ui_panels  dispatcher E8 at 0x6ED89B -> 0x001A50  head 48 83 EC 28 4C 8B CA 48
+[19:50:44.273] ui_panels  dispatcher E8 at 0x6ED8B3 -> 0x84DFE0  head E9 F3 FF FF FF CC CC CC
+[19:50:44.275] ui_panels  dispatcher E8 at 0x6ED8EB -> 0x001A50  head 48 83 EC 28 4C 8B CA 48
+[19:50:44.275] ui_panels  dispatcher E8 at 0x6ED903 -> 0x84DFE0  head E9 F3 FF FF FF CC CC CC
+[19:50:44.305] ui_panels  dispatcher E8 at 0x6EE33C -> 0x84F520  head FF 25 42 EB 01 00 CC CC
+[19:50:44.305] ui_panels  dispatcher E8 at 0x6EE4B0 -> 0x6ED120  head 48 89 5C 24 10 57 48 83
+[19:50:44.309] ui_panels  dispatcher E8 at 0x6EE5E8 -> 0x84DECC  head 40 53 48 83 EC 20 48 8B
+[19:50:44.309] ui_panels  dispatcher E8 at 0x6EE5F5 -> 0x25C500  head 48 89 5C 24 08 48 89 74
+[19:50:44.313] ui_panels  dispatcher E8 at 0x6EE68B -> 0x84E014  head E9 B3 FE FF FF CC CC CC
+[19:50:44.326] ui_panels  dispatcher E8 at 0x6EEB5A -> 0x84DECC  head 40 53 48 83 EC 20 48 8B
+[19:50:44.326] ui_panels  dispatcher E8 at 0x6EEB74 -> 0x0FD890  head 48 89 4C 24 08 57 48 83
+[19:50:44.329] ui_panels  dispatcher E8 at 0x6EECA8 -> 0x6A95D4  head 07 48 C1 F8 03 48 83 F8
+[19:50:44.329] ui_panels  dispatcher E8 at 0x6EECCF -> 0x8177B0  head 8B 81 4C 02 00 00 F3 0F
+[19:50:44.337] ui_panels  dispatcher E8 at 0x6EEFAA -> 0x6C98B4  head C7 44 24 30 00 00 00 00
+[19:50:44.343] ui_panels  dispatcher E8 at 0x6EF0DD -> 0x6F48C0  head 48 83 EC 38 80 7A 01 00
+[19:50:44.347] ui_panels  dispatcher E8 at 0x6EF2D9 -> 0x803F30  head 48 8B C4 48 89 58 08 48
+[19:50:44.353] ui_panels  dispatcher E8 at 0x6EF526 -> 0x81E210  head 40 57 48 83 EC 30 48 C7
+[19:50:44.353] ui_panels  dispatcher E8 at 0x6EF548 -> 0x001A50  head 48 83 EC 28 4C 8B CA 48
+[19:50:44.353] ui_panels  dispatcher E8 at 0x6EF5A6 -> 0x042DE0  head 48 89 5C 24 08 57 48 83
+[19:50:44.357] ui_panels  dispatcher E8 at 0x6EF6A2 -> 0x01E140  head 4C 89 4C 24 20 4C 89 44
+[19:50:44.383] ui_panels  dispatcher E8 at 0x6F0234 -> 0x803F30  head 48 8B C4 48 89 58 08 48
+[19:50:44.407] ui_panels  dispatcher E8 at 0x6F0BD9 -> 0x6CB4E3  head FA 07 48 8B CA 48 C1 E9
+[19:50:44.423] ui_panels  dispatcher E8 at 0x6F12FE -> 0x6ABC2A  head 0F B6 08 F3 41 0F 58 98
+[19:50:44.429] ui_panels  dispatcher E8 at 0x6F1546 -> 0x3329E0  head 40 55 41 56 41 57 B8 60
+[19:50:44.429] ui_panels  dispatcher E8 at 0x6F159C -> 0x42A760  head 48 8B C4 48 89 58 08 55
+[19:50:44.430] ui_panels  dispatcher E8 at 0x6F15FE -> 0x005290  head 4C 89 44 24 18 4C 89 4C
+[19:50:44.430] ui_panels  dispatcher E8 at 0x6F163B -> 0x005290  head 4C 89 44 24 18 4C 89 4C
+[19:50:44.430] ui_panels  dispatcher E8 at 0x6F1692 -> 0x015900  head 48 89 54 24 10 4C 89 44
+[19:50:44.433] ui_panels  dispatcher E8 at 0x6F16D7 -> 0x015900  head 48 89 54 24 10 4C 89 44
+[19:50:44.433] ui_panels  dispatcher E8 at 0x6F172D -> 0x42A760  head 48 8B C4 48 89 58 08 55
+[19:50:44.433] ui_panels  dispatcher E8 at 0x6F178E -> 0x005290  head 4C 89 44 24 18 4C 89 4C
+[19:50:44.435] ui_panels  dispatcher E8 at 0x6F17CA -> 0x005290  head 4C 89 44 24 18 4C 89 4C
+[19:50:44.435] ui_panels  dispatcher E8 at 0x6F1829 -> 0x015900  head 48 89 54 24 10 4C 89 44
+[19:50:44.435] ui_panels  dispatcher E8 at 0x6F1853 -> 0x3332D0  head 48 89 5C 24 08 48 89 74
+[19:50:44.435] ui_panels  dispatcher E8 at 0x6F1954 -> 0x42A760  head 48 8B C4 48 89 58 08 55
+[19:50:44.439] ui_panels  dispatcher E8 at 0x6F19AF -> 0x005290  head 4C 89 44 24 18 4C 89 4C
+[19:50:44.439] ui_panels  dispatcher E8 at 0x6F19BD -> 0x42AA80  head 48 85 D2 0F 84 8D 00 00
+[19:50:44.439] ui_panels  dispatcher E8 at 0x6F19D5 -> 0x015900  head 48 89 54 24 10 4C 89 44
+[19:50:44.443] ui_panels  storage diag: 307 calls, 1 in storage range 0x4A0000..0x4E0000
+[19:50:44.443] ui_panels  storage builder direct 0x4CABD0 32: 40 55 57 41 54 41 56 41 57 48 8D AC 24 B0 C9 FF FF B8 50 37 00 00 E8 65 48 38 00 48 2B E0 48 8B
+[19:50:44.443] ui_panels  dispatcher prologue 0x6E9B80: 40 55 53 56 57 41 56 48 8D AC 24 00 EC FF FF B8
+[19:50:44.443] hook ok      shop                   target=00007FF6F2CF72F0 tramp=0000022ACCE10000 (21 bytes stolen)
+[19:50:44.443] hook ok      residence              target=00007FF6F2D31300 tramp=0000022ACCE20000 (19 bytes stolen)
+[19:50:44.443] hook ok      pub                    target=00007FF6F2CF3950 tramp=0000022ACCE30000 (21 bytes stolen)
+[19:50:44.443] hook ok      factory                target=00007FF6F2D69630 tramp=0000022ACCE40000 (21 bytes stolen)
+[19:50:44.443] hook ok      cityhall               target=00007FF6F2CFDBF0 tramp=0000022ACCE50000 (17 bytes stolen)
+[19:50:44.443] hook ok      citizen                target=00007FF6F2D9EEB0 tramp=0000022ACCE60000 (15 bytes stolen)
+[19:50:44.725] ui_panels  do: hook 0x6EB4FD -> DO builder 0x741170 ok (cave 00007FF6F30D0000). The PRIV tile now draws on a distribution office window.
+[19:50:44.725] hook ok      storage                target=00007FF6F2A9ABD0 tramp=0000022ACCE70000 (22 bytes stolen)
+[19:50:44.725] ui_panels  warehouse: hook 0x6EA5EF -> builder 0x7FC880 ok (cave 00007FF6F30E0000). Window-kind-3 panels now get rows and widgets.
+[19:50:45.021] ui_panels  storage_td5: hook 0x6EAE14 -> builder 0x71D290 ok (cave 00007FF6F30F0000). td+0x360==5 storage panels now get rows and widgets.
+[19:50:45.021] ui_panels  person row provider 1 registered
+[19:50:45.021] ui_panels  live v6.15: 10 hook(s), max_rows 14, font 0x994200, colour 0xFF1A1A1A, test_row 0, probe 1, buttons on (content-flow, black label), toolbar size 40, ESC probe on (physical ESC + game+0xCB78/0xD428), wallet row on (currency consumed)
+[19:50:45.021] ui_panels  provider tables: 4 building row, 1 person row, 5 widget (widgets are building-only by contract)
+[19:50:45.021] plugin   17 loaded
+[19:50:45.021] --- hooks installed ---
+[19:50:45.071] game.WARN  1
+[19:50:45.073] game.WARN  2
+[19:50:45.073] game.WARN  3
+[19:50:45.073] game.WARN  4
+[19:50:45.075] game.WARN  5
+[19:50:45.077] game.WARN  6
+[19:50:45.077] game.WARN  6
+[19:50:45.078] game.WARN  7
+[19:50:45.099] game.WARN  Monitor 0
+[19:50:45.099] game.WARN  Position 0 0
+[19:50:45.099] game.WARN  Size 1920 1080
+[19:50:45.099] game.WARN  Monitor 1
+[19:50:45.099] game.WARN  Position 1920 0
+[19:50:45.099] game.WARN  Size 1920 1080
+[19:50:45.099] game.WARN  8
+[19:50:45.163] game.ERROR setfocus
+[19:50:45.600] game.ERROR currentlanguage english
+[19:51:05.029] game.ERROR Failed to open header for enumeration media_soviet/saved_last/header.bin
+[19:51:21.496] game.WARN  found save 13760 - Petsamo
+[19:51:21.499] game.WARN  found save 22467 - Test 02
+[19:51:21.501] game.WARN  found save 22939 - Osterburg
+[19:51:21.502] game.WARN  found save 30132 - Petsamo 1950
+[19:51:21.539] game.WARN  found save 31614 - Petsamo 2
+[19:51:21.541] game.WARN  found save 5643 - Test
+[19:51:21.542] game.WARN  found save autosave1
+[19:51:21.543] game.WARN  found save autosave2
+[19:51:21.544] game.WARN  found save autosave3
+[19:51:21.545] game.WARN  found save autosave4
+[19:51:21.546] game.WARN  found save autosave5
+[19:51:21.547] game.WARN  Workshop subscribed items num 0
+[19:51:24.186] game.ERROR Trying load saved game missing items:
+[19:51:24.188] game.ERROR Item ident 3026792638/electric_substation_medium_large type 1 
+[19:51:27.010] game.info  v1.1.1.9 (64 bit DX11.1)
+[19:51:28.185] game.info  Loading string --- Initializing workshop items
+[19:51:28.189] game.WARN  Workshop subscribed items num 0
+[19:51:31.823] game.info  Loading string --- Loading weather
+[19:51:31.885] game.info  Loading string --- Loading sky
+[19:51:31.891] game.info  Loading string --- Loading underground
+[19:51:31.897] game.info  Loading string --- Initializing post effect
+[19:51:31.941] game.info  Loading string --- Initializing water
+[19:51:31.967] game.info  Loading string --- Loading terrain
+[19:51:32.389] game.info  Loading string --- Initializing clouds
+[19:51:32.405] game.info  Loading string --- Initializing particle effects
+[19:51:32.608] game.info  Loading string --- Loading paths
+[19:51:32.615] game.info  Loading string --- Initializing grass
+[19:51:32.620] game.info  Loading string --- Initializing trees
+[19:51:32.652] game.info  Loading string --- Importing trees
+[19:51:33.416] game.info  Loading string --- Initializing buildings
+[19:51:33.498] game.info  Loading string --- Importing buildings
+[19:51:35.096] game.info  Loading string --- Initializing Ambients
+[19:51:35.236] game.info  Loading string --- Initializing shadow system
+[19:51:35.236] game.info  Loading string --- Initializing far map
+[19:51:35.239] game.info  Loading string --- Initializing emissive map
+[19:51:35.242] game.info  Loading string --- Initializing resource map
+[19:51:35.251] texel  deposit map texture 0 = 0000022AC432D700 (save\5643 - Test/resourcemap.dds)
+[19:51:35.260] texel  deposit map texture 1 = 0000022AC432D880 (save\5643 - Test/resourcemap2.dds)
+[19:51:35.262] game.info  Loading string --- Initializing clouds shadow map
+[19:51:35.321] game.info  Loading string --- Import - Loading header
+[19:51:35.355] game.info  Loading string --- Initializing shaders
+[19:51:35.443] game.info  Loading string --- Initializing screen marks
+[19:51:35.519] game.info  Loading string --- Initializing preview shot system
+[19:51:35.520] game.info  Loading string --- Initializing mud remove
+[19:51:35.520] game.info  Loading string --- Initializing main tabs
+[19:51:35.521] game.info  Loading string --- Initializing resources
+[19:51:35.874] game.info  Loading string --- Initializing building types
+[19:51:36.851] game.ERROR ResourceGet - not found waste
+[19:51:36.855] game.ERROR ResourceGet - not found waste
+[19:51:36.861] game.ERROR ResourceGet - not found waste
+[19:51:36.882] game.ERROR ResourceGet - not found waste
+[19:51:37.412] game.ERROR ResourceGet - not found waste
+[19:51:37.928] game.ERROR ResourceGet - not found waste
+[19:51:37.955] game.ERROR ResourceGet - not found waste
+[19:51:38.365] game.ERROR ResourceGet - not found waste
+[19:51:38.405] game.ERROR ResourceGet - not found waste
+[19:51:39.013] game.ERROR ResourceGet - not found waste
+[19:51:39.166] game.ERROR ResourceGet - not found waste
+[19:51:41.046] game.ERROR ResourceGet - not found waste
+[19:51:41.047] game.ERROR ResourceGet - not found waste
+[19:51:41.050] game.ERROR ResourceGet - not found waste
+[19:51:41.050] game.ERROR ResourceGet - not found waste
+[19:51:42.938] game.ERROR ResourceGet - not found $STORAGE_SPECIAL
+[19:51:42.943] game.ERROR ResourceGet - not found $WORKING_VEHICLES_NEEDED
+[19:51:43.483] game.ERROR Failed to open media_soviet/workshop_wip/2845627877/rennwerk/building.ini
+[19:51:43.484] game.ERROR Failed to open media_soviet/workshop_wip/2845627877/rennwerkmuseum/building.ini
+[19:51:43.804] game.ERROR ResourceGet - not found waste
+[19:51:44.340] game.ERROR ResourceGet - not found waste
+[19:51:44.469] game.ERROR ResourceGet - not found waste
+[19:51:44.471] game.ERROR ResourceGet - not found waste
+[19:51:44.587] game.ERROR ResourceGet - not found waste
+[19:51:44.642] game.ERROR Failed to open media_soviet/workshop_wip/3012036519/busstops/building.ini
+[19:51:44.751] game.ERROR Failed to open media_soviet/workshop_wip/3013547359/textures/building.ini
+[19:51:44.898] game.ERROR ResourceGet - not found $POLLUTION_MEDIUM
+[19:51:44.956] game.ERROR Failed to open media_soviet/workshop_wip/3033710102/textures/building.ini
+[19:51:44.994] game.ERROR ResourceGet - not found waste
+[19:51:44.999] game.ERROR ResourceGet - not found waste
+[19:51:45.003] game.ERROR ResourceGet - not found $STORAGE_EXPORT
+[19:51:45.005] game.ERROR ResourceGet - not found $RESOURCE_VISUALIZATION
+[19:51:45.018] game.ERROR ResourceGet - not found $PARTICLE
+[19:51:45.111] game.ERROR ResourceGet - not found waste
+[19:51:46.670] game.ERROR ResourceGet - not found waste
+[19:51:47.119] game.info  Loading string --- Initializing vehicle types
+[19:51:47.743] game.ERROR ResourceGet - not found cargovehicles
+[19:51:48.671] game.ERROR Failed to open media_soviet/cwc/vehicles/shared/script.ini
+[19:51:48.753] game.ERROR Failed to open media_soviet/dlc2/vehicles/projekt1430/script.ini
+[19:51:49.304] game.ERROR Failed to open media_soviet/dlc3/vehicles/MazTex/script.ini
+[19:51:49.938] game.ERROR Failed to open media_soviet/dlc3/vehicles/SaurerTex/script.ini
+[19:51:50.028] game.ERROR Failed to open media_soviet/dlc3/vehicles/textures/script.ini
+[19:51:50.029] game.ERROR Failed to open media_soviet/dlc3/vehicles/texturesH75/script.ini
+[19:51:50.029] game.ERROR Failed to open media_soviet/dlc3/vehicles/texturesRB2/script.ini
+[19:51:50.098] game.ERROR Failed to open media_soviet/dlc3/vehicles/wozki/script.ini
+[19:51:50.106] game.ERROR Failed to open media_soviet/dlc3/vehicles/YagTex/script.ini
+[19:51:50.295] game.ERROR Failed to open media_soviet/dlc4/vehicles/_snow_AMO15/script.ini
+[19:51:50.306] game.ERROR Failed to open media_soviet/workshop_wip/2148079458/teste/script.ini
+[19:51:50.683] game.ERROR Failed to open media_soviet/workshop_wip/2688441507/projekt1430/script.ini
+[19:51:50.730] game.ERROR Failed to open media_soviet/workshop_wip/2782038889/PT76/script.ini
+[19:51:50.731] game.ERROR Failed to open media_soviet/workshop_wip/2782038889/T54/script.ini
+[19:51:50.732] game.ERROR Failed to open media_soviet/workshop_wip/2782038889/T62/script.ini
+[19:51:51.092] game.ERROR ResourceGet - not found VEHICLES
+[19:51:55.692] game.info  Loading string --- Initializing GUI models
+[19:51:58.007] game.info  Loading string --- Initializing Conveyors
+[19:51:58.371] game.info  Loading string --- Initializing Pipes
+[19:51:58.415] game.info  Loading string --- Initializing Water Pipes
+[19:51:58.453] game.info  Loading string --- Initializing Pipes
+[19:51:58.533] game.info  Loading string --- Initializing Eletrical wires
+[19:51:58.823] game.info  Loading string --- Initializing Roads
+[19:51:58.993] game.info  Loading string --- Initializing Roads secondary
+[19:51:59.079] game.info  Loading string --- Initializing Rails
+[19:51:59.213] game.info  Loading string --- Initializing Rail secondary
+[19:51:59.213] game.info  Loading string --- Initializing Runways
+[19:51:59.288] game.info  Loading string --- Initializing Pedestrian way
+[19:51:59.334] game.info  Loading string --- Initializing Factory connections
+[19:51:59.443] game.info  Loading string --- Initializing water connections
+[19:51:59.443] game.info  Loading string --- Initializing cableway connections
+[19:51:59.444] game.info  Loading string --- Initializing Heating
+[19:51:59.455] game.info  Loading string --- Initializing tools
+[19:52:00.490] game.info  Loading string --- Initializing GUI textures
+[19:52:03.349] game.WARN  m_WaterErosionTerainWaterSediment 0
+[19:52:03.349] game.WARN  m_WaterErosionTerainWaterSediment 0
+[19:52:03.349] game.WARN  m_WaterErosionOutflow 0
+[19:52:03.352] game.WARN  m_WaterErosionOutflow 0
+[19:52:03.352] game.WARN  m_WaterErosionOutflowDiagonal 0
+[19:52:03.353] game.WARN  m_WaterErosionOutflowDiagonal 0
+[19:52:03.353] game.WARN  m_WaterErosionTerainWaterSedimentRT 0
+[19:52:03.353] game.WARN  m_WaterErosionTerainWaterSedimentRT 0
+[19:52:03.353] game.WARN  m_WaterErosionOutflowRT 0
+[19:52:03.353] game.WARN  m_WaterErosionOutflowRT 0
+[19:52:03.353] game.WARN  m_WaterErosionOutflowDiagonalRT 0
+[19:52:03.353] game.WARN  m_WaterErosionOutflowDiagonalRT 0
+[19:52:03.356] game.WARN  m_WaterErosionFinalTerrain 0
+[19:52:03.356] game.WARN  m_WaterErosionFinalTerrainRT 0
+[19:52:03.356] game.WARN  m_WaterErosionNormalTest 0
+[19:52:03.356] game.WARN  m_WaterErosionNormalTestRT 0
+[19:52:04.511] game.info  Loading string --- Initializing Semaphores
+[19:52:05.056] game.info  Loading string --- Preparing ambients
+[19:52:05.057] game.info  Loading string --- Importing game files - creating arrays
+[19:52:05.061] game.info  Loading string --- Import - Roads secondary
+[19:52:05.063] game.info  Loading string --- Import - Rails
+[19:52:05.065] game.info  Loading string --- Import - Rails secondary
+[19:52:05.067] game.info  Loading string --- Import - Conveyors
+[19:52:05.087] game.info  Loading string --- Import - Pipes
+[19:52:05.089] game.info  Loading string --- Import - WaterPipes
+[19:52:05.090] game.info  Loading string --- Import - Fences
+[19:52:05.093] game.info  Loading string --- Import - Heating
+[19:52:05.094] game.info  Loading string --- Import - Factory Connections
+[19:52:05.095] game.info  Loading string --- Import - Pedestrian Ways
+[19:52:05.097] game.info  Loading string --- Import - Electric wires high tension
+[19:52:05.098] game.info  Loading string --- Import - Electric wires low tension
+[19:52:05.098] game.info  Loading string --- Import - Buoys
+[19:52:05.099] game.info  Loading string --- Import - Cableway
+[19:52:05.101] game.info  Loading string --- Import - Runways
+[19:52:05.104] persistence  loading -> media_soviet/save\5643 - Test
+[19:52:05.105] citizen_labor  loaded 0 employment record(s) + 0 wage override(s) (format v4) from media_soviet/save\5643 - Test\tesmio_labor.dat
+[19:52:05.107] citizen_retail  loaded 0 shopping record(s) from media_soviet/save\5643 - Test\tesmio_retail.dat
+[19:52:05.107] currency  loaded 0 wallet(s) from media_soviet/save\5643 - Test\tesmio_currency.dat
+[19:52:05.107] enterprise_base  loaded pool 5000000.00, staged 0 enterprise(s) (format v4)
+[19:52:05.108] private_construction  staged 0 construction site(s) from media_soviet/save\5643 - Test\tesmio_construction.dat
+[19:52:05.113] [DRY COST] loaded=1 records=0 interrupted_unpriced=0 missing_file=0 blocked=0 prior_active_not_rebound=1 billing=off
+[19:52:05.113] private_shops  loaded 0 service visit record(s) from media_soviet/save\5643 - Test\tesmio_shops.dat
+[19:52:05.113] republic_bank  loaded state from media_soviet/save\5643 - Test\republic_bank.bin: rate 6.00%, ledger entries 0, economic index x0.7818
+[19:52:05.113] state_ledger  loaded - accumulator reset, ledger file media_soviet/save\5643 - Test\tesmio_ledger.csv
+[19:52:05.114] taxes  loaded rates+flags from media_soviet/save\5643 - Test\tesmio_taxes.dat (VAT 20%, profit 15%, property 250.00 flat)
+[19:52:05.366] game.info  Loading string --- Import - Air Pollution
+[19:52:05.368] game.info  Loading string --- Import - Christmas lights
+[19:52:05.369] game.info  Loading string --- Import - Notification Messages
+[19:52:05.369] game.info  Loading string --- Import - Scripts
+[19:52:05.370] game.info  Loading string --- Import - Custom names
+[19:52:05.371] game.info  Loading string --- Import - City names
+[19:52:05.373] game.info  Loading string --- Import - Research
+[19:52:05.374] game.info  Loading string --- Import - Movies
+[19:52:05.375] game.info  Loading string --- Import - Emergency events
+[19:52:05.376] game.info  Loading string --- Import - Roads
+[19:52:05.384] game.info  Loading string --- Import - Roads secondary
+[19:52:05.396] game.info  Loading string --- Import - Rails
+[19:52:05.463] game.info  Loading string --- Import - Rails secondary
+[19:52:05.476] game.info  Loading string --- Import - Conveyors
+[19:52:05.486] game.info  Loading string --- Import - Pipes
+[19:52:05.487] game.info  Loading string --- Import - WaterPipes
+[19:52:05.487] game.info  Loading string --- Import - Fences
+[19:52:05.488] game.info  Loading string --- Import - Heating
+[19:52:05.489] game.info  Loading string --- Import - Factory Connections
+[19:52:05.490] game.info  Loading string --- Import - Pedestrian Ways
+[19:52:05.495] game.info  Loading string --- Import - Electric wires high tension
+[19:52:05.518] game.info  Loading string --- Import - Electric wires low tension
+[19:52:05.518] game.info  Loading string --- Import - Water
+[19:52:05.518] game.info  Loading string --- Import - Cableway
+[19:52:05.519] game.info  Loading string --- Import - Runways
+[19:52:05.519] game.info  Loading string --- Import - Semaphores
+[19:52:05.519] game.info  Loading string --- Import - Buildings game
+[19:52:05.525] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.526] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.526] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.526] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.529] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.529] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.529] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.530] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.530] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.531] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.531] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.532] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.532] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.532] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.533] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.533] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.533] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.533] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.534] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.534] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.534] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.535] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.535] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.535] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.537] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.537] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.537] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.539] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.539] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.540] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.541] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.541] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.541] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.542] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.542] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.543] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.543] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.543] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.543] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.545] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.546] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.546] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.546] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.546] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.547] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.547] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.548] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.548] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.549] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.549] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.551] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.551] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.551] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.552] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.552] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.553] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.553] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.553] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.554] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.554] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.555] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.555] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.556] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.556] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.556] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.557] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.557] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.557] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.557] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.559] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.559] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.559] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.560] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.560] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.561] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.561] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.561] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.561] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.562] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.562] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.562] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.563] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.563] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.563] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.564] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.564] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.564] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.565] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.565] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.565] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.565] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.566] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.567] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.567] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.567] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.568] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.568] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.569] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.569] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.569] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.569] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.570] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.571] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.571] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.571] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.572] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.573] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.573] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.574] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.575] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.575] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.575] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.576] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.576] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.576] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.577] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.577] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.577] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.578] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.578] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.579] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.579] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.579] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.580] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.580] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.580] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.581] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.581] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.581] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.581] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.581] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.581] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.583] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.583] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.583] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.584] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.585] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.585] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.586] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.586] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.587] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.587] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.588] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.588] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.589] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.589] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.589] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.589] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.590] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.590] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.591] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.591] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.591] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.591] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.593] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.593] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.593] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.594] game.ERROR IO_Building_Read BuildingType is NULL - temp
+[19:52:05.594] game.info  Loading string --- Import - Road junctions
+[19:52:05.595] game.info  Loading string --- Import - Vehicles
+[19:52:06.033] game.info  Loading string --- Import - Lines
+[19:52:06.035] game.info  Loading string --- Import - Workers
+[19:52:06.348] game.info  Loading string --- Import - Vehicle Replace tool
+[19:52:06.350] game.ERROR Read error (8) - File 'media_soviet/save\5643 - Test/replace_history.bin' 
+[19:52:06.350] game.ERROR Read error (8) - File 'media_soviet/save\5643 - Test/usedveh.bin' 
+[19:52:06.351] game.info  Loading string --- Import - CO tool
+[19:52:06.352] game.info  Loading string --- Import - Verifying Roads
+[19:52:06.353] game.info  Loading string --- Import - Verifying Footpaths
+[19:52:06.354] game.info  Loading string --- Import - Verifying Railways
+[19:52:06.354] game.info  Loading string --- Import - Verifying Buildings
+[19:52:06.355] game.info  Loading string --- Import - Verifying Buildings - Step 2
+[19:52:06.355] game.info  Loading string --- Import - Electric High wires verification
+[19:52:06.356] game.info  Loading string --- Import - Electric Low wires verification
+[19:52:06.356] game.info  Loading string --- Import - Pipelines verification
+[19:52:06.356] game.info  Loading string --- Import - WaterPipes verification
+[19:52:06.357] game.info  Loading string --- Import - Fences verification
+[19:52:06.357] game.info  Loading string --- Import - Heating verification
+[19:52:06.357] game.info  Loading string --- Import - Initializing chain semaphores
+[19:52:06.358] game.info  Loading string --- Import - Vehicles Validation
+[19:52:06.358] game.info  Loading string --- Import - Check vehicles
+[19:52:06.358] game.info  Loading string --- Import - Check buildings
+[19:52:06.358] game.info  Loading string --- Import - Check vehicles - conversion to new system
+[19:52:06.358] game.info  Loading string --- Import - Emergency events verification
+[19:52:06.358] game.info  Loading string --- Import - Fixing snowplows
+[19:52:06.359] game.info  Loading string --- Import - Reconnection lamp to electric sources
+[19:52:06.359] game.info  Loading string --- Import - Christmas lights electric sources
+[19:52:06.359] game.info  Loading string --- Import - Trolley  connection to electric sources
+[19:52:06.359] game.info  Loading string --- Import - Regenerating semaphore connections
+[19:52:06.361] game.info  Loading string --- Import - Personal cars heading fix
+[19:52:06.361] game.info  Loading string --- Import - Check buildings
+[19:52:06.361] game.info  Loading string --- Import - Workers emergency events verification
+[19:52:06.361] game.info  Loading string --- Import - Adding air custom houses
+[19:52:06.362] game.info  Loading string --- Check for bad walking connections
+[19:52:06.362] game.info  Loading string --- Check for bad building railways
+[19:52:06.363] game.info  Loading string --- Import - Recalc heating or electric or water connection
+[19:52:06.363] game.info  Loading string --- Import - Workers walking to recalc
+[19:52:06.363] game.info  Loading string --- Import - Recalculating factory variable production/consumption
+[19:52:06.367] game.info  Loading string --- Import - Generating field positions
+[19:52:06.367] game.info  Loading string --- Import - Finished
+[19:52:06.386] game.info  Loading string --- Loading weathers
+[19:52:06.386] game.info  Loading string --- Creating dynamic Lines
+[19:52:06.387] game.info  Loading string --- Creating road junctions
+[19:52:06.388] game.info  Loading string --- Creating road sign zones
+[19:52:06.388] game.info  Loading string --- Game initialized
+[19:52:09.385] private_construction  [ROW_PRINT] caller SOVIET64.exe + 0x785348, building = 0000022B73A2D230
+[19:52:09.385] private_construction  hint: the address above is INSIDE a panel builder, not its entry. `python tools\pe\pdata.py SOVIET64.exe <that rva>` resolves the containing function and dumps its prologue; then set panel_builder_rva / panel_builder_expect / panel_builder_stolen in plugins\private_construction.ini
+[19:52:09.385] private_construction  hint: stolen bytes must be >= 14, must end on an instruction boundary, and must be POSITION-INDEPENDENT - they are copied to a trampoline and run there. A /GS prologue ending in `48 8B 05 <disp32>` (__security_cookie) cannot be inline-hooked at any length; that one needs a call patch. See the notes at the bottom of the ini.
+[19:52:09.391] private_construction  [ROW_PRINT] caller SOVIET64.exe + 0x7C5B49, building = 0000022B73A2D230
+[19:52:09.391] private_construction  [ENTIRE_PRINT] caller SOVIET64.exe + 0x785837, building = 0000022B73A2D230
+[19:52:09.392] ui_panels  ESC probe: new window | closeLatch 0 modalTool 0 | engEdge 0 engHeld 0 | win 0000022B82D988A0 kind 0x0 hidden 0 winClose 0
+[19:52:09.393] enterprise_base  [PRIV TILE] reached 0000022B73A2D230 type=33 priv=0
+[19:52:09.393] ui_panels  btn probe: rect (1512,801)+32  mouse (0.0,0.0)  screen (-1,-1)  client (-1,-1)  chrome (0,0)  engine 0  hover 0  live 0  busy -1  latch 0  edge 1  click 0  tex 1  font 1  lx 1517 ly 810  used 0  tab 0
+[19:52:09.393] ui_panels  btn geom : small 1  dpi 0.800  W_Y 484.8 W_OFFY -220.8  W_X 1644.0 W_OFFX -244.0  (target y 801 x 1512)
+[19:52:09.395] [AUTO DO] state panel key=7C263C3321F2460C type=33 asset=fountain2 capabilities=0 permissions=0 native_load=1 native_unload=1 (native 0=checked,1=unchecked) (unsupported role: controls hidden, automatic access denied)
+[19:52:09.418] ui_panels  btn probe: rect (1512,801)+32  mouse (0.0,0.0)  screen (-1,-1)  client (-1,-1)  chrome (0,0)  engine 0  hover 0  live 0  busy -1  latch 0  edge 0  click 0  tex 1  font 1  lx 1517 ly 810  used 0  tab 0
+[19:52:09.418] ui_panels  btn geom : small 1  dpi 0.800  W_Y 484.8 W_OFFY -220.8  W_X 1644.0 W_OFFX -244.0  (target y 801 x 1512)
+[19:52:09.443] ui_panels  btn probe: rect (1512,801)+32  mouse (0.0,0.0)  screen (-1,-1)  client (-1,-1)  chrome (0,0)  engine 0  hover 0  live 0  busy -1  latch 0  edge 0  click 0  tex 1  font 1  lx 1517 ly 810  used 0  tab 0
+[19:52:09.444] ui_panels  btn geom : small 1  dpi 0.800  W_Y 484.8 W_OFFY -220.8  W_X 1644.0 W_OFFX -244.0  (target y 801 x 1512)
+[19:52:09.643] ui_panels  btn probe: rect (1512,801)+32  mouse (118.0,344.0)  screen (62,314)  client (62,314)  chrome (0,0)  engine 0  hover 0  live 1  busy -1  latch 0  edge 0  click 0  tex 1  font 1  lx 1517 ly 810  used 0  tab 0
+[19:52:09.643] ui_panels  btn geom : small 1  dpi 0.800  W_Y 484.8 W_OFFY -220.8  W_X 1644.0 W_OFFX -244.0  (target y 801 x 1512)
+[19:52:10.573] ui_panels  btn probe: rect (1512,801)+32  mouse (45.0,360.0)  screen (45,360)  client (45,360)  chrome (0,0)  engine 0  hover 0  live 1  busy -1  latch 1  edge 0  click 0  tex 1  font 1  lx 1517 ly 810  used 0  tab 0
+[19:52:10.573] ui_panels  btn geom : small 1  dpi 0.800  W_Y 484.8 W_OFFY -220.8  W_X 1644.0 W_OFFX -244.0  (target y 801 x 1512)
+[19:52:10.604] ui_panels  btn probe: rect (1512,801)+32  mouse (45.0,360.0)  screen (45,360)  client (45,360)  chrome (0,0)  engine 0  hover 0  live 1  busy -1  latch 0  edge 0  click 0  tex 1  font 1  lx 1517 ly 810  used 0  tab 0
+[19:52:10.604] ui_panels  btn geom : small 1  dpi 0.800  W_Y 484.8 W_OFFY -220.8  W_X 1644.0 W_OFFX -244.0  (target y 801 x 1512)
+[19:52:10.609] almanac_button  row  ok
+[19:52:10.623] === CRASH: ACCESS_VIOLATION at 00007FF956F61780 ===
+[19:52:10.623]     C:\Workers Resources Soviet Republic\C3DDLL64.dll + 0xD1780
+[19:52:10.623]     reading address 00007FF957082078
+[19:52:10.623]     rax=00007FF957082078 rbx=00007FF95720DCD0 rcx=0000000000000043 rdx=00000000FFFFFFBD
+[19:52:10.623]     rsi=00007FF95720DCD0 rdi=00007FF6F2FAFF58 r8 =000000000018BC58 r9 =0000000000000C81
+[19:52:10.624]     rsp=00000075914FBD28 rbp=00007FF957201F78 rip=00007FF956F61780
+[19:52:10.624]     --- return addresses on the stack ---
+[19:52:10.624]       SOVIET64.exe + 0x9BE2F0
+[19:52:10.624]       SOVIET64.exe + 0x9BE060
+[19:52:10.624]       SOVIET64.exe + 0x0
+[19:52:10.624]       SOVIET64.exe + 0x9D4F10
+[19:52:10.624]       SOVIET64.exe + 0x9BE060
+[19:52:10.624]       SOVIET64.exe + 0x9D4F10
+[19:52:10.624]       SOVIET64.exe + 0x9D4F10
+[19:52:10.624]       SOVIET64.exe + 0x9E1700
+[19:52:10.624]       SOVIET64.exe + 0x3743A8
+[19:52:10.624]       SOVIET64.exe + 0x996FB0
+[19:52:10.624]       SOVIET64.exe + 0x8B1C30
+[19:52:10.624]       SOVIET64.exe + 0x9BE060
+[19:52:10.624]       SOVIET64.exe + 0x9BE060
+[19:52:10.624]       SOVIET64.exe + 0x9BE348
+[19:52:10.624]       SOVIET64.exe + 0x9D4F10
+[19:52:10.624]       SOVIET64.exe + 0x8B1ED0
+[19:52:10.624] === end crash report ===
