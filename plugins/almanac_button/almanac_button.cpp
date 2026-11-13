@@ -173,7 +173,8 @@
 
 typedef void (*t_Draw)(void* self, float a1, float a2, float a3,
                        float a4, float a5, bool a6);
-typedef float* (*t_GetMouseSolid)(void* input);
+struct C3DVec3 { float x, y, z; };
+typedef void (*t_GetMouseSolid)(void* input, C3DVec3* out);
 
 static int                        g_enabled;
 static volatile LONG              g_active;    // 1 = armed: the ninth tile is wanted
@@ -546,10 +547,10 @@ static int CheckNinthClick(float x, float y, float w, float h)
 {
     if (!g_getMouseSolid) return 0;
     void* input = (void*)(Base() + TSM_RVA_DEFAULT_INPUT);
-    float* mouse = g_getMouseSolid(input);
-    if (!ReadablePtr(mouse, sizeof(float) * 2)) return 0;
-    float mx = mouse[0];
-    float my = mouse[1];
+    C3DVec3 mouse = { 0.0f, 0.0f, 0.0f };
+    g_getMouseSolid(input, &mouse);
+    float mx = mouse.x;
+    float my = mouse.y;
     if (mx < x || mx >= x + w) return 0;
     if (my < y || my >= y + h) return 0;
     return ReadClickLatch() ? 1 : 0;
@@ -676,9 +677,10 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
 {
     TsmBind(host);
     info->name    = "almanac_button";
-    info->version = "2.0";
+    info->version = "2.1";
 
     ReadSettings();
+    Logf("almanac_button  init v2.1 (GetMouseSolid ABI fixed to void(*)(void*,C3DVec3*))");
     if (!g_enabled) {
         Logf("almanac_button  disabled (enabled = 0)");
         return 1;                       // loader calls FreeLibrary; nothing is patched
