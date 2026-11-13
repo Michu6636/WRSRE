@@ -8,4 +8,4 @@ Native reverse-engineering findings for `SOVIET64.exe` v1.1.1.9 (`0x6A3EB6AD`).
 - [logistics.md](logistics.md) — superseded DO overview; use ghidra-do-storage-findings as source of truth
 - [local-markets.md](local-markets.md) — town `0x108` NamePoint, aggregator `0xC858/0xC898`
 - [vehicle-fuel-system.md](vehicle-fuel-system.md) — cargo slot `+0x08` tons, burn/refuel via `0x420350`
-- [native-verification-results.md](native-verification-results.md) — treasury writers census
+- [almanac-ui.md](almanac-ui.md) — Almanac UI & Plugin Exports (Economy & Trade handler 0x373EA0, C3DDLL64 texture/font exports, middlepoint 0x9EACD0, hook point 0x3745B6)
