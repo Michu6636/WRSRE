@@ -153,6 +153,7 @@
 
 #include <stdint.h>
 #include <intrin.h>
+#include <cmath>
 #include "../../src/tesmio_plugin.h"
 #include "almanac_button_geometry.h"
 
@@ -774,10 +775,10 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
 {
     TsmBind(host);
     info->name    = "almanac_button";
-    info->version = "2.10";
+    info->version = "2.11";
 
     ReadSettings();
-    Logf("almanac_button  init v2.10 (overflow guard, doc sync)");
+    Logf("almanac_button  init v2.11 (explicit cmath include)");
     if (!g_enabled) {
         Logf("almanac_button  disabled (enabled = 0)");
         return 1;                       // loader calls FreeLibrary; nothing is patched
