@@ -35,6 +35,7 @@
 - Do not alter saves, time, taxes, policy, or game state beyond the approved test.
 - Back up the save file before testing.
 - Test on a fresh game load (not a loaded save with existing state).
+- **Fail-stop readiness:** The plugin's FailStop calls TerminateProcess then __fastfail and does NOT restore the rect pair (0x9BE2F0) or import slot. On any FAIL-STOP or RECT DIRTY log line, immediately discard the test copy — do not reuse it. No retry or forced-fault testing without separate approval (per README.md).
 
 ---
 
@@ -60,7 +61,7 @@
 
 **Failure diagnosis:**
 - If no ninth tile appears: check log for "FAIL-STOP" or "RECT DIRTY" (rect-pair corruption).
-- If ninth tile appears but no icon: check log for "texture failed to load" (CreateManagedTexture returned NULL) or "texture load faulted" (SEH fault in Load).
+- If ninth tile appears but no icon: check log for "texture failed to load" (CreateManagedTexture returned NULL), "texture load faulted" (SEH fault in Load), "CreateManagedTexture faulted" (SEH fault in creation), or "texture bind faulted" (SEH fault in TexBind).
 - If ninth tile appears with icon but wrong position: record the visual position and compare with expected X/Y.
 
 ### 2.2 Open/close toggling
@@ -72,10 +73,10 @@
 | 1 | Single click on ninth tile | Almanac opens (log: "almanac opened via ninth-tile click") | |
 | 2 | Single click again | Almanac closes (log: "almanac closed via ninth-tile click") | |
 | 3 | Click and hold (mouse down, hold 2s, release) | Opens once, does not toggle again while held | |
-| 4 | Rapid clicks (5 clicks in 1s) | Toggles on first click, ignores subsequent while latch held | |
+| 4 | Rapid clicks (5 distinct clicks in 1s) | Each distinct click toggles; no repeat toggle while a single press is held (covered by case 3). Note: latch detection is frame-dependent; very short clicks (press+release between frames) may be missed. | |
 | 5 | Hover over ninth tile (no click) | No toggle, no state change | |
 | 6 | Click ninth tile, drag mouse off, release | Opens on click; drag does not trigger additional toggle | |
-| 7 | Click ninth tile, then click native tile 0-7 | Almanac closes (log: "almanac closed by native row click") | |
+| 7 | Click ninth tile, then click native tile 0-7 | Almanac closes (log: "almanac closed by native row click"). NOTE: the clicked native tile must differ from the selection active when Almanac was opened; clicking the already-selected native button does NOT close (known limitation, see almanac-v2.4-audit.md §4.3). | |
 | 8 | Click native tile 0-7 while Almanac closed | Native selection changes normally; Almanac stays closed | |
 
 **Pass criteria:**
@@ -85,10 +86,8 @@
 - Native row click closes Almanac.
 - Native buttons retain normal behavior.
 
-**Failure diagnosis:**
-- If double-toggle on held click: debounce logic issue (check g_almanacDebounce reset).
-- If no toggle on click: CheckNinthClick returning 0 (hitbox mismatch or latch not set).
-- If toggle on hover: latch read is returning true without click (latch semantics wrong).
+**Informational (not a pass/fail gate):**
+- Latch-timing sensitivity: CheckNinthClick reads the latch per frame. A click whose press+release occur between frames yields ninthClicked=0 on the press frame and may be missed. Record whether short clicks are detected.
 
 ### 2.3 Hitbox verification
 
@@ -105,10 +104,11 @@
 5. Click just outside each edge (1-2 pixels) and record whether it toggles.
 6. Repeat at different DPI scales (if available: 1.0, 1.25, 1.5, 2.0).
 
-**Expected (hypothesis):**
-- Clicks inside the tile (centered bounds [x-w/2, x+w/2) x [y, y+h]) should toggle.
-- Clicks outside should not toggle.
-- The hitbox should match the visible tile position.
+**Expected (hypothesis — code's actual implementation):**
+- The code's CheckNinthClick uses a left-anchored AABB: mouse.x in [x, x+w), mouse.y in [y, y+h] (X half-open, Y inclusive), where x = origin + 8*pitch, y = rowY, w = h = scale*pitch.
+- Clicks inside this AABB should toggle; clicks outside should not.
+- Whether the visible tile is left- or center-anchored is itself unresolved (Draw's consumption of the rect store is unverified per hit_area_analysis.md unresolved #4). If the visible tile is center-anchored, the hitbox would be offset by ~half a tile.
+- Test both as separately labelled hypotheses: (A) left-anchored (code's current behavior), (B) center-anchored (unverified native convention). Record which hypothesis matches the observed toggle results.
 
 **Pass criteria:**
 - Clicks on the visible tile toggle the Almanac.
@@ -160,9 +160,8 @@
 - Native click handling may be disabled when mouse is in a specific rectangle.
 - Tint change may be visible (artifact).
 
-**Pass criteria (for the partial input effect):**
-- game+0x5E6 toggles correctly with Almanac state.
-- No crash or fault when writing the flag.
+**Not verified / not achieved by this plugin:**
+- Exclusive visibility (native content hidden when Almanac is open) is NOT achieved. The 0x5E6 flag provides only a partial, mouse-dependent input effect (disables click handling + tint change). Native Draw still executes. This is a design gap, not a test failure. See almanac-ui.md C43-C44.
 
 **Failure diagnosis:**
 - If game+0x5E6 doesn't toggle: WriteU8 failed (check log for "WARNING content suppression write failed").
@@ -174,8 +173,8 @@
 
 ### 3.1 Logs
 - Full tesmioloader.log (copy before and after test).
-- Filter for "almanac_button" lines.
-- Record: version string, "armed" message, texture load result, click events, any FAIL-STOP/RECT DIRTY/warnings.
+- Filter for "almanac_button" lines. Note: log messages use double spaces (e.g., "almanac_button  armed  clickable ninth tile after row tile 8"). Match on substrings ("armed" + "clickable ninth tile" + "row tile 8") rather than exact full lines.
+- Record: version string, "armed" message, texture load result, click events, any FAIL-STOP/RECT DIRTY/warnings, "CreateManagedTexture faulted", "texture load faulted", "texture bind faulted".
 
 ### 3.2 Screenshots
 - Economy & Trade page with ninth tile (normal state).
@@ -226,7 +225,8 @@ The following require explicit user authorization before execution:
 2. **Deploying the DLL** — not authorized (build output exists but not deployed).
 3. **Click testing** — not authorized.
 4. **Debugger attachment** — not authorized.
-5. **Modifying saves/state** — not authorized.
+5. **Modifying the INI** — not authorized (§1.4 prohibits INI changes during testing).
+6. **Modifying saves/state** — not authorized.
 
 The following are authorized (already performed):
 - Static code analysis and documentation.
@@ -243,10 +243,11 @@ The following are authorized (already performed):
 3. **Mouse coordinate capture** — no debugger or coordinate-logging mechanism is currently in the plugin. Would require either a debugger or adding debug logging (which is a source change requiring authorization).
 4. **Drawn bounds capture** — the plugin logs "ninth tile drawn" but not the actual rect store values. Would require adding debug logging (source change).
 5. **DPI scale value** — not recorded; must be read from game+0x992088 at runtime.
-6. **icon_inspectnumbers.png existence** — not verified in the game's media directory.
+6. **Deployed DLL embedded version string** — verify independently of the log (the log could come from a different DLL).
+7. **icon_inspectnumbers.png existence** — not verified in the game's media directory.
 
 ---
 
 ## 7. Conclusion
 
-This plan covers all aspects of runtime verification for the Almanac button v2.12. The static investigation has identified the most credible hypotheses (center-anchor, coordinate-space mismatch, 0x5E6 partial input effect) and the plan provides specific test cases to confirm or refute each. All runtime steps require explicit authorization before execution. No tests were run in preparing this plan.
+This plan covers the runtime verification steps available without source changes or new tooling. Items in section 6 remain blockers. The static investigation has identified the most credible hypotheses (coordinate-space mismatch, 0x5E6 partial input effect) and the plan provides specific test cases to confirm or refute each. All runtime steps require explicit authorization before execution. No tests were run in preparing this plan.
