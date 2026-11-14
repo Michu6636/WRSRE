@@ -458,6 +458,18 @@ static void TestCheckNinthHitboxOverflow()
     CHECK(CheckNinthHitbox(5.0f, 5.0f, 0.0f, 1e38f, 10.0f, 1e38f) == 0);
 }
 
+// CheckNinthHitbox: zero and negative dimensions are empty.
+static void TestCheckNinthHitboxZeroNegative()
+{
+    CHECK(CheckNinthHitbox(5.0f, 5.0f, 0.0f, 0.0f, 0.0f, 10.0f) == 0);
+    CHECK(CheckNinthHitbox(5.0f, 5.0f, 0.0f, 0.0f, 10.0f, 0.0f) == 0);
+    CHECK(CheckNinthHitbox(5.0f, 5.0f, 0.0f, 0.0f, 0.0f, 0.0f) == 0);
+    CHECK(CheckNinthHitbox(5.0f, 5.0f, 0.0f, 0.0f, -1.0f, 10.0f) == 0);
+    CHECK(CheckNinthHitbox(5.0f, 5.0f, 0.0f, 0.0f, 10.0f, -1.0f) == 0);
+    CHECK(CheckNinthHitbox(5.0f, 5.0f, 0.0f, 0.0f, -1.0f, -1.0f) == 0);
+    CHECK(CheckNinthHitbox(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f) == 0);
+}
+
 int main()
 {
     TestEightTilePassDrawsNinthOnLastTile();
@@ -487,6 +499,7 @@ int main()
     TestCheckNinthHitboxBasic();
     TestCheckNinthHitboxNaN();
     TestCheckNinthHitboxOverflow();
+    TestCheckNinthHitboxZeroNegative();
     std::printf("almanac_button geometry: all tests passed\n");
     return 0;
 }
