@@ -443,3 +443,92 @@ Two errors:
 1. Change middlepoint from Base() + 0x9D4F10 + 0xB048 to Base() + 0x9EACD0.
 2. Call vtable+0x10 (Load) on the returned texture before calling vtable+0x70 (TexBind).
 3. Verify the vtable offsets against the actual C3DAPI_TEXTURE type in C3DDLL64.dll before calling them.
+---
+
+## Item 5 — Crash dump pointer-chain analysis (SOVIET64.exe.11880.dmp)
+
+Dump: C:\Users\EricM\AppData\Local\CrashDumps\SOVIET64.exe.11880.dmp (26,574,449 bytes).
+Module bases from dump: SOVIET64.exe = 0x7FF6F25D0000, C3DDLL64.dll = 0x7FF956E90000.
+Exception: ACCESS_VIOLATION (read) at 0x7FF956F61780 = C3DDLL64.dll + 0xD1780.
+Fault read address: 0x7FF957082078 = C3DDLL64.dll + 0x1F2078 (0x78 bytes past end of C3DDLL64.dll image, which is 0x1F2000 bytes).
+
+### Facts
+
+**Register context at crash** (parsed from minidump thread context at RVA 0x8E20):
+| Register | Value | Derivation |
+|----------|-------|------------|
+| RIP | 0x7FF956F61780 | C3DDLL64.dll + 0xD1780 (FindElement, MOVZX EDX,byte ptr [RAX]) |
+| RDI | 0x7FF6F2FAFF58 | SOVIET64.exe + 0x9DFF58 = plugin's middlepoint (exeBase + 0x9D4F10 + 0xB048) |
+| RAX | 0x7FF957082078 | C3DDLL64.dll + 0x1F2078 (fault read address, past end of module) |
+| RCX | 0x43 | Intermediate value in FindElement (not the original argument) |
+| RDX | 0xFFFFFFBD | Intermediate value in FindElement |
+
+**Memory at RDI** (in dump, SOVIET64.exe .data section):
+- [RDI]     = 0x22B109FA800 (heap address — container begin pointer)
+- [RDI+8]   = 0x22B10A10B80 (heap address — container end / key pointer)
+- 32 bytes at RDI: `00 a8 9f 10 2b 02 00 00 80 0b a1 10 2b 02 00 00 00 cb a0 10 2b 02 00 00 80 c7 9f 10 2b 02 00 00`
+
+**Heap addresses NOT in dump**:
+- 0x22B109FA800 ([RDI], container begin) — NOT captured in minidump
+- 0x22B10A10B80 ([RDI+8], container end / key) — NOT captured in minidump
+- 0x7FF957082078 (RAX, fault read) — NOT in dump (past end of C3DDLL64.dll)
+
+**FindElement disassembly** (C3DDLL64.dll RVA 0xD1730-0xD17C0):
+```
+0x1800D1730:  MOV [RSP+8], RBX
+0x1800D1735:  MOV R11, [RCX]          ; R11 = *(middlepoint) = container begin
+0x1800D1738:  MOV RAX, 0x7878787878787879  ; magic for division
+0x1800D1742:  MOV RCX, [RCX + 8]      ; RCX = *(middlepoint + 8) = container end
+0x1800D1746:  MOV RBX, RDX            ; RBX = filename (key)
+0x1800D1749:  SUB RCX, R11            ; RCX = end - begin (byte count)
+0x1800D174C:  XOR R9D, R9D            ; R9 = 0 (index)
+0x1800D174F:  IMUL RCX               ; RAX:RDX = RCX * magic
+0x1800D1752:  MOV R10, RDX           ; R10 = high product
+0x1800D1755:  SAR R10, 6             ; R10 = count (signed divide by 0x88 stride)
+0x1800D1759:  MOV RAX, R10
+0x1800D175C:  SHR RAX, 0x3f          ; sign bit
+0x1800D1760:  ADD R10, RAX           ; rounding
+0x1800D1763:  JZ 0x1800D17A2         ; if count==0, return NULL
+0x1800D1765:  MOV EAX, R9D           ; EAX = index
+0x1800D1770:  IMUL RAX, RAX, 0x88    ; RAX = index * 0x88
+0x1800D1777:  MOV R8, RBX            ; R8 = filename
+0x1800D177A:  ADD RAX, R11           ; RAX = index*0x88 + begin (entry pointer)
+0x1800D177D:  SUB R8, RAX            ; R8 = filename - entry (strcmp offset)
+0x1800D1780:  MOVZX EDX, byte ptr [RAX]  ; CRASH: read byte from entry
+```
+
+**CreateManagedTexture entry** (C3DDLL64.dll RVA 0xB0190):
+```
+0x1800B019A:  MOV RDI, RCX          ; RDI = middlepoint
+0x1800B019D:  MOV RSI, RDX          ; RSI = filename
+0x1800B01A0:  MOV RCX, [RCX + 0x8]  ; RCX = *(middlepoint + 8) = 0x22B10A10B80
+0x1800B01A4:  CALL 0x1800D1730      ; FindElement(0x22B10A10B80)
+```
+
+### Inferences
+
+**RDI at fault = 0x7FF6F2FAFF58** = SOVIET64.exe + 0x9DFF58. This is the plugin's wrong `middlepoint` value (`exeBase + 0x9D4F10 + 0xB048`). Confirmed by the crash log ("RDI is 0x7FF6F2FAFF58, immediately after 'almanac_button row ok'").
+
+**[RDI+8] = 0x22B10A10B80** is the argument passed to FindElement (via `MOV RCX, [RCX + 8]` at 0x1800B01A0). This is a non-null heap pointer. FindElement did NOT receive a null argument.
+
+**Reconciliation of "null would fault at +0xD1735"**: If FindElement's argument (RCX) were null, the first instruction `MOV R11, [RCX]` at 0x1800D1735 would dereference null and fault immediately. The captured RIP is 0x7FF956F61780 = +0xD1780, which is 75 bytes past +0xD1735. This means FindElement successfully dereferenced its argument (RCX = 0x22B10A10B80 was non-null and readable at the time), computed R11 = [0x22B10A10B80] (container begin), RCX = [0x22B10A10B88] (container end), and entered the comparison loop. The crash at +0xD1780 occurs on `MOVZX EDX, byte ptr [RAX]` where RAX = index*0x88 + R11 points to 0x7FF957082078 (past end of C3DDLL64.dll). This means R11 (container begin, from heap) or the index R9D produced an out-of-bounds entry pointer.
+
+**Why RAX = C3DDLL64.dll + 0x1F2078**: RAX = R9D * 0x88 + R11. Since R9D is 32-bit (max ~0x1FFFFFFF after *0x88), and R11 = [0x22B10A10B80] (heap, not in dump), the exact computation cannot be reproduced. The value 0x7FF957082078 is in the C3DDLL64.dll address space, suggesting R11 (container begin) may itself be a pointer into or near C3DDLL64.dll's image, or the index has wrapped. The heap memory at 0x22B10A10B80 (container begin) is NOT captured in the dump, so R11's value at the crash is unresolved.
+
+**Container values unresolved**: [RDI] = 0x22B109FA800 and [RDI+8] = 0x22B10A10B80 were read from the dump (RDI's memory is in the SOVIET64.exe .data section). But the heap memory they point to ([0x22B109FA800] and [0x22B10A10B80], i.e., container begin/end) is NOT captured in the minidump. Therefore:
+- Container begin (R11) at crash: UNRESOLVED
+- Container end (RCX before division) at crash: UNRESOLVED
+- Entry count (R10) at crash: UNRESOLVED
+- Current index (R9D) at crash: UNRESOLVED (though RCX=0x43 at crash is an intermediate value, not the original arg)
+
+**The crash is NOT from a null FindElement argument**. It is from FindElement receiving a non-null but invalid key (0x22B10A10B80), which leads to R11 (container begin from heap) being used as a base for string comparison, and an entry pointer computing to an address past the end of C3DDLL64.dll. This is consistent with the plugin passing an invalid middlepoint: the memory at exeBase+0x9DFF58 contains heap pointers (not a valid C3D_MIDDLEPOINT), so CreateManagedTexture dereferences garbage and passes it to FindElement.
+
+### Status: PARTIAL
+
+- RDI/this at fault: RESOLVED = 0x7FF6F2FAFF58 = exeBase + 0x9DFF58 (plugin's wrong middlepoint)
+- [RDI+8] (FindElement arg): RESOLVED = 0x22B10A10B80 (non-null heap pointer)
+- [RDI] (container begin pointer): RESOLVED = 0x22B109FA800 (heap address, but the memory it points to is NOT in the dump)
+- Container begin/end values: UNRESOLVED (heap memory not captured in minidump)
+- RAX at crash: RESOLVED = 0x7FF957082078 = C3DDLL64.dll + 0x1F2078 (past end of module)
+- Reconciliation: FindElement did NOT receive null (would fault at +0xD1735). It received non-null heap garbage, entered the comparison loop, and crashed at +0xD1780 when the entry pointer computed to an out-of-bounds address.
+- Root cause: plugin passes invalid middlepoint (exeBase + 0x9DFF58 instead of Base() + 0x9EACD0), causing CreateManagedTexture to dereference unrelated heap data and pass garbage to FindElement.

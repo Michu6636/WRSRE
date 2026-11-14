@@ -17,7 +17,8 @@
 | [`ghidra-exports/`](ghidra-exports/README.md) | Cached raw `.c`, `.asm`, and `.txt` Ghidra exports |
 | [`private-logistics-runtime/`](private-logistics-runtime/README.md) | Autonomous DO logistics investigations, runtime evidence & [`packets/`](private-logistics-runtime/packets/README.md) |
 | [`schemas/`](schemas/telemetry_schema.json) | JSON schemas for telemetry & diagnostics |
-| [`tasks/active/`](tasks/README.md) | Active bounded engineering & verification task specs |
+| [`workflow/`](workflow/README.md) | Canonical goal execution, independent review, Kilo setup and provider handoff contracts |
+| [`tasks/`](tasks/README.md) | Tracked task records, Finding Ledgers, [`TEMPLATE.md`](tasks/TEMPLATE.md), active packets and archive |
 | [`visions/`](visions/README.md) | Long-term design visions (`vision-whole-mod.md`, `vision-private-logistics.md`) |
 | `Archive dont read/` | Historical early-phase notes superseded by current docs |
 

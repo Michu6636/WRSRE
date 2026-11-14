@@ -58,5 +58,9 @@ Each entry in `docs/ghidra-index/` is a Markdown file named `<RVA>.md` (e.g., `6
   an existing claim. Preserve both views with a `Note:` explaining the conflict;
   no fresh native query is required when existing evidence decides it.
 - Use `failed` for timeouts, LockException, or bad address form — record the failure and workaround.
-- After ANY `ghidra_run.bat` call, update or append the entry.
-- Before ANY `ghidra_run.bat` call, grep this index first.
+- After ANY `ghidra_run.bat` call, update or append the entry and link the
+  tracked task record/Finding Ledger that requested it. Record failures and
+  workarounds too, so the next operator does not repeat them.
+- Before ANY `ghidra_run.bat` call, grep this index and the relevant
+  `docs/engine/` page first; confirm the single operator and reuse accessible
+  `docs/ghidra-exports/` before consuming a serialized query slot.

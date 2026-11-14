@@ -424,6 +424,52 @@ static void TestGeometryReadChangesDrawsNothing()
     CHECK(u.Next() == -1);
 }
 
+// CheckNinthHitbox: basic inside/outside tests.
+static void TestCheckNinthHitboxBasic()
+{
+    // Inside the bounds (half-open X, inclusive Y).
+    CHECK(CheckNinthHitbox(5.0f, 5.0f, 0.0f, 0.0f, 10.0f, 10.0f) == 1);
+    CHECK(CheckNinthHitbox(0.0f, 0.0f, 0.0f, 0.0f, 10.0f, 10.0f) == 1);  // lower-left corner
+    CHECK(CheckNinthHitbox(9.9f, 10.0f, 0.0f, 0.0f, 10.0f, 10.0f) == 1); // upper-right (Y inclusive)
+    CHECK(CheckNinthHitbox(10.0f, 5.0f, 0.0f, 0.0f, 10.0f, 10.0f) == 0); // X upper edge (half-open)
+    CHECK(CheckNinthHitbox(5.0f, 10.1f, 0.0f, 0.0f, 10.0f, 10.0f) == 0); // Y above upper
+    CHECK(CheckNinthHitbox(-0.1f, 5.0f, 0.0f, 0.0f, 10.0f, 10.0f) == 0); // X below lower
+    CHECK(CheckNinthHitbox(5.0f, -0.1f, 0.0f, 0.0f, 10.0f, 10.0f) == 0); // Y below lower
+}
+
+// CheckNinthHitbox: NaN and infinity guards.
+static void TestCheckNinthHitboxNaN()
+{
+    CHECK(CheckNinthHitbox(NAN, 5.0f, 0.0f, 0.0f, 10.0f, 10.0f) == 0);
+    CHECK(CheckNinthHitbox(5.0f, NAN, 0.0f, 0.0f, 10.0f, 10.0f) == 0);
+    CHECK(CheckNinthHitbox(5.0f, 5.0f, NAN, 0.0f, 10.0f, 10.0f) == 0);
+    CHECK(CheckNinthHitbox(5.0f, 5.0f, 0.0f, NAN, 10.0f, 10.0f) == 0);
+    CHECK(CheckNinthHitbox(5.0f, 5.0f, 0.0f, 0.0f, NAN, 10.0f) == 0);
+    CHECK(CheckNinthHitbox(5.0f, 5.0f, 0.0f, 0.0f, 10.0f, NAN) == 0);
+    CHECK(CheckNinthHitbox(5.0f, 5.0f, 0.0f, 0.0f, INFINITY, 10.0f) == 0);
+    CHECK(CheckNinthHitbox(5.0f, 5.0f, 0.0f, 0.0f, 10.0f, INFINITY) == 0);
+}
+
+// CheckNinthHitbox: overflow guard.
+static void TestCheckNinthHitboxOverflow()
+{
+    // x + w overflows to infinity.
+    CHECK(CheckNinthHitbox(5.0f, 5.0f, 1e38f, 0.0f, 1e38f, 10.0f) == 0);
+    CHECK(CheckNinthHitbox(5.0f, 5.0f, 0.0f, 1e38f, 10.0f, 1e38f) == 0);
+}
+
+// CheckNinthHitbox: zero and negative dimensions are empty.
+static void TestCheckNinthHitboxZeroNegative()
+{
+    CHECK(CheckNinthHitbox(5.0f, 5.0f, 0.0f, 0.0f, 0.0f, 10.0f) == 0);
+    CHECK(CheckNinthHitbox(5.0f, 5.0f, 0.0f, 0.0f, 10.0f, 0.0f) == 0);
+    CHECK(CheckNinthHitbox(5.0f, 5.0f, 0.0f, 0.0f, 0.0f, 0.0f) == 0);
+    CHECK(CheckNinthHitbox(5.0f, 5.0f, 0.0f, 0.0f, -1.0f, 10.0f) == 0);
+    CHECK(CheckNinthHitbox(5.0f, 5.0f, 0.0f, 0.0f, 10.0f, -1.0f) == 0);
+    CHECK(CheckNinthHitbox(5.0f, 5.0f, 0.0f, 0.0f, -1.0f, -1.0f) == 0);
+    CHECK(CheckNinthHitbox(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f) == 0);
+}
+
 int main()
 {
     TestEightTilePassDrawsNinthOnLastTile();
@@ -450,6 +496,10 @@ int main()
     TestScaleReadChangesOnLastTileDrawsNothing();
     TestScaleReadChangesMidPassDrawsNothing();
     TestGeometryReadChangesDrawsNothing();
+    TestCheckNinthHitboxBasic();
+    TestCheckNinthHitboxNaN();
+    TestCheckNinthHitboxOverflow();
+    TestCheckNinthHitboxZeroNegative();
     std::printf("almanac_button geometry: all tests passed\n");
     return 0;
 }

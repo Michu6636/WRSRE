@@ -1,32 +1,37 @@
-# Kilo Code: team workflow and prompt-writing guide
+# Kilo Code workflow reference
 
-**Audience:** anyone writing prompts or operating AI agents for this repository.
-**Official documentation last checked:** 2026-10-31. Check the installed runtime's
-actual capabilities; do not assume every documented feature is available.
+**Audience:** agents operating WRSRE goals. **Documentation rechecked:**
+2026-11-14. This file is a compatibility entry point and detailed reference, not
+an always-loaded rule blob. The canonical short contracts are:
 
-## Default: one parent, focused children, explicit resource ownership
+- [`docs/workflow/EXECUTION.md`](docs/workflow/EXECUTION.md) — goal lifecycle,
+  standing authorization, three gates, Finding Ledger and unlimited repair.
+- [`docs/workflow/REVIEW.md`](docs/workflow/REVIEW.md) — independent read-only
+  Focus 1/Focus 2 packets, findings and separate validation statuses.
+- [`docs/workflow/KILO.md`](docs/workflow/KILO.md) — current Kilo config,
+  permissions, goals, quota and operator preflight.
+- [`docs/workflow/PROVIDERS.md`](docs/workflow/PROVIDERS.md) — Antigravity,
+  Copilot and Kilo ownership/handoff.
 
-Use **one normal Code session** as the lead for work involving tools, scripts or
-report edits. Plan and Debug can also delegate when appropriate. Do not build new
-workflows around the deprecated Orchestrator mode.
+Use one accountable lead and focused children. The Worker writes; reviewers do
+not. For WRSRE engineering goals both reviewers inspect INVESTIGATION, PLAN and
+IMPLEMENTATION independently. Do not build new workflows around the deprecated
+Orchestrator mode or ask the user to relay routine messages. If child review is
+unavailable, report that gate as unavailable; never invent a review.
 
-The parent owns planning, dependency scheduling, verification and final delivery.
-It may delegate focused `task` children when separate context or independent
-analysis is useful. Small tasks should remain solo. Do not force a fixed number
-of agents or ask the user to relay messages between them.
-
-Read `INSTRUCTIONS.md` and the relevant subsystem instructions first. This guide
-explains coordination; it does not grant implementation, runtime, configuration,
-Git, deployment or game-test authorization. Preserve the user's task-specific
-boundaries and the current session's branch restrictions.
+Read the module matching the current action, then the relevant subsystem/native
+sections below. Session instructions and the task record control authorization;
+this guide does not expand them. Check the installed runtime rather than assuming
+every documented feature exists.
 
 ## Choose the smallest suitable mechanism
 
 | Need | Mechanism |
 | --- | --- |
-| A small or tightly coupled task | Work in the parent session |
+| A small or tightly coupled task | Implement in the parent; WRSRE engineering goals still use both review focuses at each gate |
 | A focused result needed before proceeding | Foreground `task` child |
 | Independent research while the parent does other useful work | Background `task` child, if supported |
+| A substantive change ready for acceptance | Read-only child Reviewer(s), against the frozen actual diff and evidence |
 | Material intermediate findings among a parent and its descendants | Kilo Swarm, if enabled |
 | Independent implementations requiring separate branches/checkouts | Agent Manager worktrees, only when authorized |
 | Another independent top-level conversation | Agent Manager Local session; not an automatically coordinated child |
@@ -38,48 +43,26 @@ because they use the same repository. Worktrees isolate checkout/Git state, not
 external resources such as the shared Ghidra database.
 
 For dependent work, wait for its prerequisite or use a foreground child. Background
-execution is not a substitute for dependency scheduling. If a tool or background
-capability is unavailable, use foreground delegation or work solo; do not invent
-calls or replace automation with manual user message-shuttling.
+execution is not a substitute for dependency scheduling. If background execution
+is unavailable, use foreground delegation. If no child-task capability is exposed,
+do not invent calls or replace automation with user message-shuttling; continue
+only within scope and label the independent-review gate unavailable as described
+above.
 
-## Parent-owned execution loop
+## Execution and review contracts
 
-1. **Bootstrap:** inspect the actual working tree, current instructions, relevant
-   docs and existing evidence. Record scope, acceptance criteria and forbidden
-   actions. Check whether prior agents still own shared resources.
-2. **Build a compact evidence packet:** task goal, known facts versus hypotheses,
-   exact relevant paths/addresses, unresolved question, allowed tools and expected
-   output. Do not send the entire historical handover to every child.
-3. **Assign ownership:** name the sole owner of each shared resource and shared
-   output. Prefer read-only children for investigation. If independent edits are
-   justified, allocate non-overlapping files and have the parent integrate.
-4. **Delegate independent work:** use exposed `task` capabilities. Do not delegate
-   and then duplicate the child's work. Keep its input artifacts stable while it
-   reads them; version or snapshot evidence when necessary.
-5. **Collect results:** normal task completion/error returns are the primary
-   dependency mechanism. Children must return a bounded missing-evidence request
-   instead of waiting indefinitely for a sibling or polling a shared file.
-6. **Fill gaps:** parent deduplicates requests, obtains only necessary missing
-   evidence using the designated resource owner, and delegates affected follow-ups
-   with an updated packet. Do not restart the entire investigation each round.
-7. **Verify and reconcile:** inspect actual exports/diffs/results, resolve
-   contradictions, and retain uncertainty. A child's confident summary is not
-   independent verification. If a round adds no material evidence, revise the
-   method or stop with the precise blocker rather than repeat identical queries.
-8. **Deliver:** parent integrates the result into the user-designated authoritative
-   report, records actual checks and remaining limits, and asks only for genuinely
-   necessary approval or information. Do not scatter competing final reports.
+The former parent/Worker loop and copy-ready reviewer checklist now live in
+[`docs/workflow/EXECUTION.md`](docs/workflow/EXECUTION.md) and
+[`docs/workflow/REVIEW.md`](docs/workflow/REVIEW.md). They are the controlling
+short contracts: no repository round/steps cap, both read-only focuses at all
+three gates, a reconciled Finding Ledger, tracked evidence and separate
+STATIC REVIEW / BUILD/TEST EVIDENCE / RUNTIME VALIDATION statuses.
 
-A child result should contain:
-
-- Question addressed and precise evidence references.
-- Supported findings, contested interpretations and untraced cases separately.
-- Relevant conditions, counterexamples and applicability limits.
-- Exact missing prerequisite/edge and the smallest proposed evidence request.
-- For permitted changes: owned files, actual commands/results and limitations.
-
-Children must not launch further descendants unless the parent explicitly justifies
-that need and the runtime/permissions permit it. Keep coordination shallow by default.
+Use a foreground child for a prerequisite and a background child only when the
+runtime supports it and the work is independent. Children share the worktree;
+separate context is not file isolation. Give each child a bounded stable packet,
+one question, explicit ownership and a result format. They return missing
+evidence requests rather than polling siblings or waiting for user relays.
 
 ## Swarm is communication, not a scheduler
 
@@ -305,13 +288,13 @@ do not present static reasoning as an observed game test.
 
 ### 4. Adversarial review, dependency repair and delivery
 
-Before integration, the parent tests the contract against counterexamples:
-wrong object type, attached member, alternate branch, local-only calculation,
-restore/refill mistaken for burn, index mistaken for displacement. A focused
-read-only child can independently challenge the stable raw packet if useful;
-review is a role, not a required extra agent or a vote between models. Do not
-ask it to defend the preferred conclusion. The parent is subject to the same
-source and scope requirements; its corrections are not automatically true.
+Before integration, the Worker and required child Reviewer(s) test the contract
+against counterexamples: wrong object type, attached member, alternate branch,
+local-only calculation, restore/refill mistaken for burn, index mistaken for
+displacement. The Reviewer independently challenges a stable raw packet; it must
+not be asked to defend the preferred conclusion. Review is a required check for
+deliverables, not a vote between models. The parent is subject to the same source
+and scope requirements; its corrections are not automatically true.
 
 For a contradiction, preserve old and replacement claims, identify the deciding
 raw evidence, and revise or invalidate dependent conclusions. Two narratives of
@@ -330,95 +313,38 @@ research or runtime work. Each finding retains supported/contested/unresolved
 status even if the overall implementation remains blocked. Hook feasibility is
 separate from event semantics; neither is implementation authorization.
 
-## Permissions, models and human involvement
+## Permissions, models, loading and reusable prompts
 
-Prefer Kilo's built-in read-only `explore` child for exported-evidence research.
-Use broader `general` or custom agents only when their tools are needed. Prompts
-are behavioral instructions, not security enforcement: use appropriate configured
-permissions where stronger isolation is required, with user approval for changes.
+Current Kilo setup, ordered permissions, goal/CLI behavior, quota discipline and
+operator preflight are maintained in [`docs/workflow/KILO.md`](docs/workflow/KILO.md).
+Cross-provider ownership and final audit are in
+[`docs/workflow/PROVIDERS.md`](docs/workflow/PROVIDERS.md). Do not silently change
+settings/models or rely on `ask` as an unattended safety boundary.
 
-Do not silently change Kilo settings, approval rules or models. Children normally
-inherit the parent model unless `subagent_model`, an agent-specific setting or an
-explicit user-requested task override changes selection. Inspect existing choices;
-do not invent provider/model identifiers or assume automatic cheaper-model routing.
-Use a capable lead for final reconciliation; smaller contexts are preferable to
-blindly multiplying agents or sending every child the full history.
+Root `AGENTS.md` is the lean automatically loaded entry point. Nested
+`docs/AGENTS.md` and `plugins/AGENTS.md` load lazily; read `INSTRUCTIONS.md` and
+the workflow modules on demand. Do not merge the whole reference into an
+always-loaded `instructions` array.
 
-Autonomous coordination does not mean bypassing safeguards. Genuine authorization
-questions, missing capabilities, budget limits and resource-ownership uncertainty
-can require the user. Routine task scheduling and message relaying should not.
+Reusable prompts are tracked, not pasted copies:
 
-## Durable discovery and instruction loading
+- [`docs/tasks/TEMPLATE.md`](docs/tasks/TEMPLATE.md) — task record, prior-finding
+  import, Finding Ledger, evidence, review rounds and resume checkpoint.
+- [`.kilo/prompts/autonomous-dev.md`](.kilo/prompts/autonomous-dev.md) — lead.
+- [`.kilo/prompts/implementation-worker.md`](.kilo/prompts/implementation-worker.md) — bounded worker.
+- [`.kilo/prompts/reviewer-focus1.md`](.kilo/prompts/reviewer-focus1.md) and
+  [`.kilo/prompts/reviewer-focus2.md`](.kilo/prompts/reviewer-focus2.md) — independent reviewers.
 
-The root `AGENTS.md` points AI assistants to this guide and `INSTRUCTIONS.md`.
-Kilo documents automatic loading of `AGENTS.md` (fallback `AGENT.md`), not arbitrary
-root filenames such as `INSTRUCTIONS.md`. Explicitly tell children to read the
-required instructions too.
-
-If the team wants explicit Kilo rule loading, merge `INSTRUCTIONS.md` and this guide
-into the active project's `instructions` array. Preserve existing entries and all
-other configuration; do not replace a config wholesale. This is optional setup,
-not an instruction to change settings during an unrelated task.
-
-## Reusable parent-prompt skeleton
-
-Replace the bracketed fields with task-specific instructions; do not paste it with
-unresolved placeholders. Include any exact acceptance matrix needed by the task.
-
-```text
-Read AGENTS.md, INSTRUCTIONS.md and KILO_AGENT_WORKFLOW.md first.
-
-Act as the single parent for: [goal and relevant subsystem].
-Acceptance criteria: [observable evidence/results required].
-Allowed changes: [scope]. Forbidden actions: [explicit boundaries].
-Authoritative report/output: [path]. Relevant starting evidence: [paths/sections].
-
-Inspect actual local state and available tools. Preserve existing work. Use task
-children only for useful focused subtasks; do not create separate top-level
-sessions/worktrees or change branches/settings/models without authorization.
-
-Own dependency scheduling, verification and integration. Parallelize independent
-analysis only. Name one owner for every exclusive resource; for shared Ghidra,
-only that operator queries and updates the index, while children analyze exports.
-Give each child a compact stable evidence packet, clear ownership and a result
-format. Children must return findings or precise missing-evidence requests, not
-wait on siblings. Use foreground tasks for prerequisites and background tasks
-only when supported and independent. Treat Swarm as advisory communication.
-
-Collect results, deduplicate evidence requests, fill gaps serially as required,
-and delegate only affected follow-ups. Do not require the user to relay messages.
-Reconcile actual evidence, preserve counterexamples and state remaining limits.
-For native contracts, apply this guide's Native-evidence acceptance gates: use a
-claim ledger; check bytes/address domains/typed offsets; trace receiver and
-factor definitions; distinguish static facts, semantics and runtime applicability.
-Challenge the preferred explanation and repair dependent claims after corrections.
-Do not inherit a verified index label or treat two summaries as corroboration.
-Stop on completion or an exact blocker; do not repeat unchanged queries.
-
-Preserve existing files and use narrowly targeted edits. If EITHER the planned
-content OR the destination file is long, write only in small, coherent chunks
-and verify each before continuing; never replace a long file for a short edit.
-Make targeted corrections or bounded additions to the cumulative handover; do not
-load or reproduce its entire history. Use coherent bounded writes and check the
-changed range; after an interrupted or oversized write, use smaller pieces, down
-to a heading, row or paragraph if needed. Do not blindly repeat a large payload.
-After a timeout, inspect only the relevant tail/diff before retrying; first recover
-one missing fragment and report its verified checkpoint. After success, continue
-autonomously with write/verify cycles. If that small fragment also fails, stop and
-isolate the model/provider/session rather than blindly retrying. Only the parent
-writes shared reports. Preserve analytical depth, complete evidence and cross-section
-consistency; no assembly script or arbitrary byte limit is required.
-
-Deliver one integrated result at the designated output, actual checks performed,
-changed files and any minimal approval request. Do not claim unperformed native
-validation or expand into implementation without authorization.
-```
+Replace task placeholders before launch. A prompt is behavior, not a permission
+grant or proof that a mode/review ran.
 
 ## Official references and maintenance
 
-These are the basis for the Kilo-specific behavior above, not proof of the local
-installation's version. Recheck relevant pages when capabilities change; update
-this guide rather than accumulating conflicting copies.
+These are background references, not proof of the local installation's version.
+The checked source list and runtime caveats are maintained in
+[`docs/workflow/KILO.md`](docs/workflow/KILO.md). Recheck relevant pages when
+capabilities change; update the canonical module rather than accumulating
+conflicting copies.
 
 - [Orchestrator deprecation](https://kilo.ai/docs/code-with-ai/agents/orchestrator-mode)
 - [Agent Manager and orchestration model](https://kilo.ai/docs/automate/agent-manager)
