@@ -567,7 +567,9 @@ static int CheckNinthClick(float x, float y, float w, float h)
     // Native Collision Y bound is inclusive (COMISS; JA means mouse.y <= upper).
     // X bound inclusivity is NOT evidenced (native X test is a complex quad test,
     // not decoded). Use half-open X to avoid overlap with native tile 8's boundary.
-    if (!isfinite(mx) || !isfinite(my)) return 0;
+    if (!std::isfinite(mx) || !std::isfinite(my) ||
+        !std::isfinite(x) || !std::isfinite(y) ||
+        !std::isfinite(w) || !std::isfinite(h)) return 0;
     if (mx < x || mx >= x + w) return 0;
     if (my < y || my > y + h) return 0;
     return ReadClickLatch() ? 1 : 0;
@@ -771,10 +773,10 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
 {
     TsmBind(host);
     info->name    = "almanac_button";
-    info->version = "2.8";
+    info->version = "2.9";
 
     ReadSettings();
-    Logf("almanac_button  init v2.8 (X half-open, Y inclusive, NaN guard, TexBind fault handling)");
+    Logf("almanac_button  init v2.9 (std::isfinite, rect NaN guard, doc sync)");
     if (!g_enabled) {
         Logf("almanac_button  disabled (enabled = 0)");
         return 1;                       // loader calls FreeLibrary; nothing is patched
