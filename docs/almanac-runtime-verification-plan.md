@@ -204,8 +204,8 @@
 
 | Criterion | Pass | Fail |
 |-----------|------|------|
-| Plugin loads and arms | Log shows "armed clickable ninth tile" | No "armed" message or version mismatch |
-| Texture loads | Log shows "texture loaded" | "texture failed to load" or "texture load faulted" |
+| Plugin loads and arms | Log shows "armed  clickable ninth tile" (double-space; match on substrings) | No "armed" message or version mismatch |
+| Texture loads | Log shows "texture loaded" | "texture failed to load", "texture load faulted", "CreateManagedTexture faulted", or "texture bind faulted" |
 | Click toggles Almanac | Single click opens/closes | No toggle or double-toggle |
 | Hitbox matches visible tile | Clicks on tile toggle; clicks outside don't | Misaligned hitbox |
 | Native buttons preserved | All 8 work in order | Missing/duplicated/moved buttons |
