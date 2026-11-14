@@ -1883,6 +1883,10 @@ void* FindRelocationCandidate(void* game, void* currentBld, float tenantWealth)
     return bestPref ? bestPref : bestAny;
 }
 
+// Defined with the retail refund path below; declared here because a
+// refused landlord credit must hand the tenants' money back.
+static void RefundRetailCharge(void* person, float amount);
+
 static void CollectResidentialRent(void)
 {
     if (!(g_residentialRent > 0.0)) return;
@@ -1917,6 +1921,12 @@ static void CollectResidentialRent(void)
 
     std::vector<void*> residents;
     residents.reserve(256);
+
+    // Per-tenant amounts actually taken this building, so a refused
+    // landlord credit can be reversed instead of destroying the money.
+    struct RentTake { void* person; float amount; };
+    std::vector<RentTake> rentTakes;
+    rentTakes.reserve(64);
 
     // v8.2 (Task 1): staged relocations. The burden test runs inline, but
     // native FUN_14083CA50 must NEVER run under g_lock (it walks the same
@@ -1960,6 +1970,7 @@ static void CollectResidentialRent(void)
         residents.resize(got);
 
         double buildingRent = 0.0;
+        rentTakes.clear();
         for (void* person : residents) {
             // v8.2 (Task 1): snapshot ability-to-pay BEFORE the wallet take.
             // A post-charge read would compare the drained balance and flag
@@ -1976,6 +1987,7 @@ static void CollectResidentialRent(void)
             if (taken > 0.0f) {
                 buildingRent += (double)taken;
                 tenants++;
+                rentTakes.push_back({person, taken});
             }
 
             // v8.2 (Task 1): burden test - rent exceeds the threshold share
@@ -2016,9 +2028,24 @@ static void CollectResidentialRent(void)
         }
 
         if (buildingRent > 0.0) {
-            (void)TryModifyCapital(b, buildingRent, TSM_CAP_RENT, "rent");
-            totalRent += buildingRent;
-            buildings++;
+            if (TryModifyCapital(b, buildingRent, TSM_CAP_RENT, "rent")) {
+                totalRent += buildingRent;
+                buildings++;
+            } else {
+                // The landlord refused the credit (decayed or lost tag).
+                // The tenants were already charged, so hand every take
+                // back - the retail path has the same rule.
+                for (const RentTake& t : rentTakes)
+                    RefundRetailCharge(t.person, t.amount);
+                if (g_probe) {
+                    wchar_t nm[128] = {0};
+                    Internal_GetBuildingCustomName(b, nm, 128);
+                    Logf("enterprise_base  \"%ls\" rent credit refused for "
+                         "%.2f - refunded %zu tenant(s)",
+                         nm[0] ? nm : L"(unnamed)", buildingRent,
+                         rentTakes.size());
+                }
+            }
         }
     }
 
@@ -2708,7 +2735,22 @@ static void EvaluateInsolvency(void)
         // capital <= 0: advance one month down the ladder.
         e.insolventMonths++;
 
-        if (e.insolventMonths == 1) {
+        if (e.insolventMonths >= g_monthsToAbandon) {
+            // Stage 3: physical abandonment. Latch state now (so every
+            // economic loop stops this month) and strip the tag so the
+            // registration pass cannot re-privatise it; the native swap
+            // runs outside the lock below.
+            e.isAbandoned = true;
+            e.isPrivate   = false;
+            toAbandon.push_back(b);
+            if (g_probe) {
+                wchar_t nm[128] = {0};
+                if (!Internal_GetBuildingCustomName(b, nm, 128) || !nm[0])
+                    wcsncpy_s(nm, _countof(nm), L"(unnamed)", _TRUNCATE);
+                Logf("enterprise_base  [ABANDONED] %ls collapsed into ruins "
+                     "after %d distressed month(s)", nm, e.insolventMonths);
+            }
+        } else if (e.insolventMonths == 1) {
             if (g_probe) {
                 wchar_t nm[128] = {0};
                 if (!Internal_GetBuildingCustomName(b, nm, 128) || !nm[0])
@@ -2748,21 +2790,6 @@ static void EvaluateInsolvency(void)
                     wcsncpy_s(nm, _countof(nm), L"(unnamed)", _TRUNCATE);
                 Logf("enterprise_base  [AUCTION FAILED] pool %.2f cannot cover "
                      "%.2f - %ls faces ruin", g_pool, buyoutCost, nm);
-            }
-        } else if (e.insolventMonths >= g_monthsToAbandon) {
-            // Stage 3: physical abandonment. Latch state now (so every
-            // economic loop stops this month) and strip the tag so the
-            // registration pass cannot re-privatise it; the native swap
-            // runs outside the lock below.
-            e.isAbandoned = true;
-            e.isPrivate   = false;
-            toAbandon.push_back(b);
-            if (g_probe) {
-                wchar_t nm[128] = {0};
-                if (!Internal_GetBuildingCustomName(b, nm, 128) || !nm[0])
-                    wcsncpy_s(nm, _countof(nm), L"(unnamed)", _TRUNCATE);
-                Logf("enterprise_base  [ABANDONED] %ls collapsed into ruins "
-                     "after %d distressed month(s)", nm, e.insolventMonths);
             }
         }
     }
@@ -4020,22 +4047,33 @@ static void SaveRegister(const char* dir)
              dir, ENT_FILENAME);
 }
 
+// Caller holds g_lock. A missing or unusable sidecar must leave the
+// register empty: the entries are keyed by raw building pointers, so
+// state from the previous world is both stale and aliasing-prone.
+static void ResetRegisterStateLocked(void)
+{
+    g_companies.clear();
+    g_companyOrder.clear();
+    g_pool = g_startingPool;
+    g_monthlyPoolInflow   = 0.0;
+    g_lastMonthPoolInflow = 0.0;
+    g_lastMonthSales      = 0.0;
+    g_lastMonthWages      = 0.0;
+    g_lastMonthTaxes      = 0.0;
+    g_monthlyEvictionCount = 0;
+    g_lastPoolMonth = -1;
+    g_lastPoolYear  = -1;
+    g_pendingLoadRecords.clear();
+    g_deferredMatchAttempts = 0;
+}
+
 static void LoadRegister(const char* dir)
 {
     size_t len = 0;
     void* raw = g_persistence->readFile(dir, ENT_FILENAME, &len);
     if (!raw) {
         EnterCriticalSection(&g_lock);
-        g_companies.clear();
-        g_companyOrder.clear();
-        g_pool = g_startingPool;
-        g_monthlyPoolInflow   = 0.0;
-        g_lastMonthPoolInflow = 0.0;
-        g_lastMonthSales      = 0.0;
-        g_lastMonthWages      = 0.0;
-        g_lastMonthTaxes      = 0.0;
-        g_pendingLoadRecords.clear();
-        g_deferredMatchAttempts = 0;
+        ResetRegisterStateLocked();
         LeaveCriticalSection(&g_lock);
 
         Logf("enterprise_base  no %s in this save - register cleared, "
@@ -4045,6 +4083,9 @@ static void LoadRegister(const char* dir)
 
     if (len < sizeof(EntSaveHeader)) {
         Logf("enterprise_base  %s too short - ignored", ENT_FILENAME);
+        EnterCriticalSection(&g_lock);
+        ResetRegisterStateLocked();
+        LeaveCriticalSection(&g_lock);
         free(raw);
         return;
     }
@@ -4066,6 +4107,9 @@ static void LoadRegister(const char* dir)
     } else {
         Logf("enterprise_base  %s version %u, expected %u..%u - ignored",
              ENT_FILENAME, hdr.version, ENT_VERSION_LEGACY, ENT_VERSION);
+        EnterCriticalSection(&g_lock);
+        ResetRegisterStateLocked();
+        LeaveCriticalSection(&g_lock);
         free(raw);
         return;
     }
@@ -4073,6 +4117,9 @@ static void LoadRegister(const char* dir)
     if (memcmp(hdr.magic, ENT_MAGIC, 8) != 0) {
         Logf("enterprise_base  %s has the wrong magic - ignored",
              ENT_FILENAME);
+        EnterCriticalSection(&g_lock);
+        ResetRegisterStateLocked();
+        LeaveCriticalSection(&g_lock);
         free(raw);
         return;
     }
@@ -4081,6 +4128,9 @@ static void LoadRegister(const char* dir)
     if (want > len) {
         Logf("enterprise_base  %s claims %u records but is only %zu bytes",
              ENT_FILENAME, hdr.recordCount, len);
+        EnterCriticalSection(&g_lock);
+        ResetRegisterStateLocked();
+        LeaveCriticalSection(&g_lock);
         free(raw);
         return;
     }
@@ -4091,12 +4141,15 @@ static void LoadRegister(const char* dir)
     g_companyOrder.clear();
 
     g_pool = hdr.pool;
-    if (!(g_pool == g_pool) || g_pool < 0.0) g_pool = g_startingPool;
+    if (!(g_pool >= 0.0) || !(g_pool <= 1.0e15)) g_pool = g_startingPool;
     g_monthlyPoolInflow   = 0.0;
     g_lastMonthPoolInflow = 0.0;
     g_lastMonthSales      = 0.0;
     g_lastMonthWages      = 0.0;
     g_lastMonthTaxes      = 0.0;
+    g_monthlyEvictionCount = 0;
+    g_lastPoolMonth = -1;
+    g_lastPoolYear  = -1;
 
     g_pendingLoadRecords.clear();
     g_pendingLoadRecords.reserve(hdr.recordCount);

@@ -254,14 +254,21 @@ static void SaveWallets(const char* dir)
         Logf("currency  WARN  could not write %s\\%s", dir, WALLET_FILENAME);
 }
 
+// A missing or unusable sidecar leaves an empty wallet map. The entries
+// are keyed by citizen ID and must not survive from the previous world.
+static void ResetWallets(void)
+{
+    EnterCriticalSection(&g_lock);
+    g_wallets.clear();
+    LeaveCriticalSection(&g_lock);
+}
+
 static void LoadWallets(const char* dir)
 {
     size_t len = 0;
     void* raw = g_persistence->readFile(dir, WALLET_FILENAME, &len);
     if (!raw) {
-        EnterCriticalSection(&g_lock);
-        g_wallets.clear();
-        LeaveCriticalSection(&g_lock);
+        ResetWallets();
 
         Logf("currency  no %s in this save - starting with an empty wallet map",
              WALLET_FILENAME);
@@ -270,6 +277,7 @@ static void LoadWallets(const char* dir)
 
     if (len < sizeof(WalletSaveHeader)) {
         Logf("currency  %s is too short (%zu bytes) - ignored", WALLET_FILENAME, len);
+        ResetWallets();
         free(raw);
         return;
     }
@@ -282,6 +290,7 @@ static void LoadWallets(const char* dir)
     {
         Logf("currency  %s is version %u, this build writes %u - ignored",
              WALLET_FILENAME, hdr.version, WALLET_VERSION);
+        ResetWallets();
         free(raw);
         return;
     }
@@ -290,6 +299,7 @@ static void LoadWallets(const char* dir)
     if (want > len) {
         Logf("currency  %s claims %u records but is only %zu bytes - ignored",
              WALLET_FILENAME, hdr.count, len);
+        ResetWallets();
         free(raw);
         return;
     }

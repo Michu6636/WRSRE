@@ -1131,6 +1131,10 @@ static void ProbeDemandLifetime(void* building, int type, const ServiceFee& fee,
                  patrons, held, never, st->cleared, st->reappeared);
         }
         st->dayFlags.clear();
+        st->cleared = 0;
+        st->reappeared = 0;
+        st->withSamples = 0;
+        st->withoutSamples = 0;
         st->lastLogDay = absDay;
     }
 
@@ -1613,11 +1617,21 @@ static void ParseServiceFees(const char* s)
                 else                               kind = atoi(kindStr);
 
                 if (type > 0 && fee > 0.0f && (kind == -1 || (kind >= 1 && kind <= 10))) {
-                    ServiceFee& f = g_serviceFees[g_serviceFeeCount++];
-                    f.type = type;
-                    f.kind = kind;
-                    f.fee  = fee;
-                    f.feeUsd = feeUsd;
+                    bool duplicate = false;
+                    for (int i = 0; i < g_serviceFeeCount; i++) {
+                        if (g_serviceFees[i].type == type) { duplicate = true; break; }
+                    }
+                    if (duplicate) {
+                        Logf("private_shops  service_fees entry \"%s\" rejected - "
+                             "type %d is already configured (first entry wins)",
+                             buf, type);
+                    } else {
+                        ServiceFee& f = g_serviceFees[g_serviceFeeCount++];
+                        f.type = type;
+                        f.kind = kind;
+                        f.fee  = fee;
+                        f.feeUsd = feeUsd;
+                    }
                 } else {
                     Logf("private_shops  service_fees entry \"%s\" rejected "
                          "(type>0, kind 1..10 or `any`, fee>0 required)", buf);

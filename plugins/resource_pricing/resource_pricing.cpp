@@ -469,6 +469,7 @@ static float GetLocalScarcityMultiplierImpl(void* building, void* resRecord)
             float cap = *(float*)(sp + TSM_ST_CAPACITY);
             if (!(cap == cap) || cap <= 0.0f) continue;
             if (cap < g_minCapacityTons) continue; // ignore tiny
+            bool storageMatched = false;
             for (size_t j = 0; j < nslot; j++) {
                 // slot stride 0x10: resource ptr +0, content +8
                 BYTE* slot = slotBegin + j * TSM_SLOT_STRIDE;
@@ -479,6 +480,9 @@ static float GetLocalScarcityMultiplierImpl(void* building, void* resRecord)
                 if (!(content == content)) content = 0.0f;
                 if (content < 0.0f) content = 0.0f;
                 totalCur += (double)content;
+                storageMatched = true;
+            }
+            if (storageMatched) {
                 totalCap += (double)cap;
                 found = true;
             }

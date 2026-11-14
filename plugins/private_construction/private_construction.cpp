@@ -1892,12 +1892,22 @@ static void RunConstructionPass(float dayDelta)
 
 static void OnTick(void* /*ud*/, float /*dt*/, float dayDelta)
 {
+    // dayDelta is PER FRAME (sim_clock_api.h): the frames this throttle
+    // skips must not lose their share of the day. Accumulate every valid
+    // frame and hand the whole accumulated delta to the pass that runs.
+    static float pendingDayDelta = 0.0f;
+    if (dayDelta > 0.0f && dayDelta == dayDelta)
+        pendingDayDelta += dayDelta;
+
     static DWORD lastRun = 0;
     DWORD now = GetTickCount();
     if (now - lastRun < (DWORD)g_tickIntervalMs) return;
     lastRun = now;
 
-    __try { RunConstructionPass(dayDelta); }
+    float passDelta = pendingDayDelta;
+    pendingDayDelta = 0.0f;
+
+    __try { RunConstructionPass(passDelta); }
     __except (FaultFilter("private_construction pass", GetExceptionInformation()))
     {
         Logf("private_construction  the pass faulted - skipped this frame");

@@ -372,12 +372,17 @@ static void LoadTaxes(const char* dir)
     }
 
     EnterCriticalSection(&g_lock);
-    g_vatRate      = hdr.vatRate;
-    g_profitTaxRate = hdr.profitTaxRate;
-    g_propertyTaxFlat = hdr.propertyTaxFlat;
-    g_vatEnabled   = (int)hdr.vatEnabled;
-    g_profitEnabled = (int)hdr.profitEnabled;
-    g_propertyEnabled = (int)hdr.propertyEnabled;
+    // A corrupt sidecar must not inject NaN/inf into the fiscal state.
+    // Invalid fields keep the INI/Start value that is already loaded.
+    if (hdr.vatRate >= 0.0f && hdr.vatRate <= 1.0f)
+        g_vatRate = hdr.vatRate;
+    if (hdr.profitTaxRate >= 0.0f && hdr.profitTaxRate <= 1.0f)
+        g_profitTaxRate = hdr.profitTaxRate;
+    if (hdr.propertyTaxFlat >= 0.0f && hdr.propertyTaxFlat <= 1.0e6f)
+        g_propertyTaxFlat = hdr.propertyTaxFlat;
+    g_vatEnabled   = hdr.vatEnabled ? 1 : 0;
+    g_profitEnabled = hdr.profitEnabled ? 1 : 0;
+    g_propertyEnabled = hdr.propertyEnabled ? 1 : 0;
     LeaveCriticalSection(&g_lock);
 
     free(raw);
@@ -397,6 +402,16 @@ static void OnTaxesSaveLoad(TsmSaveEvent ev, const char* dir, void* /*ud*/)
 
 // ---------------------------------------------------------------- settlement
 
+// modifyCompanyCapital is a void façade: it refuses an invalid or decayed
+// building internally. Crediting the treasury regardless would create
+// money and drop the liability, so check the refusal conditions first.
+// Enumerated enterprises are private by construction, so validity and the
+// engine decay flag are what is left to test.
+static bool CanDebitEnterprise(void* b)
+{
+    return b && TsmIsValidGamePtr(b) && !TsmIsDecayed(b);
+}
+
 static void SettleVatAll(void)
 {
     if (!g_enterprise || !g_currency) return;
@@ -408,7 +423,7 @@ static void SettleVatAll(void)
 
     for (size_t i = 0; i < n; i++) {
         void* b = g_enterprise->getEnterpriseByIndex(i);
-        if (!b) continue;
+        if (!CanDebitEnterprise(b)) continue;
 
         double vat = 0.0, profit = 0.0;
         g_enterprise->getAccruals(b, &vat, &profit);
@@ -429,8 +444,19 @@ static void SettleVatAll(void)
 
 static void SettleProfitAll(void)
 {
-    if (!g_enterprise || !g_currency) return;
-    if (!g_profitEnabled) return;   // suspended: period totals held for re-enable
+    if (!g_enterprise) return;
+    if (!g_profitEnabled) {
+        // A suspended profit tax still owns the period boundary: drop the
+        // running totals so re-enabling cannot tax the suspended window.
+        size_t n = g_enterprise->getEnterpriseCount();
+        for (size_t i = 0; i < n; i++) {
+            void* b = g_enterprise->getEnterpriseByIndex(i);
+            if (!CanDebitEnterprise(b)) continue;
+            g_enterprise->clearPeriodTotals(b);
+        }
+        return;
+    }
+    if (!g_currency) return;
 
     size_t n = g_enterprise->getEnterpriseCount();
     double total = 0.0;
@@ -438,7 +464,7 @@ static void SettleProfitAll(void)
 
     for (size_t i = 0; i < n; i++) {
         void* b = g_enterprise->getEnterpriseByIndex(i);
-        if (!b) continue;
+        if (!CanDebitEnterprise(b)) continue;
 
         double gs = 0, vatAccrued = 0, ws = 0, wages = 0, foreign = 0;
         g_enterprise->getPeriodTotals(b, &gs, &vatAccrued,
@@ -491,9 +517,8 @@ static void SettlePropertyAll(void)
 
     for (size_t i = 0; i < n; i++) {
         void* b = g_enterprise->getEnterpriseByIndex(i);
-        if (!b) continue;
-        if (!TsmIsValidGamePtr(b) ||
-            !ReadablePtr(b, TSM_BLD_MIN_READABLE)) continue;
+        if (!CanDebitEnterprise(b)) continue;
+        if (!ReadablePtr(b, TSM_BLD_MIN_READABLE)) continue;
 
         // v2 (Task 4): land-value property tax. The flat base is scaled by the
         // building's environmental attractiveness (0..1, neutral 0.5 fallback):
@@ -560,10 +585,19 @@ static void RecordVatAccrualImpl(void* entity, double amount)
     if (!g_enterprise) return;
 
     if (g_vatSchedule == TSM_FREQ_INSTANT) {
-        // Settle the moment it is accrued. Same shape as the periodic
-        // settlement, applied to one entity.
-        g_enterprise->modifyCompanyCapital(entity, -amount, TSM_CAP_TAX);
-        if (g_currency) g_currency->moveTreasury(amount, "vat");
+        // Settle the moment it is accrued. The sale credited this VAT to
+        // the shop as part of gross revenue, so it MUST reach the period
+        // VAT total: SettleProfitAll derives net revenue as
+        // grossSales - vatAccrued, and leaving this out taxed the VAT
+        // itself. addAccrual bumps both fields; clearAccrual then drops
+        // the liability (the instant schedule has no settlement boundary
+        // that could collect it later).
+        g_enterprise->addAccrual(entity, TSM_ACCRUAL_VAT, amount);
+        g_enterprise->clearAccrual(entity, TSM_ACCRUAL_VAT);
+        if (CanDebitEnterprise(entity)) {
+            g_enterprise->modifyCompanyCapital(entity, -amount, TSM_CAP_TAX);
+            if (g_currency) g_currency->moveTreasury(amount, "vat");
+        }
         return;
     }
 
@@ -606,7 +640,11 @@ static int SetTaxRateImpl(int taxKind, float rate)
             if (rate >= 0.0f && rate <= 1.0f) { g_profitTaxRate = rate; ok = 1; }
             break;
         case TSM_TAX_PROPERTY:
-            if (rate >= 0.0f) { g_propertyTaxFlat = rate; ok = 1; }
+            // A flat rate is not a fraction, but it must still be finite:
+            // +inf would flow into modifyCompanyCapital and moveTreasury.
+            if (rate >= 0.0f && rate <= 1.0e6f) {
+                g_propertyTaxFlat = rate; ok = 1;
+            }
             break;
         default: break;
     }

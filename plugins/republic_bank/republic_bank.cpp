@@ -16,6 +16,7 @@
 
 #include <vector>
 #include <cstring>
+#include <cstdio>
 
 using namespace republic_bank;
 
@@ -38,9 +39,10 @@ static int g_lastLoggedCurrency = -1;
 
 static LoanKey keyForBuilding(void* b) {
     std::string objName = "unknown";
+    bool gotName = false;
     if (g_enterprise && b) {
         const char* on = g_enterprise->getBuildingObjectName(b);
-        if (on && on[0]) objName = on;
+        if (on && on[0]) { objName = on; gotName = true; }
     }
     float x = 0.0f, z = 0.0f;
     bool got = false;
@@ -65,6 +67,11 @@ static LoanKey keyForBuilding(void* b) {
                 }
             }
         }
+    }
+    if (!gotName && !got) {
+        char ptrKey[32];
+        _snprintf_s(ptrKey, sizeof(ptrKey), _TRUNCATE, "ptr:%p", b);
+        objName = ptrKey;
     }
     return LoanBook::makeKey(objName, x, z);
 }

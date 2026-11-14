@@ -7,7 +7,7 @@ REM
 REM By default this builds every plugin in plugins\ and nothing else. The
 REM loader (tesmioloader.dll) is not built here because it is already in
 REM the game; if you do want to rebuild it, pass "loader" as the first
-REM argument and the script will look for tesmioloader.cpp in the root.
+REM argument and the script will look for src\tesmioloader.cpp.
 REM
 REM Requires Visual Studio Build Tools 2022 with "Desktop development with
 REM C++". Free download: https://visualstudio.microsoft.com/downloads/
@@ -25,7 +25,7 @@ REM   build.bat              build every plugin in plugins\
 REM   build.bat clean        remove build\plugins\ first
 REM   build.bat <name>       build one plugin, e.g. `build.bat sim_clock`
 REM   build.bat loader       also build tesmioloader.dll (needs
-REM                          tesmioloader.cpp in the root)
+REM                          src\tesmioloader.cpp)
 REM -----------------------------------------------------------------------------
 
 set "ROOT=%~dp0"
@@ -76,14 +76,20 @@ set "COMMON=/nologo /MT /O2 /W3 /std:c++17 /EHsc /D_CRT_SECURE_NO_WARNINGS /D_CR
 
 set "WHICH=%~1"
 
+REM --- Counters: defined before any branch so :done can always test them ---
+set "BUILT=0"
+set "SKIPPED=0"
+set "FAILED=0"
+set "MATCHED=0"
+
 REM --- Loader: opt-in only ---
 if /i "%WHICH%"=="loader" (
-    if not exist "tesmioloader.cpp" (
-        echo [skip]  tesmioloader.cpp not in the project root - loader not built
-        goto :plugins
+    if not exist "src\tesmioloader.cpp" (
+        echo ERROR: src\tesmioloader.cpp not found - loader not built
+        goto :failed
     )
     echo [build] tesmioloader.dll
-    cl %COMMON% /LD tesmioloader.cpp /link /OUT:build\tesmioloader.dll user32.lib
+    cl %COMMON% /LD "src\tesmioloader.cpp" /link /OUT:build\tesmioloader.dll user32.lib
     if errorlevel 1 goto :failed
     REM If the user asked for loader explicitly, do not build plugins too.
     goto :done
@@ -92,9 +98,6 @@ if /i "%WHICH%"=="loader" (
 :plugins
 
 REM --- Plugins ---
-set "BUILT=0"
-set "SKIPPED=0"
-set "FAILED=0"
 
 for /d %%d in (plugins\*) do (
     set "NAME=%%~nxd"
@@ -102,6 +105,7 @@ for /d %%d in (plugins\*) do (
 
     if "%WHICH%"==""        set "MATCH=1"
     if /i "!NAME!"=="%WHICH%" set "MATCH=1"
+    if not "%WHICH%"=="" if /i "!NAME!"=="%WHICH%" set "MATCHED=1"
 
     if "!MATCH!"=="1" (
         if exist "%%d\!NAME!.cpp" (
@@ -124,6 +128,16 @@ for /d %%d in (plugins\*) do (
             set /a SKIPPED+=1
         )
     )
+)
+
+REM --- Explicit target that matched nothing / built nothing ---
+if not "%WHICH%"=="" if "!MATCHED!"=="0" (
+    echo ERROR: unknown target "%WHICH%" - no plugins\%WHICH% directory
+    set /a FAILED+=1
+)
+if not "%WHICH%"=="" if "!BUILT!"=="0" if "!FAILED!"=="0" (
+    echo ERROR: target "%WHICH%" was not built
+    set /a FAILED+=1
 )
 
 REM --- Report ---
