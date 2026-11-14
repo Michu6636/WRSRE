@@ -576,12 +576,7 @@ static int CheckNinthClick(float x, float y, float w, float h)
     // Native Collision Y bound is inclusive (COMISS; JA means mouse.y <= upper).
     // X bound inclusivity is NOT evidenced (native X test is a complex quad test,
     // not decoded). Use half-open X to avoid overlap with native tile 8's boundary.
-    if (!std::isfinite(mx) || !std::isfinite(my) ||
-        !std::isfinite(x) || !std::isfinite(y) ||
-        !std::isfinite(w) || !std::isfinite(h) ||
-        !std::isfinite(x + w) || !std::isfinite(y + h)) return 0;
-    if (mx < x || mx >= x + w) return 0;
-    if (my < y || my > y + h) return 0;
+    if (!almanac_button::CheckNinthHitbox(mx, my, x, y, w, h)) return 0;
     return ReadClickLatch() ? 1 : 0;
 }
 
