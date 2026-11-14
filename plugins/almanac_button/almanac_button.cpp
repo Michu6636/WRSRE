@@ -564,8 +564,14 @@ static int CheckNinthClick(float x, float y, float w, float h)
     g_getMouseSolid(input, &mouse);
     float mx = mouse.x;
     float my = mouse.y;
-    if (mx < x || mx >= x + w) return 0;
-    if (my < y || my >= y + h) return 0;
+    // Native Draw treats (x,y) as a center anchor, not top-left: it scales
+    // W/H by 0.5 and constructs corners with +/-half-extents around the anchor.
+    // The plugin previously tested [x, x+w) x [y, y+h) (top-left AABB), which
+    // would be offset by ~half a tile if coordinates align. Test centered bounds.
+    float halfW = w * 0.5f;
+    float halfH = h * 0.5f;
+    if (mx < x - halfW || mx >= x + halfW) return 0;
+    if (my < y - halfH || my >= y + halfH) return 0;
     return ReadClickLatch() ? 1 : 0;
 }
 
@@ -643,6 +649,25 @@ static void DrawNinthTile(void* self, float a1, float a2, float a3, float a4,
         g_textureLoaded = (g_almanacTexture != NULL) ? 1 : 0;
         Logf("almanac_button  texture %s (%s)",
              g_textureLoaded ? "loaded" : "failed to load", g_textureAsset);
+    }
+
+    // Load texture data before binding (native sequence: Create -> Load -> TexBind).
+    // vtable+0x10 = Load(filename, 0, 0). Previously only TexBind was called,
+    // leaving the texture unpopulated. SEH-wrapped: failure is non-fatal.
+    if (g_textureLoaded && g_almanacTexture) {
+        __try {
+            uintptr_t vptr = *(uintptr_t*)g_almanacTexture;
+            if (vptr && ReadablePtr((const void*)vptr, 0x10 + sizeof(void*))) {
+                void* load = *(void**)(vptr + 0x10);
+                if (load && ReadablePtr(load, 1)) {
+                    ((void(__thiscall*)(void*, const char*, int, int))load)(
+                        g_almanacTexture, g_textureAsset, 0, 0);
+                }
+            }
+        }
+        __except (EXCEPTION_EXECUTE_HANDLER) {
+            Logf("almanac_button  texture load faulted");
+        }
     }
 
     // Bind the distinct texture pre-Draw (native binds per-sub-entry before Draw).
@@ -742,10 +767,10 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
 {
     TsmBind(host);
     info->name    = "almanac_button";
-    info->version = "2.4";
+    info->version = "2.5";
 
     ReadSettings();
-    Logf("almanac_button  init v2.4 (content suppression re-added: game+0x5E6)");
+    Logf("almanac_button  init v2.5 (center-anchor hitbox fix + texture Load call)");
     if (!g_enabled) {
         Logf("almanac_button  disabled (enabled = 0)");
         return 1;                       // loader calls FreeLibrary; nothing is patched
