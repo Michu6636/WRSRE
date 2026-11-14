@@ -565,7 +565,7 @@ static int CheckNinthClick(float x, float y, float w, float h)
     float mx = mouse.x;
     float my = mouse.y;
     // Native Collision uses inclusive upper bound (COMISS; JA means mouse.y <=
-    // upper passes). Plugin uses half-open [x, x+w). Fix: inclusive upper edge.
+    // upper passes). Plugin uses inclusive bounds [x, x+w] x [y, y+h].
     // Top-left AABB (native convention per rect store: X=origin+k*pitch, Y=rowY).
     if (mx < x || mx > x + w) return 0;
     if (my < y || my > y + h) return 0;
@@ -653,7 +653,11 @@ static void DrawNinthTile(void* self, float a1, float a2, float a3, float a4,
                     if (load && ReadablePtr(load, 1)) {
                         ((void(__thiscall*)(void*, const char*, int, int))load)(
                             g_almanacTexture, g_textureAsset, 0, 0);
+                    } else {
+                        g_textureLoaded = 0;
                     }
+                } else {
+                    g_textureLoaded = 0;
                 }
             }
             __except (EXCEPTION_EXECUTE_HANDLER) {
@@ -762,10 +766,10 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
 {
     TsmBind(host);
     info->name    = "almanac_button";
-    info->version = "2.6";
+    info->version = "2.7";
 
     ReadSettings();
-    Logf("almanac_button  init v2.6 (revert center-anchor; inclusive upper bound; Load once)");
+    Logf("almanac_button  init v2.7 (inclusive upper bound; Load once; Load fault handling)");
     if (!g_enabled) {
         Logf("almanac_button  disabled (enabled = 0)");
         return 1;                       // loader calls FreeLibrary; nothing is patched
