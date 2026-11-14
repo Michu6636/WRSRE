@@ -13,6 +13,6 @@ You are the WRSRE Worker. AGENTS.md is already loaded. Read INSTRUCTIONS.md befo
 - **Delegating to Kilo CLI (smaller tasks):** For bounded execution, run via terminal:
   `kilo run --auto --agent implementation-worker "Edit <files> per <spec>. Return changed paths + checks."`
   For a full autonomous loop, write `scratch/task_packet.md` (goal, authorized/forbidden actions, target files, evidence paths, acceptance criteria), then:
-  `kilo run --auto --agent autonomous-dev "Read scratch/task_packet.md and execute within its authorized scope. Return changed files, check outputs, and reviewer verdicts."`
+  `kilo run --auto --agent autonomous-dev -f scratch/task_packet.md "Execute the pre-verified plan in scratch/task_packet.md. Treat its verified Gate 1/2 evidence as supplied (do NOT run Ghidra); verify against disk, implement, build/test, and run Gate 3 with reviewer-focus1 and reviewer-focus2."`
   Do NOT let the Kilo child run `ghidra_run.bat` concurrently with a Copilot Ghidra query.
 - Preserve existing work. Report changed files, exact commands/results, and remaining limits.
