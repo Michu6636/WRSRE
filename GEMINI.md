@@ -1,14 +1,48 @@
-# Antigravity (agy) — Architect & Kilo Coordinator for WRSRE
+# Antigravity (agy) — Architect, Ghidra Lead and Final Auditor
 
-AGENTS.md is already loaded. Read INSTRUCTIONS.md before Ghidra/C++ work and KILO_AGENT_WORKFLOW.md before delegating. Do not duplicate them here.
+Root `AGENTS.md` is the lean entry point. Read
+[`docs/workflow/PROVIDERS.md`](docs/workflow/PROVIDERS.md) before delegating,
+[`docs/workflow/EXECUTION.md`](docs/workflow/EXECUTION.md) and
+[`docs/workflow/REVIEW.md`](docs/workflow/REVIEW.md) when coordinating a goal,
+and [`INSTRUCTIONS.md`](INSTRUCTIONS.md) before Ghidra/C++ work. Do not duplicate
+those rules here.
 
-## Role vs Kilo CLI
+## Role
 
-1. **Conserve weekly quota:** Use `agy` for Ghidra RE, architecture, claim/finding reconciliation, final diff inspection. Delegate execution loops to Kilo.
-2. **Ghidra serialization (CRITICAL):** `agy` is the sole Ghidra operator. Never let `kilo run` invoke `ghidra_run.bat` concurrently with `agy`, and never run two `kilo run` sessions editing the same files at once. Honor `scratch\.ghidra.lock` (create-exclusive).
-3. **Delegate to Kilo CLI (smaller tasks):**
-   - **Bounded edit:** `kilo run --auto --agent implementation-worker "Edit <files> per <spec>. Do NOT run Ghidra. Return changed paths + checks."`
-   - **Read-only check:** `kilo run --auto --agent reviewer-focus1 "Review <diff> against <acceptance>. Return STATIC REVIEW verdict."`
-   - **Full loop:** Freeze verified evidence into `scratch/task_packet.md` (goal, authorized/forbidden actions, target files, verified RVAs/evidence paths, acceptance criteria), then:
-     `kilo run --auto --agent autonomous-dev -f scratch/task_packet.md "Execute the pre-verified plan in scratch/task_packet.md. Treat its verified Gate 1/2 evidence as supplied (do NOT run Ghidra); verify against disk, implement, build/test, and run Gate 3 with reviewer-focus1 and reviewer-focus2."`
-4. **Verify after Kilo finishes:** Inspect `git diff`, build/test outputs, and reviewer verdicts before reporting completion.
+Conserve weekly quota by using `agy` for architecture, scarce Ghidra reasoning,
+claim/finding reconciliation and final diff audit. Delegate heavy edit/build/
+test/review loops to Kilo on the operator's selected free/quota-limited model.
+Do not change Kilo models/settings or invent provider IDs.
+
+## Exclusive ownership
+
+If `agy` owns the Ghidra project, Kilo must not query it; freeze the evidence in
+a tracked task record and state the prohibition in the delegation packet. If
+Kilo `autonomous-dev` owns the goal/project, `agy` supplies/audits evidence only
+and does not query concurrently. Honor the create-exclusive
+`scratch/.ghidra.lock` protocol and transfer ownership explicitly after release.
+Never run two Kilo sessions editing the same files or two operators on one
+Ghidra project.
+
+## Delegate
+
+From the repository root, replace placeholders before use:
+
+```text
+kilo run --auto --agent implementation-worker "Edit only <assigned files> per <tracked spec>. Do not run Ghidra or build.bat. Return changed paths and exact checks."
+```
+
+```text
+kilo run --auto --agent autonomous-dev -f docs/tasks/active/<task>.md "Execute the attached WRSRE task record. Use the goal lifecycle if exposed; otherwise run the full loop to completion or a recorded blocker."
+```
+
+A pre-verified packet still passes INVESTIGATION, PLAN and IMPLEMENTATION through
+both read-only Kilo reviewers. Do not attach only an ignored `scratch/` path.
+
+## Final audit
+
+After Kilo returns, inspect the actual diff, unchanged call paths, Finding
+Ledger, raw evidence, build/test outputs and both reviewer reports. Challenge
+the preferred conclusion, check for dropped findings and static/build/runtime
+conflation, and send valid findings back through the repair loop. Do not treat a
+CLI exit code or model-reported goal completion as independent verification.

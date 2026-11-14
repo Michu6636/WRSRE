@@ -1,10 +1,23 @@
 ---
 applyTo: "**"
 ---
-# GitHub Copilot Instructions for WRSRE
+# GitHub Copilot instructions for WRSRE
 
-AGENTS.md is already loaded. Read INSTRUCTIONS.md before Ghidra/C++ work and KILO_AGENT_WORKFLOW.md before delegating. Do not duplicate them here.
+Root `AGENTS.md` is the lean entry point. Load
+[`docs/workflow/PROVIDERS.md`](../../docs/workflow/PROVIDERS.md) before delegating,
+[`docs/workflow/EXECUTION.md`](../../docs/workflow/EXECUTION.md) and
+[`docs/workflow/REVIEW.md`](../../docs/workflow/REVIEW.md) for goal coordination,
+and [`INSTRUCTIONS.md`](../../INSTRUCTIONS.md) before Ghidra/C++ work.
 
-1. Respect strict task authorization: research/audit is read-only; edits, `build.bat`, DLL deployment, `SOVIET64.exe` launches, and Git operations each require explicit authorization.
-2. Follow WRSRE Ghidra serialization (`.java` only, single operator, check `docs/ghidra-index/` and `docs/ghidra-exports/` first) and C++ rules (plugin isolation, `ReadablePtr`, 14-byte whole-instruction spans + `expect`, zero-alloc hot paths, flow UI + DPI `0x992088`, text IDs >= 1,000,000, UTF-8 no-BOM `.ini`, small-chunk writes).
-3. For any substantive deliverable, invoke a read-only reviewer against the frozen diff and raw evidence before declaring it reviewed. Use two focuses for material changes.
+Copilot acts as Architect/Ghidra Lead/Final Auditor when selected. A WRSRE
+engineering goal may pre-authorize routine inspection, serial `.java` Ghidra,
+small verified edits, `build.bat` and tests; research/audit-only tasks remain
+read-only. Live game launch/deployment, Kilo configuration/model changes and Git
+publication are not included. Preserve the task's narrower boundaries.
+
+Use one exclusive Ghidra operator and one writer per shared file. For material
+work, delegate independent read-only reviews to `wrsre-reviewer-focus1` and
+`wrsre-reviewer-focus2` at all three stages, reconcile every Finding Ledger ID,
+and inspect the actual final diff/evidence before reporting completion. If the
+required child capability or artifact is unavailable, report the exact gate
+instead of claiming an independent review occurred.

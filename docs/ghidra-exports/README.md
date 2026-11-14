@@ -4,6 +4,18 @@ Cached raw decompilations, disassemblies, and cross-reference dumps relocated fr
 
 Always consult [`docs/ghidra-index/`](../ghidra-index/README.md) for the reviewed status and interpretation limits of each function before relying on raw decompiler output.
 
+## Promoting evidence from scratch
+
+Publish only the bounded, permitted excerpts needed for consequential claims;
+do not commit the executable, Ghidra project or whole unbounded exports. Record
+the binary/project identity, script and arguments, address domain/range, query
+or cache-reuse date, and whether hashes were locally measured or externally
+reported. Keep raw bytes/instructions distinct from interpretation, link the
+claim/task record, and update the function index after successes and failures.
+An ignored `scratch/` filename, timestamp or agent summary is not accessible
+proof. If an artifact cannot be published, record the exact gap and request the
+existing bounded excerpt from its owner rather than rerunning blindly.
+
 | File | Function / Range | Related Index / Notes |
 |---|---|---|
 | `decomp_1406EE2A0.c` | `FUN_1406EE2A0` | Generic window creator (`0x5D8` alloc + 100-slot state init); see [`../ghidra-index/6EE2A0.md`](../ghidra-index/6EE2A0.md) |

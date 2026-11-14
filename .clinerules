@@ -1,15 +1,15 @@
-# WRSRE agent entry point (legacy Cline rules)
+# WRSRE legacy Cline entry point
 
-Read `AGENTS.md`, `INSTRUCTIONS.md` and the relevant parts of
-`KILO_AGENT_WORKFLOW.md` before acting. Those files are the maintained source of
-project, safety, native-evidence and coordination rules; this file intentionally
-does not duplicate them. Respect higher-priority session instructions and the
-user's task scope.
+Read `AGENTS.md` first and follow its lazy load map. The maintained contracts are
+`docs/workflow/EXECUTION.md`, `docs/workflow/REVIEW.md`, `INSTRUCTIONS.md` and
+the relevant sections of `KILO_AGENT_WORKFLOW.md`; this file does not duplicate
+them or expand the user's task authorization.
 
 Check the actual working directory, branch, host, shell and tool availability.
 Historical Windows paths, installed software and Ghidra access are not promises
-about the current environment. Keep existing changes and serialize access to
-each Ghidra project. Verify consequential findings against accessible raw
-artifacts; if a cited artifact is missing, report that rather than guessing or
-restarting work unnecessarily. Do not make runtime changes or implement hooks
-without the authorization required by the task.
+about the current environment. Preserve existing changes, serialize Ghidra
+access, and verify consequential findings against accessible raw artifacts.
+Missing evidence is a precise blocker, not a reason to guess or restart work.
+Research/audit-only tasks stay read-only; live game tests, deployment, Kilo
+configuration/model changes and Git publication require separate explicit
+authorization.
