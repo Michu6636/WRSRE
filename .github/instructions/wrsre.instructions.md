@@ -1,3 +1,6 @@
+---
+applyTo: "**"
+---
 # GitHub Copilot Instructions for WRSRE
 
 AGENTS.md is already loaded. Read INSTRUCTIONS.md before Ghidra/C++ work and KILO_AGENT_WORKFLOW.md before delegating. Do not duplicate them here.

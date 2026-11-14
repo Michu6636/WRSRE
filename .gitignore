@@ -6,6 +6,9 @@ Release/
 .vs/
 scratch/
 tools/peinfo-out/
+# Kilo writes local state here; track only the project config.
+.kilo/*
+!.kilo/kilo.jsonc
 *.log
 *.pdb
 *.obj
