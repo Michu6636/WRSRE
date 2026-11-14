@@ -22,7 +22,7 @@
 
 ### 1.3 TesmioLoader log
 - **Location:** `<game_dir>/build/tesmioloader.log` (or configured log path).
-- **Verify:** The log shows "almanac_button init v2.12" and "armed clickable ninth tile after row tile 8". If an older version string appears, the deployed DLL is stale.
+- **Verify:** The log shows "almanac_button  init v2.12" (double-space) and "armed  clickable ninth tile after row tile 8". If an older version string appears, the deployed DLL is stale. Note: log messages use double spaces; match on substrings.
 - **Record:** Full log file (copy to evidence directory before testing).
 
 ### 1.4 INI verification
@@ -57,7 +57,7 @@
 **Pass criteria:**
 - Ninth tile is visible and not clipped.
 - If distinct icon: texture Load and TexBind succeeded.
-- If repeated artwork: texture failed (check log for "texture failed to load" or "texture load faulted").
+- If repeated artwork: texture failed (check log for "texture failed to load", "texture load faulted", "CreateManagedTexture faulted", or "texture bind faulted").
 
 **Failure diagnosis:**
 - If no ninth tile appears: check log for "FAIL-STOP" or "RECT DIRTY" (rect-pair corruption).
@@ -86,6 +86,11 @@
 - Native row click closes Almanac.
 - Native buttons retain normal behavior.
 
+**Failure diagnosis:**
+- If double-toggle on held click: debounce logic issue (check g_almanacDebounce reset).
+- If no toggle on click: CheckNinthClick returning 0 (hitbox mismatch or latch not set).
+- If toggle on hover: latch read is returning true without click (latch semantics wrong).
+
 **Informational (not a pass/fail gate):**
 - Latch-timing sensitivity: CheckNinthClick reads the latch per frame. A click whose press+release occur between frames yields ninthClicked=0 on the press frame and may be missed. Record whether short clicks are detected.
 
@@ -105,7 +110,7 @@
 6. Repeat at different DPI scales (if available: 1.0, 1.25, 1.5, 2.0).
 
 **Expected (hypothesis — code's actual implementation):**
-- The code's CheckNinthClick uses a left-anchored AABB: mouse.x in [x, x+w), mouse.y in [y, y+h] (X half-open, Y inclusive), where x = origin + 8*pitch, y = rowY, w = h = scale*pitch.
+- The code's CheckNinthClick uses a left-anchored AABB: mouse.x in [x, x+w), mouse.y in [y, y+h] (X half-open, Y inclusive), where x = origin + 8*pitch, y = rowY, w = h = scale*pitch. Non-finite mouse or rect values (including overflowed x+w/y+h) return no-toggle.
 - Clicks inside this AABB should toggle; clicks outside should not.
 - Whether the visible tile is left- or center-anchored is itself unresolved (Draw's consumption of the rect store is unverified per hit_area_analysis.md unresolved #4). If the visible tile is center-anchored, the hitbox would be offset by ~half a tile.
 - Test both as separately labelled hypotheses: (A) left-anchored (code's current behavior), (B) center-anchored (unverified native convention). Record which hypothesis matches the observed toggle results.
@@ -160,6 +165,10 @@
 - Native click handling may be disabled when mouse is in a specific rectangle.
 - Tint change may be visible (artifact).
 
+**Pass criteria (for the partial input effect):**
+- game+0x5E6 = 1 when Almanac open, 0 when closed.
+- No crash or fault when writing the flag.
+
 **Not verified / not achieved by this plugin:**
 - Exclusive visibility (native content hidden when Almanac is open) is NOT achieved. The 0x5E6 flag provides only a partial, mouse-dependent input effect (disables click handling + tint change). Native Draw still executes. This is a design gap, not a test failure. See almanac-ui.md C43-C44.
 
@@ -187,7 +196,7 @@
 - game+0x5E6 value (before open, after open, after close).
 - game+0xC65C (selected sub-tab) before/after native clicks.
 - Mouse coordinates (from GetMouseSolid or debugger) at each test point.
-- Drawn bounds (rect store 0x9BE2E8-0x9BE2F4: W, H, X, Y) for the ninth tile.
+- Drawn bounds (rect store 0x9BE2E8-0x9BE2F7: W, H, X, Y) for the ninth tile.
 - DLL hash of deployed almanac_button.dll.
 - Game executable hash and PE timestamp.
 
@@ -243,7 +252,7 @@ The following are authorized (already performed):
 3. **Mouse coordinate capture** — no debugger or coordinate-logging mechanism is currently in the plugin. Would require either a debugger or adding debug logging (which is a source change requiring authorization).
 4. **Drawn bounds capture** — the plugin logs "ninth tile drawn" but not the actual rect store values. Would require adding debug logging (source change).
 5. **DPI scale value** — not recorded; must be read from game+0x992088 at runtime.
-6. **Deployed DLL embedded version string** — verify independently of the log (the log could come from a different DLL).
+6. **Deployed DLL embedded version string** — verify independently of the log (the log could come from a different DLL). Method: use `strings` or a resource editor on the deployed DLL, or check the PE version info resource. Cross-reference with §1.2.
 7. **icon_inspectnumbers.png existence** — not verified in the game's media directory.
 
 ---
