@@ -8,6 +8,7 @@
 
 | Path | Contents |
 |---|---|
+| [`AGENTS.md`](AGENTS.md) | Rules that load only when an agent works inside `docs/`: address labelling, confidence labels, `scratch/` is never citable proof |
 | [`WRSRE DESIGN DOC.md`](WRSRE%20DESIGN%20DOC.md) | Master economic architecture, subsystem boundaries & design invariants |
 | [`DEVELOPMENT_README.md`](DEVELOPMENT_README.md) | Developer onboarding, plugin ABI conventions & debugging workflow |
 | [`DLC_UPDATE_PLAYBOOK.md`](DLC_UPDATE_PLAYBOOK.md) | Re-targeting RVAs/offsets after game updates via `tools/scan_exe_update.py` |

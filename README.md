@@ -11,14 +11,22 @@ WRSRE/
 ├── AGENTS.md                 # AI agent entry point & coordination rules
 ├── INSTRUCTIONS.md           # Project, reverse-engineering & C++ safety standards
 ├── KILO_AGENT_WORKFLOW.md    # Worker/Reviewer loop, delegation, evidence gates & chunking rules
+├── GEMINI.md                 # Antigravity (agy) role: architect, sole Ghidra operator, Kilo delegator
 ├── build.bat                 # MSVC x64 plugin builder (build.bat [clean|<plugin>|loader])
 ├── clean.bat                 # Removes root compiler/linker temporaries
+├── .kilo/
+│   └── kilo.jsonc            # Kilo agents (autonomous-dev, 2 workers, 2 reviewers) & permissions
+├── .github/
+│   ├── instructions/wrsre.instructions.md   # Copilot repo-wide rules (applyTo: "**")
+│   └── agents/               # Copilot wrsre-worker & read-only wrsre-reviewer
 ├── src/                      # Shared TesmioLoader host ABI, service APIs & RVA headers
 ├── plugins/                  # Isolated native DLL plugins (<name>/<name>.cpp + <name>.ini)
+│   └── AGENTS.md             # C++ rules, loaded only when an agent touches plugins/
 ├── tests/                    # Standalone C++17 & Python test suites + headless mock_host
 ├── tools/                    # PE scanners, CSV economy auditor & Ghidra headless scripts
 │   └── ghidra/               # Headless Ghidra .java query scripts (DecompAt, DisasmMany, ...)
 └── docs/                     # Design docs, Ghidra index/exports, runtime evidence & tasks
+    ├── AGENTS.md             # Ghidra index/export conventions, loaded only under docs/
     ├── engine/               # Reverse-engineered engine layouts & mechanics
     ├── ghidra-index/         # Function-by-RVA knowledge base (read before querying Ghidra)
     ├── ghidra-exports/       # Cached raw Ghidra decompilations, disassemblies & xrefs
@@ -84,11 +92,34 @@ Start with [`AGENTS.md`](AGENTS.md), then the project rules in
 [`KILO_AGENT_WORKFLOW.md`](KILO_AGENT_WORKFLOW.md). Check the actual host,
 branch, tools and task authorization; Windows game and Ghidra files may not be
 present in a remote checkout. Use the function index and accessible raw exports
-before requesting another query. Substantive deliverables use the bounded
+before requesting another query. Substantive deliverables use the
 Worker/Reviewer loop in `KILO_AGENT_WORKFLOW.md`: an independent child inspects
-the actual diff/evidence, and the parent repairs and rechecks findings. Verify
+the actual diff/evidence, and the parent repairs and rechecks findings with no
+round cap, stopping only for a genuine blocker. Verify
 consequential claims against actual instructions or code, not a second summary,
 and stop repeated report-only passes when no new evidence is being produced.
+
+### What loads when
+
+Only `AGENTS.md` is loaded automatically at session start. Everything else is
+opt-in, deliberately: loading all of it costs roughly 16K tokens per turn.
+
+| File | When it loads |
+|---|---|
+| [`AGENTS.md`](AGENTS.md) | Always, at session start |
+| [`INSTRUCTIONS.md`](INSTRUCTIONS.md) | On demand — before Ghidra or C++ work |
+| [`KILO_AGENT_WORKFLOW.md`](KILO_AGENT_WORKFLOW.md) | On demand — before delegating or reviewing |
+| [`GEMINI.md`](GEMINI.md) | Antigravity (`agy`) sessions |
+| [`.github/instructions/wrsre.instructions.md`](.github/instructions/wrsre.instructions.md) | GitHub Copilot, every file (`applyTo: "**"`) |
+| [`.github/agents/`](.github/agents/) | GitHub Copilot custom agents, when selected |
+| [`.kilo/kilo.jsonc`](.kilo/kilo.jsonc) | Kilo Code — agent definitions, models and permissions |
+| [`docs/AGENTS.md`](docs/AGENTS.md) | Only when an agent touches `docs/` |
+| [`plugins/AGENTS.md`](plugins/AGENTS.md) | Only when an agent touches `plugins/` |
+
+The three tool layers are independent: Kilo Code reads `.kilo/kilo.jsonc`,
+GitHub Copilot reads `.github/`, and Antigravity reads `GEMINI.md`. Editing one
+does not change the others; all three share the same `AGENTS.md` /
+`INSTRUCTIONS.md` / `KILO_AGENT_WORKFLOW.md` rules.
 
 The existing [`tools/ghidra/`](tools/ghidra/README.md) scripts use Ghidra
 headlessly; a GUI window or MCP server is not required for that workflow. MCP is
