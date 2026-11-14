@@ -562,7 +562,15 @@ static int CheckNinthClick(float x, float y, float w, float h)
     if (!g_getMouseSolid) return 0;
     void* input = (void*)(Base() + TSM_RVA_DEFAULT_INPUT);
     C3DVec3 mouse = { 0.0f, 0.0f, 0.0f };
-    g_getMouseSolid(input, &mouse);
+    int mouseOk = 0;
+    __try {
+        g_getMouseSolid(input, &mouse);
+        mouseOk = 1;
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        return 0;
+    }
+    if (!mouseOk) return 0;
     float mx = mouse.x;
     float my = mouse.y;
     // Native Collision Y bound is inclusive (COMISS; JA means mouse.y <= upper).
@@ -607,10 +615,12 @@ static void UpdateAlmanacState(int ninthClicked)
         InterlockedExchange(&g_almanacDebounce, 0);
     }
 
-    // Content suppression: when Almanac is open, write game+0x5E6 = 1 every
-    // frame to suppress native sub-page content drawing. Native code toggles
-    // this flag on certain clicks, so we re-assert it each frame. Restore to 0
-    // when Almanac closes. Never writes game+0xC65C, never consumes 0xA54E91.
+    // Native input suppression: when Almanac is open, write game+0x5E6 = 1 every
+    // frame. This is NOT visual content suppression (native Draw still executes).
+    // It provides a partial, mouse-dependent input effect (disables click handling
+    // + tint change when FUN_140335BC0 returns non-zero). See docs/engine/almanac-ui.md
+    // section 1.2.1. Restore to 0 when Almanac closes. Never writes game+0xC65C,
+    // never consumes 0xA54E91.
     if (g_contentSuppressionEnabled) {
         int isOpen = InterlockedCompareExchange(&g_almanacOpen, 1, 1) != 0;
         if (isOpen) {
@@ -647,7 +657,13 @@ static void DrawNinthTile(void* self, float a1, float a2, float a3, float a4,
     if (!g_textureAttempted && g_createManagedTexture && g_textureAsset[0] && !g_almanacTexture) {
         g_textureAttempted = 1;
         void* middlepoint = (void*)(Base() + ALM_RVA_MIDDLEPOINT);
-        g_almanacTexture = g_createManagedTexture(middlepoint, g_textureAsset);
+        __try {
+            g_almanacTexture = g_createManagedTexture(middlepoint, g_textureAsset);
+        }
+        __except (EXCEPTION_EXECUTE_HANDLER) {
+            Logf("almanac_button  CreateManagedTexture faulted");
+            g_almanacTexture = NULL;
+        }
         g_textureLoaded = (g_almanacTexture != NULL) ? 1 : 0;
         // Load texture data once after creation (native: Create -> Load -> TexBind).
         if (g_textureLoaded && g_almanacTexture) {
@@ -775,10 +791,10 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
 {
     TsmBind(host);
     info->name    = "almanac_button";
-    info->version = "2.11";
+    info->version = "2.12";
 
     ReadSettings();
-    Logf("almanac_button  init v2.11 (explicit cmath include)");
+    Logf("almanac_button  init v2.12 (SEH-wrap CreateManagedTexture/GetMouseSolid; 0x5E6 comment fix)");
     if (!g_enabled) {
         Logf("almanac_button  disabled (enabled = 0)");
         return 1;                       // loader calls FreeLibrary; nothing is patched
