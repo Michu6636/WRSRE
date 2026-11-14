@@ -17,8 +17,9 @@ permissions or override session instructions.
 3. Work as the accountable Worker within the user's authorization. For every
    substantive deliverable, consult at least one independent read-only child
    Reviewer before marking it fully reviewed; use distinct review focuses for
-   material changes. Follow the bounded repair loop in `KILO_AGENT_WORKFLOW.md`.
-   If child review is unavailable, say so and do not claim the gate passed. Do
+   material changes. Follow the unlimited-repair loop in
+   `KILO_AGENT_WORKFLOW.md`: no round cap, stop only for a genuine blocker. If
+   child review is unavailable, say so and do not claim the gate passed. Do
    not invent capabilities or make the user relay routine messages. One
    designated operator owns each Ghidra project, including GUI/headless access.
 4. When the next pass adds no new evidence or repeats a contradiction, stop:

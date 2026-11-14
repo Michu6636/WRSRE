@@ -95,7 +95,7 @@ A child result should contain:
 Children must not launch further descendants unless the parent explicitly justifies
 that need and the runtime/permissions permit it. Keep coordination shallow by default.
 
-## Worker and Reviewer modes: bounded closed loop
+## Worker and Reviewer modes: closed repair loop
 
 These are reusable behavior profiles, not permission grants or proof that a custom
 mode has been installed in the Kilo client. The Worker is implementation-capable;
@@ -139,8 +139,11 @@ owns the complete authorized cycle:
    findings do not apply, and preserve unresolved limits. Never suppress a valid
    finding merely to reach a green verdict.
 7. **Repair and repeat.** After each fix, rerun affected checks and send the new
-   frozen diff to a Reviewer for follow-up. Repeat until the exit gate below passes
-   or the bounded repair limit is reached. Do not ask the user to approve routine
+   frozen diff to a Reviewer for follow-up. There is no round cap: repeat until the
+   exit gate below passes or a genuine blocker is reached (missing artifact,
+   runtime-only question static checks cannot resolve, or a doom_loop). A round
+   that adds no new evidence and repeats a prior finding must change strategy or
+   stop with the precise blocker. Do not ask the user to approve routine
    fixes or relay messages; ask only for real authorization, missing inputs or
    unavailable capabilities.
 8. **Deliver one result.** Summarize changed files, actual commands/results,
