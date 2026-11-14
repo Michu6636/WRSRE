@@ -208,6 +208,22 @@ private:
 // Width of the ninth backdrop, the same as the native tile width (scale * P).
 inline float TileWidth(const RowConstants& c) { return c.scale * c.pitch; }
 
+// Host-testable hit-test for the ninth tile. Mirrors CheckNinthClick in the
+// plugin (Windows glue) but without the GetMouseSolid call or click-latch read.
+// Returns 1 if (mx, my) is inside the ninth-tile bounds, 0 otherwise.
+// Bounds: X half-open [x, x+w), Y inclusive [y, y+h].
+// Non-finite inputs or overflowed sums return 0.
+inline int CheckNinthHitbox(float mx, float my, float x, float y, float w, float h)
+{
+    if (!std::isfinite(mx) || !std::isfinite(my) ||
+        !std::isfinite(x) || !std::isfinite(y) ||
+        !std::isfinite(w) || !std::isfinite(h) ||
+        !std::isfinite(x + w) || !std::isfinite(y + h)) return 0;
+    if (mx < x || mx >= x + w) return 0;
+    if (my < y || my > y + h) return 0;
+    return 1;
+}
+
 }  // namespace almanac_button
 
 #endif  // ALMANAC_BUTTON_GEOMETRY_H
