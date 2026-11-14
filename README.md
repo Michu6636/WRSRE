@@ -10,7 +10,7 @@ Native x64 C++17 plugin suite (`TesmioLoader` API v4) introducing a mixed state/
 WRSRE/
 ├── AGENTS.md                 # AI agent entry point & coordination rules
 ├── INSTRUCTIONS.md           # Project, reverse-engineering & C++ safety standards
-├── KILO_AGENT_WORKFLOW.md    # Multi-agent delegation, evidence gates & chunking rules
+├── KILO_AGENT_WORKFLOW.md    # Worker/Reviewer loop, delegation, evidence gates & chunking rules
 ├── build.bat                 # MSVC x64 plugin builder (build.bat [clean|<plugin>|loader])
 ├── clean.bat                 # Removes root compiler/linker temporaries
 ├── src/                      # Shared TesmioLoader host ABI, service APIs & RVA headers
@@ -84,9 +84,11 @@ Start with [`AGENTS.md`](AGENTS.md), then the project rules in
 [`KILO_AGENT_WORKFLOW.md`](KILO_AGENT_WORKFLOW.md). Check the actual host,
 branch, tools and task authorization; Windows game and Ghidra files may not be
 present in a remote checkout. Use the function index and accessible raw exports
-before requesting another query. Verify consequential claims against the actual
-instructions or code, not a second summary, and stop repeated report-only
-passes when no new evidence is being produced.
+before requesting another query. Substantive deliverables use the bounded
+Worker/Reviewer loop in `KILO_AGENT_WORKFLOW.md`: an independent child inspects
+the actual diff/evidence, and the parent repairs and rechecks findings. Verify
+consequential claims against actual instructions or code, not a second summary,
+and stop repeated report-only passes when no new evidence is being produced.
 
 The existing [`tools/ghidra/`](tools/ghidra/README.md) scripts use Ghidra
 headlessly; a GUI window or MCP server is not required for that workflow. MCP is

@@ -14,10 +14,13 @@ permissions or override session instructions.
    agent summary or index status is a lead, not independent verification.
    Check whether cited scratch files are actually accessible before relying on
    or requesting them. Follow the claim and counterexample gates in the workflow.
-3. Do the permitted work yourself when practical. If delegation is available,
-   use one accountable parent and focused children; do not invent capabilities
-   or make the user relay routine messages. A single designated operator owns
-   each Ghidra project, including GUI and headless access.
+3. Work as the accountable Worker within the user's authorization. For every
+   substantive deliverable, consult at least one independent read-only child
+   Reviewer before marking it fully reviewed; use distinct review focuses for
+   material changes. Follow the bounded repair loop in `KILO_AGENT_WORKFLOW.md`.
+   If child review is unavailable, say so and do not claim the gate passed. Do
+   not invent capabilities or make the user relay routine messages. One
+   designated operator owns each Ghidra project, including GUI/headless access.
 4. When the next pass adds no new evidence or repeats a contradiction, stop:
    inspect the source, change the question or report the precise blocker. Do
    not keep appending summaries, guessing offsets or seeking a convenient hook.
