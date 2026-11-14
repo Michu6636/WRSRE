@@ -151,11 +151,13 @@ owns the complete authorized cycle:
 **Exit gate:** acceptance criteria are checked; all permitted relevant tests or
 static checks have passed (or are explicitly unavailable); every material review
 finding is resolved or disclosed; and at least one independent child Reviewer
-has examined the final changed state. Use a default maximum of three fix-and-review
-rounds after the first review. If the gate still fails, stop with the precise
-remaining issue and smallest next evidence/action request; never repeat a round
-that adds no new evidence. A missing Reviewer means “not independently reviewed,”
-not “pass.”
+has examined the final changed state. There is no fixed round cap: repair and
+re-review until the gate passes or a genuine blocker is reached (missing
+artifact, runtime-only question static checks cannot resolve, or a doom_loop).
+Progress check each round: if a round adds no new evidence and repeats a prior
+finding, change strategy or stop with the precise blocker and smallest next
+evidence/action request; never repeat an unchanged query. A missing Reviewer
+means “not independently reviewed,” not “pass.”
 
 ### Reviewer mode: general-purpose independent audit
 
@@ -580,8 +582,8 @@ summary. For material changes, use two independent review focuses:
 (1) requirements, correctness, regressions and side effects;
 (2) tests, evidence, edge cases, counterexamples and scope. Freeze changed files
 while they review. Validate every material finding yourself, fix valid issues,
-rerun affected checks, and request focused re-review. Stop after at most three
-fix-and-review rounds or report the exact blocker. If child review is unavailable,
+rerun affected checks, and request focused re-review. Continue until the exit
+gate passes or a genuine blocker is reached; there is no round cap. If child review is unavailable,
 say so and do not claim the review gate passed.
 
 Run only checks authorized for this task. Do not infer permission for build,
