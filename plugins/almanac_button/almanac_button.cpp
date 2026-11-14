@@ -564,10 +564,11 @@ static int CheckNinthClick(float x, float y, float w, float h)
     g_getMouseSolid(input, &mouse);
     float mx = mouse.x;
     float my = mouse.y;
-    // Native Collision uses inclusive upper bound (COMISS; JA means mouse.y <=
-    // upper passes). Plugin uses inclusive bounds [x, x+w] x [y, y+h].
-    // Top-left AABB (native convention per rect store: X=origin+k*pitch, Y=rowY).
-    if (mx < x || mx > x + w) return 0;
+    // Native Collision Y bound is inclusive (COMISS; JA means mouse.y <= upper).
+    // X bound inclusivity is NOT evidenced (native X test is a complex quad test,
+    // not decoded). Use half-open X to avoid overlap with native tile 8's boundary.
+    if (!isfinite(mx) || !isfinite(my)) return 0;
+    if (mx < x || mx >= x + w) return 0;
     if (my < y || my > y + h) return 0;
     return ReadClickLatch() ? 1 : 0;
 }
@@ -681,7 +682,11 @@ static void DrawNinthTile(void* self, float a1, float a2, float a3, float a4,
                 void* panelState = (void*)(Base() + TSM_RVA_DEFAULT_PANEL_STATE);
                 if (texBind && ReadablePtr(texBind, 1)) {
                     ((void(__thiscall*)(void*, int, void*))texBind)(g_almanacTexture, 0, panelState);
+                } else {
+                    g_textureLoaded = 0;
                 }
+            } else {
+                g_textureLoaded = 0;
             }
         }
         __except (EXCEPTION_EXECUTE_HANDLER) {
@@ -766,10 +771,10 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
 {
     TsmBind(host);
     info->name    = "almanac_button";
-    info->version = "2.7";
+    info->version = "2.8";
 
     ReadSettings();
-    Logf("almanac_button  init v2.7 (inclusive upper bound; Load once; Load fault handling)");
+    Logf("almanac_button  init v2.8 (X half-open, Y inclusive, NaN guard, TexBind fault handling)");
     if (!g_enabled) {
         Logf("almanac_button  disabled (enabled = 0)");
         return 1;                       // loader calls FreeLibrary; nothing is patched

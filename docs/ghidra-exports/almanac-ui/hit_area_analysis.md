@@ -101,7 +101,7 @@ Supported: Collision mutates the caller's mouse vector Y (subtract this+0x674C) 
 - origin = scale*(45+85). ninth X = origin + 8*pitch = scale*642.
 - Y = rowY = scale*15 + game+0xAE50 (captured from rect store 0x9BE2F4, which equals XMM10).
 - w = h = scale*pitch = scale*64.
-- CheckNinthClick: GetMouseSolid(input, &mouse); test mouse.x in [x, x+w], mouse.y in [y, y+h] (inclusive upper bound, v2.6). No transform, no panel-bounds normalization, no subtraction of this+0x674C.
+- CheckNinthClick: GetMouseSolid(input, &mouse); test mouse.x in [x, x+w], mouse.y in [y, y+h] (inclusive upper bound, v2.7). No transform, no panel-bounds normalization, no subtraction of this+0x674C.
 
 ## Supported facts
 
