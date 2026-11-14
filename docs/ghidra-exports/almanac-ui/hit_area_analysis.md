@@ -1,6 +1,6 @@
-﻿# Almanac v2.4 ninth-tile hit-area analysis (read-only)
+﻿# Almanac v2.9 ninth-tile hit-area analysis (read-only)
 
-Scope: explain why the v2.4 ninth-tile hit area is below the visible tile.
+Scope: explain why the v2.9 ninth-tile hit area is below the visible tile.
 Sources: cached disassembly `scratch/out/140373ea0_1403829fd_disasm.asm` (FUN_140373EA0),
 `export/almanac-evidence/c3ddll64-collision-draw-20261109/collision_draw_disasm.asm` (C3DDLL64 Collision),
 plugin `plugins/almanac_button/almanac_button.cpp` + `almanac_button_geometry.h`.
