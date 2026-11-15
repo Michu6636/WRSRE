@@ -156,6 +156,7 @@
 #include <cmath>
 #include "../../src/tesmio_plugin.h"
 #include "almanac_button_geometry.h"
+#include "almanac_open_state.h"
 
 #define ALM_DRAW_SYM "?Draw@C3D_PANEL2D@@QEAAXMMMMM_N@Z"   // same as ui_panels
 
@@ -180,7 +181,7 @@ typedef void (*t_GetMouseSolid)(void* input, C3DVec3* out);
 // Texture loading (re-added with corrected binding; see commit 09dc3e0).
 typedef void* (*t_CreateManagedTexture)(void* middlepoint, const char* filename);
 #define ALM_RVA_MIDDLEPOINT 0x9EACD0u   // C3D_MIDDLEPOINT global (passed to CreateManagedTexture)
-#define ALM_TEX_BIND_OFFSET 0x70u       // vtable[0x70] = TexBind (confirmed by native code at FUN_140358A20:141)
+#define ALM_TEX_BIND_OFFSET 0x70u       // vtable[0x70] = TexBind (contested: inferred, not verified vs vtable per docs claim ledger C7)
 // panel state global is TSM_RVA_DEFAULT_PANEL_STATE (0x9EAD08), NOT game+0x9D4F10+0xEAD08
 
 static int                        g_enabled;
@@ -203,9 +204,12 @@ static int                        g_noteCount;
 static const char*                g_lastNote;
 
 // Almanac state (Path D: read-only observation, mod-owned state).
-static volatile LONG              g_almanacOpen;   // 0 = closed, 1 = open
-static volatile LONG              g_almanacDebounce; // 1 while the click latch is held
-static int32_t                    g_lastSelection; // last observed game+0xC65C (native selection)
+// OpenRequestPolicy is the single authoritative lifecycle controller.
+// g_almanacMutex serializes access from the render/input threads.
+static almanac::OpenRequestPolicy   g_almanacPolicy;
+static CRITICAL_SECTION             g_almanacMutex;
+static volatile LONG                g_almanacDebounce; // 1 while the click latch is held
+static int32_t                      g_lastSelection; // last observed game+0xC65C (native selection)
 
 #define ALM_OFF_SELECTION   0xC65Cu   // game+0xC65C: selected sub-tab index (read-only)
 #define ALM_OFF_CONTENT_SUPPRESS 0x5E6u // game+0x5E6: content suppress flag (write-only)
@@ -494,7 +498,7 @@ static uint64_t PackPair(float x, float y)
 }
 
 // One 8-byte load. Returns 0 if it faulted. Nothing is written.
-static int LoadRectPair(const uint8_t* at, uint64_t* out)
+static int LoadRectPair(const uint8_t* at, volatile uint64_t* out)
 {
     __try {
         *out = *(const volatile uint64_t*)at;
@@ -506,7 +510,7 @@ static int LoadRectPair(const uint8_t* at, uint64_t* out)
 }
 
 // One 8-byte store. Returns 0 if it faulted. A faulting store writes nothing.
-static int StoreRectPair(uint8_t* at, uint64_t value)
+static int StoreRectPair(uint8_t* at, volatile uint64_t value)
 {
     __try {
         *(volatile uint64_t*)at = value;
@@ -583,15 +587,24 @@ static int CheckNinthClick(float x, float y, float w, float h)
 // Manages Almanac open/close state. Toggles on ninth-tile click; closes when the
 // native selection index changes to a valid row button (0..7). Never writes
 // game+0xC65C, never consumes 0xA54E91.
+// OpenRequestPolicy is the single authoritative lifecycle controller.
+static volatile LONG g_updateStateReentrant = 0;
+
 static void UpdateAlmanacState(int ninthClicked)
 {
+    if (InterlockedCompareExchange(&g_updateStateReentrant, 1, 0) != 0) return;
+    __try {
     int32_t sel = 0;
     if (!ReadI32(Base() + TSM_RVA_DEFAULT_GAME_OBJECT + ALM_OFF_SELECTION, &sel)) return;
 
+    EnterCriticalSection(&g_almanacMutex);
+    __try {
+
     // Close on another native row click (selection changed to a valid tile index).
     if (sel >= 0 && sel < 8 && sel != g_lastSelection) {
-        if (g_lastSelection >= 0 && g_lastSelection < 8 && InterlockedCompareExchange(&g_almanacOpen, 1, 1) != 0) {
-            InterlockedExchange(&g_almanacOpen, 0);
+        if (g_lastSelection >= 0 && g_lastSelection < 8 && g_almanacPolicy.IsOpen()) {
+            g_almanacPolicy.ConfirmClosed();
+            InterlockedExchange(&g_almanacDebounce, 0);
             Logf("almanac_button  almanac closed by native row click (selection %d)", (int)sel);
         }
     }
@@ -600,33 +613,33 @@ static void UpdateAlmanacState(int ninthClicked)
     // Toggle on ninth-tile click (debounced by latch).
     if (ninthClicked) {
         if (InterlockedCompareExchange(&g_almanacDebounce, 1, 0) == 0) {
-            int wasOpen = InterlockedCompareExchange(&g_almanacOpen, 1, 1) != 0;
-            InterlockedExchange(&g_almanacOpen, wasOpen ? 0 : 1);
-            Logf("almanac_button  almanac %s via ninth-tile click",
-                 InterlockedCompareExchange(&g_almanacOpen, 1, 1) != 0 ? "opened" : "closed");
+            if (g_almanacPolicy.IsOpen()) {
+                g_almanacPolicy.ConfirmClosed();
+                Logf("almanac_button  almanac closed via ninth-tile click");
+            } else {
+                bool emitted = g_almanacPolicy.Activate();
+                // Request-only: do NOT acknowledge Open here. Only successful
+                // real-panel creation may call AcknowledgeOpened().
+                Logf("almanac_button  almanac %s via ninth-tile click",
+                     emitted ? "open requested" : "already pending/open");
+            }
         }
     } else if (!ReadClickLatch()) {
         // Click latch is clear: ready for the next ninth-tile click.
         InterlockedExchange(&g_almanacDebounce, 0);
     }
 
-    // Native input suppression: when Almanac is open, write game+0x5E6 = 1 every
-    // frame. This is NOT visual content suppression (native Draw still executes).
-    // It provides a partial, mouse-dependent input effect (disables click handling
-    // + tint change when FUN_140335BC0 returns non-zero). See docs/engine/almanac-ui.md
-    // section 1.2.1. Restore to 0 when Almanac closes. Never writes game+0xC65C,
-    // never consumes 0xA54E91.
-    if (g_contentSuppressionEnabled) {
-        int isOpen = InterlockedCompareExchange(&g_almanacOpen, 1, 1) != 0;
-        if (isOpen) {
-            if (!WriteU8(Base() + TSM_RVA_DEFAULT_GAME_OBJECT + ALM_OFF_CONTENT_SUPPRESS, 1)) {
-                Logf("almanac_button  WARNING  content suppression write failed");
-            }
-        } else {
-            if (!WriteU8(Base() + TSM_RVA_DEFAULT_GAME_OBJECT + ALM_OFF_CONTENT_SUPPRESS, 0)) {
-                Logf("almanac_button  WARNING  content suppression restore failed");
-            }
-        }
+    // Request-only milestone: do NOT write game+0x5E6 as a substitute for
+    // panel visibility/input capture. Native content is not suppressed.
+    (void)g_contentSuppressionEnabled;
+
+    }
+    __finally {
+        LeaveCriticalSection(&g_almanacMutex);
+    }
+    }
+    __finally {
+        InterlockedExchange(&g_updateStateReentrant, 0);
     }
 }
 // Draws the ninth tile and checks for a click on it. The rect pair is touched
@@ -683,6 +696,9 @@ static void DrawNinthTile(void* self, float a1, float a2, float a3, float a4,
         }
         Logf("almanac_button  texture %s (%s)",
              g_textureLoaded ? "loaded" : "failed to load", g_textureAsset);
+    } else {
+        // Early-skip: mark attempted so we don't re-evaluate every frame.
+        g_textureAttempted = 1;
     }
 
     // Bind the distinct texture pre-Draw (native binds per-sub-entry before Draw).
@@ -765,7 +781,218 @@ __declspec(noinline) static void Detour(void* self, float a1, float a2, float a3
         UpdateAlmanacState(0);                          // close-on-native-click every frame
 }
 
+// ---------------------------------------------------------------- sidebar launcher (FUN_140317db0 post-hook)
+//
+// HYPOTHESIS (not verified): FUN_140317db0 (RVA 0x317DB0) is the actual
+// top-level sidebar builder. 0x72DBF0 is City Hall / Party HQ (building
+// type 39) and is already hooked by ui_panels as HOOK_CITYHALL. Do NOT
+// stack another hook there.
+//
+// HYPOTHESIS (not verified): FUN_140317db0 takes exactly four register
+// arguments (__fastcall). If it takes stack arguments they are not forwarded.
+//
+// HYPOTHESIS (not verified): game+0xFCE is the sidebar visibility gate,
+// game+0xC608/C610 is the panel vector (0x68-byte entries).
+//
+// This hook is a post-hook: run the original first, then draw the Almanac
+// launcher adjacent to the native tabs when game+0xFCE is set.
+
+#define ALM_RVA_SIDEBAR 0x317DB0u
+
+static volatile void* g_sidebarTrampPtr = NULL;
+
+static void __fastcall h_Sidebar(void* game, void* rdx, void* r8, void* r9)
+{
+    if (!game) return;
+
+    // Call original via trampoline.
+    if (!g_sidebarTrampPtr) return;
+    ((void(*)(void*, void*, void*, void*))g_sidebarTrampPtr)(game, rdx, r8, r9);
+
+    if (!IsArmed()) return;
+
+    // Gate on game+0xFCE (sidebar visible).
+    uint8_t gate = 0;
+    uint8_t* volatile at = NULL;
+    volatile uint64_t saved = 0;
+    volatile int savedValid = 0;
+    float launcherX = 0.0f, launcherY = 0.0f, launcherW = 0.0f, launcherH = 0.0f;
+    int clicked = 0;
+
+    __try {
+        if (!ReadU8((uintptr_t)game + 0xFCE, &gate) || !gate) return;
+    uintptr_t begin = 0, end = 0;
+    if (!ReadPtr((uintptr_t)game + 0xC608, &begin) || !begin) return;
+        if (!ReadPtr((uintptr_t)game + 0xC610, &end) || end <= begin) return;
+        if ((end - begin) % 0x68 != 0) return;
+        uintptr_t count = (end - begin) / 0x68;
+    if (count == 0 || count > 64) return;
+
+    // Read DPI scale.
+    float scale = 0.0f;
+    if (!ReadF32(Base() + TSM_RVA_DEFAULT_DPI, &scale) || scale <= 0.0f) return;
+
+    // Read rect store (last tab's position after original runs).
+    float lastX = 0.0f, lastY = 0.0f;
+    if (!ReadF32(Base() + TSM_RVA_DEFAULT_P2D_RECT_X, &lastX)) return;
+    if (!ReadF32(Base() + TSM_RVA_DEFAULT_P2D_RECT_Y, &lastY)) return;
+
+    // Compute launcher position: adjacent to last native tab.
+    // Pitch 70.0*scale is the sidebar tab spacing (hypothesis: derived from
+    // FUN_140317db0 tab loop, not yet verified against raw evidence).
+    float pitch = 70.0f * scale;
+    launcherX = lastX + pitch;
+    launcherY = lastY;
+    launcherW = scale * 64.0f;
+    launcherH = scale * 64.0f;
+
+    // Draw launcher using C3D_PANEL2D::Draw.
+    at = (uint8_t*)(Base() + TSM_RVA_DEFAULT_P2D_RECT_X);
+    saved = 0;
+    if (((uintptr_t)at & 7u) != 0 || !ReadablePtr(at, sizeof(uint64_t))) {
+        Logf("almanac_button  RECT MISALIGNED/UNREADABLE (sidebar)");
+        FailStop("rect misaligned/unreadable (sidebar)");
+        return;
+    }
+    if (!LoadRectPair((const uint8_t*)at, &saved)) {
+        Logf("almanac_button  RECT LOAD FAULTED (sidebar)");
+        FailStop("rect load faulted (sidebar)");
+        return;
+    }
+    savedValid = 1;
+    if (!StoreRectPair((uint8_t*)at, PackPair(launcherX, launcherY))) {
+        Logf("almanac_button  RECT STORE FAULTED (sidebar)");
+        FailStop("rect store faulted (sidebar)");
+        return;
+    }
+
+    if (!g_drawOrig) {
+        if (!StoreRectPair((uint8_t*)at, saved)) {
+            Logf("almanac_button  RECT DIRTY (sidebar): restore faulted");
+            FailStop("rect restore faulted (sidebar)");
+        }
+        return;
+    }
+
+    int drawFault = CallNinthNative((void*)(Base() + TSM_RVA_DEFAULT_PANEL2D),
+                                    0.0f, 0.0f, 0.0f, 0.0f, 0.0f, true);
+    // Note: using default args; the native Draw reads rect store for position.
+
+    // Click detection.
+    clicked = 0;
+    if (g_getMouseSolid) {
+        void* input = (void*)(Base() + TSM_RVA_DEFAULT_INPUT);
+        C3DVec3 mouse = { 0.0f, 0.0f, 0.0f };
+        int mouseOk = 0;
+        __try {
+            g_getMouseSolid(input, &mouse);
+            mouseOk = 1;
+        }
+        __except (EXCEPTION_EXECUTE_HANDLER) { mouseOk = 0; }
+        if (mouseOk) {
+            if (almanac_button::CheckNinthHitbox(mouse.x, mouse.y,
+                    launcherX, launcherY, launcherW, launcherH)) {
+                clicked = ReadClickLatch() ? 1 : 0;
+            }
+        }
+    }
+
+    if (at && savedValid) {
+        if (!StoreRectPair((uint8_t*)at, saved)) {
+            Logf("almanac_button  RECT DIRTY (sidebar): restore faulted");
+            FailStop("rect restore faulted (sidebar)");
+        }
+    }
+    if (drawFault) {
+        Logf("almanac_button  native sidebar Draw faulted");
+        FailStop("native sidebar Draw faulted");
+    }
+
+    // Update Almanac state.
+    UpdateAlmanacState(clicked);
+
+    if (clicked) {
+        Logf("almanac_button  sidebar launcher clicked");
+    }
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER) {
+        InterlockedExchange(&g_active, 0);
+        if (at && savedValid) {
+            if (!StoreRectPair((uint8_t*)at, saved)) {
+                Logf("almanac_button  RECT DIRTY (sidebar): restore faulted in except");
+                FailStop("rect restore faulted (sidebar, except)");
+            }
+        }
+        return;
+    }
+}
+
+static void InstallSidebarHook(void)
+{
+    static const unsigned char kExpect[18] = {
+        0x40, 0x55, 0x41, 0x54, 0x41, 0x55, 0x41, 0x56, 0x41, 0x57,
+        0x48, 0x8D, 0xAC, 0x24, 0xD0, 0xD4, 0xFF, 0xFF
+    };
+
+    uintptr_t target = Base() + ALM_RVA_SIDEBAR;
+    if (!ReadablePtr((const void*)target, 18)) {
+        Logf("almanac_button  sidebar hook: target not readable");
+        return;
+    }
+    if (memcmp((const void*)target, kExpect, 18) != 0) {
+        Logf("almanac_button  sidebar hook: prologue bytes do not match");
+        return;
+    }
+
+    // Build trampoline: copy 18 bytes + JMP rel32 to target+18.
+    // Allocate executable memory for trampoline.
+    void* tramp = VirtualAlloc(NULL, 64, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+    if (!tramp) {
+        Logf("almanac_button  sidebar hook: VirtualAlloc failed");
+        return;
+    }
+    memcpy(tramp, (const void*)target, 18);
+    ((unsigned char*)tramp)[18] = 0xE9;  // JMP rel32
+    int32_t rel = (int32_t)((target + 18) - ((uintptr_t)tramp + 18 + 5));
+    memcpy((unsigned char*)tramp + 19, &rel, 4);
+    FlushInstructionCache(GetCurrentProcess(), tramp, 23);
+
+    // Publish trampoline pointer before hook goes live.
+    g_sidebarTrampPtr = tramp;
+
+    // Save trampoline pointer.
+    // (moved to after successful installation)
+
+    // Write hook: 14-byte JMP to h_Sidebar.
+    DWORD oldProt = 0;
+    if (!VirtualProtect((void*)target, 18, PAGE_EXECUTE_READWRITE, &oldProt)) {
+        Logf("almanac_button  sidebar hook: VirtualProtect failed");
+        g_sidebarTrampPtr = NULL;
+        VirtualFree(tramp, 0, MEM_RELEASE);
+        return;
+    }
+
+    unsigned char jmp[14] = { 0xFF, 0x25, 0x00, 0x00, 0x00, 0x00 };
+    void* detour = (void*)h_Sidebar;
+    memcpy(jmp + 6, &detour, 8);
+    memcpy((void*)target, jmp, 14);
+    memset((void*)(target + 14), 0x90, 4);  // NOP pad
+    FlushInstructionCache(GetCurrentProcess(), (void*)target, 18);
+
+    if (!VirtualProtect((void*)target, 18, oldProt, &oldProt)) {
+        Logf("almanac_button  sidebar hook: VirtualProtect restore failed");
+        memcpy((void*)target, tramp, 18);
+        FlushInstructionCache(GetCurrentProcess(), (void*)target, 18);
+        VirtualFree(tramp, 0, MEM_RELEASE);
+        g_sidebarTrampPtr = NULL;
+        return;
+    }
+
+    Logf("almanac_button  sidebar hook installed on FUN_140317db0 (tramp=%p)", tramp);
+}
+
 // ---------------------------------------------------------------- lifecycle
+
 
 static void ReadSettings(void)
 {
@@ -789,6 +1016,7 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
     info->version = "2.12";
 
     ReadSettings();
+    InitializeCriticalSection(&g_almanacMutex);
     Logf("almanac_button  init v2.12 (SEH-wrap CreateManagedTexture/GetMouseSolid; 0x5E6 comment fix)");
     if (!g_enabled) {
         Logf("almanac_button  disabled (enabled = 0)");
@@ -888,5 +1116,9 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
     InterlockedExchange(&g_active, 1);
     Logf("almanac_button  armed  clickable ninth tile after row tile 8 (import verified; GetMouseSolid %s)",
          g_getMouseSolid ? "resolved" : "not found");
+
+    // Install sidebar launcher hook on FUN_140317db0 (additive top-level Almanac).
+    InstallSidebarHook();
+
     return 0;
 }

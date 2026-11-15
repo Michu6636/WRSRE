@@ -1,0 +1,2031 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// DXGI bootstrap, overlay-chain re-entry protection and Win32 input approach
+// adapted from RepublicMP, commit 630775724abd5e3346eb59f9c66e2873128d74a4.
+#include <windows.h>
+#include <windowsx.h>
+#include <wincodec.h>
+#include <wrl/client.h>
+#include <d3d11.h>
+#include <dxgi1_2.h>
+#include "../runtime/runtime.h"
+#include "game_underlay.h"
+#include "imgui.h"
+#include "imgui_internal.h"
+#include "imgui_impl_win32.h"
+#include "../core/productivity.h"
+#include "../core/user_settings.h"
+#include "../core/terrain_grid.h"
+#include "imgui_impl_dx11.h"
+#include <algorithm>
+#include <cmath>
+#include <cstdio>
+#include <cstring>
+#include <limits>
+#include <mutex>
+#include <string>
+#include <vector>
+
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND,UINT,WPARAM,LPARAM);
+namespace ew {
+namespace {
+using PresentFn = HRESULT (STDMETHODCALLTYPE*)(IDXGISwapChain*,UINT,UINT);
+PresentFn originalPresent = nullptr;
+bool gameUnderlayInstalled = false;
+bool previewLinesUnderlay = false;
+ID3D11Device* device = nullptr;
+ID3D11DeviceContext* context = nullptr;
+ID3D11RenderTargetView* target = nullptr;
+ID3D11ShaderResourceView* panelPaper = nullptr;
+UINT panelPaperWidth = 0, panelPaperHeight = 0;
+ID3D11ShaderResourceView* gameCursorArt = nullptr;
+UINT gameCursorArtWidth = 0, gameCursorArtHeight = 0;
+ID3D11ShaderResourceView* siteCancelIcon = nullptr;
+ID3D11ShaderResourceView* siteRenameIcon = nullptr;
+ID3D11ShaderResourceView* siteHideIcon = nullptr;
+ID3D11ShaderResourceView* siteShowIcon = nullptr;
+ID3D11ShaderResourceView* siteStatusWaitingIcon = nullptr;
+ID3D11ShaderResourceView* siteStatusWarningIcon = nullptr;
+ID3D11ShaderResourceView* siteStatusCompletedIcon = nullptr;
+ID3D11ShaderResourceView* siteMoveUpIcon = nullptr;
+ID3D11ShaderResourceView* siteMoveDownIcon = nullptr;
+ID3D11ShaderResourceView* projectNewIcon = nullptr;
+ID3D11ShaderResourceView* projectDeleteIcon = nullptr;
+ID3D11ShaderResourceView* targetHeightInfoIcon = nullptr;
+ID3D11ShaderResourceView* settingsIcon = nullptr;
+HCURSOR cursorToRestore = nullptr;
+bool systemCursorHiddenForPanel = false;
+IDXGISwapChain* gameChain = nullptr;
+ImGuiContext* gui = nullptr;
+HWND gameWindow = nullptr;
+WNDPROC originalWndProc = nullptr;
+std::recursive_mutex guiMutex;
+RECT buttonRect{}, panelRect{}, settingsRect{}, popupRect{}, assignmentWarningRect{};
+RECT editorRect{};
+RECT siteTableRect{}, facilityTableRect{};
+bool siteTableRectValid=false, facilityTableRectValid=false;
+bool panelRectValid = false;
+bool settingsRectValid = false;
+bool popupRectValid = false;
+bool assignmentWarningRectValid = false;
+bool editorRectValid = false;
+bool panelMinimized = false;
+bool restorePanelSize = false;
+float expandedPanelHeight = 517.5f;
+std::atomic<bool> editorWasDragged{false};
+bool escapeKeyDown = false;
+bool escapeOwned = false;
+bool pickCancelledByEscape = false;
+bool targetHeightEditing = false;
+bool nameTextEditing = false;
+bool settingsDistanceEditing = false;
+bool showAllFacilities = false;
+bool settingsOpen = false;
+std::atomic<bool> areaPickCapture{false};
+RECT siteHandleRects[MaxSitePoints]{};
+unsigned siteHandlePointIndices[MaxSitePoints]{};
+unsigned siteHandleRectCount=0;
+unsigned draggingSitePoint=MaxSitePoints;
+Point dragSitePoint{};
+Point dragSitePointStart{};
+bool draggingSitePointMoved=false;
+bool draggingSitePointButtonHeld=false;
+ULONGLONG dragSitePointArmedAt=0;
+bool dragSitePointCommitPending=false;
+ULONGLONG dragSitePointReleasedAt=0;
+Point dragWholeSiteStart{};
+Point dragWholeSiteFirstPoint{};
+Point dragWholeSiteCursor{};
+Point dragWholeSiteDelta{};
+bool draggingWholeSiteMoved=false;
+bool draggingWholeSiteButtonHeld=false;
+bool dragWholeSiteCommitPending=false;
+ULONGLONG dragWholeSiteReleasedAt=0;
+constexpr ULONGLONG SitePointSelectDebounceMs=250;
+constexpr ULONGLONG SitePointPreviewCommitGraceMs=1000;
+constexpr float WholeSiteDragThresholdMeters=0.5f;
+constexpr float SitePointHitRadiusPixels=20.0f;
+struct SiteEdgePreview { unsigned edge=MaxSitePoints; float t=0.0f; ImVec2 screen{}; Point point{}; float distanceSquared=0.0f; };
+uint64_t frameGeneration = 0;
+thread_local int presentDepth = 0;
+ImU32 CutWireColor() { return HighContrastColors()?IM_COL32(255,105,0,255):IM_COL32(255,159,67,255); }
+ImU32 FillWireColor() { return HighContrastColors()?IM_COL32(255,211,0,255):IM_COL32(62,221,166,255); }
+bool Project(const Snapshot& s,Point p,ImVec2* out);
+void Send(Action action, float value = 0)
+{
+    if(action==Action::Select || action==Action::NewSite || action==Action::Sample || action==Action::SampleSiteTarget || action==Action::InspectBuilding) pickCancelledByEscape=false;
+    Enqueue({action,value,frameGeneration});
+}
+void SendProject(Action action,uint64_t projectId) { Enqueue({action,0,frameGeneration,projectId}); }
+void SendProjectValue(Action action,uint64_t projectId,float value)
+{
+    Command command{};command.action=action;command.value=value;command.generation=frameGeneration;command.projectId=projectId;Enqueue(command);
+}
+void SendSitePointValue(uint64_t projectId,unsigned pointIndex,float value,bool adjust=false,bool allSitePoints=false)
+{
+    Command command{};command.action=adjust?Action::AdjustSitePointTarget:Action::SetSitePointTarget;command.value=value;command.projectId=projectId;
+    command.pointIndex=pointIndex;command.allSitePoints=allSitePoints;command.generation=frameGeneration;Enqueue(command);
+}
+void SendSitePointCommand(Action action,uint64_t projectId,unsigned pointIndex,Point point={},bool additive=false)
+{
+    Command command{};command.action=action;command.projectId=projectId;command.pointIndex=pointIndex;
+    command.point=point;command.value=additive?1.0f:0.0f;command.generation=frameGeneration;Enqueue(command);
+}
+void SendWholeSiteMove(uint64_t projectId,Point delta)
+{
+    Command command{};command.action=Action::MoveSiteShape;command.projectId=projectId;command.point=delta;command.generation=frameGeneration;Enqueue(command);
+}
+void SendProjectText(Action action,uint64_t projectId,const char* text)
+{
+    Command command{};command.action=action;command.generation=frameGeneration;command.projectId=projectId;
+    if(text)strncpy_s(command.text,text,_TRUNCATE);
+    Enqueue(command);
+}
+bool CursorSiteVisible(const Snapshot& s,uint64_t id)
+{
+    if(!id)return false;
+    for(size_t i=0;i<s.projectCount;++i)if(s.projects[i].id==id)return s.projects[i].visible;
+    return false;
+}
+bool FindSiteEdgeAtScreen(const Snapshot& s,float x,float y,SiteEdgePreview* result)
+{
+    if(!result||!s.siteEditorOpen||s.mode!=PickMode::None||!s.editorPlan.complete||s.editorPlan.pointCount<3
+        ||(!s.creatingSite&&(!CursorSiteVisible(s,s.editingSiteId)||s.projectStatus==ProjectStatus::Completed)))return false;
+    constexpr float hitRadius=12.0f;
+    const float maxDistanceSquared=hitRadius*hitRadius;
+    SiteEdgePreview best{};best.distanceSquared=maxDistanceSquared;
+    bool found=false;
+    const auto& plan=s.editorPlan;
+    for(unsigned i=0;i<plan.pointCount;++i) {
+        const auto& a=plan.points[i];
+        const auto& b=plan.points[(i+1)%plan.pointCount];
+        const double dx=static_cast<double>(b.x)-a.x,dz=static_cast<double>(b.z)-a.z;
+        const double lengthSquared=dx*dx+dz*dz;
+        if(lengthSquared<4.0*MinSitePointSpacing*MinSitePointSpacing)continue;
+        ImVec2 screenA{},screenB{};
+        if(!Project(s,a,&screenA)||!Project(s,b,&screenB))continue;
+        const double edgeLength=std::sqrt(lengthSquared);
+        const double minT=MinSitePointSpacing/edgeLength,maxT=1.0-minT;
+        auto pointAt=[&](double t) {return Point{static_cast<float>(a.x+t*(b.x-a.x)),static_cast<float>(a.y+t*(b.y-a.y)),static_cast<float>(a.z+t*(b.z-a.z))};};
+        auto distanceAt=[&](double t,ImVec2* projected) {
+            ImVec2 screen{};if(!Project(s,pointAt(t),&screen))return std::numeric_limits<float>::infinity();
+            if(projected)*projected=screen;
+            const float ex=x-screen.x,ey=y-screen.y;return ex*ex+ey*ey;
+        };
+        double low=minT,high=maxT;
+        for(int iteration=0;iteration<20;++iteration) {
+            const double left=low+(high-low)/3.0,right=high-(high-low)/3.0;
+            if(distanceAt(left,nullptr)<distanceAt(right,nullptr))high=right;else low=left;
+        }
+        const double t=(low+high)*0.5;
+        ImVec2 projected{};const float distanceSquared=distanceAt(t,&projected);
+        if(distanceSquared>=best.distanceSquared)continue;
+        best.edge=i;best.t=static_cast<float>(t);
+        best.screen=projected;
+        best.point=pointAt(t);
+        best.distanceSquared=distanceSquared;found=true;
+    }
+    if(found)*result=best;
+    return found;
+}
+void SendProjectAction(Action action,uint64_t projectId)
+{
+    SendProject(action,projectId);
+}
+const char* ProjectStatusName(ProjectStatus status)
+{
+    switch(status) {
+    case ProjectStatus::Queued:return "Queued";
+    case ProjectStatus::Running:return "Running";
+    case ProjectStatus::Paused:return "Paused";
+    case ProjectStatus::Waiting:return "Waiting";
+    case ProjectStatus::Completed:return "Completed";
+    default:return "Draft";
+    }
+}
+bool ProjectCanMove(ProjectStatus status)
+{
+    return status==ProjectStatus::Queued||status==ProjectStatus::Running||status==ProjectStatus::Waiting||status==ProjectStatus::Paused;
+}
+void NativeTooltip(const char* text)
+{
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding,{4.0f,2.0f});
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize,1.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding,1.0f);
+    ImGui::PushStyleColor(ImGuiCol_PopupBg,{0.96f,0.88f,0.77f,1.0f});
+    ImGui::PushStyleColor(ImGuiCol_Border,{0.58f,0.43f,0.30f,0.85f});
+    ImGui::PushStyleColor(ImGuiCol_Text,{0.25f,0.21f,0.17f,1.0f});
+    ImGui::BeginTooltip();ImGui::TextUnformatted(text);ImGui::EndTooltip();
+    ImGui::PopStyleColor(3);ImGui::PopStyleVar(3);
+}
+bool GameIconButton(const char* id,ID3D11ShaderResourceView* texture,const char* fallback,const char* tooltip,ImVec2 size={30,30},bool transparentBackground=false)
+{
+    const auto pos=ImGui::GetCursorScreenPos();
+    const bool hovered=ImGui::IsMouseHoveringRect(pos,{pos.x+size.x,pos.y+size.y},true);
+    bool pressed=false;
+    if(!texture)pressed=ImGui::Button(fallback,size);
+    else {
+        const ImTextureRef image(static_cast<ImTextureID>(reinterpret_cast<intptr_t>(texture)));
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,{0,0});
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize,0.0f);
+        ImGui::PushStyleColor(ImGuiCol_Button,{0,0,0,0});
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered,{0,0,0,0});
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive,{0,0,0,0});
+        const ImVec4 background=transparentBackground?ImVec4{0,0,0,0}:(hovered?ImVec4{1,1,1,1}:ImVec4{0.82f,0.82f,0.82f,1});
+        pressed=ImGui::ImageButton(id,image,size,{0,0},{1,1},background,ImVec4{1,1,1,1});
+        ImGui::PopStyleColor(3);ImGui::PopStyleVar(2);
+    }
+    if(hovered&&tooltip) NativeTooltip(tooltip);
+    return pressed;
+}
+bool Hit(const RECT& rect, LPARAM point)
+{
+    const POINT p = {GET_X_LPARAM(point),GET_Y_LPARAM(point)};
+    return PtInRect(&rect,p) != FALSE;
+}
+void RememberTableRect(RECT* rect,bool* valid,ImVec2 min,ImVec2 size)
+{
+    if(!rect||!valid||size.x<=0.0f||size.y<=0.0f) { if(valid)*valid=false; return; }
+    *rect={static_cast<LONG>(min.x),static_cast<LONG>(min.y),
+        static_cast<LONG>(min.x+size.x),static_cast<LONG>(min.y+size.y)};
+    *valid=true;
+}
+bool CursorOverEarthworksUi(LPARAM point)
+{
+    const bool launcherHit=Hit(buttonRect,point)
+        &&!NativeUiOccludes(static_cast<float>(GET_X_LPARAM(point)),static_cast<float>(GET_Y_LPARAM(point)));
+    return launcherHit
+        ||(panelOpen&&panelRectValid&&Hit(panelRect,point))
+        ||(panelOpen&&settingsRectValid&&Hit(settingsRect,point))
+        ||(panelOpen&&popupRectValid&&Hit(popupRect,point))
+        ||(assignmentWarningRectValid&&Hit(assignmentWarningRect,point))
+        ||(editorRectValid&&Hit(editorRect,point));
+}
+bool CursorOnEditingSite(const Snapshot& s);
+Point SiteDrawingCursor(const Snapshot& s)
+{
+    if(!s.creatingSite||!s.lockToGrid||!s.terrainGridValid)return s.cursor;
+    TerrainGrid grid{};
+    grid.originX=s.terrainGridOriginX;grid.originZ=s.terrainGridOriginZ;
+    grid.stepX=s.terrainGridStepX;grid.stepZ=s.terrainGridStepZ;
+    return SnapToTerrainGrid(s.cursor,grid);
+}
+bool BuildDraggedSitePlan(const Plan& source,unsigned pointIndex,Point cursor,Plan* output);
+bool KeyboardShortcutPassesThrough(UINT message,WPARAM key)
+{
+    if(message==WM_SYSKEYDOWN||message==WM_SYSKEYUP||message==WM_SYSCHAR||message==WM_SYSDEADCHAR)return true;
+    return key==VK_ESCAPE||(key>=VK_F1&&key<=VK_F24)||key==VK_PAUSE||key==VK_SNAPSHOT;
+}
+bool WorldHit(LPARAM point)
+{
+    RECT client{}; GetClientRect(gameWindow,&client);
+    const int x=GET_X_LPARAM(point),y=GET_Y_LPARAM(point);
+    return x>65 && y>85 && y<client.bottom-90
+        && !(x>client.right-300 && y>client.bottom-210);
+}
+void RememberRect(RECT* rect)
+{
+    const auto p = ImGui::GetWindowPos(), s = ImGui::GetWindowSize();
+    *rect = {static_cast<LONG>(p.x),static_cast<LONG>(p.y),static_cast<LONG>(p.x+s.x),static_cast<LONG>(p.y+s.y)};
+}
+LRESULT CALLBACK WindowProc(HWND window,UINT message,WPARAM wParam,LPARAM lParam)
+{
+    std::lock_guard<std::recursive_mutex> lock(guiMutex);
+    auto* previous = ImGui::GetCurrentContext();
+    ImGui::SetCurrentContext(gui);
+    ImGui_ImplWin32_WndProcHandler(window,message,wParam,lParam);
+    // The render pass normally updates keyboardCapture after drawing the
+    // widgets. Set it here too, before the game can poll C3D_INPUT for this
+    // key, to cover the first key typed immediately after focusing a field.
+    if(panelOpen && ImGui::GetIO().WantTextInput) keyboardCapture=true;
+    const bool mousePositionMessage=message==WM_LBUTTONDOWN||message==WM_LBUTTONUP||message==WM_LBUTTONDBLCLK||message==WM_MOUSEMOVE;
+    NativeUiOcclusionInfo nativeUiInfo{};
+    const bool nativeUiOccluded=mousePositionMessage
+        &&NativeUiOccludes(static_cast<float>(GET_X_LPARAM(lParam)),static_cast<float>(GET_Y_LPARAM(lParam)),&nativeUiInfo);
+    const auto& inputSnapshot=ReadSnapshot();
+    const bool drawingNewSite=inputSnapshot.creatingSite&&inputSnapshot.mode==PickMode::DrawSite;
+    const bool wheelMessage=message==WM_MOUSEWHEEL||message==WM_MOUSEHWHEEL;
+    bool wheelOverEarthworksTable=false;
+    if(wheelMessage&&panelOpen) {
+        POINT cursor{GET_X_LPARAM(lParam),GET_Y_LPARAM(lParam)};
+        if(ScreenToClient(window,&cursor)) {
+            RECT client{};GetClientRect(window,&client);
+            const ImVec2 display=ImGui::GetIO().DisplaySize;
+            const float scaleX=client.right>0?display.x/static_cast<float>(client.right):1.0f;
+            const float scaleY=client.bottom>0?display.y/static_cast<float>(client.bottom):1.0f;
+            const POINT imguiCursor{static_cast<LONG>(cursor.x*scaleX),static_cast<LONG>(cursor.y*scaleY)};
+            const bool siteHit=siteTableRectValid&&PtInRect(&siteTableRect,imguiCursor)!=FALSE;
+            const bool facilityHit=facilityTableRectValid&&PtInRect(&facilityTableRect,imguiCursor)!=FALSE;
+            wheelOverEarthworksTable=siteHit||facilityHit;
+            if(wheelOverEarthworksTable)
+                tableWheelCaptureUntilMs.store(GetTickCount64()+250,std::memory_order_release);
+#if defined(EARTHWORKS_DEVELOPER_UI)
+            if(host&&host->log)host->log("earthworks table-wheel client=%ld,%ld imgui=%ld,%ld scale=%.3f,%.3f site=%d[%ld,%ld,%ld,%ld] facility=%d[%ld,%ld,%ld,%ld] swallowed=%d",
+                cursor.x,cursor.y,imguiCursor.x,imguiCursor.y,scaleX,scaleY,static_cast<int>(siteHit),siteTableRect.left,siteTableRect.top,siteTableRect.right,siteTableRect.bottom,
+                static_cast<int>(facilityHit),facilityTableRect.left,facilityTableRect.top,facilityTableRect.right,facilityTableRect.bottom,static_cast<int>(wheelOverEarthworksTable));
+#endif
+        }
+    }
+    unsigned handleIndex=MaxSitePoints;
+    // While Free draw is armed, nearby draft vertices are not selection
+    // targets: every map click must reach Action::Pick so it can append the
+    // cursor's (possibly grid-snapped) point or close at the first vertex.
+    if(!nativeUiOccluded&&!drawingNewSite) {
+        const float mouseX=static_cast<float>(GET_X_LPARAM(lParam)),mouseY=static_cast<float>(GET_Y_LPARAM(lParam));
+        float nearestDistanceSquared=SitePointHitRadiusPixels*SitePointHitRadiusPixels;
+        for(unsigned i=0;i<siteHandleRectCount;++i)if(Hit(siteHandleRects[i],lParam)) {
+            const float centerX=(siteHandleRects[i].left+siteHandleRects[i].right)*0.5f;
+            const float centerY=(siteHandleRects[i].top+siteHandleRects[i].bottom)*0.5f;
+            const float dx=mouseX-centerX,dy=mouseY-centerY,distanceSquared=dx*dx+dy*dy;
+            if(distanceSquared<=nearestDistanceSquared) {
+                nearestDistanceSquared=distanceSquared;handleIndex=siteHandlePointIndices[i];
+            }
+        }
+    }
+    const bool shiftDown=(GetKeyState(VK_SHIFT)&0x8000)!=0;
+    bool edgeInsertHandled=false,clickedSiteEdge=false;
+    SiteEdgePreview clickedEdge{};
+    if(message==WM_LBUTTONDOWN&&!nativeUiOccluded&&!drawingNewSite&&handleIndex>=MaxSitePoints&&GetForegroundWindow()==gameWindow) {
+        const auto& snapshot=inputSnapshot;
+        clickedSiteEdge=FindSiteEdgeAtScreen(snapshot,static_cast<float>(GET_X_LPARAM(lParam)),static_cast<float>(GET_Y_LPARAM(lParam)),&clickedEdge);
+        if(clickedSiteEdge&&!shiftDown) {
+            SendSitePointCommand(Action::AddSitePoint,snapshot.editingSiteId,clickedEdge.edge,clickedEdge.point,true);
+            edgeInsertHandled=true;
+        }
+    }
+    bool startedWholeSiteDrag=false;
+    if(message==WM_LBUTTONDOWN&&!nativeUiOccluded&&!drawingNewSite&&!edgeInsertHandled&&handleIndex>=MaxSitePoints
+        &&GetForegroundWindow()==gameWindow&&shiftDown) {
+        const auto& snapshot=inputSnapshot;
+        const bool editable=snapshot.siteEditorOpen&&snapshot.mode==PickMode::None&&snapshot.editorPlan.complete
+            &&(snapshot.creatingSite||(CursorSiteVisible(snapshot,snapshot.editingSiteId)&&snapshot.projectStatus!=ProjectStatus::Completed));
+        const bool uiHit=Hit(buttonRect,lParam)||(panelRectValid&&Hit(panelRect,lParam))||(settingsRectValid&&Hit(settingsRect,lParam))||(popupRectValid&&Hit(popupRect,lParam))
+            ||(assignmentWarningRectValid&&Hit(assignmentWarningRect,lParam))||(editorRectValid&&Hit(editorRect,lParam));
+        if(editable&&!uiHit&&WorldHit(lParam)&&snapshot.cursorValid
+            &&(snapshot.editorPlan.Contains(snapshot.cursor.x,snapshot.cursor.z)||clickedSiteEdge)) {
+            draggingWholeSiteButtonHeld=true;draggingWholeSiteMoved=false;dragWholeSiteCommitPending=false;
+            dragWholeSiteStart=snapshot.cursor;dragWholeSiteFirstPoint=snapshot.editorPlan.points[0];
+            dragWholeSiteCursor=snapshot.cursor;dragWholeSiteDelta={};startedWholeSiteDrag=true;
+        }
+    }
+    bool over=(Hit(buttonRect,lParam)&&!nativeUiOccluded)||(panelRectValid&&Hit(panelRect,lParam))||(settingsRectValid&&Hit(settingsRect,lParam))||(popupRectValid&&Hit(popupRect,lParam))||(assignmentWarningRectValid&&Hit(assignmentWarningRect,lParam))||(editorRectValid&&Hit(editorRect,lParam))||handleIndex<MaxSitePoints||edgeInsertHandled||draggingWholeSiteButtonHeld||startedWholeSiteDrag;
+    if (message == WM_KILLFOCUS) { mouseCapture=false; keyboardCapture=false; leftRelease=false; draggingWholeSiteButtonHeld=false;draggingWholeSiteMoved=false;dragWholeSiteCommitPending=false;escapeKeyDown=false; escapeOwned=false; escapeCapture=false; if(systemCursorHiddenForPanel&&cursorToRestore)SetCursor(cursorToRestore);systemCursorHiddenForPanel=false;cursorToRestore=nullptr; }
+    bool escapeMessage=false;
+    if(message==WM_KEYDOWN && wParam==VK_ESCAPE) {
+        if(!escapeKeyDown) {
+            escapeKeyDown=true;
+            if(panelOpen) {
+                escapeOwned=true;
+                escapeCapture=true;
+                if(areaPickCapture) { mapPickCapture=false;areaPickCapture=false;pickCancelledByEscape=true; Send(Action::CancelPick); }
+                else if(settingsOpen) { settingsOpen=false;settingsRectValid=false; }
+                else { panelOpen=false; panelRectValid=false;settingsRectValid=false; keyboardCapture=false; pickCancelledByEscape=false;Send(Action::CloseSiteEditor);host->log("earthworks  planning panel closed with Escape"); }
+            }
+        }
+        escapeMessage=escapeOwned;
+    } else if(message==WM_KEYUP && wParam==VK_ESCAPE) {
+        escapeKeyDown=false;
+        escapeMessage=escapeOwned||keyboardCapture;
+        if(escapeOwned) escapeCapture=false;
+        escapeOwned=false;
+    }
+    if (message == WM_MOUSEMOVE) mouseCapture=over;
+    const bool leftMessage = message == WM_LBUTTONDOWN || message == WM_LBUTTONUP || message == WM_LBUTTONDBLCLK;
+    if(message==WM_LBUTTONDOWN&&handleIndex<MaxSitePoints&&GetForegroundWindow()==gameWindow) {
+        const auto& snapshot=ReadSnapshot();
+        if(handleIndex==0&&snapshot.creatingSite&&snapshot.mode==PickMode::DrawSite
+            &&snapshot.shapeMode==SiteShapeMode::FreeDraw&&snapshot.plan.pointCount>=3) {
+            draggingSitePoint=static_cast<unsigned>(MaxSitePoints);
+            draggingSitePointMoved=false;
+            draggingSitePointButtonHeld=false;
+            Send(Action::Pick);
+        } else {
+        const uint32_t pointBit=1u<<handleIndex;
+        const bool wasSoleSelected=!shiftDown&&snapshot.selectedSitePoint==handleIndex&&snapshot.selectedSitePointsMask==pointBit;
+        draggingSitePoint=!shiftDown?handleIndex:static_cast<unsigned>(MaxSitePoints);
+        draggingSitePointButtonHeld=draggingSitePoint<MaxSitePoints;
+        dragSitePointCommitPending=false;
+        dragWholeSiteCommitPending=false;
+        dragSitePointArmedAt=draggingSitePoint<MaxSitePoints?GetTickCount64()+(wasSoleSelected?0:SitePointSelectDebounceMs):0;
+        draggingSitePointMoved=false;dragSitePoint=snapshot.cursor;dragSitePointStart=snapshot.cursor;
+        SendSitePointCommand(Action::SelectSitePoint,snapshot.editingSiteId,handleIndex,{},shiftDown);
+        }
+    }
+    if(message==WM_MOUSEMOVE&&!nativeUiOccluded&&draggingSitePointButtonHeld&&draggingSitePoint<MaxSitePoints&&(wParam&MK_LBUTTON)) {
+        const auto& snapshot=ReadSnapshot();if(snapshot.cursorValid) {
+            dragSitePoint=snapshot.cursor;
+            const float dx=dragSitePoint.x-dragSitePointStart.x,dz=dragSitePoint.z-dragSitePointStart.z;
+            if(GetTickCount64()>=dragSitePointArmedAt&&dx*dx+dz*dz>0.25f)draggingSitePointMoved=true;
+            if(draggingSitePointMoved&&snapshot.siteEditorOpen&&draggingSitePoint<snapshot.editorPlan.pointCount) {
+                Plan livePlan{};
+                if(BuildDraggedSitePlan(snapshot.editorPlan,draggingSitePoint,dragSitePoint,&livePlan))
+                    SetInteractiveSitePreview(snapshot.creatingSite?0:snapshot.editingSiteId,&livePlan);
+            }
+        }
+    }
+    if(message==WM_MOUSEMOVE&&!nativeUiOccluded&&draggingWholeSiteButtonHeld&&(wParam&MK_LBUTTON)) {
+        const auto& snapshot=ReadSnapshot();if(snapshot.cursorValid) {
+            dragWholeSiteCursor=snapshot.cursor;
+            dragWholeSiteDelta={dragWholeSiteCursor.x-dragWholeSiteStart.x,0.0f,dragWholeSiteCursor.z-dragWholeSiteStart.z};
+            draggingWholeSiteMoved=dragWholeSiteDelta.x*dragWholeSiteDelta.x+dragWholeSiteDelta.z*dragWholeSiteDelta.z
+                >WholeSiteDragThresholdMeters*WholeSiteDragThresholdMeters;
+        }
+    }
+    if(message==WM_LBUTTONUP&&draggingWholeSiteButtonHeld) {
+        draggingWholeSiteButtonHeld=false;
+        const auto& snapshot=ReadSnapshot();if(snapshot.cursorValid) {
+            dragWholeSiteCursor=snapshot.cursor;
+            dragWholeSiteDelta={dragWholeSiteCursor.x-dragWholeSiteStart.x,0.0f,dragWholeSiteCursor.z-dragWholeSiteStart.z};
+            draggingWholeSiteMoved=dragWholeSiteDelta.x*dragWholeSiteDelta.x+dragWholeSiteDelta.z*dragWholeSiteDelta.z
+                >WholeSiteDragThresholdMeters*WholeSiteDragThresholdMeters;
+        }
+        if(draggingWholeSiteMoved&&snapshot.siteEditorOpen&&(snapshot.creatingSite||snapshot.editingSiteId)) {
+            SendWholeSiteMove(snapshot.creatingSite?0:snapshot.editingSiteId,dragWholeSiteDelta);
+            dragWholeSiteCommitPending=true;dragWholeSiteReleasedAt=GetTickCount64();
+        } else {draggingWholeSiteMoved=false;dragWholeSiteCommitPending=false;}
+    }
+    if(message==WM_LBUTTONUP&&draggingSitePointButtonHeld&&draggingSitePoint<MaxSitePoints) {
+        draggingSitePointButtonHeld=false;
+        const auto& snapshot=ReadSnapshot();if(snapshot.cursorValid)dragSitePoint=snapshot.cursor;
+        if(GetTickCount64()>=dragSitePointArmedAt&&draggingSitePointMoved&&(snapshot.editingSiteId||snapshot.creatingSite)) {
+            SendSitePointCommand(Action::MoveSitePoint,snapshot.editingSiteId,draggingSitePoint,dragSitePoint);
+            if(snapshot.siteEditorOpen&&draggingSitePoint<snapshot.editorPlan.pointCount) {
+                Plan livePlan{};
+                if(BuildDraggedSitePlan(snapshot.editorPlan,draggingSitePoint,dragSitePoint,&livePlan))
+                    SetInteractiveSitePreview(snapshot.creatingSite?0:snapshot.editingSiteId,&livePlan);
+            }
+            dragSitePointCommitPending=true;dragSitePointReleasedAt=GetTickCount64();
+        } else {
+            draggingSitePoint=static_cast<unsigned>(MaxSitePoints);draggingSitePointMoved=false;
+            dragSitePointArmedAt=0;dragSitePointCommitPending=false;
+        }
+    }
+    if(message==WM_LBUTTONDOWN&&panelOpen&&editorRectValid&&!editorWasDragged.load()&&GetForegroundWindow()==gameWindow) {
+        const auto& snapshot=ReadSnapshot();
+        if(snapshot.siteEditorOpen&&!snapshot.creatingSite&&snapshot.mode==PickMode::None) {
+            const bool insidePanel=(panelRectValid&&Hit(panelRect,lParam))||(settingsRectValid&&Hit(settingsRect,lParam))||(popupRectValid&&Hit(popupRect,lParam));
+            const bool insideEditor=Hit(editorRect,lParam);
+            if(!insidePanel&&!insideEditor&&!CursorOnEditingSite(snapshot))Send(Action::CloseSiteEditor);
+        }
+    }
+    const bool mapPick = mapPickCapture && !nativeUiOccluded && !over && WorldHit(lParam);
+    const bool leftOwned = mouseCapture || leftRelease || over || mapPick;
+    const bool leftClickMessage=message==WM_LBUTTONDOWN||message==WM_LBUTTONDBLCLK;
+#if defined(EARTHWORKS_DEVELOPER_UI)
+    if(leftClickMessage&&drawingNewSite&&host&&host->log) {
+        host->log("earthworks draw-click route x=%d y=%d mapCapture=%d nativeUi=%d uiRects=%u cursorRectIgnored=%d uiHit=%d uiBounds=%.1f,%.1f,%.1f,%.1f over=%d world=%d mapPick=%d owned=%d foreground=%d cursorValid=%d points=%u",
+            GET_X_LPARAM(lParam),GET_Y_LPARAM(lParam),static_cast<int>(mapPickCapture.load()),static_cast<int>(nativeUiOccluded),
+            nativeUiInfo.rectCount,static_cast<int>(nativeUiInfo.cursorRectIgnored),nativeUiInfo.hitIndex,nativeUiInfo.left,nativeUiInfo.top,nativeUiInfo.right,nativeUiInfo.bottom,
+            static_cast<int>(over),static_cast<int>(WorldHit(lParam)),static_cast<int>(mapPick),static_cast<int>(leftOwned),
+            static_cast<int>(GetForegroundWindow()==gameWindow),static_cast<int>(inputSnapshot.cursorValid),inputSnapshot.plan.pointCount);
+    }
+#endif
+    if (leftClickMessage && leftOwned) {
+        leftRelease = true;
+        if (mapPick && GetForegroundWindow() == gameWindow&&handleIndex>=MaxSitePoints) Send(Action::Pick);
+    }
+    if (message == WM_LBUTTONUP) leftRelease = false;
+    const bool otherMouse = message == WM_RBUTTONDOWN || message == WM_RBUTTONUP || message == WM_RBUTTONDBLCLK
+        || message == WM_MBUTTONDOWN || message == WM_MBUTTONUP;
+    const bool keyboardMessage=message==WM_KEYDOWN||message==WM_KEYUP||message==WM_CHAR||message==WM_SYSKEYDOWN
+        ||message==WM_SYSKEYUP||message==WM_SYSCHAR||message==WM_DEADCHAR||message==WM_SYSDEADCHAR
+        ||message==WM_UNICHAR||message==WM_IME_STARTCOMPOSITION||message==WM_IME_COMPOSITION||message==WM_IME_ENDCOMPOSITION;
+    const bool suppressTypedShortcut=keyboardMessage&&keyboardCapture&&!KeyboardShortcutPassesThrough(message,wParam);
+    const bool swallow = (leftMessage && leftOwned) || (otherMouse && mouseCapture) || wheelOverEarthworksTable || suppressTypedShortcut || escapeMessage;
+    ImGui::SetCurrentContext(previous);
+    if (swallow) return TRUE;
+    if(message==WM_MOUSEMOVE) {
+        const LRESULT result=CallWindowProcW(originalWndProc,window,message,wParam,lParam);
+        const bool overPanel=CursorOverEarthworksUi(lParam);
+        if(overPanel) {
+            if(HCURSOR cursor=GetCursor())cursorToRestore=cursor;
+            SetCursor(nullptr);systemCursorHiddenForPanel=true;
+        } else if(systemCursorHiddenForPanel) {
+            if(GetCursor()==nullptr&&cursorToRestore)SetCursor(cursorToRestore);
+            systemCursorHiddenForPanel=false;cursorToRestore=nullptr;
+        }
+        return result;
+    }
+    if(message==WM_SETCURSOR) {
+        const LRESULT result=CallWindowProcW(originalWndProc,window,message,wParam,lParam);
+        POINT point{};
+        if(GetCursorPos(&point)&&ScreenToClient(window,&point)
+            &&CursorOverEarthworksUi(MAKELPARAM(point.x,point.y))) {
+            if(HCURSOR cursor=GetCursor())cursorToRestore=cursor;
+            SetCursor(nullptr);systemCursorHiddenForPanel=true;return TRUE;
+        }
+        systemCursorHiddenForPanel=false;cursorToRestore=nullptr;
+        return result;
+    }
+    return CallWindowProcW(originalWndProc,window,message,wParam,lParam);
+}
+bool Project(const Snapshot& s,Point p,ImVec2* out)
+{
+    float eye[3]{}; float clip[4]{};
+    for (int i=0; i<3; ++i) eye[i] = p.x*s.view[i]+p.y*s.view[4+i]+p.z*s.view[8+i]+s.view[12+i];
+    for (int i=0; i<4; ++i) clip[i] = eye[0]*s.projection[i]+eye[1]*s.projection[4+i]+eye[2]*s.projection[8+i]+s.projection[12+i];
+    if (!std::isfinite(clip[3]) || clip[3]<0.01f) return false;
+    const auto size = ImGui::GetIO().DisplaySize;
+    *out = {(clip[0]/clip[3]+1)*0.5f*size.x,(1-clip[1]/clip[3])*0.5f*size.y};
+    return std::isfinite(out->x) && std::isfinite(out->y) && std::abs(out->x)<1e6f && std::abs(out->y)<1e6f;
+}
+void Line(const Snapshot& s,Point a,Point b,ImU32 color,float thickness=1)
+{
+    if(previewLinesUnderlay) return;
+    ImVec2 p,q;
+    if (Project(s,a,&p) && Project(s,b,&q)) ImGui::GetBackgroundDrawList()->AddLine(p,q,color,thickness);
+}
+void Shade(const Snapshot& s,const Point* triangle,const float* depth,float sign,ImU32 color)
+{
+    if(gameUnderlayInstalled)return;
+    Point clipped[6]{}; int count=0;
+    for (int i=0; i<3; ++i) {
+        const int j=(i+1)%3;
+        const float a=depth[i]*sign,b=depth[j]*sign;
+        if (a>=0) clipped[count++]=triangle[i];
+        if ((a>0 && b<0) || (a<0 && b>0)) {
+            const float t=a/(a-b);
+            clipped[count++]={triangle[i].x+t*(triangle[j].x-triangle[i].x),triangle[i].y,triangle[i].z+t*(triangle[j].z-triangle[i].z)};
+        }
+    }
+    if (count<3) return;
+    ImVec2 screen[6]{};
+    for (int i=0; i<count; ++i) if (!Project(s,clipped[i],&screen[i])) return;
+    ImGui::GetBackgroundDrawList()->AddConvexPolyFilled(screen,count,(color & 0x00FFFFFFu) | (55u<<24));
+}
+void DrawQueuedWireframe(const Snapshot& s,const Plan& p)
+{
+    if(p.pointCount<2) return;
+    const ImU32 gray=HighContrastColors()?IM_COL32(255,174,0,230):IM_COL32(175,180,190,210);
+    if(p.complete)for(int z=0;z<GridSide;++z) for(int x=0;x<GridSide;++x) {
+        const auto a=p.Vertex(x,z,true,s.terrainCellSize);
+        if(x<GridCells) {const auto b=p.Vertex(x+1,z,true,s.terrainCellSize);if(p.Contains((a.x+b.x)*0.5f,(a.z+b.z)*0.5f))Line(s,a,b,gray,1.5f);}
+        if(z<GridCells) {const auto b=p.Vertex(x,z+1,true,s.terrainCellSize);if(p.Contains((a.x+b.x)*0.5f,(a.z+b.z)*0.5f))Line(s,a,b,gray,1.5f);}
+    }
+    const unsigned edgeCount=p.complete?p.pointCount:p.pointCount-1;
+    for(unsigned i=0;i<edgeCount;++i) {
+        const auto& a=p.points[i];const auto& b=p.points[(i+1)%p.pointCount];
+        Line(s,a,b,HighContrastColors()?IM_COL32(194,75,0,245):IM_COL32(205,210,220,235),2.5f);
+    }
+}
+template<class Shape>
+void DrawQueuedOutline(const Snapshot& s,const Shape& p,ImU32 color)
+{
+    if(p.pointCount<2)return;
+    for(unsigned i=0;i<p.pointCount;++i)Line(s,p.points[i],p.points[(i+1)%p.pointCount],color,2.5f);
+}
+void DrawSitePointHandles(const Snapshot& s,const Plan& p)
+{
+    if(!s.siteEditorOpen)return;
+    for(unsigned i=0;i<p.pointCount&&siteHandleRectCount<MaxSitePoints;++i) {
+        ImVec2 screen{};if(!Project(s,p.points[i],&screen))continue;
+        const RECT candidate{static_cast<LONG>(screen.x-SitePointHitRadiusPixels),static_cast<LONG>(screen.y-SitePointHitRadiusPixels),
+            static_cast<LONG>(screen.x+SitePointHitRadiusPixels),static_cast<LONG>(screen.y+SitePointHitRadiusPixels)};
+        const auto overlaps=[](const RECT& a,const RECT& b){return a.left<b.right&&a.right>b.left&&a.top<b.bottom&&a.bottom>b.top;};
+        if((panelRectValid&&overlaps(candidate,panelRect))||(editorRectValid&&overlaps(candidate,editorRect)))continue;
+        siteHandleRects[siteHandleRectCount]=candidate;
+        siteHandlePointIndices[siteHandleRectCount++]=i;
+    }
+}
+void DrawSiteEdgeInsertionPreview(const Snapshot& s)
+{
+    const auto& mouse=ImGui::GetIO().MousePos;
+    SiteEdgePreview edge{};
+    if(!FindSiteEdgeAtScreen(s,mouse.x,mouse.y,&edge))return;
+    auto* draw=ImGui::GetForegroundDrawList();
+    draw->AddCircleFilled(edge.screen,9.0f,HighContrastColors()?IM_COL32(255,225,90,235):IM_COL32(115,120,125,150),16);
+    draw->AddCircle(edge.screen,9.0f,HighContrastColors()?IM_COL32(190,70,0,255):IM_COL32(60,65,70,190),16,1.5f);
+    draw->AddLine({edge.screen.x-3.5f,edge.screen.y},{edge.screen.x+3.5f,edge.screen.y},HighContrastColors()?IM_COL32(190,70,0,255):IM_COL32(45,50,55,210),1.5f);
+    draw->AddLine({edge.screen.x,edge.screen.y-3.5f},{edge.screen.x,edge.screen.y+3.5f},HighContrastColors()?IM_COL32(190,70,0,255):IM_COL32(45,50,55,210),1.5f);
+}
+bool BuildDraggedSitePlan(const Plan& source,unsigned pointIndex,Point cursor,Plan* output)
+{
+    if(!output||pointIndex>=source.pointCount)return false;
+    *output=source;
+    const Plan original=source;
+    output->points[pointIndex].x=cursor.x;output->points[pointIndex].z=cursor.z;
+    output->RefreshBounds();
+    if(output->complete) {
+        for(int z=0;z<GridSide;++z)for(int x=0;x<GridSide;++x) {
+            const float worldX=output->MinX()+output->Width()*static_cast<float>(x)/GridCells;
+            const float worldZ=output->MinZ()+output->Depth()*static_cast<float>(z)/GridCells;
+            float ground=0;
+            if(original.GroundAt(worldX,worldZ,&ground))output->ground[static_cast<size_t>(z*GridSide+x)]=ground;
+        }
+        output->RefreshBounds();
+    }
+    return true;
+}
+bool BuildTranslatedSitePlan(const Plan& source,Point delta,Plan* output)
+{
+    if(!output||!source.complete||!source.pointCount)return false;
+    *output=source;
+    for(unsigned i=0;i<output->pointCount;++i){output->points[i].x+=delta.x;output->points[i].z+=delta.z;}
+    output->RefreshBounds();
+    // Shift the sampled ground grid with the footprint for a stable live
+    // preview. Runtime validation resamples the destination terrain on release.
+    const Plan original=source;
+    for(int z=0;z<GridSide;++z)for(int x=0;x<GridSide;++x) {
+        const float worldX=output->MinX()+output->Width()*static_cast<float>(x)/GridCells;
+        const float worldZ=output->MinZ()+output->Depth()*static_cast<float>(z)/GridCells;
+        float ground=0;
+        if(original.GroundAt(worldX-delta.x,worldZ-delta.z,&ground))output->ground[static_cast<size_t>(z*GridSide+x)]=ground;
+    }
+    output->RefreshBounds();
+    return true;
+}
+void DrawPreview(const Snapshot& s)
+{
+    siteHandleRectCount=0;
+    if (!s.ready || !s.cameraValid) {SetInteractiveSitePreview(0,nullptr);return;}
+    const bool editorTerrainVisible=s.siteEditorOpen&&(s.creatingSite||CursorSiteVisible(s,s.editingSiteId));
+    Plan liveSitePlan{};const Plan* livePlan=nullptr;uint64_t liveSiteId=0;
+    if(editorTerrainVisible&&draggingSitePointButtonHeld&&draggingSitePoint<MaxSitePoints&&draggingSitePointMoved
+        &&draggingSitePoint<s.editorPlan.pointCount) {
+        liveSiteId=s.creatingSite?0:s.editingSiteId;
+        if(BuildDraggedSitePlan(s.editorPlan,draggingSitePoint,dragSitePoint,&liveSitePlan))livePlan=&liveSitePlan;
+    } else if(editorTerrainVisible&&draggingWholeSiteButtonHeld&&draggingWholeSiteMoved) {
+        liveSiteId=s.creatingSite?0:s.editingSiteId;
+        if(BuildTranslatedSitePlan(s.editorPlan,dragWholeSiteDelta,&liveSitePlan))livePlan=&liveSitePlan;
+    } else if(dragWholeSiteCommitPending&&editorTerrainVisible) {
+        const auto& first=s.editorPlan.points[0];
+        const float expectedX=dragWholeSiteFirstPoint.x+dragWholeSiteDelta.x,expectedZ=dragWholeSiteFirstPoint.z+dragWholeSiteDelta.z;
+        if(std::abs(first.x-expectedX)<=0.5f&&std::abs(first.z-expectedZ)<=0.5f
+            ||GetTickCount64()-dragWholeSiteReleasedAt>=SitePointPreviewCommitGraceMs) {
+            dragWholeSiteCommitPending=false;draggingWholeSiteMoved=false;dragWholeSiteDelta={};
+        } else {
+            liveSiteId=s.creatingSite?0:s.editingSiteId;
+            if(BuildTranslatedSitePlan(s.editorPlan,dragWholeSiteDelta,&liveSitePlan))livePlan=&liveSitePlan;
+        }
+    }
+    if(!livePlan&&dragSitePointCommitPending&&editorTerrainVisible&&draggingSitePoint<s.editorPlan.pointCount) {
+        const auto& point=s.editorPlan.points[draggingSitePoint];
+        const float dx=point.x-dragSitePoint.x,dz=point.z-dragSitePoint.z;
+        if(dx*dx+dz*dz<=0.25f||GetTickCount64()-dragSitePointReleasedAt>=SitePointPreviewCommitGraceMs) {
+            draggingSitePoint=static_cast<unsigned>(MaxSitePoints);draggingSitePointMoved=false;
+            dragSitePointArmedAt=0;dragSitePointCommitPending=false;
+        } else {
+            liveSiteId=s.creatingSite?0:s.editingSiteId;
+            if(BuildDraggedSitePlan(s.editorPlan,draggingSitePoint,dragSitePoint,&liveSitePlan))livePlan=&liveSitePlan;
+        }
+    }
+    SetInteractiveSitePreview(livePlan?liveSiteId:0,livePlan);
+    for(size_t i=0;i<s.projectCount;++i) {
+        const auto& project=s.projects[i];
+        if(!project.visible)continue;
+        if(project.status==ProjectStatus::Queued||project.status==ProjectStatus::Running
+            ||project.status==ProjectStatus::Waiting||project.status==ProjectStatus::Paused) {
+            if(project.id==s.editingSiteId)DrawQueuedWireframe(s,livePlan&&liveSiteId==project.id?*livePlan:s.queuedPlan);
+            else DrawQueuedOutline(s,project.outline,HighContrastColors()?IM_COL32(255,174,0,230):IM_COL32(175,180,190,205));
+        } else if(project.status==ProjectStatus::Completed)
+            DrawQueuedOutline(s,project.outline,HighContrastColors()?IM_COL32(255,220,40,245):IM_COL32(100,190,155,190));
+    }
+    if(editorTerrainVisible) {
+        const auto& editorPlan=livePlan?*livePlan:s.editorPlan;
+        DrawSitePointHandles(s,editorPlan);
+        DrawSiteEdgeInsertionPreview(s);
+    }
+    const auto& p=livePlan&&liveSiteId==0?*livePlan:s.plan;
+    if (!p.first) return;
+    if (!p.complete) {
+        ImVec2 first;
+        for(unsigned i=0;i<p.pointCount;++i) {
+            ImVec2 screen{};if(Project(s,p.points[i],&screen))ImGui::GetBackgroundDrawList()->AddCircleFilled(screen,4.5f,HighContrastColors()?IM_COL32(255,105,0,255):IM_COL32(255,235,135,235),12);
+            if(i+1<p.pointCount)Line(s,p.points[i],p.points[i+1],FillWireColor(),2.0f);
+        }
+        if(panelOpen&&s.cursorValid&&s.mode==PickMode::DrawSite&&p.pointCount) {
+            const Point drawingCursor=SiteDrawingCursor(s);
+            if(s.shapeMode!=SiteShapeMode::FreeDraw&&p.pointCount==1) {
+                Point corners[4]{};BuildTwoCornerShape(p.points[0],drawingCursor,s.shapeMode,corners);
+                for(unsigned i=0;i<4;++i)Line(s,corners[i],corners[(i+1)%4],FillWireColor(),2.0f);
+            } else Line(s,p.points[p.pointCount-1],drawingCursor,FillWireColor(),2.0f);
+        }
+        return;
+    }
+    for (int z=0; z<GridCells; ++z) for (int x=0; x<GridCells; ++x) {
+        const Point ground[]={p.Vertex(x,z,false),p.Vertex(x+1,z,false),p.Vertex(x+1,z+1,false),p.Vertex(x,z+1,false)};
+        if(!p.Contains((ground[0].x+ground[2].x)*0.5f,(ground[0].z+ground[2].z)*0.5f))continue;
+        Point proposed[4];float d[4];bool valid=true;
+        for(unsigned i=0;i<4;++i) {valid=p.BlendedTargetAt(ground[i].x,ground[i].z,s.terrainCellSize,&proposed[i].y)&&valid;d[i]=proposed[i].y-ground[i].y;}
+        if(!valid)continue;
+        for(auto& point:proposed)point.x=ground[&point-proposed].x,point.z=ground[&point-proposed].z;
+        for (int t=0; t<2; ++t) {
+            const Point tri[]={proposed[0],proposed[t+1],proposed[t+2]};
+            const float depths[]={d[0],d[t+1],d[t+2]};
+            Shade(s,tri,depths,1,FillWireColor()); Shade(s,tri,depths,-1,CutWireColor());
+        }
+    }
+    for (int z=0; z<GridSide; ++z) for (int x=0; x<GridSide; ++x) {
+        const auto a=p.Vertex(x,z,true,s.terrainCellSize); const auto ground=p.Vertex(x,z,false);
+        float targetHeight=0;const ImU32 color=p.BlendedTargetAt(a.x,a.z,s.terrainCellSize,&targetHeight)&&targetHeight>=ground.y ? FillWireColor():CutWireColor();
+        if (x<GridCells) {const auto b=p.Vertex(x+1,z,true,s.terrainCellSize);if(p.Contains((a.x+b.x)*0.5f,(a.z+b.z)*0.5f))Line(s,a,b,color);}
+        if (z<GridCells) {const auto b=p.Vertex(x,z+1,true,s.terrainCellSize);if(p.Contains((a.x+b.x)*0.5f,(a.z+b.z)*0.5f))Line(s,a,b,color);}
+    }
+    DrawQueuedOutline(s,p,HighContrastColors()?IM_COL32(255,245,120,255):IM_COL32(245,250,255,255));
+}
+bool CursorOnVisibleSite(const Snapshot& s)
+{
+    if(!s.cursorValid)return false;
+    for(size_t i=0;i<s.projectCount;++i) {
+        const auto& site=s.projects[i];
+        if(site.visible&&site.outline.Contains(s.cursor.x,s.cursor.z))return true;
+    }
+    return false;
+}
+bool CursorOnEditingSite(const Snapshot& s)
+{
+    if(!s.cursorValid||!s.editingSiteId)return false;
+    for(size_t i=0;i<s.projectCount;++i) {
+        const auto& site=s.projects[i];
+        if(site.id==s.editingSiteId&&site.visible)
+            return site.outline.Contains(s.cursor.x,s.cursor.z);
+    }
+    return false;
+}
+void DrawSiteEditor(const Snapshot& s,ImVec2 display);
+void DrawPanelPaper(bool headerOnly);
+void DrawSiteEditorPaper(ImVec2 pos,ImVec2 size,bool headerOnly);
+void DrawFacilityAssignmentWarning(const Snapshot& s,ImVec2 display)
+{
+    assignmentWarningRectValid=false;
+    if(!s.ready||!s.facilityAssignmentWarning)return;
+    const ImVec2 size{560.0f,184.0f};
+    ImGui::SetNextWindowPos({std::max(8.0f,(display.x-size.x)*0.5f),std::max(8.0f,(display.y-size.y)*0.5f)},ImGuiCond_Always);
+    ImGui::SetNextWindowSize(size,ImGuiCond_Always);
+    ImGui::PushStyleColor(ImGuiCol_WindowBg,{0,0,0,0});
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize,0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding,{18.0f,54.0f});
+    ImGui::Begin("##EarthworksAssignmentWarning",nullptr,ImGuiWindowFlags_NoTitleBar|ImGuiWindowFlags_NoResize|ImGuiWindowFlags_NoMove|ImGuiWindowFlags_NoSavedSettings|ImGuiWindowFlags_NoScrollbar);
+    ImGui::PopStyleVar(2);
+    ImGui::PopStyleColor();
+    const auto pos=ImGui::GetWindowPos();
+    const auto windowSize=ImGui::GetWindowSize();
+    DrawPanelPaper(false);
+    auto* draw=ImGui::GetWindowDrawList();
+    draw->AddRectFilled(pos,{pos.x+windowSize.x,pos.y+46.0f},IM_COL32(150,60,55,255),12.0f,ImDrawFlags_RoundCornersTop);
+    draw->AddText({pos.x+16.0f,pos.y+15.0f},IM_COL32(255,255,255,255),"Earthworks | Warning");
+    ImGui::SetCursorScreenPos({pos.x+windowSize.x-48.0f,pos.y+8.0f});
+    ImGui::PushStyleColor(ImGuiCol_Text,{1,1,1,1});
+    ImGui::PushStyleColor(ImGuiCol_Button,{0,0,0,0});
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered,{0.70f,0.31f,0.29f,1});
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive,{0.42f,0.14f,0.13f,1});
+    if(ImGui::Button("X##CloseAssignmentWarning",{30.0f,30.0f}))Send(Action::DismissFacilityWarning);
+    ImGui::PopStyleColor(4);
+    ImGui::SetCursorScreenPos({pos.x+18.0f,pos.y+58.0f});
+    ImGui::PushTextWrapPos(pos.x+windowSize.x-18.0f);
+    ImGui::TextUnformatted("Warning: Error loading Earthworks assignments, please re-check your assigned facilities to projects");
+    ImGui::PopTextWrapPos();
+    const ImVec2 okSize{110.0f,34.0f};
+    ImGui::SetCursorScreenPos({pos.x+(windowSize.x-okSize.x)*0.5f,pos.y+130.0f});
+    if(ImGui::Button("OK",okSize))Send(Action::RemoveUnresolvedFacilityAssignments);
+    RememberRect(&assignmentWarningRect);assignmentWarningRectValid=true;
+    ImGui::End();
+}
+void DrawSettingsPanel(ImVec2 display)
+{
+    if(!panelOpen||!settingsOpen||!panelRectValid) {settingsRectValid=false;return;}
+    constexpr float width=360.0f,height=390.0f,headerHeight=54.0f;
+    float x=static_cast<float>(panelRect.left)-width-10.0f;
+    if(x<10.0f)x=static_cast<float>(panelRect.right)+10.0f;
+    x=std::clamp(x,10.0f,std::max(10.0f,display.x-width-10.0f));
+    const float y=std::clamp(static_cast<float>(panelRect.top),10.0f,std::max(10.0f,display.y-height-10.0f));
+    ImGui::SetNextWindowPos({x,y},ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize({width,height},ImGuiCond_FirstUseEver);
+    ImGui::PushStyleColor(ImGuiCol_WindowBg,{0,0,0,0});
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize,0.0f);
+    bool open=true;
+    ImGui::Begin("##EarthworksSettings",&open,ImGuiWindowFlags_NoTitleBar|ImGuiWindowFlags_NoSavedSettings|ImGuiWindowFlags_NoScrollbar);
+    ImGui::PopStyleVar();ImGui::PopStyleColor();
+    const auto pos=ImGui::GetWindowPos(),size=ImGui::GetWindowSize();
+    DrawPanelPaper(false);
+    auto* panelDraw=ImGui::GetWindowDrawList();
+    panelDraw->AddRectFilled(pos,{pos.x+size.x,pos.y+headerHeight},IM_COL32(150,60,55,255),12.0f,ImDrawFlags_RoundCornersTop);
+    panelDraw->AddText({pos.x+11.0f,pos.y+29.5f-ImGui::GetTextLineHeight()*0.5f},IM_COL32(255,255,255,255),"Earthworks | Settings");
+    ImGui::PushStyleColor(ImGuiCol_Text,{1,1,1,1});
+    ImGui::PushStyleColor(ImGuiCol_Button,{0.59f,0.235f,0.216f,1});
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered,{0.70f,0.31f,0.29f,1});
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive,{0.42f,0.14f,0.13f,1});
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,{0,0});
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize,0);
+    ImGui::SetCursorScreenPos({pos.x+size.x-36.0f,pos.y+14.5f});
+    if(ImGui::Button("X",{30.0f,30.0f}))open=false;
+    ImGui::PopStyleVar(2);ImGui::PopStyleColor(4);
+    ImGui::SetCursorScreenPos({pos.x+12.0f,pos.y+headerHeight+12.0f});
+    ImGui::TextUnformatted("Site construction speed");
+    float multiplier=ConstructionSpeedMultiplier();
+    ImGui::SetNextItemWidth(width-36.0f);
+    if(ImGui::SliderFloat("##SiteSpeedMultiplier",&multiplier,0.1f,10.0f,"%.1fx"))SetConstructionSpeedMultiplier(multiplier);
+    if(ImGui::IsItemDeactivatedAfterEdit())SaveGlobalSettings();
+    bool highContrast=HighContrastColors();
+    if(ImGui::Checkbox("High contrast colors",&highContrast)) {
+        SetHighContrastColors(highContrast);SetWinterWireframeMode(highContrast);SaveGlobalSettings();
+    }
+    ImGui::TextUnformatted("Scales Site work and capacity estimates.");
+    ImGui::Separator();
+    bool distanceMode=DistanceBasedFacilityContribution();
+    if(ImGui::Checkbox("Distance-based facility contribution",&distanceMode)) {
+        SetDistanceBasedFacilityContribution(distanceMode);SaveGlobalSettings();Send(Action::SettingsChanged);
+    }
+    ImGui::TextWrapped("Facilities contribute less when farther from a Site.");
+    int closeMetersValue=CloseFacilityDistanceMeters();
+    int mediumMetersValue=MediumFacilityDistanceMeters();
+    int farMetersValue=FarFacilityDistanceMeters();
+    auto distanceRow=[&](const char* label,const char* id,const char* infoId,const char* info,int* value) {
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted(label);
+        ImGui::SameLine(104.0f);
+        ImGui::SetNextItemWidth(150.0f);
+        ImGui::InputInt(id,value,0,0);
+        settingsDistanceEditing|=ImGui::IsItemActive();
+        const bool changed=ImGui::IsItemDeactivatedAfterEdit();
+        ImGui::SameLine();ImGui::TextUnformatted("m");
+        ImGui::SameLine();
+        GameIconButton(infoId,targetHeightInfoIcon,"i",info,{22.0f,22.0f});
+        if(changed) {
+            SetFacilityDistanceThresholds(closeMetersValue,mediumMetersValue,farMetersValue);
+            SaveGlobalSettings();Send(Action::SettingsChanged);
+        }
+    };
+    distanceRow("Close (100%)","##FacilityCloseDistance","##FacilityCloseInfo","Within this distance, facilities contribute 100%. Efficiency falls linearly to 50% at Medium.",&closeMetersValue);
+    distanceRow("Medium (50%)","##FacilityMediumDistance","##FacilityMediumInfo","At this distance, facilities contribute 50%. Efficiency falls linearly from 100% at Close.",&mediumMetersValue);
+    distanceRow("Far (25%)","##FacilityFarDistance","##FacilityFarInfo","At this distance and beyond, facilities contribute 25%. Efficiency falls linearly from 50% at Medium.",&farMetersValue);
+    RememberRect(&settingsRect);settingsRectValid=true;
+    ImGui::End();
+    if(!open)settingsOpen=false;
+}
+void DrawInterface(const Snapshot& s)
+{
+    targetHeightEditing = false;
+    nameTextEditing = false;
+    settingsDistanceEditing = false;
+    popupRectValid=false;
+    assignmentWarningRectValid=false;
+    siteTableRectValid=false;
+    facilityTableRectValid=false;
+    frameGeneration=s.generation;
+    SetWinterWireframeMode(HighContrastColors());
+    if (!s.ready) { panelOpen=false; panelRectValid=false;settingsRectValid=false; popupRectValid=false; assignmentWarningRectValid=false;editorRectValid=false; }
+    if(panelOpen && s.cameraValid && s.workforce.buildingValid) {
+        const auto p=s.workforce.building.position;
+        const auto colour=IM_COL32(255,100,255,255);
+        Line(s,{p.x-5,p.y+1,p.z},{p.x+5,p.y+1,p.z},colour,3);
+        Line(s,{p.x,p.y+1,p.z-5},{p.x,p.y+1,p.z+5},colour,3);
+        Line(s,{p.x,p.y,p.z},{p.x,p.y+12,p.z},colour,3);
+    }
+    const auto display=ImGui::GetIO().DisplaySize;
+    buttonRect={};
+    if(s.ready&&s.cameraValid) {
+        const ImVec2 buttonPos{70.0f,display.y-132.0f};
+        constexpr ImVec2 buttonSize{150.0f,42.0f};
+        const auto mousePos=ImGui::GetIO().MousePos;
+        const bool coveredByNativeUi=NativeUiAreaOccludes(buttonPos.x,buttonPos.y,
+            buttonSize.x,buttonSize.y,mousePos.x,mousePos.y);
+        // The game draws native panels before the ImGui overlay. Do not draw
+        // the launcher over them. Keep its fixed hit rectangle so the usual
+        // native-UI input occlusion checks still apply when the panel closes.
+        buttonRect={static_cast<LONG>(buttonPos.x),static_cast<LONG>(buttonPos.y),
+            static_cast<LONG>(buttonPos.x+buttonSize.x),static_cast<LONG>(buttonPos.y+buttonSize.y)};
+        constexpr ImGuiWindowFlags launcherFlags=ImGuiWindowFlags_NoTitleBar|ImGuiWindowFlags_NoResize|
+            ImGuiWindowFlags_NoMove|ImGuiWindowFlags_NoSavedSettings|ImGuiWindowFlags_NoScrollbar|
+            ImGuiWindowFlags_NoCollapse|ImGuiWindowFlags_NoBackground;
+        if(!coveredByNativeUi) {
+            ImGui::SetNextWindowPos(buttonPos,ImGuiCond_Always);
+            ImGui::SetNextWindowSize(buttonSize,ImGuiCond_Always);
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding,{0,0});
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize,0.0f);
+            ImGui::Begin("##EarthworksLauncher",nullptr,launcherFlags);
+            ImGui::PushStyleColor(ImGuiCol_Text,{0.20f,0.14f,0.09f,1.0f});
+            ImGui::SetCursorPos({0,0});
+            if(ImGui::Button("Earthworks",buttonSize)) {
+                panelOpen=!panelOpen.load();leftRelease=true;
+                host->log("earthworks  planning panel %s",panelOpen?"opened":"closed");
+            }
+            ImGui::PopStyleColor();
+            ImGui::End();
+            ImGui::PopStyleVar(2);
+        }
+    }
+    if (!s.ready) {panelRectValid=false;settingsRectValid=false;popupRectValid=false;editorRectValid=false;return;}
+    if (!panelOpen) {panelRectValid=false;settingsRectValid=false;settingsOpen=false;popupRectValid=false;editorRectValid=false;DrawFacilityAssignmentWarning(s,display);return;}
+    const float panelWidth=std::min(580.0f,std::max(480.0f,display.x-20.0f));
+    constexpr float listHeightReduction=122.5f;
+    const float availablePanelHeight=std::max(360.0f,display.y-180.0f-listHeightReduction);
+    const float panelHeight=std::min(727.5f,availablePanelHeight);
+    constexpr float headerHeight=56.0f;
+    ImGui::SetNextWindowPos({std::max(10.0f,display.x-panelWidth-20.0f),155},ImGuiCond_FirstUseEver);
+    if(panelMinimized) ImGui::SetNextWindowSize({panelWidth,headerHeight+2.0f},ImGuiCond_Always);
+    else if(restorePanelSize) { ImGui::SetNextWindowSize({panelWidth,expandedPanelHeight},ImGuiCond_Always); restorePanelSize=false; }
+    else ImGui::SetNextWindowSize({panelWidth,panelHeight},ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSizeConstraints({std::min(560.0f,std::max(480.0f,display.x-20.0f)),44},{std::min(800.0f,std::max(480.0f,display.x-20.0f)),availablePanelHeight});
+    bool open=true;
+    ImGui::PushStyleColor(ImGuiCol_WindowBg,{0,0,0,0});
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize,0.0f);
+    ImGui::Begin("##EarthworksPanel",&open,ImGuiWindowFlags_NoTitleBar|ImGuiWindowFlags_NoSavedSettings|ImGuiWindowFlags_NoScrollbar);
+    ImGui::PopStyleVar();
+    ImGui::PopStyleColor();
+    const bool collapsedThisFrame=panelMinimized;
+    auto* panelDraw=ImGui::GetWindowDrawList();
+    const auto panelPos=ImGui::GetWindowPos(),panelSize=ImGui::GetWindowSize();
+    DrawPanelPaper(collapsedThisFrame);
+    panelDraw->AddText({panelPos.x+11.0f,panelPos.y+29.5f-ImGui::GetTextLineHeight()*0.5f},IM_COL32(255,255,255,255),"Earthworks | Projects");
+    ImGui::PushStyleColor(ImGuiCol_Text,{1,1,1,1});
+    ImGui::PushStyleColor(ImGuiCol_Button,{0.59f,0.235f,0.216f,1});
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered,{0.70f,0.31f,0.29f,1});
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive,{0.42f,0.14f,0.13f,1});
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,{0,0});
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize,0);
+    ImGui::SetCursorScreenPos({panelPos.x+panelSize.x-104.0f,panelPos.y+14.5f});
+    if(GameIconButton("##EarthworksSettingsButton",settingsIcon,"S",nullptr,{30.0f,30.0f},true))settingsOpen=!settingsOpen;
+    ImGui::SameLine(0,4.0f);
+    ImGui::SetCursorScreenPos({panelPos.x+panelSize.x-70.0f,panelPos.y+14.5f});
+    if(ImGui::Button("-",{30.0f,30.0f})) { panelMinimized=!panelMinimized; restorePanelSize=!panelMinimized; }
+    ImGui::SameLine(0,4.0f);
+    if(ImGui::Button("X",{30.0f,30.0f})) open=false;
+    ImGui::PopStyleVar(2);
+    ImGui::PopStyleColor(4);
+    if(!panelMinimized && !collapsedThisFrame) expandedPanelHeight=panelSize.y;
+    if(!open) {
+        panelOpen=false;settingsOpen=false; mapPickCapture=false;areaPickCapture=false;leftRelease=true; panelRectValid=false;settingsRectValid=false;editorRectValid=false;Send(Action::CloseSiteEditor);
+        ImGui::End();
+        host->log("earthworks  planning panel closed; native left clicks released after button up");
+        return;
+    }
+    if(collapsedThisFrame || panelMinimized) {
+        RememberRect(&panelRect); panelRectValid=true; ImGui::End();DrawSettingsPanel(display);DrawSiteEditor(s,display);return;
+    }
+    ImGui::SetCursorScreenPos({panelPos.x+ImGui::GetStyle().WindowPadding.x,panelPos.y+headerHeight+ImGui::GetStyle().WindowPadding.y});
+    static char nameBuffer[MaxSavedNameBytes+1]{};
+    static Action renameAction=Action::RenameNamedProject;
+    static uint64_t renameTarget=0;
+    static uint64_t deleteTarget=0;
+    static uint64_t deleteSiteTarget=0;
+    if(ImGui::BeginTabBar("Earthworks tabs")) {
+        if(ImGui::BeginTabItem("Projects and Sites")) {
+            ImGui::AlignTextToFramePadding();ImGui::Text("Project");ImGui::SameLine();
+            ImGui::SetNextItemWidth(225);
+            const char* selectedProject=s.projectContainerName[0]?s.projectContainerName:"No Project selected";
+            if(ImGui::BeginCombo("##Project selector",selectedProject)) {
+                for(size_t i=0;i<s.namedProjectCount;++i) {
+                    const auto& named=s.namedProjects[i];const bool selected=named.id==s.selectedNamedProjectId;
+                    if(ImGui::Selectable(named.name,selected))SendProject(Action::SelectNamedProject,named.id);
+                    if(selected)ImGui::SetItemDefaultFocus();
+                }
+                ImGui::EndCombo();
+            }
+            ImGui::SameLine();
+            if(GameIconButton("##NewProject",projectNewIcon,"New","New Project")) {
+                nameBuffer[0]=0;renameAction=Action::CreateNamedProject;renameTarget=0;ImGui::OpenPopup("Project name");
+            }
+            ImGui::SameLine();ImGui::BeginDisabled(!s.selectedNamedProjectId);
+            if(GameIconButton("##RenameProject",siteRenameIcon,"Rename","Rename Project")) {
+                strncpy_s(nameBuffer,s.projectContainerName,_TRUNCATE);renameAction=Action::RenameNamedProject;
+                renameTarget=s.selectedNamedProjectId;ImGui::OpenPopup("Project name");
+            }
+            ImGui::SameLine();
+            if(GameIconButton("##DeleteProject",projectDeleteIcon,"Delete","Delete Project")) {
+                deleteTarget=s.selectedNamedProjectId;ImGui::OpenPopup("Delete Project");
+            }
+            ImGui::EndDisabled();
+            ImGui::Spacing();
+
+            if(ImGui::BeginPopupModal("Project name",nullptr,ImGuiWindowFlags_AlwaysAutoResize)) {
+                RememberRect(&popupRect);popupRectValid=true;
+                ImGui::Text(renameAction==Action::CreateNamedProject?"Create Project":"Rename Project");
+                ImGui::SetNextItemWidth(300);ImGui::InputText("Name",nameBuffer,sizeof(nameBuffer));nameTextEditing|=ImGui::IsItemActive();
+                if(ImGui::Button("Save")) {SendProjectText(renameAction,renameTarget,nameBuffer);ImGui::CloseCurrentPopup();}
+                ImGui::SameLine();if(ImGui::Button("Cancel"))ImGui::CloseCurrentPopup();
+                ImGui::EndPopup();
+            }
+            if(ImGui::BeginPopupModal("Delete Project",nullptr,ImGuiWindowFlags_AlwaysAutoResize)) {
+                RememberRect(&popupRect);popupRectValid=true;
+                ImGui::TextWrapped("Delete this Project after you delete each Site with its X button.");
+                if(ImGui::Button("Delete")) {SendProject(Action::DeleteNamedProject,deleteTarget);ImGui::CloseCurrentPopup();}
+                ImGui::SameLine();if(ImGui::Button("Keep Project"))ImGui::CloseCurrentPopup();
+                ImGui::EndPopup();
+            }
+
+            {
+                if(!s.selectedNamedProjectId)ImGui::TextDisabled("Create a Project to manage Sites.");
+                else if(!s.projectCount)ImGui::TextDisabled("No Sites in this Project yet.");
+                bool openSiteRenamePopup=false,openSiteDeletePopup=false;
+                ImGui::BeginChild("Sites list",{0,225},ImGuiChildFlags_Borders);
+                ImGui::PushStyleVar(ImGuiStyleVar_CellPadding,{3.0f,3.0f});
+                if(s.projectCount&&ImGui::BeginTable("Site rows",8,ImGuiTableFlags_BordersOuter|ImGuiTableFlags_BordersInnerV|ImGuiTableFlags_RowBg|ImGuiTableFlags_SizingStretchProp|ImGuiTableFlags_ScrollY)) {
+                    const ImGuiTable* table=ImGui::GetCurrentTable();
+                    if(table)RememberTableRect(&siteTableRect,&siteTableRectValid,table->OuterRect.Min,{table->OuterRect.GetWidth(),table->OuterRect.GetHeight()});
+                    constexpr float priorityButtonGap=2.0f;
+                    const float priorityControlWidth=24.0f*2.0f+priorityButtonGap+ImGui::GetStyle().CellPadding.x*2.0f;
+                    const float priorityWidth=std::max(ImGui::CalcTextSize("Order").x+ImGui::GetStyle().CellPadding.x*2.0f,priorityControlWidth);
+                    const float progressWidth=std::max(68.0f,ImGui::CalcTextSize("Progress").x+ImGui::GetStyle().CellPadding.x*2.0f);
+                    const float workWidth=ImGui::CalcTextSize("Restart").x+ImGui::GetStyle().FramePadding.x*2.0f+ImGui::GetStyle().CellPadding.x*2.0f+4.0f;
+                    const float visibilityWidth=siteHideIcon&&siteShowIcon?30.0f:52.0f;
+                    ImGui::TableSetupColumn("Site",ImGuiTableColumnFlags_WidthStretch,1.0f);
+                    ImGui::TableSetupColumn("State",ImGuiTableColumnFlags_WidthFixed,44.0f);
+                    ImGui::TableSetupColumn("Progress",ImGuiTableColumnFlags_WidthFixed,progressWidth);
+                    ImGui::TableSetupColumn("Order",ImGuiTableColumnFlags_WidthFixed,priorityWidth);
+                    ImGui::TableSetupColumn("Work",ImGuiTableColumnFlags_WidthFixed,workWidth);
+                    ImGui::TableSetupColumn("##VisibilityHeader",ImGuiTableColumnFlags_WidthFixed,visibilityWidth);
+                    ImGui::TableSetupColumn("##CancelHeader",ImGuiTableColumnFlags_WidthFixed,30.0f);
+                    ImGui::TableSetupColumn("##RenameHeader",ImGuiTableColumnFlags_WidthFixed,30.0f);
+                    ImGui::TableNextRow(ImGuiTableRowFlags_Headers,32.0f);
+                    ImGui::TableNextColumn();ImGui::TextUnformatted("Site");
+                    ImGui::TableNextColumn();ImGui::TextUnformatted("State");
+                    ImGui::TableNextColumn();ImGui::TextUnformatted("Progress");
+                    ImGui::TableNextColumn();ImGui::TextUnformatted("Order");
+                    ImGui::TableNextColumn();ImGui::TextUnformatted("Work");
+                    ImGui::TableNextColumn();
+                    if(!siteHideIcon||!siteShowIcon)ImGui::TextUnformatted("Hide");
+                    else ImGui::Dummy({24,24});
+                    ImGui::TableNextColumn();
+                    ImGui::Dummy({24,24});
+                    if(ImGui::IsItemHovered()) NativeTooltip("Delete Site");
+                    ImGui::TableNextColumn();
+                    ImGui::Dummy({24,24});
+                    if(ImGui::IsItemHovered()) NativeTooltip("Rename");
+                    auto drawIconButton=[](const char* id,ID3D11ShaderResourceView* texture,const char* tooltip,float iconSize=30.0f,bool center=true) {
+                        if(!texture)return false;
+                        if(center)ImGui::SetCursorPosX(ImGui::GetCursorPosX()+std::max(0.0f,(ImGui::GetContentRegionAvail().x-iconSize)*0.5f));
+                        const auto pos=ImGui::GetCursorScreenPos();
+                        const bool hovered=ImGui::IsMouseHoveringRect(pos,{pos.x+iconSize,pos.y+iconSize},true);
+                        const ImTextureRef image(static_cast<ImTextureID>(reinterpret_cast<intptr_t>(texture)));
+                        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,{0,0});
+                        ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize,0.0f);
+                        ImGui::PushStyleColor(ImGuiCol_Button,{0,0,0,0});
+                        ImGui::PushStyleColor(ImGuiCol_ButtonHovered,{0,0,0,0});
+                        ImGui::PushStyleColor(ImGuiCol_ButtonActive,{0,0,0,0});
+                        const bool pressed=ImGui::ImageButton(id,image,{iconSize,iconSize},{0,0},{1,1},hovered?ImVec4{1,1,1,1}:ImVec4{0.82f,0.82f,0.82f,1});
+                        ImGui::PopStyleColor(3);ImGui::PopStyleVar(2);
+                        if(hovered&&tooltip) NativeTooltip(tooltip);
+                        return pressed;
+                    };
+                    auto drawPriorityButton=[](const char* id,ID3D11ShaderResourceView* texture) {
+                        if(!texture)return false;
+                        constexpr ImVec2 hitSize{24.0f,28.0f},iconSize{20.0f,20.0f};
+                        const bool pressed=ImGui::InvisibleButton(id,hitSize);
+                        const bool hovered=ImGui::IsItemHovered();
+                        const auto min=ImGui::GetItemRectMin();
+                        const auto max=ImGui::GetItemRectMax();
+                        const ImVec2 iconMin{min.x+(hitSize.x-iconSize.x)*0.5f,min.y+(hitSize.y-iconSize.y)*0.5f};
+                        const ImVec2 iconMax{iconMin.x+iconSize.x,iconMin.y+iconSize.y};
+                        const ImTextureRef image(static_cast<ImTextureID>(reinterpret_cast<intptr_t>(texture)));
+                        ImGui::GetWindowDrawList()->AddImage(image,iconMin,iconMax,{0,0},{1,1},ImGui::GetColorU32(hovered?ImVec4{1,1,1,1}:ImVec4{0.82f,0.82f,0.82f,1}));
+                        return pressed;
+                    };
+                    auto centerCellItem=[](float height) {
+                        constexpr float rowHeight=44.0f,cellPaddingY=3.0f;
+                        const float innerHeight=rowHeight-2.0f*cellPaddingY;
+                        ImGui::SetCursorPosY(ImGui::GetCursorPosY()+std::max(0.0f,(innerHeight-height)*0.5f));
+                    };
+                    auto drawSiteStatusIcon=[&](const ProjectBrief& site) {
+                        constexpr float iconSize=24.0f;
+                        centerCellItem(iconSize);
+                        ImGui::SetCursorPosX(ImGui::GetCursorPosX()+std::max(0.0f,(ImGui::GetContentRegionAvail().x-iconSize)*0.5f));
+                        ImGui::Dummy({iconSize,iconSize});
+                        const ImVec2 min=ImGui::GetItemRectMin();
+                        const ImVec2 max=ImGui::GetItemRectMax();
+                        ImDrawList* draw=ImGui::GetWindowDrawList();
+                        ID3D11ShaderResourceView* nativeIcon=nullptr;
+                        if(site.needsReview)nativeIcon=siteStatusWarningIcon;
+                        else if(site.status==ProjectStatus::Queued||site.status==ProjectStatus::Waiting)nativeIcon=siteStatusWaitingIcon;
+                        else if(site.status==ProjectStatus::Completed)nativeIcon=siteStatusCompletedIcon;
+                        if(nativeIcon) {
+                            const ImTextureRef image(static_cast<ImTextureID>(reinterpret_cast<intptr_t>(nativeIcon)));
+                            draw->AddImage(image,min,max);
+                        } else {
+                            const ImVec2 center{(min.x+max.x)*0.5f,(min.y+max.y)*0.5f};
+                            const bool running=site.status==ProjectStatus::Running;
+                            const bool paused=site.status==ProjectStatus::Paused;
+                            const bool draft=site.status==ProjectStatus::Draft;
+                            const bool review=site.needsReview;
+                            const ImU32 fill=review?IM_COL32(207,141,34,255):running?IM_COL32(71,145,76,255):draft?IM_COL32(120,132,141,255):IM_COL32(126,105,78,255);
+                            draw->AddCircleFilled(center,10.0f,fill,24);
+                            draw->AddCircle(center,10.0f,IM_COL32(86,66,47,255),24,1.0f);
+                            if(review) {
+                                draw->AddLine({center.x,center.y-5.0f},{center.x,center.y+2.0f},IM_COL32(255,248,230,255),2.0f);
+                                draw->AddCircleFilled({center.x,center.y+6.0f},1.2f,IM_COL32(255,248,230,255),12);
+                            } else if(running) {
+                                draw->AddTriangleFilled({center.x-3.0f,center.y-5.0f},{center.x-3.0f,center.y+5.0f},{center.x+5.0f,center.y},IM_COL32(255,248,230,255));
+                            } else if(paused) {
+                                draw->AddRectFilled({center.x-4.0f,center.y-5.0f},{center.x-1.0f,center.y+5.0f},IM_COL32(255,248,230,255),0.5f);
+                                draw->AddRectFilled({center.x+1.0f,center.y-5.0f},{center.x+4.0f,center.y+5.0f},IM_COL32(255,248,230,255),0.5f);
+                            } else if(draft) {
+                                draw->AddCircle(center,5.0f,IM_COL32(255,248,230,255),16,1.5f);
+                                draw->AddLine({center.x+3.5f,center.y+3.5f},{center.x+7.0f,center.y+7.0f},IM_COL32(255,248,230,255),1.5f);
+                            } else {
+                                // A missing native asset should not make a queued, waiting, or
+                                // completed Site look paused. Use a clock for queued/waiting and
+                                // a check for completed as a visual fallback.
+                                if(site.status==ProjectStatus::Completed) {
+                                    draw->AddLine({center.x-5.0f,center.y},{center.x-1.5f,center.y+4.0f},IM_COL32(255,248,230,255),2.0f);
+                                    draw->AddLine({center.x-1.5f,center.y+4.0f},{center.x+6.0f,center.y-5.0f},IM_COL32(255,248,230,255),2.0f);
+                                } else {
+                                    draw->AddCircle(center,5.0f,IM_COL32(255,248,230,255),20,1.5f);
+                                    draw->AddLine(center,{center.x,center.y-3.5f},IM_COL32(255,248,230,255),1.5f);
+                                    draw->AddLine(center,{center.x+3.0f,center.y+1.5f},IM_COL32(255,248,230,255),1.5f);
+                                }
+                            }
+                        }
+                    };
+                    for(size_t i=0;i<s.projectCount;++i) {
+                        const auto& site=s.projects[i];ImGui::PushID(static_cast<int>(site.id));
+                        ImGui::TableNextRow(ImGuiTableRowFlags_None,44.0f);
+                        ImGui::TableNextColumn();
+                        char label[96];sprintf_s(label,"%s",site.name);
+                        centerCellItem(38.0f);
+                        if(ImGui::Selectable("##SelectSiteRow",s.projectId==site.id,ImGuiSelectableFlags_None,{0,38}))SendProject(Action::SelectProject,site.id);
+                        const auto siteLabelMin=ImGui::GetItemRectMin();
+                        const auto siteLabelMax=ImGui::GetItemRectMax();
+                        const float siteLabelY=siteLabelMin.y+(siteLabelMax.y-siteLabelMin.y-ImGui::GetTextLineHeight())*0.5f;
+                        ImGui::GetWindowDrawList()->AddText({siteLabelMin.x+4.0f,siteLabelY},ImGui::GetColorU32(ImGuiCol_Text),label);
+                        ImGui::TableNextColumn();drawSiteStatusIcon(site);
+                        ImGui::TableNextColumn();char progressLabel[24];sprintf_s(progressLabel,"%.1f%%",site.progress*100.0f);centerCellItem(28.0f);ImGui::ProgressBar(site.progress,{ImGui::GetContentRegionAvail().x,28},progressLabel);
+                        ImGui::TableNextColumn();
+                        centerCellItem(32.0f);
+                        const bool movable=ProjectCanMove(site.status);const float moveWidth=(ImGui::GetContentRegionAvail().x-ImGui::GetStyle().ItemSpacing.x)*0.5f;
+                        ImGui::BeginDisabled(!movable);
+                        if(siteMoveUpIcon&&siteMoveDownIcon) {
+                            if(drawPriorityButton("##MoveSiteUp",siteMoveUpIcon))SendProject(Action::MoveProjectUp,site.id);
+                            ImGui::SameLine(0.0f,priorityButtonGap);
+                            if(drawPriorityButton("##MoveSiteDown",siteMoveDownIcon))SendProject(Action::MoveProjectDown,site.id);
+                        } else {
+                            if(ImGui::Button("↑",{moveWidth,32}))SendProject(Action::MoveProjectUp,site.id);
+                            ImGui::SameLine(0.0f,priorityButtonGap);if(ImGui::Button("↓",{moveWidth,32}))SendProject(Action::MoveProjectDown,site.id);
+                        }
+                        ImGui::EndDisabled();
+                        ImGui::TableNextColumn();Action workAction=Action::StartProject;const char* workLabel="Done";bool workEnabled=false;
+                        if(site.status==ProjectStatus::Queued){workAction=Action::StartProject;workLabel="Start";workEnabled=s.assignedFacilityCount!=0;}
+                        else if(site.status==ProjectStatus::Running||site.status==ProjectStatus::Waiting){workAction=Action::PauseProject;workLabel="Pause";workEnabled=true;}
+                        else if(site.status==ProjectStatus::Paused){workAction=site.needsReview?Action::ReviewResumeProject:Action::ResumeProject;workLabel=site.needsReview?"Review":"Resume";workEnabled=s.assignedFacilityCount!=0;}
+                        else if(site.status==ProjectStatus::Completed){workAction=Action::RestartProject;workLabel="Restart";workEnabled=s.assignedFacilityCount!=0;}
+                        centerCellItem(32.0f);ImGui::BeginDisabled(!workEnabled);if(ImGui::Button(workLabel,{ImGui::GetContentRegionAvail().x,32}))SendProjectAction(workAction,site.id);ImGui::EndDisabled();
+                        ImGui::TableNextColumn();centerCellItem(30.0f);
+                        if(siteHideIcon&&siteShowIcon) {
+                            if(drawIconButton("##ToggleSiteVisibility",site.visible?siteShowIcon:siteHideIcon,nullptr,24.0f))
+                                SendProjectValue(Action::SetSiteVisibility,site.id,site.visible?0.0f:1.0f);
+                        } else {
+                            bool visible=site.visible;
+                            if(ImGui::Checkbox("##ToggleSiteVisibility",&visible))SendProjectValue(Action::SetSiteVisibility,site.id,visible?1.0f:0.0f);
+                        }
+                        ImGui::TableNextColumn();
+                        centerCellItem(30.0f);
+                        if(siteCancelIcon) {
+                            if(drawIconButton("##DeleteSite",siteCancelIcon,"Delete Site",24.0f)) {
+                                if(site.status==ProjectStatus::Completed)SendProject(Action::RemoveProject,site.id);
+                                else {deleteSiteTarget=site.id;openSiteDeletePopup=true;}
+                            }
+                        } else if(ImGui::Button("×",{32,32})) {
+                            if(site.status==ProjectStatus::Completed)SendProject(Action::RemoveProject,site.id);
+                            else {deleteSiteTarget=site.id;openSiteDeletePopup=true;}
+                        }
+                        ImGui::TableNextColumn();
+                        centerCellItem(30.0f);
+                        if(siteRenameIcon) {
+                            if(drawIconButton("##RenameSite",siteRenameIcon,"Rename Site",24.0f)) {strncpy_s(nameBuffer,site.name,_TRUNCATE);renameAction=Action::RenameSite;renameTarget=site.id;openSiteRenamePopup=true;}
+                        } else if(ImGui::Button("R",{32,32})) {strncpy_s(nameBuffer,site.name,_TRUNCATE);renameAction=Action::RenameSite;renameTarget=site.id;openSiteRenamePopup=true;}
+                        ImGui::PopID();
+                    }
+                    ImGui::EndTable();
+                }
+                ImGui::PopStyleVar();
+                ImGui::EndChild();
+                if(openSiteRenamePopup)ImGui::OpenPopup("Site name");
+                if(openSiteDeletePopup)ImGui::OpenPopup("Delete Site");
+                if(ImGui::BeginPopupModal("Delete Site",nullptr,ImGuiWindowFlags_AlwaysAutoResize)) {
+                    RememberRect(&popupRect);popupRectValid=true;
+                    ImGui::TextWrapped("Delete this Site? Terrain changes already made will be kept.");
+                    if(ImGui::Button("Delete Site")) {SendProject(Action::RemoveProject,deleteSiteTarget);deleteSiteTarget=0;ImGui::CloseCurrentPopup();}
+                    ImGui::SameLine();if(ImGui::Button("Keep Site")) {deleteSiteTarget=0;ImGui::CloseCurrentPopup();}
+                    ImGui::EndPopup();
+                }
+                ImGui::BeginDisabled(!s.selectedNamedProjectId);
+                const char* draftAction=(s.creatingSite||s.plan.first)?"Continue draft":"New Site";
+                const float actionRowWidth=ImGui::GetContentRegionAvail().x;
+                const float spacing=ImGui::GetStyle().ItemSpacing.x;
+                const float toggleWidth=std::min(190.0f,actionRowWidth*0.38f);
+                if(ImGui::Button(draftAction,{actionRowWidth-toggleWidth-spacing,36}))Send(Action::NewSite);
+                ImGui::SameLine();
+                bool anyVisibleSite=false;
+                for(size_t i=0;i<s.projectCount;++i)anyVisibleSite|=s.projects[i].visible;
+                const char* visibilityAction=anyVisibleSite?"Hide Project Sites":"Show Project Sites";
+                ImGui::BeginDisabled(!s.projectCount);
+                if(ImGui::Button(visibilityAction,{toggleWidth,36}))SendProjectValue(Action::SetProjectSitesVisibility,s.selectedNamedProjectId,anyVisibleSite?0.0f:1.0f);
+                ImGui::EndDisabled();
+                ImGui::EndDisabled();
+                ImGui::SeparatorText("Facilities");
+                if(ImGui::SmallButton(showAllFacilities?"Hide other Projects":"Show all facilities"))showAllFacilities=!showAllFacilities;
+                ImGui::SameLine();if(ImGui::SmallButton("Refresh"))Send(Action::RefreshFacilities);
+                ImGui::SameLine();ImGui::TextDisabled("%u found",s.facilityCandidateCount);
+                if(ImGui::BeginTable("facilityTable",4,ImGuiTableFlags_Borders|ImGuiTableFlags_RowBg|ImGuiTableFlags_SizingStretchProp|ImGuiTableFlags_ScrollY,{0,142.5f})) {
+                    const ImGuiTable* table=ImGui::GetCurrentTable();
+                    if(table)RememberTableRect(&facilityTableRect,&facilityTableRectValid,table->OuterRect.Min,{table->OuterRect.GetWidth(),table->OuterRect.GetHeight()});
+                    ImGui::TableSetupColumn("Facility",ImGuiTableColumnFlags_WidthStretch,2.2f);
+                    ImGui::TableSetupColumn("Project",ImGuiTableColumnFlags_WidthStretch,1.6f);
+                    ImGui::TableSetupColumn("Machines",ImGuiTableColumnFlags_WidthFixed,84.0f);
+                    ImGui::TableSetupColumn("",ImGuiTableColumnFlags_WidthFixed,72.0f);
+                    ImGui::TableHeadersRow();
+                    unsigned displayed=0;
+                    for(unsigned i=0;i<s.facilityCandidateCount;++i) {
+                        const auto& facility=s.facilityCandidates[i];
+                        const bool assignedElsewhere=facility.assignedProjectId&&facility.assignedProjectId!=s.selectedNamedProjectId;
+                        if(assignedElsewhere&&!showAllFacilities)continue;
+                        ++displayed;ImGui::PushID(static_cast<int>(facility.id));ImGui::TableNextRow();
+                        if(assignedElsewhere)ImGui::BeginDisabled(true);
+                        ImGui::TableNextColumn();
+                        if(facility.displayName[0])ImGui::TextUnformatted(facility.displayName);
+                        else ImGui::TextDisabled("Name unavailable");
+                        ImGui::TableNextColumn();
+                        if(assignedElsewhere)ImGui::TextUnformatted(facility.assignedProjectName);
+                        else if(facility.assignedProjectId)ImGui::TextUnformatted(s.projectContainerName);
+                        else ImGui::TextDisabled("Unassigned");
+                        ImGui::TableNextColumn();
+                        const auto assigned=std::find_if(s.assignedFacilities.begin(),s.assignedFacilities.begin()+s.assignedFacilityCount,[&](const ProjectFacilityBrief& row){return row.id==facility.id;});
+                        if(assigned!=s.assignedFacilities.begin()+s.assignedFacilityCount&&assigned->machineCountValid)
+                            ImGui::Text("%u",assigned->eligibleMachines);
+                        else ImGui::TextDisabled("—");
+                        ImGui::TableNextColumn();
+                        if(assignedElsewhere)ImGui::TextDisabled("Assigned");
+                        else if(facility.assignedProjectId==s.selectedNamedProjectId) {
+                            if(ImGui::SmallButton("Remove"))SendProject(Action::RemoveProjectFacility,facility.id);
+                        } else {
+                            ImGui::BeginDisabled(!s.selectedNamedProjectId);
+                            if(ImGui::SmallButton("Assign"))SendProject(Action::AddProjectFacility,facility.id);
+                            ImGui::EndDisabled();
+                        }
+                        if(assignedElsewhere)ImGui::EndDisabled();
+                        ImGui::PopID();
+                    }
+                    ImGui::EndTable();
+                    if(!displayed)ImGui::TextDisabled("No unassigned or current-Project facilities found.");
+                }
+                if(s.facilityListTruncated)ImGui::TextDisabled("Showing the first %u facilities.",WorldEarthworksFacilities);
+                else if(!s.facilityCandidateCount)ImGui::TextDisabled("No existing Earthworks facilities found in this republic.");
+            }
+            if(ImGui::BeginPopupModal("Site name",nullptr,ImGuiWindowFlags_AlwaysAutoResize)) {
+                RememberRect(&popupRect);popupRectValid=true;
+                ImGui::Text("Rename Site");ImGui::SetNextItemWidth(300);ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,{8.0f,6.0f});ImGui::InputText("Name",nameBuffer,sizeof(nameBuffer));ImGui::PopStyleVar();nameTextEditing|=ImGui::IsItemActive();
+                if(ImGui::Button("Save")) {SendProjectText(Action::RenameSite,renameTarget,nameBuffer);ImGui::CloseCurrentPopup();}
+                ImGui::SameLine();if(ImGui::Button("Cancel"))ImGui::CloseCurrentPopup();ImGui::EndPopup();
+            }
+            ImGui::EndTabItem();
+        }
+#ifdef EARTHWORKS_DEVELOPER_UI
+        if(ImGui::BeginTabItem("Developer")) {
+            if(ImGui::CollapsingHeader("Workforce inspector",ImGuiTreeNodeFlags_DefaultOpen)) {
+                const auto& w=s.workforce;
+                ImGui::TextWrapped("Facility identity is detected from the dedicated Workshop asset name. Ordinary construction offices remain unchanged.");
+                if(ImGui::Button("Find buildings")) Send(Action::InspectBuilding);
+                ImGui::SameLine();if(ImGui::Button("Clear inspector")) Send(Action::ClearInspector);
+                ImGui::TextWrapped("%s",w.status);
+                for(unsigned i=0;i<w.candidateCount;++i) {
+                    const auto& b=w.candidates[i];ImGui::PushID(static_cast<int>(i));
+                    char label[120];sprintf_s(label,"%s ID %u | %.1f m from click",b.earthworksFacility?"Earthworks facility":"Other building",b.id,b.distance);
+                    if(ImGui::Button(label))Send(Action::ChooseBuilding,static_cast<float>(i));
+                    ImGui::TextWrapped("X %.1f Z %.1f | %s | category %d / subtype %d",b.position.x,b.position.z,b.assetName,b.category,b.subtype);
+                    ImGui::PopID();
+                }
+                if(w.selected && !w.buildingValid)ImGui::TextColored({0.55f,0.25f,0.08f,1},"Building fields: UNAVAILABLE");
+                if(w.selected && w.buildingValid) {
+                    ImGui::Text("Building ID %u | slot %u | sample %u",w.building.id,w.building.slot,w.samples);
+                    ImGui::Text("Origin X %.1f Z %.1f | category %d / %d",w.building.position.x,w.building.position.z,w.building.category,w.building.subtype);
+                    if(w.occupantsValid)ImGui::Text("Occupant list: %u non-null / %u slots",w.occupants,w.occupantSlots);
+                    else ImGui::TextColored({0.55f,0.25f,0.08f,1},"Occupant list: UNAVAILABLE");
+                    if(w.parkedValid)ImGui::Text("Parked list: %u native slots",w.parkedSlots);
+                    else ImGui::TextColored({0.55f,0.25f,0.08f,1},"Parked list: UNAVAILABLE");
+                    ImGui::Text("Vehicle links: Home %u | Assignment %u | Parked %u",w.homeCount,w.assignedCount,w.parkedCount);
+                    ImGui::Text("Showing %u of %u readable linked vehicles",w.rowCount,w.matchedCount);
+                    for(unsigned i=0;i<w.rowCount;++i) {
+                        const auto& v=w.vehicles[i];
+                        ImGui::Text("ID %u | %s%s%s | %s | category %u",v.id,v.home?"H ":"",v.assigned?"A ":"",v.parked?"P":"",v.groundworksMachine&&v.earthworksAllowed?"machine candidate":"not a machine candidate",v.category);
+                        ImGui::TextWrapped("%s",v.type);
+                        if(v.groundworksMachine) {
+                            if(v.nativeJobStateValid)ImGui::Text("Native job state: %d (raw)",v.nativeJobState);
+                            else ImGui::TextColored({0.55f,0.25f,0.08f,1},"Native job state: UNAVAILABLE");
+                            if(v.routeValid)ImGui::Text("Route stops: %u | first stop is this facility: %s",v.routeStopCount,v.firstRouteStopIsFacility?"yes":"no");
+                            else ImGui::TextColored({0.55f,0.25f,0.08f,1},"Native route list: UNAVAILABLE");
+                        }
+                    }
+                    ImGui::TextWrapped("Raw job state and route stops are diagnostics, not proof of availability or reservation.");
+                }
+                if(ImGui::Button("Log inspector snapshot"))Send(Action::LogInspector);
+            }
+            ImGui::EndTabItem();
+        }
+#endif
+        ImGui::EndTabBar();
+    }
+    if (ImGui::Button("Close planning",{ImGui::GetContentRegionAvail().x,32})) {
+        panelOpen=false;mapPickCapture=false;areaPickCapture=false;leftRelease=true;panelRectValid=false;editorRectValid=false;Send(Action::CloseSiteEditor);
+    }
+    RememberRect(&panelRect); panelRectValid=true; ImGui::End();DrawSettingsPanel(display);DrawSiteEditor(s,display);
+    DrawFacilityAssignmentWarning(s,display);
+}
+void DrawSiteEditor(const Snapshot& s,ImVec2 display)
+{
+    static char renameBuffer[MaxSavedNameBytes+1]{};
+    static char draftNameBuffer[MaxSavedNameBytes+1]{};
+    static bool draftNameWasActive=false;
+    static bool renameEditing=false,editorMinimized=false;
+    static uint64_t renameEditingSite=0;
+    if(!panelOpen||!s.siteEditorOpen||(!s.editorPlan.pointCount&&!s.creatingSite)) {
+        editorRectValid=false;
+        if(!s.siteEditorOpen)editorWasDragged=false;
+        if(!s.creatingSite)draftNameWasActive=false;
+        return;
+    }
+    if(s.creatingSite&&!draftNameWasActive)strncpy_s(draftNameBuffer,s.siteDraftName,_TRUNCATE);
+    draftNameWasActive=s.creatingSite;
+    if(!s.creatingSite&&renameEditingSite!=s.editingSiteId) {renameEditingSite=s.editingSiteId;renameEditing=false;}
+    const Plan& plan=s.editorPlan;
+    const bool showActionError=s.siteActionError[0]
+        &&(!s.creatingSite||!s.siteDraftError[0]||strcmp(s.siteActionError,s.siteDraftError)!=0);
+    const bool finishedSite=s.projectStatus==ProjectStatus::Completed;
+    const bool activeSite=s.projectStatus==ProjectStatus::Running||s.projectStatus==ProjectStatus::Waiting;
+    const bool showFacilityBlock=!s.creatingSite&&!finishedSite&&!activeSite
+        &&s.assignedFacilityCount==0&&!showActionError;
+    const float width=420.0f,fullHeight=(s.creatingSite?686.0f:716.0f)
+        +(s.siteDraftError[0]?64.0f:0.0f)+(showActionError?96.0f:0.0f)+(showFacilityBlock?48.0f:0.0f);
+    double groundTotal=0;for(float value:plan.ground)groundTotal+=value;
+    const float groundMean=plan.ground.empty()?plan.target:static_cast<float>(groundTotal/static_cast<double>(plan.ground.size()));
+    Point anchor{(plan.a.x+plan.b.x)*0.5f,groundMean,(plan.a.z+plan.b.z)*0.5f};
+    ImVec2 screen{};
+    if(!Project(s,anchor,&screen))screen={display.x*0.5f,display.y*0.5f};
+    static uint64_t trackedSite=0;
+    static ImVec2 editorPosition{};
+    static bool editorPositionInitialized=false;
+    const uint64_t siteKey=s.creatingSite?~uint64_t{0}:s.editingSiteId;
+    if(siteKey!=trackedSite) {
+        trackedSite=siteKey;
+        editorMinimized=false;
+        if(!editorPositionInitialized) {
+            const float x=std::clamp(72.0f,12.0f,std::max(12.0f,display.x-width-12.0f));
+            const float y=std::clamp(155.0f,70.0f,std::max(70.0f,display.y-fullHeight-12.0f));
+            editorPosition={x,y};
+            editorPositionInitialized=true;
+        }
+        editorPosition.x=std::clamp(editorPosition.x,12.0f,std::max(12.0f,display.x-width-12.0f));
+        editorPosition.y=std::clamp(editorPosition.y,70.0f,std::max(70.0f,display.y-fullHeight-12.0f));
+    }
+    const float height=editorMinimized?52.0f:fullHeight;
+    ImGui::SetNextWindowPos(editorPosition,ImGuiCond_Always);
+    ImGui::SetNextWindowSize({width,height},ImGuiCond_Always);
+    ImGui::PushStyleColor(ImGuiCol_WindowBg,{0,0,0,0});
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize,0.0f);
+    ImGui::Begin("##EarthworksSiteEditor",nullptr,ImGuiWindowFlags_NoTitleBar|ImGuiWindowFlags_NoResize|ImGuiWindowFlags_NoMove|ImGuiWindowFlags_NoSavedSettings);
+    ImGui::PopStyleVar();ImGui::PopStyleColor();
+    const auto pos=ImGui::GetWindowPos(),size=ImGui::GetWindowSize();
+    DrawSiteEditorPaper(pos,size,editorMinimized);
+    ImGui::SetCursorScreenPos({pos.x+2.0f,pos.y+2.0f});
+    ImGui::InvisibleButton("##DragSiteEditorHeader",{size.x-80.0f,44.0f});
+    if(ImGui::IsItemActive()&&ImGui::GetIO().MouseDown[0]) {
+        const ImVec2 delta=ImGui::GetIO().MouseDelta;
+        if(delta.x!=0.0f||delta.y!=0.0f)editorWasDragged=true;
+        editorPosition.x+=delta.x;editorPosition.y+=delta.y;
+        ImGui::SetWindowPos(editorPosition);
+    }
+    const auto movedPos=ImGui::GetWindowPos();
+    ImGui::GetWindowDrawList()->AddText({movedPos.x+10.0f,movedPos.y+27.0f-ImGui::GetTextLineHeight()*0.5f},IM_COL32(255,255,255,255),
+        s.creatingSite?"New Site":"Site editor");
+    ImGui::PushStyleColor(ImGuiCol_Text,{0.20f,0.145f,0.105f,1.0f});
+    ImGui::PushStyleColor(ImGuiCol_Button,{0.77f,0.64f,0.47f,1});
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered,{0.86f,0.73f,0.55f,1});
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive,{0.70f,0.56f,0.39f,1});
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,{0,0});
+    ImGui::PushStyleColor(ImGuiCol_Text,{1,1,1,1});
+    ImGui::PushStyleColor(ImGuiCol_Button,{0.66f,0.29f,0.25f,1});
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered,{0.76f,0.36f,0.32f,1});
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive,{0.57f,0.22f,0.19f,1});
+    ImGui::SetCursorScreenPos({movedPos.x+size.x-72.0f,movedPos.y+11.0f});
+    if(ImGui::Button("-",{26,26}))editorMinimized=!editorMinimized;
+    ImGui::SetCursorScreenPos({movedPos.x+size.x-38.0f,movedPos.y+11.0f});
+    if(ImGui::Button("X",{26,26}))Send(Action::CloseSiteEditor);
+    ImGui::PopStyleColor(4);
+    if(editorMinimized) {
+        ImGui::PopStyleVar();ImGui::PopStyleColor(4);
+        editorPosition=ImGui::GetWindowPos();
+        RememberRect(&editorRect);editorRectValid=true;ImGui::End();
+        return;
+    }
+    ImGui::SetCursorScreenPos({movedPos.x+12.0f,movedPos.y+56.0f});
+    auto drawSafetyChecks=[&]() {
+        int safeAngles=static_cast<int>(plan.safeAngles);
+        const char* modes[]={"None","Roads","Vanilla"};
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,{10.0f,5.0f});
+        const float controlHeight=ImGui::GetFrameHeight();
+        ImGui::AlignTextToFramePadding();ImGui::TextUnformatted("Safe angles");ImGui::SameLine();
+        const float labelWidth=ImGui::CalcTextSize("Safe angles").x+ImGui::GetStyle().ItemSpacing.x;
+        ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x-labelWidth-34.0f);
+        if(ImGui::Combo("##SafeAngles",&safeAngles,modes,3))Send(Action::SetSiteSafeAngles,static_cast<float>(safeAngles));
+        ImGui::PopStyleVar();
+        ImGui::SameLine();
+        GameIconButton("##SafeAnglesHelp",targetHeightInfoIcon,"i","None — no slope limit.\nRoads — Allows angles for roads, up to 16% / 9.09°.\nVanilla — Allows angles reachable with vanilla tools, up to 75.36% / 37°.",{controlHeight,controlHeight});
+    };
+    if(s.creatingSite) {
+        ImGui::TextUnformatted("New Site draft");
+        ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x*(2.0f/3.0f));
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,{8.0f,6.0f});
+        if(ImGui::InputText("Site name",draftNameBuffer,sizeof(draftNameBuffer)))
+            SendProjectText(Action::SetDraftSiteName,0,draftNameBuffer);
+        ImGui::PopStyleVar();
+        nameTextEditing|=ImGui::IsItemActive();
+        ImGui::TextUnformatted("Shape");
+        const char* shapeNames[]={"Free draw","Square","Rectangle"};
+        const char* selectedShapeNames[]={"[x] Free draw","[x] Square","[x] Rectangle"};
+        const bool canChangeShape=!plan.complete&&plan.pointCount<=1;
+        const float shapeWidth=(ImGui::GetContentRegionAvail().x-2.0f*ImGui::GetStyle().ItemSpacing.x)/3.0f;
+        for(unsigned i=0;i<3;++i) {
+            if(i)ImGui::SameLine();
+            const bool active=s.shapeMode==static_cast<SiteShapeMode>(i);
+            if(active)ImGui::PushStyleColor(ImGuiCol_Button,{0.84f,0.70f,0.52f,1.0f});
+            ImGui::BeginDisabled(!canChangeShape);
+            if(ImGui::Button(active?selectedShapeNames[i]:shapeNames[i],{shapeWidth,28.0f}))Send(Action::SetShapeMode,static_cast<float>(i));
+            ImGui::EndDisabled();
+            if(active)ImGui::PopStyleColor();
+        }
+        const bool gridSnapAvailable=s.terrainGridValid;
+        const bool canSetGridSnap=gridSnapAvailable&&!plan.complete&&plan.pointCount==0;
+        bool lockToGrid=s.lockToGrid;
+        ImGui::BeginDisabled(!canSetGridSnap);
+        if(ImGui::Checkbox("Lock to Grid",&lockToGrid))Send(Action::SetGridSnap,lockToGrid?1.0f:0.0f);
+        ImGui::EndDisabled();
+        drawSafetyChecks();
+        if(!plan.pointCount) {
+            ImGui::Separator();
+            if(s.shapeMode==SiteShapeMode::FreeDraw)ImGui::TextWrapped("Click boundary points in sequence. Click within 5 m of the first point, or choose Finish shape, to close the polygon.");
+            else if(s.shapeMode==SiteShapeMode::Square)ImGui::TextWrapped("Click one corner, move the cursor to preview a map-aligned square, then click to set it.");
+            else ImGui::TextWrapped("Click one corner, move the cursor to preview a map-aligned rectangle, then click the opposite corner.");
+            if(ImGui::Button("Discard draft",{ImGui::GetContentRegionAvail().x,30.0f}))Send(Action::CancelSiteDraft);
+            ImGui::PopStyleVar();ImGui::PopStyleColor(4);
+            editorPosition=ImGui::GetWindowPos();RememberRect(&editorRect);editorRectValid=true;ImGui::End();return;
+        }
+    } else if(renameEditing) {
+        ImGui::SetNextItemWidth(155.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,{8.0f,6.0f});
+        const bool enterPressed=ImGui::InputText("##EditingSiteName",renameBuffer,sizeof(renameBuffer),ImGuiInputTextFlags_EnterReturnsTrue);
+        ImGui::PopStyleVar();
+        nameTextEditing|=ImGui::IsItemActive();
+        ImGui::SameLine();
+        const bool saveRename=ImGui::Button("Save",{48,26})||enterPressed;
+        ImGui::SameLine();
+        const bool cancelRename=ImGui::Button("Cancel##CancelSiteRename",{54,26});
+        ImGui::SameLine();ImGui::Text("|  %s",ProjectStatusName(s.projectStatus));
+        if(saveRename) {
+            SendProjectText(Action::RenameSite,s.editingSiteId,renameBuffer);
+            renameEditing=false;
+        }
+        if(cancelRename)renameEditing=false;
+    } else {
+        ImGui::SetWindowFontScale(1.35f);
+        ImGui::TextUnformatted(s.selectedSiteName);
+        ImGui::SameLine();
+        bool renamePressed=false;
+        if(siteRenameIcon) {
+            const ImTextureRef icon(static_cast<ImTextureID>(reinterpret_cast<intptr_t>(siteRenameIcon)));
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,{0,0});
+            ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize,0.0f);
+            ImGui::PushStyleColor(ImGuiCol_Button,{0,0,0,0});
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered,{0,0,0,0});
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive,{0,0,0,0});
+            const auto renameIconPos=ImGui::GetCursorScreenPos();
+            const bool hovered=ImGui::IsMouseHoveringRect(renameIconPos,{renameIconPos.x+24.0f,renameIconPos.y+24.0f},true);
+            renamePressed=ImGui::ImageButton("##RenameSelectedSite",icon,{24,24},{0,0},{1,1},hovered?ImVec4{1,1,1,1}:ImVec4{0.82f,0.82f,0.82f,1});
+            ImGui::PopStyleColor(3);ImGui::PopStyleVar(2);
+            if(hovered) NativeTooltip("Rename Site");
+        } else renamePressed=ImGui::Button("R",{24,24});
+        ImGui::SameLine();ImGui::Text("|  %s",ProjectStatusName(s.projectStatus));
+        if(renamePressed) {
+            strncpy_s(renameBuffer,s.selectedSiteName,_TRUNCATE);
+            renameEditing=true;
+        }
+        ImGui::SetWindowFontScale(1.0f);
+    }
+    if(!s.creatingSite)drawSafetyChecks();
+    ImGui::Separator();
+    Plan liveFootprintPlan{};
+    const Plan* footprintPlan=&plan;
+    if(s.creatingSite&&s.mode==PickMode::DrawSite&&s.cursorValid&&plan.pointCount==1
+        &&s.shapeMode!=SiteShapeMode::FreeDraw) {
+        Point corners[4]{};
+        BuildTwoCornerShape(plan.points[0],SiteDrawingCursor(s),s.shapeMode,corners);
+        liveFootprintPlan=plan;
+        liveFootprintPlan.pointCount=4;
+        for(unsigned i=0;i<4;++i)liveFootprintPlan.points[i]=corners[i];
+        footprintPlan=&liveFootprintPlan;
+    }
+    ImGui::Text("Footprint: %.1f x %.1f m  |  %.0f m2",footprintPlan->Width(),footprintPlan->Depth(),footprintPlan->FootprintArea());
+    ImGui::Text("Sampled ground mean: %.2f m",groundMean);
+    const auto volume=(!s.creatingSite&&s.editorVolumesValid)?s.editorVolumes:Estimate(plan,s.terrainCellSize);
+    ImGui::TextColored({0.55f,0.25f,0.10f,1},"Cut estimate: %.1f m3",volume.cut);
+    ImGui::TextColored({0.12f,0.43f,0.29f,1},"Fill estimate: %.1f m3",volume.fill);
+    const bool assignedCapacityKnown=s.assignedMachineReadingsValid;
+    const bool useCurrentAllocation=!s.creatingSite&&s.projectStatus==ProjectStatus::Running&&s.editorAllocatedMachines>0;
+    const double siteRateUnits=useCurrentAllocation?s.editorAllocatedRateUnits:s.assignedMachineRateUnits;
+    const double ratePerUnitPerDay=VolumePerRateUnitPerSimulationHour*SimulationHoursPerInGameDay*ConstructionSpeedMultiplier();
+    const double siteRateM3PerDay=siteRateUnits*ratePerUnitPerDay;
+    if(!assignedCapacityKnown)ImGui::Text("Assigned capacity: reading unavailable");
+    else if(!s.assignedEligibleMachines)ImGui::Text("Assigned capacity: 0 m3/day (no eligible machines)");
+    else if(useCurrentAllocation) {
+        ImGui::Text("Project capacity: ~%.0f m3/day (%u machines)",
+            s.assignedMachineRateUnits*ratePerUnitPerDay,s.assignedEligibleMachines);
+        ImGui::Text("This Site allocation: ~%.0f m3/day (%u machines)",
+            siteRateM3PerDay,s.editorAllocatedMachines);
+    } else ImGui::Text("Assigned capacity: ~%.0f m3/day (%u machines)",
+        s.assignedMachineRateUnits*ratePerUnitPerDay,s.assignedEligibleMachines);
+    if(!s.creatingSite&&s.projectStatus==ProjectStatus::Completed) {
+        ImGui::Text("Estimated time: complete");
+    } else if(!assignedCapacityKnown||siteRateM3PerDay<=0.0) {
+        ImGui::Text("Estimated time: unavailable");
+    } else {
+        const double remainingM3=std::max(0.0,static_cast<double>(volume.cut)+volume.fill);
+        const double days=remainingM3/siteRateM3PerDay;
+        if(useCurrentAllocation)ImGui::Text("Estimated time: ~%.1f in-game days (~%.0f m3/day current rate)",days,siteRateM3PerDay);
+        else ImGui::Text("Estimated time: ~%.1f in-game days at full assigned capacity",days);
+    }
+    if(ImGui::IsItemHovered())NativeTooltip("Each point of a machine's displayed Speed/Level contributes 250 m3 per in-game day at 1x. The global speed multiplier scales this rate. Running Sites use their current allocation; other states assume all assigned capacity is available.");
+    ImGui::Separator();
+    const bool editable=(s.creatingSite)||(!s.creatingSite&&(s.projectStatus==ProjectStatus::Queued||s.projectStatus==ProjectStatus::Running||s.projectStatus==ProjectStatus::Waiting||s.projectStatus==ProjectStatus::Paused));
+    const unsigned selectedPoint=std::min<unsigned>(s.selectedSitePoint,plan.pointCount-1);
+    static float editHeight=0;
+    static uint64_t seenEditorRevision=~uint64_t{0},seenEditorSite=~uint64_t{0};
+    if(seenEditorRevision!=s.revision||seenEditorSite!=s.editingSiteId) {
+        editHeight=plan.points[selectedPoint].y;seenEditorRevision=s.revision;seenEditorSite=s.editingSiteId;
+    }
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,{4.0f,4.0f});
+    ImGui::Text("Points: %u / %zu (minimum spacing 5 m)",static_cast<unsigned>(plan.pointCount),MaxSitePoints);
+    ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+    const auto& input=ImGui::GetIO();
+    const uint32_t selectedMask=s.selectedSitePointsMask;
+    unsigned selectedCount=0;for(unsigned i=0;i<plan.pointCount;++i)if(selectedMask&(1u<<i))++selectedCount;
+    char pointLabel[48]{};
+    if(!selectedCount)strcpy_s(pointLabel,"No points selected");
+    else if(selectedCount>1)sprintf_s(pointLabel,"%u points selected",selectedCount);
+    else sprintf_s(pointLabel,"Point %u",selectedPoint+1);
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,{10.0f,5.0f});
+    if(ImGui::BeginCombo("##SelectedSitePoint",pointLabel)) {
+        for(unsigned i=0;i<plan.pointCount;++i) {
+            char label[64]{};sprintf_s(label,"%s Point %u  (%.1f, %.1f)",(selectedMask&(1u<<i))?"[x]":"[ ]",i+1,plan.points[i].x,plan.points[i].z);
+            const bool selected=(selectedMask&(1u<<i))!=0;
+            if(ImGui::Selectable(label,selected))SendSitePointCommand(Action::SelectSitePoint,s.editingSiteId,i,{},input.KeyShift);
+            if(selected)ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+    ImGui::PopStyleVar();
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,{4.0f,4.0f});
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,{10.0f,5.0f});
+    const float heightControlHeight=ImGui::GetFrameHeight();
+    ImGui::AlignTextToFramePadding();ImGui::TextUnformatted("Height (m)");ImGui::SameLine();
+    const float heightStep=input.KeyCtrl?10.0f:1.0f;
+    auto applyHeight=[&](float height){SendSitePointValue(s.editingSiteId,selectedPoint,height);};
+    auto adjustHeight=[&](float delta){SendSitePointValue(s.editingSiteId,selectedPoint,delta,true,input.KeyShift);};
+    ImGui::BeginDisabled(!editable||!selectedCount);
+    if(ImGui::Button("-##DecreasePointHeight",{24.0f,heightControlHeight})){editHeight-=heightStep;adjustHeight(-heightStep);}
+    ImGui::SameLine();ImGui::SetNextItemWidth(92.0f);
+    const bool changed=ImGui::InputFloat("##SitePointHeight",&editHeight,0,0,"%.2f",ImGuiInputTextFlags_EnterReturnsTrue);
+    targetHeightEditing=ImGui::IsItemActive();nameTextEditing|=targetHeightEditing;
+    if(changed)applyHeight(editHeight);
+    if(ImGui::IsItemDeactivatedAfterEdit())applyHeight(editHeight);
+    ImGui::SameLine();if(ImGui::Button("+##IncreasePointHeight",{24.0f,heightControlHeight})){editHeight+=heightStep;adjustHeight(heightStep);}
+    ImGui::SameLine();
+    GameIconButton("##TargetHeightHelp",targetHeightInfoIcon,"i","Click −/+ to adjust by 1 m. Hold Ctrl for 10 m.\nHold Shift while clicking −/+ to adjust every point in the shape.\nShift-click points to toggle them in the selection.\nHeight entry and map sampling affect selected points; −/+ preserve their height differences.",{heightControlHeight,heightControlHeight});
+    ImGui::SameLine();
+    if(ImGui::Button("Sample selected",{104.0f,heightControlHeight}))Send(Action::SampleSiteTarget);
+    ImGui::EndDisabled();
+    ImGui::PopStyleVar();
+    const bool finishedShape=plan.complete;
+    if(s.creatingSite) {
+        if(s.shapeMode==SiteShapeMode::FreeDraw) {
+            ImGui::BeginDisabled(plan.pointCount<3||finishedShape);
+            if(ImGui::Button("Finish shape",{ImGui::GetContentRegionAvail().x,30.0f}))Send(Action::FinishSite);
+            ImGui::EndDisabled();
+        }
+    }
+    const bool geometryEditable=editable&&finishedShape;
+    ImGui::BeginDisabled(!geometryEditable);
+    const float half=(ImGui::GetContentRegionAvail().x-ImGui::GetStyle().ItemSpacing.x)*0.5f;
+    if(ImGui::Button("Add point on next edge",{half,28.0f}))SendSitePointCommand(Action::AddSitePoint,s.editingSiteId,selectedPoint);
+    ImGui::SameLine();
+    if(ImGui::Button("Remove selected point",{ImGui::GetContentRegionAvail().x,28.0f}))SendSitePointCommand(Action::RemoveSitePoint,s.editingSiteId,selectedPoint);
+    ImGui::EndDisabled();
+    ImGui::PopStyleVar();
+    if(s.creatingSite) {
+        const bool draftInvalid=s.siteDraftError[0]!=0;
+        if(draftInvalid) {
+            ImGui::PushStyleColor(ImGuiCol_Text,{0.67f,0.15f,0.12f,1.0f});
+            ImGui::TextWrapped("%s",s.siteDraftError);
+            ImGui::PopStyleColor();
+        }
+        if(showActionError) {
+            ImGui::PushStyleColor(ImGuiCol_Text,{0.67f,0.15f,0.12f,1.0f});
+            ImGui::TextWrapped("%s",s.siteActionError);
+            ImGui::PopStyleColor();
+        }
+        ImGui::BeginDisabled(draftInvalid);
+        if(ImGui::Button("Save Site",{ImGui::GetContentRegionAvail().x,32}))SendProjectText(Action::ConfirmProject,0,draftNameBuffer);
+        ImGui::EndDisabled();
+        if(ImGui::Button("Discard draft",{ImGui::GetContentRegionAvail().x,30}))Send(Action::CancelSiteDraft);
+    } else {
+        const bool finished=s.projectStatus==ProjectStatus::Completed;
+        if(finished)ImGui::TextDisabled("Finished Sites cannot be edited.");
+        else if(s.projectStatus==ProjectStatus::Running||s.projectStatus==ProjectStatus::Waiting)ImGui::TextDisabled("Editing the target will pause this Site; review terrain before resuming.");
+        else if(s.projectStatus==ProjectStatus::Paused&&s.projectNeedsReview)ImGui::TextWrapped("This Site needs terrain review before work can resume.");
+        if(s.siteActionError[0]) {
+            ImGui::PushStyleColor(ImGuiCol_Text,{0.67f,0.15f,0.12f,1.0f});
+            ImGui::TextWrapped("%s",s.siteActionError);
+            ImGui::PopStyleColor();
+        }
+        if(!finished) {
+            Action workAction=Action::StartProject;
+            const char* workLabel="Start";
+            bool workEnabled=s.assignedFacilityCount!=0;
+            if(s.projectStatus==ProjectStatus::Running||s.projectStatus==ProjectStatus::Waiting) {
+                workAction=Action::PauseProject;workLabel="Pause";workEnabled=true;
+            } else if(s.projectStatus==ProjectStatus::Paused) {
+                workAction=s.projectNeedsReview?Action::ReviewResumeProject:Action::ResumeProject;
+                workLabel=s.projectNeedsReview?"Review and resume":"Resume";workEnabled=s.assignedFacilityCount!=0;
+            }
+            if(!workEnabled) {
+                ImGui::PushStyleColor(ImGuiCol_Text,{0.67f,0.15f,0.12f,1.0f});
+                ImGui::TextWrapped("%s",s.assignedFacilityCount
+                    ?"Assigned facility readings are unavailable. Try again when the building can be read."
+                    :"Assign an Earthworks facility to this Project before starting or resuming this Site.");
+                ImGui::PopStyleColor();
+            }
+            ImGui::BeginDisabled(!workEnabled);
+            if(ImGui::Button(workLabel,{ImGui::GetContentRegionAvail().x,32.0f}))SendProjectAction(workAction,s.editingSiteId);
+            ImGui::EndDisabled();
+        }
+        if(ImGui::Button("Close editor",{ImGui::GetContentRegionAvail().x,32}))Send(Action::CloseSiteEditor);
+    }
+    ImGui::PopStyleVar(2);ImGui::PopStyleColor(4);
+    editorPosition=ImGui::GetWindowPos();
+    RememberRect(&editorRect);editorRectValid=true;ImGui::End();
+}
+void DrawSiteEditorPaper(ImVec2 pos,ImVec2 size,bool headerOnly)
+{
+    auto* draw=ImGui::GetWindowDrawList();
+    if(!panelPaper||!panelPaperWidth||!panelPaperHeight) {
+        if(!headerOnly)draw->AddRectFilled(pos,{pos.x+size.x,pos.y+size.y},IM_COL32(232,220,197,255),12.0f);
+        draw->AddRectFilled(pos,{pos.x+size.x,pos.y+size.y},IM_COL32(150,60,55,255),12.0f,
+            headerOnly?ImDrawFlags_RoundCornersAll:ImDrawFlags_RoundCornersTop);
+        return;
+    }
+    const ImTextureRef texture(static_cast<ImTextureID>(reinterpret_cast<intptr_t>(panelPaper)));
+    const ImVec2 headerUv0{52.0f/panelPaperWidth,20.0f/panelPaperHeight};
+    const ImVec2 headerUv1{605.0f/panelPaperWidth,63.0f/panelPaperHeight};
+    if(headerOnly)draw->AddImageRounded(texture,pos,{pos.x+size.x,pos.y+size.y},headerUv0,headerUv1,IM_COL32_WHITE,12.0f,ImDrawFlags_RoundCornersAll);
+    else {
+        const ImVec2 bodyUv0{52.0f/panelPaperWidth,63.0f/panelPaperHeight};
+        const ImVec2 bodyUv1{605.0f/panelPaperWidth,698.0f/panelPaperHeight};
+        draw->AddImageRounded(texture,pos,{pos.x+size.x,pos.y+size.y},bodyUv0,bodyUv1,IM_COL32_WHITE,12.0f,ImDrawFlags_RoundCornersBottom);
+        draw->AddImageRounded(texture,pos,{pos.x+size.x,pos.y+52.0f},headerUv0,headerUv1,IM_COL32_WHITE,12.0f,ImDrawFlags_RoundCornersTop);
+    }
+}
+void CleanupTarget() { if (target) { target->Release(); target=nullptr; } }
+void LoadPanelPaper()
+{
+    if(panelPaper || !device) return;
+    wchar_t executable[MAX_PATH]{};
+    const auto length=GetModuleFileNameW(nullptr,executable,MAX_PATH);
+    if(!length || length>=MAX_PATH) return;
+    std::wstring path(executable,length);
+    const auto slash=path.find_last_of(L"\\/");
+    if(slash==std::wstring::npos) return;
+    path.resize(slash+1);
+    path+=L"media_soviet\\menu\\strip.png";
+    const auto init=CoInitializeEx(nullptr,COINIT_MULTITHREADED);
+    if(FAILED(init) && init!=RPC_E_CHANGED_MODE) return;
+    const bool uninitialize=SUCCEEDED(init);
+    Microsoft::WRL::ComPtr<IWICImagingFactory> factory;
+    Microsoft::WRL::ComPtr<IWICBitmapDecoder> decoder;
+    Microsoft::WRL::ComPtr<IWICBitmapFrameDecode> frame;
+    Microsoft::WRL::ComPtr<IWICFormatConverter> converter;
+    HRESULT hr=CoCreateInstance(CLSID_WICImagingFactory,nullptr,CLSCTX_INPROC_SERVER,IID_PPV_ARGS(&factory));
+    if(SUCCEEDED(hr)) hr=factory->CreateDecoderFromFilename(path.c_str(),nullptr,GENERIC_READ,WICDecodeMetadataCacheOnDemand,&decoder);
+    if(SUCCEEDED(hr)) hr=decoder->GetFrame(0,&frame);
+    if(SUCCEEDED(hr)) hr=factory->CreateFormatConverter(&converter);
+    if(SUCCEEDED(hr)) hr=converter->Initialize(frame.Get(),GUID_WICPixelFormat32bppRGBA,WICBitmapDitherTypeNone,nullptr,0,WICBitmapPaletteTypeCustom);
+    UINT width=0,height=0;
+    if(SUCCEEDED(hr)) hr=converter->GetSize(&width,&height);
+    std::vector<BYTE> pixels;
+    if(SUCCEEDED(hr) && width && height && static_cast<uint64_t>(width)*height<=16'000'000) {
+        pixels.resize(static_cast<size_t>(width)*height*4);
+        hr=converter->CopyPixels(nullptr,width*4,static_cast<UINT>(pixels.size()),pixels.data());
+    } else if(SUCCEEDED(hr)) hr=E_INVALIDARG;
+    if(SUCCEEDED(hr)) {
+        D3D11_TEXTURE2D_DESC desc{};
+        desc.Width=width; desc.Height=height; desc.MipLevels=1; desc.ArraySize=1;
+        desc.Format=DXGI_FORMAT_R8G8B8A8_UNORM; desc.SampleDesc.Count=1;
+        desc.Usage=D3D11_USAGE_IMMUTABLE; desc.BindFlags=D3D11_BIND_SHADER_RESOURCE;
+        D3D11_SUBRESOURCE_DATA data{}; data.pSysMem=pixels.data(); data.SysMemPitch=width*4;
+        Microsoft::WRL::ComPtr<ID3D11Texture2D> texture;
+        hr=device->CreateTexture2D(&desc,&data,&texture);
+        if(SUCCEEDED(hr)) hr=device->CreateShaderResourceView(texture.Get(),nullptr,&panelPaper);
+        if(SUCCEEDED(hr)) { panelPaperWidth=width; panelPaperHeight=height; }
+    }
+    if(uninitialize) CoUninitialize();
+    if(FAILED(hr)) host->log("earthworks  native parchment texture unavailable; using color fallback");
+}
+void DrawPanelPaper(bool headerOnly)
+{
+    const auto pos=ImGui::GetWindowPos(),size=ImGui::GetWindowSize();
+    auto* draw=ImGui::GetWindowDrawList();
+    if(!panelPaper || !panelPaperWidth || !panelPaperHeight) {
+        draw->AddRectFilled(pos,{pos.x+size.x,pos.y+size.y},IM_COL32(232,220,197,255),12.0f);
+        draw->AddRectFilled(pos,{pos.x+size.x,pos.y+52.0f},IM_COL32(150,60,55,255),12.0f,ImDrawFlags_RoundCornersTop);
+        return;
+    }
+    const ImTextureRef texture(static_cast<ImTextureID>(reinterpret_cast<intptr_t>(panelPaper)));
+    const ImVec2 uv0{52.0f/panelPaperWidth,20.0f/panelPaperHeight};
+    const ImVec2 uv1{605.0f/panelPaperWidth,(headerOnly?63.0f:698.0f)/panelPaperHeight};
+    draw->AddImageRounded(texture,pos,{pos.x+size.x,pos.y+size.y},uv0,uv1,IM_COL32_WHITE,12.0f,ImDrawFlags_RoundCornersAll);
+}
+void LoadGameUiIcon(const wchar_t* filename,ID3D11ShaderResourceView** output)
+{
+    if(!device||!output||*output)return;
+    wchar_t executable[MAX_PATH]{};
+    const auto length=GetModuleFileNameW(nullptr,executable,MAX_PATH);
+    if(!length||length>=MAX_PATH)return;
+    std::wstring path(executable,length);
+    const auto slash=path.find_last_of(L"\\/");
+    if(slash==std::wstring::npos)return;
+    path.resize(slash+1);path+=L"media_soviet\\editor\\";path+=filename;
+    const auto init=CoInitializeEx(nullptr,COINIT_MULTITHREADED);
+    if(FAILED(init)&&init!=RPC_E_CHANGED_MODE)return;
+    const bool uninitialize=SUCCEEDED(init);
+    Microsoft::WRL::ComPtr<IWICImagingFactory> factory;
+    Microsoft::WRL::ComPtr<IWICBitmapDecoder> decoder;
+    Microsoft::WRL::ComPtr<IWICBitmapFrameDecode> frame;
+    Microsoft::WRL::ComPtr<IWICFormatConverter> converter;
+    HRESULT hr=CoCreateInstance(CLSID_WICImagingFactory,nullptr,CLSCTX_INPROC_SERVER,IID_PPV_ARGS(&factory));
+    if(SUCCEEDED(hr))hr=factory->CreateDecoderFromFilename(path.c_str(),nullptr,GENERIC_READ,WICDecodeMetadataCacheOnDemand,&decoder);
+    if(SUCCEEDED(hr))hr=decoder->GetFrame(0,&frame);
+    if(SUCCEEDED(hr))hr=factory->CreateFormatConverter(&converter);
+    if(SUCCEEDED(hr))hr=converter->Initialize(frame.Get(),GUID_WICPixelFormat32bppRGBA,WICBitmapDitherTypeNone,nullptr,0,WICBitmapPaletteTypeCustom);
+    UINT width=0,height=0;
+    if(SUCCEEDED(hr))hr=converter->GetSize(&width,&height);
+    std::vector<BYTE> pixels;
+    if(SUCCEEDED(hr)&&width&&height&&static_cast<uint64_t>(width)*height<=1'000'000) {
+        pixels.resize(static_cast<size_t>(width)*height*4);
+        hr=converter->CopyPixels(nullptr,width*4,static_cast<UINT>(pixels.size()),pixels.data());
+    } else if(SUCCEEDED(hr))hr=E_INVALIDARG;
+    if(SUCCEEDED(hr)) {
+        D3D11_TEXTURE2D_DESC desc{};
+        desc.Width=width;desc.Height=height;desc.MipLevels=1;desc.ArraySize=1;desc.Format=DXGI_FORMAT_R8G8B8A8_UNORM;
+        desc.SampleDesc.Count=1;desc.Usage=D3D11_USAGE_IMMUTABLE;desc.BindFlags=D3D11_BIND_SHADER_RESOURCE;
+        D3D11_SUBRESOURCE_DATA data{};data.pSysMem=pixels.data();data.SysMemPitch=width*4;
+        Microsoft::WRL::ComPtr<ID3D11Texture2D> texture;
+        hr=device->CreateTexture2D(&desc,&data,&texture);
+        if(SUCCEEDED(hr))hr=device->CreateShaderResourceView(texture.Get(),nullptr,output);
+    }
+    if(uninitialize)CoUninitialize();
+    if(FAILED(hr))host->log("earthworks  native Site row icon unavailable: %ls",filename);
+}
+void LoadSiteRowIcons()
+{
+    LoadGameUiIcon(L"button_cancel.png",&siteCancelIcon);
+    LoadGameUiIcon(L"button_rename.png",&siteRenameIcon);
+    LoadGameUiIcon(L"button_view_cancel.png",&siteHideIcon);
+    LoadGameUiIcon(L"button_view.png",&siteShowIcon);
+    LoadGameUiIcon(L"status_waiting.png",&siteStatusWaitingIcon);
+    LoadGameUiIcon(L"status_warning.png",&siteStatusWarningIcon);
+    LoadGameUiIcon(L"status_ok.png",&siteStatusCompletedIcon);
+    LoadGameUiIcon(L"sort_up.png",&siteMoveUpIcon);
+    LoadGameUiIcon(L"sort_down.png",&siteMoveDownIcon);
+    LoadGameUiIcon(L"button_plus.png",&projectNewIcon);
+    LoadGameUiIcon(L"trash.png",&projectDeleteIcon);
+    LoadGameUiIcon(L"infoicon.png",&targetHeightInfoIcon);
+    LoadGameUiIcon(L"icon_gears.png",&settingsIcon);
+}
+void LoadGameCursorArt()
+{
+    if(gameCursorArt || !device) return;
+    wchar_t executable[MAX_PATH]{};
+    const auto length=GetModuleFileNameW(nullptr,executable,MAX_PATH);
+    if(!length || length>=MAX_PATH) return;
+    std::wstring path(executable,length);
+    const auto slash=path.find_last_of(L"\\/");
+    if(slash==std::wstring::npos) return;
+    path.resize(slash+1);path+=L"media_soviet\\editor\\cursor.png";
+    const auto init=CoInitializeEx(nullptr,COINIT_MULTITHREADED);
+    if(FAILED(init)&&init!=RPC_E_CHANGED_MODE) return;
+    const bool uninitialize=SUCCEEDED(init);
+    Microsoft::WRL::ComPtr<IWICImagingFactory> factory;
+    Microsoft::WRL::ComPtr<IWICBitmapDecoder> decoder;
+    Microsoft::WRL::ComPtr<IWICBitmapFrameDecode> frame;
+    Microsoft::WRL::ComPtr<IWICFormatConverter> converter;
+    HRESULT hr=CoCreateInstance(CLSID_WICImagingFactory,nullptr,CLSCTX_INPROC_SERVER,IID_PPV_ARGS(&factory));
+    if(SUCCEEDED(hr))hr=factory->CreateDecoderFromFilename(path.c_str(),nullptr,GENERIC_READ,WICDecodeMetadataCacheOnDemand,&decoder);
+    if(SUCCEEDED(hr))hr=decoder->GetFrame(0,&frame);
+    if(SUCCEEDED(hr))hr=factory->CreateFormatConverter(&converter);
+    if(SUCCEEDED(hr))hr=converter->Initialize(frame.Get(),GUID_WICPixelFormat32bppRGBA,WICBitmapDitherTypeNone,nullptr,0,WICBitmapPaletteTypeCustom);
+    UINT width=0,height=0;
+    if(SUCCEEDED(hr))hr=converter->GetSize(&width,&height);
+    std::vector<BYTE> pixels;
+    if(SUCCEEDED(hr)&&width&&height&&static_cast<uint64_t>(width)*height<=1'000'000) {
+        pixels.resize(static_cast<size_t>(width)*height*4);
+        hr=converter->CopyPixels(nullptr,width*4,static_cast<UINT>(pixels.size()),pixels.data());
+    } else if(SUCCEEDED(hr))hr=E_INVALIDARG;
+    if(SUCCEEDED(hr)) {
+        D3D11_TEXTURE2D_DESC desc{};
+        desc.Width=width;desc.Height=height;desc.MipLevels=1;desc.ArraySize=1;desc.Format=DXGI_FORMAT_R8G8B8A8_UNORM;
+        desc.SampleDesc.Count=1;desc.Usage=D3D11_USAGE_IMMUTABLE;desc.BindFlags=D3D11_BIND_SHADER_RESOURCE;
+        D3D11_SUBRESOURCE_DATA data{};data.pSysMem=pixels.data();data.SysMemPitch=width*4;
+        Microsoft::WRL::ComPtr<ID3D11Texture2D> texture;
+        hr=device->CreateTexture2D(&desc,&data,&texture);
+        if(SUCCEEDED(hr))hr=device->CreateShaderResourceView(texture.Get(),nullptr,&gameCursorArt);
+        if(SUCCEEDED(hr)){gameCursorArtWidth=width;gameCursorArtHeight=height;}
+    }
+    if(uninitialize)CoUninitialize();
+    if(FAILED(hr))host->log("earthworks  game cursor art unavailable; native cursor remains unchanged");
+}
+void DrawGameCursorArt()
+{
+    const auto pos=ImGui::GetIO().MousePos;
+    const bool finite=std::isfinite(pos.x)&&std::isfinite(pos.y);
+    const auto point=finite?MAKELPARAM(static_cast<int>(pos.x),static_cast<int>(pos.y)):LPARAM{};
+    const bool overPanel=finite&&CursorOverEarthworksUi(point);
+    if(!overPanel||GetForegroundWindow()!=gameWindow) {
+        if(systemCursorHiddenForPanel&&cursorToRestore)SetCursor(cursorToRestore);
+        systemCursorHiddenForPanel=false;cursorToRestore=nullptr;return;
+    }
+    if(!gameCursorArt)return;
+    if(!systemCursorHiddenForPanel) {
+        if(HCURSOR cursor=GetCursor())cursorToRestore=cursor;
+        SetCursor(nullptr);systemCursorHiddenForPanel=true;
+    }
+    const float width=32.0f,height=width*static_cast<float>(gameCursorArtHeight)/std::max(1u,gameCursorArtWidth);
+    const ImTextureRef texture(static_cast<ImTextureID>(reinterpret_cast<intptr_t>(gameCursorArt)));
+    ImGui::GetForegroundDrawList()->AddImage(texture,{pos.x-2.0f,pos.y-2.0f},{pos.x+width-2.0f,pos.y+height-2.0f},
+        ImVec2(0,0),ImVec2(1,1),IM_COL32_WHITE);
+}
+bool CreateTarget(IDXGISwapChain* swap)
+{
+    ID3D11Texture2D* buffer=nullptr;
+    if (FAILED(swap->GetBuffer(0,__uuidof(ID3D11Texture2D),reinterpret_cast<void**>(&buffer)))) return false;
+    const auto hr=device->CreateRenderTargetView(buffer,nullptr,&target); buffer->Release(); return SUCCEEDED(hr);
+}
+bool Initialize(IDXGISwapChain* swap)
+{
+    DXGI_SWAP_CHAIN_DESC desc{};
+    if (FAILED(swap->GetDesc(&desc)) || !desc.OutputWindow || !IsWindowVisible(desc.OutputWindow)) return false;
+    DWORD pid=0; GetWindowThreadProcessId(desc.OutputWindow,&pid);
+    if (pid!=GetCurrentProcessId()) return false;
+    if (FAILED(swap->GetDevice(__uuidof(ID3D11Device),reinterpret_cast<void**>(&device)))) return false;
+    device->GetImmediateContext(&context); gameWindow=desc.OutputWindow;
+    gui=ImGui::CreateContext(); ImGui::SetCurrentContext(gui);
+    auto& io=ImGui::GetIO(); io.IniFilename=nullptr; io.LogFilename=nullptr;
+    io.ConfigFlags|=ImGuiConfigFlags_NoMouseCursorChange;
+    ImFontConfig fontConfig{};
+    fontConfig.PixelSnapH=true;
+    wchar_t windowsDirectory[MAX_PATH]{};
+    const UINT windowsLength=GetWindowsDirectoryW(windowsDirectory,MAX_PATH);
+    ImFont* gameFont=nullptr;
+    if(windowsLength && windowsLength<MAX_PATH) {
+        std::wstring fontPath(windowsDirectory,windowsLength);
+        fontPath+=L"\\Fonts\\arial.ttf";
+        const int pathLength=WideCharToMultiByte(CP_ACP,0,fontPath.c_str(),-1,nullptr,0,nullptr,nullptr);
+        if(pathLength>0) {
+            std::string ansiPath(static_cast<size_t>(pathLength),'\0');
+            if(WideCharToMultiByte(CP_ACP,0,fontPath.c_str(),-1,ansiPath.data(),pathLength,nullptr,nullptr)>0)
+                gameFont=io.Fonts->AddFontFromFileTTF(ansiPath.c_str(),16.0f,&fontConfig);
+        }
+    }
+    if(!gameFont) { fontConfig.SizePixels=16.0f; gameFont=io.Fonts->AddFontDefault(&fontConfig); }
+    io.FontDefault=gameFont;
+    ImGui::StyleColorsLight();
+    auto& style=ImGui::GetStyle();
+    const ImVec4 ink{0.22f,0.16f,0.12f,1.0f},paper{0.91f,0.85f,0.74f,1.0f};
+    const ImVec4 paperDark{0.76f,0.65f,0.49f,1.0f},oxblood{0.40f,0.10f,0.09f,1.0f};
+    // Keep control text on the fixed dark-ink color; selected/pressed surfaces
+    // stay light enough for it to remain readable.
+    const ImVec4 red{0.82f,0.57f,0.48f,1.0f},redLight{0.89f,0.70f,0.60f,1.0f};
+    style.Colors[ImGuiCol_Text]=ink;
+    style.Colors[ImGuiCol_TextDisabled]={0.43f,0.36f,0.28f,1.0f};
+    style.Colors[ImGuiCol_WindowBg]=paper;
+    style.Colors[ImGuiCol_ChildBg]={0.88f,0.81f,0.69f,0.55f};
+    style.Colors[ImGuiCol_Border]={0.36f,0.25f,0.16f,0.85f};
+    style.Colors[ImGuiCol_FrameBg]={0.96f,0.92f,0.83f,1.0f};
+    style.Colors[ImGuiCol_FrameBgHovered]={1.0f,0.97f,0.89f,1.0f};
+    style.Colors[ImGuiCol_FrameBgActive]={0.99f,0.91f,0.76f,1.0f};
+    style.Colors[ImGuiCol_TitleBg]=oxblood;
+    style.Colors[ImGuiCol_TitleBgActive]=red;
+    style.Colors[ImGuiCol_TitleBgCollapsed]=oxblood;
+    style.Colors[ImGuiCol_Button]=paperDark;
+    style.Colors[ImGuiCol_ButtonHovered]=redLight;
+    style.Colors[ImGuiCol_ButtonActive]=red;
+    style.Colors[ImGuiCol_Header]=paperDark;
+    style.Colors[ImGuiCol_HeaderHovered]=redLight;
+    style.Colors[ImGuiCol_HeaderActive]=red;
+    style.Colors[ImGuiCol_Tab]=paperDark;
+    style.Colors[ImGuiCol_TabHovered]=redLight;
+    style.Colors[ImGuiCol_TabSelected]=red;
+    style.Colors[ImGuiCol_TabSelectedOverline]=oxblood;
+    style.Colors[ImGuiCol_TabDimmed]=paperDark;
+    style.Colors[ImGuiCol_TabDimmedSelected]=paper;
+    style.Colors[ImGuiCol_CheckMark]=oxblood;
+    style.Colors[ImGuiCol_SliderGrab]=red;
+    style.Colors[ImGuiCol_SliderGrabActive]=oxblood;
+    style.Colors[ImGuiCol_Separator]={0.45f,0.32f,0.21f,0.55f};
+    style.Colors[ImGuiCol_ScrollbarBg]={0.67f,0.56f,0.42f,0.30f};
+    style.Colors[ImGuiCol_ScrollbarGrab]=paperDark;
+    style.Colors[ImGuiCol_ScrollbarGrabHovered]=redLight;
+    style.Colors[ImGuiCol_ScrollbarGrabActive]=red;
+    style.WindowPadding={14,12}; style.FramePadding={10,5}; style.ItemSpacing={8,7};
+    style.WindowRounding=12; style.ChildRounding=8; style.FrameRounding=6; style.TabRounding=6; style.GrabRounding=5;
+    style.WindowBorderSize=1; style.FrameBorderSize=1;
+    LoadPanelPaper();
+    LoadSiteRowIcons();
+    LoadGameCursorArt();
+    if (!ImGui_ImplWin32_Init(gameWindow) || !ImGui_ImplDX11_Init(device,context)) return false;
+    SetLastError(0);
+    originalWndProc=reinterpret_cast<WNDPROC>(SetWindowLongPtrW(gameWindow,GWLP_WNDPROC,reinterpret_cast<LONG_PTR>(WindowProc)));
+    if (!originalWndProc) return false;
+    gameChain=swap;
+    gameUnderlayInstalled=InstallGameUnderlay(host);
+    host->log("earthworks  native UI terrain underlay %s",gameUnderlayInstalled?"installed":"unavailable; using foreground fallback");
+    host->log("earthworks  overlay initialized hwnd=%p; on-screen Earthworks button only",gameWindow);
+    return true;
+}
+void Render(IDXGISwapChain* swap)
+{
+    std::lock_guard<std::recursive_mutex> lock(guiMutex);
+    auto* previous=ImGui::GetCurrentContext();
+    if (!gameChain && !Initialize(swap)) { ImGui::SetCurrentContext(previous); return; }
+    if (swap!=gameChain) { ImGui::SetCurrentContext(previous); return; }
+    ImGui::SetCurrentContext(gui);
+    if (!target && !CreateTarget(swap)) { ImGui::SetCurrentContext(previous); return; }
+    ImGui_ImplDX11_NewFrame(); ImGui_ImplWin32_NewFrame(); ImGui::NewFrame();
+    const auto& io=ImGui::GetIO();
+    const auto& snapshot=ReadSnapshot();
+    ImGui::GetBackgroundDrawList()->PushClipRect({65,85},{io.DisplaySize.x,io.DisplaySize.y-90},true);
+    previewLinesUnderlay=gameUnderlayInstalled;
+    DrawPreview(snapshot);
+    previewLinesUnderlay=false;
+    ImGui::GetBackgroundDrawList()->PopClipRect();
+    DrawInterface(snapshot);
+    DrawGameCursorArt();
+    if(snapshot.mode==PickMode::None) pickCancelledByEscape=false;
+    const bool sitePick=!snapshot.siteEditorOpen&&CursorOnVisibleSite(snapshot);
+    areaPickCapture=panelOpen&&!panelMinimized&&snapshot.mode!=PickMode::None&&!pickCancelledByEscape;
+    mapPickCapture=areaPickCapture||(!pickCancelledByEscape&&sitePick);
+    const bool focused=GetForegroundWindow()==gameWindow;
+    mouseCapture=focused && io.WantCaptureMouse && snapshot.ready;
+    keyboardCapture=focused && (targetHeightEditing||nameTextEditing||settingsDistanceEditing) && panelOpen;
+    if (!(GetAsyncKeyState(VK_LBUTTON)&0x8000)) leftRelease=false;
+    // Leave cursor shape and visibility entirely to the game window procedure.
+    ImGui::GetIO().MouseDrawCursor=false;
+    ClearInputLatches();
+    ImGui::Render();
+    ID3D11RenderTargetView* oldTarget=nullptr; ID3D11DepthStencilView* oldDepth=nullptr;
+    context->OMGetRenderTargets(1,&oldTarget,&oldDepth);
+    context->OMSetRenderTargets(1,&target,nullptr);
+    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+    context->OMSetRenderTargets(1,&oldTarget,oldDepth);
+    if (oldTarget) oldTarget->Release(); if (oldDepth) oldDepth->Release();
+    // Do not retain a back-buffer reference between frames. Native resizes can
+    // proceed without intercepting ResizeBuffers or chaining its Steam hook.
+    CleanupTarget();
+    ImGui::SetCurrentContext(previous);
+}
+HRESULT STDMETHODCALLTYPE Present(IDXGISwapChain* swap,UINT interval,UINT flags)
+{
+    if (presentDepth) {
+        IDXGISwapChain1* next=nullptr;
+        if (FAILED(swap->QueryInterface(__uuidof(IDXGISwapChain1),reinterpret_cast<void**>(&next)))) return S_OK;
+        DXGI_PRESENT_PARAMETERS p{}; const auto hr=next->Present1(interval,flags,&p); next->Release(); return hr;
+    }
+    ++presentDepth;
+    try { if (!(flags & DXGI_PRESENT_TEST)) Render(swap); }
+    catch (...) { panelOpen=false; mouseCapture=false; keyboardCapture=false; leftRelease=false; mapPickCapture=false; escapeCapture=false; host->log("earthworks  overlay exception; input released"); }
+    const auto hr=originalPresent(swap,interval,flags);
+    --presentDepth; return hr;
+}
+bool PatchSlot(void** slot,void* replacement,void** original)
+{
+    DWORD protect=0;
+    if (!VirtualProtect(slot,sizeof(void*),PAGE_READWRITE,&protect)) return false;
+    *original=*slot; *slot=replacement;
+    DWORD ignored=0; VirtualProtect(slot,sizeof(void*),protect,&ignored); return true;
+}
+using CreateDeviceFn = decltype(&D3D11CreateDeviceAndSwapChain);
+CreateDeviceFn originalCreate = nullptr;
+HRESULT WINAPI CreateDevice(IDXGIAdapter* adapter,D3D_DRIVER_TYPE type,HMODULE software,UINT flags,
+    const D3D_FEATURE_LEVEL* levels,UINT levelCount,UINT sdk,const DXGI_SWAP_CHAIN_DESC* desc,
+    IDXGISwapChain** swap,ID3D11Device** dev,D3D_FEATURE_LEVEL* level,ID3D11DeviceContext** ctx)
+{
+    const auto hr=originalCreate(adapter,type,software,flags,levels,levelCount,sdk,desc,swap,dev,level,ctx);
+    // Observe the game's actual creation after Steam has initialized its chain.
+    // A disposable swap chain created early races Steam's own initialization.
+    if (SUCCEEDED(hr) && swap && *swap && !originalPresent) {
+        auto** table=*reinterpret_cast<void***>(*swap);
+        const bool ok=PatchSlot(&table[8],reinterpret_cast<void*>(Present),reinterpret_cast<void**>(&originalPresent));
+        host->log("earthworks  real swap-chain Present hook %s; original=%p",ok ? "installed":"failed",reinterpret_cast<void*>(originalPresent));
+    }
+    return hr;
+}
+}
+void StartOverlay()
+{
+    if (!host->patchIat(host->engineModule,"d3d11.dll","D3D11CreateDeviceAndSwapChain",reinterpret_cast<void*>(CreateDevice),
+        reinterpret_cast<void**>(&originalCreate),"Earthworks graphics creation")) host->log("earthworks  graphics creation import hook failed");
+}
+}
