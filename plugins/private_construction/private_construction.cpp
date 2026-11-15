@@ -353,6 +353,11 @@ static float  g_usdDivisor       = 50.0f;
 static float  g_maxTickAdvance   = 0.02f;
 static int    g_probeCompletion  = 1;
 
+// Day-delta accumulated across throttled frames. The per-site step is
+// bounded by g_maxTickAdvance, so OnTick consumes at most that much per
+// pass and leaves the remainder queued; a world load drops it.
+static float  g_pendingDayDelta  = 0.0f;
+
 // v3.4.3 ----------------------------------------------------------------
 //
 // The completion the engine performs - the finished mesh node, the
@@ -1561,7 +1566,11 @@ static void OnSaveLoad(TsmSaveEvent ev, const char* dir, void* /*ud*/)
 {
     if (!dir || !g_persistence) return;
     if      (ev == TSM_SAVE_WRITING) SaveSites(dir);
-    else if (ev == TSM_SAVE_LOADING) LoadSites(dir);
+    else if (ev == TSM_SAVE_LOADING) {
+        // A fragment accumulated before the load belongs to the old world.
+        g_pendingDayDelta = 0.0f;
+        LoadSites(dir);
+    }
 }
 
 static void MatchPendingSites(TsmBuildingSpan* span)
@@ -1895,17 +1904,22 @@ static void OnTick(void* /*ud*/, float /*dt*/, float dayDelta)
     // dayDelta is PER FRAME (sim_clock_api.h): the frames this throttle
     // skips must not lose their share of the day. Accumulate every valid
     // frame and hand the whole accumulated delta to the pass that runs.
-    static float pendingDayDelta = 0.0f;
     if (dayDelta > 0.0f && dayDelta == dayDelta)
-        pendingDayDelta += dayDelta;
+        g_pendingDayDelta += dayDelta;
 
     static DWORD lastRun = 0;
     DWORD now = GetTickCount();
     if (now - lastRun < (DWORD)g_tickIntervalMs) return;
     lastRun = now;
 
-    float passDelta = pendingDayDelta;
-    pendingDayDelta = 0.0f;
+    // The pass caps each site's step at g_maxTickAdvance, so consume only
+    // that much here and keep the rest for the next pass; otherwise a
+    // frame backlog silently under-progresses construction.
+    float passDelta = g_pendingDayDelta;
+    if (g_maxTickAdvance > 0.0f && passDelta > g_maxTickAdvance)
+        passDelta = g_maxTickAdvance;
+    g_pendingDayDelta -= passDelta;
+    if (!(g_pendingDayDelta > 0.0f)) g_pendingDayDelta = 0.0f;  // drain + NaN
 
     __try { RunConstructionPass(passDelta); }
     __except (FaultFilter("private_construction pass", GetExceptionInformation()))

@@ -150,7 +150,8 @@ static double Api_GetTotalWalletBalance(void)
 {
     EnterCriticalSection(&g_lock);
     double total = 0.0;
-    for (const auto& kv : g_wallets) total += (double)kv.second.balance;
+    for (const auto& kv : g_wallets)
+        if (std::isfinite(kv.second.balance)) total += (double)kv.second.balance;
     LeaveCriticalSection(&g_lock);
     return total;
 }
@@ -315,8 +316,11 @@ static void LoadWallets(const char* dir)
         WalletSaveRecord r;
         memcpy(&r, p, sizeof(r));
         p += sizeof(r);
-        if (!(r.wallet == r.wallet)) continue;
-        if (r.wallet < 0.0f) r.wallet = 0.0f;
+        // A corrupt record must not poison the map: the wallet service
+        // refuses non-finite balances, so +inf would be invisible to
+        // WalletGet while the total and the next save expose it.
+        if (!std::isfinite(r.wallet) || r.wallet < 0.0f || r.wallet > 1.0e9f)
+            continue;
         WalletEntry e;
         e.balance        = r.wallet;
         e.lastSeenAbsDay = now;

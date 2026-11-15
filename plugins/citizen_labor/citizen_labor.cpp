@@ -1755,13 +1755,18 @@ static void LoadLabor(const char* dir)
     // parse exactly like before; a short v3 tail is tolerated.
     uint32_t ovCount = 0;
     const BYTE* ovBase = nullptr;
+    bool ovTailOk = true;
     if (hdr.version == LABOR_VERSION) {
         ovCount = hdr.overrideCount;
         size_t ovWant = want + (size_t)ovCount * sizeof(LaborOverrideRecord);
         if (ovWant > len) {
             Logf("citizen_labor  %s override tail truncated (%u claimed) - loading citizens only",
                  LABOR_FILENAME, ovCount);
+            // The sector-wage tail sits AFTER the override records, so a
+            // truncated override block makes its offset unknowable too.
+            // Reading at raw+want would interpret override bytes as wages.
             ovCount = 0;
+            ovTailOk = false;
         } else if (ovCount > 0) {
             ovBase = (const BYTE*)raw + want;
         }
@@ -1822,7 +1827,7 @@ static void LoadLabor(const char* dir)
         }
     }
     // v4: sector base wages are stored after the override records.
-    if (hdr.version >= LABOR_VERSION) {
+    if (hdr.version >= LABOR_VERSION && ovTailOk) {
         const BYTE* secBase = ovBase ? ovBase + (size_t)ovCount * sizeof(LaborOverrideRecord)
                                      : (const BYTE*)raw + want;
         size_t secWant = (size_t)(secBase - (const BYTE*)raw) + TSM_SECTOR_COUNT * sizeof(float);

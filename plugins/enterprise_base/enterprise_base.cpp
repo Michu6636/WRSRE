@@ -767,8 +767,22 @@ static void RebuildOrder()
 {
     g_companyOrder.clear();
     g_companyOrder.reserve(g_companies.size());
-    for (auto& kv : g_companies)
-        if (kv.second.isPrivate) g_companyOrder.push_back(kv.first);
+    for (auto& kv : g_companies) {
+        if (kv.second.isPrivate) {
+            g_companyOrder.push_back(kv.first);
+            continue;
+        }
+        // Leaving the private register ends the company's tax period:
+        // taxes enumerates only this order, so totals kept across an
+        // un-privatise/abandon/re-privatise cycle would be taxed in a
+        // later (possibly suspended) window.
+        Enterprise& e = kv.second;
+        e.periodGrossSales     = 0.0;
+        e.periodVatAccrued     = 0.0;
+        e.periodWholesaleCosts = 0.0;
+        e.periodWagesPaid      = 0.0;
+        e.periodForeignCosts   = 0.0;
+    }
 }
 
 // ---------------------------------------------------------------- name helpers

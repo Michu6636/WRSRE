@@ -198,6 +198,7 @@
 #include <algorithm>
 #include <assert.h>
 #include <stdint.h>
+#include <cmath>
 
 static const TsmSimClockApi*        g_simClock    = nullptr;
 static const TsmCurrencyApi*        g_currency    = nullptr;
@@ -1328,7 +1329,9 @@ static void ReadSettings(void)
     g_minCostCfg = g_minCost;
     if (H->configString(ini, "citizen_retail", "min_cost", v, sizeof(v), "") && v[0]) {
         float m = (float)atof(v);
-        if (m >= 0.0f && m == m) g_minCostCfg = m;
+        // atof("inf") and 1e999 both yield +inf; the floor would then block
+        // every sale. Require a finite, plausible figure.
+        if (std::isfinite(m) && m >= 0.0f && m <= 1.0e6f) g_minCostCfg = m;
     }
     g_minCost = g_minCostCfg;
     // v4: RUB->USD divisor for min_cost unless min_cost_usd overrides it.
@@ -1517,7 +1520,7 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
         if (H->configString(ini, "citizen_retail", "min_cost_usd",
                             u, sizeof(u), "") && u[0]) {
             float m = (float)atof(u);
-            if (m >= 0.0f && m == m) g_minCost = m;
+            if (std::isfinite(m) && m >= 0.0f && m <= 1.0e6f) g_minCost = m;
         } else {
             float d = (g_usdDivisor >= 1.0f) ? g_usdDivisor : 50.0f;
             g_minCost = g_minCostCfg / d;
