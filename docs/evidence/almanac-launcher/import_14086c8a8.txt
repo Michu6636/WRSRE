@@ -1,0 +1,80 @@
+Program: SOVIET64.exe
+Image base: 0x140000000
+Query VA: 0x14086C8A8
+
+Memory block: name=.rdata start=0x14086C000 end=0x140991DFF perms=R
+Bytes[0..15]: 4A A5 98 00 00 00 00 00 72 A5 98 00 00 00 00 00
+QWORD at addr (little-endian): 0x98A54A
+
+Symbols at exact address:
+  name=PTR_SetDimensions_14086c8a8 type=Label source=DEFAULT ns=Global
+
+Function at addr: <none>
+Function containing addr: <none>
+
+ExternalManager location: <none>
+
+Data at addr: addr 0098a54a
+
+References to addr (first 50):
+  [READ] from=0x1400A957E in=FUN_14009dc80@0x14009dc80
+  [READ] from=0x1400A9786 in=FUN_14009dc80@0x14009dc80
+  [READ] from=0x1400B044F in=FUN_14009dc80@0x14009dc80
+  [READ] from=0x1400B056F in=FUN_14009dc80@0x14009dc80
+  [READ] from=0x1400B0637 in=FUN_14009dc80@0x14009dc80
+  [READ] from=0x1400B06F6 in=FUN_14009dc80@0x14009dc80
+  [READ] from=0x1400CE316 in=FUN_1400ce0b0@0x1400ce0b0
+  [READ] from=0x1400CE34E in=FUN_1400ce0b0@0x1400ce0b0
+  [READ] from=0x1400CE465 in=FUN_1400ce0b0@0x1400ce0b0
+  [READ] from=0x1400CE6A2 in=FUN_1400ce0b0@0x1400ce0b0
+  [READ] from=0x1400CE6D1 in=FUN_1400ce0b0@0x1400ce0b0
+  [READ] from=0x1400CEA2B in=FUN_1400ce0b0@0x1400ce0b0
+  [READ] from=0x1400CED7E in=FUN_1400ce0b0@0x1400ce0b0
+  [READ] from=0x1400CFA20 in=FUN_1400ce0b0@0x1400ce0b0
+  [READ] from=0x1400CFB00 in=FUN_1400ce0b0@0x1400ce0b0
+  [READ] from=0x1400D01B7 in=FUN_1400ce0b0@0x1400ce0b0
+  [READ] from=0x1400D1149 in=FUN_1400ce0b0@0x1400ce0b0
+  [READ] from=0x1400D1365 in=FUN_1400ce0b0@0x1400ce0b0
+  [READ] from=0x1400D162D in=FUN_1400ce0b0@0x1400ce0b0
+  [READ] from=0x1400D17F3 in=FUN_1400ce0b0@0x1400ce0b0
+  [READ] from=0x1400D1C69 in=FUN_1400ce0b0@0x1400ce0b0
+  [READ] from=0x1400D32C7 in=FUN_1400ce0b0@0x1400ce0b0
+  [READ] from=0x1400D35CE in=FUN_1400ce0b0@0x1400ce0b0
+  [READ] from=0x1400DA362 in=FUN_1400ce0b0@0x1400ce0b0
+  [READ] from=0x1400DA6F6 in=FUN_1400ce0b0@0x1400ce0b0
+  [READ] from=0x1400DA8F6 in=FUN_1400ce0b0@0x1400ce0b0
+  [READ] from=0x1400DAB06 in=FUN_1400ce0b0@0x1400ce0b0
+  [READ] from=0x1400DAD15 in=FUN_1400ce0b0@0x1400ce0b0
+  [READ] from=0x1400DAF26 in=FUN_1400ce0b0@0x1400ce0b0
+  [READ] from=0x1400DB345 in=FUN_1400ce0b0@0x1400ce0b0
+  [READ] from=0x1400DB5B6 in=FUN_1400ce0b0@0x1400ce0b0
+  [READ] from=0x1400DC553 in=FUN_1400ce0b0@0x1400ce0b0
+  [READ] from=0x1400DC99F in=FUN_1400ce0b0@0x1400ce0b0
+  [READ] from=0x1400DCB55 in=FUN_1400ce0b0@0x1400ce0b0
+  [READ] from=0x1400DCE9F in=FUN_1400ce0b0@0x1400ce0b0
+  [READ] from=0x1400DD050 in=FUN_1400ce0b0@0x1400ce0b0
+  [READ] from=0x1400DD6CA in=FUN_1400ce0b0@0x1400ce0b0
+  [READ] from=0x1400DDF90 in=FUN_1400ce0b0@0x1400ce0b0
+  [READ] from=0x1402815DD in=FUN_140278de0@0x140278de0
+  [READ] from=0x140281014 in=FUN_140278de0@0x140278de0
+  [READ] from=0x140281235 in=FUN_140278de0@0x140278de0
+  [READ] from=0x140281AE8 in=FUN_140278de0@0x140278de0
+  [READ] from=0x140281D53 in=FUN_140278de0@0x140278de0
+  [READ] from=0x140282064 in=FUN_140278de0@0x140278de0
+  [READ] from=0x140282307 in=FUN_140278de0@0x140278de0
+  [READ] from=0x140709CC3 in=FUN_140706c00@0x140706c00
+  [READ] from=0x14070A830 in=FUN_140706c00@0x140706c00
+  [READ] from=0x14070A962 in=FUN_140706c00@0x140706c00
+  [READ] from=0x14070AA77 in=FUN_140706c00@0x140706c00
+  [READ] from=0x14070AD3E in=FUN_140706c00@0x140706c00
+
+Nearby symbols (addr +/- 0x20):
+  0x14086C888 PTR_PrintCenterUnicode_14086c888 type=Label
+  0x14086C890 PTR_GetString_14086c890 type=Label
+  0x14086C898 PTR_SetColor_14086c898 type=Label
+  0x14086C8A0 PTR_SetPosition_14086c8a0 type=Label
+  0x14086C8A8 PTR_SetDimensions_14086c8a8 type=Label
+  0x14086C8B0 PTR_GetMouseLeftPressAOff_14086c8b0 type=Label
+  0x14086C8B8 PTR_GetMouseLeftPress_14086c8b8 type=Label
+  0x14086C8C0 PTR_GetMouseLeftDown_14086c8c0 type=Label
+  0x14086C8C8 PTR_GetKeyPress_14086c8c8 type=Label

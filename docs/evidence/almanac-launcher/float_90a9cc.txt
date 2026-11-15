@@ -1,0 +1,2 @@
+0x14090A9CC: bytes=00 00 0C 42 float=35.0
+0x14090A9D0: bytes=9A 99 0D 42 float=35.4
