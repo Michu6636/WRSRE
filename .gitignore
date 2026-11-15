@@ -4,6 +4,7 @@ x64/
 Debug/
 Release/
 .vs/
+.kilo/
 scratch/
 tools/peinfo-out/
 # Kilo writes local state here; track only the project config.
