@@ -44,6 +44,10 @@ public:
         context_ = next;
         if (phase_ == Phase::Queued && !Matches(command_.context))
             FinishWithoutExecution(OverlayOutcome::Stale);
+        // An acknowledgement may be waiting when its panel/world disappears.
+        // Preserve its actual outcome, but never deliver it as fresh again.
+        if (phase_ == Phase::Result && !Matches(result_.context))
+            result_.stale = true;
     }
     OverlaySubmit Submit(const OverlayApplyCommand& command) {
         std::lock_guard<std::mutex> lock(mutex_);

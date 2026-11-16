@@ -18,7 +18,25 @@ static void Close(OverlayController& c) {
     CHECK(ticket && !c.BeginClose());
     CHECK(c.CompleteClose(ticket, true));
 }
+static void CompletedBeforeWorldChange() {
+    OverlayController c;
+    CHECK(c.SetWorld(1, true));
+    const auto generation = Open(c);
+    CHECK(c.Publish(1, generation, 1, FinanceSnapshot{}));
+    CHECK(c.Apply(FinanceDraft{}) == OverlaySubmit::Accepted);
+    OverlayApplyCommand work{};
+    CHECK(c.Take(work));
+    FinanceApplyResult finance{};
+    finance.status = EditApplyStatus::Applied;
+    CHECK(c.Complete(work.request, finance));
+    CHECK(c.SetWorld(2, false));
+    OverlayApplyResult ack{};
+    CHECK(c.Poll(ack) && ack.stale && ack.executed);
+    CHECK(ack.finance.status == EditApplyStatus::Applied);
+    CHECK(!c.Pending() && !c.Result(finance) && !c.Feedback(ack));
+}
 int main() {
+    CompletedBeforeWorldChange();
     OverlayController c;
     FinanceDraft draft{};
     FinanceSnapshot snapshot{};
