@@ -1,0 +1,125 @@
+=== SOURCE EVIDENCE: tesmiolauncher.cpp ===
+File: src/tesmiolauncher.cpp
+
+Lines 1130-1175:
+    if (!CreateProcessW(gameFull, cmdline, NULL, NULL, FALSE,
+                        CREATE_SUSPENDED, NULL, workDir, &si, &pi))
+    {
+        Fail(L"CreateProcess");
+        return false;
+    }
+    Msg(L"pid %lu created suspended", pi.dwProcessId);
+
+    bool ok = false;
+    SIZE_T bytes = (wcslen(dllFull) + 1) * sizeof(wchar_t);
+    LPVOID remote = VirtualAllocEx(pi.hProcess, NULL, bytes,
+                                   MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+
+    if (!remote)
+        Fail(L"VirtualAllocEx");
+    else if (!WriteProcessMemory(pi.hProcess, remote, dllFull, bytes, NULL))
+        Fail(L"WriteProcessMemory");
+    else
+    {
+        FARPROC loadLib = GetProcAddress(GetModuleHandleW(L"kernel32.dll"), "LoadLibraryW");
+        if (!loadLib)
+            Fail(L"GetProcAddress(LoadLibraryW)");
+        else
+        {
+            HANDLE th = CreateRemoteThread(pi.hProcess, NULL, 0,
+                                           (LPTHREAD_START_ROUTINE)loadLib, remote, 0, NULL);
+            if (!th)
+                Fail(L"CreateRemoteThread");
+            else
+            {
+                WaitForSingleObject(th, 30000);
+                DWORD loaded = 0;
+                GetExitCodeThread(th, &loaded);
+                CloseHandle(th);
+
+                if (!loaded)
+                    Msg(L"LoadLibraryW returned NULL - the DLL did not load");
+                else if (ResumeThread(pi.hThread) == (DWORD)-1)
+                    Fail(L"ResumeThread");
+                else
+                {
+                    Msg(L"tesmioloader.dll loaded, game resumed");
+                    ok = true;
+                }
+            }
+        }
+    }
+
+=== SOURCE EVIDENCE: tesmioloader.cpp ===
+File: src/tesmioloader.cpp
+
+Lines 2110-2125:
+BOOL APIENTRY DllMain(HMODULE mod, DWORD reason, LPVOID)
+{
+    if (reason == DLL_PROCESS_ATTACH)
+    {
+        g_self = mod;
+        DisableThreadLibraryCalls(mod);
+        Init();
+    }
+    else if (reason == DLL_PROCESS_DETACH)
+    {
+        ...
+    }
+    return TRUE;
+}
+
+Lines 2028, 2105:
+static void Init()
+{
+    ...
+    if (g_plugins) LoadPlugins();
+    Logf("--- hooks installed ---");
+}
+
+Lines 1473-1530:
+static void LoadPlugins()
+{
+    ...
+    do
+    {
+        ...
+        LoadOnePlugin(fd.cFileName);
+    } while (FindNextFileA(h, &fd));
+    FindClose(h);
+
+    StartPlugins();
+    Logf("plugin   %d loaded", g_pluginCount);
+}
+
+static void StartPlugins()
+{
+    for (int i = 0; i < g_pluginCount; i++)
+    {
+        LoadedPlugin* p = &g_plugin[i];
+        if (!p->start) continue;
+        ...
+        __try { rc = p->start(); }
+        __except (FaultFilter("plugin start", GetExceptionInformation())) { rc = -1; }
+        ...
+    }
+}
+
+=== BINARY EVIDENCE: SOVIET64.exe STATIC IMPORTS ===
+Parsed from PE Import Directory (RVA 0x984b3c):
+- C3DDLL64.dll (IAT RVA: 0x86c000, ILT RVA: 0x984cf8)
+- steam_api64.dll (IAT RVA: 0x86e0d8)
+- dxgi.dll (IAT RVA: 0x86e0b0)
+- KERNEL32.dll (IAT RVA: 0x86d708)
+- USER32.dll (IAT RVA: 0x86db80)
+- COMDLG32.dll (IAT RVA: 0x86d6f0)
+- SHELL32.dll (IAT RVA: 0x86db70)
+- ole32.dll (IAT RVA: 0x86e0c0)
+- OLEAUT32.dll (IAT RVA: 0x86db48)
+- MSVCP140.dll (IAT RVA: 0x86d940)
+- VCRUNTIME140.dll (IAT RVA: 0x86dc40)
+- api-ms-win-crt-* (multiple crt DLLs)
+
+tesmioloader.dll is NOT present in SOVIET64.exe's static import table.
+There is NO proxy DLL in the standard import chain.
+The loader is introduced strictly via explicit LoadLibraryW called in the remote thread created by tesmiolauncher.exe before the game process main thread is resumed.
