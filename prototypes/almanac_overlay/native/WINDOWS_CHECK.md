@@ -17,7 +17,7 @@ if ($LASTEXITCODE -ne 0) { throw "Almanac build failed; do not run a stale execu
 
 CMake requires exact ImGui HEAD `f5befd2d29e66809cd1110a152e375a7f1981f06` and checks raw bytes of all used core/header/license/DX11-backend files against that commit. It does not fetch dependencies. Wrong platform, missing dependency or modified inputs fail configuration. The pin guard also runs before compilation on every build, including incremental builds, so changing dependencies after configuration does not silently bypass it. First builds must retain output: warnings-as-errors is enabled for candidate/harness source, not upstream ImGui.
 
-Outputs are an isolated static native-candidate library and `build/almanac_native/Debug/almanac_panel_window.exe`. The adapter source is compiled into the library, but the test never calls its installer and need not pull that unreferenced object into the executable. This is **not full adapter DLL link or hook testing**. No game DLL target or automatic CTest run is provided. Normal `build.bat` behavior is unchanged.
+Outputs are an isolated static native-candidate library and `build/almanac_native/Debug/almanac_panel_window.exe`. The adapter source is compiled into the library, but the diagnostic never calls its installer. The separate `almanac_overlay_dev` DLL target is on by default in the isolated CMake project; this target-specific command does not build it. This is **not full adapter DLL link or hook testing**. No automatic CTest run is provided, and normal `build.bat` behavior is unchanged.
 
 ## Manual diagnostic acceptance (Windows operator)
 

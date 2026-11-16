@@ -2,7 +2,7 @@
 
 Current cross-subsystem handoff: [Almanac engineering status](../../docs/almanac-engineering-status.md).
 
-This directory is intentionally outside `plugins/` and the normal plugin build. It contains drawing code plus an explicitly callable creation/Present/F8 adapter candidate under `native/`, not a deployable plugin. Nothing invokes that installer automatically; no native hooks have been installed or tested in-game. F8 logic and sampling source exist, but there is no working shortcut without entry-point/startup/build integration. Do not enable the old experimental `almanac_button` plugin to test it.
+This directory remains outside `plugins/` and normal `build.bat` plugin discovery. It contains synthetic drawing code, a development DLL entry point and creation/Present/F8 adapter under `native/`. The isolated CMake project now builds that DLL target by default, but no build step copies the DLL/config into a game or installs hooks. The adapter has not been Windows-built or tested in-game, so there is no verified working F8 shortcut yet. Do not enable the old experimental `almanac_button` plugin to test it.
 
 `DrawOverlayReadOnlyPrototype` is the new draw-only candidate: it has no Close button, titlebar controls, movement, resize, navigation or mouse interaction. Its window uses NoInputs/NoDecoration/NoMove/NoFocusOnAppearing/NoBringToFrontOnFocus flags and re-anchors/resizes each frame against the viewport work area. It skips invalid/minimized/tiny work areas instead of retaining stale visible bounds. Its banner wraps at the window edge. Visibility is controlled by its caller, not a hotkey or click.
 
@@ -12,13 +12,13 @@ Neither path calls services, executes edits or infers game readiness. No live Fi
 
 `SyntheticOverlayView` reports a fixed invented RUB treasury, with policy fields deliberately unavailable. The synthetic-data banner must remain visible in any development integration. This is not the user's republic. Window anchoring/sizing uses viewport-relative ratios and contents use a flow table. Window drawing does not establish correct DPI behavior, native-modal arbitration or click-through protection.
 
-## F8 development visibility policy (not wired to the game)
+## F8 development visibility policy
 
 `almanac_debug_toggle.h` supplies a host-only `DebugOverlayToggle`. It starts hidden and requires an allowed key-up followed by key-down, toggles once per press, ignores held/repeated down samples, and hides/disarms whenever permission is lost. `Hide()` also disarms it. Restoring permission with F8 held cannot reopen it. Hiding does not create/destroy resources or change the Finance/panel lifecycle.
 
-A future adapter must sample F8 and permission on one serialized UI owner. Permission must be denied outside the disposable development setup, on focus loss, during unsafe/modal input ownership, or while the graphics backend is unready. Stop drawing immediately when permission is lost; if sampling stops, call `Hide()` before resuming. Physical state/event handling and safety signals remain unimplemented and require evidence/review. This class does not poll Windows, install hooks, consume game keys, assign a final player launcher or prove that F8 is unused by the game. Any F8 conflict must be checked before native tests.
+The current development adapter samples physical F8 on the selected swap chain's Present callback and applies this policy. Its synthetic-drawing permission now defaults on in the development DLL, but there is no native modal-state provider, so it may cover native dialogs. The adapter checks foreground/visible/not-minimized state; it captures no input and does not consume game keys. Use only for disposable-copy visual tests and do not click through the panel or dialogs. This class itself does not poll Windows, install hooks, assign a final player launcher or prove that F8 is unused; the existing budget HUD also uses F8.
 
-Once authorized, the adapter may draw the synthetic read-only view only when both permission and `Visible()` are true. Do not wire this to live Finance or resource destruction. Host tests cover startup-held keys, repeat, alternating presses, permission loss/restoration, releases while blocked and explicit hiding. Native F8 operation remains untested.
+When the development DLL is manually built and loaded for a test, it draws the synthetic read-only view only when permission and `Visible()` are true. It does not connect to live Finance or modify resources. Host tests cover startup-held keys, repeat, alternating presses, permission loss/restoration, releases while blocked and explicit hiding. Native F8 operation remains untested.
 
 ## Dependency and verification
 

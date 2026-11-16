@@ -1,13 +1,13 @@
 # Experimental Almanac DLL — build/review candidate, not game acceptance
 
-`dev_plugin.cpp` supplies the missing Tesmio API 4 Init/Start exports. It is outside `plugins/`, has no custom DllMain, and the CMake DLL target is **OFF by default**. Building does not copy a DLL/config into a game. Do not deploy or run it until the new source is reviewed, Windows-built and a disposable-copy test is explicitly authorized.
+`dev_plugin.cpp` supplies the Tesmio API 4 Init/Start exports. It is outside `plugins/`, has no custom DllMain, and its target is **ON by default only in this isolated CMake project**. The normal `build.bat` build does not include it, and CMake does not copy a DLL/config into a game. Its config defaults to enabling the synthetic F8 panel only when this development DLL is manually loaded. Use only after source review and a Windows build, and test only on a disposable copy.
 
 ## Explicit build target (not yet Windows-tested)
 
-After the isolated Windows configure described in [WINDOWS_CHECK.md](WINDOWS_CHECK.md), opt in explicitly:
+After the isolated Windows configure described in [WINDOWS_CHECK.md](WINDOWS_CHECK.md), build the explicitly named DLL target (the isolated CMake option is on by default):
 
 ```powershell
-cmake -S prototypes/almanac_overlay/native -B build/almanac_native -A x64 "-DALMANAC_IMGUI_DIR=$imgui" -DALMANAC_BUILD_DEV_PLUGIN=ON
+cmake -S prototypes/almanac_overlay/native -B build/almanac_native -A x64 "-DALMANAC_IMGUI_DIR=$imgui"
 if ($LASTEXITCODE -ne 0) { throw "Almanac configure failed" }
 cmake --build build/almanac_native --config Debug --target almanac_overlay_dev
 if ($LASTEXITCODE -ne 0) { throw "Almanac DLL build failed" }
@@ -17,10 +17,10 @@ Expected output: `build/almanac_native/Debug/almanac_overlay_dev.dll`. This is t
 
 ## Defaults and scope
 
-The example `almanac_overlay_dev.ini` is not copied by the build. Both controls default to zero:
+The example `almanac_overlay_dev.ini` is not copied by the build. Both settings and their missing-config fallbacks default to one for this development DLL:
 
-- `enabled`: opts into binary validation and creation-observer installation. If absent/zero, Init declines with no hooks installed.
-- `allow_synthetic_without_modal_tracking`: independent, explicit permission for the noninteractive synthetic overlay. Without it, observation can occur but F8 cannot draw. With it, F8 can toggle the synthetic panel once the chain is captured and focused. This is deliberately named: there is **no native modal-state provider**, so it may cover native dialogs. It captures no input and does not block underlying game controls. Do not click through the panel and call that safe interaction. Restrict any eventual test to a disposable setup and visual checks.
+- `enabled`: opts into binary validation and creation-observer installation. If set to zero, Init declines with no hooks installed.
+- `allow_synthetic_without_modal_tracking`: permits the noninteractive synthetic overlay without a native modal-state provider. If set to zero, observation may occur but F8 cannot draw. This is deliberately named: there is **no native modal-state provider**, so the overlay may cover native dialogs. It captures no input and does not block underlying game controls. Do not click through it. Restrict use to disposable-copy visual tests.
 
 Neither setting permits live Finance access, editing, deployment, save writes or enabling the old sidebar prototype. Existing budget/HUD F8 remains unchanged; both would toggle in a game test. Final player launcher and shared hotkey ownership remain unresolved.
 
