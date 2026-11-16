@@ -4504,7 +4504,7 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
 {
     TsmBind(host);
     info->name    = "enterprise_base";
-    info->version = "9.18";
+    info->version = "9.19";
 
     g_simClock = (const TsmSimClockApi*)
         H->consume(TSM_SERVICE_SIM_CLOCK, TSM_SIM_CLOCK_VERSION);
@@ -4654,6 +4654,11 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
 
     g_taxes = (const TsmTaxesApi*)
         H->consume(TSM_SERVICE_TAXES, TSM_TAXES_VERSION);
+    // v9.19: retain older taxes providers after the v3 snapshot API bump.
+    if (!g_taxes)
+        g_taxes = (const TsmTaxesApi*)H->consume(TSM_SERVICE_TAXES, TSM_TAXES_VERSION_V2);
+    if (!g_taxes)
+        g_taxes = (const TsmTaxesApi*)H->consume(TSM_SERVICE_TAXES, TSM_TAXES_VERSION_V1);
 
     // v8.1 (Task 1 UI): the Republic macro market book, for the in-window
     // Market Condition row on retail/factory/service buildings. Optional -
@@ -4710,10 +4715,10 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
         }
     }
 
-    Logf("enterprise_base  live v9.18 (unified currency %s, privatisation bar everywhere, net-profit siphon, attractiveness rent, park-cap, economic eviction + destitute bread-day, atomic retail charge+credit, in-window rows, wage bidding, phased insolvency, market-condition row, full-private-price retail pre-check, refusal-triggered capital watch, honest audit baseline, payroll affordability, wage provenance, visible revenue, wage contract cap %s, rate ceiling %.0fx minimum)",
+    Logf("enterprise_base  live v9.19 (unified currency %s, privatisation bar everywhere, net-profit siphon, attractiveness rent, park-cap, economic eviction + destitute bread-day, atomic retail charge+credit, in-window rows, wage bidding, phased insolvency, market-condition row, full-private-price retail pre-check, refusal-triggered capital watch, honest audit baseline, payroll affordability, wage provenance, visible revenue, wage contract cap %s, rate ceiling %.0fx minimum)",
          TsmCurrencySymbol(g_currency), g_wageCapEnabled ? "on" : "off",
          (double)g_wageRateCeiling);
-    Logf("enterprise_base  *** BUILD v9.18 - wholesale income counts as revenue, every privatise click logged ***");
+    Logf("enterprise_base  *** BUILD v9.19 - wholesale income counts as revenue, every privatise click logged ***");
     Logf("enterprise_base      [WATCH n]      armed by a refusal; logs every movement on that shop for %d ms", g_watchMs);
     Logf("enterprise_base      [WATCH n CAP]  a capital movement on the watched shop, with by=<caller>");
     Logf("enterprise_base      [WATCH n SALE] a completed sale on the watched shop, with the buyer");

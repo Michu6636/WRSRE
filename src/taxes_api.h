@@ -56,8 +56,10 @@ extern "C" {
 // old header - e.g. a third-party private-shop variant) and the v2 view (full
 // struct). This mirrors the currency (v3/v4), citizen_labor (v2/v3) and
 // resource_pricing (v1/v2) dual-provide precedent. build.bat rebuilds every
-// in-tree consumer with this header, so a consumer asking for v2 resolves.
-#define TSM_TAXES_VERSION    2u
+// in-tree consumer with this header. v3 retains both prefix views and appends
+// a coherent read-only configured-policy snapshot.
+#define TSM_TAXES_VERSION    3u
+#define TSM_TAXES_VERSION_V2 2u
 #define TSM_TAXES_VERSION_V1 1u
 
 // Tax categories addressed by the v2 setters/getters. A future tax on a new
@@ -65,6 +67,19 @@ extern "C" {
 #define TSM_TAX_VAT      0
 #define TSM_TAX_PROFIT   1
 #define TSM_TAX_PROPERTY 2
+
+// v3: one coherent copy of CONFIGURED policy, including suspended taxes.
+// Indices are TSM_TAX_*. VAT/profit are fractions [0,1]; property is the
+// live base amount per enterprise in the provider's active-currency units,
+// not the raw pre-USD-conversion INI value or the final scaled bill.
+// propertyLandValue: 0 = flat base, 1 = base * (0.50 + 1.50 * attractiveness).
+// Does not sample the currency service, schedules, arrears or settlements.
+typedef struct TsmTaxPolicySnapshot {
+    unsigned structSize; // provider sets to sizeof(TsmTaxPolicySnapshot)
+    float configured[3];
+    int enabled[3];      // normalized 0/1
+    int propertyLandValue; // normalized 0/1
+} TsmTaxPolicySnapshot;
 
 typedef struct TsmTaxesApi {
     unsigned structSize;
@@ -78,7 +93,7 @@ typedef struct TsmTaxesApi {
     // tax is disabled.
     //
     // The property tax is a flat amount per enterprise, not a rate, and
-    // is not exposed here; no consumer needs to know it.
+    // is not exposed in this prefix; v3 exposes the configured base.
 
     float (*getVatRate)(void);
     float (*getProfitTaxRate)(void);
@@ -134,6 +149,14 @@ typedef struct TsmTaxesApi {
     // an unknown kind.
     int (*setTaxEnabled)(int taxKind, int enabled);
 
+    // --- v3: read-only policy snapshot (append-only) -------------------------
+    // Copy all fields under the provider's policy lock. Returns 1 on success;
+    // 0 before successful provider Start, for null output or insufficient size; no
+    // output writes on failure. Caller owns writable storage for outSize bytes.
+    // No allocation, settlement, policy changes or callbacks. This is coherent
+    // tax policy only, not an atomic tax/treasury/currency snapshot.
+    int (*getPolicySnapshot)(TsmTaxPolicySnapshot* out, unsigned outSize);
+
 } TsmTaxesApi;
 
 // --- v2 consumer guard ------------------------------------------------------
@@ -148,6 +171,15 @@ static inline int TsmTaxesHasPolicy(const TsmTaxesApi* api)
         api->structSize >= offsetof(TsmTaxesApi, setTaxEnabled) +
                               sizeof(api->setTaxEnabled) &&
         api->isTaxEnabled && api->setTaxRate && api->setTaxEnabled;
+}
+
+// v1/v2 prefixes remain valid; never read the new pointer before size guard.
+static inline int TsmTaxesHasPolicySnapshot(const TsmTaxesApi* api)
+{
+    return api &&
+        api->structSize >= offsetof(TsmTaxesApi, getPolicySnapshot) +
+                              sizeof(api->getPolicySnapshot) &&
+        api->getPolicySnapshot;
 }
 
 #ifdef __cplusplus

@@ -1765,7 +1765,7 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host, TsmPlugi
 {
     TsmBind(host);
     info->name    = "private_shops";
-    info->version = "3.4";
+    info->version = "3.5";
 
     ReadSettings();
     if (!g_enabled) {
@@ -1800,6 +1800,11 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
     g_b2bLogistics = (const TsmB2bLogisticsApi*)H->consume(TSM_SERVICE_B2B_LOGISTICS, TSM_B2B_LOGISTICS_VERSION);
 
     g_taxes = (const TsmTaxesApi*)H->consume(TSM_SERVICE_TAXES, TSM_TAXES_VERSION);
+    // v3.5: retain older taxes providers after the v3 snapshot API bump.
+    if (!g_taxes)
+        g_taxes = (const TsmTaxesApi*)H->consume(TSM_SERVICE_TAXES, TSM_TAXES_VERSION_V2);
+    if (!g_taxes)
+        g_taxes = (const TsmTaxesApi*)H->consume(TSM_SERVICE_TAXES, TSM_TAXES_VERSION_V1);
     if (!g_taxes) Logf("private_shops  WARN  taxes service not installed");
 
     g_persistence = (const TsmPersistenceApi*)H->consume(TSM_SERVICE_PERSISTENCE, TSM_PERSISTENCE_VERSION);
@@ -1813,7 +1818,7 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
     g_simClock->registerTick([](void*, float, float) { RunShopTick(); }, nullptr);
 
     const char* restockSummary = g_restockAll ? "all" : "list";
-    Logf("private_shops  live v3.3: interval %d ms, slot-identity snapshots, "
+    Logf("private_shops  live v3.5: interval %d ms, slot-identity snapshots, "
          "restock %s (%d type(s)), "
          "retail %d type(s), %d service fee(s), wholesale %.2f, procurement %.2f (flag fallback %s), foreign %s (target %.0f%%, markup %.2f), taxes %s, currency %s",
          g_tickIntervalMs, restockSummary, g_restockTypeCount,
