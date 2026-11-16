@@ -2,13 +2,25 @@
 
 This directory is intentionally outside `plugins/` and the normal plugin build. It provides actual Dear ImGui panel drawing code, not a deployable plugin. It installs NO Present, WndProc, DirectInput, native Draw or sidebar hook. No temporary shortcut is implemented yet. Do not enable the old experimental `almanac_button` plugin to test it.
 
-`DrawOverlayPrototype` draws a labelled synthetic-data Finance table and Close control. Its caller must own the ImGui context, frame boundaries, rendering resources, coordinate/font scaling and input routing. Call only while the panel is logically open; return actions.close to the lifecycle owner rather than destroying resources from inside drawing. It does not call services, execute edits or infer game readiness. No live Finance controller connection is made here.
+`DrawOverlayReadOnlyPrototype` is the new draw-only candidate: it has no Close button, titlebar controls, movement, resize, navigation or mouse interaction. Its window uses NoInputs/NoDecoration/NoMove/NoFocusOnAppearing/NoBringToFrontOnFocus flags and re-anchors/resizes each frame against the viewport work area. It skips invalid/minimized/tiny work areas instead of retaining stale visible bounds. Its banner wraps at the window edge. Visibility is controlled by its caller, not a hotkey or click.
+
+`DrawOverlayPrototype` retains the older interactive drawing experiment and Close action for host testing; it is NOT approved for native integration. The caller of either function owns the context, frame boundaries, resources and scaling. For the read-only candidate use a dedicated draw-only context with no platform input backend, global keyboard/gamepad navigation disabled and no other interactive windows. Do not force global capture flags off in a shared interactive context. An initial test with global keyboard navigation enabled showed ImGui's fallback debug window claiming Tab despite the read-only window's NoInputs flags; disabling global navigation in the test's dedicated draw-only context resolved that. Window flags alone are not a general input-isolation guarantee.
+
+Neither path calls services, executes edits or infers game readiness. No live Finance controller connection is made here. A future backend must still satisfy its own readiness, graphics-state, input and lifetime review gates.
 
 `SyntheticOverlayView` reports a fixed invented RUB treasury, with policy fields deliberately unavailable. The synthetic-data banner must remain visible in any development integration. This is not the user's republic. Window anchoring/sizing uses viewport-relative ratios and contents use a flow table. Window drawing does not establish correct DPI behavior, native-modal arbitration or click-through protection.
 
+## F8 development visibility policy (not wired to the game)
+
+`almanac_debug_toggle.h` supplies a host-only `DebugOverlayToggle`. It starts hidden and requires an allowed key-up followed by key-down, toggles once per press, ignores held/repeated down samples, and hides/disarms whenever permission is lost. `Hide()` also disarms it. Restoring permission with F8 held cannot reopen it. Hiding does not create/destroy resources or change the Finance/panel lifecycle.
+
+A future adapter must sample F8 and permission on one serialized UI owner. Permission must be denied outside the disposable development setup, on focus loss, during unsafe/modal input ownership, or while the graphics backend is unready. Stop drawing immediately when permission is lost; if sampling stops, call `Hide()` before resuming. Physical state/event handling and safety signals remain unimplemented and require evidence/review. This class does not poll Windows, install hooks, consume game keys, assign a final player launcher or prove that F8 is unused by the game. Any F8 conflict must be checked before native tests.
+
+Once authorized, the adapter may draw the synthetic read-only view only when both permission and `Visible()` are true. Do not wire this to live Finance or resource destruction. Host tests cover startup-held keys, repeat, alternating presses, permission loss/restoration, releases while blocked and explicit hiding. Native F8 operation remains untested.
+
 ## Dependency and verification
 
-Original drawing code was written for this prototype; no Earthworks/RepublicMP source was copied. Dear ImGui itself is MIT licensed (Omar Cornut and contributors); retain its LICENSE.txt with any future vendored/distributed copy.
+The Finance drawing code was written for this prototype. The separate `earthworks/panel_style.cpp` now copies Earthworks' paper/ink style block under GPL-3.0-only, with provenance and full license in that directory. The headless test applies it to an owned context; no native graphics/input code or game textures were copied. See `docs/almanac-earthworks-port-map.md` for the backend source comparison and remaining gates. This adds GPL-derived prototype source; it does not license the rest of the repository or authorize a combined binary release. Dear ImGui itself is MIT licensed (Omar Cornut and contributors); retain its LICENSE.txt with any future vendored/distributed copy.
 
 The Earthworks-pinned RepublicMP header fetch returned HTTP 404 from GitHub's contents API. No cause (private, unavailable or bad path) is assumed. An initial syntax check consequently failed with `imgui.h: No such file or directory`. Rather than claim that unavailable dependency worked, this prototype was checked against upstream Dear ImGui **v1.91.9b**, Git tag commit `f5befd2d29e66809cd1110a152e375a7f1981f06`. This is a prototype-only dependency selection, not a decision to change Earthworks or the production SDK.
 
@@ -18,7 +30,9 @@ Fetched through GitHub's contents API into ignored `.cache/almanac-imgui-headers
 - imconfig.h SHA256 `0884061cc43e27e1d346fe18dcd1425792eb2532d3d16610a82eb5ac751f7594`
 - Core implementation: imgui.cpp, imgui_draw.cpp, imgui_tables.cpp, imgui_widgets.cpp, imgui_internal.h, imstb_rectpack.h, imstb_textedit.h, imstb_truetype.h, plus LICENSE.txt, all from that tag. No platform/GPU backends used.
 
-Strict C++17 syntax checking passed. The headless smoke test creates an ImGui context and font atlas, draws multiple frames at 1280x720, 1920x1080 and 800x600, verifies synthetic/unavailable data and asserts valid nonempty draw output. It passed. This does NOT visually inspect the panel, test clicking Close, verify layout after live resize, prove game input isolation or test GPU rendering. No OS window or game is created.
+The updated headless test covers the original interactive smoke path and the separate draw-only path. It checks NoInputs/control flags, absence of a titlebar Close control, re-anchoring/window bounds after synthetic viewport changes at 1280x720, 800x600, 1920x1080 and 320x240, valid nonempty draw output, and no capture requests in the dedicated draw-only context while synthetic clicks/Tab events are injected. Zero/tiny viewport cases omit drawing. These are headless coordinate/input checks, NOT visual inspection, native window resizing, real keyboard/mouse isolation or GPU rendering.
+
+All 13 host/extraction/headless suites (including the added debug toggle) passed via the consolidated runner normally and with ASan/UBSan after the style extraction. Tests also verify style values, repeat application without cumulative scaling, and isolation from a second ImGui context. The dependency was obtained explicitly at the recorded pin in ignored cache; it is not vendored. No OS window or game was created. Independent child review is unavailable here and is not claimed.
 
 Reproduce after obtaining the dependency at the specified pin:
 
@@ -32,6 +46,10 @@ g++ -std=c++17 -Wall -Wextra -Werror -pedantic -Isrc \
   -o build/almanac_overlay_view_test
 build/almanac_overlay_view_test
 ```
+
+## D3D11 drawing candidate
+
+`native/d3d11_panel.{h,cpp}` now contains an isolated Windows/DX11 draw component for the synthetic Earthworks-styled panel. It takes a verified swap chain and externally sampled F8 state; it installs no interception and is not a working plugin yet. It has NOT been Windows-compiled or GPU-tested. See `native/README.md` for its strict owner/lifetime contract and remaining adapter work, and `docs/almanac-overlay-s0-reconciliation.md` for the corrected Beam evidence. Host test results do not cover these Windows-only files.
 
 ## Next native integration gate
 
