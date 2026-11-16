@@ -4,6 +4,8 @@
 #include <cstddef>
 #include <mutex>
 #include <new>
+#include <cwchar>
+#include <intrin.h> // _ReturnAddress: exact matching-engine creation caller
 
 namespace almanac {
 namespace {
@@ -15,7 +17,11 @@ std::atomic<bool> permission{false};
 std::atomic<bool> healthy{true};
 std::mutex installMutex, renderMutex;
 bool installed = false;
-HWND verifiedWindow = nullptr;
+// Matching engine hash 65FCB684...E231516: CALL at RVA 0x148BC,
+// return address 0x148C2. See S0 raw caller export and startup addendum.
+// This is not a transferable address for other engine versions.
+constexpr std::size_t CreationReturnRva = 0x148C2;
+constexpr wchar_t GameWindowClass[] = L"Workers & Resources: Soviet Republic";
 const TsmHost* host = nullptr;
 // Process-lifetime references: no unsafe global ImGui/COM destructor at unload.
 // There is deliberately no unload/recovery contract in this experiment yet.
@@ -78,36 +84,50 @@ HRESULT STDMETHODCALLTYPE PanelPresent(IDXGISwapChain* swap, UINT interval, UINT
     return originalPresent(swap, interval, flags);
 }
 
-HRESULT WINAPI ObserveCreation(IDXGIAdapter* adapter, D3D_DRIVER_TYPE type,
+// Validate at creation time, not under plugin Start's loader lock. The window
+// may be hidden at this point; focus/visibility are Draw-time requirements.
+bool MatchesGameWindow(HWND window) {
+    if (!IsWindow(window) || GetAncestor(window, GA_ROOT) != window) return false;
+    DWORD process = 0;
+    if (!GetWindowThreadProcessId(window, &process) || process != GetCurrentProcessId()) return false;
+    if (reinterpret_cast<HMODULE>(GetWindowLongPtrW(window, GWLP_HINSTANCE)) !=
+        GetModuleHandleW(nullptr)) return false;
+    wchar_t name[128]{};
+    const int length = GetClassNameW(window, name, static_cast<int>(_countof(name)));
+    return length > 0 && std::wcscmp(name, GameWindowClass) == 0;
+}
+
+__declspec(noinline) HRESULT WINAPI ObserveCreation(IDXGIAdapter* adapter, D3D_DRIVER_TYPE type,
     HMODULE software, UINT flags, const D3D_FEATURE_LEVEL* levels, UINT count,
     UINT sdk, const DXGI_SWAP_CHAIN_DESC* desc, IDXGISwapChain** swap,
     ID3D11Device** device, D3D_FEATURE_LEVEL* level, ID3D11DeviceContext** context) {
+    const void* caller = _ReturnAddress();
     const HRESULT result = originalCreate(adapter, type, software, flags, levels,
         count, sdk, desc, swap, device, level, context);
     if (FAILED(result) || !swap || !*swap || !desc || !healthy.load()) return result;
     try {
-    // Select only the externally verified HWND; it may still be hidden during
-    // creation. Draw separately gates focus/visibility at Present time.
-    DWORD process = 0;
-    GetWindowThreadProcessId(desc->OutputWindow, &process);
-    if (!permission.load() || desc->OutputWindow != verifiedWindow || process != GetCurrentProcessId())
-        return result;
-    std::lock_guard<std::mutex> lock(renderMutex);
-    if (selectedChain) return result;
-    auto** table = *reinterpret_cast<void***>(*swap);
-    void* expected = table[8];
-    if (!expected || expected == reinterpret_cast<void*>(PanelPresent)) return result;
-    // Keep chain alive before publishing a reachable hook.
-    selectedChain = *swap;
-    selectedChain->AddRef();
-    if (!ReplaceSlot(&table[8], expected, reinterpret_cast<void*>(PanelPresent),
-                     reinterpret_cast<void**>(&originalPresent))) {
-        selectedChain->Release();
-        selectedChain = nullptr;
-        healthy.store(false);
-    }
-    if (host->log) host->log("almanac graphics: creation observed; Present installed=%d healthy=%d",
-        selectedChain != nullptr, healthy.load());
+        const auto* expectedCaller = static_cast<const unsigned char*>(host->engineModule) + CreationReturnRva;
+        if (caller != expectedCaller || !MatchesGameWindow(desc->OutputWindow)) return result;
+        DXGI_SWAP_CHAIN_DESC actual{};
+        if (FAILED((*swap)->GetDesc(&actual)) || actual.OutputWindow != desc->OutputWindow) return result;
+        // Observe while rendering permission is false too: modal/focus permission
+        // must not decide whether a one-time startup creation event is captured.
+        std::lock_guard<std::mutex> lock(renderMutex);
+        if (selectedChain) return result;
+        auto** table = *reinterpret_cast<void***>(*swap);
+        void* expected = table[8];
+        if (!expected || expected == reinterpret_cast<void*>(PanelPresent)) return result;
+        // Keep chain alive before publishing a reachable hook.
+        selectedChain = *swap;
+        selectedChain->AddRef();
+        if (!ReplaceSlot(&table[8], expected, reinterpret_cast<void*>(PanelPresent),
+                         reinterpret_cast<void**>(&originalPresent))) {
+            selectedChain->Release();
+            selectedChain = nullptr;
+            healthy.store(false);
+        }
+        if (host->log) host->log("almanac graphics: creation observed; Present installed=%d healthy=%d",
+            selectedChain != nullptr, healthy.load());
     } catch (...) {
         healthy.store(false);
         permission.store(false);
@@ -118,9 +138,9 @@ HRESULT WINAPI ObserveCreation(IDXGIAdapter* adapter, D3D_DRIVER_TYPE type,
 
 void SetGraphicsAdapterPermission(bool allowed) { permission.store(allowed); }
 
-bool InstallGraphicsAdapter(const TsmHost* api, HWND verifiedGameWindow, bool developmentOptIn) {
+bool InstallGraphicsAdapter(const TsmHost* api, bool developmentOptIn) {
     std::lock_guard<std::mutex> lock(installMutex);
-    if (installed || !healthy.load() || !IsWindow(verifiedGameWindow) || !developmentOptIn || !api ||
+    if (installed || !healthy.load() || !developmentOptIn || !api ||
         api->apiVersion != TSM_API_VERSION ||
         api->structSize < offsetof(TsmHost, findIatSlot) + sizeof(api->findIatSlot) ||
         !api->findIatSlot || !api->engineModule) return false;
@@ -134,7 +154,6 @@ bool InstallGraphicsAdapter(const TsmHost* api, HWND verifiedGameWindow, bool de
     if (!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_PIN,
         reinterpret_cast<LPCWSTR>(&InstallGraphicsAdapter), &pinned)) return false;
     host = api;
-    verifiedWindow = verifiedGameWindow;
     installed = ReplaceSlot(slot, expected, reinterpret_cast<void*>(ObserveCreation),
                             reinterpret_cast<void**>(&originalCreate));
     if (host->log) host->log("almanac graphics: creation observer installed=%d healthy=%d; late load has no fallback",
