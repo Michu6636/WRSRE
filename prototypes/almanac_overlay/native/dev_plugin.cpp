@@ -52,7 +52,7 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* api, TsmPlugin
         !api->log || !api->configInt || !api->findIatSlot || !api->readablePtr) return 1;
     info->name = "almanac_overlay_dev";
     info->version = "0.1-experimental";
-    if (!api->configInt("plugins\\almanac_overlay_dev.ini", "almanac_overlay_dev", "enabled", 0))
+    if (!api->configInt("plugins\\almanac_overlay_dev.ini", "almanac_overlay_dev", "enabled", 1))
         return 1; // no hooks, services or persistent resources: safe to decline Init
     if (!api->exeModule || !api->engineModule ||
         api->exeModule != GetModuleHandleW(nullptr) ||
@@ -69,8 +69,8 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* api, TsmPlugin
         std::memcmp(call, expectedCall, sizeof(expectedCall)) != 0) return 1;
     host = api;
     allowSynthetic = api->configInt("plugins\\almanac_overlay_dev.ini", "almanac_overlay_dev",
-                                   "allow_synthetic_without_modal_tracking", 0) != 0;
-    api->log("almanac dev: matching files/call site; synthetic drawing opt-in=%d", allowSynthetic);
+                                   "allow_synthetic_without_modal_tracking", 1) != 0;
+    api->log("almanac dev: matching files/call site; synthetic drawing allowed=%d", allowSynthetic);
     return 0;
 }
 
