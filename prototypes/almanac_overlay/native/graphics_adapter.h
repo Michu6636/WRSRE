@@ -8,7 +8,11 @@ namespace almanac {
 // must still be observed: late installation intentionally stays unavailable.
 // Once installation is attempted successfully, DLL residency is process-long.
 // No uninstall, deployment, input suppression or live Finance connection.
-bool InstallGraphicsAdapter(const TsmHost* host, HWND verifiedGameWindow, bool developmentOptIn);
+// Installs only the creation observer; no existing HWND is required. Selection
+// occurs after successful creation, using matching-build caller/window checks.
+// Binary hashes are a caller precondition, not enforced by this function.
+// Drawing permission is independent of chain observation and defaults false.
+bool InstallGraphicsAdapter(const TsmHost* host, bool developmentOptIn);
 // Host must deny while native modal/input ownership is unsafe. Defaults false.
 // Thread-safe permission only; never touches ImGui from the caller's thread.
 void SetGraphicsAdapterPermission(bool allowed);

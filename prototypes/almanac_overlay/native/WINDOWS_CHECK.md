@@ -35,7 +35,9 @@ Record source commit/diff, MSVC/SDK/CMake/dependency identities, configure/build
 
 `src/tesmioloader.cpp::DllMain(DLL_PROCESS_ATTACH)` calls `Init()`, which calls `LoadPlugins()`, which calls `StartPlugins()`. Thus current plugin Start runs under the loader lock. This is source ordering, NOT proof of timing versus engine device creation. Do not start a graphics/window creation routine, wait for a worker thread, or assume a game HWND already exists in Start.
 
-The current adapter requires an externally verified HWND at install time. If the game window does not exist before graphics creation, that contract cannot be satisfied by a naive Start entry point. Resolve this with bounded startup/window evidence and a reviewed deferred/creation-time selection design before adding an automatic DLL entry point. Do not erase this requirement by silently taking the first arbitrary window/chain or reading unverified globals.
+The original adapter required an externally verified HWND at install time, making it unsuitable for normal pre-window plugin Start. Gemini's published startup packet (`d67cf4d`, addendum `d36333d`, on Almanac) supports moving validation to creation time. The current source now installs without an HWND and validates the creation caller/window/returned chain before selection; see native README. This is NOT a tested automatic plugin entry point, and binary-identity enforcement is still a caller prerequisite. Do not silently take the first arbitrary window/chain or read unverified globals.
+
+Normal completed launcher injection supports Start-before-window ordering. The launcher's unchecked wait timeout can instead resume the main thread while injection is incomplete; it does not establish which game instructions then execute concurrently. No universal ordering, direct-launch attachment rule or post-window interception impossibility is inferred. The old raw packet's `SovietClass` annotation is superseded by the addendum. Beam's reported Windows build/launch at `8facb6e` does not compile/test the new adapter revision; obtain a fresh Windows compile after review.
 
 ## Checks actually performed in Arena
 
