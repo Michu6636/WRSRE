@@ -6,7 +6,13 @@
 
 An **in-game Earthworks-style ImGui Almanac**, initially Finance-focused, with room for future information and controls. **F8 is the development toggle**, not the final player-facing launcher. Do not substitute a native-text HUD preview or keep adding Finance scaffolding instead of making the panel visible.
 
-**There is no working in-game Almanac panel yet. Pressing F8 currently controls the existing HUD, not the new panel.** The immediate acceptance milestone is a deliberately enabled development plugin displaying the labelled synthetic panel on F8 in a disposable game copy. Live Finance, editing and final native launcher come later; the synthetic milestone is not a complete product release.
+**There is no accepted in-game Almanac panel yet.** Pressing F8 currently controls the existing HUD, not the new panel. The product milestone remains a labelled synthetic panel on F8 in a disposable game copy; live Finance, editing and a final launcher come later.
+
+## Current immediate test: Earthworks panel spawning
+
+The user narrowed the current check to **only the actual Earthworks panel**. Build the real Earthworks plugin, copy its DLL into the disposable Tesmio `plugins` folder, and enable it in that copy's existing `tesmioloader.ini`; keep `almanac_overlay_dev=0` if that DLL is present. The synthetic Almanac DLL is not part of this test. No custom chooser or test-mode selector is needed. See [`test_menu/README.md`](../prototypes/almanac_overlay/test_menu/README.md).
+
+Earthworks is a full gameplay plugin, not a visuals-only DLL; runtime tests remain limited to the disposable copy/save. The panel now opens automatically when the first ready world/camera is available; the user launches Tesmio and verifies that it appears. Its floating button can then close/reopen it. Earthworks' recorded baseline is WRSR 1.1.1.13 / Steam build 24922914. A test on 1.1.1.9 is exploratory only, and hook/preflight checks must not be bypassed. No Windows build, staging, or game test has occurred for this check.
 
 Preserve the eight native sidebar buttons' order, artwork and click behavior. Do not re-enable the old ninth-button prototype as a shortcut. Native controls remain appropriate for supported native-window extensions; Almanac itself uses an overlay inside the game window, not a desktop popup.
 
@@ -104,6 +110,6 @@ Default run: 12 checks, optional drawing skipped. With ImGui: 13. Pin: upstream 
 - [Overlay design](almanac-overlay-design.md), [review reconciliation](almanac-overlay-review-reconciliation.md): ownership and separate S0/D0/V0/I0/F0 gates. A merged preparation PR does not close native acceptance gates.
 - [Host tests](../tests/almanac_button/HOST_TESTS.md) and adjacent Finance/session/executor/bridge/controller/lifecycle contracts: existing host safety work. In particular stale completed acknowledgements remain sticky-invalidated after context changes without rewriting the real execution result.
 - [UI direction](almanac-ui-direction-20261114.md): overlay decision and earlier native-sidebar evidence corrections. Older `almanac-plan.md`, implementation spec and sidebar investigations are historical requirements/research, not an instruction to resurrect rejected native patches.
-- [Earthworks NOTICE](../prototypes/almanac_overlay/earthworks/NOTICE.md): exact local source hash, provenance and GPL-3.0-only extraction. ImGui is MIT. Preserve both notices/source obligations; combined-binary distribution treatment remains unresolved. No repository-wide license was assigned. Earthworks' API 4 SDK hash discrepancy and unavailable RepublicMP-pinned dependency are not cured by using the prototype's upstream ImGui pin.
+- [Earthworks NOTICE](../prototypes/almanac_overlay/earthworks/NOTICE.md): exact local source hash, provenance and GPL-3.0-only extraction. ImGui is MIT. Preserve both notices/source obligations; combined-binary distribution treatment remains unresolved. No repository-wide license was assigned. The Earthworks Tesmio API 4 header hashes have been corrected against the pinned SDK, but Windows compilation is unverified. GitHub returned 404 for the RepublicMP-pinned checkout; no cause is assumed. Its provenance notice remains; Earthworks and the separate Almanac candidate use separately pinned upstream Dear ImGui v1.91.9b.
 
 No separate repository migration has been performed. The user explicitly deferred that operation. Local-agent prompts belong in chat, not repository prompt files.

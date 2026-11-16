@@ -1,6 +1,6 @@
 # Experimental Almanac DLL — build/review candidate, not game acceptance
 
-`dev_plugin.cpp` supplies the Tesmio API 4 Init/Start exports. It is outside `plugins/`, has no custom DllMain, and its target is **ON by default only in this isolated CMake project**. The normal `build.bat` build does not include it, and CMake does not copy a DLL/config into a game. Its config defaults to enabling the synthetic F8 panel only when this development DLL is manually loaded. Use only after source review and a Windows build, and test only on a disposable copy.
+`dev_plugin.cpp` supplies the Tesmio API 4 Init/Start exports. It is outside `plugins/`, has no custom DllMain, and its target is **ON by default only in this isolated CMake project**. The normal `build.bat` build does not include it, and CMake does not copy a DLL/config into a game. The current [Earthworks panel-spawn check](../test_menu/README.md) does not build or stage this synthetic DLL. Its config defaults to enabling the synthetic F8 panel only when this development DLL is loaded. Use only after source review and a Windows build, and test only on a disposable copy.
 
 ## Explicit build target (not yet Windows-tested)
 

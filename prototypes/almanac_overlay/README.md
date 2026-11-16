@@ -2,6 +2,8 @@
 
 Current cross-subsystem handoff: [Almanac engineering status](../../docs/almanac-engineering-status.md).
 
+The current panel-spawn check is documented in [`test_menu/README.md`](test_menu/README.md). It builds the actual Earthworks plugin and gives the manual copy/INI steps for a disposable copy; it does not build or enable the synthetic Almanac DLL and does not edit the native sidebar.
+
 This directory remains outside `plugins/` and normal `build.bat` plugin discovery. It contains synthetic drawing code, a development DLL entry point and creation/Present/F8 adapter under `native/`. The isolated CMake project now builds that DLL target by default, but no build step copies the DLL/config into a game or installs hooks. The adapter has not been Windows-built or tested in-game, so there is no verified working F8 shortcut yet. Do not enable the old experimental `almanac_button` plugin to test it.
 
 `DrawOverlayReadOnlyPrototype` is the new draw-only candidate: it has no Close button, titlebar controls, movement, resize, navigation or mouse interaction. Its window uses NoInputs/NoDecoration/NoMove/NoFocusOnAppearing/NoBringToFrontOnFocus flags and re-anchors/resizes each frame against the viewport work area. It skips invalid/minimized/tiny work areas instead of retaining stale visible bounds. Its banner wraps at the window edge. Visibility is controlled by its caller, not a hotkey or click.
@@ -24,7 +26,7 @@ When the development DLL is manually built and loaded for a test, it draws the s
 
 The Finance drawing code was written for this prototype. The separate `earthworks/panel_style.cpp` now copies Earthworks' paper/ink style block under GPL-3.0-only, with provenance and full license in that directory. The headless test applies it to an owned context; no native graphics/input code or game textures were copied. See `docs/almanac-earthworks-port-map.md` for the backend source comparison and remaining gates. This adds GPL-derived prototype source; it does not license the rest of the repository or authorize a combined binary release. Dear ImGui itself is MIT licensed (Omar Cornut and contributors); retain its LICENSE.txt with any future vendored/distributed copy.
 
-The Earthworks-pinned RepublicMP header fetch returned HTTP 404 from GitHub's contents API. No cause (private, unavailable or bad path) is assumed. An initial syntax check consequently failed with `imgui.h: No such file or directory`. Rather than claim that unavailable dependency worked, this prototype was checked against upstream Dear ImGui **v1.91.9b**, Git tag commit `f5befd2d29e66809cd1110a152e375a7f1981f06`. This is a prototype-only dependency selection, not a decision to change Earthworks or the production SDK.
+The pinned RepublicMP checkout used to supply Earthworks' ImGui sources was unavailable from this environment (GitHub returned 404 for the pinned commit); no cause is assumed. Earthworks now builds against separately pinned upstream Dear ImGui **v1.91.9b**, commit `f5befd2d29e66809cd1110a152e375a7f1981f06`. CMake checks the commit and raw bytes of all linked core/Win32/DX11 inputs at configure and build time. This fixes the dependency path only; Earthworks remains GPL-derived and its runtime compatibility is not established by building.
 
 Fetched through GitHub's contents API into ignored `.cache/almanac-imgui-headers`, not vendored or installed in the game:
 

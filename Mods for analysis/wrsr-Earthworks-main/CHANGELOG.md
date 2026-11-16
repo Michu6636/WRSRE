@@ -2,6 +2,7 @@
 
 ## 0.16.64-release-candidate — 14 November 2026
 
+- Open the planning panel automatically when the first ready world and camera are available; the floating Earthworks button remains available to close or reopen it.
 - Moved Site centroid calculation into the core planning module.
 - Kept detailed click-routing and table-wheel traces in Developer UI builds. The player build omits these diagnostic messages.
 - Added a versioned package with source, license texts, compatibility notes, and known issues.

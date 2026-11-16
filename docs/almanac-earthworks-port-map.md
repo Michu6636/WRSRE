@@ -4,7 +4,7 @@
 
 Static source comparison plus isolated styling extraction; no native interception installed or deployable backend built. Source: `Mods for analysis/wrsr-Earthworks-main`, frozen in WRSRE base commit `670eb5315f9d3240bb3467e47af9f1bef8f12a40`. Exact overlay source SHA-256 and licensing are recorded in `prototypes/almanac_overlay/earthworks/NOTICE.md`. This is locally accessible source, not fresh binary/runtime verification. Independent child review is unavailable; this is not integration approval.
 
-Earthworks documents game **1.1.1.13**, Steam build 24922914, TesmioLoader b0.3.7 in `docs/NATIVE_BINDINGS.md`. That is its baseline, not proof of compatibility with our matching executable. Its dependency lock names API 4 and RepublicMP commit `630775724abd5e3346eb59f9c66e2873128d74a4`. The known SDK header hash discrepancy and unavailable RepublicMP dependency remain unresolved. API version equality alone is insufficient.
+Earthworks documents game **1.1.1.13**, Steam build 24922914, TesmioLoader b0.3.7 in `docs/NATIVE_BINDINGS.md`. That is its baseline, not proof of compatibility with our matching executable. Its dependency lock names API 4 and RepublicMP commit `630775724abd5e3346eb59f9c66e2873128d74a4`. The Tesmio API header hashes have now been corrected against pinned API 4 commit `7d6bb8943ca5f6af817d8e7e6cf5be2c7faa818a`; the Windows build remains unverified. GitHub returned 404 for the RepublicMP-pinned checkout in the earlier dependency investigation; no cause is assumed. The current build uses separately pinned upstream Dear ImGui v1.91.9b instead, while retaining RepublicMP source attribution. API version equality alone is insufficient.
 
 ## Source-traced route
 
