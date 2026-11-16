@@ -5,7 +5,44 @@
 #include <thread>
 #define CHECK(x) do { if (!(x)) { std::fprintf(stderr,"FAIL line %d: %s\n",__LINE__,#x); std::exit(1); } } while (0)
 using namespace almanac;
+static void CompletedThenInvalidated() {
+    // Cover context changes AFTER completion but BEFORE acknowledgement delivery.
+    for (int kind = 0; kind < 3; ++kind) {
+        for (int change = 0; change < 4; ++change) {
+            OverlayApplyBridge bridge;
+            OverlayContext context{1, 1, 1, true};
+            bridge.SetContext(context);
+            OverlayApplyCommand command{1, context, {}};
+            CHECK(bridge.Submit(command) == OverlaySubmit::Accepted);
+            OverlayApplyCommand work{};
+            FinanceApplyResult finance{};
+            finance.status = EditApplyStatus::PartiallyApplied;
+            if (kind == 2) CHECK(bridge.Cancel(1));
+            else {
+                CHECK(bridge.Take(work));
+                if (kind == 0) CHECK(bridge.Complete(1, finance));
+                else CHECK(bridge.Reject(1, SessionDispatch::NotLoaded));
+            }
+            const auto old = context;
+            if (change == 0) ++context.world;
+            if (change == 1) ++context.panel;
+            if (change == 2) ++context.revision;
+            if (change == 3) context.ready = false;
+            bridge.SetContext(context);
+            // Invalidity is sticky, even if a caller restores readiness/context.
+            bridge.SetContext(old);
+            OverlayApplyResult result{};
+            CHECK(bridge.Consume(result) && result.stale);
+            CHECK(result.executed == (kind == 0));
+            CHECK(result.context.world == old.world);
+            if (kind == 0) CHECK(result.finance.status == EditApplyStatus::PartiallyApplied);
+            if (kind == 1) CHECK(result.dispatch == SessionDispatch::NotLoaded);
+            CHECK(!bridge.Consume(result));
+        }
+    }
+}
 int main() {
+    CompletedThenInvalidated();
     OverlayApplyBridge bridge;
     OverlayContext context{1, 1, 1, true};
     OverlayApplyCommand command{1, context, {}};
