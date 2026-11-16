@@ -18,19 +18,31 @@ if(NOT EXISTS "${TESMIO_SDK_DIR}/src/tesmio_api.h")
 endif()
 
 file(SHA256 "${TESMIO_SDK_DIR}/src/tesmio_api.h" sdk_header_hash)
-if(NOT sdk_header_hash STREQUAL "5daaf51ec1f6a5f279868bb039f01719931dfba0be69312a75863073ceac04a6")
+if(NOT sdk_header_hash STREQUAL "33c9fae4acb1041708c7b1b4675b0eb4740f0af737e7a1968c0acb0c325fff3c")
     message(FATAL_ERROR "SDK header differs from the pinned API 4 header. Review dependencies.lock.json.")
 endif()
 
-set(IMGUI_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/RepublicMP/third_party/imgui")
-if(NOT EXISTS "${IMGUI_DIR}/imgui.cpp")
-    message(FATAL_ERROR "Pinned RepublicMP/ImGui checkout missing. Run scripts/Fetch-Dependencies.ps1.")
+set(EARTHWORKS_IMGUI_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/DearImGui" CACHE PATH "Pinned upstream Dear ImGui checkout")
+if(NOT EXISTS "${EARTHWORKS_IMGUI_DIR}/imgui.cpp")
+    message(FATAL_ERROR "Pinned Dear ImGui checkout missing. Run scripts/Fetch-Dependencies.ps1.")
 endif()
+set(EARTHWORKS_IMGUI_VERIFY "${CMAKE_CURRENT_SOURCE_DIR}/cmake/verify_imgui.cmake")
+execute_process(COMMAND "${CMAKE_COMMAND}" "-DEARTHWORKS_IMGUI_DIR=${EARTHWORKS_IMGUI_DIR}"
+    -P "${EARTHWORKS_IMGUI_VERIFY}" RESULT_VARIABLE imgui_verify_result)
+if(NOT imgui_verify_result EQUAL 0)
+    message(FATAL_ERROR "Pinned Dear ImGui verification failed.")
+endif()
+add_custom_target(earthworks_verify_imgui
+    COMMAND "${CMAKE_COMMAND}" "-DEARTHWORKS_IMGUI_DIR=${EARTHWORKS_IMGUI_DIR}"
+        -P "${EARTHWORKS_IMGUI_VERIFY}"
+    VERBATIM)
 add_library(earthworks_imgui STATIC
-    "${IMGUI_DIR}/imgui.cpp" "${IMGUI_DIR}/imgui_draw.cpp"
-    "${IMGUI_DIR}/imgui_tables.cpp" "${IMGUI_DIR}/imgui_widgets.cpp"
-    "${IMGUI_DIR}/backends/imgui_impl_win32.cpp" "${IMGUI_DIR}/backends/imgui_impl_dx11.cpp")
-target_include_directories(earthworks_imgui SYSTEM PUBLIC "${IMGUI_DIR}" "${IMGUI_DIR}/backends")
+    "${EARTHWORKS_IMGUI_DIR}/imgui.cpp" "${EARTHWORKS_IMGUI_DIR}/imgui_draw.cpp"
+    "${EARTHWORKS_IMGUI_DIR}/imgui_tables.cpp" "${EARTHWORKS_IMGUI_DIR}/imgui_widgets.cpp"
+    "${EARTHWORKS_IMGUI_DIR}/backends/imgui_impl_win32.cpp"
+    "${EARTHWORKS_IMGUI_DIR}/backends/imgui_impl_dx11.cpp")
+add_dependencies(earthworks_imgui earthworks_verify_imgui)
+target_include_directories(earthworks_imgui SYSTEM PUBLIC "${EARTHWORKS_IMGUI_DIR}" "${EARTHWORKS_IMGUI_DIR}/backends")
 target_compile_definitions(earthworks_imgui PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
 set_property(TARGET earthworks_imgui PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/generated")

@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param()
+param([switch]$BuildOnly)
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
@@ -33,25 +33,31 @@ function Ensure-Checkout([string]$Name, $Spec) {
     return $checkout
 }
 
-New-Item -ItemType Directory -Path (Join-Path $root 'external'),$runtime -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $root 'external') -Force | Out-Null
+if (-not $BuildOnly) { New-Item -ItemType Directory -Path $runtime -Force | Out-Null }
 $sdk = Ensure-Checkout 'TesmioLoader' $lock.tesmioloader
 foreach ($header in $lock.tesmioloader.sdk_headers.PSObject.Properties) {
     Assert-Hash (Join-Path $sdk ('src\' + $header.Name)) $header.Value
 }
-$rmlSource = Ensure-Checkout 'RepublicModLoader' $lock.rml
-$null = Ensure-Checkout 'RepublicMP' $lock.republicmp
-foreach ($file in $lock.rml.runtime_files.PSObject.Properties) {
-    $source = Join-Path (Join-Path $rmlSource 'ModFiles') $file.Name
-    $destination = Join-Path $runtime $file.Name
-    Assert-Hash $source $file.Value
-    if (Test-Path -LiteralPath $destination) {
+$null = Ensure-Checkout 'DearImGui' $lock.imgui
+if (-not $BuildOnly) {
+    $rmlSource = Ensure-Checkout 'RepublicModLoader' $lock.rml
+    foreach ($file in $lock.rml.runtime_files.PSObject.Properties) {
+        $source = Join-Path (Join-Path $rmlSource 'ModFiles') $file.Name
+        $destination = Join-Path $runtime $file.Name
+        Assert-Hash $source $file.Value
+        if (Test-Path -LiteralPath $destination) {
+            Assert-Hash $destination $file.Value
+        } else {
+            New-Item -ItemType Directory -Path (Split-Path $destination -Parent) -Force | Out-Null
+            Copy-Item -LiteralPath $source -Destination $destination
+        }
         Assert-Hash $destination $file.Value
-    } else {
-        New-Item -ItemType Directory -Path (Split-Path $destination -Parent) -Force | Out-Null
-        Copy-Item -LiteralPath $source -Destination $destination
     }
-    Assert-Hash $destination $file.Value
+    Write-Host "Dependencies verified: Tesmio API $($lock.tesmioloader.api_version) SDK, Dear ImGui $($lock.imgui.tag), and RML $($lock.rml.version) fallback source/runtime."
+    Write-Host "RML fallback runtime staged locally: $runtime"
+} else {
+    Write-Host "Build dependencies verified: Tesmio API $($lock.tesmioloader.api_version) SDK and Dear ImGui $($lock.imgui.tag)."
+    Write-Host 'The RML source/runtime was not fetched for this build-only run.'
 }
-Write-Host "Dependencies verified: Tesmio API $($lock.tesmioloader.api_version) SDK and RML $($lock.rml.version) fallback source/runtime."
-Write-Host "RML fallback runtime staged locally: $runtime"
 Write-Host 'Install TesmioLoader separately in the game directory. The game has not been launched.'

@@ -31,4 +31,4 @@ Use RML only if the Tesmio path is unavailable. Keep the package's `plugins/Eart
 
 ## First in-game check
 
-Use a disposable save. Confirm that Earthworks loads, the Earthworks button opens, all three facility sizes appear in the building menu, and the facility UI can register each building. Report any loader or game log errors. Do not treat a successful loader start as proof that the native hooks work.
+Use a disposable save. Confirm that Earthworks loads and the panel opens automatically once the world and camera are ready; its floating Earthworks button should close and reopen the panel. Also confirm all three facility sizes appear in the building menu and the facility UI can register each building. Report any loader or game log errors. Do not treat a successful loader start as proof that the native hooks work.

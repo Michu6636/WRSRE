@@ -12,7 +12,7 @@ TesmioLoader does not install the plugin DLL from Steam Workshop. Double-click `
 
 The RML fallback uses `plugins/EarthworksPlanning.rml.json` beside the DLL. RML users must enable the plugin and Workshop content in the RML playlist.
 
-The plugin loads through TesmioLoader API 4 without checking the game executable timestamp or whole-file hash. Each native hook still checks its target signature before patching.
+The plugin loads through TesmioLoader API 4 without checking the game executable timestamp or whole-file hash. Each native hook still checks its target signature before patching. The Earthworks panel opens automatically when the first ready world and camera are available; the floating Earthworks button closes or reopens it.
 
 ## Version
 
@@ -22,7 +22,7 @@ The plugin loads through TesmioLoader API 4 without checking the game executable
 
 Read [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md), [decision register](docs/DECISIONS.md), and [stage review log](docs/STAGE_REVIEWS.md) before changing gameplay or UX behavior. The project uses staged implementation and user-run in-game reviews. Do not perform in-game tests unless the user explicitly asks.
 
-Required build tools are Git for Windows and Visual Studio 2022 with the components in `.vsconfig`. Run `scripts/Fetch-Dependencies.ps1` to restore the pinned Tesmio API 4 SDK, RML fallback source, and RepublicMP reference source. This script does not install a game loader.
+Required build tools are Git for Windows and Visual Studio 2022 with the components in `.vsconfig`. Run `scripts/Fetch-Dependencies.ps1` to restore the pinned Tesmio API 4 SDK, Dear ImGui v1.91.9b build input, and RML fallback source. Use `-BuildOnly` to fetch just the SDK and ImGui needed for the CMake build. The GPL-derived RepublicMP material is retained as source provenance; its pinned checkout is unavailable and is not needed to build. This script does not install a game loader.
 
 Build the player plugin with:
 

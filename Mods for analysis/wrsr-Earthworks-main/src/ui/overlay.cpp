@@ -70,6 +70,8 @@ bool assignmentWarningRectValid = false;
 bool editorRectValid = false;
 bool panelMinimized = false;
 bool restorePanelSize = false;
+// Open once a world/camera is usable by default; do not reopen after the user closes it.
+bool autoOpenedPanelForWorld = false;
 float expandedPanelHeight = 517.5f;
 std::atomic<bool> editorWasDragged{false};
 bool escapeKeyDown = false;
@@ -863,7 +865,15 @@ void DrawInterface(const Snapshot& s)
     facilityTableRectValid=false;
     frameGeneration=s.generation;
     SetWinterWireframeMode(HighContrastColors());
-    if (!s.ready) { panelOpen=false; panelRectValid=false;settingsRectValid=false; popupRectValid=false; assignmentWarningRectValid=false;editorRectValid=false; }
+    if (!s.ready) {
+        panelOpen=false;
+        autoOpenedPanelForWorld=false;
+        panelRectValid=false;settingsRectValid=false;popupRectValid=false;assignmentWarningRectValid=false;editorRectValid=false;
+    } else if (s.cameraValid && !autoOpenedPanelForWorld) {
+        panelOpen=true;
+        autoOpenedPanelForWorld=true;
+        host->log("earthworks  planning panel opened automatically for this world");
+    }
     if(panelOpen && s.cameraValid && s.workforce.buildingValid) {
         const auto p=s.workforce.building.position;
         const auto colour=IM_COL32(255,100,255,255);
