@@ -9,7 +9,7 @@ python3 tests/almanac_button/run_host_tests.py --sanitize
 python3 tests/almanac_button/run_host_tests.py --cxx clang++
 ```
 
-Default coverage: ten strict warnings-as-errors C++ suites (shared button policy, existing button geometry/open-request policy, panel lifecycle, Finance view/editor, bridge, controller, session and executor), plus the actual tax-provider/publication/consumer extraction harness. Sanitizer mode adds ASan/UBSan; it is not thread-race detection. Failures return a nonzero exit; suites after the first failure are not run. Compile/run commands are printed and each subprocess has a 180-second timeout.
+Default coverage: eleven strict warnings-as-errors C++ suites (shared button policy, existing button geometry/open-request policy, panel lifecycle, Finance view/editor, bridge, controller, session, executor and debug visibility toggle), plus the actual tax-provider/publication/consumer extraction harness. Sanitizer mode adds ASan/UBSan; it is not thread-race detection. Failures return a nonzero exit; suites after the first failure are not run. Compile/run commands are printed and each subprocess has a 180-second timeout.
 
 Results are written to ignored build/almanac_host/normal/summary.json or build/almanac_host/sanitized/summary.json, recording compiler, per-suite outcomes, overall failure and optional dependency identity. Each invocation overwrites its mode's report. Compiler lookup errors are command-line errors before report creation. A compiler --version failure writes a failed report with zero suites; it does not claim tests passed. No code/source revision fingerprint is recorded, so retain the exact source commit/diff alongside results when handing off acceptance evidence.
 
@@ -33,7 +33,11 @@ The merged bridge checked freshness when a completion was created, but did not i
 
 A new test reproduced the failure before the fix. SetContext now marks waiting results stale, without changing their real execution/Finance/rejection outcome. Invalidation stays sticky even if a caller later restores readiness/context. Tests cover completion, refusal and queued cancellation across all four context changes (12 cases), plus controller completion -> world change -> Poll. No new native code or thread scheduling was introduced.
 
-## Checks actually performed
+## Current draw-only/debug-toggle checks
+
+Normal and ASan/UBSan runs with the pinned local ImGui dependency each passed all 13 checks (11 C++ suites, tax extraction and headless drawing). The debug-toggle suite tests visibility only; it does not install or validate an F8 input adapter. Drawing tests and context restrictions are detailed in `prototypes/almanac_overlay/README.md`. Independent review remains unavailable; these are host results, not native acceptance.
+
+## Earlier bridge-fix checks (before debug-toggle suite)
 
 - Normal core runner: all 11 core/extraction suites passed.
 - ASan/UBSan runner: all 11 core/extraction suites passed; optional drawing explicitly skipped.

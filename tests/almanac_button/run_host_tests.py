@@ -14,7 +14,7 @@ SUITES = (
     "ui_button_core", "almanac_button_geometry", "almanac_open_state",
     "almanac_panel_state", "almanac_finance", "almanac_finance_editor",
     "almanac_overlay_bridge", "almanac_overlay_controller",
-    "almanac_finance_session", "almanac_finance_executor",
+    "almanac_finance_session", "almanac_finance_executor", "almanac_debug_toggle",
 )
 IMGUI_COMMIT = "f5befd2d29e66809cd1110a152e375a7f1981f06"
 IMGUI_FILES = (
@@ -99,6 +99,7 @@ def main():
                  "-isystem", imgui,
                  ROOT / "tests/almanac_button/almanac_overlay_view_test.cpp",
                  ROOT / "prototypes/almanac_overlay/almanac_overlay_view.cpp",
+                 ROOT / "prototypes/almanac_overlay/earthworks/panel_style.cpp",
                  *(imgui / name for name in IMGUI_FILES[:4]), "-o", exe])
             run([exe])
             active["status"] = "passed"
