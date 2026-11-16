@@ -1,5 +1,7 @@
 # Almanac overlay integration design
 
+> **Design contract, not current implementation inventory.** See [engineering status](almanac-engineering-status.md) for existing source, missing integrations and acceptance gates.
+
 Status: proposed technical contract, not implementation approval or runtime acceptance.
 User decision: Almanac/macro panels use in-game overlays; supported additions to native windows retain native controls. The native launcher remains independently gated.
 

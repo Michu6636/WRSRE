@@ -1,6 +1,8 @@
 # Read-only Almanac drawing prototype
 
-This directory is intentionally outside `plugins/` and the normal plugin build. It provides actual Dear ImGui panel drawing code, not a deployable plugin. It installs NO Present, WndProc, DirectInput, native Draw or sidebar hook. No temporary shortcut is implemented yet. Do not enable the old experimental `almanac_button` plugin to test it.
+Current cross-subsystem handoff: [Almanac engineering status](../../docs/almanac-engineering-status.md).
+
+This directory is intentionally outside `plugins/` and the normal plugin build. It contains drawing code plus an explicitly callable creation/Present/F8 adapter candidate under `native/`, not a deployable plugin. Nothing invokes that installer automatically; no native hooks have been installed or tested in-game. F8 logic and sampling source exist, but there is no working shortcut without entry-point/startup/build integration. Do not enable the old experimental `almanac_button` plugin to test it.
 
 `DrawOverlayReadOnlyPrototype` is the new draw-only candidate: it has no Close button, titlebar controls, movement, resize, navigation or mouse interaction. Its window uses NoInputs/NoDecoration/NoMove/NoFocusOnAppearing/NoBringToFrontOnFocus flags and re-anchors/resizes each frame against the viewport work area. It skips invalid/minimized/tiny work areas instead of retaining stale visible bounds. Its banner wraps at the window edge. Visibility is controlled by its caller, not a hotkey or click.
 

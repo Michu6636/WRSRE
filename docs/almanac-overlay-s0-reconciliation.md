@@ -1,5 +1,7 @@
 # Arena check of Beam S0 (4589d3a)
 
+> **Evidence correction remains applicable.** The disposition at the end records the boundary at the time of this check. Later callable interception/F8 source was merged in PR #82; see [engineering status](almanac-engineering-status.md). It has not been built or accepted in-game.
+
 Fetched `origin/Almanac` and read the published report, manifest and all three raw exports using `git show 4589d3a:...`. No matching binaries are available locally; executable/engine hashes remain operator-reported, not freshly recomputed here. Independent review is unavailable.
 
 ## Accepted evidence

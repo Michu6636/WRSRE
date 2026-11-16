@@ -4,6 +4,10 @@ Native x64 C++17 plugin suite (`TesmioLoader` API v4) introducing a mixed state/
 
 ---
 
+## Almanac development
+
+Start with the [Almanac engineering status and handoff](docs/almanac-engineering-status.md): current source inventory, verified evidence/corrections, missing native integration, test limits and concrete next tasks. The ImGui/F8 candidate is **not yet a working in-game panel**; do not use historical sidebar prototypes as its launcher.
+
 ## Repository Layout
 
 ```text

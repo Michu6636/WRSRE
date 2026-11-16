@@ -1,5 +1,7 @@
 # Almanac branch synchronization / reviewer entry point
 
+> **Historical synchronization packet.** Work subsequently merged through PRs #80, #81 and #82. The current entry point is [engineering status](almanac-engineering-status.md), including the now-present native adapter source, missing DLL integration, and review/acceptance limits. The inventory below describes the earlier handoff, not the latest tree.
+
 This source handoff publishes Arena's previously uncommitted work so agents using `Almanac` can inspect the same files. It is NOT approval to deploy, arm the old sidebar hook, or call live Finance services from the prototype. The user authorized creating and merging this synchronization PR. Review gates below remain open after merge.
 
 ## Included work groups
