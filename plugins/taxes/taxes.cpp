@@ -674,6 +674,30 @@ struct TaxSnapshot {
     int   enabled[3];
 };
 
+// v4.6 / API v3: expose configured policy without triggering any tax work.
+static int g_policySnapshotReady = 0; // protected by g_lock; set after Start
+static int GetPolicySnapshotImpl(TsmTaxPolicySnapshot* out, unsigned outSize)
+{
+    if (!out || outSize < sizeof(TsmTaxPolicySnapshot)) return 0;
+    TsmTaxPolicySnapshot snapshot = {};
+    snapshot.structSize = sizeof(snapshot);
+    EnterCriticalSection(&g_lock);
+    if (!g_policySnapshotReady) {
+        LeaveCriticalSection(&g_lock);
+        return 0; // No reads during startup currency conversion; output untouched.
+    }
+    snapshot.configured[TSM_TAX_VAT] = g_vatRate;
+    snapshot.configured[TSM_TAX_PROFIT] = g_profitTaxRate;
+    snapshot.configured[TSM_TAX_PROPERTY] = g_propertyTaxFlat;
+    snapshot.enabled[TSM_TAX_VAT] = g_vatEnabled ? 1 : 0;
+    snapshot.enabled[TSM_TAX_PROFIT] = g_profitEnabled ? 1 : 0;
+    snapshot.enabled[TSM_TAX_PROPERTY] = g_propertyEnabled ? 1 : 0;
+    snapshot.propertyLandValue = g_propertyLandValue ? 1 : 0;
+    LeaveCriticalSection(&g_lock);
+    *out = snapshot;
+    return 1;
+}
+
 static const TsmTaxesApi kApi = {
     sizeof(TsmTaxesApi),
     GetVatRateImpl,
@@ -683,6 +707,7 @@ static const TsmTaxesApi kApi = {
     IsTaxEnabledImpl,
     SetTaxRateImpl,
     SetTaxEnabledImpl,
+    GetPolicySnapshotImpl,
 };
 
 // ---------------------------------------------------------------- settings
@@ -1169,7 +1194,7 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
 {
     TsmBind(host);
     info->name    = "taxes";
-    info->version = "4.5";
+    info->version = "4.6";
 
     g_simClock = (const TsmSimClockApi*)
         H->consume(TSM_SERVICE_SIM_CLOCK, TSM_SIM_CLOCK_VERSION);
@@ -1180,15 +1205,17 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
         return 1;
     }
 
-    // v2 ABI: publish both the v2 iface (full struct) and a v1 view (prefix
-    // only). A consumer built against the old header asks for v1 and reads
-    // exactly the prefix it expects; a v2 consumer asks for v2 and gets the
-    // fiscal-policy tail. Same dual-provide currency (v3/v4), citizen_labor
-    // (v2/v3) and resource_pricing (v1/v2) use.
+    // v3 ABI: retain exact-version v1/v2 prefix views for existing binaries.
     static TsmTaxesApi kApiV1;
-    memcpy(&kApiV1, &kApi, sizeof(kApiV1));
+    static TsmTaxesApi kApiV2;
+    kApiV1 = kApi;
     kApiV1.structSize = (unsigned)offsetof(TsmTaxesApi, isTaxEnabled);
+    kApiV1.getPolicySnapshot = nullptr;
+    kApiV2 = kApi;
+    kApiV2.structSize = (unsigned)offsetof(TsmTaxesApi, getPolicySnapshot);
+    kApiV2.getPolicySnapshot = nullptr;
     H->provide(TSM_SERVICE_TAXES, TSM_TAXES_VERSION_V1, &kApiV1);
+    H->provide(TSM_SERVICE_TAXES, TSM_TAXES_VERSION_V2, &kApiV2);
     H->provide(TSM_SERVICE_TAXES, TSM_TAXES_VERSION, &kApi);
     return 0;
 }
@@ -1315,7 +1342,11 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
             Logf("taxes  WARN  persistence refused the handler");
     }
 
-    Logf("taxes  live v4.5 (currency %s, macro readouts %s, CPI %s)",
+    EnterCriticalSection(&g_lock);
+    g_policySnapshotReady = 1;
+    LeaveCriticalSection(&g_lock);
+
+    Logf("taxes  live v4.6 (currency %s, macro readouts %s, CPI %s)",
          CurSym(),
          g_macroIndicators ? "on" : "off",
          TsmPricingHasCpi(g_pricing) ? "live (pricing v3)"

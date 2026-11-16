@@ -28,11 +28,79 @@ It is a **context-specific integration check**, not a research project to redisc
 
 An independent button in the same row and a separate global page are the preferred direction; an Economy & Trade page is the accepted fallback for the page location. Neither changes the same-row button requirement.
 
+## Current direction — overlay handoff
+
+The user selected in-game overlays for Almanac/macro panels; native controls
+remain for supported native windows. The older native-popup research below is
+historical, not the current panel implementation plan. See
+[overlay design](almanac-overlay-design.md) and
+[backend review scope](almanac-overlay-backend-review.md).
+The native sidebar launcher remains unverified and must not be armed.
+Host-tested policy and the isolated ImGui prototype do not establish Windows
+plugin compilation, input isolation or in-game acceptance. In particular,
+preparatory ui_panels renderer changes still require Windows/runtime review.
+
+## Button implementation progress — 2026-11-14
+
+Preparatory implementation, **not a working modal launcher**:
+
+- `ui_panels` 6.16 separates `DrawPanelButtonAtRect` from widget layout/budget.
+  Game, optional verified window (diagnostics only), fonts, clip permission,
+  cursor-fallback permission, live state and press owner are explicit inputs.
+  The helper is private to that DLL; a screen adapter/service is still needed
+  before `almanac_button` can use it. No public API version changed.
+- `src/ui_button_core.h` supplies validated, pixel-aligned bounds and the press
+  policy used by the renderer. Collision globals, textured Draw, 9-patch rect
+  and label derive from those bounds. Pressed/active feedback no longer shifts
+  the quad away from the tested rectangle. Existing widget callers retain
+  their OS-cursor fallback; the future launcher must disable it.
+- `tests/almanac_button/ui_button_core_test.cpp` covers DPI geometry, invalid
+  bounds, physical edges, delayed engine latches, release/re-arm and hover/live
+  gating. This tests shared policy, not the native DLL or collision geometry.
+- The trade-row hook, `DrawNinthTile`, its AABB test and its `game+0x5E6`
+  writes are **not migrated yet**. Native row ordering is untouched. Do not
+  deploy this as the completed launcher or infer click-through protection.
+
+The modal prerequisite is narrower than finding an allocator. In cached raw
+`ghidra-exports/decomp_1406EE2A0.c`, lines 127–139 can mark existing windows;
+155–165 allocate/initialize a window and retain `param_3` at byte `+0x240`;
+680–725 show existing-window changes, table insertion and game input-state
+writes. The insertion ABI has subsequent corrections/closure in
+`ghidra-index/6EE2A0.md`, `1E140.md` and `1E8C0.md`; do not treat the
+three-argument decompiler call as the verified ABI. None of that establishes
+an available mod-owned window kind or a modal lifecycle.
+
+Next native evidence needed: one supported non-building window route from
+creation arguments through dispatcher drawing, frontmost input ownership,
+close/Escape, removal/destruction and resize/DPI updates. Establish whether a
+custom draw/provider route exists without a fabricated building descriptor or
+unknown kind. Do not call the generic creator or reuse building-window offsets
+on the trade screen to bypass this gap. This Linux checkout has an engine DLL
+but no locally available game executable/Ghidra project or Windows build tool;
+no fresh native analysis, DLL build or runtime observation was performed.
+Independent child review is unavailable in this session; this change is not
+independently reviewed.
+
 ## Finance and tax service findings
+
+Read-only presentation preparation (2026-11-14):
+`src/almanac_finance_snapshot.h` and `src/almanac_finance_view.h` now build a
+per-field availability model and fixed-capacity Finance rows from existing
+public services. Integration contract, API limitations and host-test commands:
+[`FINANCE_SNAPSHOT.md`](../tests/almanac_button/FINANCE_SNAPSHOT.md).
+Taxes API v3 now adds a coherent configured-policy getter, consumed by this
+model; v1/v2 remain published and older providers retain unavailable-field
+fallbacks. This does not add native editing controls or native UI.
+
+`src/almanac_finance_editor.h` now supplies the separate host-tested Apply/Cancel
+controller: local percent/amount drafts, validation, optimistic conflict checks,
+changed-field setters, dependency skips, explicit partial outcomes and policy
+readback. It is not an atomic policy transaction or connected native widget.
+Integration and limits: [`FINANCE_EDITOR.md`](../tests/almanac_button/FINANCE_EDITOR.md).
 
 - [`currency_api.h`](../src/currency_api.h) exposes treasury and active-currency access. Consumers must handle unavailable services and version/size compatibility.
 - [`state_ledger`](../plugins/state_ledger/state_ledger.cpp) holds its flow aggregation and closed-period HUD values privately; it does not currently publish a general snapshot service. Its flow total and the observed treasury change are separate values. A versioned snapshot with period, currency, validity, tracked flows, observed change, and unexplained difference is a **design candidate**, not an implemented API.
-- [`taxes_api.h`](../src/taxes_api.h) exposes enabled flags and policy setters for VAT, profit, and property tax. VAT and profit getters report **effective zero when suspended**, and the public API has no generic configured property-value getter. A future configured-policy snapshot/getter is needed to show the stored values accurately while suspended; preserve existing consumers and exact-version service behavior.
+- [`taxes_api.h`](../src/taxes_api.h) v3 appends `getPolicySnapshot`: configured VAT/profit fractions, live property base, enabled flags and the property scaling rule copied under one provider lock. Legacy rate getters still report **effective zero when suspended**. Taxes 4.6 preserves exact-version v1/v2 publication; rebuilt enterprise_base/private_shops also fall back to those older providers. Provider/API/consumer tests extract the actual new production bodies; Windows DLL build and independent review remain pending.
 - The property-tax control sets a base amount per enterprise, not a percentage. `SettlePropertyAll` scales that base by attractiveness when `property_land_value` is enabled (the shipped INI default), and uses it flat when disabled. The Almanac should present the active rule and call the authoritative setters rather than inventing parallel behavior.
 
 ## Evidence and limits
