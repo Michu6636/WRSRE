@@ -157,6 +157,7 @@
 #include "../../src/tesmio_plugin.h"
 #include "almanac_button_geometry.h"
 #include "almanac_open_state.h"
+#include "almanac_trampoline.h"
 
 #define ALM_DRAW_SYM "?Draw@C3D_PANEL2D@@QEAAXMMMMM_N@Z"   // same as ui_panels
 
@@ -944,18 +945,22 @@ static void InstallSidebarHook(void)
         return;
     }
 
-    // Build trampoline: copy 18 bytes + JMP rel32 to target+18.
-    // Allocate executable memory for trampoline.
+    // Build a trampoline with an absolute jump back. VirtualAlloc(NULL) may
+    // place it more than +/-2 GB from the game image, so a JMP rel32 can silently
+    // truncate and resume in unrelated memory (the prior code did exactly that).
+    static_assert(sizeof(void*) == 8, "The sidebar trampoline requires x64");
     void* tramp = VirtualAlloc(NULL, 64, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
     if (!tramp) {
         Logf("almanac_button  sidebar hook: VirtualAlloc failed");
         return;
     }
-    memcpy(tramp, (const void*)target, 18);
-    ((unsigned char*)tramp)[18] = 0xE9;  // JMP rel32
-    int32_t rel = (int32_t)((target + 18) - ((uintptr_t)tramp + 18 + 5));
-    memcpy((unsigned char*)tramp + 19, &rel, 4);
-    FlushInstructionCache(GetCurrentProcess(), tramp, 23);
+    auto* trampoline = static_cast<unsigned char*>(tramp);
+    memcpy(trampoline, (const void*)target, 18);
+    // jmp qword ptr [rip+0] ; followed by the absolute target+18 address.
+    unsigned char jumpBack[almanac_button::AbsoluteIndirectJumpSize]{};
+    almanac_button::EncodeAbsoluteIndirectJump(jumpBack, target + 18);
+    memcpy(trampoline + 18, jumpBack, sizeof(jumpBack));
+    FlushInstructionCache(GetCurrentProcess(), tramp, 18 + sizeof(jumpBack));
 
     // Publish trampoline pointer before hook goes live.
     g_sidebarTrampPtr = tramp;
@@ -972,11 +977,11 @@ static void InstallSidebarHook(void)
         return;
     }
 
-    unsigned char jmp[14] = { 0xFF, 0x25, 0x00, 0x00, 0x00, 0x00 };
-    void* detour = (void*)h_Sidebar;
-    memcpy(jmp + 6, &detour, 8);
-    memcpy((void*)target, jmp, 14);
-    memset((void*)(target + 14), 0x90, 4);  // NOP pad
+    unsigned char jmp[almanac_button::AbsoluteIndirectJumpSize]{};
+    almanac_button::EncodeAbsoluteIndirectJump(
+        jmp, reinterpret_cast<uintptr_t>(h_Sidebar));
+    memcpy((void*)target, jmp, sizeof(jmp));
+    memset((void*)(target + sizeof(jmp)), 0x90, 18 - sizeof(jmp));  // NOP pad
     FlushInstructionCache(GetCurrentProcess(), (void*)target, 18);
 
     if (!VirtualProtect((void*)target, 18, oldProt, &oldProt)) {
@@ -1013,11 +1018,11 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
 {
     TsmBind(host);
     info->name    = "almanac_button";
-    info->version = "2.12";
+    info->version = "2.13";
 
     ReadSettings();
     InitializeCriticalSection(&g_almanacMutex);
-    Logf("almanac_button  init v2.12 (SEH-wrap CreateManagedTexture/GetMouseSolid; 0x5E6 comment fix)");
+    Logf("almanac_button  init v2.13 (absolute sidebar trampoline return jump)");
     if (!g_enabled) {
         Logf("almanac_button  disabled (enabled = 0)");
         return 1;                       // loader calls FreeLibrary; nothing is patched
