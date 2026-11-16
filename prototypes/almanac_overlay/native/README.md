@@ -1,6 +1,6 @@
 # Isolated D3D11 panel candidate — NOT a working plugin yet
 
-Cross-subsystem entry point: [Almanac engineering status](../../../docs/almanac-engineering-status.md). PR #82 merged this preparation into Almanac; merge is not Windows/runtime acceptance. Its latest adapter review was still reported in progress when the handoff was updated; recheck the PR rather than assuming the earlier renderer check covered the adapter.
+Cross-subsystem entry point: [Almanac engineering status](../../../docs/almanac-engineering-status.md). PR #82 merged this preparation into Almanac; its final adapter source review passed, but this is not Windows/runtime or hook-install acceptance. The follow-on [Windows build and standalone diagnostic](WINDOWS_CHECK.md) now provides an isolated CMake target and F8 test-window source; it is not a game DLL and has not been Windows-built/run. This new work has not yet been independently reviewed.
 
 `d3d11_panel.{h,cpp}` prepares the actual ImGui DX11 draw path, following Earthworks' real-swap-chain architecture without copying its monolithic interception/input code. It is outside normal plugin discovery, has no exports/DllMain and is not built by the host runner. It installs no IAT/Present/WndProc hook. No Windows compilation, GPU test, deployment or game execution has been performed. Independent review is outstanding. Do not drop this source into `plugins/` or enable it in a live game.
 

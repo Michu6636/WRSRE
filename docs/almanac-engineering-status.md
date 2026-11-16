@@ -1,6 +1,6 @@
 # Almanac engineering status and handoff
 
-**Start here for current implementation status.** Baseline: `Almanac` merge `6e3d61f73a6bb16aa19c8496dbf96e4884209b61` ([PR #82](https://github.com/Michu6636/WRSRE/pull/82)). This documentation update does not implement, build or deploy anything. Older Almanac plans/reviews remain historical evidence; their sidebar approach and implementation-status statements are not the current delivery plan.
+**Start here for current implementation status.** Baseline: `Almanac` merge `6e3d61f73a6bb16aa19c8496dbf96e4884209b61` ([PR #82](https://github.com/Michu6636/WRSRE/pull/82)). Follow-on development on the current branch adds an isolated Windows compilation target and standalone renderer diagnostic (not a game plugin); neither has been Windows-built or deployed. Older Almanac plans/reviews remain historical evidence; their sidebar approach and implementation-status statements are not the current delivery plan.
 
 ## What the user wants / immediate milestone
 
@@ -22,7 +22,8 @@ Preserve the eight native sidebar buttons' order, artwork and click behavior. Do
 | Toggle policy | `prototypes/almanac_overlay/almanac_debug_toggle.h` | Host-tested: hidden initially, requires allowed release then press, repeat suppression, hides/disarms on permission loss. Visibility is not GPU-resource ownership. |
 | DX11 drawing component | `prototypes/almanac_overlay/native/d3d11_panel.{h,cpp}` | Windows-only source candidate; NOT Windows-compiled or GPU-tested. Own context/COM resources; supplied chain, synthetic drawing, target restoration. |
 | Creation/Present/F8 adapter | `prototypes/almanac_overlay/native/graphics_adapter.{h,cpp}` | Callable hook-installation source candidate; NOT invoked by any plugin or built by normal discovery. No runtime acceptance. |
-| Plugin/build integration | No development DLL entry point or isolated Windows build target yet | **Missing.** No file to deploy as a working Almanac plugin. |
+| Windows compilation/diagnostic | `prototypes/almanac_overlay/native/CMakeLists.txt`, `panel_window.cpp`, [Windows check](../prototypes/almanac_overlay/native/WINDOWS_CHECK.md) | Explicit x64 MSVC build target and standalone WARP-DX11 F8 test-window source added; not Windows-compiled/run. Compiles adapter source but does not install hooks. |
+| Plugin integration | No development DLL entry point yet | **Missing.** No file to deploy as a working Almanac plugin. |
 | Interaction/live Finance | No native overlay input arbitration or provider/safe-phase hookup | **Missing.** Do not call host Finance services from Present simply because host tests pass. |
 
 All overlay prototype/native candidate code intentionally lives outside `plugins/` and `build.bat` discovery. No normal plugin behavior was changed to activate it.
@@ -69,7 +70,7 @@ Chain/panel references are deliberately process-long. No hot unload, full device
 - Headless tests cover synthetic/unavailable rows, window bounds after simulated viewport changes, noninteractive flags, toggle policy, style isolation and draw output. They do not visually inspect a GPU panel or exercise any Windows native adapter.
 - **No Windows compile/link, native/GPU/input test, deployment or Almanac game execution has occurred for this candidate.** No working DLL/artifact hash can be supplied yet.
 - PR #80 merged groundwork; #81 merged the completed-result stale-ack fix and consolidated test runner. #82 merged drawing/toggle/style/renderer/adapter preparation as `6e3d61f`.
-- Kilo passed PR #82 head `0aade50` (panel/renderer preparation). The later adapter commit `3a964e6` started a new check. At merge it was running; when queried for this documentation update it **still reported IN_PROGRESS**. Do not call the adapter review passed based on the earlier success. Recheck [PR #82](https://github.com/Michu6636/WRSRE/pull/82) before implementation decisions.
+- Kilo passed PR #82 head `0aade50` (panel/renderer preparation). The adapter commit `3a964e6` started a new check, still running at merge and the original handoff update. It has now completed **SUCCESS**, and its published review reports no issues in the adapter diff. That review explicitly does NOT claim Windows compilation, game integration or hook/install acceptance. It also does not cover the new Windows build/diagnostic changes on this branch.
 - No independent child reviewer is exposed in this Arena session; no independent approval of this documentation update is claimed. Beam S0 likewise reported no independent reviewer.
 
 Reproduce host checks (offline by default) using [HOST_TESTS.md](../tests/almanac_button/HOST_TESTS.md):
@@ -86,9 +87,9 @@ Default run: 12 checks, optional drawing skipped. With ImGui: 13. Pin: upstream 
 ## Concrete next work / completion evidence
 
 1. **Review owner:** retrieve final adapter review; check chaining/publication, lock/re-entry behavior, initialization failure and lifetime contracts against code. Close findings, not merely status labels.
-2. **Matching-binary operator:** establish loader Start versus graphics creation timing and how to identify the correct HWND early enough. Provide exact commands, identities, raw exports/observations, thread/order evidence and explicit unknowns. Existing S0 is static only; any runtime diagnostics need separately scoped authorization. Do not invent a dummy chain/global-pointer fallback if installation is late.
+2. **Matching-binary operator:** establish loader Start versus graphics creation timing and how to identify the correct HWND early enough. Source tracing now shows loader DllMain → Init → LoadPlugins → StartPlugins, so Start is under the loader lock, not a safe graphics/window initialization callback. See the [startup blocker](../prototypes/almanac_overlay/native/WINDOWS_CHECK.md). Provide exact commands, identities, raw exports/observations, thread/order evidence and explicit unknowns. Existing S0 is static only; any runtime diagnostics need separately scoped authorization. Do not invent a dummy chain/global-pointer fallback if installation is late.
 3. **Integration engineer:** implement an explicitly enabled development entry point and isolated build target after those decisions. Supply identity/window/permission producers; keep synthetic draw-only mode, no Finance calls. Resolve F8 budget-HUD coexistence without breaking existing controls. Keep normal builds unchanged by default.
-4. **Windows builder:** compile/link the actual DLL with the pinned core and DX11 backend; retain compiler/dependency/source identities and logs. This has not been done. Avoid bundling unrelated Earthworks terrain/runtime hooks.
+4. **Windows builder:** first compile the new isolated static candidate/test-window target and manually check F8/rendering/resize without the game; retain compiler/dependency/source identities and logs. Then compile/link the actual opt-in DLL after entry-point/startup work is reviewed. Neither Windows build has been done here. Avoid bundling unrelated Earthworks terrain/runtime hooks.
 5. **Disposable-copy operator:** after explicit authorization, record DLL hash/config and verify F8 shows/hides the synthetic panel once per press; focus loss/held-key restore, alt-tab, minimize/resize, native modal interaction and original rendering/HUD/sidebar behavior. Capture screenshots/logs and failure behavior. No save/policy changes are needed for this milestone.
 6. **Then:** add reviewed interaction/input ownership and recovery; connect real read-only Finance through a verified safe-phase adapter; editing follows session/world/revision safety proof. Final player launcher is unresolved. Audit full Almanac-to-main changes and regressions before a product merge; branch synchronization alone is not release readiness.
 
