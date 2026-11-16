@@ -11,7 +11,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[2]
 SUITES = (
-    "ui_button_core", "almanac_button_geometry", "almanac_open_state",
+    "ui_button_core", "almanac_button_geometry", "almanac_trampoline", "almanac_open_state",
     "almanac_panel_state", "almanac_finance", "almanac_finance_editor",
     "almanac_overlay_bridge", "almanac_overlay_controller",
     "almanac_finance_session", "almanac_finance_executor", "almanac_debug_toggle",
