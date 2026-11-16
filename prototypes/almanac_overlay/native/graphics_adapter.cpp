@@ -29,6 +29,7 @@ IDXGISwapChain* selectedChain = nullptr;
 D3D11Panel* panel = nullptr;
 DWORD renderOwner = 0;
 bool initializationAttempted = false;
+bool panelVisibleLogSent = false;
 thread_local bool drawing = false;
 
 // Caller serializes writes. Output is published before the replacement becomes
@@ -71,6 +72,10 @@ HRESULT STDMETHODCALLTYPE PanelPresent(IDXGISwapChain* swap, UINT interval, UINT
                     // unchanged; it does not consume this high-bit sample.
                     const bool down = (GetAsyncKeyState(VK_F8) & 0x8000) != 0;
                     if (!panel->Draw(swap, permission.load(), down)) healthy.store(false);
+                    else if (panel->Visible() && !panelVisibleLogSent) {
+                        panelVisibleLogSent = true;
+                        if (host->log) host->log("almanac graphics: synthetic ImGui panel visible; F8 hides/reopens");
+                    }
                 } else if (GetCurrentThreadId() != renderOwner) {
                     healthy.store(false); // no owner migration guess
                 }

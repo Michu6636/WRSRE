@@ -81,7 +81,7 @@ extern "C" __declspec(dllexport) int TsmPluginStart() {
         // Observer install only: no HWND/graphics initialization here.
         if (!almanac::InstallGraphicsAdapter(host, true)) return 1;
         almanac::SetGraphicsAdapterPermission(allowSynthetic);
-        host->log("almanac dev: observer installed; F8 draws synthetic data only; no live Finance/input capture");
+        host->log("almanac dev: observer installed; synthetic panel opens on first eligible frame; F8 hides/reopens; no live Finance/input capture");
         return 0;
     } catch (...) {
         almanac::SetGraphicsAdapterPermission(false);

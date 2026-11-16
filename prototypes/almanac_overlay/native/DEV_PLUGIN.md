@@ -1,6 +1,6 @@
 # Experimental Almanac DLL — build/review candidate, not game acceptance
 
-`dev_plugin.cpp` supplies the Tesmio API 4 Init/Start exports. It is outside `plugins/`, has no custom DllMain, and its target is **ON by default only in this isolated CMake project**. The normal `build.bat` build does not include it, and CMake does not copy a DLL/config into a game. The current [Earthworks panel-spawn check](../test_menu/README.md) does not build or stage this synthetic DLL. Its config defaults to enabling the synthetic F8 panel only when this development DLL is loaded. Use only after source review and a Windows build, and test only on a disposable copy.
+`dev_plugin.cpp` supplies the Tesmio API 4 Init/Start exports. It is outside `plugins/`, has no custom DllMain, and its target is **ON by default only in this isolated CMake project**. The normal `build.bat` build does not include it, and CMake does not copy a DLL/config into a game. The corrected [Almanac panel-spawn check](../test_menu/README.md) builds and stages this `almanac_overlay_dev.dll` into a disposable Tesmio copy. Its read-only synthetic panel auto-shows on the first eligible foreground render; F8 hides/reopens it. The log attached to the previous attempt showed only `almanac_button.dll`, not this plugin. Test only on a disposable copy.
 
 ## Explicit build target (not yet Windows-tested)
 
@@ -20,9 +20,9 @@ Expected output: `build/almanac_native/Debug/almanac_overlay_dev.dll`. This is t
 The example `almanac_overlay_dev.ini` is not copied by the build. Both settings and their missing-config fallbacks default to one for this development DLL:
 
 - `enabled`: opts into binary validation and creation-observer installation. If set to zero, Init declines with no hooks installed.
-- `allow_synthetic_without_modal_tracking`: permits the noninteractive synthetic overlay without a native modal-state provider. If set to zero, observation may occur but F8 cannot draw. This is deliberately named: there is **no native modal-state provider**, so the overlay may cover native dialogs. It captures no input and does not block underlying game controls. Do not click through it. Restrict use to disposable-copy visual tests.
+- `allow_synthetic_without_modal_tracking`: permits the noninteractive synthetic overlay without a native modal-state provider. If set to zero, observation may occur but the panel will not draw. This is deliberately named: there is **no native modal-state provider**, so the overlay may cover native dialogs. It captures no input and does not block underlying game controls. Do not click through it. Restrict use to disposable-copy visual tests.
 
-Neither setting permits live Finance access, editing, deployment, save writes or enabling the old sidebar prototype. Existing budget/HUD F8 remains unchanged; both would toggle in a game test. Final player launcher and shared hotkey ownership remain unresolved.
+The overlay auto-shows only after a matching game chain is observed and the game window is foreground/visible. Focus loss hides and disarms it; after returning, a fresh F8 press reopens it. It remains read-only, captures no input and can cover native dialogs because there is no modal-state provider. Existing budget/HUD F8 remains unchanged, so F8 can affect both. Neither setting permits live Finance access, editing or save writes. Final player launcher and shared hotkey ownership remain unresolved.
 
 ## Identity/startup contract
 

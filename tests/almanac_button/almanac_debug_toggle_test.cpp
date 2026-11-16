@@ -34,5 +34,20 @@ int main() {
     CHECK(!toggle.Update(false, false));
     CHECK(!toggle.Update(false, true));
     CHECK(toggle.Update(true, true) && toggle.Visible());
+
+    almanac::DebugOverlayToggle autoShow;
+    CHECK(!autoShow.ShowOnFirstAllowedFrame(false)); // wait for foreground permission
+    CHECK(!autoShow.Visible());
+    CHECK(autoShow.ShowOnFirstAllowedFrame(true) && autoShow.Visible());
+    CHECK(!autoShow.ShowOnFirstAllowedFrame(true)); // show once, not every frame
+    CHECK(!autoShow.Update(true, true)); // a held startup key does not close it
+    CHECK(autoShow.Visible());
+    CHECK(!autoShow.Update(false, true));
+    CHECK(autoShow.Update(true, true) && !autoShow.Visible());
+    CHECK(!autoShow.Update(false, false)); // focus loss remains fail-closed
+    CHECK(!autoShow.ShowOnFirstAllowedFrame(true)); // focus restore does not auto-reopen
+    CHECK(!autoShow.Update(true, true)); // held through restore is ignored
+    CHECK(!autoShow.Update(false, true));
+    CHECK(autoShow.Update(true, true) && autoShow.Visible());
     std::puts("debug visibility toggle tests passed");
 }

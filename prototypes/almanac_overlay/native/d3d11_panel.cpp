@@ -92,6 +92,7 @@ bool D3D11Panel::Draw(IDXGISwapChain* swap, bool allowed, bool f8Down) {
     }
     allowed = allowed && IsWindowVisible(window_) && !IsIconic(window_) &&
               GetForegroundWindow() == window_;
+    toggle_.ShowOnFirstAllowedFrame(allowed);
     toggle_.Update(f8Down, allowed);
     const auto now = std::chrono::steady_clock::now();
     const float elapsed = std::chrono::duration<float>(now - last_).count();

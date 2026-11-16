@@ -23,7 +23,7 @@ Outputs are an isolated static native-candidate library and `build/almanac_nativ
 
 Only run after a successful build/source review. Launch the executable directly, NOT through the game. It creates its own WARP software-DX11 device/swap chain and an obviously labelled window. A successful process exit does not automatically certify the following visual checks:
 
-1. Initially only a dark background appears. Release F8, then press it: paper/ink synthetic Finance panel appears. Holding F8 must not flicker/toggle repeatedly; next fresh press hides it.
+1. The paper/ink synthetic Finance panel should appear automatically on the first eligible foreground frame. A fresh F8 press hides it; the next fresh press reopens it. Holding F8 must not flicker/toggle repeatedly.
 2. Confirm the synthetic-data banner, invented RUB balance, unavailable policy values and absence of editable/Close controls. This is not your republic's data.
 3. Resize repeatedly, including small sizes. Panel re-anchors; extremely small/minimized work areas omit drawing. No crash or ResizeBuffers error should occur. Clipping at tiny sizes is not final usability acceptance.
 4. Alt-tab/minimize with the panel visible: it hides/disarms. Returning while F8 is held must not reopen it; release and press again. Neither ImGui mouse capture nor input suppression is implemented.

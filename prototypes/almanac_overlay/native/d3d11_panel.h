@@ -30,6 +30,7 @@ public:
     // allowed includes development opt-in, focus/modal/readiness permission.
     // False means unavailable/fault: adapter must bypass overlay, not skip Present.
     bool Draw(IDXGISwapChain* swap, bool allowed, bool f8Down);
+    bool Visible() const { return toggle_.Visible(); }
     void Shutdown(); // no hook removal; caller retains interception ownership
 private:
     Microsoft::WRL::ComPtr<IDXGISwapChain> swap_;

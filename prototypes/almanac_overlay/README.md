@@ -2,9 +2,9 @@
 
 Current cross-subsystem handoff: [Almanac engineering status](../../docs/almanac-engineering-status.md).
 
-The current panel-spawn check is documented in [`test_menu/README.md`](test_menu/README.md). It builds the actual Earthworks plugin and gives the manual copy/INI steps for a disposable copy; it does not build or enable the synthetic Almanac DLL and does not edit the native sidebar.
+The current Almanac panel-spawn check is documented in [`test_menu/README.md`](test_menu/README.md). It builds and manually stages the separate `almanac_overlay_dev.dll` into a disposable Tesmio copy; it does not use Earthworks' gameplay DLL or alter the native sidebar.
 
-This directory remains outside `plugins/` and normal `build.bat` plugin discovery. It contains synthetic drawing code, a development DLL entry point and creation/Present/F8 adapter under `native/`. The isolated CMake project now builds that DLL target by default, but no build step copies the DLL/config into a game or installs hooks. The adapter has not been Windows-built or tested in-game, so there is no verified working F8 shortcut yet. Do not enable the old experimental `almanac_button` plugin to test it.
+This directory remains outside `plugins/` and normal `build.bat` plugin discovery. It contains synthetic drawing code, a development DLL entry point and creation/Present adapter under `native/`. The isolated CMake project defines that DLL target, but does not copy it into a game. The panel auto-shows on its first eligible foreground render and F8 hides/reopens it. Windows compilation, staging and in-game visual acceptance are still outstanding. `almanac_button.dll` is a separate native-sidebar prototype; its load log is not evidence that the ImGui panel loaded.
 
 `DrawOverlayReadOnlyPrototype` is the new draw-only candidate: it has no Close button, titlebar controls, movement, resize, navigation or mouse interaction. Its window uses NoInputs/NoDecoration/NoMove/NoFocusOnAppearing/NoBringToFrontOnFocus flags and re-anchors/resizes each frame against the viewport work area. It skips invalid/minimized/tiny work areas instead of retaining stale visible bounds. Its banner wraps at the window edge. Visibility is controlled by its caller, not a hotkey or click.
 
@@ -16,7 +16,7 @@ Neither path calls services, executes edits or infers game readiness. No live Fi
 
 ## F8 development visibility policy
 
-`almanac_debug_toggle.h` supplies a host-only `DebugOverlayToggle`. It starts hidden and requires an allowed key-up followed by key-down, toggles once per press, ignores held/repeated down samples, and hides/disarms whenever permission is lost. `Hide()` also disarms it. Restoring permission with F8 held cannot reopen it. Hiding does not create/destroy resources or change the Finance/panel lifecycle.
+`almanac_debug_toggle.h` supplies a host-only `DebugOverlayToggle`. The current dev panel auto-shows once on the first allowed foreground frame. F8 then toggles it once per fresh press; held/repeated samples do not flicker it. Permission loss hides/disarms it, and focus restoration with F8 held cannot reopen it. Hiding does not create/destroy resources or change the Finance/panel lifecycle.
 
 The current development adapter samples physical F8 on the selected swap chain's Present callback and applies this policy. Its synthetic-drawing permission now defaults on in the development DLL, but there is no native modal-state provider, so it may cover native dialogs. The adapter checks foreground/visible/not-minimized state; it captures no input and does not consume game keys. Use only for disposable-copy visual tests and do not click through the panel or dialogs. This class itself does not poll Windows, install hooks, assign a final player launcher or prove that F8 is unused; the existing budget HUD also uses F8.
 
@@ -53,8 +53,8 @@ build/almanac_overlay_view_test
 
 ## D3D11 drawing candidate
 
-`native/d3d11_panel.{h,cpp}` now contains an isolated Windows/DX11 draw component for the synthetic Earthworks-styled panel. It takes a verified swap chain and externally sampled F8 state; it installs no interception and is not a working plugin yet. It has NOT been Windows-compiled or GPU-tested. See `native/README.md` for its strict owner/lifetime contract and remaining adapter work, and `docs/almanac-overlay-s0-reconciliation.md` for the corrected Beam evidence. Host test results do not cover these Windows-only files.
+`native/d3d11_panel.{h,cpp}` contains the Windows/DX11 draw component for the synthetic Earthworks-styled panel. It takes the selected swap chain and physical F8 state; it installs no interception itself. It is wired to the isolated development DLL, which auto-shows it on the first eligible foreground frame. Neither the DLL nor renderer has been Windows-compiled or GPU-tested. See `native/README.md` for the owner/lifetime contract and remaining acceptance gates, and `docs/almanac-overlay-s0-reconciliation.md` for the corrected Beam evidence. Host tests do not cover these Windows-only files.
 
-## Next native integration gate
+## Acceptance gate
 
-Before adding graphics or input hooks, independent review must establish hook ownership/coexistence, safe state restoration, lifecycle/thread routing, partial initialization and device/window recovery, pinned dependency/license packaging and a safe development activation path. Existing repository rules disallow speculative native hooks; no child-review capability is exposed here, so independent review is outstanding. This prototype remains deliberately unconnected until that gate is satisfied. Windows build, deployment, visible in-game tests and disposable-copy acceptance have not occurred.
+The isolated `almanac_overlay_dev` source now wires the existing ImGui panel to the creation/Present adapter, but remains an unbuilt development candidate. Before production integration, interaction or live Finance, independent review must establish hook ownership/coexistence, safe state restoration, lifecycle/thread routing, partial initialization and device/window recovery, pinned dependency/license packaging and modal/input behavior. Existing repository rules disallow speculative native hooks; no child-review capability is exposed here, so independent review is outstanding. The Windows DLL build, disposable-copy staging and visual in-game check have not occurred.
