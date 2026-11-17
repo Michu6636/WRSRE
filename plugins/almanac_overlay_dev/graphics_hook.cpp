@@ -51,8 +51,8 @@ constexpr int kPresentVtableIndex = 8;
 // Published before any detour that reads them becomes reachable, and never
 // mutated afterwards.
 const TsmHost* g_host      = nullptr;
-unsigned       g_toggleKey = VK_F8;
-bool           g_autoShow  = true;
+unsigned       g_toggleKey = VK_F9;
+bool           g_autoShow  = false;
 
 using CreateAndSwapChainFn = HRESULT(WINAPI*)(IDXGIAdapter*, D3D_DRIVER_TYPE,
     HMODULE, UINT, const D3D_FEATURE_LEVEL*, UINT, UINT,
@@ -462,7 +462,7 @@ bool StartGraphicsHook(const TsmHost* host, unsigned toggleKey, bool autoShow)
         return false;
 
     g_host      = host;
-    g_toggleKey = toggleKey ? toggleKey : static_cast<unsigned>(VK_F8);
+    g_toggleKey = toggleKey ? toggleKey : static_cast<unsigned>(VK_F9);
     g_autoShow  = autoShow;
 
     HANDLE thread = CreateThread(nullptr, 0, &InstallThread, nullptr, 0, nullptr);

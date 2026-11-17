@@ -141,6 +141,68 @@ void DrawTable(const Row* rows, int count)
 
 } // namespace
 
+LauncherRect DrawAlmanacLauncherButton(bool panelOpen, bool hovered,
+                                       const char* toggleKeyName)
+{
+    LauncherRect rect{};
+    const ImGuiViewport* viewport = ImGui::GetMainViewport();
+    if (!viewport) return rect;
+
+    const ImVec2 origin = viewport->WorkPos;
+    const ImVec2 extent = viewport->WorkSize;
+    if (!(extent.x > 240.0f) || !(extent.y > 120.0f)) return rect;
+
+    const char* key = (toggleKeyName && toggleKeyName[0]) ? toggleKeyName : "F9";
+    char label[64];
+    std::snprintf(label, sizeof(label), "%s (%s)",
+                  panelOpen ? "Almanac [Open]" : "Almanac", key);
+
+    const ImVec2 textSize = ImGui::CalcTextSize(label);
+    const float  padX     = 14.0f;
+    const float  padY     = 6.0f;
+    const float  btnW     = textSize.x + padX * 2.0f;
+    const float  btnH     = textSize.y + padY * 2.0f;
+    const ImVec2 pos(origin.x + 24.0f, origin.y + 64.0f);
+
+    ImGui::SetNextWindowPos(pos, ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2(btnW, btnH), ImGuiCond_Always);
+
+    const ImVec4 bg = panelOpen
+        ? (hovered ? ImVec4(0.56f, 0.17f, 0.13f, 0.98f)
+                   : ImVec4(0.46f, 0.12f, 0.10f, 0.96f))
+        : (hovered ? ImVec4(0.95f, 0.90f, 0.79f, 0.98f)
+                   : ImVec4(0.91f, 0.85f, 0.74f, 0.95f));
+    const ImVec4 border = hovered
+        ? ImVec4(0.65f, 0.22f, 0.16f, 1.00f)
+        : ImVec4(0.36f, 0.25f, 0.16f, 0.90f);
+    const ImVec4 textCol = panelOpen
+        ? ImVec4(0.96f, 0.91f, 0.82f, 1.00f)
+        : kInk;
+
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(1.0f, 1.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 6.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, hovered ? 1.5f : 1.0f);
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, bg);
+    ImGui::PushStyleColor(ImGuiCol_Border, border);
+
+    const ImGuiWindowFlags btnFlags = kPanelFlags | ImGuiWindowFlags_NoTitleBar;
+    if (ImGui::Begin("##almanac_launcher_btn", nullptr, btnFlags)) {
+        ImGui::SetCursorPos(ImVec2(padX, padY));
+        ImGui::TextColored(textCol, "%s", label);
+        rect.left   = pos.x;
+        rect.top    = pos.y;
+        rect.right  = pos.x + btnW;
+        rect.bottom = pos.y + btnH;
+        rect.valid  = true;
+    }
+    ImGui::End();
+
+    ImGui::PopStyleColor(2);
+    ImGui::PopStyleVar(4);
+    return rect;
+}
+
 bool DrawAlmanacPanel(const PanelModel& model)
 {
     const ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -188,14 +250,13 @@ bool DrawAlmanacPanel(const PanelModel& model)
                  + 1.0f + gap + line                           // footer rule + line
                  + gap;                                        // child gap allowance
 
-    float maxHeight = extent.y - 96.0f;
+    float maxHeight = extent.y - 128.0f;
     if (maxHeight < 120.0f) maxHeight = 120.0f;
     if (height > maxHeight) height = maxHeight;
     if (width < 200.0f) width = 200.0f;
 
-    // Anchored top-left with a small margin, matching the game's own tool
-    // panels, so it does not sit on the centre of the map.
-    ImGui::SetNextWindowPos(ImVec2(origin.x + 24.0f, origin.y + 64.0f),
+    // Anchored top-left right below the floating launcher button.
+    ImGui::SetNextWindowPos(ImVec2(origin.x + 24.0f, origin.y + 104.0f),
                             ImGuiCond_Always);
     ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_Always);
 

@@ -17,6 +17,7 @@
 // Nothing here reads game memory, calls a game function or writes game state.
 #include "almanac_panel.h"
 
+#include <windowsx.h>
 #include <dxgi1_4.h>
 
 #include "almanac_panel_view.h"
@@ -24,7 +25,9 @@
 #include "imgui.h"
 #include "backends/imgui_impl_dx11.h"
 
+#include <atomic>
 #include <cstdio>
+#include <mutex>
 
 namespace almanac {
 namespace {
@@ -86,6 +89,104 @@ double NowSeconds()
            static_cast<double>(frequency.QuadPart);
 }
 
+// Scoped WndProc state for the floating launcher button.
+// Shared between the window message thread and the D3D11 present thread.
+std::mutex        g_launcherMutex;
+LauncherRect      g_launcherRect{};
+unsigned          g_surfaceWidth  = 0;
+unsigned          g_surfaceHeight = 0;
+std::atomic<bool> g_launcherHovered{false};
+std::atomic<bool> g_pendingButtonClick{false};
+WNDPROC           g_originalWndProc = nullptr;
+HWND              g_subclassedWindow = nullptr;
+
+bool PointInLauncherButton(HWND hwnd, LPARAM lParam)
+{
+    LauncherRect rect{};
+    unsigned surfW = 0, surfH = 0;
+    {
+        std::lock_guard<std::mutex> lock(g_launcherMutex);
+        rect  = g_launcherRect;
+        surfW = g_surfaceWidth;
+        surfH = g_surfaceHeight;
+    }
+    if (!rect.valid || !surfW || !surfH) return false;
+
+    RECT client{};
+    if (!GetClientRect(hwnd, &client)) return false;
+    const float clientW = static_cast<float>(client.right - client.left);
+    const float clientH = static_cast<float>(client.bottom - client.top);
+    if (!(clientW > 0.0f) || !(clientH > 0.0f)) return false;
+
+    const float mx = static_cast<float>(GET_X_LPARAM(lParam)) *
+                     (static_cast<float>(surfW) / clientW);
+    const float my = static_cast<float>(GET_Y_LPARAM(lParam)) *
+                     (static_cast<float>(surfH) / clientH);
+    return mx >= rect.left && mx <= rect.right &&
+           my >= rect.top  && my <= rect.bottom;
+}
+
+LRESULT CALLBACK AlmanacWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+    switch (msg) {
+    case WM_MOUSEMOVE:
+        g_launcherHovered.store(PointInLauncherButton(hwnd, lParam),
+                                std::memory_order_relaxed);
+        break;
+    case WM_LBUTTONDOWN:
+        if (PointInLauncherButton(hwnd, lParam)) {
+            g_pendingButtonClick.store(true, std::memory_order_release);
+            return 0; // swallow click so the game world does not react behind the button
+        }
+        break;
+    case WM_LBUTTONUP:
+        if (PointInLauncherButton(hwnd, lParam)) {
+            return 0; // swallow matching release
+        }
+        break;
+    case WM_MOUSELEAVE:
+        g_launcherHovered.store(false, std::memory_order_relaxed);
+        break;
+    default:
+        break;
+    }
+    WNDPROC orig = g_originalWndProc;
+    return orig ? CallWindowProcW(orig, hwnd, msg, wParam, lParam)
+                : DefWindowProcW(hwnd, msg, wParam, lParam);
+}
+
+void InstallLauncherWndProc(HWND hwnd)
+{
+    if (!hwnd || g_subclassedWindow) return;
+    WNDPROC prev = reinterpret_cast<WNDPROC>(
+        SetWindowLongPtrW(hwnd, GWLP_WNDPROC,
+                          reinterpret_cast<LONG_PTR>(&AlmanacWndProc)));
+    if (prev && prev != &AlmanacWndProc) {
+        g_originalWndProc  = prev;
+        g_subclassedWindow = hwnd;
+    }
+}
+
+void PublishLauncherRect(const LauncherRect& rect, unsigned width, unsigned height)
+{
+    std::lock_guard<std::mutex> lock(g_launcherMutex);
+    g_launcherRect  = rect;
+    g_surfaceWidth  = width;
+    g_surfaceHeight = height;
+}
+
+const char* HotkeyDisplayName(int vk)
+{
+    switch (vk) {
+    case VK_F8:  return "F8";
+    case VK_F9:  return "F9";
+    case VK_F10: return "F10";
+    case VK_F11: return "F11";
+    case VK_F12: return "F12";
+    default:     return "hotkey";
+    }
+}
+
 } // namespace
 
 Panel::~Panel()
@@ -138,6 +239,7 @@ bool Panel::Initialize(IDXGISwapChain* swap, const PanelSettings& settings)
     toggle_    = OverlayToggle{};
     toggle_.SetAutoShow(settings.autoShow);
     lastTime_  = NowSeconds();
+    InstallLauncherWndProc(window_);
     return true;
 }
 
@@ -295,15 +397,23 @@ bool Panel::Render(IDXGISwapChain* swap, bool keyDown)
 
     if (FAILED(device_->GetDeviceRemovedReason())) return false;
 
-    // Eligibility: the panel only exists over the foreground, unminimised game
-    // window. Behind another window it would paint over the desktop owner, and
-    // ImGui has no way to know it is being seen.
+    // Eligibility: the overlay only exists over the foreground, unminimised game
+    // window. Behind another window it would paint over the desktop owner.
     bool eligible = IsWindow(window_) && !IsIconic(window_);
     if (eligible && !settings_.drawWhenUnfocused)
         eligible = GetForegroundWindow() == window_;
 
-    const bool show = toggle_.Frame(keyDown, eligible);
-    if (!show) return true;                       // hidden: nothing to draw
+    if (!eligible) {
+        PublishLauncherRect(LauncherRect{}, 0, 0);
+        g_launcherHovered.store(false, std::memory_order_relaxed);
+        g_pendingButtonClick.store(false, std::memory_order_relaxed);
+        toggle_.Frame(keyDown, false, false);
+        return true;
+    }
+
+    const bool buttonClicked =
+        g_pendingButtonClick.exchange(false, std::memory_order_acq_rel);
+    const bool show = toggle_.Frame(keyDown, true, buttonClicked);
 
     if (!AcquireBackBuffer(swap)) return false;
 
@@ -322,21 +432,27 @@ bool Panel::Render(IDXGISwapChain* swap, bool keyDown)
     if (!(delta > 0.0f) || delta > 0.25f) delta = 1.0f / 30.0f;  // tab-out, hitch
     io.DeltaTime = delta;
 
-    // No Win32 backend and no input events: the panel is draw-only, so ImGui's
-    // mouse/keyboard state stays empty and the game keeps every click and key.
     ImGui_ImplDX11_NewFrame();
     ImGui::NewFrame();
 
-    PanelModel model;
-    char buildNotice[64];
-    std::snprintf(buildNotice, sizeof(buildNotice), "v%s",
-                  ALMANAC_PANEL_VERSION);
-    model.buildNotice   = buildNotice;
-    model.drawnFrames   = drawnFrames_;
-    model.processId     = static_cast<int>(GetCurrentProcessId());
-    model.autoShow      = settings_.autoShow;
-    model.toggleKeyName = settings_.toggleKey == VK_F8 ? "F8" : "the toggle key";
-    DrawAlmanacPanel(model);
+    const char* keyName = HotkeyDisplayName(settings_.toggleKey);
+    const bool hovered  = g_launcherHovered.load(std::memory_order_relaxed);
+    const LauncherRect btnRect = DrawAlmanacLauncherButton(show, hovered, keyName);
+    PublishLauncherRect(btnRect, bufferWidth_, bufferHeight_);
+
+    if (show) {
+        PanelModel model;
+        char buildNotice[64];
+        std::snprintf(buildNotice, sizeof(buildNotice), "v%s",
+                      ALMANAC_PANEL_VERSION);
+        model.buildNotice   = buildNotice;
+        model.drawnFrames   = drawnFrames_;
+        model.processId     = static_cast<int>(GetCurrentProcessId());
+        model.autoShow      = settings_.autoShow;
+        model.toggleKeyName = keyName;
+        DrawAlmanacPanel(model);
+        ++drawnFrames_;
+    }
 
     ImGui::Render();
     {
@@ -346,7 +462,6 @@ bool Panel::Render(IDXGISwapChain* swap, bool keyDown)
         ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
     }
 
-    ++drawnFrames_;
     return true;
 }
 

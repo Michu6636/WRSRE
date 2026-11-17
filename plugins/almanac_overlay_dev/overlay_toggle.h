@@ -24,7 +24,7 @@ public:
     // drawing was refused by config, or no frame is being produced. The panel
     // hides while ineligible and needs a fresh press afterwards, so holding the
     // key through an alt-tab does not bring it back for free.
-    bool Frame(bool keyDown, bool eligible) {
+    bool Frame(bool keyDown, bool eligible, bool buttonClicked = false) {
         if (!eligible) {
             visible_ = false;
             armed_   = false;
@@ -42,6 +42,11 @@ public:
             visible_      = true;
             armed_        = false;
             return true;
+        }
+
+        if (buttonClicked) {
+            visible_ = !visible_;
+            return visible_;
         }
 
         if (keyDown && armed_) {

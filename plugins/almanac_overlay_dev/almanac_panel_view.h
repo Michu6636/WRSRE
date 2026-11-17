@@ -14,12 +14,29 @@ struct PanelModel {
     const char* title          = "Almanac";
     const char* subtitle       = "Market economy suite";
     const char* dataNotice     = "Synthetic placeholder values - not read from your republic.";
-    const char* toggleKeyName  = "F8";
+    const char* toggleKeyName  = "F9";
     const char* buildNotice    = "";
     int         drawnFrames    = 0;
     int         processId      = 0;
-    bool        autoShow       = true;
+    bool        autoShow       = false;
 };
+
+// Screen-space bounding box of the floating Almanac launcher button, published
+// each frame so WndProc can hit-test and swallow clicks on the button without
+// touching ImGui from the window-message path.
+struct LauncherRect {
+    float left   = 0.0f;
+    float top    = 0.0f;
+    float right  = 0.0f;
+    float bottom = 0.0f;
+    bool  valid  = false;
+};
+
+// Draw the compact floating launcher button anchored top-left below the HUD.
+// Must be called between ImGui::NewFrame() and ImGui::Render(). Returns the
+// button's screen-space rect (valid = false if the viewport is too small).
+LauncherRect DrawAlmanacLauncherButton(bool panelOpen, bool hovered,
+                                       const char* toggleKeyName);
 
 // Draw the panel. Must be called between ImGui::NewFrame() and
 // ImGui::Render(), on the owning thread, with a current context.

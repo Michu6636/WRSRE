@@ -23,8 +23,8 @@ struct ImGuiContext;
 namespace almanac {
 
 struct PanelSettings {
-    bool  autoShow     = true;   // show once without a key press
-    int   toggleKey    = VK_F8;  // launcher
+    bool  autoShow     = false;  // wait for launcher click or F9 by default
+    int   toggleKey    = VK_F9;  // launcher hotkey
     float fontScale    = 1.0f;   // 0.75 .. 2.5
     bool  drawWhenUnfocused = false;
 };
