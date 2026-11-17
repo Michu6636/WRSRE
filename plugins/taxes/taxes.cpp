@@ -607,6 +607,7 @@ static void RecordVatAccrualImpl(void* entity, double amount)
     if (!g_enterprise) return;
 
     TaxSettlementLock settleLock;
+    if (!g_vatEnabled) return;
 
     if (g_vatSchedule == TSM_FREQ_INSTANT) {
         // Settle the moment it is accrued. The sale credited this VAT to

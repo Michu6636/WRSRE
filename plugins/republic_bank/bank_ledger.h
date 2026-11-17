@@ -169,6 +169,7 @@ public:
     }
 
     void repayPrincipal(const LoanKey& key, double amount) {
+        if (IsSessionOnlyLoanKey(key)) return;
         auto it = loans.find(key);
         if (it == loans.end()) return;
         if (amount < 0.0) amount = 0.0;
@@ -178,6 +179,10 @@ public:
 
     bool getEnterpriseDebt(const LoanKey& key, double& principal,
                            double& monthlyInterest, int& missedPayments) const {
+        if (IsSessionOnlyLoanKey(key)) {
+            principal = 0.0; monthlyInterest = 0.0; missedPayments = 0;
+            return false;
+        }
         auto it = loans.find(key);
         if (it == loans.end()) {
             principal = 0.0; monthlyInterest = 0.0; missedPayments = 0;
@@ -191,6 +196,10 @@ public:
 
     Settlement monthlySettle(const LoanKey& key, double& enterpriseCapital) {
         Settlement s;
+        if (IsSessionOnlyLoanKey(key)) {
+            sync(s);
+            return s;
+        }
         Loan& L = loans[key];
         L.key = key;
         if (L.inDefault) {

@@ -779,8 +779,8 @@ static float ClampToMinimum(float wage)
     // into payroll and capital, and worker credits reject non-finite pay.
     float floor = (g_minimumWage > 0.0f) ? g_minimumWage : 0.0f;
     // A non-finite input is not a wage: return zero so the payment is
-    // dropped rather than minting a floor payment from corrupt data.
-    if (!(wage == wage)) return 0.0f;
+    // dropped rather than minting a floor or ceiling payment from corrupt data.
+    if (!isfinite(wage)) return 0.0f;
     if (wage > 1.0e6f) wage = 1.0e6f;
     return (wage < floor) ? floor : wage;
 }
@@ -1005,8 +1005,6 @@ static void ProcessPayrollForPerson(void* person, int day, int month)
     case TSM_FREQ_DAILY:
         if (rec.lastPayDay != day) {
             due = true;
-            rec.lastPayDay   = day;
-            rec.lastPayMonth = month;
             multiplier = 1.0f;
         }
         break;
@@ -1017,8 +1015,6 @@ static void ProcessPayrollForPerson(void* person, int day, int month)
             day -  rec.lastPayDay >= 7)
         {
             due = true;
-            rec.lastPayDay   = day;
-            rec.lastPayMonth = month;
             multiplier = 7.0f;
         }
         break;
@@ -1027,8 +1023,6 @@ static void ProcessPayrollForPerson(void* person, int day, int month)
     default:
         if (rec.lastPayMonth != month) {
             due = true;
-            rec.lastPayMonth = month;
-            rec.lastPayDay   = day;
             multiplier = (float)DaysPerMonth();
         }
         break;
@@ -1057,7 +1051,7 @@ static void ProcessPayrollForPerson(void* person, int day, int month)
         LeaveCriticalSection(&g_lock);
         if (ov > 0.0f) daily = ClampToMinimum(ov);
     }
-    if (!(daily > 0.0f)) return;
+    if (!isfinite(daily) || !(daily > 0.0f)) return;
 
     float amount = daily * multiplier;
 
@@ -1072,9 +1066,13 @@ static void ProcessPayrollForPerson(void* person, int day, int month)
         if (ratio < 0.20f) ratio = 0.20f;
         amount *= ratio;
     }
-    rec.shiftsThisMonth = 0;
 
-    if (!(amount > 0.0f)) return;
+    if (!isfinite(amount) || !(amount > 0.0f)) return;
+
+    // Commit payday and shift consumption only after the payment amount is valid.
+    rec.lastPayDay      = day;
+    rec.lastPayMonth    = month;
+    rec.shiftsThisMonth = 0;
 
     // Ask the private employer, if one is registered and this citizen
     // has a workplace on record.
@@ -1144,7 +1142,7 @@ static void ProcessPayrollForPerson(void* person, int day, int month)
                 rec.consecutiveDefaults = 0;
 
                 float welfare = g_unemployedWelfare * multiplier;
-                if (welfare > 0.0f && g_currency)
+                if (isfinite(welfare) && welfare > 0.0f && g_currency)
                     g_currency->stateToCitizen(person, welfare, "welfare");
             }
             return;
@@ -1500,7 +1498,7 @@ static float Api_GetEffectiveWageForBuilding(void* building)
 static int Api_SetSectorWage(int sectorId, float wage)
 {
     if (sectorId < 0 || sectorId >= TSM_SECTOR_COUNT) return 0;
-    if (!(wage == wage) || !(wage > 0.0f)) return 0;
+    if (!isfinite(wage) || !(wage > 0.0f) || wage > 1.0e6f) return 0;
 
     float w = ClampToMinimum(wage);
     EnterCriticalSection(&g_lock);
@@ -1765,7 +1763,7 @@ static void LoadLabor(const char* dir)
     uint32_t ovCount = 0;
     const BYTE* ovBase = nullptr;
     bool ovTailOk = true;
-    if (hdr.version == LABOR_VERSION) {
+    if (hdr.version >= LABOR_VERSION_V3) {
         ovCount = hdr.overrideCount;
         size_t ovWant = want + (size_t)ovCount * sizeof(LaborOverrideRecord);
         if (ovWant > len) {
@@ -1909,7 +1907,7 @@ static void ReadWageTable(const char* ini)
         DWORD n = H->configString(ini, "wages", key, val, sizeof(val), "");
         if (n == 0 || !val[0]) continue;
         float w = (float)atof(val);
-        if (w > 0.0f && w == w) g_wageTable[t] = w;
+        if (isfinite(w) && w > 0.0f && w <= 1.0e6f) g_wageTable[t] = w;
     }
     // v4: explicit USD per-type overrides. Presence of the section
     // switches unlisted types to the USD default (see GetWageForTypeImpl).
@@ -1921,7 +1919,7 @@ static void ReadWageTable(const char* ini)
         DWORD n = H->configString(ini, "wages_usd", key, val, sizeof(val), "");
         if (n == 0 || !val[0]) continue;
         float w = (float)atof(val);
-        if (w > 0.0f && w == w) {
+        if (isfinite(w) && w > 0.0f && w <= 1.0e6f) {
             g_wageTableUsd[t] = w;
             g_wagesUsdPresent = 1;
         }
@@ -2039,17 +2037,25 @@ static void ReadSettings(void)
     g_stipendRatioToMin = -1.0f;
     g_pensionRatioToMin = -1.0f;
     if (H->configString(ini, "citizen_labor", "default_daily_wage",
-                        v, sizeof(v), "") && v[0])
-        g_defaultDailyWageCfg = (float)atof(v);
+                        v, sizeof(v), "") && v[0]) {
+        float w = (float)atof(v);
+        if (isfinite(w) && w > 0.0f && w <= 1.0e6f) g_defaultDailyWageCfg = w;
+    }
     if (H->configString(ini, "citizen_labor", "unemployed_welfare",
-                        v, sizeof(v), "") && v[0])
-        g_unemployedWelfareCfg = (float)atof(v);
+                        v, sizeof(v), "") && v[0]) {
+        float w = (float)atof(v);
+        if (isfinite(w) && w >= 0.0f && w <= 1.0e6f) g_unemployedWelfareCfg = w;
+    }
     if (H->configString(ini, "citizen_labor", "student_stipend",
-                        v, sizeof(v), "") && v[0])
-        g_studentStipendCfg = (float)atof(v);
+                        v, sizeof(v), "") && v[0]) {
+        float w = (float)atof(v);
+        if (isfinite(w) && w >= 0.0f && w <= 1.0e6f) g_studentStipendCfg = w;
+    }
     if (H->configString(ini, "citizen_labor", "retiree_pension",
-                        v, sizeof(v), "") && v[0])
-        g_retireePensionCfg = (float)atof(v);
+                        v, sizeof(v), "") && v[0]) {
+        float w = (float)atof(v);
+        if (isfinite(w) && w >= 0.0f && w <= 1.0e6f) g_retireePensionCfg = w;
+    }
     if (H->configString(ini, "citizen_labor", "minimum_wage",
                         v, sizeof(v), "") && v[0]) {
         float w = (float)atof(v);

@@ -1297,7 +1297,14 @@ static int ApplyCapital(void* building, double delta,
         e.isPrivate = true;
         e.markup    = g_defaultMarkup;
         if (e.capital == 0.0) e.capital = g_startingCapital;
-        e.capital += delta;
+        double next = e.capital + delta;
+        if (!std::isfinite(next)) {
+            LeaveCriticalSection(&g_lock);
+            return 0;
+        }
+        if (next < -1.0e12) next = -1.0e12;
+        if (next >  1.0e12) next =  1.0e12;
+        e.capital = next;
         ApplyCategory(e, delta, category);
         RebuildOrder();
         LeaveCriticalSection(&g_lock);
@@ -1305,7 +1312,14 @@ static int ApplyCapital(void* building, double delta,
     }
 
     Enterprise& e = it->second;
-    e.capital += delta;
+    double next = e.capital + delta;
+    if (!std::isfinite(next)) {
+        LeaveCriticalSection(&g_lock);
+        return 0;
+    }
+    if (next < -1.0e12) next = -1.0e12;
+    if (next >  1.0e12) next =  1.0e12;
+    e.capital = next;
     ApplyCategory(e, delta, category);
 
     LeaveCriticalSection(&g_lock);
@@ -4063,7 +4077,7 @@ static void SaveRegister(const char* dir)
         if (g_probe)
             Logf("enterprise_base  [SAVE POS] %s at pos=(%.1f, %.1f)",
                  rec.objectName, rec.posX, rec.posZ);
-        rec.capital              = kv.second.capital;
+        rec.capital              = SanitizeLoadedMoney(kv.second.capital, -1.0e12, 1.0e12, 0.0);
         rec.markup               = kv.second.markup;
         rec.accruedVat           = kv.second.accruedVatLiability;
         rec.periodGrossSales     = kv.second.periodGrossSales;
@@ -4527,11 +4541,17 @@ static void ReadSettings(void)
                         v, sizeof(v), "") && v[0])
         g_siphonRate = (float)atof(v);
     if (H->configString(ini, "investment_pool", "payroll_buffer_months",
-                        v, sizeof(v), "") && v[0])
-        g_payrollBufferMonths = (float)atof(v);
+                        v, sizeof(v), "") && v[0]) {
+        float f = (float)atof(v);
+        if (std::isfinite(f) && f >= 0.0f && f <= 120.0f)
+            g_payrollBufferMonths = f;
+    }
     if (H->configString(ini, "investment_pool", "wholesale_buffer_months",
-                        v, sizeof(v), "") && v[0])
-        g_wholesaleBufferMonths = (float)atof(v);
+                        v, sizeof(v), "") && v[0]) {
+        float f = (float)atof(v);
+        if (std::isfinite(f) && f >= 0.0f && f <= 120.0f)
+            g_wholesaleBufferMonths = f;
+    }
 
     SanitizeMoneyConfig();
     if (!(g_privateWageBonus > 0.0f))   g_privateWageBonus= 1.0f;
