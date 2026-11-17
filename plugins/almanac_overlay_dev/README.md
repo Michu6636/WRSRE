@@ -5,17 +5,20 @@ inside the game window. `F8` hides and reopens it. It is read-only and its value
 are labelled placeholders.
 
 ```cmd
-build.bat almanac_overlay_dev
+build.bat
 ```
 
-Copy `build\plugins\almanac_overlay_dev.dll` and `almanac_overlay_dev.ini` into
-the `plugins` folder of the runtime you are testing (the folder beside
-`tesmioloader.dll`), then launch through Tesmio. Full check list in
-[TESTING.md](TESTING.md).
+That one command builds the loader and every plugin, this panel included. Copy
+the whole `build\plugins` folder into the game's `tesmioloader\plugins` folder
+(one set of DLLs and INIs, nothing else), then launch through Tesmio. Full check
+list in [TESTING.md](TESTING.md).
 
 This is a **new plugin**. The earlier `prototypes/almanac_overlay/native/` CMake
-candidate is untouched and still not built by anything; `build.bat
-almanac_overlay_dev` now builds this one.
+candidate is untouched and still not built by anything; a plain `build.bat` now
+builds this one along with everything else.
+
+The panel starts hidden (`show_on_start = 0`), so the first `F8` shows it and the
+next `F8` hides it.
 
 ![The panel as drawn by the host renderer](preview-host-render.png)
 
@@ -142,7 +145,7 @@ hooked; a title-bar Close button is not drawn; the panel is hidden by `F8` only.
 
 ## Loading the pinned ImGui
 
-`build.bat almanac_overlay_dev` compiles the plugin together with upstream Dear
+`build.bat` compiles the plugin together with upstream Dear
 ImGui **v1.91.9b** and its DX11 backend, with `/MT` like every other plugin.
 
 - If `ALMANAC_IMGUI_DIR` is set, that checkout is used.

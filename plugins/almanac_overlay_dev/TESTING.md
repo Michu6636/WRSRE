@@ -3,25 +3,29 @@
 Short version:
 
 ```cmd
-build.bat almanac_overlay_dev
+build.bat
 ```
 
-Then copy **both** of these into the `plugins` folder of a disposable game
-install — the folder next to `tesmioloader.dll`, which is what the loader scans:
+That one command builds the loader and every plugin into `build\plugins`, so
+there is a single folder to copy. Copy the **contents** of `build\plugins` into
+the `plugins` folder of a disposable game install — the folder next to
+`tesmioloader.dll`, which is what the loader scans:
 
 ```
+build\plugins\tesmioloader.dll
 build\plugins\almanac_overlay_dev.dll
 build\plugins\almanac_overlay_dev.ini
+...every other plugin DLL and INI
 ```
 
-Launch the game through Tesmio. The panel appears on the first frame it can draw
-on. `F8` hides and reopens it.
+Launch the game through Tesmio. The panel starts hidden, so press `F8` once to
+show it; `F8` again hides it.
 
 ## Expected loader log, in order
 
 ```
 plugin   almanac_overlay_dev <version>  from almanac_overlay_dev.dll
-almanac overlay  init: key 0x77, show_on_start 1, font 100%, host API 4
+almanac overlay  init: key 0x77, show_on_start 0, font 100%, host API 4
 almanac overlay  startup handed to the installer thread; ...
 almanac overlay  creation import hooked; waiting for the engine's swap chain
 almanac overlay  Present hooked on the game's swap chain (hwnd ...)
@@ -47,15 +51,16 @@ the problem, and each case below is distinguishable.
 | `frame failed …` | The device was removed or the back buffer was unavailable | Read the game's own graphics state; the plugin stops drawing rather than guessing |
 
 `Present hooked` + `panel initialized` without `panel visible` means the panel is
-hidden: press `F8` once, making sure the game window has focus.
+hidden, which is the normal start with `show_on_start = 0`: press `F8` once,
+making sure the game window has focus.
 
 ## Visual check on a disposable install
 
 1. The panel is a paper-and-ink window anchored near the top-left, titled
    `Almanac`, over the game view. Not a separate desktop window.
 2. It says `SYNTHETIC`/placeholder values — the numbers are not your republic's.
-3. `F8` hides it; `F8` again reopens it. Holding `F8` must not flicker: it takes
-   exactly one press per change.
+3. The first `F8` shows it; the next `F8` hides it. Holding `F8` must not flicker:
+   it takes exactly one press per change.
 4. Alt-tab away and back: the panel hides while unfocused and needs a fresh `F8`
    press afterwards. Holding the key through the alt-tab must not reopen it.
 5. Minimise, restore and resize the game window: the panel re-anchors and stays
@@ -68,8 +73,7 @@ hidden: press `F8` once, making sure the game window has focus.
 ## What a pass does not prove
 
 - Not GPU-driver or HDR/scaling behaviour on your monitor.
-- Not coexistence with Steam's overlay or another ImGui overlay beyond "nothing
-  crashed".
+- Not coexistence with another ImGui overlay beyond "nothing crashed".
 - Not a product UI: no interaction, no live Finance data, no native sidebar entry.
 
 Do not test on a live install. The plugin reads one key and writes nothing to
