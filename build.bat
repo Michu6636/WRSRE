@@ -162,7 +162,7 @@ goto :plugins
 :build_wrsre_monolithic
 echo [build] wrsre.dll (single-DLL monolithic build)
 if not exist "build\wrsre_obj" mkdir "build\wrsre_obj"
-set "WRSRE_MODS=sim_clock persistence currency resource_pricing enterprise_base republic_bank taxes state_ledger citizen_labor citizen_retail private_shops private_logistics private_construction ui_panels ui_overlay map_expander"
+set "WRSRE_MODS=sim_clock persistence currency resource_pricing enterprise_base republic_bank taxes state_ledger citizen_labor citizen_retail private_shops private_logistics private_construction ui_panels ui_overlay"
 set "WRSRE_OBJS="
 for %%m in (%WRSRE_MODS%) do (
     echo   [cc]  plugins\%%m\%%m.cpp

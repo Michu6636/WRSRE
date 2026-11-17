@@ -30,10 +30,9 @@ WRSRE_DECLARE_MOD(private_shops);
 WRSRE_DECLARE_MOD(private_logistics);
 WRSRE_DECLARE_MOD(private_construction);
 
-// UI & map utilities
+// UI
 WRSRE_DECLARE_MOD(ui_panels);
 WRSRE_DECLARE_MOD(ui_overlay);
-WRSRE_DECLARE_MOD(map_expander);
 
 struct WrsreModule {
     const char*      name;
@@ -61,10 +60,9 @@ static WrsreModule g_modules[] = {
     WRSRE_MOD_ENTRY(private_shops),
     WRSRE_MOD_ENTRY(private_logistics),
     WRSRE_MOD_ENTRY(private_construction),
-    // UI & utilities
+    // UI
     WRSRE_MOD_ENTRY(ui_panels),
     WRSRE_MOD_ENTRY(ui_overlay),
-    WRSRE_MOD_ENTRY(map_expander),
 };
 
 static const int kModuleCount = (int)(sizeof(g_modules) / sizeof(g_modules[0]));
@@ -132,3 +130,15 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
             rc = -1;
         }
 
+
+        if (rc == 0) {
+            started++;
+        } else {
+            Logf("wrsre    start %-20s returned %d - inactive", m->name, rc);
+        }
+    }
+    Logf("wrsre    %d/%d modules active", started, kModuleCount);
+    return 0;
+}
+
+BOOL APIENTRY DllMain(HMODULE, DWORD, LPVOID) { return TRUE; }
