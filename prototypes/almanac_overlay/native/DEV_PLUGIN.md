@@ -1,19 +1,27 @@
 # Experimental Almanac DLL — build/review candidate, not game acceptance
 
-`dev_plugin.cpp` supplies the Tesmio API 4 Init/Start exports. It is outside `plugins/`, has no custom DllMain, and its target is **ON by default only in this isolated CMake project**. The normal `build.bat` build does not include it, and CMake does not copy a DLL/config into a game. The corrected [Almanac panel-spawn check](../test_menu/README.md) builds and stages this `almanac_overlay_dev.dll` into a disposable Tesmio copy. Its read-only synthetic panel auto-shows on the first eligible foreground render; F8 hides/reopens it. The log attached to the previous attempt showed only `almanac_button.dll`, not this plugin. Test only on a disposable copy.
+`dev_plugin.cpp` supplies the Tesmio API 4 Init/Start exports. It is outside `plugins/`, has no custom DllMain, and its target is **ON by default only in this isolated CMake project**. The ordinary `build.bat` build does not include it. The explicit `build.bat almanac_overlay_dev` target builds it and copies the DLL/config into this checkout's `build/plugins`; it does not deploy to another game directory. The [Almanac panel smoke-test guide](../test_menu/README.md) covers copying it into the exact disposable Tesmio runtime. The recent `tesmioloader-5.log` shows only `almanac_button.dll`, not this plugin, so that run never reached the ImGui renderer. Test only on a disposable copy.
 
 ## Explicit build target (not yet Windows-tested)
 
-After the isolated Windows configure described in [WINDOWS_CHECK.md](WINDOWS_CHECK.md), build the explicitly named DLL target (the isolated CMake option is on by default):
+From the repository root on Windows, the preferred explicit target is:
+
+```cmd
+build.bat almanac_overlay_dev
+```
+
+It checks for CMake 3.24+, fetches pinned Dear ImGui v1.91.9b into ignored `.cache` when `ALMANAC_IMGUI_DIR` is unset, builds the DLL and copies it plus its config to this checkout's `build/plugins`. It is intentionally absent from ordinary `build.bat` runs. Use only from a disposable game copy; if that output is not the runtime's actual plugin directory, copy the two files into the disposable runtime as described in the smoke-test guide.
+
+For a manual CMake build instead, first acquire the pinned dependency as described in [WINDOWS_CHECK.md](WINDOWS_CHECK.md), then run:
 
 ```powershell
-cmake -S prototypes/almanac_overlay/native -B build/almanac_native -A x64 "-DALMANAC_IMGUI_DIR=$imgui"
+cmake -S prototypes/almanac_overlay/native -B build/almanac_native -G "Visual Studio 17 2022" -A x64 "-DALMANAC_IMGUI_DIR=$imgui"
 if ($LASTEXITCODE -ne 0) { throw "Almanac configure failed" }
 cmake --build build/almanac_native --config Debug --target almanac_overlay_dev
 if ($LASTEXITCODE -ne 0) { throw "Almanac DLL build failed" }
 ```
 
-Expected output: `build/almanac_native/Debug/almanac_overlay_dev.dll`. This is the first full link target for the adapter; the standalone executable did not pull its unreferenced object out of the static library. All targets now use the static MSVC CRT to match the loader API contract. No Windows build result from an earlier source revision transfers to this target/CRT change.
+Expected output: `build/almanac_native/Debug/almanac_overlay_dev.dll`. This manual route does not copy to `build/plugins`. This is the first full link target for the adapter; the standalone executable did not pull its unreferenced object out of the static library. All targets use the static MSVC CRT to match the loader API contract. No Windows build result from an earlier source revision transfers to this target/CRT change.
 
 ## Defaults and scope
 

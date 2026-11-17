@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.24)
 project(AlmanacNativeCheck LANGUAGES CXX)
 
-# Deliberately separate from build.bat and normal plugins. No fetching/deployment.
+# Explicit opt-in target only; the build.bat wrapper may invoke this project.
+# CMake itself does not fetch dependencies or deploy DLLs.
 if(NOT WIN32 OR NOT MSVC OR NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
     message(FATAL_ERROR "Use an x64 MSVC Windows toolchain; this is not a host/GNU build")
 endif()
