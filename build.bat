@@ -24,6 +24,8 @@ REM Usage:
 REM   build.bat              build every plugin in plugins\
 REM   build.bat clean        remove build\plugins\ first
 REM   build.bat <name>       build one plugin, e.g. `build.bat sim_clock`
+REM   build.bat almanac_overlay_dev
+REM                          build the isolated Almanac ImGui DLL (CMake + pinned ImGui)
 REM   build.bat loader       also build tesmioloader.dll (needs
 REM                          src\tesmioloader.cpp)
 REM -----------------------------------------------------------------------------
@@ -94,6 +96,60 @@ if /i "%WHICH%"=="loader" (
     REM If the user asked for loader explicitly, do not build plugins too.
     goto :done
 )
+
+if /i "%WHICH%"=="almanac_overlay_dev" goto :build_almanac_overlay_dev
+goto :plugins
+
+REM This explicit opt-in keeps the experimental D3D11 panel out of ordinary
+REM `build.bat` output. It builds with the isolated pinned-dependency CMake
+REM project, then places the DLL/config in the standard build\plugins output.
+:build_almanac_overlay_dev
+where cmake >nul 2>nul
+if errorlevel 1 (
+    echo ERROR: CMake 3.24 or newer is required for almanac_overlay_dev.
+    goto :failed
+)
+
+set "IMGUI_DIR=%ALMANAC_IMGUI_DIR%"
+if not defined IMGUI_DIR (
+    set "IMGUI_DIR=%ROOT%.cache\almanac-imgui-host-tests"
+    if not exist "!IMGUI_DIR!\imgui.cpp" (
+        where git >nul 2>nul
+        if errorlevel 1 (
+            echo ERROR: Git is required to fetch pinned Dear ImGui v1.91.9b.
+            goto :failed
+        )
+        if not exist ".cache" mkdir ".cache"
+        echo [dependency] fetching Dear ImGui v1.91.9b into !IMGUI_DIR!
+        git -c core.autocrlf=false clone --depth 1 --branch v1.91.9b https://github.com/ocornut/imgui.git "!IMGUI_DIR!"
+        if errorlevel 1 goto :failed
+    )
+) else (
+    if not exist "!IMGUI_DIR!\imgui.cpp" (
+        echo ERROR: ALMANAC_IMGUI_DIR does not contain imgui.cpp: !IMGUI_DIR!
+        goto :failed
+    )
+)
+for %%I in ("!IMGUI_DIR!") do set "IMGUI_DIR=%%~fI"
+
+cmake -S prototypes\almanac_overlay\native -B build\almanac_native -G "Visual Studio 17 2022" -A x64 "-DALMANAC_IMGUI_DIR=!IMGUI_DIR!" -DALMANAC_BUILD_DEV_PLUGIN=ON
+if errorlevel 1 goto :failed
+cmake --build build\almanac_native --config Debug --target almanac_overlay_dev
+if errorlevel 1 goto :failed
+
+set "DEV_DLL=build\almanac_native\Debug\almanac_overlay_dev.dll"
+if not exist "!DEV_DLL!" (
+    echo ERROR: expected DLL was not produced: !DEV_DLL!
+    goto :failed
+)
+if not exist "build\plugins" mkdir "build\plugins"
+copy /Y "!DEV_DLL!" "build\plugins\almanac_overlay_dev.dll" >nul
+if errorlevel 1 goto :failed
+copy /Y "prototypes\almanac_overlay\native\almanac_overlay_dev.ini" "build\plugins\almanac_overlay_dev.ini" >nul
+if errorlevel 1 goto :failed
+echo [build] almanac_overlay_dev.dll and config staged in build\plugins
+echo [build] copy only into a disposable Tesmio runtime before testing
+goto :done
 
 :plugins
 
