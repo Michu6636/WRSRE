@@ -69,10 +69,10 @@ REM   /EHsc                   standard C++ exception semantics; __try /
 REM                           __except is SEH and works regardless
 REM   /D_CRT_*                silence a handful of deliberate uses of the
 REM                           classic string functions
-REM   /I%ROOT%src             so a plugin can write #include "game_world.h"
+REM   /I"%ROOT%src"           so a plugin can write #include "game_world.h"
 REM                           without a path, even though most of them use
 REM                           relative includes
-set "COMMON=/nologo /MT /O2 /W3 /std:c++17 /EHsc /D_CRT_SECURE_NO_WARNINGS /D_CRT_NONSTDC_NO_DEPRECATE /I%ROOT%src /I%ROOT%src"
+set "COMMON=/nologo /MT /O2 /W3 /std:c++17 /EHsc /D_CRT_SECURE_NO_WARNINGS /D_CRT_NONSTDC_NO_DEPRECATE /I"%ROOT%src""
 
 set "WHICH=%~1"
 
