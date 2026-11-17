@@ -372,8 +372,10 @@ void Panel::ReleaseBackBuffer()
 
 bool Panel::Render(IDXGISwapChain* swap, bool keyDown)
 {
+    static std::mutex s_renderMutex;
+    std::lock_guard<std::mutex> renderLock(s_renderMutex);
+
     if (!context_ || !backend_ || !device_ || !deviceCtx_) return false;
-    if (owner_ != GetCurrentThreadId()) return false;
 
     // The chain we bound must still be the chain presenting. Anything else is a
     // different window's Present reaching our hook; never draw on it.
