@@ -292,6 +292,125 @@ void ApplyPanelAction(const PanelAction& action)
 }
 
 // Sample live read-only data from WRSRE services (throttled to ~4 Hz).
+bool IsLegitNameChar(wchar_t c)
+{
+    return (c >= 0x0020 && c <= 0x007E) ||
+           (c >= 0x00C0 && c <= 0x024F) ||
+           (c >= 0x0400 && c <= 0x04FF);
+}
+
+bool IsLetterChar(wchar_t c)
+{
+    return (c >= L'A' && c <= L'Z') ||
+           (c >= L'a' && c <= L'z') ||
+           (c >= 0x00C0 && c <= 0x024F) ||
+           (c >= 0x0400 && c <= 0x04FF);
+}
+
+bool ValidateWideName(const wchar_t* ws, size_t maxScan, size_t* outLen)
+{
+    size_t len = 0;
+    size_t letters = 0;
+    while (len < maxScan) {
+        const wchar_t c = ws[len];
+        if (c == 0) break;
+        if (!IsLegitNameChar(c)) return false;
+        if (IsLetterChar(c)) ++letters;
+        ++len;
+    }
+    if (len < 2 || len >= maxScan || ws[len] != 0 || letters < 2) return false;
+    *outLen = len;
+    return true;
+}
+
+bool ReadBuildingDisplayName(void* bldg, wchar_t* out, size_t maxChars,
+                             size_t* outOffset)
+{
+    if (!bldg || !out || maxChars < 2) return false;
+    out[0] = L'\0';
+    if (outOffset) *outOffset = 0;
+
+    const uintptr_t addr = reinterpret_cast<uintptr_t>(bldg);
+    if (addr < 0x10000ULL || addr > 0x00007FFFFFFFFFFFULL) return false;
+    if (g_host && g_host->isReadable && !g_host->isReadable(bldg, 0xC00)) {
+        return false;
+    }
+
+    const BYTE* b = static_cast<const BYTE*>(bldg);
+    __try {
+        // Pass 1: inline null-terminated UTF-16 name in the building header (0x10..0x318).
+        for (size_t off = 0x10; off + 6 <= 0x318; off += 2) {
+            if (off > 0x10) {
+                const wchar_t prev = *reinterpret_cast<const wchar_t*>(b + off - 2);
+                if (IsLegitNameChar(prev)) continue;
+            }
+            const wchar_t* ws = reinterpret_cast<const wchar_t*>(b + off);
+            const size_t avail = (0x318 - off) / sizeof(wchar_t);
+            const size_t limit = (avail < 64) ? avail : 64;
+            size_t len = 0;
+            if (ValidateWideName(ws, limit, &len)) {
+                const size_t cp = (len < maxChars - 1) ? len : (maxChars - 1);
+                for (size_t k = 0; k < cp; ++k) out[k] = ws[k];
+                out[cp] = L'\0';
+                if (outOffset) *outOffset = off;
+                return true;
+            }
+        }
+
+        // Pass 2: MSVC std::wstring (SSO or heap-spilled) in 0x10..0x318.
+        for (size_t off = 0x10; off + 0x20 <= 0x318; off += 8) {
+            const size_t len = *reinterpret_cast<const size_t*>(b + off + 0x10);
+            const size_t cap = *reinterpret_cast<const size_t*>(b + off + 0x18);
+            if (len < 2 || len > 63 || cap < len || cap > 256) continue;
+            const wchar_t* ws = nullptr;
+            if (cap < 8) {
+                ws = reinterpret_cast<const wchar_t*>(b + off);
+            } else {
+                const void* p = *reinterpret_cast<void* const*>(b + off);
+                const uintptr_t pa = reinterpret_cast<uintptr_t>(p);
+                if (pa < 0x10000ULL || pa > 0x00007FFFFFFFFFFFULL) continue;
+                if (g_host && g_host->isReadable &&
+                    !g_host->isReadable(p, (len + 1) * sizeof(wchar_t))) {
+                    continue;
+                }
+                ws = static_cast<const wchar_t*>(p);
+            }
+            size_t vlen = 0;
+            if (ValidateWideName(ws, len + 1, &vlen) && vlen == len) {
+                const size_t cp = (len < maxChars - 1) ? len : (maxChars - 1);
+                for (size_t k = 0; k < cp; ++k) out[k] = ws[k];
+                out[cp] = L'\0';
+                if (outOffset) *outOffset = off;
+                return true;
+            }
+        }
+
+        // Pass 3: inline UTF-16 name after TypeDescriptor* (0x320..0xC00).
+        for (size_t off = 0x320; off + 6 <= 0xC00; off += 2) {
+            if (off > 0x320) {
+                const wchar_t prev = *reinterpret_cast<const wchar_t*>(b + off - 2);
+                if (IsLegitNameChar(prev)) continue;
+            }
+            const wchar_t* ws = reinterpret_cast<const wchar_t*>(b + off);
+            const size_t avail = (0xC00 - off) / sizeof(wchar_t);
+            const size_t limit = (avail < 64) ? avail : 64;
+            size_t len = 0;
+            if (ValidateWideName(ws, limit, &len)) {
+                const size_t cp = (len < maxChars - 1) ? len : (maxChars - 1);
+                for (size_t k = 0; k < cp; ++k) out[k] = ws[k];
+                out[cp] = L'\0';
+                if (outOffset) *outOffset = off;
+                return true;
+            }
+        }
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        out[0] = L'\0';
+        return false;
+    }
+
+    return false;
+}
+
 const PanelModel* SampleLiveModel(bool worldLoaded)
 {
     static PanelModel s_model{};
@@ -505,24 +624,37 @@ const PanelModel* SampleLiveModel(bool worldLoaded)
             row.debt     = 0.0;
 
             bool gotName = false;
-            if (s_enterprise->getBuildingCustomName) {
-                wchar_t wbuf[48]{};
-                if (s_enterprise->getBuildingCustomName(bldg, wbuf, 48) > 0 && wbuf[0]) {
-                    const int n = WideCharToMultiByte(
-                        CP_UTF8, 0, wbuf, -1, row.name,
-                        static_cast<int>(sizeof(row.name)), nullptr, nullptr);
-                    if (n > 1) gotName = true;
-                }
+            size_t nameOff = 0;
+            wchar_t wbuf[64]{};
+            if (s_enterprise->getBuildingCustomName &&
+                s_enterprise->getBuildingCustomName(bldg, wbuf, 64) > 0 && wbuf[0]) {
+                const int n = WideCharToMultiByte(
+                    CP_UTF8, 0, wbuf, -1, row.name,
+                    static_cast<int>(sizeof(row.name)), nullptr, nullptr);
+                if (n > 1) gotName = true;
             }
-            if (!gotName && s_enterprise->getBuildingObjectName) {
-                const char* obj = s_enterprise->getBuildingObjectName(bldg);
-                if (obj && obj[0]) {
-                    std::snprintf(row.name, sizeof(row.name), "%s", obj);
-                    gotName = true;
-                }
+            if (!gotName && ReadBuildingDisplayName(bldg, wbuf, 64, &nameOff)) {
+                const int n = WideCharToMultiByte(
+                    CP_UTF8, 0, wbuf, -1, row.name,
+                    static_cast<int>(sizeof(row.name)), nullptr, nullptr);
+                if (n > 1) gotName = true;
+            }
+            const char* objName = s_enterprise->getBuildingObjectName
+                                      ? s_enterprise->getBuildingObjectName(bldg)
+                                      : nullptr;
+            if (!gotName && objName && objName[0]) {
+                std::snprintf(row.name, sizeof(row.name), "%s", objName);
+                gotName = true;
             }
             if (!gotName) {
                 std::snprintf(row.name, sizeof(row.name), "Enterprise #%zu", i + 1);
+            }
+            static int s_nameProbeCount = 0;
+            if (s_nameProbeCount < 3) {
+                ++s_nameProbeCount;
+                Log("enterprise name probe: obj=\"%s\" resolved=\"%s\" off=0x%zX",
+                    (objName && objName[0]) ? objName : "(none)",
+                    row.name, nameOff);
             }
 
             if (s_bank && s_bank->getEnterpriseDebt) {
