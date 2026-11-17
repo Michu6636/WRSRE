@@ -273,17 +273,17 @@ void DrawEconomyControls(const ControlState& ctrl, PanelAction* outAction)
     if (ctrl.hasBankControl) {
         ImGui::Spacing();
         ImGui::AlignTextToFramePadding();
-        ImGui::TextColored(kInk, "Bank Rate (%.1f%%)", ctrl.bankRate * 100.0);
+        ImGui::TextColored(kInk, "Bank Rate (%.0f%%)", ctrl.bankRate * 100.0);
         ImGui::SameLine(180.0f);
-        if (ImGui::SmallButton("-0.5%##bank")) {
-            float v = static_cast<float>(ctrl.bankRate) - 0.005f;
+        if (ImGui::SmallButton("-1%##bank")) {
+            float v = static_cast<float>(ctrl.bankRate) - 0.01f;
             if (v < 0.0f) v = 0.0f;
             emit(PanelAction::Kind::SetBankRate, 0, false, v);
         }
         ImGui::SameLine();
-        if (ImGui::SmallButton("+0.5%##bank")) {
-            float v = static_cast<float>(ctrl.bankRate) + 0.005f;
-            if (v > 0.50f) v = 0.50f;
+        if (ImGui::SmallButton("+1%##bank")) {
+            float v = static_cast<float>(ctrl.bankRate) + 0.01f;
+            if (v > 0.25f) v = 0.25f;
             emit(PanelAction::Kind::SetBankRate, 0, false, v);
         }
     }
