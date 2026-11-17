@@ -1,6 +1,6 @@
 import ghidra.app.script.GhidraScript;
 import ghidra.program.model.listing.Function;
-import ghidra.app.decompiler.DecompileInterface;
+import ghidra.app.decompiler.DecompInterface;
 import ghidra.app.decompiler.DecompileResults;
 import ghidra.util.task.ConsoleTaskMonitor;
 import java.io.FileWriter;
@@ -26,19 +26,18 @@ public class DecompAt extends GhidraScript {
             return;
         }
         String outFile = a[0];
-        DecompileInterface decompiler = new DecompileInterface();
+        DecompInterface decompiler = new DecompInterface();
         decompiler.openProgram(currentProgram);
-        // set decompiler timeout to match UI budget
-        decompiler.setDecompileTimeoutSeconds(120);
+        // timeout is passed to decompileFunction below
         try (PrintWriter w = new PrintWriter(new FileWriter(outFile))) {
             for (int i = 1; i < a.length; i++) {
                 long addrVal = parseHex(a[i]);
                 Function f = currentProgram.getFunctionManager()
-                        .getFunctionAt(addr(addrVal));
+                        .getFunctionAt(toAddr(addrVal));
                 if (f == null) {
                     // try containing function
                     f = currentProgram.getFunctionManager()
-                            .getFunctionContaining(addr(addrVal));
+                            .getFunctionContaining(toAddr(addrVal));
                 }
                 if (f == null) {
                     w.printf("// No function found at 0x%X%n", addrVal);
@@ -58,8 +57,7 @@ public class DecompAt extends GhidraScript {
                             + f.getBody().getNumAddresses() + " addr)");
                 } else {
                     w.printf("// Decompilation failed/timed out at 0x%X%n", addrVal);
-                    println("DecompAt: FAILED for 0x" + Long.toHexString(addrVal)
-                            + " (" + results.getDecompileStatus() + ")");
+                    println("DecompAt: FAILED for 0x" + Long.toHexString(addrVal));
                 }
             }
         }
