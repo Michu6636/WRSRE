@@ -488,7 +488,8 @@ void Panel::ReleaseBackBuffer()
     bufferHeight_ = 0;
 }
 
-bool Panel::Render(IDXGISwapChain* swap, bool keyDown, bool worldLoaded)
+bool Panel::Render(IDXGISwapChain* swap, bool keyDown, bool worldLoaded,
+                   const PanelModel* liveModel)
 {
     static std::mutex s_renderMutex;
     std::lock_guard<std::mutex> renderLock(s_renderMutex);
@@ -588,7 +589,7 @@ bool Panel::Render(IDXGISwapChain* swap, bool keyDown, bool worldLoaded)
 
     LauncherRect panelRect{};
     if (show) {
-        PanelModel model;
+        PanelModel model = liveModel ? *liveModel : PanelModel{};
         char buildNotice[64];
         std::snprintf(buildNotice, sizeof(buildNotice), "v%s",
                       ALMANAC_PANEL_VERSION);

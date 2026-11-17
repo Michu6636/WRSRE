@@ -7,9 +7,21 @@
 
 namespace almanac {
 
+struct TabRow {
+    char label[64]{};
+    char value[64]{};
+};
+
+struct TabData {
+    static constexpr int kMaxRows = 16;
+    TabRow rows[kMaxRows]{};
+    int    count = 0;
+};
+
 // Everything the panel displays. Deliberately a value type: no service
-// pointers, no game handles, no live repository state. A future live read-only
-// Finance feed replaces the numbers here without changing the drawing code.
+// pointers, no game handles, no live repository state. When hasLiveData is
+// true, tabs[0..2] hold live read-only values sampled from WRSRE services;
+// otherwise the view falls back to its built-in synthetic placeholder tables.
 struct PanelModel {
     const char* title          = "Almanac";
     const char* subtitle       = "Market economy suite";
@@ -19,6 +31,8 @@ struct PanelModel {
     int         drawnFrames    = 0;
     int         processId      = 0;
     bool        autoShow       = false;
+    bool        hasLiveData    = false;
+    TabData     tabs[3]{};
 };
 
 // Screen-space bounding box of the floating Almanac launcher button, published

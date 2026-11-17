@@ -49,6 +49,7 @@ constexpr ImGuiWindowFlags kInteractivePanelFlags =
 const ImVec4 kInk   = ImVec4(0.22f, 0.17f, 0.12f, 1.00f);
 const ImVec4 kQuiet = ImVec4(0.42f, 0.35f, 0.27f, 1.00f);
 const ImVec4 kWarn  = ImVec4(0.55f, 0.18f, 0.12f, 1.00f);
+const ImVec4 kLive  = ImVec4(0.16f, 0.42f, 0.20f, 1.00f);
 const ImU32  kRule  = IM_COL32(0x38, 0x2B, 0x1E, 0x55);
 
 struct Row {
@@ -159,6 +160,29 @@ void DrawTable(const Row* rows, int count)
         ImGui::TextColored(kInk, "%s", rows[i].label);
         ImGui::TableSetColumnIndex(1);
         ImGui::TextColored(kQuiet, "%s", rows[i].value);
+    }
+    ImGui::EndTable();
+}
+
+void DrawLiveTable(const TabData& data)
+{
+    if (data.count <= 0) {
+        ImGui::TextColored(kQuiet, "No live service data available for this tab.");
+        return;
+    }
+    if (!ImGui::BeginTable("##almanac_rows", 2,
+            ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerH |
+            ImGuiTableFlags_SizingStretchProp)) {
+        return;
+    }
+    ImGui::TableSetupColumn("Item", ImGuiTableColumnFlags_WidthStretch, 1.6f);
+    ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch, 1.0f);
+    for (int i = 0; i < data.count; ++i) {
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::TextColored(kInk, "%s", data.rows[i].label);
+        ImGui::TableSetColumnIndex(1);
+        ImGui::TextColored(kQuiet, "%s", data.rows[i].value);
     }
     ImGui::EndTable();
 }
@@ -321,7 +345,8 @@ bool DrawAlmanacPanel(const PanelModel& model, LauncherRect* outRect, int* activ
                            model.toggleKeyName);
         Rule();
 
-        ImGui::TextColored(kWarn, "%s", model.dataNotice);
+        ImGui::TextColored(model.hasLiveData ? kLive : kWarn,
+                           "%s", model.dataNotice);
         ImGui::Spacing();
 
         DrawTabStrip(tab);
@@ -332,7 +357,11 @@ bool DrawAlmanacPanel(const PanelModel& model, LauncherRect* outRect, int* activ
         if (ImGui::BeginChild("##almanac_body", ImVec2(0.0f, -footer),
                               ImGuiChildFlags_None,
                               ImGuiWindowFlags_None)) {
-            DrawTable(kTabRows[tab], kTabRowCounts[tab]);
+            if (model.hasLiveData) {
+                DrawLiveTable(model.tabs[tab]);
+            } else {
+                DrawTable(kTabRows[tab], kTabRowCounts[tab]);
+            }
         }
         ImGui::EndChild();
 
