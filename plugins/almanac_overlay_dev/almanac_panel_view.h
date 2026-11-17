@@ -18,6 +18,22 @@ struct TabData {
     int    count = 0;
 };
 
+struct EnterpriseRow {
+    char   name[48]{};
+    bool   solvent  = true;
+    double capital  = 0.0;
+    double monthNet = 0.0;
+    float  markup   = 1.0f;
+    double debt     = 0.0;
+};
+
+struct EnterpriseList {
+    static constexpr int kMaxEnterprises = 64;
+    EnterpriseRow rows[kMaxEnterprises]{};
+    int           count      = 0;
+    int           totalCount = 0;
+};
+
 struct ControlState {
     bool   hasTaxControls  = false;
     bool   vatEnabled      = true;
@@ -71,9 +87,10 @@ struct PanelModel {
     int          drawnFrames    = 0;
     int          processId      = 0;
     bool         autoShow       = false;
-    bool         hasLiveData    = false;
-    TabData      tabs[3]{};
-    ControlState controls{};
+    bool           hasLiveData    = false;
+    TabData        tabs[3]{};
+    ControlState   controls{};
+    EnterpriseList enterprises{};
 };
 
 // Screen-space bounding box of the floating Almanac launcher button, published

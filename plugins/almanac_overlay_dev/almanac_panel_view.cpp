@@ -86,14 +86,14 @@ const Row kLogisticsRows[] = {
     {"Shipments in transit",         "158"},
 };
 
-const char* const kTabNames[] = {"Economy", "Labour", "Logistics"};
+const char* const kTabNames[] = {"Economy", "Labour", "Logistics", "Enterprises"};
 const Row* const   kTabRows[]  = {kEconomyRows, kLabourRows, kLogisticsRows};
 const int          kTabRowCounts[] = {
     static_cast<int>(sizeof(kEconomyRows) / sizeof(kEconomyRows[0])),
     static_cast<int>(sizeof(kLabourRows) / sizeof(kLabourRows[0])),
     static_cast<int>(sizeof(kLogisticsRows) / sizeof(kLogisticsRows[0])),
 };
-constexpr int kTabCount = 3;
+constexpr int kTabCount = 4;
 
 void Rule()
 {
@@ -332,6 +332,59 @@ void DrawLabourControls(const ControlState& ctrl, PanelAction* outAction)
     }
 }
 
+void DrawEnterprisesTable(const EnterpriseList& list, const char* sym)
+{
+    if (list.totalCount <= 0) {
+        ImGui::TextColored(kQuiet,
+            "No private enterprises registered yet.");
+        ImGui::TextColored(kQuiet,
+            "Tag a building [P] or click its Privatise button to register one.");
+        return;
+    }
+
+    ImGui::TextColored(kQuiet, "Showing %d of %d private enterprise(s) (%s)",
+                       list.count, list.totalCount, (sym && sym[0]) ? sym : "RUB");
+    ImGui::Spacing();
+
+    if (!ImGui::BeginTable("##almanac_enterprises", 5,
+            ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerH |
+            ImGuiTableFlags_SizingStretchProp)) {
+        return;
+    }
+    ImGui::TableSetupColumn("Enterprise", ImGuiTableColumnFlags_WidthStretch, 2.0f);
+    ImGui::TableSetupColumn("Capital",    ImGuiTableColumnFlags_WidthStretch, 1.0f);
+    ImGui::TableSetupColumn("Month Net",  ImGuiTableColumnFlags_WidthStretch, 1.0f);
+    ImGui::TableSetupColumn("Markup",     ImGuiTableColumnFlags_WidthStretch, 0.7f);
+    ImGui::TableSetupColumn("Debt",       ImGuiTableColumnFlags_WidthStretch, 0.9f);
+    ImGui::TableHeadersRow();
+
+    for (int i = 0; i < list.count; ++i) {
+        const EnterpriseRow& r = list.rows[i];
+        ImGui::TableNextRow();
+
+        ImGui::TableSetColumnIndex(0);
+        ImGui::TextColored(r.solvent ? kInk : kWarn, "%s%s",
+                           r.name, r.solvent ? "" : " [!]");
+
+        ImGui::TableSetColumnIndex(1);
+        ImGui::TextColored(r.capital >= 0.0 ? kInk : kWarn, "%.0f", r.capital);
+
+        ImGui::TableSetColumnIndex(2);
+        ImGui::TextColored(r.monthNet >= 0.0 ? kLive : kWarn, "%+.0f", r.monthNet);
+
+        ImGui::TableSetColumnIndex(3);
+        ImGui::TextColored(kQuiet, "x%.2f", r.markup);
+
+        ImGui::TableSetColumnIndex(4);
+        if (r.debt > 0.5) {
+            ImGui::TextColored(kWarn, "%.0f", r.debt);
+        } else {
+            ImGui::TextColored(kQuiet, "-");
+        }
+    }
+    ImGui::EndTable();
+}
+
 } // namespace
 
 LauncherRect DrawAlmanacLauncherButton(bool panelOpen, bool hovered,
@@ -512,7 +565,9 @@ bool DrawAlmanacPanel(const PanelModel& model, LauncherRect* outRect,
         if (ImGui::BeginChild("##almanac_body", ImVec2(0.0f, -footer),
                               ImGuiChildFlags_None,
                               ImGuiWindowFlags_None)) {
-            if (model.hasLiveData) {
+            if (tab == 3) {
+                DrawEnterprisesTable(model.enterprises, model.controls.currencySymbol);
+            } else if (model.hasLiveData) {
                 DrawLiveTable(model.tabs[tab]);
                 if (tab == 0) {
                     DrawEconomyControls(model.controls, outAction);

@@ -481,6 +481,59 @@ const PanelModel* SampleLiveModel(bool worldLoaded)
                   TsmB2bCounterpartyActive(s_b2b) ? "active" : "inactive");
     }
 
+    // --- Tab 3: Enterprises Directory ---
+    if (s_enterprise && s_enterprise->getEnterpriseCount &&
+        s_enterprise->getEnterpriseByIndex && s_enterprise->describeEnterprise) {
+        const size_t total = s_enterprise->getEnterpriseCount();
+        m.enterprises.totalCount = static_cast<int>(total);
+        const size_t limit = (total < static_cast<size_t>(EnterpriseList::kMaxEnterprises))
+                                 ? total
+                                 : static_cast<size_t>(EnterpriseList::kMaxEnterprises);
+        for (size_t i = 0; i < limit; ++i) {
+            void* bldg = s_enterprise->getEnterpriseByIndex(i);
+            if (!bldg) continue;
+            TsmEnterpriseInfo info{};
+            info.structSize = sizeof(info);
+            if (!s_enterprise->describeEnterprise(bldg, &info) || !info.isPrivate) {
+                continue;
+            }
+            EnterpriseRow& row = m.enterprises.rows[m.enterprises.count++];
+            row.solvent  = info.solvent != 0;
+            row.capital  = info.capital;
+            row.monthNet = info.monthNet;
+            row.markup   = info.markup;
+            row.debt     = 0.0;
+
+            bool gotName = false;
+            if (s_enterprise->getBuildingCustomName) {
+                wchar_t wbuf[48]{};
+                if (s_enterprise->getBuildingCustomName(bldg, wbuf, 48) > 0 && wbuf[0]) {
+                    const int n = WideCharToMultiByte(
+                        CP_UTF8, 0, wbuf, -1, row.name,
+                        static_cast<int>(sizeof(row.name)), nullptr, nullptr);
+                    if (n > 1) gotName = true;
+                }
+            }
+            if (!gotName && s_enterprise->getBuildingObjectName) {
+                const char* obj = s_enterprise->getBuildingObjectName(bldg);
+                if (obj && obj[0]) {
+                    std::snprintf(row.name, sizeof(row.name), "%s", obj);
+                    gotName = true;
+                }
+            }
+            if (!gotName) {
+                std::snprintf(row.name, sizeof(row.name), "Enterprise #%zu", i + 1);
+            }
+
+            if (s_bank && s_bank->getEnterpriseDebt) {
+                double principal = 0.0, monthlyInt = 0.0;
+                int missed = 0;
+                s_bank->getEnterpriseDebt(bldg, &principal, &monthlyInt, &missed);
+                row.debt = principal;
+            }
+        }
+    }
+
     s_model = m;
     return &s_model;
 }

@@ -129,7 +129,7 @@ void LoadSavedLayout()
         g_savedLayout.w = static_cast<float>(w);
         g_savedLayout.h = static_cast<float>(h);
     }
-    if (t >= 0 && t <= 2) {
+    if (t >= 0 && t <= 3) {
         g_activeTab = t;
     }
 }
