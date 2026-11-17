@@ -219,8 +219,6 @@ public:
             if (dt < -0.001 || dt > 2.0) continue;
             if (std::fabs(pl.tons - mag) > tol) continue;
 
-            pl.active = false;
-
             VehCargoState& vcs = vehCargo_[vehSlotIdx];
             if (vcs.vehPtr != vehicle) {
                 vcs.vehPtr = vehicle;
@@ -259,6 +257,8 @@ public:
                 }
             }
             if (slot < 0) return false;
+
+            pl.active = false;
 
             VehCargoLot& lot = vcs.lots[slot];
             lot.res       = res;

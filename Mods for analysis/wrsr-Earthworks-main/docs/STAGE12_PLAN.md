@@ -1,0 +1,90 @@
+# Stage 12 — Purpose-built Earthworks facility
+
+**Status:** The user reports that facility costs are OK after active playtesting over several days. This accepts the displayed facility costs. Other Medium and Large appearance, access, and construction checks remain open. The Small model is accepted. Its Road Depot prototype has four vehicle slots (D93). The Medium variant (D94) has eight slots and one loading/unloading station; its model and config are staged. The Large model has a 74 m rear service hall, 59.5 m side wings, and an approximately 75 m by 75 m structural footprint. Per user direction, its narrower middle section rises to a second storey above the dispatch office, reaching about 9.9 m; the side wings remain single-storey. The native asphalt court is approximately 75 m by 94 m including the forecourt and road approach. The model is approved, converted to NMF and staged. Its parking layout is 16 covered positions (eight per wing) and four open-air positions at the U opening; the user confirms the positions are now correct. D101 moves both loading stations to the court center near the main building and reverses the road connector direction while preserving its snap point; this revision awaits in-game review. Large construction-material coefficients are normalized for its larger construction geometry to target displayed phase totals about 30% above Medium (D104). The accepted vehicle-only behavior remains: native `$TYPE_ROADDEPO`, excavators and bulldozers only, no worker requirement, and no configured fuel storage.
+
+## Goal
+
+Replace the temporary construction-office-derived test item with a distinctive, placeable Earthworks facility, then connect its native building behavior and player-facing facility controls to the existing Project/Site workflow. The revised prototype is vehicle-only: its parked eligible machines provide Earthworks capacity/output without a worker requirement. Accept only bulldozers and excavators; reject dumpers, buses and every other vehicle type (D92). Preserve automatic recognition, no ordinary construction jobs, one Project per facility and multiple facilities per Project.
+
+The Small concept is an open two-bay equipment canopy beside a compact dispatch office, with a visible decorative tank. Its four vehicle slots are two parallel positions in each bay. The Medium concept (visual option A) extends the same canopy to four openings; it has eight slots, one loading/unloading station in front of the office and a road connection on the far-right end pointing outward to the right. The accepted Large concept is the revised C layout: long main service building across the rear, substantial left and right structures around a wide shared court. It has 20 non-blocking, single-depth stalls: 16 covered in the garage wings (eight per side) and four open-air at the U opening (D99–D100), two loading/unloading stations and one road connector at the U opening. Put one loading station on each side of the main building's yard-facing service frontage, clear of parking and turning paths. Keep containers outside all vehicle paths. Small material coefficients remain 75% of the vanilla office baseline and Medium remains 120% of Small. Large coefficients account for its larger construction geometry to target displayed material totals of about 130% of Medium (D104); see the cost notes. Retain the same vehicle-only `$TYPE_ROADDEPO` behavior, excavator/bulldozer allowlist, no worker requirement and no fuel storage. Eligible parked machines give capacity; no eligible parked machine means no work. Machine-rate scale remains provisional under the existing rate decision. The earlier 0.5-worker-per-Strength rule (D87) is superseded by the vehicle-only direction.
+
+The active Large visual reference is [the five-view concept sheet](mockups/STAGE12_FACILITY_LARGE_ANGLE_CONCEPT.png), with front/open-yard, rear, left-side, right-side and top-down views. The latest Blender model and five-angle render set have been generated against it. The rear hall is shorter than the wings' combined span, and its middle bay now rises to two storeys; review these revised proportions against the top-down mockup before ModelViewer export.
+
+## 12.1 — Building design, model and placeable item
+
+### Work
+
+1. Prepare a visual proposal before committing the model. Show a game-scale concept with front/side/top views or an equivalent clear layout, including the canopy, dispatch office, two equipment bays, visible decorative tank, access/road-facing sides, footprint and approximate height. Retain the accepted middle concept; use the proposal to settle implementation details rather than reopen the basic concept.
+   - Current single-frontage concept: [STAGE12_FACILITY_CONCEPT_PROPOSAL.png](mockups/STAGE12_FACILITY_CONCEPT_PROPOSAL.png). The user asked to return to this initial road/bay layout after reviewing the through-access alternative. It has one road approach along the open bay fronts; final geometry remains subject to actual in-game routing.
+   - Through-access alternative (superseded): [STAGE12_FACILITY_CONCEPT_THROUGH_ACCESS.png](mockups/STAGE12_FACILITY_CONCEPT_THROUGH_ACCESS.png).
+2. Confirm the installed game's supported asset/export workflow and package requirements. The current development script copies a native construction-office model/materials and writes a Workshop item; it is a staging aid, not a custom-model pipeline. The game includes ModelViewer; see the [official ModelViewer guide](https://wiki.hoodedhorse.com/Workers_Resources_Soviet_Republic/Modelviewer) and [official modelling notes](https://wiki.hoodedhorse.com/Workers_Resources_Soviet_Republic/Modelling). The community workflow uses Blender-exported OBJ imported into ModelViewer to create NMF and material files; see the [community modding guide](https://workers-resources.fandom.com/wiki/General_modding).
+3. Build a low-poly model and materials that read clearly at normal camera distance and in the construction thumbnail. Prepare a unique item/asset identity and placeable preview icon.
+4. Design the vehicle access together with the parking layout. The current `construction_office3.ini` donor defines each `$VEHICLE_PARKING` slot and ordered `$VEHICLE_PARKING_ADVANCED_POINT_PID` waypoints, plus its road connections. Small has four slots in two bays. Medium has eight slots in four bays and one loading/unloading station in front of the office. Its road connection is at the far-right end and points outward to the right. The actual route may require vehicles to reverse out; confirm that in-game before changing the concept.
+5. Configure the native Workshop building as `$TYPE_ROADDEPO` so it uses the depot's vehicle-only panel. Keep each variant's parking count and the accepted vehicle classes, and keep ordinary construction jobs blocked. Omit fuel-storage declarations for now; the mesh tank is decorative.
+6. Keep footprint, road/access behavior, build cost, maintenance, and demolition behavior documented from native defaults or clearly marked as provisional. Do not invent release balance values during modeling.
+
+### User-run check and gate
+
+Using a fresh disposable world, place and rotate each item. For Medium, check the four-bay silhouette, road connection at the far right facing outward, footprint fit, loading/unloading station in front of the office, construction animation/cost, save/reload and demolition cleanup. With eligible vehicles, check that eight can be parked (two per bay), then try mixed vehicle lengths and arrival order and ensure the single loading/unloading point is outside the garage. The user reviews each model/item before Stage 12.2.
+
+### Exit criteria
+
+- A unique model and Workshop item load without missing assets.
+- Both size variants are legible in game; no major clipping, floating, or unusable access orientation.
+- Native identity and slot configuration are recorded and survive save/reload.
+- The user accepts the appearance and placement behavior.
+
+## 12.2 — Building's native UI
+
+### Work
+
+1. Inspect the actual native building window produced by the Workshop asset. The current construction-office-derived item provides inherited native controls; confirm which controls and readings remain valid for the new item.
+2. Prepare a screenshot/mockup of the native panel before changing its UX. Keep normal player-facing controls clear: worker staffing/occupation, accepted or parked machinery, ordinary-job exclusion and building identity. Do not surface developer diagnostics or claims about fuel services.
+3. Reuse the native construction-office-style panel if it presents usable staffing and vehicle controls. If the inherited panel hides information or exposes misleading ordinary-job controls, investigate supported ways to correct that before proposing a custom panel.
+4. Keep project selection, Site execution, and Project assignment in the Earthworks panel unless the user approves a different division. Avoid duplicating those controls between the building window and Earthworks UI.
+
+### User-run check and gate
+
+Inspect an empty facility, then buy/park representative allowed vehicles. Verify the native depot panel, four slots (two per bay), vehicle purchase/return, and that the facility has no worker requirement or ordinary construction-assignment controls. Confirm that no fuel controls appear; this is expected because fuel storage is omitted for now. The visible tank is decorative. The user reviews the panel before Stage 12.3.
+
+### Exit criteria
+
+- Building name and native controls are understandable and functional for this facility.
+- The panel does not advertise services or ordinary jobs the facility cannot provide.
+- Worker and machine state is either shown accurately or its native display limitation is documented and addressed in the Earthworks facility UI.
+- The user accepts the building-panel experience.
+
+## 12.3 — Earthworks facility and Project integration
+
+### Work
+
+1. Update automatic facility recognition from the development asset name to the released item's unique descriptor. Confirm every placed instance is detected without per-session registration; ordinary construction offices remain unaffected.
+2. Connect the item to the existing facility-management area in the Earthworks Projects view. Preserve the user's direction: facility management remains below **New Site**, shows only facilities assigned to the selected Project with add/remove controls, and contains no flavor text.
+3. Show facility name/identity, eligible parked machine counts, and missing/unreadable status in the assigned-facility section, but only when readings are reliable. Do not show workers as a requirement or productivity input. If a vehicle reading is unavailable, label it unavailable rather than displaying a misleading zero. Do not expose technical inspector fields or add per-machine detail without confirmation.
+4. Preserve project ownership rules: multiple facilities per Project, no facility shared between Projects, explicit add/remove, reassignment only after removal, and saved assignments bound to stable building identity. A missing facility must remain visible as unavailable or clearly explain why capacity is absent; never silently assign a different building.
+5. Verify scheduler capacity aggregation with two facilities assigned to one Project, facility exclusivity across Projects, worker/machine counts and concurrent Sites. Verify removing/demolishing a facility follows existing missing-facility handling and preserves project progress.
+6. Add player UI only for demonstrated integration state. Keep the workforce inspector out of the player build; temporary terrain-edit and native UI/terrain observation probes have been removed.
+
+### User-run check and gate
+
+On a fresh test save, place at least two Earthworks facilities and an ordinary construction office. Check automatic detection, add/remove assignment, cross-Project exclusivity, save/reload, eligible-machine readings, concurrent Site allocation without workers, and behavior after one assigned facility is removed. Confirm ordinary offices are unchanged and ordinary construction jobs cannot be assigned to either Earthworks facility. User reviews this as Stage 12's final acceptance.
+
+### Exit criteria
+
+- Released facility instances are recognized reliably after placement and save/reload.
+- Facility rows and assignment controls reflect actual Project ownership and usable capacity without technical diagnostics.
+- Existing scheduler rules continue to work across multiple facilities; no facility is double-counted or shared between Projects.
+- User accepts end-to-end building, native UI and Project integration.
+
+## Deferred to Stage 13 or later
+
+Flexible multi-point Site geometry and post-creation editing are Stage 13. Final machine productivity/balance, facility range, build/maintenance costs, fuel-store capacity and fuel consumption/refuelling rules, quarried-stone accounting, and release settings are Stage 14. Stage 12 uses visibly provisional values where a test needs them. Vehicle reservations, machine animations and active-area construction prevention also remain outside this stage.
+
+## Open decisions to resolve at the relevant checkpoint
+
+- Finish native ModelViewer conversion and staging for the 12.1 single-frontage model, then ask the user to review the placeable item in game before 12.2.
+- Review the current Large preview against the concept, then convert its OBJ through ModelViewer and stage the native item. Review all 20 parking positions, pathing, two stations, construction phases, asphalt coverage and demolition cleanup using [STAGE12_LARGE_TESTING.md](STAGE12_LARGE_TESTING.md).
+- For 12.2, decide whether the inherited native construction-office panel is sufficient after seeing it with the new building, or whether a custom player-facing panel is necessary and technically supported.
+- For 12.3, show eligible-machine counts per assigned facility when readings are reliable; show a clear unavailable state instead of misleading zeroes. Worker counts are no longer an operating prerequisite (D90).
+- Keep the machine-rate scale provisional through Stage 12 and review final productivity during Stage 14.
+- `$TYPE_ROADDEPO` is the selected native-panel prototype. Fuel storage, consumption and refuelling are deferred (D91).

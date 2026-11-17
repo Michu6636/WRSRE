@@ -27,6 +27,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 #include <cmath>
 
@@ -150,7 +151,8 @@ static double Api_GetTotalWalletBalance(void)
 {
     EnterCriticalSection(&g_lock);
     double total = 0.0;
-    for (const auto& kv : g_wallets) total += (double)kv.second.balance;
+    for (const auto& kv : g_wallets)
+        if (std::isfinite(kv.second.balance)) total += (double)kv.second.balance;
     LeaveCriticalSection(&g_lock);
     return total;
 }
@@ -254,14 +256,21 @@ static void SaveWallets(const char* dir)
         Logf("currency  WARN  could not write %s\\%s", dir, WALLET_FILENAME);
 }
 
+// A missing or unusable sidecar leaves an empty wallet map. The entries
+// are keyed by citizen ID and must not survive from the previous world.
+static void ResetWallets(void)
+{
+    EnterCriticalSection(&g_lock);
+    g_wallets.clear();
+    LeaveCriticalSection(&g_lock);
+}
+
 static void LoadWallets(const char* dir)
 {
     size_t len = 0;
     void* raw = g_persistence->readFile(dir, WALLET_FILENAME, &len);
     if (!raw) {
-        EnterCriticalSection(&g_lock);
-        g_wallets.clear();
-        LeaveCriticalSection(&g_lock);
+        ResetWallets();
 
         Logf("currency  no %s in this save - starting with an empty wallet map",
              WALLET_FILENAME);
@@ -270,6 +279,7 @@ static void LoadWallets(const char* dir)
 
     if (len < sizeof(WalletSaveHeader)) {
         Logf("currency  %s is too short (%zu bytes) - ignored", WALLET_FILENAME, len);
+        ResetWallets();
         free(raw);
         return;
     }
@@ -282,6 +292,7 @@ static void LoadWallets(const char* dir)
     {
         Logf("currency  %s is version %u, this build writes %u - ignored",
              WALLET_FILENAME, hdr.version, WALLET_VERSION);
+        ResetWallets();
         free(raw);
         return;
     }
@@ -290,6 +301,7 @@ static void LoadWallets(const char* dir)
     if (want > len) {
         Logf("currency  %s claims %u records but is only %zu bytes - ignored",
              WALLET_FILENAME, hdr.count, len);
+        ResetWallets();
         free(raw);
         return;
     }
@@ -300,17 +312,37 @@ static void LoadWallets(const char* dir)
     // B5: loaded survivors get a fresh lease - stamp now (memory-only,
     // no format change) so a long-lived save is not pruned on arrival.
     int now = CurrentAbsDay();
+    // Duplicate IDs should not exist, but a damaged file can carry one.
+    // Track which inserted entries needed sanitising so a later sane
+    // duplicate can replace the placeholder instead of being discarded.
+    std::unordered_set<uint64_t> sanitizedIds;
+    sanitizedIds.reserve(hdr.count);
     const BYTE* p = (const BYTE*)raw + sizeof(hdr);
     for (uint32_t i = 0; i < hdr.count; i++) {
         WalletSaveRecord r;
         memcpy(&r, p, sizeof(r));
         p += sizeof(r);
-        if (!(r.wallet == r.wallet)) continue;
-        if (r.wallet < 0.0f) r.wallet = 0.0f;
+        // A corrupt record must not poison the map, and dropping it would
+        // be worse: a missing ID reads as a fresh starting wallet. Clamp
+        // into the same [0, 1e9] band WalletChange enforces, so a damaged
+        // balance becomes zero (or the ceiling) instead of a new grant.
+        bool sane = std::isfinite(r.wallet) &&
+                    r.wallet >= 0.0f && r.wallet <= 1.0e9f;
+        float balance = r.wallet;
+        if (!std::isfinite(balance) || balance < 0.0f) balance = 0.0f;
+        if (balance > 1.0e9f) balance = 1.0e9f;
         WalletEntry e;
-        e.balance        = r.wallet;
+        e.balance        = balance;
         e.lastSeenAbsDay = now;
-        g_wallets.emplace(r.citizenId, e);
+        auto ins = g_wallets.emplace(r.citizenId, e);
+        if (!ins.second) {
+            if (sane && sanitizedIds.count(r.citizenId)) {
+                ins.first->second = e;          // prefer the sane duplicate
+                sanitizedIds.erase(r.citizenId);
+            }
+        } else if (!sane) {
+            sanitizedIds.insert(r.citizenId);
+        }
     }
     size_t loaded = g_wallets.size();
     LeaveCriticalSection(&g_lock);
@@ -347,8 +379,11 @@ static void ReadSettings()
 
     g_startingWalletSet = 0;
     if (H->configString(ini, "currency", "starting_wallet", v, sizeof(v), "150.0") && v[0]) {
-        g_startingWalletCfg = (float)atof(v);
-        g_startingWalletSet = 1;
+        float w = (float)atof(v);
+        if (std::isfinite(w) && w >= 0.0f && w <= 1.0e9f) {
+            g_startingWalletCfg = w;
+            g_startingWalletSet = 1;
+        }
     }
 
     // v4 scale calibration: USD numbers run far smaller than RUB

@@ -1,0 +1,28 @@
+Program: C3DDLL64.dll
+Image base: 0x180000000
+Query VA: 0x18016B750
+
+Memory block: name=.rdata start=0x18016B000 end=0x1801CA5FF perms=R
+Bytes[0..15]: B4 91 1C 00 00 00 00 00 00 00 00 00 00 00 00 00
+QWORD at addr (little-endian): 0x1C91B4
+
+Symbols at exact address:
+  name=PTR_D3D11CreateDeviceAndSwapChain_18016b750 type=Label source=DEFAULT ns=Global
+
+Function at addr: <none>
+Function containing addr: <none>
+
+ExternalManager location: <none>
+
+Data at addr: addr 001c91b4
+
+References to addr (first 50):
+  [READ] from=0x1800148BC in=Initialize@0x1800145c0
+
+Nearby symbols (addr +/- 0x20):
+  0x18016B730 PTR_rand_18016b730 type=Label
+  0x18016B738 PTR_bsearch_s_18016b738 type=Label
+  0x18016B740 PTR_srand_18016b740 type=Label
+  0x18016B750 PTR_D3D11CreateDeviceAndSwapChain_18016b750 type=Label
+  0x18016B760 PTR_CreateDXGIFactory1_18016b760 type=Label
+  0x18016B770 PTR_CoSetProxyBlanket_18016b770 type=Label

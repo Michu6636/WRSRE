@@ -1,0 +1,2 @@
+0x14090AA28: bytes=00 00 48 42 float=50.0
+0x14090AA2C: bytes=00 00 4C 42 float=51.0

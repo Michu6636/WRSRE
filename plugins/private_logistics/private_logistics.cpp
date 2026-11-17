@@ -1297,7 +1297,7 @@ static bool AutoHasNativeStorage(void* b)
     const uintptr_t end = (uintptr_t)*(void**)((BYTE*)b + TSM_BLD_STORAGES_END);
     if (!begin || end <= begin || ((end - begin) % AUTO_STORAGE_STRIDE) != 0) return false;
     const uintptr_t count = (end - begin) / AUTO_STORAGE_STRIDE;
-    return count <= 4096 && ReadablePtr((const void*)begin, count * AUTO_STORAGE_STRIDE);
+    return count <= 32 && ReadablePtr((const void*)begin, count * AUTO_STORAGE_STRIDE);
 }
 
 static bool AutoReadTargetVector(void* office, void*** outBegin, size_t* outCount)

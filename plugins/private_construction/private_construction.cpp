@@ -353,6 +353,16 @@ static float  g_usdDivisor       = 50.0f;
 static float  g_maxTickAdvance   = 0.02f;
 static int    g_probeCompletion  = 1;
 
+// Day-delta accumulated across throttled frames. The per-site step is
+// bounded by g_maxTickAdvance (a progress fraction), so OnTick consumes at
+// most its day-equivalent, g_maxTickAdvance / g_dailyBuildRate, per pass and
+// leaves the remainder queued; a world load drops it.
+static float  g_pendingDayDelta  = 0.0f;
+// Unconsumed day fragments are a smoothing buffer, not a ledger: a long
+// stall at high time scale must not accumulate an unbounded backlog that
+// later drains for minutes after the player returns to 1x.
+static const float kMaxPendingDays = 10.0f;
+
 // v3.4.3 ----------------------------------------------------------------
 //
 // The completion the engine performs - the finished mesh node, the
@@ -1561,7 +1571,14 @@ static void OnSaveLoad(TsmSaveEvent ev, const char* dir, void* /*ud*/)
 {
     if (!dir || !g_persistence) return;
     if      (ev == TSM_SAVE_WRITING) SaveSites(dir);
-    else if (ev == TSM_SAVE_LOADING) LoadSites(dir);
+    else if (ev == TSM_SAVE_LOADING) {
+        // A fragment accumulated before the load belongs to the old world.
+        // OnTick and this callback can run on different threads.
+        EnterCriticalSection(&g_lock);
+        g_pendingDayDelta = 0.0f;
+        LeaveCriticalSection(&g_lock);
+        LoadSites(dir);
+    }
 }
 
 static void MatchPendingSites(TsmBuildingSpan* span)
@@ -1892,12 +1909,40 @@ static void RunConstructionPass(float dayDelta)
 
 static void OnTick(void* /*ud*/, float /*dt*/, float dayDelta)
 {
+    // dayDelta is PER FRAME (sim_clock_api.h): the frames this throttle
+    // skips must not lose their share of the day. Accumulate every valid
+    // frame and hand the whole accumulated delta to the pass that runs.
+    if (dayDelta > 0.0f && dayDelta == dayDelta) {
+        EnterCriticalSection(&g_lock);
+        g_pendingDayDelta += dayDelta;
+        if (g_pendingDayDelta > kMaxPendingDays)
+            g_pendingDayDelta = kMaxPendingDays;
+        LeaveCriticalSection(&g_lock);
+    }
+
     static DWORD lastRun = 0;
     DWORD now = GetTickCount();
     if (now - lastRun < (DWORD)g_tickIntervalMs) return;
     lastRun = now;
 
-    __try { RunConstructionPass(dayDelta); }
+    // The pass caps a site's PROGRESS step at g_maxTickAdvance (a 0..1
+    // fraction), so the day fragment consumed here is that fraction's
+    // day-equivalent. Capping days by the raw fraction made the limit
+    // bind at ordinary fast-forward speeds.
+    float dayCap = 0.0f;
+    if (g_maxTickAdvance > 0.0f && g_dailyBuildRate > 0.0f)
+        dayCap = g_maxTickAdvance / g_dailyBuildRate;
+
+    EnterCriticalSection(&g_lock);
+    float passDelta = g_pendingDayDelta;
+    if (dayCap > 0.0f && passDelta > dayCap) passDelta = dayCap;
+    g_pendingDayDelta -= passDelta;
+    if (!(g_pendingDayDelta > 0.0f)) g_pendingDayDelta = 0.0f;  // drain + NaN
+    LeaveCriticalSection(&g_lock);
+
+    // A faulted pass deliberately drops its fragment: re-running it could
+    // double-charge a site that already advanced before the fault.
+    __try { RunConstructionPass(passDelta); }
     __except (FaultFilter("private_construction pass", GetExceptionInformation()))
     {
         Logf("private_construction  the pass faulted - skipped this frame");

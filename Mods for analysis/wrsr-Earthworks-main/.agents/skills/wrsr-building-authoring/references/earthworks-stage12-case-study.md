@@ -1,0 +1,135 @@
+# Earthworks facility: workflow, review, and lessons learned
+
+This is an Earthworks-specific case study, not a default specification for another WRSR building. Paths in this reference are relative to `MOD_ROOT` (the mod/repository root) unless they begin with `GAME_ROOT` (the installed game's root). It distinguishes validated results from this prototype's remaining in-game checks. Its current source of truth is `MOD_ROOT/scripts/Stage-EarthworksBuilding.ps1`, `MOD_ROOT/assets/building/generate_earthworks_facility.py`, and the Stage 12 decision/review documents.
+
+## Accepted target and current limits
+
+The approved model concept is a compact dispatch office next to an open two-bay equipment canopy, with a visible decorative fuel tank. The current accepted road concept is a single frontage at the open bay side; the reviewed through-access variant was explicitly superseded. Two vehicle slots are required. The eventual staffing rule is zero worker capacity without an eligible parked machine, then 0.5 workers per Strength/Level point summed across eligible machines and rounded up. That dynamic rule is not implemented yet. The current building still has a fixed five-worker prototype value and a two-slot construction-office-derived configuration.
+
+Construction currently uses the installed vanilla construction-office coefficients:
+
+| Phase | Work coefficient | Resources | Mesh nodes |
+|---|---:|---|---|
+| Groundworks | 0.0 | `ground_asphalt 1.5` | `mesh_foundation_concrete`, `mesh_parking_bay_markings` |
+| Brick Laying | 1.0 | `wall_brick 0.7`, `wall_wood 0.3` | `mesh_dispatch_concrete`, `mesh_window_frames`, `mesh_safety_red`, `mesh_office_window_glass` |
+| Rooftop Building | 1.0 | `roof_woodsteel 0.8` | `mesh_canopy_structural_steel`, `mesh_decorative_tank_painted_steel`, `mesh_corrugated_galvanized_roof`, `mesh_office_roof_graphite`, `mesh_roof_rib_highlight` |
+
+These resource values are **coefficients**, not final item counts. The game calculates totals from the construction geometry. Balance remains subject to later testing. The construction vehicle work station is attached to `mesh_foundation_concrete`.
+
+## Source files and generated item
+
+| Role | Project path |
+|---|---|
+| Editable model and OBJ exporter | `MOD_ROOT/assets/building/generate_earthworks_facility.py` |
+| Generated Blender, OBJ, source MTL | `MOD_ROOT/assets/building/generated/` |
+| Game NMF, ModelViewer MTL, preview | `MOD_ROOT/assets/building/native/` |
+| WIP item generator/stager | `MOD_ROOT/scripts/Stage-EarthworksBuilding.ps1` |
+| User-run launch/staging wrapper | `MOD_ROOT/launch-prototype.cmd` |
+| User-run model review | `MOD_ROOT/docs/STAGE12_1_TESTING.md` |
+| Construction cost reference | `MOD_ROOT/docs/STAGE12_CONSTRUCTION_COSTS.md` |
+
+The local item is `GAME_ROOT/media_soviet/workshop_wip/9100000012`, with root `workshopconfig.ini`, `previewimage.png`, and `material.mtl`, and object folder `EarthworksDevelopmentFacility`. Its `renderconfig.ini` currently references `model.nmf` and the object-local `earthworks_facility_material.mtl`; runtime BC1 textures sit beside that MTL. `$OBJECT_BUILDING` must match the folder name. `imagegui.png` is copied into the object folder for the game catalog.
+
+The stage script emits three construction phases, two `$VEHICLE_PARKING` entries and a single `$CONNECTION_ROAD` at the open front. Bay centers and connector coordinates are prototype coordinates; native pathing has not been accepted yet.
+
+The current stager creates tiny BC1/DXT1 DDS files for custom-color submaterials. Dispatch walls use a concrete region from `buildings/firestation.dds`; the office roof uses a dark roof region from that atlas; the canopy roof uses a corrugated metal region from `buildings/garage.dds`. The earlier authoring snapshot also modeled a thin parking apron plane at grade. That mesh-floor approach is superseded by the Building Editor surface-area discovery below: floor and paved-area coverage must use native area directives, never floor meshes. The remaining atlas-backed wall and roof textures have not yet been reviewed in game. Remaining custom parts retain the muted palette and explicit Workshop-local DDS binding.
+
+## Native floor areas discovered in the Building Editor
+
+The comparison files under `GAME_ROOT/media_soviet/buildingeditor/userbuildings/` showed both line-drawn surface runs and rectangular coverage. `20424_My building_all_floor_types/element_script.ini` emitted the following full property names and parameter order:
+
+| Surface type | Line property and observed parameters | Square/rectangle property and observed parameters | Surface use |
+|---|---|---|---|
+| Road | `$CONNECTION_ROAD_DEAD 1 x1 y1 z1 x2 y2 z2` | `$CONNECTIONS_ROAD_DEAD_SQUARE x1 y1 x2 y2` | Textured road run; rectangular asphalt, parking court, or forecourt. |
+| Airport | `$CONNECTION_AIRPORT_DEAD -1 x1 y1 z1 x2 y2 z2` | `$CONNECTIONS_AIRPORT_DEAD_SQUARE x1 y1 x2 y2` | Textured airport/tarmac run or rectangle. |
+| Pedestrian | `$CONNECTION_PEDESTRIAN_DEAD 1 x1 y1 z1 x2 y2 z2` | `$CONNECTIONS_PEDESTRIAN_DEAD_SQUARE x1 y1 x2 y2` | Gravel-textured run or rectangular area in the tested game/build, per the user's all-floor-types comparison. |
+| Water | `$CONNECTION_WATER_DEAD x1 y1 z1 x2 y2 z2` | `$CONNECTIONS_WATER_DEAD_SQUARE 0.0000 x1 y1 x2 y2` | Water run or rectangular coverage. The square property has a leading scalar; its meaning is unverified. |
+| Mud road | `$CONNECTION_MUDROAD_DEAD 0 x1 y1 z1 x2 y2 z2` | Not observed | Textured mud-road run. |
+| Trolley track | `$CONNECTION_TROLLEYTRACK_DEAD x1 y1 z1 x2 y2 z2 x3 y3 z3 x4 y4 z4` | Not observed | Trolley-track line geometry. |
+| Trolley lines | `$CONNECTION_TROLLEYLINES_DEAD x1 y1 z1 x2 y2 z2 x3 y3 z3 x4 y4 z4` | Not observed | Trolley-line utility geometry. |
+
+The line forms use XYZ coordinate points; road, airport, pedestrian, and mud-road have leading type-specific values (`1`, `-1`, `1`, and `0` in this sample), whose meanings are not established. The trolley properties each contain four XYZ points. Square forms use two XY corners in building-local coordinates. Example square lines: `$CONNECTIONS_ROAD_DEAD_SQUARE 5.5147 4.0049 17.5180 17.9735`; `$CONNECTIONS_AIRPORT_DEAD_SQUARE -16.5144 0.4822 -1.3613 16.5378`; `$CONNECTIONS_PEDESTRIAN_DEAD_SQUARE -15.0612 -33.3294 -2.0876 -15.7728`; `$CONNECTIONS_WATER_DEAD_SQUARE 0.0000 2.8460 -51.1360 11.4206 -42.6012`. Treat these as observed parameter shapes rather than a complete grammar; preserve and verify ambiguous values in Building Editor.
+
+The separate `20424_My building_road_connection_only` comparison showed that ordinary road access is distinct from these surface runs and rectangles. A `$CONNECTION_ROAD` access point does not itself create either surface shape. Likewise, `$COST_RESOURCE_AUTO ground_asphalt` is a construction-cost coefficient, not a surface declaration.
+
+The editor output also listed ordinary access/utility properties separately. Keep surface coverage and access connectors as separate design/configuration decisions. `ground_asphalt` under `$COST_RESOURCE_AUTO` is a construction-cost coefficient; it does not paint an area by itself.
+
+This finding corrects the earlier investigation in this thread that had concluded no native per-building ground-area mechanism was available. For new building work, ask the user which footprint zones should receive which area type before modeling, use the Building Editor output as the syntax reference, and do not create floor meshes. A separate foundation/plinth mesh is allowed only when the design needs structural support or a visible raised base.
+
+The user's in-game comparison established that both pedestrian surface forms render with the game's gravel texture. Use `$CONNECTION_PEDESTRIAN_DEAD_SQUARE` for gravel coverage when that appearance is intended; its name can misleadingly suggest a paved footpath.
+
+## Full authoring procedure
+
+### 1. Review concept and requirements
+
+Before modeling, read the Stage 12 decisions and use the latest accepted visual concept. Keep roads, vehicle parking points, office placement, tank placement, scale, mesh parts and material names aligned. Do not silently reintroduce an option that the user superseded. Mark values such as five workers as temporary until explicitly balanced.
+
+### 2. Build the editable Blender source
+
+Use the project's portable Blender and the generator script. It builds the dispatch office, plinth/foundation, office windows/door, decorative tank, steel canopy, corrugated roof and bay markings at metric scale. Geometry groups by material. The exporter:
+
+- duplicates and groups parts by their first Blender material;
+- names each output object `mesh_<material>`;
+- merges vertices closer than 0.0001 m, triangulates faces and recalculates normals;
+- exports with forward axis `-Z` and up axis `Y` for ModelViewer;
+- saves editable `.blend`, `.obj`, and a PNG render.
+
+The first accepted vehicle approach faces negative Z. If geometry or orientation changes, revisit parking and road connector coordinates and regenerate the NMF. Check material-group node names after every export because construction phases refer to those names.
+
+### 3. Convert and review with ModelViewer
+
+Import `assets/building/generated/earthworks_facility.obj` into ModelViewer. Set Object type to **Building** when reviewing construction meshes and material appearance. ModelViewer's NMF save dialog is confined to `GAME_DIR/media_soviet`; entering a repository path outside that tree triggers “Error, file is outside of GAME_DIR/media_soviet”. Navigate to the local item directory, such as `media_soviet/workshop_wip/9100000012/EarthworksDevelopmentFacility/`, and enter `model` without an extension because the dialog appends `.nmf`. Verify the success message and actual filename: entering `model.nmf` creates `model.nmf.nmf`. Copy the saved NMF to `assets/building/native/earthworks_facility.nmf` with `Copy-Item` (or an equivalent filesystem command). This keeps ModelViewer's path sandbox satisfied while preserving the repo copy as the source-controlled artifact. Verify file size/hash after copying, then run the staging script. Use ModelViewer's native material workflow for the source MTL. Check that every expected `mesh_*` and submaterial name survived conversion. ModelViewer showing colors is necessary asset evidence, but it did not guarantee the same runtime result in game.
+
+### 4. Configure construction and facility metadata
+
+The stager copies type flags and resource source declarations from the installed vanilla construction-office configuration, then writes Earthworks-specific values. Keep `$COST_WORK`, `$COST_WORK_BUILDING_NODE`, `$COST_WORK_VEHICLE_STATION_ACCORDING_NODE`, and `$COST_RESOURCE_AUTO` in the correct phase blocks. The phase blocks must occur before `$RESOURCE_SOURCE_*` in this parser setup. Give every mesh node a phase and avoid assigning an unrelated node name. The current facilities/costs table above documents the complete mapping.
+
+Do not infer a building's worker formula from `$WORKERS_NEEDED`; the current fixed `5` is only the temporary building panel/capacity configuration. The user-approved Strength/Level formula still needs separate implementation and mapping validation.
+
+### 5. Produce and stage materials
+
+The working in-game diagnostic was decisive: one compressed local DDS per NMF submaterial, referenced with `$TEXTURE_MTL 0`, made the finished model show the exaggerated colors. The current stager writes a small valid BC1/DXT1 color texture for custom-color parts and writes `earthworks_facility_material.mtl`, then references it from the object-local `renderconfig.ini`. To answer the later request for vanilla-style surfaces, the current texture pass uses `$TEXTURE 0` for atlas-backed concrete/roof panels and UVs each mesh to a measured region of the firestation or garage atlas. Do not map arbitrary UVs across a whole atlas; select a known texture rectangle and make the generator/stager path agree. Current in-game appearance of these atlas surfaces and the ground-level apron remains unreviewed.
+
+The simpler source MTL color constants and changing the `MATERIAL` path between object-local and parent-relative locations did not resolve the gray finished model. Do not repeat path-only experiments or tune the color constants as if that proved runtime binding. If a future result regresses, verify the live renderconfig target, local MTL, texture files, and game log; compare the finished placed building, not the green placement ghost or construction phase overlay.
+
+### 6. Stage and perform user-run review
+
+Close both game and project-local RML. Run `launch-prototype.cmd`; it rejects a running game/RML, verifies the game baseline through staging, stages the plugin and local Workshop item, and opens the isolated RML profile. Keep Steam open. Use a fresh/disposable save.
+
+If the game has no matching `building.bbox`/`building.fire` for the current NMF, let it start once to generate them, close it fully, then relaunch before checking costs. A stale donor bounds file can make the menu show all-zero construction requirements even when `building.ini` is correct. The stager removes generated bounds only when the NMF hash changes, otherwise preserving the game-generated files.
+
+In game, check the menu cost summary, construction resources/work progression, finished palette, approach road, both machine slots, save/reload and demolition. For color, wait until construction has finished. Do not mistake the blue/yellow/green construction/placement overlays for the final texture. Record each user-reported check separately; not all Stage 12.1 checks are complete yet.
+
+## Mistakes and corrections
+
+| Symptom/attempt | What we learned | Corrective action and current lesson |
+|---|---|---|
+| Parking court was represented by a broad modeled apron/floor plane. | Building Editor exposes native rectangular area directives separately from road access points. A road connector alone is not paved-area coverage. | Remove floor meshes and define intended coverage with `$CONNECTIONS_*_DEAD_SQUARE`. Ask the user to map areas to surface types first; keep building access connectors separate. |
+| Model appeared black with atlas-like fragments. | The game log showed failed reads of `media_soviet/buildings/blankdiffuse.dds`; the blank diffuse asset is at the media root. | Corrected the original MTL diffuse reference. This removed the black/atlas artifact, but did not establish final color rendering. Current runtime uses explicit local textures instead. |
+| First color-material edit read mostly brown; later placements looked gray. | Reordering submaterials, adding `$END`, changing ambient/specular values and boosting diffuse colors did not solve the completed-building result. ModelViewer and finished in-game rendering were not equivalent. | Stop color tweaking until runtime binding is proven. The explicit local BC1 texture diagnostic proved binding; final muted textures now use that route. |
+| `MATERIAL ../material.mtl` and then a local `MATERIAL material.mtl` reference were tried as the main fix. | Both path variants failed to restore color on a fresh placed facility. | The successful diagnostic used a uniquely named object-local MTL plus local `$TEXTURE_MTL` DDS textures. Path correctness alone was insufficient in this case. |
+| Saving the converted NMF directly from ModelViewer into the mod repository failed. | ModelViewer restricts its save dialog to `GAME_DIR/media_soviet` and reports “file is outside of GAME_DIR/media_soviet” for repository paths. | Save first into the staged item (or another temporary directory) beneath `media_soviet`, then copy the NMF into `assets/building/native/` using filesystem tools. Do not try to work around the app's path check by changing unrelated game paths. |
+| Building model had no construction stages/nodes. | The ModelViewer guide identifies mesh names as needed by construction scripts and proper model rendering. Later, the user also observed zero cost/no requirements. | Assign all custom NMF nodes to native construction phases and include a real vehicle station node. Keep phase names and node strings synchronized. |
+| Initial cost phases used zero work/no resources; prototype stayed a yellow blueprint. | A blueprint with no cost phase did not provide a useful construction review. | Add native construction phase entries and material coefficients, then verify the build-menu summary and completion in game. |
+| First cost attempt put resource-source declarations before cost phases. | Menu still displayed zero costs. | Reorder cost phases before `$RESOURCE_SOURCE_*` as shown in the working vanilla config. |
+| Donor `building.bbox`/`building.fire` files were copied from a different, much larger construction office. | The generated node/collision bounds no longer matched the custom model; costs remained zero even after the INI was corrected. | Do not copy donor bounds to an unrelated NMF. Let the game generate custom bounds; invalidate on NMF hash change and restart the game so regenerated bounds load. This was the change after which the user confirmed construction costs and build progression worked. |
+| Diagnostic coefficients were set to `100.0`. | The game interpreted these as scale coefficients applied across construction geometry, producing extremely large requirements. Decimal syntax such as `1.0` is accepted; these values are not literal unit counts. | Return to the installed native construction-office coefficients (`0.0`, `1.0`, `1.5`, etc.) and adjust in small in-game steps. The current vanilla baseline is written in `docs/STAGE12_CONSTRUCTION_COSTS.md`. |
+| `Development inventory: local=1 enabled=0` was treated as evidence that the Workshop item did not load. | This RML checkbox refers to the optional DLL development payload, not the WIP building item. | Do not use that line to diagnose local building loading. Confirm the item directory and launcher profile separately. |
+| The test building inherited 16 parking points from a donor CO. | That contradicted the approved two-slot target and did not describe custom bay pathing. | Stage exactly two custom `$VEHICLE_PARKING` entries. Final pathing is still awaiting user review. |
+| Through-access roads were designed after the initial concept. | The user reverted that proposal to the original single-frontage layout. | Keep the single-front design. Do not revive through-access unless the user changes the decision; test the approved road side in game. |
+
+## Current review status
+
+- **Confirmed by the user:** the high-contrast local-texture diagnostic renders the separate material colors on a completed in-game facility; construction requirements and progression work after the bounds/order fixes.
+- **Staged but not yet accepted:** the vanilla-atlas surface update and flush parking apron from commit `a865bb4`; the previous explicit texture-binding route remains available for custom-color parts.
+- **Still needed for Stage 12.1:** fresh-placement review of the concrete/metal atlas mapping, flush grade, remaining palette, scale/footprint, road snap and vehicle entry/exit for both slots, save/reload, demolition, plus any missing material warnings.
+- **Not implemented yet:** purpose-built native facility panel (Stage 12.2), Project/facility integration (Stage 12.3), dynamic Strength/Level staffing rule, final visual polish/balance. The five-worker value is not the approved final formula.
+
+## References
+
+- [Official General modding guide](https://wiki.hoodedhorse.com/Workers_Resources_Soviet_Republic/General_modding)
+- [Official Modelling guide](https://wiki.hoodedhorse.com/Workers_Resources_Soviet_Republic/Modelling)
+- [Stage 12 construction cost notes](../../../../docs/STAGE12_CONSTRUCTION_COSTS.md)
+- [Stage 12.1 user test instructions](../../../../docs/STAGE12_1_TESTING.md)
+- [Stage decisions](../../../../docs/DECISIONS.md)
+- [Stage review record](../../../../docs/STAGE_REVIEWS.md)

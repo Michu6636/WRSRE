@@ -198,6 +198,7 @@
 #include <algorithm>
 #include <assert.h>
 #include <stdint.h>
+#include <cmath>
 
 static const TsmSimClockApi*        g_simClock    = nullptr;
 static const TsmCurrencyApi*        g_currency    = nullptr;
@@ -590,19 +591,6 @@ static int ProcessOneDemand(void* shop, void* person, const BYTE* demand)
     // Sanity check: Ensure this venue stocks this resource and has stock on hand
     if (!ShopHasResourceInStock((BYTE*)shop, res)) return 0;
 
-    // v4: unified global currency - price in the active currency so
-    // wholesale, retail, pub charges and state procurement all transact
-    // in the same unit the treasury routes to.
-    int cur = TsmCurrencyActive(g_currency);
-    float pricePerTon = g_pricing->getPrice(res, cur);
-    // v2.0 (Task 2): Victoria-3 market price = base * marketMult.
-    // When the Republic book has the multiplier API available, use it;
-    // otherwise fall back to a neutral 1.0 (pre-v2 behaviour).
-    float marketMult = TsmPricingMarketMult(g_pricing, res);
-    float totalCost   = amountNeeded * (pricePerTon * marketMult);
-    if (!(totalCost == totalCost) || totalCost < g_minCost)
-        totalCost = g_minCost;
-
     // v2.4: payment is handled natively by the checkout hook at
     // FUN_140171E10+0x1725DE before the engine decrements shelf/demand.
     // WalkShop no longer charges here to avoid double-charging.
@@ -625,6 +613,10 @@ static int CheckoutAffordabilityGate(void* shop, void* person, void* res, float 
         float marketMult = TsmPricingMarketMult(g_pricing, res);
         float cost = amount * pricePerTon * marketMult;
         if (!(cost == cost) || cost < 0.0f) cost = 0.0f;
+
+        // Configured sale floor: apply min_cost to the amount actually
+        // charged so a cheap sale still produces a non-zero transaction.
+        if (cost < g_minCost) cost = g_minCost;
 
         // Negligible cost: don't bother the citizen, allow the give.
         if (cost < 0.0001f) return 1;
@@ -1031,7 +1023,11 @@ static void ApplySolScaling(void* person, int absDay, float wallet)
     // --- Top-down classification (first match wins) -------------------------
     int isDestitute = (wallet < breadCost) && (dailyWage <= 0.01f);
     int isAffluent  = (ppr >= 2.0f) && (runway >= g_runwayAffluentDays);
-    int isMiddle    = (ppr >= 1.0f) || (runway >= g_runwayLowDays);
+    // First match wins, Affluent before Middle: ppr >= 2.0 also satisfies
+    // the Middle ppr >= 1.0 test, so Middle must exclude the Affluent band
+    // or the rich are always classified as Middle and never scaled.
+    int isMiddle    = !isAffluent &&
+                      ((ppr >= 1.0f) || (runway >= g_runwayLowDays));
     int isLow       = !isDestitute && !isAffluent && !isMiddle;
 
     if (isMiddle) {
@@ -1333,7 +1329,9 @@ static void ReadSettings(void)
     g_minCostCfg = g_minCost;
     if (H->configString(ini, "citizen_retail", "min_cost", v, sizeof(v), "") && v[0]) {
         float m = (float)atof(v);
-        if (m >= 0.0f && m == m) g_minCostCfg = m;
+        // atof("inf") and 1e999 both yield +inf; the floor would then block
+        // every sale. Require a finite, plausible figure.
+        if (std::isfinite(m) && m >= 0.0f && m <= 1.0e6f) g_minCostCfg = m;
     }
     g_minCost = g_minCostCfg;
     // v4: RUB->USD divisor for min_cost unless min_cost_usd overrides it.
@@ -1522,7 +1520,7 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
         if (H->configString(ini, "citizen_retail", "min_cost_usd",
                             u, sizeof(u), "") && u[0]) {
             float m = (float)atof(u);
-            if (m >= 0.0f && m == m) g_minCost = m;
+            if (std::isfinite(m) && m >= 0.0f && m <= 1.0e6f) g_minCost = m;
         } else {
             float d = (g_usdDivisor >= 1.0f) ? g_usdDivisor : 50.0f;
             g_minCost = g_minCostCfg / d;

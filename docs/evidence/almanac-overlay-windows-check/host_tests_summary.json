@@ -1,0 +1,65 @@
+{
+  "mode": "normal",
+  "compiler": "C:\\w64devkit\\bin\\g++.EXE",
+  "suites": [
+    {
+      "name": "ui_button_core",
+      "status": "passed"
+    },
+    {
+      "name": "almanac_button_geometry",
+      "status": "passed"
+    },
+    {
+      "name": "almanac_open_state",
+      "status": "passed"
+    },
+    {
+      "name": "almanac_panel_state",
+      "status": "passed"
+    },
+    {
+      "name": "almanac_finance",
+      "status": "passed"
+    },
+    {
+      "name": "almanac_finance_editor",
+      "status": "passed"
+    },
+    {
+      "name": "almanac_overlay_bridge",
+      "status": "passed"
+    },
+    {
+      "name": "almanac_overlay_controller",
+      "status": "passed"
+    },
+    {
+      "name": "almanac_finance_session",
+      "status": "passed"
+    },
+    {
+      "name": "almanac_finance_executor",
+      "status": "passed"
+    },
+    {
+      "name": "almanac_debug_toggle",
+      "status": "passed"
+    },
+    {
+      "name": "tax_policy_extracted",
+      "status": "passed"
+    },
+    {
+      "name": "imgui_headless",
+      "status": "passed"
+    }
+  ],
+  "scope": "host-only; no native/GPU/input acceptance",
+  "compiler_version": "g++.EXE (GCC) 16.1.0",
+  "imgui": {
+    "commit": "f5befd2d29e66809cd1110a152e375a7f1981f06",
+    "imgui_h_sha256": "2d0180859ff85e7fe66ed9999b0f05f2fc45176773046a8f86b3b6bd190b0765"
+  },
+  "status": "passed"
+}

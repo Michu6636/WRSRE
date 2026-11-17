@@ -1159,13 +1159,16 @@ static bool Inject(const wchar_t* gameFull, const wchar_t* dllFull)
                 Fail(L"CreateRemoteThread");
             else
             {
-                WaitForSingleObject(th, 30000);
-
+                const DWORD wait = WaitForSingleObject(th, 30000);
                 DWORD loaded = 0;
-                GetExitCodeThread(th, &loaded);
+                const BOOL gotExitCode = wait == WAIT_OBJECT_0 && GetExitCodeThread(th, &loaded);
                 CloseHandle(th);
 
-                if (!loaded)
+                if (wait != WAIT_OBJECT_0)
+                    Msg(L"loader injection did not complete (wait=0x%08lX); game will not resume", wait);
+                else if (!gotExitCode || loaded == STILL_ACTIVE)
+                    Msg(L"loader injection exit status unavailable; game will not resume");
+                else if (!loaded)
                     Msg(L"LoadLibraryW returned NULL - the DLL did not load");
                 else if (ResumeThread(pi.hThread) == (DWORD)-1)
                     Fail(L"ResumeThread");
@@ -1178,7 +1181,9 @@ static bool Inject(const wchar_t* gameFull, const wchar_t* dllFull)
         }
     }
 
-    if (remote) VirtualFreeEx(pi.hProcess, remote, 0, MEM_RELEASE);
+    // On timeout the remote thread may still be reading its parameter. Never
+    // free it under that thread; terminating the failed child reclaims memory.
+    if (ok && remote) VirtualFreeEx(pi.hProcess, remote, 0, MEM_RELEASE);
     if (!ok) TerminateProcess(pi.hProcess, 1);
     CloseHandle(pi.hThread);
     CloseHandle(pi.hProcess);

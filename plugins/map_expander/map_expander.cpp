@@ -25,6 +25,8 @@
 
 #include "../../src/tesmio_plugin.h"
 
+#include <cmath>
+
 #define RVA_WORLD_SIZE  (g_tsmAddr.world_size)
 #define RVA_HALF_WORLD  (g_tsmAddr.half_world)
 #define RVA_GATE_HI     (g_tsmAddr.gate_hi)
@@ -53,7 +55,10 @@ static void ReadSettings()
     {
         char* end = nullptr;
         float w = strtof(v, &end);
-        if (end == v || w < VANILLA_WORLD)
+        // "nan"/"inf" parse successfully but both comparisons below are
+        // false for NaN, and inf would still be written to six engine
+        // constants. Reject every non-finite value here.
+        if (end == v || !std::isfinite(w) || w < VANILLA_WORLD)
         {
             Logf("map_expander  WARN  world_size = '%s' is invalid (minimum %.1f) - clamped to %.1f",
                  v, (double)VANILLA_WORLD, (double)VANILLA_WORLD);

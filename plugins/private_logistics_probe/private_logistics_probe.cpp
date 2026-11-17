@@ -350,8 +350,15 @@ static int TripIndexFor(const void* vehicle)
 
 static int TripAlloc(const void* vehicle)
 {
-    if (g_tripCount >= 16) return -1;
-    int i = g_tripCount++;
+    int i;
+    if (g_tripCount < 16) {
+        i = g_tripCount++;
+    } else {
+        // Table full: reuse the first slot that is not waiting for unload.
+        for (i = 0; i < 16; i++)
+            if (g_trips[i].state != 1) break;
+        if (i >= 16) return -1;
+    }
     memset(&g_trips[i], 0, sizeof(g_trips[i]));
     g_trips[i].vehicle = vehicle;
     g_trips[i].state   = 0;
@@ -685,14 +692,14 @@ static float TodNow(void)
     return 0.0f;
 }
 
-static void LogHeader(const char* recKind, unsigned seq, double ts,
+static void LogHeader(const char* recKind, int kind, unsigned seq, double ts,
                       unsigned long thread, unsigned flags, int synth)
 {
     char pbuf[32];
     PtrStr(pbuf, sizeof(pbuf), (const void*)(uintptr_t)thread);
     Logf("[PROBE %s] seq=%u ts=%.4f thr=%s kind=%s schema=%u "
          "committed=%d load=%d unload=%d complete=%d gap=%d error=%d synth=%d",
-         recKind, seq, ts, pbuf, ConfName((int)seq % 6 + 1), PROBE_SCHEMA_VERSION,
+         recKind, seq, ts, pbuf, ConfName(kind), PROBE_SCHEMA_VERSION,
          !!(flags & PROBE_F_COMMITTED), !!(flags & PROBE_F_LOAD),
          !!(flags & PROBE_F_UNLOAD), !!(flags & PROBE_F_COMPLETE),
          !!(flags & PROBE_F_GAP), !!(flags & PROBE_F_ERROR), synth);
@@ -704,7 +711,7 @@ static void LogSession(const char* event, const char* note)
     unsigned seq = NextSeq();
     double ts  = NowSeconds() - g_sessionStartTs;
     unsigned long thr = GetCurrentThreadId();
-    LogHeader("SESSION", seq, ts, thr, 0, 0);
+    LogHeader("SESSION", PROBE_REC_SESSION, seq, ts, thr, 0, 0);
     int d = DayNow(), m = MonthNow(), y = YearNow();
     Logf(" session_id=%s event=%s day=%d mon=%d yr=%d note=\"%s\"",
          g_sessionId, event, d, m, y, note);
@@ -716,7 +723,7 @@ static void LogDrop(const char* reason, unsigned queueDrops)
     unsigned seq = NextSeq();
     double ts = NowSeconds() - g_sessionStartTs;
     unsigned long thr = GetCurrentThreadId();
-    LogHeader("DROP", seq, ts, thr, PROBE_F_ERROR, 0);
+    LogHeader("DROP", PROBE_REC_DROP, seq, ts, thr, PROBE_F_ERROR, 0);
     Logf(" reason=\"%s\" ring_drops=%u queue_drops=%u today_drops=%u",
          reason, g_ringDrops, queueDrops, g_eventsDroppedToday);
 }
@@ -1063,7 +1070,7 @@ static unsigned LogRawEvent(const char* site, unsigned mode,
     unsigned long thr = GetCurrentThreadId();
     int synth = !!(flags & PROBE_F_SYNTH) ? 1 : 0;
 
-    LogHeader("EVENT", seq, ts, thr, flags, synth);
+    LogHeader("EVENT", PROBE_REC_EVENT, seq, ts, thr, flags, synth);
     Logf(" site=\"%s\" mode=%u", site, mode);
 
     char vbuf[32], dbuf[32], lsbuf[32], usbuf[32];
@@ -1108,7 +1115,7 @@ static void LogInterp(const char* what, const void* vehicle,
     unsigned long thr = GetCurrentThreadId();
     int synth = !!(flags & PROBE_F_SYNTH) ? 1 : 0;
 
-    LogHeader("INTERP", seq, ts, thr, flags, synth);
+    LogHeader("INTERP", PROBE_REC_INTERP, seq, ts, thr, flags, synth);
     char vbuf[32];
     PtrStr(vbuf, sizeof(vbuf), vehicle);
     Logf(" veh=%s what=\"%s\" fb=%.6f fa=%.6f ded=%.6f complete=%d gap=%d error=%d",
@@ -1124,7 +1131,7 @@ static void LogTripSummary(const void* vehicle, double fuel_before,
     double ts = NowSeconds() - g_sessionStartTs;
     unsigned long thr = GetCurrentThreadId();
 
-    LogHeader("TRIP", seq, ts, thr, PROBE_F_COMPLETE, 0);
+    LogHeader("TRIP", PROBE_REC_TRIP, seq, ts, thr, PROBE_F_COMPLETE, 0);
     char vbuf[32];
     PtrStr(vbuf, sizeof(vbuf), vehicle);
     Logf(" veh=%s fuel_before=%.6f fuel_after=%.6f deduction=%.6f "

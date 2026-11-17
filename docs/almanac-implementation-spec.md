@@ -1,5 +1,7 @@
 # Almanac: implementation specification (decision draft, not code)
 
+> **Historical decision draft.** This predates the implemented host policies and ImGui candidate. Read [current engineering status](almanac-engineering-status.md) first; do not interpret the old “specification only” status or native-host proposals as current source inventory.
+
 **Status:** specification only. D1–D6 are **proposals, not approved implementation decisions**. Neither proof of concept (§6) is authorized or read-only. No code, no game or mod execution, no hooks, no deployment, no live test. The existing tax rules are unchanged by this specification. Builds on [`almanac-design-comparison.md`](almanac-design-comparison.md) (committed `d0b3f05`).
 
 **Labels**

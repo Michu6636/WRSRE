@@ -1,0 +1,2 @@
+0x14090A960: bytes=00 00 C0 41 float=24.0
+0x14090A964: bytes=60 E5 C7 41 float=24.987

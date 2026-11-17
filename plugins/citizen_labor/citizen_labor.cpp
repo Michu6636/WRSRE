@@ -774,9 +774,40 @@ static int IsUsdActive(void)
 static float ClampToMinimum(float wage)
 {
     // M1: the statutory floor takes effect at the point every wage path
-    // funnels through, so no wage can pay below it by accident.
+    // funnels through, so no wage can pay below it by accident. The upper
+    // bound mirrors the sidecar/sector-wage limit: inf here would flow
+    // into payroll and capital, and worker credits reject non-finite pay.
     float floor = (g_minimumWage > 0.0f) ? g_minimumWage : 0.0f;
+    // A non-finite input is not a wage: return zero so the payment is
+    // dropped rather than minting a floor or ceiling payment from corrupt data.
+    if (!isfinite(wage)) return 0.0f;
+    if (wage > 1.0e6f) wage = 1.0e6f;
     return (wage < floor) ? floor : wage;
+}
+
+// Recompute the effective sector wages from the currency-neutral cfg
+// bases. Runs at Start after the floor is resolved, and again after a
+// save load: the sidecar stores RUB bases, so loading one in USD mode
+// must divide by the divisor (explicit USD entries win) instead of
+// assigning the RUB figure to g_sectorWage verbatim.
+static void ResolveSectorWages(void)
+{
+    const int usd = IsUsdActive();
+    const float d = UsdScale();
+    for (int s = 0; s < TSM_SECTOR_COUNT; s++) {
+        if (usd) {
+            if (g_sectorWageUsdCfg[s] > 0.0f)
+                g_sectorWage[s] = g_sectorWageUsdCfg[s];
+            else if (g_sectorWageCfg[s] > 0.0f)
+                g_sectorWage[s] = g_sectorWageCfg[s] / d;
+            else
+                g_sectorWage[s] = 0.0f;  // unconfigured stays unconfigured
+        } else {
+            g_sectorWage[s] = g_sectorWageCfg[s];
+        }
+        if (g_sectorWage[s] > 0.0f)
+            g_sectorWage[s] = ClampToMinimum(g_sectorWage[s]);
+    }
 }
 
 // Sector base for one building type: effective sector figure when the
@@ -974,8 +1005,6 @@ static void ProcessPayrollForPerson(void* person, int day, int month)
     case TSM_FREQ_DAILY:
         if (rec.lastPayDay != day) {
             due = true;
-            rec.lastPayDay   = day;
-            rec.lastPayMonth = month;
             multiplier = 1.0f;
         }
         break;
@@ -986,8 +1015,6 @@ static void ProcessPayrollForPerson(void* person, int day, int month)
             day -  rec.lastPayDay >= 7)
         {
             due = true;
-            rec.lastPayDay   = day;
-            rec.lastPayMonth = month;
             multiplier = 7.0f;
         }
         break;
@@ -996,8 +1023,6 @@ static void ProcessPayrollForPerson(void* person, int day, int month)
     default:
         if (rec.lastPayMonth != month) {
             due = true;
-            rec.lastPayMonth = month;
-            rec.lastPayDay   = day;
             multiplier = (float)DaysPerMonth();
         }
         break;
@@ -1026,7 +1051,7 @@ static void ProcessPayrollForPerson(void* person, int day, int month)
         LeaveCriticalSection(&g_lock);
         if (ov > 0.0f) daily = ClampToMinimum(ov);
     }
-    if (!(daily > 0.0f)) return;
+    if (!isfinite(daily) || !(daily > 0.0f)) return;
 
     float amount = daily * multiplier;
 
@@ -1041,9 +1066,13 @@ static void ProcessPayrollForPerson(void* person, int day, int month)
         if (ratio < 0.20f) ratio = 0.20f;
         amount *= ratio;
     }
-    rec.shiftsThisMonth = 0;
 
-    if (!(amount > 0.0f)) return;
+    if (!isfinite(amount) || !(amount > 0.0f)) return;
+
+    // Commit payday and shift consumption only after the payment amount is valid.
+    rec.lastPayDay      = day;
+    rec.lastPayMonth    = month;
+    rec.shiftsThisMonth = 0;
 
     // Ask the private employer, if one is registered and this citizen
     // has a workplace on record.
@@ -1113,7 +1142,7 @@ static void ProcessPayrollForPerson(void* person, int day, int month)
                 rec.consecutiveDefaults = 0;
 
                 float welfare = g_unemployedWelfare * multiplier;
-                if (welfare > 0.0f && g_currency)
+                if (isfinite(welfare) && welfare > 0.0f && g_currency)
                     g_currency->stateToCitizen(person, welfare, "welfare");
             }
             return;
@@ -1392,7 +1421,7 @@ static int Api_SetWorkplaceWageOverride(void* building, float dailyWage)
     if (!TsmIsValidGamePtr(building)) return 0;
     if (!ReadablePtr(building, TSM_BLD_MIN_READABLE)) return 0;
     if (!(dailyWage == dailyWage)) return 0;
-    if (!(dailyWage > 0.0f)) return 0;
+    if (!(dailyWage > 0.0f) || !(dailyWage <= 1.0e6f)) return 0;
 
     float eff = ClampToMinimum(dailyWage);
     float rub = eff;
@@ -1401,6 +1430,9 @@ static int Api_SetWorkplaceWageOverride(void* building, float dailyWage)
         if (!(d >= 1.0f)) d = 50.0f;
         rub = eff * d;
     }
+    // The sidecar and sector bases are RUB figures capped at 1e6; a huge
+    // active-currency value must not bypass that cap through the divisor.
+    if (!(rub > 0.0f) || !(rub <= 1.0e6f)) return 0;
 
     float px = 0.0f, pz = 0.0f;
     (void)ReadBuildingPosition(building, &px, &pz);
@@ -1466,7 +1498,7 @@ static float Api_GetEffectiveWageForBuilding(void* building)
 static int Api_SetSectorWage(int sectorId, float wage)
 {
     if (sectorId < 0 || sectorId >= TSM_SECTOR_COUNT) return 0;
-    if (!(wage == wage) || !(wage > 0.0f)) return 0;
+    if (!isfinite(wage) || !(wage > 0.0f) || wage > 1.0e6f) return 0;
 
     float w = ClampToMinimum(wage);
     EnterCriticalSection(&g_lock);
@@ -1646,16 +1678,29 @@ static void SaveLabor(const char* dir)
              dir, LABOR_FILENAME);
 }
 
+static void ReadSectorWages(const char* ini);   // settings, defined below
+
+// A sidecar that cannot be used is treated exactly like a missing one:
+// no employment records, overrides or runtime sector wages from the
+// previous world may survive into the newly loaded one. Caller holds
+// g_lock.
+static void ResetLoadedStateLocked(void)
+{
+    g_records.clear();
+    g_zeroedWorkers.clear();
+    g_wageOverrides.clear();
+    g_pendingOverrides.clear();
+    ReadSectorWages("plugins\\citizen_labor.ini");
+    ResolveSectorWages();
+}
+
 static void LoadLabor(const char* dir)
 {
     size_t len = 0;
     void* raw = g_persistence->readFile(dir, LABOR_FILENAME, &len);
     if (!raw) {
         EnterCriticalSection(&g_lock);
-        g_records.clear();
-        g_zeroedWorkers.clear();
-        g_wageOverrides.clear();
-        g_pendingOverrides.clear();
+        ResetLoadedStateLocked();
         LeaveCriticalSection(&g_lock);
 
         Logf("citizen_labor  no %s in this save - starting with an empty registry",
@@ -1664,6 +1709,9 @@ static void LoadLabor(const char* dir)
     }
 
     if (len < sizeof(LaborSaveHeader)) {
+        EnterCriticalSection(&g_lock);
+        ResetLoadedStateLocked();
+        LeaveCriticalSection(&g_lock);
         Logf("citizen_labor  %s too short - ignored", LABOR_FILENAME);
         free(raw);
         return;
@@ -1681,6 +1729,9 @@ static void LoadLabor(const char* dir)
     } else {
         Logf("citizen_labor  %s version %u, expected %u..%u - ignored",
              LABOR_FILENAME, hdr.version, LABOR_VERSION_LEGACY, LABOR_VERSION);
+        EnterCriticalSection(&g_lock);
+        ResetLoadedStateLocked();
+        LeaveCriticalSection(&g_lock);
         free(raw);
         return;
     }
@@ -1688,6 +1739,9 @@ static void LoadLabor(const char* dir)
     if (memcmp(hdr.magic, LABOR_MAGIC, 8) != 0 ||
         hdr.recordSize != recordSize) {
         Logf("citizen_labor  %s header invalid - ignored", LABOR_FILENAME);
+        EnterCriticalSection(&g_lock);
+        ResetLoadedStateLocked();
+        LeaveCriticalSection(&g_lock);
         free(raw);
         return;
     }
@@ -1696,6 +1750,9 @@ static void LoadLabor(const char* dir)
     if (want > len) {
         Logf("citizen_labor  %s claims %u records but is only %zu bytes - ignored",
              LABOR_FILENAME, hdr.count, len);
+        EnterCriticalSection(&g_lock);
+        ResetLoadedStateLocked();
+        LeaveCriticalSection(&g_lock);
         free(raw);
         return;
     }
@@ -1705,13 +1762,18 @@ static void LoadLabor(const char* dir)
     // parse exactly like before; a short v3 tail is tolerated.
     uint32_t ovCount = 0;
     const BYTE* ovBase = nullptr;
-    if (hdr.version == LABOR_VERSION) {
+    bool ovTailOk = true;
+    if (hdr.version >= LABOR_VERSION_V3) {
         ovCount = hdr.overrideCount;
         size_t ovWant = want + (size_t)ovCount * sizeof(LaborOverrideRecord);
         if (ovWant > len) {
             Logf("citizen_labor  %s override tail truncated (%u claimed) - loading citizens only",
                  LABOR_FILENAME, ovCount);
+            // The sector-wage tail sits AFTER the override records, so a
+            // truncated override block makes its offset unknowable too.
+            // Reading at raw+want would interpret override bytes as wages.
             ovCount = 0;
+            ovTailOk = false;
         } else if (ovCount > 0) {
             ovBase = (const BYTE*)raw + want;
         }
@@ -1722,6 +1784,10 @@ static void LoadLabor(const char* dir)
     g_zeroedWorkers.clear();
     g_wageOverrides.clear();
     g_pendingOverrides.clear();
+    // A world load resets runtime sector wages from the INI. The v4 tail
+    // below then overwrites the saved RUB bases (a zero there means
+    // unconfigured and must stay zero, not inherit a since-edited INI).
+    ReadSectorWages("plugins\\citizen_labor.ini");
     g_records.reserve(hdr.count);
 
     // B5: loaded survivors get a fresh lease - stamp now (memory-only,
@@ -1758,7 +1824,8 @@ static void LoadLabor(const char* dir)
         for (uint32_t i = 0; i < ovCount; i++) {
             LaborOverrideRecord o = {};
             memcpy(&o, ovBase + (size_t)i * sizeof(o), sizeof(o));
-            if (!(o.wageRub > 0.0f)) continue;
+            // Same finite band the sector-wage tail uses below.
+            if (!(o.wageRub > 0.0f) || !(o.wageRub <= 1.0e6f)) continue;
             PendingWageOverride pend;
             pend.posX    = o.posX;
             pend.posZ    = o.posZ;
@@ -1768,7 +1835,7 @@ static void LoadLabor(const char* dir)
         }
     }
     // v4: sector base wages are stored after the override records.
-    if (hdr.version >= LABOR_VERSION) {
+    if (hdr.version >= LABOR_VERSION && ovTailOk) {
         const BYTE* secBase = ovBase ? ovBase + (size_t)ovCount * sizeof(LaborOverrideRecord)
                                      : (const BYTE*)raw + want;
         size_t secWant = (size_t)(secBase - (const BYTE*)raw) + TSM_SECTOR_COUNT * sizeof(float);
@@ -1776,13 +1843,16 @@ static void LoadLabor(const char* dir)
             for (int s = 0; s < TSM_SECTOR_COUNT; s++) {
                 float w = 0.0f;
                 memcpy(&w, secBase + (size_t)s * sizeof(float), sizeof(float));
-                if (w > 0.0f && w == w) {
-                    g_sectorWageCfg[s] = w;
-                    g_sectorWage[s] = w;  // will be rescaled for USD at Start
-                }
+                // 0 = unconfigured; reject NaN/inf and absurd values,
+                // then assign even a zero so the save is authoritative.
+                if (!(w >= 0.0f) || !(w <= 1.0e6f)) w = 0.0f;
+                g_sectorWageCfg[s] = w;
             }
         }
     }
+    // The sidecar stores RUB bases; resolve for the ACTIVE currency now.
+    // Start already ran, so nothing later would fix a USD-mode load.
+    ResolveSectorWages();
     size_t loadedOv = g_pendingOverrides.size();
     LeaveCriticalSection(&g_lock);
 
@@ -1837,7 +1907,7 @@ static void ReadWageTable(const char* ini)
         DWORD n = H->configString(ini, "wages", key, val, sizeof(val), "");
         if (n == 0 || !val[0]) continue;
         float w = (float)atof(val);
-        if (w > 0.0f && w == w) g_wageTable[t] = w;
+        if (isfinite(w) && w > 0.0f && w <= 1.0e6f) g_wageTable[t] = w;
     }
     // v4: explicit USD per-type overrides. Presence of the section
     // switches unlisted types to the USD default (see GetWageForTypeImpl).
@@ -1849,7 +1919,7 @@ static void ReadWageTable(const char* ini)
         DWORD n = H->configString(ini, "wages_usd", key, val, sizeof(val), "");
         if (n == 0 || !val[0]) continue;
         float w = (float)atof(val);
-        if (w > 0.0f && w == w) {
+        if (isfinite(w) && w > 0.0f && w <= 1.0e6f) {
             g_wageTableUsd[t] = w;
             g_wagesUsdPresent = 1;
         }
@@ -1882,12 +1952,12 @@ static void ReadSectorWages(const char* ini)
         if (H->configString(ini, "sector_wages", kSectorKeys[s],
                             val, sizeof(val), "") && val[0]) {
             float w = (float)atof(val);
-            if (w > 0.0f && w == w) g_sectorWageCfg[s] = w;
+            if (w > 0.0f && w == w && w <= 1.0e6f) g_sectorWageCfg[s] = w;
         }
         if (H->configString(ini, "sector_wages_usd", kSectorKeys[s],
                             val, sizeof(val), "") && val[0]) {
             float w = (float)atof(val);
-            if (w > 0.0f && w == w) g_sectorWageUsdCfg[s] = w;
+            if (w > 0.0f && w == w && w <= 1.0e6f) g_sectorWageUsdCfg[s] = w;
         }
     }
 }
@@ -1967,26 +2037,36 @@ static void ReadSettings(void)
     g_stipendRatioToMin = -1.0f;
     g_pensionRatioToMin = -1.0f;
     if (H->configString(ini, "citizen_labor", "default_daily_wage",
-                        v, sizeof(v), "") && v[0])
-        g_defaultDailyWageCfg = (float)atof(v);
+                        v, sizeof(v), "") && v[0]) {
+        float w = (float)atof(v);
+        if (isfinite(w) && w > 0.0f && w <= 1.0e6f) g_defaultDailyWageCfg = w;
+    }
     if (H->configString(ini, "citizen_labor", "unemployed_welfare",
-                        v, sizeof(v), "") && v[0])
-        g_unemployedWelfareCfg = (float)atof(v);
+                        v, sizeof(v), "") && v[0]) {
+        float w = (float)atof(v);
+        if (isfinite(w) && w >= 0.0f && w <= 1.0e6f) g_unemployedWelfareCfg = w;
+    }
     if (H->configString(ini, "citizen_labor", "student_stipend",
-                        v, sizeof(v), "") && v[0])
-        g_studentStipendCfg = (float)atof(v);
+                        v, sizeof(v), "") && v[0]) {
+        float w = (float)atof(v);
+        if (isfinite(w) && w >= 0.0f && w <= 1.0e6f) g_studentStipendCfg = w;
+    }
     if (H->configString(ini, "citizen_labor", "retiree_pension",
-                        v, sizeof(v), "") && v[0])
-        g_retireePensionCfg = (float)atof(v);
+                        v, sizeof(v), "") && v[0]) {
+        float w = (float)atof(v);
+        if (isfinite(w) && w >= 0.0f && w <= 1.0e6f) g_retireePensionCfg = w;
+    }
     if (H->configString(ini, "citizen_labor", "minimum_wage",
                         v, sizeof(v), "") && v[0]) {
         float w = (float)atof(v);
-        if (w > 0.0f && w == w) g_minimumWageCfg = w;
+        // The floor feeds every ClampToMinimum call; inf would bypass the
+        // wage cap and make every payroll infinite.
+        if (w > 0.0f && w <= 1.0e6f && w == w) g_minimumWageCfg = w;
     }
     if (H->configString(ini, "citizen_labor", "minimum_wage_usd",
                         v, sizeof(v), "") && v[0]) {
         float w = (float)atof(v);
-        if (w > 0.0f && w == w) g_minimumWageUsdCfg = w;
+        if (w > 0.0f && w <= 1.0e6f && w == w) g_minimumWageUsdCfg = w;
     }
     if (H->configString(ini, "citizen_labor", "welfare_ratio_to_min",
                         v, sizeof(v), "") && v[0]) {
@@ -2393,7 +2473,7 @@ static int LaborWindowType(void* building)
 static float WageSliderFloor(void)
 {
     float f = g_minimumWage;
-    if (!(f > 0.0f) || !(f == f)) f = 2.50f;
+    if (!(f > 0.0f) || !(f <= 1.0e6f) || !(f == f)) f = 2.50f;
     return f;
 }
 
@@ -2656,10 +2736,24 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
                 g_minimumWage = g_minimumWageUsdCfg;
             else
                 g_minimumWage = g_minimumWageCfg / d;
+
+            // The override/load bands are RUB-denominated. Keep the floor's
+            // RUB equivalent inside 1e6 on BOTH paths (explicit USD floor
+            // and RUB floor divided by the divisor), or every override
+            // would fail the rub > 1e6 check. 1e6f / d can round up, so
+            // step down until the product re-enters the bound.
+            if (g_minimumWage > 0.0f &&
+                !(g_minimumWage * d <= 1.0e6f)) {
+                g_minimumWage = 1.0e6f / d;
+                while (!(g_minimumWage * d <= 1.0e6f) &&
+                       g_minimumWage > 0.0f)
+                    g_minimumWage = nextafterf(g_minimumWage, 0.0f);
+            }
         } else {
             g_minimumWage = g_minimumWageCfg;
         }
-        if (!(g_minimumWage > 0.0f)) g_minimumWage = g_minimumWageCfg;
+        if (!(g_minimumWage > 0.0f) || !(g_minimumWage <= 1.0e6f))
+            g_minimumWage = g_minimumWageCfg;
 
         // --- default wage
         if (usd) {
@@ -2714,20 +2808,7 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
         // wages are floored.
 
         // --- sectors: explicit USD wins, else scaled RUB; clamp to floor.
-        for (int s = 0; s < TSM_SECTOR_COUNT; s++) {
-            if (usd) {
-                if (g_sectorWageUsdCfg[s] > 0.0f)
-                    g_sectorWage[s] = g_sectorWageUsdCfg[s];
-                else if (g_sectorWageCfg[s] > 0.0f)
-                    g_sectorWage[s] = g_sectorWageCfg[s] / d;
-                else
-                    g_sectorWage[s] = 0.0f;  // unconfigured stays unconfigured
-            } else {
-                g_sectorWage[s] = g_sectorWageCfg[s];
-            }
-            if (g_sectorWage[s] > 0.0f)
-                g_sectorWage[s] = ClampToMinimum(g_sectorWage[s]);
-        }
+        ResolveSectorWages();
     }
 
     g_persistence = (const TsmPersistenceApi*)

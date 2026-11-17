@@ -518,6 +518,10 @@
 
 #include "../../src/tesmio_plugin.h"
 #include "../../src/ui_panels_api.h"
+#include "../../src/ui_button_core.h"
+// v6.16 updates: separate rectangle button rendering from widget flow; share
+// tested press policy; keep draw/Collision bounds fixed in pressed states.
+// No standalone window creator or new screen hook is introduced here.
 #include "../../src/game_world.h"     // TsmBuildingType - the fallback-hook type filter
 #include "../../src/currency_api.h"   // getWalletBalance / TsmCurrencySymbol for the wallet row
 
@@ -786,8 +790,7 @@ static t_PrintNoArg    o_PrintNoArg;   // v3.1 manual-center fallback
 static t_PlayGuiSound  o_PlaySound;
 static t_ClipPush      o_ClipPush;
 static int             g_buttonsReady;  // v3.1: core Draw9Patch+Collision+MouseSolid
-static int             s_wasLButtonDown; // v3.1 physical mouse edge latch
-static int             s_clickConsumed;  // v3.7 one click per physical press
+static tsm_ui::ButtonPress s_buttonPress; // shared across the existing widget pass
 // v5.6 ESC fix: the CON tile runs on the construction panel via the FOREIGN
 // append (appendWidgetsToWindow), which fires AFTER o_PanelBuilder returns.
 // There the widget's ClipPush (FUN_1404461f0) lands outside the builder's
@@ -1439,14 +1442,14 @@ static int WidgetCheckboxImpl(unsigned* value, const wchar_t* label,
 
 // v3.1 helpers: resolve a live font + bind a live chrome texture.
 // The empty-tile bug was both halves failing silently in City Hall.
-static void* ResolveButtonFont(void)
+static void* ResolveButtonFont(void* preferred)
 {
     // v3.1 font fallback chain: frame font first (the game's own row font
     // the append pass resolved), then the three verified exe C3D_FONT*
     // slots: 0x994200 (shop/residence rows), 0x995220 (checkbox decomp
     // default when font==NULL), 0x995228 (menucand center-print font).
-    if (g_frame.font && ReadablePtr(g_frame.font, sizeof(void*)))
-        return g_frame.font;
+    if (preferred && ReadablePtr(preferred, sizeof(void*)))
+        return preferred;
     static const DWORD kFonts[] = {
         RVA_FONT_DEFAULT, RVA_FONT_ALT_A, RVA_FONT_ALT_B
     };
@@ -1459,9 +1462,9 @@ static void* ResolveButtonFont(void)
     return NULL;
 }
 
-static void* ResolveButtonFontMgr(void)
+static void* ResolveButtonFontMgr(void* preferred)
 {
-    if (g_frame.fontMgr) return g_frame.fontMgr;
+    if (preferred) return preferred;
     // C3D_FONTMANAGER singleton, by address (same object the slider,
     // checkbox and menucand prints all use).
     if (ReadablePtr(g_exeBase + RVA_FONTMGR, 16))
@@ -1469,13 +1472,13 @@ static void* ResolveButtonFontMgr(void)
     return NULL;
 }
 
-static int BindButtonTexture(void)
+static int BindButtonTexture(BYTE* game)
 {
     // v6.4: the small (toolbar) tile wears the WINDOW's own button texture -
     // the construction loop binds from R13+0xB210... (constr_tbloop.asm:181),
     // not the game object's ALT slots. Try those first on the small path so
     // PC matches demolish/R_ exactly; big tiles keep the generic chain.
-    if (!g_frame.game || !ReadablePtr(g_exeBase + RVA_PANEL_STATE,
+    if (!game || !ReadablePtr(g_exeBase + RVA_PANEL_STATE,
                                       sizeof(void*)))
         return 0;
     typedef void (*t_TexBind)(void* self, int slot, void* state);
@@ -1493,8 +1496,8 @@ static int BindButtonTexture(void)
     };
     for (unsigned i = 0; i < sizeof(kTex) / sizeof(kTex[0]); i++)
     {
-        if (!ReadablePtr(g_frame.game + kTex[i], sizeof(void*))) continue;
-        void* tex = *(void**)(g_frame.game + kTex[i]);
+        if (!ReadablePtr(game + kTex[i], sizeof(void*))) continue;
+        void* tex = *(void**)(game + kTex[i]);
         if (!tex || !ReadablePtr(tex, sizeof(void*))) continue;
         __try {
             void** vtable = *(void***)tex;
@@ -1802,6 +1805,25 @@ static void EscCloseProbe(void)
     s_escPrevModal = modal;
 }
 
+// Both native operations load exactly this rectangle, including after texture
+// binding / clip helpers that may use the engine's shared immediate-mode state.
+static void SetPanelButtonRect(const tsm_ui::ButtonRect& bounds)
+{
+    *(float*)(g_exeBase + RVA_P2D_RECT_W) = bounds.width;
+    *(float*)(g_exeBase + RVA_P2D_RECT_H) = bounds.height;
+    *(float*)(g_exeBase + RVA_P2D_RECT_X) = bounds.CenterX();
+    *(float*)(g_exeBase + RVA_P2D_RECT_Y) = bounds.CenterY();
+    *(float*)(g_exeBase + RVA_P2D_ROT) = 0.0f;
+}
+
+// Rectangle renderer is independent of the widget pass and row budget. A future
+// screen adapter must supply its verified game/clip/input context explicitly;
+// this helper does not create a window or make an arbitrary screen safe.
+static int DrawPanelButtonAtRect(const wchar_t* label, int active,
+    const tsm_ui::ButtonRect& bounds, float dpi, BYTE* game, BYTE* window,
+    int winLive, int allowClipPush, int allowCursorFallback, int small, int isWide,
+    void* preferredFontMgr, void* preferredFont, tsm_ui::ButtonPress& press);
+
 // `wideUnits` > 0 draws a BAR of that many native units instead of a square
 // tile of `bsz`. Height is unchanged - a bar occupies exactly the same two
 // row pitches the square does - so the budget, the advance and every
@@ -1848,7 +1870,7 @@ static int WidgetButtonImplEx(const wchar_t* label, int active, int small,
     }
     // v6.8: a wide button keeps the square's HEIGHT (two row pitches) and
     // takes the width from the INI knob. `size` stays the height so every
-    // downstream use of it - budget, rect bottom, label baseline, sink -
+    // downstream use of it - budget, rect bottom, label baseline -
     // keeps the meaning it had for the tile.
     float size = dpi * bsz;
     float wide = 0.0f;
@@ -1865,11 +1887,36 @@ static int WidgetButtonImplEx(const wchar_t* label, int active, int small,
         size = dpi * 2.0f * rowH;
     }
     const float width = (wide > 0.0f) ? wide : size;
+    const tsm_ui::ButtonRect bounds = { bx, y, width, size };
+    const int clicked = DrawPanelButtonAtRect(label, active, bounds, dpi,
+        g_frame.game, g_frame.win, g_frame.live ? 1 : 0,
+        !s_foreignClip, 1, small, wide > 0.0f, g_frame.fontMgr, g_frame.font,
+        s_buttonPress);
+    // The widget adapter alone owns layout and budget, never the renderer.
+    g_frame.y = y + 2.0f * dpi * g_frame.step;
+    g_frame.rowsUsed += 2;
+    if (ReadablePtr(g_frame.win + W_BOTTOM, sizeof(float)))
+        *(float*)(g_frame.win + W_BOTTOM) = g_frame.y;
+    return clicked;
+}
+
+static int DrawPanelButtonAtRect(const wchar_t* label, int active,
+    const tsm_ui::ButtonRect& requested, float dpi, BYTE* game, BYTE* window,
+    int winLive, int allowClipPush, int allowCursorFallback, int small, int isWide,
+    void* preferredFontMgr, void* preferredFont, tsm_ui::ButtonPress& press)
+{
+    if (!label || !game || !g_buttonsReady || !requested.Valid() ||
+        !(dpi > 0.0f) || !std::isfinite(dpi)) return 0;
+    const tsm_ui::ButtonRect bounds = requested.PixelAligned();
+    if (!bounds.Valid() || bounds.x < -1000000.0f || bounds.y < -1000000.0f ||
+        bounds.x + bounds.width > 1000000.0f ||
+        bounds.y + bounds.height > 1000000.0f) return 0;
+    const float bx = bounds.x, y = bounds.y;
+    const float width = bounds.width, size = bounds.height;
     // v3.2: native City Hall tab buttons gate ONLY on window+0x20
     // (FUN_14072DBF0: `hover && *(char*)(window+0x20)`) - they do NOT
     // check game+0xAD74. The busy gate inside WidgetLiveAndFree was
     // starving this button of hover/clicks while native buttons worked.
-    int   winLive = g_frame.live ? 1 : 0;
     int   clicked = 0;
     int   hover = 0, latch = 0, bound = 0, busy = -1;
     LONG  cxp = -1, cyp = -1;      // client point (probe only)
@@ -1883,22 +1930,10 @@ static int WidgetButtonImplEx(const wchar_t* label, int active, int small,
     // so the rising edge is available even when the engine latch was
     // eaten by a native widget that ran earlier this frame.
     int isLDown = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
-    int physEdge = (isLDown && !s_wasLButtonDown) ? 1 : 0;
-    s_wasLButtonDown = isLDown;
+    int physEdge = (isLDown && !press.wasDown) ? 1 : 0;
 
     __try {
-        *(float*)(g_exeBase + RVA_P2D_RECT_W) = width;
-        *(float*)(g_exeBase + RVA_P2D_RECT_H) = size;
-        // v6.x: set rect globals to CENTER here so Collision (below) and Draw
-        // (later, with sink) both interpret them as center. With centered=true
-        // the engine draws the quad CENTERED on the rect point; Collision uses
-        // the same rect, so hit and draw agree by construction. Setting
-        // top-left here (as v3.7 did) made Collision center on (bx, y) while
-        // Draw centered on (bx+size/2, ...) � a -size/2 top-left offset
-        // between hitbox and visuals.
-        *(float*)(g_exeBase + RVA_P2D_RECT_X) = bx + width * 0.5f;
-        *(float*)(g_exeBase + RVA_P2D_RECT_Y) = y + size * 0.5f;
-        *(float*)(g_exeBase + RVA_P2D_ROT)    = 0.0f;
+        SetPanelButtonRect(bounds);
 
         // Balanced clip push: natives push the clip exactly when
         // game+0xADA8 is -1 or game+0xADF0, and pop it with the matching
@@ -1909,16 +1944,16 @@ static int WidgetButtonImplEx(const wchar_t* label, int active, int small,
         // push a clip - the builder's clip scope is already closed by then
         // and a stray clip would trap ESC (can't cancel placement, can't
         // close the site panel). So skip the push on that path only.
-        if (!s_foreignClip && o_ClipPush && ReadablePtr(g_frame.game + G_CLIP_ID, sizeof(int)) &&
-            ReadablePtr(g_frame.game + G_CLIP_PAD, sizeof(int)))
+        if (allowClipPush && o_ClipPush && ReadablePtr(game + G_CLIP_ID, sizeof(int)) &&
+            ReadablePtr(game + G_CLIP_PAD, sizeof(int)))
         {
-            int clipId = *(int*)(g_frame.game + G_CLIP_ID);
-            if (clipId == -1 || clipId == *(int*)(g_frame.game + G_CLIP_PAD))
-                o_ClipPush(g_frame.game + G_CLIP_CTX, bx, y, clipId);
+            int clipId = *(int*)(game + G_CLIP_ID);
+            if (clipId == -1 || clipId == *(int*)(game + G_CLIP_PAD))
+                o_ClipPush(game + G_CLIP_CTX, bx, y, clipId);
         }
 
         // v3.2: texture chain (checkbox-box bevel first, bar texture last).
-        bound = BindButtonTexture();
+        bound = BindButtonTexture(game);
 
         // v3.6 hover: the natives' EXACT recipe (FUN_14072DBF0:0x14072ed00).
         // GetMouseSolid RETURNS the C3DVECTOR3 in RAX (sret pointer); the
@@ -1943,6 +1978,7 @@ static int WidgetButtonImplEx(const wchar_t* label, int active, int small,
                                     GetExceptionInformation())) {
                 m.x = m.y = m.z = 0.0f;
             }
+            SetPanelButtonRect(bounds);
             if (m.x > -100000.0f && m.x < 100000.0f &&
                 m.y > -100000.0f && m.y < 100000.0f)
                 engineHover = o_Collision((void*)(g_exeBase + RVA_PANEL2D),
@@ -1951,7 +1987,7 @@ static int WidgetButtonImplEx(const wchar_t* label, int active, int small,
         }
         // Fallback only when the engine path is unavailable or dead: the raw
         // OS cursor in screen space (v3.5 - see CursorOverTile).
-        if (!hover && winLive) {
+        if (allowCursorFallback && !hover && winLive) {
             if (CursorOverTile(bx, y, size, width, &sxp, &syp,
                                &cxp, &cyp, &chromeX, &chromeY)) hover = 1;
         }
@@ -1962,7 +1998,7 @@ static int WidgetButtonImplEx(const wchar_t* label, int active, int small,
         // building's bar was tinted 100 % of the time, so hovering it
         // changed nothing on screen - the "only the grocery store lights up"
         // report. Squares keep the old (hover || active) rule untouched.
-        const int tintHot = (wide > 0.0f) ? hover : (hover || active);
+        const int tintHot = isWide ? hover : (hover || active);
         const void* tint = tintHot
             ? (const void*)(g_exeBase + RVA_TINT_HOVER)
             : (const void*)(g_exeBase + RVA_TINT_NORMAL);
@@ -1976,59 +2012,32 @@ static int WidgetButtonImplEx(const wchar_t* label, int active, int small,
         // "latch 1 edge 0 click 1"). taxes.cpp toggles on every return-1, so
         // the panel opened then instantly closed again - the "tax info
         // disappears and I have to click the invisible button again" report.
-        // s_clickConsumed latches until the button is actually released, so
+        // ButtonPress latches until the button is actually released, so
         // the second signal is swallowed and one press = one toggle.
         if (ReadablePtr(g_exeBase + RVA_CLICK_LATCH, 1) &&
             *(const BYTE*)(g_exeBase + RVA_CLICK_LATCH) != 0)
             latch = 1;
-        if (ReadablePtr(g_frame.game + G_WIDGET_BUSY, sizeof(int)))
-            busy = *(int*)(g_frame.game + G_WIDGET_BUSY);   // diagnostics only
+        if (ReadablePtr(game + G_WIDGET_BUSY, sizeof(int)))
+            busy = *(int*)(game + G_WIDGET_BUSY);   // diagnostics only
 
-        // The engine latch can outlive the press that set it (the natives'
-        // own consumers may not have run this frame), so re-arm only on a
-        // real release: LButton up AND the engine latch cleared.
-        if (!isLDown && !latch) s_clickConsumed = 0;
-
-        if (hover && winLive && !s_clickConsumed && (latch || physEdge)) {
+        if (press.Update(isLDown != 0, latch != 0, hover != 0,
+                                 winLive != 0)) {
             if (latch)
-                *(BYTE*)(g_exeBase + RVA_CLICK_LATCH) = 0;   // consume
-            if (physEdge) s_wasLButtonDown = true;           // one-shot
-            s_clickConsumed = 1;      // v3.7: one toggle per press
-            if (o_PlaySound) o_PlaySound(g_frame.game, "gui_click", 1);
+                *(BYTE*)(g_exeBase + RVA_CLICK_LATCH) = 0;
+            if (o_PlaySound) o_PlaySound(game, "gui_click", 1);
             clicked = 1;
         }
 
-        int held = isLDown ||
-                   (ReadablePtr(g_exeBase + RVA_MOUSE_DOWN, 1) &&
-                    *(const BYTE*)(g_exeBase + RVA_MOUSE_DOWN) != 0);
-        float sink = (active || clicked || (hover && held))
-                         ? dpi * 2.0f : 0.0f;
-
+        // Keep the outer rectangle fixed in every state. Press/active feedback
+        // is the tint above, not a translated quad with an unshifted hit area.
         C3DRect rect;
-        rect.left   = (int)bx;
-        rect.top    = (int)(y + sink);
-        rect.right  = (int)(bx + width);
-        rect.bottom = (int)(y + sink + size);
-        // v3.2/v3.8 NATIVE recipe - Draw with the rect coming from the
-        // globals, then Draw(0,0,uv,uv,0,true).
-        // v3.8 CRITICAL: the last parameter is `bool centered`, and 83 of the
-        // 84 native C3D_PANEL2D::Draw calls in the corpus pass TRUE. With
-        // centered == true the engine draws the quad CENTERED on the point in
-        // the rect globals, i.e. the visual box is
-        //   [cx - size/2, cx + size/2] x [cy - size/2, cy + size/2].
-        // The natives know this and subtract the half-size themselves -
-        // ch_builder_full.c:560 passes Y as `local_b08 + 0.0` where local_b08
-        // already includes `- dpi*70`, and ch_tab1.c:832 passes
-        // `fVar43 - dpi*fVar35`. v3.7 passed the TOP-LEFT and got a tile
-        // painted a half-size up and left of the rect the hit-test and the
-        // label use - the visible tile / invisible hotspot split reported
-        // twice. So we pass the CENTRE and keep (bx, y) as the top-left for
-        // Collision, the label and CursorOverTile. Sink stays on the Y global
-        // so the pressed state shows in both draw paths.
-        *(float*)(g_exeBase + RVA_P2D_RECT_X) = bx + width * 0.5f;
-        *(float*)(g_exeBase + RVA_P2D_RECT_Y) = y + sink + size * 0.5f;
+        rect.left   = (int)bounds.x;
+        rect.top    = (int)bounds.y;
+        rect.right  = (int)(bounds.x + bounds.width);
+        rect.bottom = (int)(bounds.y + bounds.height);
         float uv = LayoutF(RVA_UV_FULL);
         if (!(uv > 0.0f && uv <= 4.0f)) uv = 1.0f;
+        SetPanelButtonRect(bounds);
         if (o_DrawPlain && bound) {
             o_DrawPlain((void*)(g_exeBase + RVA_PANEL2D),
                         0.0f, 0.0f, uv, uv, 0.0f, true);
@@ -2042,9 +2051,9 @@ static int WidgetButtonImplEx(const wchar_t* label, int active, int small,
 
         // v3.1 label: proven left printer + math center X first (the same
         // import the text rows use live), NoArg then PrintCenter behind it.
-        void* mgr  = ResolveButtonFontMgr();
-        void* font = ResolveButtonFont();
-        PrintButtonLabel(mgr, font, bx, y + sink, width, size, label,
+        void* mgr  = ResolveButtonFontMgr(preferredFontMgr);
+        void* font = ResolveButtonFont(preferredFont);
+        PrintButtonLabel(mgr, font, bx, y, width, size, label,
                          &lblX, &lblY);
     } __except (FaultFilter("ui_panels widget button",
                             GetExceptionInformation())) {
@@ -2066,7 +2075,7 @@ static int WidgetButtonImplEx(const wchar_t* label, int active, int small,
             s_btnProbe++;
             s_btnPrevHover = hover; s_btnPrevLive = winLive;
             s_btnPrevLatch = latch; s_btnPrevBusy = busy;
-            void* fnt = ResolveButtonFont();
+            void* fnt = ResolveButtonFont(preferredFont);
             Logf("ui_panels  btn probe: rect (%.0f,%.0f)+%.0f  mouse (%.1f,%.1f)"
                  "  screen (%ld,%ld)  client (%ld,%ld)  chrome (%ld,%ld)"
                  "  engine %d  hover %d  live %d  busy %d  latch %d  edge %d"
@@ -2075,37 +2084,31 @@ static int WidgetButtonImplEx(const wchar_t* label, int active, int small,
                  bx, y, size, m.x, m.y, (long)sxp, (long)syp,
                  (long)cxp, (long)cyp, (long)chromeX, (long)chromeY,
                  engineHover, hover, winLive, busy, latch, physEdge,
-                 clicked, bound, fnt ? 1 : 0, lblX, lblY, s_clickConsumed,
+                 clicked, bound, fnt ? 1 : 0, lblX, lblY, press.consumed,
                  0);
             // v5.2: raw window geometry dump so the toolbar dock can be
             // computed exactly instead of guessed. Prints once per probe
             // tick; the numbers pin W_Y/W_OFFY/W_X/W_OFFX/dpi for the
             // window the tile is docking in.
-            if (g_frame.win &&
-                ReadablePtr(g_frame.win + W_Y, sizeof(float)) &&
-                ReadablePtr(g_frame.win + W_OFFY, sizeof(float)) &&
-                ReadablePtr(g_frame.win + W_X, sizeof(float)) &&
-                ReadablePtr(g_frame.win + W_OFFX, sizeof(float)))
+            if (window &&
+                ReadablePtr(window + W_Y, sizeof(float)) &&
+                ReadablePtr(window + W_OFFY, sizeof(float)) &&
+                ReadablePtr(window + W_X, sizeof(float)) &&
+                ReadablePtr(window + W_OFFX, sizeof(float)))
             {
                 Logf("ui_panels  btn geom : small %d  dpi %.3f  "
                      "W_Y %.1f W_OFFY %.1f  W_X %.1f W_OFFX %.1f  "
                      "(target y %.0f x %.0f)",
                      small, dpi,
-                     *(float*)(g_frame.win + W_Y),
-                     *(float*)(g_frame.win + W_OFFY),
-                     *(float*)(g_frame.win + W_X),
-                     *(float*)(g_frame.win + W_OFFX),
+                     *(float*)(window + W_Y),
+                     *(float*)(window + W_OFFY),
+                     *(float*)(window + W_X),
+                     *(float*)(window + W_OFFX),
                      y, bx);
             }
         }
     }
 
-    // v6.x: buttons are content rows - always advance window+0x250 by two
-    // pitches so they sit cleanly below the rest of the panel content.
-    g_frame.y = y + 2.0f * dpi * g_frame.step;
-    g_frame.rowsUsed += 2;
-    if (ReadablePtr(g_frame.win + W_BOTTOM, sizeof(float)))
-        *(float*)(g_frame.win + W_BOTTOM) = g_frame.y;
     return clicked;
 }
 
@@ -3164,7 +3167,7 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
 {
     TsmBind(host);
     info->name    = "ui_panels";
-    info->version = "6.14";  // v6.12: dispatcher diagnostic for warehouse variant
+    info->version = "6.16";  // rectangle button core
 
     ReadSettings();
     if (!g_enabled) {
@@ -3328,7 +3331,7 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
         return 1;
     }
 
-    Logf("ui_panels  live v6.15: %d hook(s), max_rows %d, font 0x%X, "
+    Logf("ui_panels  live v6.16: %d hook(s), max_rows %d, font 0x%X, "
          "colour 0x%08lX, test_row %d, probe %d, buttons %s, "
          "toolbar size %.0f, "
          "ESC probe %s, wallet row %s",

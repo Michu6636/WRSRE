@@ -390,6 +390,7 @@ class TestProbeParserSnapshot(unittest.TestCase):
         self.assertIsInstance(s, probe_schema.ProbeSnapshot)
         self.assertEqual(s.record_type, "selection")
         self.assertEqual(s.snapshot_ok, 1)
+        self.assertEqual(s.observation_seq, 1)
         self.assertEqual(s.veh, fx.V_TRUCK_A)
         self.assertEqual(s.do, fx.DO_WEST)
         self.assertEqual(s.fuel_slot_valid, 0)
@@ -446,9 +447,11 @@ class TestProbeParserSnapshot(unittest.TestCase):
         lost = snaps[1].kind_record
         self.assertEqual(sel.record_type, "selection")
         self.assertEqual(sel.snapshot_ok, 1)
+        self.assertEqual(sel.observation_seq, 1)
         self.assertEqual(lost.record_type, "vehicle_lost")
         self.assertEqual(lost.snapshot_ok, 0)
         self.assertEqual(lost.fail_reason, "vehicle_gone")
+        self.assertEqual(lost.observation_seq, 2)
 
     def test_parse_snapshot_world_reset(self):
         records = probe_parser.parse_probe_log(fx.fixture_snapshot_world_reset())
@@ -495,7 +498,14 @@ if __name__ == '__main__':
 # swaps (state from cargo_slots, mode from fuel_tons, etc.) are detectable.
 
 class TestCppSerialization(_ProbeBaseTest):
-    """Verify the parser correctly maps real C++ emitter output fields."""
+    """Verify the parser correctly maps real C++ emitter output fields.
+
+    The fixture is a static golden in the current ProbeSerializeSnapshot
+    format: the measurement record reproduces the values of
+    snapshot_serialization_test.cpp, and the no_match record is hand-built
+    from the same serializer layout. test_native_snapshot.py recompiles the
+    live serializer separately, so format drift is still exercised.
+    """
 
     _output_path = "tests/private_logistics_probe/snapshot_serialization_output.txt"
 
@@ -519,7 +529,7 @@ class TestCppSerialization(_ProbeBaseTest):
         """Every field must map to its correct value - no swaps allowed.
 
         Distinct values:
-          - state=2 (NOT cargo_slots=3)
+          - state=17 (NOT cargo_slots=3, NOT fuel_tons=9.876543)
           - mode=9 (NOT fuel_tons=9.876543)
           - home_matches=1 (NOT mirror_tons=-1.0)
           - kind=66 (0x42 road truck)
@@ -531,6 +541,7 @@ class TestCppSerialization(_ProbeBaseTest):
         m = snaps[0].kind_record  # measurement record
         self.assertEqual(m.record_type, "measurement")
         self.assertEqual(m.snapshot_ok, 1)
+        self.assertEqual(m.observation_seq, 71)
         self.assertEqual(m.fail_reason, "")
 
         # Vehicle/DO identity
@@ -560,9 +571,9 @@ class TestCppSerialization(_ProbeBaseTest):
         self.assertEqual(m.kind_valid, 1)
         self.assertEqual(m.kind, 66)
 
-        # STATE = 2 (NOT cargo_slots=3, NOT fuel_tons=9.876543)
+        # STATE = 17 (NOT cargo_slots=3, NOT fuel_tons=9.876543)
         self.assertEqual(m.state_valid, 1)
-        self.assertEqual(m.state, 2)
+        self.assertEqual(m.state, 17)
         self.assertNotEqual(m.state, 3)   # cargo_slots value
         self.assertNotEqual(m.state, 9)   # mode value
 
@@ -584,6 +595,7 @@ class TestCppSerialization(_ProbeBaseTest):
         nm = snaps[1].kind_record  # no_match record
         self.assertEqual(nm.record_type, "no_match")
         self.assertEqual(nm.snapshot_ok, 0)
+        self.assertEqual(nm.observation_seq, 72)
         self.assertEqual(nm.fail_reason, "no_match")
         self.assertEqual(nm.veh, "null")
         self.assertEqual(nm.do, "null")

@@ -1,0 +1,32 @@
+Program: SOVIET64.exe
+Image base: 0x140000000
+Query VA: 0x14086D220
+
+Memory block: name=.rdata start=0x14086C000 end=0x140991DFF perms=R
+Bytes[0..15]: 02 DE 98 00 00 00 00 00 42 DE 98 00 00 00 00 00
+QWORD at addr (little-endian): 0x98DE02
+
+Symbols at exact address:
+  name=PTR_DrawFromNew3PatchVertical_14086d220 type=Label source=DEFAULT ns=Global
+
+Function at addr: <none>
+Function containing addr: <none>
+
+ExternalManager location: <none>
+
+Data at addr: addr 0098de02
+
+References to addr (first 50):
+  [READ] from=0x14031F3E0 in=FUN_140317db0@0x140317db0
+  [READ] from=0x14031F58E in=FUN_140317db0@0x140317db0
+
+Nearby symbols (addr +/- 0x20):
+  0x14086D200 PTR_RenderEffectContentField_14086d200 type=Label
+  0x14086D208 PTR_RenderEffectContentNormal_14086d208 type=Label
+  0x14086D210 PTR_RenderEffectContentLook_14086d210 type=Label
+  0x14086D218 PTR_C3DMatrixCompleteTransform_14086d218 type=Label
+  0x14086D220 PTR_DrawFromNew3PatchVertical_14086d220 type=Label
+  0x14086D228 PTR_DrawFrom3Patch_14086d228 type=Label
+  0x14086D230 PTR_CollisionRay_14086d230 type=Label
+  0x14086D238 PTR_EditRaiseLowerAngleLimitGetCost_14086d238 type=Label
+  0x14086D240 PTR_EditRaiseLowerAngleLimit_14086d240 type=Label

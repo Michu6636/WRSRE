@@ -39,4 +39,4 @@ class TestNativeSnapshot(unittest.TestCase):
         self.assertEqual(r.cargo, "fuel=9.876t ore=2.345t goods=1.234t")
         self.assertEqual(r.mirror_valid, 0)
         self.assertEqual(r.home_matches, 1)
-        self.assertIn("observation_seq=71", output)
+        self.assertIn(" observation_seq=71 ", output)

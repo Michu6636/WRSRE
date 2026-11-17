@@ -91,6 +91,12 @@ struct Loan {
     int    inDefault = 0;
 };
 
+// A "ptr:<address>" key is session-only: the address changes when the world
+// reloads, so no debt may be opened against one and serialization skips it.
+inline bool IsSessionOnlyLoanKey(const LoanKey& k) {
+    return k.objectName.rfind("ptr:", 0) == 0;
+}
+
 struct Settlement {
     double treasury_delta = 0.0;
     double enterprise_delta = 0.0;
@@ -140,6 +146,7 @@ public:
     }
 
     double requestCreditDraw(const LoanKey& key, double neededAmount, int solvencyStreak) {
+        if (IsSessionOnlyLoanKey(key)) return 0.0;
         if (neededAmount < 0.0) neededAmount = 0.0;
         Loan& L = loans[key];
         L.key = key;
@@ -162,6 +169,7 @@ public:
     }
 
     void repayPrincipal(const LoanKey& key, double amount) {
+        if (IsSessionOnlyLoanKey(key)) return;
         auto it = loans.find(key);
         if (it == loans.end()) return;
         if (amount < 0.0) amount = 0.0;
@@ -171,6 +179,10 @@ public:
 
     bool getEnterpriseDebt(const LoanKey& key, double& principal,
                            double& monthlyInterest, int& missedPayments) const {
+        if (IsSessionOnlyLoanKey(key)) {
+            principal = 0.0; monthlyInterest = 0.0; missedPayments = 0;
+            return false;
+        }
         auto it = loans.find(key);
         if (it == loans.end()) {
             principal = 0.0; monthlyInterest = 0.0; missedPayments = 0;
@@ -184,6 +196,10 @@ public:
 
     Settlement monthlySettle(const LoanKey& key, double& enterpriseCapital) {
         Settlement s;
+        if (IsSessionOnlyLoanKey(key)) {
+            sync(s);
+            return s;
+        }
         Loan& L = loans[key];
         L.key = key;
         if (L.inDefault) {
@@ -242,6 +258,7 @@ public:
     double dailyOverdraftRescue(const LoanKey& key, double& enterpriseCapital,
                                int solvencyStreak) {
         if (!config.autoOverdraftEnabled) return 0.0;
+        if (IsSessionOnlyLoanKey(key)) return 0.0;
         Loan& L = loans[key];
         L.key = key;
         if (L.inDefault) return 0.0;
@@ -257,20 +274,28 @@ public:
     }
 
     std::string serialize() const {
+        std::string rows;
+        size_t written = 0;
+        for (const auto& kv : loans) {
+            const Loan& L = kv.second;
+            // A pointer key is session-only (its address changes when the
+            // world reloads). Persisting it would orphan the debt, so it
+            // is deliberately not written.
+            if (IsSessionOnlyLoanKey(L.key)) continue;
+            rows += "loan|" + L.key.objectName + "|" +
+                    std::to_string(L.key.qx) + "|" +
+                    std::to_string(L.key.qz) + "|" +
+                    std::to_string(L.principal) + "|" +
+                    std::to_string(L.missedMonths) + "|" +
+                    std::to_string(L.inDefault) + "\n";
+            written++;
+        }
         std::string out;
         out += "REPUBLIC_BANK_LEDGER v1\n";
         out += "rate=" + std::to_string(config.annualInterestRate) + "\n";
         out += "scale=" + std::to_string(config.currencyScale) + "\n";
-        out += "count=" + std::to_string(loans.size()) + "\n";
-        for (const auto& kv : loans) {
-            const Loan& L = kv.second;
-            out += "loan|" + L.key.objectName + "|" +
-                   std::to_string(L.key.qx) + "|" +
-                   std::to_string(L.key.qz) + "|" +
-                   std::to_string(L.principal) + "|" +
-                   std::to_string(L.missedMonths) + "|" +
-                   std::to_string(L.inDefault) + "\n";
-        }
+        out += "count=" + std::to_string(written) + "\n";
+        out += rows;
         return out;
     }
 
@@ -319,6 +344,14 @@ public:
                     } catch (...) {
                         continue;
                     }
+                    // Old builds could persist a pointer key (address
+                    // changes on reload), and pre-repair builds could
+                    // persist a name with no coordinates. Neither can
+                    // match a building in this world, so drop them rather
+                    // than keep an unreachable loan. A real key always has
+                    // a non-zero coordinate (keyForBuilding requires it).
+                    if (IsSessionOnlyLoanKey(L.key)) continue;
+                    if (L.key.qx == 0 && L.key.qz == 0) continue;
                     loans[L.key] = L;
                 }
             }

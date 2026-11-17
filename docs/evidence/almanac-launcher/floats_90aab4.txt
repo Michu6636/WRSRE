@@ -1,0 +1,2 @@
+0x14090AAB4: bytes=00 00 88 42 float=68.0
+0x14090AAB8: bytes=00 00 8C 42 float=70.0

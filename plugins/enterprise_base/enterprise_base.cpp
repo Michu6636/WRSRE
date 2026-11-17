@@ -552,6 +552,7 @@
 #include <vector>
 #include <string>
 #include <stdint.h>
+#include <cmath>
 
 #pragma comment(lib, "user32.lib")   // GetForegroundWindow / GetAsyncKeyState
 
@@ -767,8 +768,22 @@ static void RebuildOrder()
 {
     g_companyOrder.clear();
     g_companyOrder.reserve(g_companies.size());
-    for (auto& kv : g_companies)
-        if (kv.second.isPrivate) g_companyOrder.push_back(kv.first);
+    for (auto& kv : g_companies) {
+        if (kv.second.isPrivate) {
+            g_companyOrder.push_back(kv.first);
+            continue;
+        }
+        // Leaving the private register ends the company's tax period:
+        // taxes enumerates only this order, so totals kept across an
+        // un-privatise/abandon/re-privatise cycle would be taxed in a
+        // later (possibly suspended) window.
+        Enterprise& e = kv.second;
+        e.periodGrossSales     = 0.0;
+        e.periodVatAccrued     = 0.0;
+        e.periodWholesaleCosts = 0.0;
+        e.periodWagesPaid      = 0.0;
+        e.periodForeignCosts   = 0.0;
+    }
 }
 
 // ---------------------------------------------------------------- name helpers
@@ -1260,7 +1275,9 @@ static int ApplyCapital(void* building, double delta,
                         TsmCapitalCategory category)
 {
     if (!TsmIsValidGamePtr(building)) return 0;
-    if (!(delta == delta)) return 0;
+    // NaN would poison capital; +-inf would too (and would slip past the
+    // equality test the old guard used).
+    if (!std::isfinite(delta)) return 0;
     if (delta == 0.0) return 1;              // nothing to apply is success
     // v8.0 (Task 3): a ruin never takes capital movements - no auto-
     // registration, no silent re-privatisation.
@@ -1280,7 +1297,14 @@ static int ApplyCapital(void* building, double delta,
         e.isPrivate = true;
         e.markup    = g_defaultMarkup;
         if (e.capital == 0.0) e.capital = g_startingCapital;
-        e.capital += delta;
+        double next = e.capital + delta;
+        if (!std::isfinite(next)) {
+            LeaveCriticalSection(&g_lock);
+            return 0;
+        }
+        if (next < -1.0e12) next = -1.0e12;
+        if (next >  1.0e12) next =  1.0e12;
+        e.capital = next;
         ApplyCategory(e, delta, category);
         RebuildOrder();
         LeaveCriticalSection(&g_lock);
@@ -1288,7 +1312,14 @@ static int ApplyCapital(void* building, double delta,
     }
 
     Enterprise& e = it->second;
-    e.capital += delta;
+    double next = e.capital + delta;
+    if (!std::isfinite(next)) {
+        LeaveCriticalSection(&g_lock);
+        return 0;
+    }
+    if (next < -1.0e12) next = -1.0e12;
+    if (next >  1.0e12) next =  1.0e12;
+    e.capital = next;
     ApplyCategory(e, delta, category);
 
     LeaveCriticalSection(&g_lock);
@@ -1396,7 +1427,10 @@ static float GetMarkupImpl(void* building)
 static void SetMarkupImpl(void* building, float m)
 {
     if (!TsmIsValidGamePtr(building)) return;
+    // Same bound the save/load path enforces, so a value accepted here
+    // always survives a round-trip instead of reverting to the default.
     if (!(m > 0.0f && m == m)) return;
+    if (m > 100.0f) m = 100.0f;
     EnterCriticalSection(&g_lock);
     g_companies[building].markup = m;
     LeaveCriticalSection(&g_lock);
@@ -1423,7 +1457,9 @@ static void GetAccrualsImpl(void* building, double* outVat, double* outProfit)
 static void AddAccrualImpl(void* building, TsmAccrualKind kind, double amount)
 {
     if (!TsmIsValidGamePtr(building)) return;
-    if (!(amount == amount) || amount <= 0.0) return;
+    // +inf passes an equality-only NaN test; reject both non-finite ends so
+    // the liability and period totals can never become non-finite.
+    if (!(amount > 0.0) || !(amount <= 1.0e300)) return;
 
     EnterCriticalSection(&g_lock);
     auto it = g_companies.find(building);
@@ -1883,6 +1919,10 @@ void* FindRelocationCandidate(void* game, void* currentBld, float tenantWealth)
     return bestPref ? bestPref : bestAny;
 }
 
+// Defined with the retail refund path below; declared here because a
+// refused landlord credit must hand the tenants' money back.
+static void RefundRetailCharge(void* person, float amount);
+
 static void CollectResidentialRent(void)
 {
     if (!(g_residentialRent > 0.0)) return;
@@ -1917,6 +1957,12 @@ static void CollectResidentialRent(void)
 
     std::vector<void*> residents;
     residents.reserve(256);
+
+    // Per-tenant amounts actually taken this building, so a refused
+    // landlord credit can be reversed instead of destroying the money.
+    struct RentTake { void* person; float amount; };
+    std::vector<RentTake> rentTakes;
+    rentTakes.reserve(64);
 
     // v8.2 (Task 1): staged relocations. The burden test runs inline, but
     // native FUN_14083CA50 must NEVER run under g_lock (it walks the same
@@ -1960,6 +2006,7 @@ static void CollectResidentialRent(void)
         residents.resize(got);
 
         double buildingRent = 0.0;
+        rentTakes.clear();
         for (void* person : residents) {
             // v8.2 (Task 1): snapshot ability-to-pay BEFORE the wallet take.
             // A post-charge read would compare the drained balance and flag
@@ -1976,6 +2023,7 @@ static void CollectResidentialRent(void)
             if (taken > 0.0f) {
                 buildingRent += (double)taken;
                 tenants++;
+                rentTakes.push_back({person, taken});
             }
 
             // v8.2 (Task 1): burden test - rent exceeds the threshold share
@@ -2016,9 +2064,24 @@ static void CollectResidentialRent(void)
         }
 
         if (buildingRent > 0.0) {
-            (void)TryModifyCapital(b, buildingRent, TSM_CAP_RENT, "rent");
-            totalRent += buildingRent;
-            buildings++;
+            if (TryModifyCapital(b, buildingRent, TSM_CAP_RENT, "rent")) {
+                totalRent += buildingRent;
+                buildings++;
+            } else {
+                // The landlord refused the credit (decayed or lost tag).
+                // The tenants were already charged, so hand every take
+                // back - the retail path has the same rule.
+                for (const RentTake& t : rentTakes)
+                    RefundRetailCharge(t.person, t.amount);
+                if (g_probe) {
+                    wchar_t nm[128] = {0};
+                    Internal_GetBuildingCustomName(b, nm, 128);
+                    Logf("enterprise_base  \"%ls\" rent credit refused for "
+                         "%.2f - refunded %zu tenant(s)",
+                         nm[0] ? nm : L"(unnamed)", buildingRent,
+                         rentTakes.size());
+                }
+            }
         }
     }
 
@@ -2708,7 +2771,22 @@ static void EvaluateInsolvency(void)
         // capital <= 0: advance one month down the ladder.
         e.insolventMonths++;
 
-        if (e.insolventMonths == 1) {
+        if (e.insolventMonths >= g_monthsToAbandon) {
+            // Stage 3: physical abandonment. Latch state now (so every
+            // economic loop stops this month) and strip the tag so the
+            // registration pass cannot re-privatise it; the native swap
+            // runs outside the lock below.
+            e.isAbandoned = true;
+            e.isPrivate   = false;
+            toAbandon.push_back(b);
+            if (g_probe) {
+                wchar_t nm[128] = {0};
+                if (!Internal_GetBuildingCustomName(b, nm, 128) || !nm[0])
+                    wcsncpy_s(nm, _countof(nm), L"(unnamed)", _TRUNCATE);
+                Logf("enterprise_base  [ABANDONED] %ls collapsed into ruins "
+                     "after %d distressed month(s)", nm, e.insolventMonths);
+            }
+        } else if (e.insolventMonths == 1) {
             if (g_probe) {
                 wchar_t nm[128] = {0};
                 if (!Internal_GetBuildingCustomName(b, nm, 128) || !nm[0])
@@ -2748,21 +2826,6 @@ static void EvaluateInsolvency(void)
                     wcsncpy_s(nm, _countof(nm), L"(unnamed)", _TRUNCATE);
                 Logf("enterprise_base  [AUCTION FAILED] pool %.2f cannot cover "
                      "%.2f - %ls faces ruin", g_pool, buyoutCost, nm);
-            }
-        } else if (e.insolventMonths >= g_monthsToAbandon) {
-            // Stage 3: physical abandonment. Latch state now (so every
-            // economic loop stops this month) and strip the tag so the
-            // registration pass cannot re-privatise it; the native swap
-            // runs outside the lock below.
-            e.isAbandoned = true;
-            e.isPrivate   = false;
-            toAbandon.push_back(b);
-            if (g_probe) {
-                wchar_t nm[128] = {0};
-                if (!Internal_GetBuildingCustomName(b, nm, 128) || !nm[0])
-                    wcsncpy_s(nm, _countof(nm), L"(unnamed)", _TRUNCATE);
-                Logf("enterprise_base  [ABANDONED] %ls collapsed into ruins "
-                     "after %d distressed month(s)", nm, e.insolventMonths);
             }
         }
     }
@@ -3292,6 +3355,19 @@ static void* FindMatchForRecord(const EntSaveRecord& rec, TsmBuildingSpan* span)
     return nullptr;
 }
 
+// A structurally valid sidecar can still carry corrupt money fields
+// (hand-edited save, damaged sector). Clamp each one into a plausible
+// range before it reaches the live register and the next save; a
+// non-finite value falls back to the field's clean default.
+static double SanitizeLoadedMoney(double v, double lo, double hi,
+                                  double fallback)
+{
+    if (!std::isfinite(v)) return fallback;
+    if (v < lo) return lo;
+    if (v > hi) return hi;
+    return v;
+}
+
 static void ProcessDeferredLoadMatches(TsmBuildingSpan* span)
 {
     if (g_pendingLoadRecords.empty() || !span || span->count == 0) return;
@@ -3321,15 +3397,39 @@ static void ProcessDeferredLoadMatches(TsmBuildingSpan* span)
 
         Enterprise& e = g_companies[found];
         e.isPrivate                 = true;
-        e.markup                    = rec.markup;
-        e.capital                   = rec.capital;
-        e.accruedVatLiability       = rec.accruedVat;
-        e.accruedProfitTaxLiability = rec.accruedProfitTax;
-        e.periodGrossSales          = rec.periodGrossSales;
-        e.periodVatAccrued          = rec.periodVatAccrued;
-        e.periodWholesaleCosts      = rec.periodWholesaleCosts;
-        e.periodWagesPaid           = rec.periodWagesPaid;
-        e.periodForeignCosts        = rec.periodForeignCosts;
+        e.markup                    = (std::isfinite(rec.markup) &&
+                                       rec.markup > 0.0f &&
+                                       rec.markup <= 100.0f)
+                                        ? rec.markup : g_defaultMarkup;
+        // Capital may legitimately be negative (debt/insolvency), but not
+        // non-finite. Finite values are clamped into the plausible ±1e12
+        // band (the configured starting-capital maximum) so a corrupt
+        // figure cannot mint or forgive an unbounded amount, while growth
+        // just above the band survives a save/load instead of vanishing.
+        // Non-finite becomes zero - never a fresh starting grant.
+        if (!std::isfinite(rec.capital))
+            e.capital = 0.0;
+        else if (rec.capital < -1.0e12)
+            e.capital = -1.0e12;
+        else if (rec.capital > 1.0e12)
+            e.capital = 1.0e12;
+        else
+            e.capital = rec.capital;
+        // Accruals and period totals are running charges: never negative.
+        e.accruedVatLiability =
+            SanitizeLoadedMoney(rec.accruedVat, 0.0, 1.0e12, 0.0);
+        e.accruedProfitTaxLiability =
+            SanitizeLoadedMoney(rec.accruedProfitTax, 0.0, 1.0e12, 0.0);
+        e.periodGrossSales =
+            SanitizeLoadedMoney(rec.periodGrossSales, 0.0, 1.0e12, 0.0);
+        e.periodVatAccrued =
+            SanitizeLoadedMoney(rec.periodVatAccrued, 0.0, 1.0e12, 0.0);
+        e.periodWholesaleCosts =
+            SanitizeLoadedMoney(rec.periodWholesaleCosts, 0.0, 1.0e12, 0.0);
+        e.periodWagesPaid =
+            SanitizeLoadedMoney(rec.periodWagesPaid, 0.0, 1.0e12, 0.0);
+        e.periodForeignCosts =
+            SanitizeLoadedMoney(rec.periodForeignCosts, 0.0, 1.0e12, 0.0);
         // M2: sanitise the persisted bidding multiplier. v1/v2 records
         // predate the field (zeroed by the caller's memset) and land on
         // the 1.0 default; a v3 value outside [1, max] is clamped to the
@@ -3977,7 +4077,7 @@ static void SaveRegister(const char* dir)
         if (g_probe)
             Logf("enterprise_base  [SAVE POS] %s at pos=(%.1f, %.1f)",
                  rec.objectName, rec.posX, rec.posZ);
-        rec.capital              = kv.second.capital;
+        rec.capital              = SanitizeLoadedMoney(kv.second.capital, -1.0e12, 1.0e12, 0.0);
         rec.markup               = kv.second.markup;
         rec.accruedVat           = kv.second.accruedVatLiability;
         rec.periodGrossSales     = kv.second.periodGrossSales;
@@ -4020,22 +4120,33 @@ static void SaveRegister(const char* dir)
              dir, ENT_FILENAME);
 }
 
+// Caller holds g_lock. A missing or unusable sidecar must leave the
+// register empty: the entries are keyed by raw building pointers, so
+// state from the previous world is both stale and aliasing-prone.
+static void ResetRegisterStateLocked(void)
+{
+    g_companies.clear();
+    g_companyOrder.clear();
+    g_pool = g_startingPool;
+    g_monthlyPoolInflow   = 0.0;
+    g_lastMonthPoolInflow = 0.0;
+    g_lastMonthSales      = 0.0;
+    g_lastMonthWages      = 0.0;
+    g_lastMonthTaxes      = 0.0;
+    g_monthlyEvictionCount = 0;
+    g_lastPoolMonth = -1;
+    g_lastPoolYear  = -1;
+    g_pendingLoadRecords.clear();
+    g_deferredMatchAttempts = 0;
+}
+
 static void LoadRegister(const char* dir)
 {
     size_t len = 0;
     void* raw = g_persistence->readFile(dir, ENT_FILENAME, &len);
     if (!raw) {
         EnterCriticalSection(&g_lock);
-        g_companies.clear();
-        g_companyOrder.clear();
-        g_pool = g_startingPool;
-        g_monthlyPoolInflow   = 0.0;
-        g_lastMonthPoolInflow = 0.0;
-        g_lastMonthSales      = 0.0;
-        g_lastMonthWages      = 0.0;
-        g_lastMonthTaxes      = 0.0;
-        g_pendingLoadRecords.clear();
-        g_deferredMatchAttempts = 0;
+        ResetRegisterStateLocked();
         LeaveCriticalSection(&g_lock);
 
         Logf("enterprise_base  no %s in this save - register cleared, "
@@ -4045,6 +4156,9 @@ static void LoadRegister(const char* dir)
 
     if (len < sizeof(EntSaveHeader)) {
         Logf("enterprise_base  %s too short - ignored", ENT_FILENAME);
+        EnterCriticalSection(&g_lock);
+        ResetRegisterStateLocked();
+        LeaveCriticalSection(&g_lock);
         free(raw);
         return;
     }
@@ -4066,6 +4180,9 @@ static void LoadRegister(const char* dir)
     } else {
         Logf("enterprise_base  %s version %u, expected %u..%u - ignored",
              ENT_FILENAME, hdr.version, ENT_VERSION_LEGACY, ENT_VERSION);
+        EnterCriticalSection(&g_lock);
+        ResetRegisterStateLocked();
+        LeaveCriticalSection(&g_lock);
         free(raw);
         return;
     }
@@ -4073,6 +4190,9 @@ static void LoadRegister(const char* dir)
     if (memcmp(hdr.magic, ENT_MAGIC, 8) != 0) {
         Logf("enterprise_base  %s has the wrong magic - ignored",
              ENT_FILENAME);
+        EnterCriticalSection(&g_lock);
+        ResetRegisterStateLocked();
+        LeaveCriticalSection(&g_lock);
         free(raw);
         return;
     }
@@ -4081,6 +4201,9 @@ static void LoadRegister(const char* dir)
     if (want > len) {
         Logf("enterprise_base  %s claims %u records but is only %zu bytes",
              ENT_FILENAME, hdr.recordCount, len);
+        EnterCriticalSection(&g_lock);
+        ResetRegisterStateLocked();
+        LeaveCriticalSection(&g_lock);
         free(raw);
         return;
     }
@@ -4091,12 +4214,15 @@ static void LoadRegister(const char* dir)
     g_companyOrder.clear();
 
     g_pool = hdr.pool;
-    if (!(g_pool == g_pool) || g_pool < 0.0) g_pool = g_startingPool;
+    if (!(g_pool >= 0.0) || !(g_pool <= 1.0e15)) g_pool = g_startingPool;
     g_monthlyPoolInflow   = 0.0;
     g_lastMonthPoolInflow = 0.0;
     g_lastMonthSales      = 0.0;
     g_lastMonthWages      = 0.0;
     g_lastMonthTaxes      = 0.0;
+    g_monthlyEvictionCount = 0;
+    g_lastPoolMonth = -1;
+    g_lastPoolYear  = -1;
 
     g_pendingLoadRecords.clear();
     g_pendingLoadRecords.reserve(hdr.recordCount);
@@ -4238,6 +4364,25 @@ static void ParseAutoTypes(const char* s)
         g_autoTypes[g_autoTypeCount++] = atoi(s);
         while (*s && *s != ',') s++;
     }
+}
+
+// Money-valued config fields feed capital, the pool, and rent directly.
+// The INI/USD parsers accept atof() output, so inf/absurd figures must be
+// re-bounded here (NaN fails the lower test, inf fails the upper one).
+// Called once after the base values are read and again after the USD
+// overrides, which are parsed later and bypass the first pass.
+static void SanitizeMoneyConfig()
+{
+    if (!(g_startingCapital >= 0.0) ||
+        !(g_startingCapital <= 1.0e12))  g_startingCapital = 0.0;
+    if (!(g_defaultMarkup > 0.0f) ||
+        !(g_defaultMarkup <= 100.0f))    g_defaultMarkup   = 1.0f;
+    if (!(g_startingPool >= 0.0) ||
+        !(g_startingPool <= 1.0e15))     g_startingPool = 0.0;
+    if (!(g_legalReserveFlat >= 0.0) ||
+        !(g_legalReserveFlat <= 1.0e15)) g_legalReserveFlat = 0.0;
+    if (!(g_residentialRent >= 0.0) ||
+        !(g_residentialRent <= 1.0e9))   g_residentialRent = 10.0;
 }
 
 static void ReadSettings(void)
@@ -4396,14 +4541,19 @@ static void ReadSettings(void)
                         v, sizeof(v), "") && v[0])
         g_siphonRate = (float)atof(v);
     if (H->configString(ini, "investment_pool", "payroll_buffer_months",
-                        v, sizeof(v), "") && v[0])
-        g_payrollBufferMonths = (float)atof(v);
+                        v, sizeof(v), "") && v[0]) {
+        float f = (float)atof(v);
+        if (std::isfinite(f) && f >= 0.0f && f <= 120.0f)
+            g_payrollBufferMonths = f;
+    }
     if (H->configString(ini, "investment_pool", "wholesale_buffer_months",
-                        v, sizeof(v), "") && v[0])
-        g_wholesaleBufferMonths = (float)atof(v);
+                        v, sizeof(v), "") && v[0]) {
+        float f = (float)atof(v);
+        if (std::isfinite(f) && f >= 0.0f && f <= 120.0f)
+            g_wholesaleBufferMonths = f;
+    }
 
-    if (g_startingCapital < 0.0)        g_startingCapital = 0.0;
-    if (!(g_defaultMarkup > 0.0f))      g_defaultMarkup   = 1.0f;
+    SanitizeMoneyConfig();
     if (!(g_privateWageBonus > 0.0f))   g_privateWageBonus= 1.0f;
     if (!(g_maxPrivatePremium >= 1.0f)) g_maxPrivatePremium = 1.50f;
     if (g_maxPrivatePremium > 3.0f)     g_maxPrivatePremium = 3.0f;
@@ -4451,7 +4601,7 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
 {
     TsmBind(host);
     info->name    = "enterprise_base";
-    info->version = "9.18";
+    info->version = "9.19";
 
     g_simClock = (const TsmSimClockApi*)
         H->consume(TSM_SERVICE_SIM_CLOCK, TSM_SIM_CLOCK_VERSION);
@@ -4540,6 +4690,9 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
         } else {
             g_legalReserveFlat = g_legalReserveFlatCfg / d;
         }
+        // The USD overrides are parsed after ReadSettings' first pass, so
+        // re-bound the resolved values before they seed anything.
+        SanitizeMoneyConfig();
         // No save has loaded yet at Start - re-seed the fresh-game pool.
         g_pool = g_startingPool;
         Logf("enterprise_base  v4 USD scale: capital %.2f, pool %.2f, "
@@ -4601,6 +4754,11 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
 
     g_taxes = (const TsmTaxesApi*)
         H->consume(TSM_SERVICE_TAXES, TSM_TAXES_VERSION);
+    // v9.19: retain older taxes providers after the v3 snapshot API bump.
+    if (!g_taxes)
+        g_taxes = (const TsmTaxesApi*)H->consume(TSM_SERVICE_TAXES, TSM_TAXES_VERSION_V2);
+    if (!g_taxes)
+        g_taxes = (const TsmTaxesApi*)H->consume(TSM_SERVICE_TAXES, TSM_TAXES_VERSION_V1);
 
     // v8.1 (Task 1 UI): the Republic macro market book, for the in-window
     // Market Condition row on retail/factory/service buildings. Optional -
@@ -4657,10 +4815,10 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
         }
     }
 
-    Logf("enterprise_base  live v9.18 (unified currency %s, privatisation bar everywhere, net-profit siphon, attractiveness rent, park-cap, economic eviction + destitute bread-day, atomic retail charge+credit, in-window rows, wage bidding, phased insolvency, market-condition row, full-private-price retail pre-check, refusal-triggered capital watch, honest audit baseline, payroll affordability, wage provenance, visible revenue, wage contract cap %s, rate ceiling %.0fx minimum)",
+    Logf("enterprise_base  live v9.19 (unified currency %s, privatisation bar everywhere, net-profit siphon, attractiveness rent, park-cap, economic eviction + destitute bread-day, atomic retail charge+credit, in-window rows, wage bidding, phased insolvency, market-condition row, full-private-price retail pre-check, refusal-triggered capital watch, honest audit baseline, payroll affordability, wage provenance, visible revenue, wage contract cap %s, rate ceiling %.0fx minimum)",
          TsmCurrencySymbol(g_currency), g_wageCapEnabled ? "on" : "off",
          (double)g_wageRateCeiling);
-    Logf("enterprise_base  *** BUILD v9.18 - wholesale income counts as revenue, every privatise click logged ***");
+    Logf("enterprise_base  *** BUILD v9.19 - wholesale income counts as revenue, every privatise click logged ***");
     Logf("enterprise_base      [WATCH n]      armed by a refusal; logs every movement on that shop for %d ms", g_watchMs);
     Logf("enterprise_base      [WATCH n CAP]  a capital movement on the watched shop, with by=<caller>");
     Logf("enterprise_base      [WATCH n SALE] a completed sale on the watched shop, with the buyer");
