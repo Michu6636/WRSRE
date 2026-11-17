@@ -297,6 +297,11 @@ static errno_t __cdecl h_wfopen_s(FILE** f, const wchar_t* path,
     return o_wfopen_s(f, path, mode);
 }
 
+static void FreeBufferImpl(void* buf)
+{
+    free(buf);
+}
+
 // ---------------------------------------------------------------- the API
 
 static const TsmPersistenceApi kApi = {
@@ -305,6 +310,7 @@ static const TsmPersistenceApi kApi = {
     UnregisterHandler,
     WriteAtomicImpl,
     ReadFileImpl,
+    FreeBufferImpl,
 };
 
 // ---------------------------------------------------------------- settings

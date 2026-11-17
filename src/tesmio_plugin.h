@@ -158,4 +158,17 @@ static void TsmWrite(HANDLE h, const char* s, int len)
     WriteFile(h, s, (DWORD)len, &wrote, NULL);
 }
 
+// Single-DLL (monolithic) build support:
+// When a plugin .cpp is compiled with /DWRSRE_MONOLITHIC_MODULE=<name>, its
+// entry points are renamed so multiple plugins can be linked into one
+// wrsre.dll driven by src/wrsre_entry.cpp with explicit Init/Start ordering.
+#ifdef WRSRE_MONOLITHIC_MODULE
+#define WRSRE_CAT2(a, b)    a##b
+#define WRSRE_CAT(a, b)     WRSRE_CAT2(a, b)
+#define TsmPluginApiVersion WRSRE_CAT(WrsreApiVersion_, WRSRE_MONOLITHIC_MODULE)
+#define TsmPluginInit       WRSRE_CAT(WrsreInit_,       WRSRE_MONOLITHIC_MODULE)
+#define TsmPluginStart      WRSRE_CAT(WrsreStart_,      WRSRE_MONOLITHIC_MODULE)
+#define DllMain             WRSRE_CAT(WrsreDllMain_,    WRSRE_MONOLITHIC_MODULE)
+#endif
+
 #endif // TESMIO_PLUGIN_H

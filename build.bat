@@ -162,7 +162,44 @@ REM below, which would make a plain `build.bat` build only the panel.
 if /i "%WHICH%"=="almanac_overlay_dev_cmake" goto :build_almanac_overlay_dev
 if /i "%WHICH%"=="almanac_overlay_dev" goto :build_almanac_panel
 if /i "%WHICH%"=="almanac_panel"       goto :build_almanac_panel
+if /i "%WHICH%"=="wrsre"               goto :build_wrsre_monolithic
 goto :plugins
+
+:build_wrsre_monolithic
+echo [build] wrsre.dll (single-DLL monolithic build)
+if not exist "build\wrsre_obj" mkdir "build\wrsre_obj"
+set "WRSRE_MODS=sim_clock persistence currency resource_pricing enterprise_base republic_bank taxes state_ledger citizen_labor citizen_retail private_shops private_logistics private_construction ui_panels ui_overlay map_expander"
+set "WRSRE_OBJS="
+for %%m in (%WRSRE_MODS%) do (
+    echo   [cc]  plugins\%%m\%%m.cpp
+    cl %COMMON% /c /DWRSRE_MONOLITHIC_MODULE=%%m /Fo"build\wrsre_obj\%%m.obj" "plugins\%%m\%%m.cpp"
+    if errorlevel 1 (
+        echo [FAIL]  %%m
+        set /a FAILED+=1
+        goto :failed
+    )
+    set "WRSRE_OBJS=!WRSRE_OBJS! build\wrsre_obj\%%m.obj"
+    if exist "plugins\%%m\%%m.ini" (
+        copy /Y "plugins\%%m\%%m.ini" "build\plugins\%%m.ini" >nul
+    )
+)
+echo   [cc]  src\wrsre_entry.cpp
+cl %COMMON% /c /Fo"build\wrsre_obj\wrsre_entry.obj" "src\wrsre_entry.cpp"
+if errorlevel 1 (
+    echo [FAIL]  wrsre_entry
+    set /a FAILED+=1
+    goto :failed
+)
+echo   [link] build\plugins\wrsre.dll
+link /NOLOGO /DLL /OUT:build\plugins\wrsre.dll build\wrsre_obj\wrsre_entry.obj !WRSRE_OBJS! user32.lib
+if errorlevel 1 (
+    echo [FAIL]  wrsre.dll
+    set /a FAILED+=1
+    goto :failed
+)
+set /a BUILT+=1
+echo [build] wrsre.dll ready in build\plugins (remove individual plugin DLLs when staging wrsre.dll)
+goto :done
 
 :build_almanac_panel
 echo [build] plugins\almanac_overlay_dev (ImGui from !IMGUI_DIR!)
