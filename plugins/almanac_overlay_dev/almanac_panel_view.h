@@ -41,11 +41,13 @@ LauncherRect DrawAlmanacLauncherButton(bool panelOpen, bool hovered,
 // Draw the panel. Must be called between ImGui::NewFrame() and
 // ImGui::Render(), on the owning thread, with a current context.
 //
-// The panel is input-free by construction (every window and control carries
-// ImGuiWindowFlags_NoInputs / the read-only styles below), so it can be placed
-// over the game without stealing clicks or keys from the game or from another
-// overlay. Returns true while the panel is still being drawn; false only if the
-// viewport is too small to lay out, which the caller treats as "not shown".
-bool DrawAlmanacPanel(const PanelModel& model, LauncherRect* outRect = nullptr);
+// Supports interactive tab switching (Economy / Labour / Logistics), scrolling,
+// dragging, and resizing. Populates `outRect` with the panel's current
+// screen-space bounds so WndProc can route and swallow mouse/wheel input over
+// the panel without affecting the game world behind it. Returns true while the
+// panel is drawn; false only if the viewport is too small to lay out.
+bool DrawAlmanacPanel(const PanelModel& model,
+                      LauncherRect* outRect = nullptr,
+                      int* activeTab = nullptr);
 
 } // namespace almanac

@@ -24,14 +24,23 @@
 namespace almanac {
 namespace {
 
-// Window flags shared by the panel and its child regions. NoInputs is the
-// important one; the rest keep the panel from dragging, resizing, colliding
-// with another overlay's name, or being persisted to imgui.ini.
-constexpr ImGuiWindowFlags kPanelFlags =
+// Window flags for the non-interactive launcher button (clicks are handled
+// directly by WndProc hit-testing against the published rect).
+constexpr ImGuiWindowFlags kLauncherFlags =
     ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoSavedSettings |
     ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove |
     ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar |
     ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoNav |
+    ImGuiWindowFlags_NoFocusOnAppearing |
+    ImGuiWindowFlags_NoBringToFrontOnFocus |
+    ImGuiWindowFlags_NoTitleBar;
+
+// Window flags for the interactive Almanac panel (Milestone 2): draggable,
+// resizable, scrollable, with clickable tabs.
+constexpr ImGuiWindowFlags kInteractivePanelFlags =
+    ImGuiWindowFlags_NoSavedSettings |
+    ImGuiWindowFlags_NoCollapse |
+    ImGuiWindowFlags_NoNav |
     ImGuiWindowFlags_NoFocusOnAppearing |
     ImGuiWindowFlags_NoBringToFrontOnFocus;
 
@@ -94,29 +103,44 @@ void Rule()
     ImGui::Dummy(ImVec2(w, 1.0f));
 }
 
-// Tabs are drawn, not owned. A real ImGui tab bar keeps selection state and
-// takes focus; for a read-only smoke panel the "selected" tab is simply the
-// first one, always, and none of them respond to the pointer.
-void DrawTabStrip()
+// Interactive tab strip: clicking any tab switches the active table.
+void DrawTabStrip(int& activeTab)
 {
+    if (activeTab < 0 || activeTab >= kTabCount) activeTab = 0;
     ImDrawList* draw = ImGui::GetWindowDrawList();
     for (int i = 0; i < kTabCount; ++i) {
         if (i) ImGui::SameLine(0.0f, 6.0f);
-        const ImVec2 at = ImGui::GetCursorScreenPos();
+        const ImVec2 at   = ImGui::GetCursorScreenPos();
         const ImVec2 size = ImGui::CalcTextSize(kTabNames[i]);
-        const ImVec2 pad(10.0f, 4.0f);
-        const bool   selected = i == 0;
+        const ImVec2 pad(12.0f, 5.0f);
+        const ImVec2 btnSize(size.x + pad.x * 2.0f, size.y + pad.y * 2.0f);
+
+        char btnId[48];
+        std::snprintf(btnId, sizeof(btnId), "##almanac_tab_%d", i);
+        if (ImGui::InvisibleButton(btnId, btnSize)) {
+            activeTab = i;
+        }
+        const bool selected = (i == activeTab);
+        const bool hovered  = ImGui::IsItemHovered();
+
+        const ImU32 fillCol = selected
+            ? IM_COL32(0x66, 0x1A, 0x17, 0xFF)
+            : (hovered ? IM_COL32(0xDF, 0xCF, 0xAF, 0xFF)
+                       : IM_COL32(0xD3, 0xC1, 0x9F, 0xFF));
+        const ImU32 borderCol = selected || hovered
+            ? IM_COL32(0x66, 0x1A, 0x17, 0xDD)
+            : kRule;
+        const ImVec4 textCol = selected
+            ? ImVec4(0.96f, 0.91f, 0.82f, 1.00f)
+            : (hovered ? kInk : kQuiet);
+
         draw->AddRectFilled(
-            at, ImVec2(at.x + size.x + pad.x * 2.0f, at.y + size.y + pad.y * 2.0f),
-            selected ? IM_COL32(0xE8, 0xD9, 0xBC, 0xFF) : IM_COL32(0xD3, 0xC1, 0x9F, 0xFF), 4.0f);
+            at, ImVec2(at.x + btnSize.x, at.y + btnSize.y), fillCol, 4.0f);
         draw->AddRect(
-            at, ImVec2(at.x + size.x + pad.x * 2.0f, at.y + size.y + pad.y * 2.0f),
-            kRule, 4.0f);
-        ImGui::SetCursorScreenPos(ImVec2(at.x + pad.x, at.y + pad.y));
-        ImGui::TextColored(selected ? kInk : kQuiet,
-                           "%s", kTabNames[i]);
-        ImGui::SetCursorScreenPos(ImVec2(at.x + size.x + pad.x * 2.0f, at.y));
-        ImGui::Dummy(ImVec2(0.0f, size.y + pad.y * 2.0f));
+            at, ImVec2(at.x + btnSize.x, at.y + btnSize.y), borderCol, 4.0f);
+        draw->AddText(
+            ImVec2(at.x + pad.x, at.y + pad.y),
+            ImGui::ColorConvertFloat4ToU32(textCol), kTabNames[i]);
     }
 }
 
@@ -186,8 +210,7 @@ LauncherRect DrawAlmanacLauncherButton(bool panelOpen, bool hovered,
     ImGui::PushStyleColor(ImGuiCol_WindowBg, bg);
     ImGui::PushStyleColor(ImGuiCol_Border, border);
 
-    const ImGuiWindowFlags btnFlags = kPanelFlags | ImGuiWindowFlags_NoTitleBar;
-    if (ImGui::Begin("##almanac_launcher_btn", nullptr, btnFlags)) {
+    if (ImGui::Begin("##almanac_launcher_btn", nullptr, kLauncherFlags)) {
         ImGui::SetCursorPos(ImVec2(padX, padY));
         ImGui::TextColored(textCol, "%s", label);
         rect.left   = pos.x;
@@ -203,9 +226,11 @@ LauncherRect DrawAlmanacLauncherButton(bool panelOpen, bool hovered,
     return rect;
 }
 
-bool DrawAlmanacPanel(const PanelModel& model, LauncherRect* outRect)
+bool DrawAlmanacPanel(const PanelModel& model, LauncherRect* outRect, int* activeTab)
 {
     if (outRect) *outRect = LauncherRect{};
+    int localTab = 0;
+    int& tab = activeTab ? *activeTab : localTab;
     const ImGuiViewport* viewport = ImGui::GetMainViewport();
     if (!viewport) return false;
 
@@ -256,10 +281,14 @@ bool DrawAlmanacPanel(const PanelModel& model, LauncherRect* outRect)
     if (height > maxHeight) height = maxHeight;
     if (width < 200.0f) width = 200.0f;
 
-    // Anchored top-left right below the floating launcher button.
+    // Initial placement top-left below the launcher button; user may drag and
+    // resize freely afterwards.
     ImGui::SetNextWindowPos(ImVec2(origin.x + 24.0f, origin.y + 104.0f),
-                            ImGuiCond_Always);
-    ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_Always);
+                            ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_FirstUseEver);
+    const float maxW = (extent.x - 32.0f > 420.0f) ? (extent.x - 32.0f) : 420.0f;
+    const float maxH = (extent.y - 48.0f > 240.0f) ? (extent.y - 48.0f) : 240.0f;
+    ImGui::SetNextWindowSizeConstraints(ImVec2(420.0f, 240.0f), ImVec2(maxW, maxH));
 
     // ###  separates the visible title from the window's identity, so changing
     // the visible text never creates a new window.
@@ -270,17 +299,19 @@ bool DrawAlmanacPanel(const PanelModel& model, LauncherRect* outRect)
     // the light text colour is pushed for the call that draws it and popped
     // before any content: the body keeps the dark ink colour.
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.95f, 0.90f, 0.80f, 1.00f));
-    const bool open = ImGui::Begin(title, nullptr, kPanelFlags);
+    const bool open = ImGui::Begin(title, nullptr, kInteractivePanelFlags);
     ImGui::PopStyleColor();
 
     bool shown = false;
     if (open) {
         shown = true;
         if (outRect) {
-            outRect->left   = origin.x + 24.0f;
-            outRect->top    = origin.y + 104.0f;
-            outRect->right  = origin.x + 24.0f + width;
-            outRect->bottom = origin.y + 104.0f + height;
+            const ImVec2 wPos  = ImGui::GetWindowPos();
+            const ImVec2 wSize = ImGui::GetWindowSize();
+            outRect->left   = wPos.x;
+            outRect->top    = wPos.y;
+            outRect->right  = wPos.x + wSize.x;
+            outRect->bottom = wPos.y + wSize.y;
             outRect->valid  = true;
         }
 
@@ -293,23 +324,15 @@ bool DrawAlmanacPanel(const PanelModel& model, LauncherRect* outRect)
         ImGui::TextColored(kWarn, "%s", model.dataNotice);
         ImGui::Spacing();
 
-        DrawTabStrip();
+        DrawTabStrip(tab);
         ImGui::Spacing();
         Rule();
 
-        // The body takes whatever is left above the footer. On a surface so
-        // short that the footer would be squeezed out, the child has no room and
-        // the rows are clipped - which is visible, and better than a footer
-        // drawn over them.
-        // Exactly the two terms the height calculation reserves for the footer.
         const float footer = gap + 1.0f + gap + line;
         if (ImGui::BeginChild("##almanac_body", ImVec2(0.0f, -footer),
                               ImGuiChildFlags_None,
-                              ImGuiWindowFlags_NoInputs)) {
-            DrawTable(kTabRows[0], kTabRowCounts[0]);
-            ImGui::TextColored(kQuiet,
-                               "Tabs are drawn for layout review only; only the "
-                               "first is populated.");
+                              ImGuiWindowFlags_None)) {
+            DrawTable(kTabRows[tab], kTabRowCounts[tab]);
         }
         ImGui::EndChild();
 

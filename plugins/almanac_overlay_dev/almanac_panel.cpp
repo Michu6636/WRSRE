@@ -89,17 +89,24 @@ double NowSeconds()
            static_cast<double>(frequency.QuadPart);
 }
 
-// Scoped WndProc state for the floating launcher button.
+// Scoped WndProc state for the floating launcher button and interactive panel.
 // Shared between the window message thread and the D3D11 present thread.
 std::mutex        g_launcherMutex;
 LauncherRect      g_launcherRect{};
 LauncherRect      g_panelRect{};
+bool              g_panelVisible  = false;
 unsigned          g_surfaceWidth  = 0;
 unsigned          g_surfaceHeight = 0;
 std::atomic<bool> g_launcherHovered{false};
 std::atomic<bool> g_pendingButtonClick{false};
+std::atomic<bool> g_panelDragging{false};
+std::atomic<bool> g_mouseDownLeft{false};
+std::atomic<bool> g_mouseDownRight{false};
+std::mutex        g_inputMutex;
+float             g_pendingWheelY = 0.0f;
 WNDPROC           g_originalWndProc = nullptr;
 HWND              g_subclassedWindow = nullptr;
+int               g_activeTab = 0;
 
 bool PointInRect(const LauncherRect& rect, float x, float y)
 {
@@ -124,6 +131,20 @@ bool GetSurfaceCursorPos(HWND hwnd, unsigned surfW, unsigned surfH,
     return true;
 }
 
+bool ClientLParamToSurface(HWND hwnd, LPARAM lParam, unsigned surfW, unsigned surfH,
+                           float& outX, float& outY)
+{
+    if (!surfW || !surfH) return false;
+    RECT client{};
+    if (!GetClientRect(hwnd, &client)) return false;
+    const float clientW = static_cast<float>(client.right - client.left);
+    const float clientH = static_cast<float>(client.bottom - client.top);
+    if (!(clientW > 0.0f) || !(clientH > 0.0f)) return false;
+    outX = static_cast<float>(GET_X_LPARAM(lParam)) * (static_cast<float>(surfW) / clientW);
+    outY = static_cast<float>(GET_Y_LPARAM(lParam)) * (static_cast<float>(surfH) / clientH);
+    return true;
+}
+
 bool PointInLauncherButton(HWND hwnd, LPARAM lParam)
 {
     LauncherRect rect{};
@@ -134,20 +155,46 @@ bool PointInLauncherButton(HWND hwnd, LPARAM lParam)
         surfW = g_surfaceWidth;
         surfH = g_surfaceHeight;
     }
-    if (!rect.valid || !surfW || !surfH) return false;
+    if (!rect.valid) return false;
+    float mx = 0.0f, my = 0.0f;
+    if (!ClientLParamToSurface(hwnd, lParam, surfW, surfH, mx, my)) return false;
+    return PointInRect(rect, mx, my);
+}
 
-    RECT client{};
-    if (!GetClientRect(hwnd, &client)) return false;
-    const float clientW = static_cast<float>(client.right - client.left);
-    const float clientH = static_cast<float>(client.bottom - client.top);
-    if (!(clientW > 0.0f) || !(clientH > 0.0f)) return false;
+bool PointInOpenPanel(HWND hwnd, LPARAM lParam)
+{
+    LauncherRect rect{};
+    bool visible = false;
+    unsigned surfW = 0, surfH = 0;
+    {
+        std::lock_guard<std::mutex> lock(g_launcherMutex);
+        rect    = g_panelRect;
+        visible = g_panelVisible;
+        surfW   = g_surfaceWidth;
+        surfH   = g_surfaceHeight;
+    }
+    if (!visible || !rect.valid) return false;
+    float mx = 0.0f, my = 0.0f;
+    if (!ClientLParamToSurface(hwnd, lParam, surfW, surfH, mx, my)) return false;
+    return PointInRect(rect, mx, my);
+}
 
-    const float mx = static_cast<float>(GET_X_LPARAM(lParam)) *
-                     (static_cast<float>(surfW) / clientW);
-    const float my = static_cast<float>(GET_Y_LPARAM(lParam)) *
-                     (static_cast<float>(surfH) / clientH);
-    return mx >= rect.left && mx <= rect.right &&
-           my >= rect.top  && my <= rect.bottom;
+bool CursorInOpenPanel(HWND hwnd)
+{
+    LauncherRect rect{};
+    bool visible = false;
+    unsigned surfW = 0, surfH = 0;
+    {
+        std::lock_guard<std::mutex> lock(g_launcherMutex);
+        rect    = g_panelRect;
+        visible = g_panelVisible;
+        surfW   = g_surfaceWidth;
+        surfH   = g_surfaceHeight;
+    }
+    if (!visible || !rect.valid) return false;
+    float mx = 0.0f, my = 0.0f;
+    if (!GetSurfaceCursorPos(hwnd, surfW, surfH, mx, my)) return false;
+    return PointInRect(rect, mx, my);
 }
 
 LRESULT CALLBACK AlmanacWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -156,20 +203,61 @@ LRESULT CALLBACK AlmanacWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
     case WM_MOUSEMOVE:
         g_launcherHovered.store(PointInLauncherButton(hwnd, lParam),
                                 std::memory_order_relaxed);
+        if (g_panelDragging.load(std::memory_order_relaxed)) {
+            return 0; // keep camera/map from panning while dragging or resizing panel
+        }
         break;
     case WM_LBUTTONDOWN:
         if (PointInLauncherButton(hwnd, lParam)) {
             g_pendingButtonClick.store(true, std::memory_order_release);
             return 0; // swallow click so the game world does not react behind the button
         }
+        if (PointInOpenPanel(hwnd, lParam)) {
+            g_panelDragging.store(true, std::memory_order_relaxed);
+            g_mouseDownLeft.store(true, std::memory_order_relaxed);
+            return 0; // swallow click and route to ImGui
+        }
         break;
     case WM_LBUTTONUP:
-        if (PointInLauncherButton(hwnd, lParam)) {
-            return 0; // swallow matching release
+        if (g_panelDragging.exchange(false, std::memory_order_relaxed)) {
+            g_mouseDownLeft.store(false, std::memory_order_relaxed);
+            return 0;
+        }
+        if (PointInLauncherButton(hwnd, lParam) || PointInOpenPanel(hwnd, lParam)) {
+            g_mouseDownLeft.store(false, std::memory_order_relaxed);
+            return 0;
+        }
+        break;
+    case WM_RBUTTONDOWN:
+        if (PointInOpenPanel(hwnd, lParam)) {
+            g_mouseDownRight.store(true, std::memory_order_relaxed);
+            return 0;
+        }
+        break;
+    case WM_RBUTTONUP:
+        if (g_mouseDownRight.exchange(false, std::memory_order_relaxed) ||
+            PointInOpenPanel(hwnd, lParam)) {
+            return 0;
+        }
+        break;
+    case WM_MOUSEWHEEL:
+        if (CursorInOpenPanel(hwnd)) {
+            const float delta =
+                static_cast<float>(GET_WHEEL_DELTA_WPARAM(wParam)) /
+                static_cast<float>(WHEEL_DELTA);
+            std::lock_guard<std::mutex> lock(g_inputMutex);
+            g_pendingWheelY += delta;
+            return 0; // swallow scroll so the game camera does not zoom
         }
         break;
     case WM_MOUSELEAVE:
         g_launcherHovered.store(false, std::memory_order_relaxed);
+        break;
+    case WM_KILLFOCUS:
+    case WM_CAPTURECHANGED:
+        g_panelDragging.store(false, std::memory_order_relaxed);
+        g_mouseDownLeft.store(false, std::memory_order_relaxed);
+        g_mouseDownRight.store(false, std::memory_order_relaxed);
         break;
     default:
         break;
@@ -191,10 +279,15 @@ void InstallLauncherWndProc(HWND hwnd)
     }
 }
 
-void PublishLauncherRect(const LauncherRect& rect, unsigned width, unsigned height)
+void PublishOverlayRects(const LauncherRect& btnRect,
+                         const LauncherRect& panelRect,
+                         bool panelVisible,
+                         unsigned width, unsigned height)
 {
     std::lock_guard<std::mutex> lock(g_launcherMutex);
-    g_launcherRect  = rect;
+    g_launcherRect  = btnRect;
+    g_panelRect     = panelRect;
+    g_panelVisible  = panelVisible;
     g_surfaceWidth  = width;
     g_surfaceHeight = height;
 }
@@ -415,10 +508,12 @@ bool Panel::Render(IDXGISwapChain* swap, bool keyDown, bool worldLoaded)
         eligible = GetForegroundWindow() == window_;
 
     if (!eligible) {
-        PublishLauncherRect(LauncherRect{}, 0, 0);
-        g_panelRect = LauncherRect{};
+        PublishOverlayRects(LauncherRect{}, LauncherRect{}, false, 0, 0);
         g_launcherHovered.store(false, std::memory_order_relaxed);
         g_pendingButtonClick.store(false, std::memory_order_relaxed);
+        g_panelDragging.store(false, std::memory_order_relaxed);
+        g_mouseDownLeft.store(false, std::memory_order_relaxed);
+        g_mouseDownRight.store(false, std::memory_order_relaxed);
         toggle_.Frame(keyDown, false, false);
         return true;
     }
@@ -445,22 +540,38 @@ bool Panel::Render(IDXGISwapChain* swap, bool keyDown, bool worldLoaded)
     const bool hasCursor = GetSurfaceCursorPos(window_, bufferWidth_,
                                                bufferHeight_, mx, my);
     if (hasCursor) {
-        io.MousePos = ImVec2(mx, my);
+        io.AddMousePosEvent(mx, my);
     } else {
-        io.MousePos = ImVec2(-FLT_MAX, -FLT_MAX);
+        io.AddMousePosEvent(-FLT_MAX, -FLT_MAX);
+    }
+
+    // Feed WndProc-captured mouse buttons and scroll wheel to ImGui.
+    const bool dragging = g_panelDragging.load(std::memory_order_relaxed);
+    io.AddMouseButtonEvent(0, show && g_mouseDownLeft.load(std::memory_order_relaxed));
+    io.AddMouseButtonEvent(1, show && g_mouseDownRight.load(std::memory_order_relaxed));
+    float wheelY = 0.0f;
+    {
+        std::lock_guard<std::mutex> lock(g_inputMutex);
+        wheelY = g_pendingWheelY;
+        g_pendingWheelY = 0.0f;
+    }
+    if (show && wheelY != 0.0f) {
+        io.AddMouseWheelEvent(0.0f, wheelY);
     }
 
     // Workers & Resources renders its own software cursor before Present, so
     // anything drawn in Present paints over it. Draw ImGui's own cursor on top
     // whenever the pointer is over our launcher button or open panel.
     LauncherRect prevBtnRect{};
+    LauncherRect prevPanelRect{};
     {
         std::lock_guard<std::mutex> lock(g_launcherMutex);
-        prevBtnRect = g_launcherRect;
+        prevBtnRect   = g_launcherRect;
+        prevPanelRect = g_panelRect;
     }
     const bool overButton = hasCursor && PointInRect(prevBtnRect, mx, my);
-    const bool overPanel  = hasCursor && show && PointInRect(g_panelRect, mx, my);
-    io.MouseDrawCursor = overButton || overPanel;
+    const bool overPanel  = hasCursor && show && PointInRect(prevPanelRect, mx, my);
+    io.MouseDrawCursor = overButton || overPanel || (show && dragging);
 
     const double now = NowSeconds();
     float delta = static_cast<float>(now - lastTime_);
@@ -474,8 +585,8 @@ bool Panel::Render(IDXGISwapChain* swap, bool keyDown, bool worldLoaded)
     const char* keyName = HotkeyDisplayName(settings_.toggleKey);
     const bool hovered  = overButton || g_launcherHovered.load(std::memory_order_relaxed);
     const LauncherRect btnRect = DrawAlmanacLauncherButton(show, hovered, keyName);
-    PublishLauncherRect(btnRect, bufferWidth_, bufferHeight_);
 
+    LauncherRect panelRect{};
     if (show) {
         PanelModel model;
         char buildNotice[64];
@@ -486,11 +597,10 @@ bool Panel::Render(IDXGISwapChain* swap, bool keyDown, bool worldLoaded)
         model.processId     = static_cast<int>(GetCurrentProcessId());
         model.autoShow      = settings_.autoShow;
         model.toggleKeyName = keyName;
-        DrawAlmanacPanel(model, &g_panelRect);
+        DrawAlmanacPanel(model, &panelRect, &g_activeTab);
         ++drawnFrames_;
-    } else {
-        g_panelRect = LauncherRect{};
     }
+    PublishOverlayRects(btnRect, panelRect, show, bufferWidth_, bufferHeight_);
 
     ImGui::Render();
     {
