@@ -2,6 +2,21 @@
 
 **Start here for current implementation status.** Baseline: `Almanac` merge `f3c2bd598d77b42fe2e4cec84bc10b8405e1d037` ([PR #88](https://github.com/Michu6636/WRSRE/pull/88)). That merge added auto-show behavior to the isolated Almanac development DLL source, but the latest user log shows the DLL was absent from Tesmio's plugin scan. This branch adds an explicit build target; Windows build, runtime staging and in-game visual acceptance remain outstanding. Older Almanac plans/reviews remain historical evidence; their sidebar approach and implementation-status statements are not the current delivery plan.
 
+## Superseding implementation: `plugins/almanac_overlay_dev`
+
+The isolated CMake candidate described below is **superseded as the delivery
+candidate** by [`plugins/almanac_overlay_dev`](../plugins/almanac_overlay_dev/README.md),
+an ordinary plugin built by `build.bat almanac_overlay_dev`. It reuses the working
+architecture (ImGui over the game's own swap chain) and removes the two blockers
+that kept the old candidate off screen: it lived outside `plugins\` so the loader
+never saw it, and its installer demanded exact `SOVIET64.exe`/`C3DDLL64.dll`
+hashes plus engine RVA `0x148BC`, which no other build satisfies. The new plugin
+identifies the chain at runtime, installs from a worker thread rather than under
+the loader lock, and has a shared-Present-slot fallback. Host checks:
+`python3 tests/almanac_overlay_dev/run_host_tests.py --imgui-dir PATH`.
+Windows build and in-game acceptance remain outstanding; the prototype sources
+and their history below are retained as evidence, not as the current plan.
+
 ## What the user wants / immediate milestone
 
 The user has redirected the immediate task from testing Earthworks itself to getting a **simple in-game Almanac ImGui panel visible**. Reuse the existing Earthworks-inspired D3D11/ImGui renderer and synthetic Almanac view; do not add Earthworks terrain/gameplay hooks, connect live Finance, or change the native sidebar. This test panel is read-only and clearly labels its values synthetic. It auto-shows on the first eligible foreground render; F8 hides/reopens it. It is a visual smoke test, not product/runtime acceptance.

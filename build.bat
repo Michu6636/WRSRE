@@ -25,7 +25,13 @@ REM   build.bat              build every plugin in plugins\
 REM   build.bat clean        remove build\plugins\ first
 REM   build.bat <name>       build one plugin, e.g. `build.bat sim_clock`
 REM   build.bat almanac_overlay_dev
-REM                          build the isolated Almanac ImGui DLL (CMake + pinned ImGui)
+REM                          build the Almanac ImGui panel into build\plugins
+REM                          (fetches pinned ImGui into .cache on first run;
+REM                          set ALMANAC_IMGUI_DIR to reuse a checkout)
+REM   build.bat almanac_panel
+REM                          same as almanac_overlay_dev
+REM   build.bat almanac_overlay_dev_cmake
+REM                          the older isolated CMake prototype (not the panel)
 REM   build.bat loader       also build tesmioloader.dll (needs
 REM                          src\tesmioloader.cpp)
 REM -----------------------------------------------------------------------------
@@ -97,12 +103,66 @@ if /i "%WHICH%"=="loader" (
     goto :done
 )
 
-if /i "%WHICH%"=="almanac_overlay_dev" goto :build_almanac_overlay_dev
+if /i "%WHICH%"=="almanac_overlay_dev_cmake" goto :build_almanac_overlay_dev
+if /i "%WHICH%"=="almanac_panel"     goto :build_almanac_panel
+if /i "%WHICH%"=="almanac_overlay"   goto :build_almanac_panel
 goto :plugins
 
-REM This explicit opt-in keeps the experimental D3D11 panel out of ordinary
-REM `build.bat` output. It builds with the isolated pinned-dependency CMake
-REM project, then places the DLL/config in the standard build\plugins output.
+REM The Almanac ImGui panel. Unlike the old isolated prototype this one is
+REM ordinary plugin source: the plugin directory plus the pinned Dear ImGui
+REM core and its DX11 backend. ImGui is fetched once into the ignored .cache
+REM directory, or comes from ALMANAC_IMGUI_DIR when that is set. The output
+REM goes to build\plugins beside every other plugin, with the same /MT CRT, so
+REM the loader discovers it exactly like any other plugin.
+:build_almanac_panel
+set "IMGUI_DIR=%ALMANAC_IMGUI_DIR%"
+if not defined IMGUI_DIR (
+    set "IMGUI_DIR=%ROOT%.cache\almanac-imgui-host-tests"
+    if not exist "!IMGUI_DIR!\imgui.cpp" (
+        echo [dependency] fetching Dear ImGui v1.91.9b into !IMGUI_DIR!
+        if not exist ".cache" mkdir ".cache"
+        git -c core.autocrlf=false clone --depth 1 --branch v1.91.9b https://github.com/ocornut/imgui.git "!IMGUI_DIR!"
+        if errorlevel 1 goto :failed
+    )
+)
+for %%I in ("!IMGUI_DIR!") do set "IMGUI_DIR=%%~fI"
+if not exist "!IMGUI_DIR!\imgui.cpp" (
+    echo ERROR: IMGUI_DIR does not contain imgui.cpp: !IMGUI_DIR!
+    goto :failed
+)
+if not exist "!IMGUI_DIR!\backends\imgui_impl_dx11.cpp" (
+    echo ERROR: IMGUI_DIR has no DX11 backend; v1.91.9b is expected: !IMGUI_DIR!
+    goto :failed
+)
+REM The pinned version is what the host drawing checks were written against;
+REM a different checkout still compiles, but say so rather than silently using
+REM an untested ImGui.
+findstr /r /c:"#define IMGUI_VERSION_NUM  *19191" "!IMGUI_DIR!\imgui.h" >nul 2>nul
+if errorlevel 1 echo [build] WARNING: IMGUI_DIR is not v1.91.9b (IMGUI_VERSION_NUM 19191)
+
+echo [build] plugins\almanac_overlay_dev (ImGui from !IMGUI_DIR!)
+cl %COMMON% /LD /I"!IMGUI_DIR!" /I"!IMGUI_DIR!\backends" ^
+   "plugins\almanac_overlay_dev\almanac_overlay_dev.cpp" ^
+   "plugins\almanac_overlay_dev\graphics_hook.cpp" ^
+   "plugins\almanac_overlay_dev\almanac_panel.cpp" ^
+   "plugins\almanac_overlay_dev\almanac_panel_view.cpp" ^
+   "!IMGUI_DIR!\imgui.cpp" "!IMGUI_DIR!\imgui_draw.cpp" ^
+   "!IMGUI_DIR!\imgui_tables.cpp" "!IMGUI_DIR!\imgui_widgets.cpp" ^
+   "!IMGUI_DIR!\backends\imgui_impl_dx11.cpp" ^
+   /link /OUT:build\plugins\almanac_overlay_dev.dll
+if errorlevel 1 goto :failed
+copy /Y "plugins\almanac_overlay_dev\almanac_overlay_dev.ini" "build\plugins\almanac_overlay_dev.ini" >nul
+if errorlevel 1 goto :failed
+del /q "plugins\almanac_overlay_dev\*.obj" "plugins\almanac_overlay_dev\*.exp" "plugins\almanac_overlay_dev\*.lib" "plugins\almanac_overlay_dev\*.pdb" >nul 2>nul
+del /q "*.obj" >nul 2>nul
+echo [build] build\plugins\almanac_overlay_dev.dll + .ini
+echo [build] copy both into the plugins folder of the runtime you are testing
+goto :done
+
+REM LEGACY: the isolated CMake prototype under prototypes\almanac_overlay\native.
+REM It is NOT the panel: it refuses to install unless the game files match one
+REM exact build. `build.bat almanac_overlay_dev` builds the real plugin above;
+REM this target is kept only for the standalone WARP diagnostic window.
 :build_almanac_overlay_dev
 where cmake >nul 2>nul
 if errorlevel 1 (
