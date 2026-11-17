@@ -31,7 +31,9 @@
 
 #include "almanac_panel.h"
 #include "../../src/sim_clock_api.h"
+#include "../../src/ui_overlay_api.h"
 
+#include <atomic>
 #include <cstdarg>
 #include <cstddef>
 #include <cstdio>
@@ -122,22 +124,48 @@ bool ToggleKeyDown()
     return (GetAsyncKeyState(g_toggleKey) & 0x8000) != 0;
 }
 
-// Check sim_clock to see whether a game save/world is currently loaded.
-// Returns false on the splash screen, loading screen, and main menu.
-// If sim_clock is not present (e.g. standalone test), defaults to true.
+std::atomic<ULONGLONG> g_lastTerrainFrameMs{0};
+
+float AlmanacWorldHeartbeat(void*, float, float y, float)
+{
+    g_lastTerrainFrameMs.store(GetTickCount64(), std::memory_order_relaxed);
+    return y;
+}
+
+// Detect whether a game save/world is currently loaded.
+// Uses a lightweight ui_overlay drawer (C3D_TERRAIN::Render heartbeat), which
+// runs every frame in a loaded save (paused or unpaused) and never runs on the
+// splash screen, loading screen, or main menu. Falls back to sim_clock if the
+// HUD is hidden, or defaults to true if neither service is present.
 bool IsWorldLoaded()
 {
-    static const TsmSimClockApi* s_simClock = nullptr;
+    static const TsmUiOverlayApi* s_uiOverlay = nullptr;
+    static const TsmSimClockApi*  s_simClock  = nullptr;
     static bool s_lookedUp = false;
+
     if (!s_lookedUp && g_host && g_host->consume) {
+        s_uiOverlay = static_cast<const TsmUiOverlayApi*>(
+            g_host->consume(TSM_SERVICE_UI_OVERLAY, TSM_UI_OVERLAY_VERSION));
+        if (s_uiOverlay && s_uiOverlay->registerDrawer) {
+            s_uiOverlay->registerDrawer(&AlmanacWorldHeartbeat, nullptr);
+        }
         s_simClock = static_cast<const TsmSimClockApi*>(
             g_host->consume(TSM_SERVICE_SIM_CLOCK, TSM_SIM_CLOCK_VERSION));
         s_lookedUp = true;
     }
-    if (s_simClock && s_simClock->getYear) {
-        return s_simClock->getYear() >= 0;
+
+    if (s_uiOverlay) {
+        const ULONGLONG last = g_lastTerrainFrameMs.load(std::memory_order_relaxed);
+        if (last != 0 && (GetTickCount64() - last) < 1000ULL) {
+            return true;
+        }
     }
-    return true;
+
+    if (s_simClock && s_simClock->getYear && s_simClock->getYear() >= 0) {
+        return true;
+    }
+
+    return !s_uiOverlay && !s_simClock;
 }
 
 // Drawing for one frame. Owns the "is the panel ready, and did it draw" state so
