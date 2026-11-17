@@ -316,13 +316,15 @@ static void LoadWallets(const char* dir)
         WalletSaveRecord r;
         memcpy(&r, p, sizeof(r));
         p += sizeof(r);
-        // A corrupt record must not poison the map: the wallet service
-        // refuses non-finite balances, so +inf would be invisible to
-        // WalletGet while the total and the next save expose it.
-        if (!std::isfinite(r.wallet) || r.wallet < 0.0f || r.wallet > 1.0e9f)
-            continue;
+        // A corrupt record must not poison the map, and dropping it would
+        // be worse: a missing ID reads as a fresh starting wallet. Clamp
+        // into the same [0, 1e9] band WalletChange enforces, so a damaged
+        // balance becomes zero (or the ceiling) instead of a new grant.
+        float balance = r.wallet;
+        if (!std::isfinite(balance) || balance < 0.0f) balance = 0.0f;
+        if (balance > 1.0e9f) balance = 1.0e9f;
         WalletEntry e;
-        e.balance        = r.wallet;
+        e.balance        = balance;
         e.lastSeenAbsDay = now;
         g_wallets.emplace(r.citizenId, e);
     }

@@ -412,8 +412,22 @@ static bool CanDebitEnterprise(void* b)
     return b && TsmIsValidGamePtr(b) && !TsmIsDecayed(b);
 }
 
+// Serialises settlement against the retail accrual path. Without it a
+// settleNow from the UI thread can interleave between the instant branch's
+// getAccruals / addAccrual / clearAccrual and settle the same sale twice
+// (or clear it without a debit). Lock order is taxes -> enterprise /
+// currency; no enterprise or currency path calls back into settlement
+// while holding its own lock.
+struct TaxSettlementLock {
+    TaxSettlementLock()  { EnterCriticalSection(&g_lock); }
+    ~TaxSettlementLock() { LeaveCriticalSection(&g_lock); }
+    TaxSettlementLock(const TaxSettlementLock&) = delete;
+    TaxSettlementLock& operator=(const TaxSettlementLock&) = delete;
+};
+
 static void SettleVatAll(void)
 {
+    TaxSettlementLock settleLock;
     if (!g_enterprise || !g_currency) return;
     if (!g_vatEnabled) return;   // suspended: nothing NEW accrued, nothing to settle
 
@@ -444,15 +458,18 @@ static void SettleVatAll(void)
 
 static void SettleProfitAll(void)
 {
+    TaxSettlementLock settleLock;
     if (!g_enterprise) return;
     if (!g_profitEnabled) {
         // A suspended profit tax still owns the period boundary: drop the
         // running totals so re-enabling cannot tax the suspended window.
+        // Clearing totals needs no debit eligibility: a decayed entry that
+        // is still in the register must lose them too, or it would carry
+        // the suspended window's profit into a later active period.
         size_t n = g_enterprise->getEnterpriseCount();
         for (size_t i = 0; i < n; i++) {
             void* b = g_enterprise->getEnterpriseByIndex(i);
-            if (!CanDebitEnterprise(b)) continue;
-            g_enterprise->clearPeriodTotals(b);
+            if (b) g_enterprise->clearPeriodTotals(b);
         }
         return;
     }
@@ -507,6 +524,7 @@ static void SettleProfitAll(void)
 
 static void SettlePropertyAll(void)
 {
+    TaxSettlementLock settleLock;
     if (!g_enterprise || !g_currency) return;
     if (!g_propertyEnabled) return;             // suspended
     if (!(g_propertyTaxFlat > 0.01f)) return;
@@ -571,8 +589,9 @@ static void OnYearly(void* /*ud*/, int /*d*/, int /*m*/, int /*y*/)
 // ---------------------------------------------------------------- the API
 
 // A suspended tax reports a zero rate, so no NEW liability accrues through
-// the retail interceptor - but see settleNow / the schedule: an amount that
-// already accrued before the switch still settles at the boundary.
+// the retail interceptor. An amount that already accrued before the switch
+// is retained (VAT) or dropped with the period totals (profit) rather than
+// settled while the tax is off; nothing is collected until it is re-enabled.
 static float GetVatRateImpl(void)
 { return g_vatEnabled ? g_vatRate : 0.0f; }
 static float GetProfitTaxRateImpl(void)
@@ -584,20 +603,33 @@ static void RecordVatAccrualImpl(void* entity, double amount)
     if (!(amount == amount) || amount <= 0.0) return;
     if (!g_enterprise) return;
 
+    TaxSettlementLock settleLock;
+
     if (g_vatSchedule == TSM_FREQ_INSTANT) {
         // Settle the moment it is accrued. The sale credited this VAT to
         // the shop as part of gross revenue, so it MUST reach the period
         // VAT total: SettleProfitAll derives net revenue as
         // grossSales - vatAccrued, and leaving this out taxed the VAT
         // itself. addAccrual bumps both fields; clearAccrual then drops
-        // the liability (the instant schedule has no settlement boundary
-        // that could collect it later).
+        // the liability.
+        //
+        // clearAccrual zeroes the WHOLE liability, so a figure that was
+        // already outstanding (for example a sidecar saved under the
+        // monthly schedule) must be settled in the same debit. Otherwise
+        // the first instant sale would erase it without paying it.
+        double priorVat = 0.0, priorProfit = 0.0;
+        g_enterprise->getAccruals(entity, &priorVat, &priorProfit);
         g_enterprise->addAccrual(entity, TSM_ACCRUAL_VAT, amount);
+
+        // No usable payer or no treasury: keep the liability rather than
+        // clearing it without a matching debit/credit. The period total
+        // still carries the sale so profit tax nets the VAT out.
+        if (!CanDebitEnterprise(entity) || !g_currency) return;
+
+        double due = amount + ((priorVat > 0.0) ? priorVat : 0.0);
         g_enterprise->clearAccrual(entity, TSM_ACCRUAL_VAT);
-        if (CanDebitEnterprise(entity)) {
-            g_enterprise->modifyCompanyCapital(entity, -amount, TSM_CAP_TAX);
-            if (g_currency) g_currency->moveTreasury(amount, "vat");
-        }
+        g_enterprise->modifyCompanyCapital(entity, -due, TSM_CAP_TAX);
+        g_currency->moveTreasury(due, "vat");
         return;
     }
 
@@ -606,6 +638,9 @@ static void RecordVatAccrualImpl(void* entity, double amount)
 
 static void SettleNowImpl(void)
 {
+    // Manual settlement closes the current period exactly like a scheduled
+    // boundary: SettleProfitAll clears the running totals even while the
+    // profit tax is disabled, so re-enabling it cannot tax a settled window.
     SettleVatAll();
     SettleProfitAll();
     SettlePropertyAll();
@@ -812,8 +847,13 @@ static void ReadSettings(void)
     if (!(g_vatRate >= 0.0f) || !(g_vatRate <= 1.0f))         g_vatRate = 0.0f;
     if (!(g_profitTaxRate >= 0.0f) ||
         !(g_profitTaxRate <= 1.0f))                           g_profitTaxRate = 0.0f;
+    // The flat property tax is not a fraction, but it still has to be a
+    // finite, bounded figure: inf/1e30 would reach both capital and the
+    // treasury. NaN fails the lower test; inf fails the upper one.
+    if (!(g_propertyTaxFlatCfg >= 0.0f) ||
+        !(g_propertyTaxFlatCfg <= 1.0e6f))                    g_propertyTaxFlatCfg = 0.0f;
     if (!(g_propertyTaxFlat >= 0.0f) ||
-        !(g_propertyTaxFlat == g_propertyTaxFlat))            g_propertyTaxFlat = 0.0f;
+        !(g_propertyTaxFlat <= 1.0e6f))                       g_propertyTaxFlat = 0.0f;
 }
 
 // ---------------------------------------------------------------- City Hall panel (v3)
@@ -1278,13 +1318,15 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
         if (H->configString(ini, "taxes", "property_tax_flat_usd",
                             v, sizeof(v), "") && v[0]) {
             float u = (float)atof(v);
-            if (u >= 0.0f && u == u) g_propertyTaxFlat = u;
+            if (u >= 0.0f && u <= 1.0e6f) g_propertyTaxFlat = u;
         } else {
             float d = (g_usdDivisor >= 1.0f) ? g_usdDivisor : 50.0f;
             g_propertyTaxFlat = g_propertyTaxFlatCfg / d;
         }
+        // One final gate on the RESOLVED value: the explicit override can
+        // be inf, and the divisor path can overflow a tiny divisor.
         if (!(g_propertyTaxFlat >= 0.0f) ||
-            !(g_propertyTaxFlat == g_propertyTaxFlat))
+            !(g_propertyTaxFlat <= 1.0e6f))
             g_propertyTaxFlat = 0.0f;
     }
 

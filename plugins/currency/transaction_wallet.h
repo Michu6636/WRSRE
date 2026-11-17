@@ -48,7 +48,10 @@ static float WalletChange(void* person, float amount, bool credit, bool partial,
     }
     if (moved <= 0.0f) return 0.0f;
     const float next = credit ? balance + moved : balance - moved;
-    if (!std::isfinite(next) || next < 0.0f || next == balance) return 0.0f;
+    // 1e9 is the load-time ceiling too; refusing here keeps an in-memory
+    // balance from being silently confiscated by the next save/load.
+    if (!std::isfinite(next) || next < 0.0f || next > 1.0e9f ||
+        next == balance) return 0.0f;
     if (missing) {
         WalletEntry entry = { balance, now };
         try { it = g_wallets.emplace(id, entry).first; }

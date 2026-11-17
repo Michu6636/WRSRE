@@ -7,9 +7,9 @@ Each logical record spans multiple physical lines:
 The header line also carries the Loader timestamp prefix [HH:MM:SS.mmm] on
 the first physical line.
 
-Known emitter discrepancy (reported, not worked around): the `kind=` field
-in the header is computed as `ConfName(seq % 6 + 1)`, NOT the actual record
-kind. The parser uses the `[PROBE <RECKIND>]` prefix as authoritative.
+The `kind=` field in the header carries the actual record kind in
+lowercase (the same name as the `[PROBE <RECKIND>]` prefix). The parser
+uses the prefix as authoritative and treats `kind=` as redundant.
 
 Confidence strings (from schema + emitter):
   verified, partial, unverified, synthetic, unsupported
@@ -53,7 +53,7 @@ PROBE_HEADER_RE = re.compile(
     r'seq=(\d+)\s+'
     r'ts=([+-]?\d+\.\d+)\s+'
     r'thr=(\S+)\s+'
-    r'kind=\S+\s+'                # BUGGY field: ConfName(seq%6+1), ignored
+    r'kind=\S+\s+'                # actual record kind, redundant with prefix
     r'schema=(\d+)\s+'
     r'committed=(\d)\s+'
     r'load=(\d)\s+'
@@ -338,16 +338,6 @@ def build_probe_record(ra: AssembledProbeRecord) -> ProbeRecord:
 # ---------------------------------------------------------------------------
 
 DISCREPANCIES: List[ProbeDiscrepancy] = [
-    ProbeDiscrepancy(
-        discrepancy_id="D-KIND-FIELD-BUG",
-        description=(
-            "Header 'kind=' field is computed as ConfName(seq % 6 + 1), "
-            "not the actual record kind. Does not match [PROBE <RECKIND>] prefix."
-        ),
-        severity="bug",
-        location="private_logistics_probe.cpp:LogHeader()",
-        schema_field="line_format.kind",
-    ),
     ProbeDiscrepancy(
         discrepancy_id="D-THR-FORMAT",
         description=(

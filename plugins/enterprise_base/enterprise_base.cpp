@@ -552,6 +552,7 @@
 #include <vector>
 #include <string>
 #include <stdint.h>
+#include <cmath>
 
 #pragma comment(lib, "user32.lib")   // GetForegroundWindow / GetAsyncKeyState
 
@@ -1274,7 +1275,9 @@ static int ApplyCapital(void* building, double delta,
                         TsmCapitalCategory category)
 {
     if (!TsmIsValidGamePtr(building)) return 0;
-    if (!(delta == delta)) return 0;
+    // NaN would poison capital; +-inf would too (and would slip past the
+    // equality test the old guard used).
+    if (!std::isfinite(delta)) return 0;
     if (delta == 0.0) return 1;              // nothing to apply is success
     // v8.0 (Task 3): a ruin never takes capital movements - no auto-
     // registration, no silent re-privatisation.
@@ -1410,7 +1413,10 @@ static float GetMarkupImpl(void* building)
 static void SetMarkupImpl(void* building, float m)
 {
     if (!TsmIsValidGamePtr(building)) return;
+    // Same bound the save/load path enforces, so a value accepted here
+    // always survives a round-trip instead of reverting to the default.
     if (!(m > 0.0f && m == m)) return;
+    if (m > 100.0f) m = 100.0f;
     EnterCriticalSection(&g_lock);
     g_companies[building].markup = m;
     LeaveCriticalSection(&g_lock);
@@ -3333,6 +3339,19 @@ static void* FindMatchForRecord(const EntSaveRecord& rec, TsmBuildingSpan* span)
     return nullptr;
 }
 
+// A structurally valid sidecar can still carry corrupt money fields
+// (hand-edited save, damaged sector). Clamp each one into a plausible
+// range before it reaches the live register and the next save; a
+// non-finite value falls back to the field's clean default.
+static double SanitizeLoadedMoney(double v, double lo, double hi,
+                                  double fallback)
+{
+    if (!std::isfinite(v)) return fallback;
+    if (v < lo) return lo;
+    if (v > hi) return hi;
+    return v;
+}
+
 static void ProcessDeferredLoadMatches(TsmBuildingSpan* span)
 {
     if (g_pendingLoadRecords.empty() || !span || span->count == 0) return;
@@ -3362,15 +3381,29 @@ static void ProcessDeferredLoadMatches(TsmBuildingSpan* span)
 
         Enterprise& e = g_companies[found];
         e.isPrivate                 = true;
-        e.markup                    = rec.markup;
-        e.capital                   = rec.capital;
-        e.accruedVatLiability       = rec.accruedVat;
-        e.accruedProfitTaxLiability = rec.accruedProfitTax;
-        e.periodGrossSales          = rec.periodGrossSales;
-        e.periodVatAccrued          = rec.periodVatAccrued;
-        e.periodWholesaleCosts      = rec.periodWholesaleCosts;
-        e.periodWagesPaid           = rec.periodWagesPaid;
-        e.periodForeignCosts        = rec.periodForeignCosts;
+        e.markup                    = (std::isfinite(rec.markup) &&
+                                       rec.markup > 0.0f &&
+                                       rec.markup <= 100.0f)
+                                        ? rec.markup : g_defaultMarkup;
+        // Capital may legitimately be negative (debt/insolvency), but not
+        // non-finite or beyond any plausible economy. A corrupt figure
+        // becomes zero, not a fresh starting grant.
+        e.capital = SanitizeLoadedMoney(rec.capital, -1.0e12, 1.0e12, 0.0);
+        // Accruals and period totals are running charges: never negative.
+        e.accruedVatLiability =
+            SanitizeLoadedMoney(rec.accruedVat, 0.0, 1.0e12, 0.0);
+        e.accruedProfitTaxLiability =
+            SanitizeLoadedMoney(rec.accruedProfitTax, 0.0, 1.0e12, 0.0);
+        e.periodGrossSales =
+            SanitizeLoadedMoney(rec.periodGrossSales, 0.0, 1.0e12, 0.0);
+        e.periodVatAccrued =
+            SanitizeLoadedMoney(rec.periodVatAccrued, 0.0, 1.0e12, 0.0);
+        e.periodWholesaleCosts =
+            SanitizeLoadedMoney(rec.periodWholesaleCosts, 0.0, 1.0e12, 0.0);
+        e.periodWagesPaid =
+            SanitizeLoadedMoney(rec.periodWagesPaid, 0.0, 1.0e12, 0.0);
+        e.periodForeignCosts =
+            SanitizeLoadedMoney(rec.periodForeignCosts, 0.0, 1.0e12, 0.0);
         // M2: sanitise the persisted bidding multiplier. v1/v2 records
         // predate the field (zeroed by the caller's memset) and land on
         // the 1.0 default; a v3 value outside [1, max] is clamped to the
@@ -4307,6 +4340,25 @@ static void ParseAutoTypes(const char* s)
     }
 }
 
+// Money-valued config fields feed capital, the pool, and rent directly.
+// The INI/USD parsers accept atof() output, so inf/absurd figures must be
+// re-bounded here (NaN fails the lower test, inf fails the upper one).
+// Called once after the base values are read and again after the USD
+// overrides, which are parsed later and bypass the first pass.
+static void SanitizeMoneyConfig()
+{
+    if (!(g_startingCapital >= 0.0) ||
+        !(g_startingCapital <= 1.0e12))  g_startingCapital = 0.0;
+    if (!(g_defaultMarkup > 0.0f) ||
+        !(g_defaultMarkup <= 100.0f))    g_defaultMarkup   = 1.0f;
+    if (!(g_startingPool >= 0.0) ||
+        !(g_startingPool <= 1.0e15))     g_startingPool = 0.0;
+    if (!(g_legalReserveFlat >= 0.0) ||
+        !(g_legalReserveFlat <= 1.0e15)) g_legalReserveFlat = 0.0;
+    if (!(g_residentialRent >= 0.0) ||
+        !(g_residentialRent <= 1.0e9))   g_residentialRent = 10.0;
+}
+
 static void ReadSettings(void)
 {
     const char* ini = "plugins\\enterprise_base.ini";
@@ -4469,8 +4521,7 @@ static void ReadSettings(void)
                         v, sizeof(v), "") && v[0])
         g_wholesaleBufferMonths = (float)atof(v);
 
-    if (g_startingCapital < 0.0)        g_startingCapital = 0.0;
-    if (!(g_defaultMarkup > 0.0f))      g_defaultMarkup   = 1.0f;
+    SanitizeMoneyConfig();
     if (!(g_privateWageBonus > 0.0f))   g_privateWageBonus= 1.0f;
     if (!(g_maxPrivatePremium >= 1.0f)) g_maxPrivatePremium = 1.50f;
     if (g_maxPrivatePremium > 3.0f)     g_maxPrivatePremium = 3.0f;
@@ -4607,6 +4658,9 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
         } else {
             g_legalReserveFlat = g_legalReserveFlatCfg / d;
         }
+        // The USD overrides are parsed after ReadSettings' first pass, so
+        // re-bound the resolved values before they seed anything.
+        SanitizeMoneyConfig();
         // No save has loaded yet at Start - re-seed the fresh-game pool.
         g_pool = g_startingPool;
         Logf("enterprise_base  v4 USD scale: capital %.2f, pool %.2f, "

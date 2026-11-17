@@ -774,8 +774,12 @@ static int IsUsdActive(void)
 static float ClampToMinimum(float wage)
 {
     // M1: the statutory floor takes effect at the point every wage path
-    // funnels through, so no wage can pay below it by accident.
+    // funnels through, so no wage can pay below it by accident. The upper
+    // bound mirrors the sidecar/sector-wage limit: inf here would flow
+    // into payroll and capital, and worker credits reject non-finite pay.
     float floor = (g_minimumWage > 0.0f) ? g_minimumWage : 0.0f;
+    if (!(wage == wage)) return floor;
+    if (wage > 1.0e6f) wage = 1.0e6f;
     return (wage < floor) ? floor : wage;
 }
 
@@ -1417,7 +1421,7 @@ static int Api_SetWorkplaceWageOverride(void* building, float dailyWage)
     if (!TsmIsValidGamePtr(building)) return 0;
     if (!ReadablePtr(building, TSM_BLD_MIN_READABLE)) return 0;
     if (!(dailyWage == dailyWage)) return 0;
-    if (!(dailyWage > 0.0f)) return 0;
+    if (!(dailyWage > 0.0f) || !(dailyWage <= 1.0e6f)) return 0;
 
     float eff = ClampToMinimum(dailyWage);
     float rub = eff;
@@ -1426,6 +1430,9 @@ static int Api_SetWorkplaceWageOverride(void* building, float dailyWage)
         if (!(d >= 1.0f)) d = 50.0f;
         rub = eff * d;
     }
+    // The sidecar and sector bases are RUB figures capped at 1e6; a huge
+    // active-currency value must not bypass that cap through the divisor.
+    if (!(rub > 0.0f) || !(rub <= 1.0e6f)) return 0;
 
     float px = 0.0f, pz = 0.0f;
     (void)ReadBuildingPosition(building, &px, &pz);
@@ -1817,7 +1824,8 @@ static void LoadLabor(const char* dir)
         for (uint32_t i = 0; i < ovCount; i++) {
             LaborOverrideRecord o = {};
             memcpy(&o, ovBase + (size_t)i * sizeof(o), sizeof(o));
-            if (!(o.wageRub > 0.0f)) continue;
+            // Same finite band the sector-wage tail uses below.
+            if (!(o.wageRub > 0.0f) || !(o.wageRub <= 1.0e6f)) continue;
             PendingWageOverride pend;
             pend.posX    = o.posX;
             pend.posZ    = o.posZ;
@@ -2043,12 +2051,14 @@ static void ReadSettings(void)
     if (H->configString(ini, "citizen_labor", "minimum_wage",
                         v, sizeof(v), "") && v[0]) {
         float w = (float)atof(v);
-        if (w > 0.0f && w == w) g_minimumWageCfg = w;
+        // The floor feeds every ClampToMinimum call; inf would bypass the
+        // wage cap and make every payroll infinite.
+        if (w > 0.0f && w <= 1.0e6f && w == w) g_minimumWageCfg = w;
     }
     if (H->configString(ini, "citizen_labor", "minimum_wage_usd",
                         v, sizeof(v), "") && v[0]) {
         float w = (float)atof(v);
-        if (w > 0.0f && w == w) g_minimumWageUsdCfg = w;
+        if (w > 0.0f && w <= 1.0e6f && w == w) g_minimumWageUsdCfg = w;
     }
     if (H->configString(ini, "citizen_labor", "welfare_ratio_to_min",
                         v, sizeof(v), "") && v[0]) {
@@ -2455,7 +2465,7 @@ static int LaborWindowType(void* building)
 static float WageSliderFloor(void)
 {
     float f = g_minimumWage;
-    if (!(f > 0.0f) || !(f == f)) f = 2.50f;
+    if (!(f > 0.0f) || !(f <= 1.0e6f) || !(f == f)) f = 2.50f;
     return f;
 }
 
@@ -2721,7 +2731,8 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
         } else {
             g_minimumWage = g_minimumWageCfg;
         }
-        if (!(g_minimumWage > 0.0f)) g_minimumWage = g_minimumWageCfg;
+        if (!(g_minimumWage > 0.0f) || !(g_minimumWage <= 1.0e6f))
+            g_minimumWage = g_minimumWageCfg;
 
         // --- default wage
         if (usd) {

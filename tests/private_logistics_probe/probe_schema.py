@@ -10,16 +10,12 @@ implements the Python-side record types that match the emitter's actual
 output, including known discrepancies from the schema.
 
 KNOWN DISCREPANCIES (emitter vs schema):
-  1. `kind=` field in the header line is computed as `ConfName(seq % 6 + 1)`
-     by the emitter, NOT the actual record kind. The `[PROBE <RECKIND>]`
-     prefix is authoritative; the `kind=` field is ignored for parsing.
-     Schema mismatch: the emitter bug is reported, not the parser.
-  2. `thr=` is formatted as a hex pointer (`%p`) by the emitter, not a
+  1. `thr=` is formatted as a hex pointer (`%p`) by the emitter, not a
      decimal u64 as the schema states. Parser accepts both hex and decimal.
-  3. `res=` is "?" for synthetic/unresolvable pointers (schema says
+  2. `res=` is "?" for synthetic/unresolvable pointers (schema says
      `res=<string>`). Parser accepts "?" as valid (unresolved).
-  4. `ts=` is formatted with `%.4f` (4 decimal places). Schema says `<f64>`.
-  5. Records span multiple physical log lines (header + continuation lines).
+  3. `ts=` is formatted with `%.4f` (4 decimal places). Schema says `<f64>`.
+  4. Records span multiple physical log lines (header + continuation lines).
      Continuation lines have no timestamp prefix.
 """
 
@@ -63,7 +59,7 @@ class ProbeHeader:
     seq: int                # monotonically increasing event sequence
     ts: float              # monotonic seconds since session start
     thr: str               # thread id as hex string (emitter uses %p)
-    kind_field: str        # BUGGY: ConfName(seq % 6 + 1), not the real kind
+    kind_field: str        # record kind, lowercase (redundant with prefix)
     schema_version: int    # always 1
     committed: int         # 0|1
     load: int              # 0|1

@@ -39,10 +39,9 @@ static int g_lastLoggedCurrency = -1;
 
 static LoanKey keyForBuilding(void* b) {
     std::string objName = "unknown";
-    bool gotName = false;
     if (g_enterprise && b) {
         const char* on = g_enterprise->getBuildingObjectName(b);
-        if (on && on[0]) { objName = on; gotName = true; }
+        if (on && on[0]) objName = on;
     }
     float x = 0.0f, z = 0.0f;
     bool got = false;
@@ -68,13 +67,23 @@ static LoanKey keyForBuilding(void* b) {
             }
         }
     }
-    if (!gotName && !got) {
+    // The object name is a TYPE name ("Store"), not a unique identity, so
+    // coordinates are what distinguish same-type buildings. Without them
+    // every one of them would share a LoanKey; fall back to the runtime
+    // pointer instead. Pointer keys are session-only (see serialize()).
+    if (!got) {
         char ptrKey[32];
         _snprintf_s(ptrKey, sizeof(ptrKey), _TRUNCATE, "ptr:%p", b);
         objName = ptrKey;
     }
     return LoanBook::makeKey(objName, x, z);
 }
+
+// Pointer keys cannot survive a save/load (the building moves and the
+// address changes), so debt must never be opened on one.
+//
+// (IsSessionOnlyLoanKey lives in bank_ledger.h and is also enforced by
+// LoanBook::requestCreditDraw / dailyOverdraftRescue.)
 
 // The INI limits are reference-RUB amounts, not live nominal constants.
 // resource_pricing's v3 CPI basket is already denominated in the ACTIVE
@@ -105,6 +114,9 @@ static double requestCreditDrawImpl(void* building, double neededAmount, const c
     if (!g_enterprise || !building || !g_enabled) return 0.0;
     RefreshEconomicScale();
     LoanKey k = keyForBuilding(building);
+    // No usable coordinates -> pointer key. Opening debt there would be
+    // unfindable after the next save/load.
+    if (IsSessionOnlyLoanKey(k)) return 0.0;
     int streak = g_enterprise->isCompanySolvent(building) ? 1 : 0;
     EnterCriticalSection(&g_lock);
     double approved = g_book.requestCreditDraw(k, neededAmount, reason, streak);
@@ -251,6 +263,9 @@ static void onDay(void* userData, int day, int month, int year) {
         double capital = g_enterprise->getCompanyCapital(b);
         if (capital >= 0.0) continue;
         LoanKey k = keyForBuilding(b);
+        // Auto-overdraft bypasses the API's pointer-key refusal, so the
+        // same invariant is enforced here: never lend against an address.
+        if (IsSessionOnlyLoanKey(k)) continue;
         EnterCriticalSection(&g_lock);
         int isDef = g_book.isInDefault(k);
         LeaveCriticalSection(&g_lock);

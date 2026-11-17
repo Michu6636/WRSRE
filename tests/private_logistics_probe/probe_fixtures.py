@@ -5,7 +5,7 @@ plugins/private_logistics_probe/private_logistics_probe.cpp (commit ce8648d5).
 
 Key emitter behaviors to reproduce:
   - Records span multiple lines (header + continuation lines prefixed with space)
-  - kind= field is buggy: ConfName(seq % 6 + 1), not the real kind
+  - kind= carries the real record kind in lowercase (SESSION -> session)
   - thr= formatted as hex pointer (%p style)
   - res=? for synthetic/unresolvable pointers
   - ts formatted with 4 decimal places
@@ -40,14 +40,8 @@ def _ts(minute: int, second: int, ms: int) -> str:
 # Emitter behavior reproduction helpers
 # ---------------------------------------------------------------------------
 
-def _buggy_kind(seq: int) -> str:
-    """Reproduce the emitter's kind= bug: ConfName(seq % 6 + 1)."""
-    names = ["session", "event", "interp", "trip", "drop", "synth"]
-    return names[seq % 6]
-
-
 def _probe_header(record_kind: str, seq: int, ts: float, flags: int, synth: int) -> str:
-    """Generate a PROBE header line with the buggy kind= field."""
+    """Generate a PROBE header line with the explicit record kind."""
     committed = 1 if (flags & 0x01) else 0
     load = 1 if (flags & 0x02) else 0
     unload = 1 if (flags & 0x04) else 0
@@ -56,7 +50,7 @@ def _probe_header(record_kind: str, seq: int, ts: float, flags: int, synth: int)
     error = 1 if (flags & 0x20) else 0
     return (
         f"[PROBE {record_kind}] seq={seq} ts={ts:.4f} thr=00000000000007F1 "
-        f"kind={_buggy_kind(seq)} schema={PROBE_SCHEMA_VERSION} "
+        f"kind={record_kind.lower()} schema={PROBE_SCHEMA_VERSION} "
         f"committed={committed} load={load} unload={unload} "
         f"complete={complete} gap={gap} error={error} synth={synth}"
     )
@@ -690,7 +684,7 @@ def fixture_snapshot_selection() -> str:
         f' session_id=AAAA0000BBBB0000 event=armed day=5 mon=1 yr=2026 note=\"armed\"',
         # Selection record: vehicle selected, no measurements yet
         f"{_ts(0,0,2)} {_probe_header('SNAPSHOT', 2, 0.0100, 0x08, 0)}",
-        f' day=5 mon=1 yr=2026 tod=12.5000',
+        f' observation_seq=2 day=5 mon=1 yr=2026 tod=12.5000',
         f" veh={V_TRUCK_A} do={DO_WEST}",
         f" record_type=selection snapshot_ok=1 fail_reason=\"\"",
         f" fuel_slot_valid=0 fuel_tons=-1.000000",
@@ -710,7 +704,7 @@ def fixture_snapshot_measurement_complete() -> str:
         f"{_ts(0,0,1)} {_probe_header('SESSION', 1, 0.0001, 0, 0)}",
         f' session_id=AAAA0000BBBB0000 event=armed day=5 mon=1 yr=2026 note=\"armed\"',
         f"{_ts(0,0,2)} {_probe_header('SNAPSHOT', 2, 0.0200, 0x08, 0)}",
-        f' day=5 mon=1 yr=2026 tod=12.5000',
+        f' observation_seq=2 day=5 mon=1 yr=2026 tod=12.5000',
         f" veh={V_TRUCK_A} do={DO_WEST}",
         f" record_type=measurement snapshot_ok=1 fail_reason=\"\"",
         f" fuel_slot_valid=1 fuel_tons=0.430000",
@@ -731,7 +725,7 @@ def fixture_snapshot_measurement_unavailable() -> str:
         f"{_ts(0,0,1)} {_probe_header('SESSION', 1, 0.0001, 0, 0)}",
         f' session_id=AAAA0000BBBB0000 event=armed day=5 mon=1 yr=2026 note=\"armed\"',
         f"{_ts(0,0,2)} {_probe_header('SNAPSHOT', 2, 0.0300, 0x08, 0)}",
-        f' day=5 mon=1 yr=2026 tod=13.0000',
+        f' observation_seq=2 day=5 mon=1 yr=2026 tod=13.0000',
         f" veh={V_TRUCK_A} do={DO_WEST}",
         f" record_type=measurement snapshot_ok=1 fail_reason=\"\"",
         # fuel slot unavailable
@@ -754,8 +748,8 @@ def fixture_snapshot_no_match() -> str:
     lines = [
         f"{_ts(0,0,1)} {_probe_header('SESSION', 1, 0.0001, 0, 0)}",
         f' session_id=AAAA0000BBBB0000 event=armed day=5 mon=1 yr=2026 note=\"armed\"',
-        f"{_ts(0,0,2)} {_probe_header('SNAPSHOT', 2, 0.0100, 0x20, 0)}",
-        f' day=5 mon=1 yr=2026 tod=12.5000',
+        f"{_ts(0,0,2)} {_probe_header('SNAPSHOT', 2, 0.0100, 0x00, 0)}",
+        f' observation_seq=2 day=5 mon=1 yr=2026 tod=12.5000',
         f" veh=null do=null",
         f" record_type=no_match snapshot_ok=0 fail_reason=\"no_match\"",
         f" fuel_slot_valid=0 fuel_tons=-1.000000",
@@ -776,7 +770,7 @@ def fixture_snapshot_vehicle_lost() -> str:
         f' session_id=AAAA0000BBBB0000 event=armed day=5 mon=1 yr=2026 note=\"armed\"',
         # Selection first
         f"{_ts(0,0,2)} {_probe_header('SNAPSHOT', 2, 0.0100, 0x08, 0)}",
-        f' day=5 mon=1 yr=2026 tod=12.5000',
+        f' observation_seq=2 day=5 mon=1 yr=2026 tod=12.5000',
         f" veh={V_TRUCK_A} do={DO_WEST}",
         f" record_type=selection snapshot_ok=1 fail_reason=\"\"",
         f" fuel_slot_valid=0 fuel_tons=-1.000000",
@@ -787,8 +781,8 @@ def fixture_snapshot_vehicle_lost() -> str:
         f" mode_valid=1 mode=9",
         f" home_matches_valid=1 home_matches=1",
         # Vehicle lost
-        f"{_ts(0,0,3)} {_probe_header('SNAPSHOT', 3, 0.0400, 0x40, 0)}",
-        f' day=5 mon=1 yr=2026 tod=13.0000',
+        f"{_ts(0,0,3)} {_probe_header('SNAPSHOT', 3, 0.0400, 0x00, 0)}",
+        f' observation_seq=3 day=5 mon=1 yr=2026 tod=13.0000',
         f" veh={V_TRUCK_A} do={DO_WEST}",
         f" record_type=vehicle_lost snapshot_ok=0 fail_reason=\"vehicle_gone\"",
         f" fuel_slot_valid=0 fuel_tons=-1.000000",
@@ -807,8 +801,8 @@ def fixture_snapshot_world_reset() -> str:
     lines = [
         f"{_ts(0,0,1)} {_probe_header('SESSION', 1, 0.0001, 0, 0)}",
         f' session_id=AAAA0000BBBB0000 event=armed day=5 mon=1 yr=2026 note=\"armed\"',
-        f"{_ts(0,0,2)} {_probe_header('SNAPSHOT', 2, 0.0100, 0x40, 0)}",
-        f' day=-1 mon=-1 yr=-1 tod=0.0000',
+        f"{_ts(0,0,2)} {_probe_header('SNAPSHOT', 2, 0.0100, 0x00, 0)}",
+        f' observation_seq=2 day=-1 mon=-1 yr=-1 tod=0.0000',
         f" veh=null do=null",
         f" record_type=world_reset snapshot_ok=0 fail_reason=\"world_reset\"",
         f" fuel_slot_valid=0 fuel_tons=-1.000000",
@@ -829,7 +823,7 @@ def fixture_snapshot_identity_retained() -> str:
         f' session_id=AAAA0000BBBB0000 event=armed day=5 mon=1 yr=2026 note=\"armed\"',
         # Selection
         f"{_ts(0,0,2)} {_probe_header('SNAPSHOT', 2, 0.0100, 0x08, 0)}",
-        f' day=5 mon=1 yr=2026 tod=12.5000',
+        f' observation_seq=2 day=5 mon=1 yr=2026 tod=12.5000',
         f" veh={V_TRUCK_A} do={DO_WEST}",
         f" record_type=selection snapshot_ok=1 fail_reason=\"\"",
         f" fuel_slot_valid=0 fuel_tons=-1.000000",
@@ -841,7 +835,7 @@ def fixture_snapshot_identity_retained() -> str:
         f" home_matches_valid=1 home_matches=1",
         # Measurement: same vehicle, state changed to 2, mode to 9 — identity retained
         f"{_ts(0,0,3)} {_probe_header('SNAPSHOT', 3, 0.0200, 0x08, 0)}",
-        f' day=5 mon=1 yr=2026 tod=13.0000',
+        f' observation_seq=3 day=5 mon=1 yr=2026 tod=13.0000',
         f" veh={V_TRUCK_A} do={DO_WEST}",
         f" record_type=measurement snapshot_ok=1 fail_reason=\"\"",
         f" fuel_slot_valid=1 fuel_tons=0.428000",
