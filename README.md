@@ -73,7 +73,6 @@ WRSRE/
 | `private_construction` | Private construction financing, site progress & turnkey ownership transfer |
 | `taxes` | VAT, corporate profit tax, property tax & City Hall fiscal policy sliders |
 | `state_ledger` | Monthly Treasury & full Republic money-supply reconciliation (`tesmio_ledger.csv`) |
-| `map_expander` | Map boundary expansion utilities |
 | `ui_overlay` | Top-level HUD economy & enterprise cards |
 | `ui_panels` | Native building-window row injection & interactive slider/checkbox widgets |
 
@@ -83,9 +82,10 @@ WRSRE/
 
 ### Build (Windows — Visual Studio 2022 Build Tools x64)
 ```bat
-build.bat                     REM Build all plugins into build\plugins\
-build.bat private_logistics   REM Build a single plugin
-build.bat clean               REM Clean build\plugins\ and rebuild all
+build.bat wrsre               REM Build single-DLL wrsre.dll + all INIs (VS Code Ctrl+Shift+B default)
+build.bat clean wrsre         REM Clean build\plugins\ and rebuild wrsre.dll
+build.bat                     REM Build all separate plugin DLLs into build\plugins\ (excludes tesmioloader.dll)
+build.bat private_logistics   REM Build a single plugin DLL
 ```
 
 ### Run Automated Tests (Cross-Platform Python 3 + C++17)
@@ -131,7 +131,7 @@ project and keep runtime tests and implementation within the user's authorizatio
 
 ## Key Documentation Entry Points
 
-- **Architecture & Design:** [`docs/WRSRE DESIGN DOC.md`](docs/WRSRE%20DESIGN%20DOC.md), [`docs/DEVELOPMENT_README.md`](docs/DEVELOPMENT_README.md), [`docs/README.md`](docs/README.md)
+- **Architecture & Design:** [`docs/SINGLE_DLL_ARCHITECTURE.md`](docs/SINGLE_DLL_ARCHITECTURE.md), [`docs/WRSRE DESIGN DOC.md`](docs/WRSRE%20DESIGN%20DOC.md), [`docs/DEVELOPMENT_README.md`](docs/DEVELOPMENT_README.md), [`docs/README.md`](docs/README.md)
 - **B2B Counterparty Settlement Spec:** [`docs/proposal-b2b-wholesale-counterparty-settlement.md`](docs/proposal-b2b-wholesale-counterparty-settlement.md)
 - **Game Update / DLC Re-Targeting Playbook:** [`docs/DLC_UPDATE_PLAYBOOK.md`](docs/DLC_UPDATE_PLAYBOOK.md)
 - **Ghidra Function Index:** [`docs/ghidra-index/README.md`](docs/ghidra-index/README.md)
