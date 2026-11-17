@@ -107,6 +107,63 @@ float             g_pendingWheelY = 0.0f;
 WNDPROC           g_originalWndProc = nullptr;
 HWND              g_subclassedWindow = nullptr;
 int               g_activeTab = 0;
+PanelLayout       g_savedLayout{};
+
+constexpr const char* kLayoutIni = "plugins\\almanac_overlay_dev.ini";
+
+void LoadSavedLayout()
+{
+    const int x = GetPrivateProfileIntA("layout", "panel_x", -1, kLayoutIni);
+    const int y = GetPrivateProfileIntA("layout", "panel_y", -1, kLayoutIni);
+    const int w = GetPrivateProfileIntA("layout", "panel_w", -1, kLayoutIni);
+    const int h = GetPrivateProfileIntA("layout", "panel_h", -1, kLayoutIni);
+    const int t = GetPrivateProfileIntA("layout", "active_tab", 0, kLayoutIni);
+
+    if (x >= 0 && y >= 0) {
+        g_savedLayout.hasSavedPos = true;
+        g_savedLayout.x = static_cast<float>(x);
+        g_savedLayout.y = static_cast<float>(y);
+    }
+    if (w >= 420 && h >= 240) {
+        g_savedLayout.hasSavedSize = true;
+        g_savedLayout.w = static_cast<float>(w);
+        g_savedLayout.h = static_cast<float>(h);
+    }
+    if (t >= 0 && t <= 2) {
+        g_activeTab = t;
+    }
+}
+
+void MaybeSaveLayout(const LauncherRect& rect, int tab, bool dragging)
+{
+    if (!rect.valid || dragging) return;
+    static int       s_lastX = -1, s_lastY = -1, s_lastW = -1, s_lastH = -1, s_lastTab = -1;
+    static ULONGLONG s_lastWriteMs = 0;
+
+    const int x = static_cast<int>(rect.left + 0.5f);
+    const int y = static_cast<int>(rect.top + 0.5f);
+    const int w = static_cast<int>((rect.right - rect.left) + 0.5f);
+    const int h = static_cast<int>((rect.bottom - rect.top) + 0.5f);
+    if (x == s_lastX && y == s_lastY && w == s_lastW && h == s_lastH && tab == s_lastTab) {
+        return;
+    }
+    const ULONGLONG now = GetTickCount64();
+    if (s_lastWriteMs != 0 && (now - s_lastWriteMs) < 1000ULL) return;
+    s_lastWriteMs = now;
+    s_lastX = x; s_lastY = y; s_lastW = w; s_lastH = h; s_lastTab = tab;
+
+    char buf[32];
+    std::snprintf(buf, sizeof(buf), "%d", x);
+    WritePrivateProfileStringA("layout", "panel_x", buf, kLayoutIni);
+    std::snprintf(buf, sizeof(buf), "%d", y);
+    WritePrivateProfileStringA("layout", "panel_y", buf, kLayoutIni);
+    std::snprintf(buf, sizeof(buf), "%d", w);
+    WritePrivateProfileStringA("layout", "panel_w", buf, kLayoutIni);
+    std::snprintf(buf, sizeof(buf), "%d", h);
+    WritePrivateProfileStringA("layout", "panel_h", buf, kLayoutIni);
+    std::snprintf(buf, sizeof(buf), "%d", tab);
+    WritePrivateProfileStringA("layout", "active_tab", buf, kLayoutIni);
+}
 
 bool PointInRect(const LauncherRect& rect, float x, float y)
 {
@@ -356,6 +413,7 @@ bool Panel::Initialize(IDXGISwapChain* swap, const PanelSettings& settings)
     toggle_    = OverlayToggle{};
     toggle_.SetAutoShow(settings.autoShow);
     lastTime_  = NowSeconds();
+    LoadSavedLayout();
     InstallLauncherWndProc(window_);
     return true;
 }
@@ -489,8 +547,9 @@ void Panel::ReleaseBackBuffer()
 }
 
 bool Panel::Render(IDXGISwapChain* swap, bool keyDown, bool worldLoaded,
-                   const PanelModel* liveModel)
+                   const PanelModel* liveModel, PanelAction* outAction)
 {
+    if (outAction) *outAction = PanelAction{};
     static std::mutex s_renderMutex;
     std::lock_guard<std::mutex> renderLock(s_renderMutex);
 
@@ -598,7 +657,8 @@ bool Panel::Render(IDXGISwapChain* swap, bool keyDown, bool worldLoaded,
         model.processId     = static_cast<int>(GetCurrentProcessId());
         model.autoShow      = settings_.autoShow;
         model.toggleKeyName = keyName;
-        DrawAlmanacPanel(model, &panelRect, &g_activeTab);
+        DrawAlmanacPanel(model, &panelRect, &g_activeTab, outAction, &g_savedLayout);
+        MaybeSaveLayout(panelRect, g_activeTab, dragging);
         ++drawnFrames_;
     }
     PublishOverlayRects(btnRect, panelRect, show, bufferWidth_, bufferHeight_);

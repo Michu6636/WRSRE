@@ -23,6 +23,7 @@ struct ImGuiContext;
 namespace almanac {
 
 struct PanelModel;
+struct PanelAction;
 
 struct PanelSettings {
     bool  autoShow     = false;  // wait for launcher click or F9 by default
@@ -48,7 +49,8 @@ public:
     // the physical key level. Returns false if the panel had to give up (device
     // removed, back buffer unavailable); the caller then stops calling it.
     bool Render(IDXGISwapChain* swap, bool keyDown, bool worldLoaded = true,
-                const PanelModel* liveModel = nullptr);
+                const PanelModel* liveModel = nullptr,
+                PanelAction* outAction = nullptr);
 
     // Drops the GPU objects and the ImGui context. Only from the owner thread,
     // and only while no Present callback can be running.

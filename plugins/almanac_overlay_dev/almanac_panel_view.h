@@ -18,21 +18,62 @@ struct TabData {
     int    count = 0;
 };
 
+struct ControlState {
+    bool   hasTaxControls  = false;
+    bool   vatEnabled      = true;
+    float  vatRate         = 0.20f;
+    bool   profitEnabled   = true;
+    float  profitRate      = 0.15f;
+    bool   propertyEnabled = true;
+    float  propertyBase    = 250.0f;
+    bool   hasBankControl  = false;
+    double bankRate        = 0.06;
+    bool   hasSectorWages  = false;
+    float  minWage         = 2.50f;
+    float  sectorWages[6]{};
+    char   currencySymbol[16] = "RUB";
+};
+
+struct PanelAction {
+    enum class Kind {
+        None = 0,
+        SetTaxEnabled,
+        SetTaxRate,
+        SettleTaxesNow,
+        SetBankRate,
+        SetSectorWage,
+    };
+    Kind  kind  = Kind::None;
+    int   index = 0;      // taxKind (0..2) or sectorId (0..5)
+    bool  flag  = false;  // enabled/disabled
+    float value = 0.0f;   // new rate or wage
+};
+
+struct PanelLayout {
+    bool  hasSavedPos  = false;
+    float x            = 24.0f;
+    float y            = 104.0f;
+    bool  hasSavedSize = false;
+    float w            = 560.0f;
+    float h            = 420.0f;
+};
+
 // Everything the panel displays. Deliberately a value type: no service
 // pointers, no game handles, no live repository state. When hasLiveData is
 // true, tabs[0..2] hold live read-only values sampled from WRSRE services;
 // otherwise the view falls back to its built-in synthetic placeholder tables.
 struct PanelModel {
-    const char* title          = "Almanac";
-    const char* subtitle       = "Market economy suite";
-    const char* dataNotice     = "Synthetic placeholder values - not read from your republic.";
-    const char* toggleKeyName  = "F9";
-    const char* buildNotice    = "";
-    int         drawnFrames    = 0;
-    int         processId      = 0;
-    bool        autoShow       = false;
-    bool        hasLiveData    = false;
-    TabData     tabs[3]{};
+    const char*  title          = "Almanac";
+    const char*  subtitle       = "Market economy suite";
+    const char*  dataNotice     = "Synthetic placeholder values - not read from your republic.";
+    const char*  toggleKeyName  = "F9";
+    const char*  buildNotice    = "";
+    int          drawnFrames    = 0;
+    int          processId      = 0;
+    bool         autoShow       = false;
+    bool         hasLiveData    = false;
+    TabData      tabs[3]{};
+    ControlState controls{};
 };
 
 // Screen-space bounding box of the floating Almanac launcher button, published
@@ -62,6 +103,8 @@ LauncherRect DrawAlmanacLauncherButton(bool panelOpen, bool hovered,
 // panel is drawn; false only if the viewport is too small to lay out.
 bool DrawAlmanacPanel(const PanelModel& model,
                       LauncherRect* outRect = nullptr,
-                      int* activeTab = nullptr);
+                      int* activeTab = nullptr,
+                      PanelAction* outAction = nullptr,
+                      const PanelLayout* initialLayout = nullptr);
 
 } // namespace almanac

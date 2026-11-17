@@ -187,81 +187,132 @@ void AppendRow(TabData& tab, const char* label, const char* fmt, ...)
     row.value[sizeof(row.value) - 1] = '\0';
 }
 
+const TsmSimClockApi*       g_svcClock      = nullptr;
+const TsmCurrencyApi*       g_svcCurrency   = nullptr;
+const TsmTaxesApi*          g_svcTaxes      = nullptr;
+const TsmRepublicBankApi*   g_svcBank       = nullptr;
+const TsmCitizenLaborApi*   g_svcLabor      = nullptr;
+const TsmEnterpriseBaseApi* g_svcEnterprise = nullptr;
+const TsmB2bLogisticsApi*   g_svcB2b        = nullptr;
+bool                        g_servicesLookedUp = false;
+ULONGLONG                   g_lastSampleMs     = 0;
+
+void EnsureServicesLookedUp()
+{
+    if (g_servicesLookedUp || !g_host || !g_host->consume) return;
+    g_svcClock = static_cast<const TsmSimClockApi*>(
+        g_host->consume(TSM_SERVICE_SIM_CLOCK, TSM_SIM_CLOCK_VERSION));
+
+    g_svcCurrency = static_cast<const TsmCurrencyApi*>(
+        g_host->consume(TSM_SERVICE_CURRENCY, TSM_CURRENCY_VERSION));
+    if (!g_svcCurrency) {
+        g_svcCurrency = static_cast<const TsmCurrencyApi*>(
+            g_host->consume(TSM_SERVICE_CURRENCY, TSM_CURRENCY_VERSION_V3));
+    }
+
+    g_svcTaxes = static_cast<const TsmTaxesApi*>(
+        g_host->consume(TSM_SERVICE_TAXES, TSM_TAXES_VERSION));
+    if (!g_svcTaxes) {
+        g_svcTaxes = static_cast<const TsmTaxesApi*>(
+            g_host->consume(TSM_SERVICE_TAXES, TSM_TAXES_VERSION_V2));
+    }
+    if (!g_svcTaxes) {
+        g_svcTaxes = static_cast<const TsmTaxesApi*>(
+            g_host->consume(TSM_SERVICE_TAXES, TSM_TAXES_VERSION_V1));
+    }
+
+    g_svcBank = static_cast<const TsmRepublicBankApi*>(
+        g_host->consume(TSM_SERVICE_REPUBLIC_BANK, TSM_REPUBLIC_BANK_VERSION));
+
+    g_svcLabor = static_cast<const TsmCitizenLaborApi*>(
+        g_host->consume(TSM_SERVICE_CITIZEN_LABOR, TSM_CITIZEN_LABOR_VERSION));
+    if (!g_svcLabor) {
+        g_svcLabor = static_cast<const TsmCitizenLaborApi*>(
+            g_host->consume(TSM_SERVICE_CITIZEN_LABOR, TSM_CITIZEN_LABOR_VERSION_V4));
+    }
+    if (!g_svcLabor) {
+        g_svcLabor = static_cast<const TsmCitizenLaborApi*>(
+            g_host->consume(TSM_SERVICE_CITIZEN_LABOR, TSM_CITIZEN_LABOR_VERSION_V3));
+    }
+    if (!g_svcLabor) {
+        g_svcLabor = static_cast<const TsmCitizenLaborApi*>(
+            g_host->consume(TSM_SERVICE_CITIZEN_LABOR, TSM_CITIZEN_LABOR_VERSION_V2));
+    }
+
+    g_svcEnterprise = static_cast<const TsmEnterpriseBaseApi*>(
+        g_host->consume(TSM_SERVICE_ENTERPRISE_BASE, TSM_ENTERPRISE_BASE_VERSION));
+    if (!g_svcEnterprise) {
+        g_svcEnterprise = static_cast<const TsmEnterpriseBaseApi*>(
+            g_host->consume(TSM_SERVICE_ENTERPRISE_BASE, TSM_ENTERPRISE_BASE_VERSION_V7));
+    }
+
+    g_svcB2b = static_cast<const TsmB2bLogisticsApi*>(
+        g_host->consume(TSM_SERVICE_B2B_LOGISTICS, TSM_B2B_LOGISTICS_VERSION));
+
+    g_servicesLookedUp = true;
+}
+
+void ApplyPanelAction(const PanelAction& action)
+{
+    if (action.kind == PanelAction::Kind::None) return;
+    EnsureServicesLookedUp();
+
+    switch (action.kind) {
+    case PanelAction::Kind::SetTaxEnabled:
+        if (TsmTaxesHasPolicy(g_svcTaxes)) {
+            g_svcTaxes->setTaxEnabled(action.index, action.flag ? 1 : 0);
+        }
+        break;
+    case PanelAction::Kind::SetTaxRate:
+        if (TsmTaxesHasPolicy(g_svcTaxes)) {
+            g_svcTaxes->setTaxRate(action.index, action.value);
+        }
+        break;
+    case PanelAction::Kind::SettleTaxesNow:
+        if (g_svcTaxes && g_svcTaxes->settleNow) {
+            g_svcTaxes->settleNow();
+        }
+        break;
+    case PanelAction::Kind::SetBankRate:
+        if (g_svcBank && g_svcBank->setAnnualInterestRate) {
+            g_svcBank->setAnnualInterestRate(static_cast<double>(action.value));
+        }
+        break;
+    case PanelAction::Kind::SetSectorWage:
+        if (TsmLaborHasV4(g_svcLabor)) {
+            g_svcLabor->setSectorWage(action.index, action.value);
+        }
+        break;
+    case PanelAction::Kind::None:
+        break;
+    }
+
+    // Force immediate telemetry refresh on the next frame.
+    g_lastSampleMs = 0;
+}
+
 // Sample live read-only data from WRSRE services (throttled to ~4 Hz).
 const PanelModel* SampleLiveModel(bool worldLoaded)
 {
     static PanelModel s_model{};
-    static ULONGLONG  s_lastSampleMs = 0;
 
     if (!worldLoaded || !g_host || !g_host->consume) return nullptr;
 
     const ULONGLONG now = GetTickCount64();
-    if (s_lastSampleMs != 0 && (now - s_lastSampleMs) < 250ULL && s_model.hasLiveData) {
+    if (g_lastSampleMs != 0 && (now - g_lastSampleMs) < 250ULL && s_model.hasLiveData) {
         return &s_model;
     }
-    s_lastSampleMs = now;
+    g_lastSampleMs = now;
 
-    static bool s_servicesLookedUp = false;
-    static const TsmSimClockApi*      s_clock      = nullptr;
-    static const TsmCurrencyApi*      s_currency   = nullptr;
-    static const TsmTaxesApi*         s_taxes      = nullptr;
-    static const TsmRepublicBankApi*  s_bank       = nullptr;
-    static const TsmCitizenLaborApi*  s_labor      = nullptr;
-    static const TsmEnterpriseBaseApi* s_enterprise = nullptr;
-    static const TsmB2bLogisticsApi*  s_b2b        = nullptr;
+    EnsureServicesLookedUp();
 
-    if (!s_servicesLookedUp) {
-        s_clock = static_cast<const TsmSimClockApi*>(
-            g_host->consume(TSM_SERVICE_SIM_CLOCK, TSM_SIM_CLOCK_VERSION));
-
-        s_currency = static_cast<const TsmCurrencyApi*>(
-            g_host->consume(TSM_SERVICE_CURRENCY, TSM_CURRENCY_VERSION));
-        if (!s_currency) {
-            s_currency = static_cast<const TsmCurrencyApi*>(
-                g_host->consume(TSM_SERVICE_CURRENCY, TSM_CURRENCY_VERSION_V3));
-        }
-
-        s_taxes = static_cast<const TsmTaxesApi*>(
-            g_host->consume(TSM_SERVICE_TAXES, TSM_TAXES_VERSION));
-        if (!s_taxes) {
-            s_taxes = static_cast<const TsmTaxesApi*>(
-                g_host->consume(TSM_SERVICE_TAXES, TSM_TAXES_VERSION_V2));
-        }
-        if (!s_taxes) {
-            s_taxes = static_cast<const TsmTaxesApi*>(
-                g_host->consume(TSM_SERVICE_TAXES, TSM_TAXES_VERSION_V1));
-        }
-
-        s_bank = static_cast<const TsmRepublicBankApi*>(
-            g_host->consume(TSM_SERVICE_REPUBLIC_BANK, TSM_REPUBLIC_BANK_VERSION));
-
-        s_labor = static_cast<const TsmCitizenLaborApi*>(
-            g_host->consume(TSM_SERVICE_CITIZEN_LABOR, TSM_CITIZEN_LABOR_VERSION));
-        if (!s_labor) {
-            s_labor = static_cast<const TsmCitizenLaborApi*>(
-                g_host->consume(TSM_SERVICE_CITIZEN_LABOR, TSM_CITIZEN_LABOR_VERSION_V4));
-        }
-        if (!s_labor) {
-            s_labor = static_cast<const TsmCitizenLaborApi*>(
-                g_host->consume(TSM_SERVICE_CITIZEN_LABOR, TSM_CITIZEN_LABOR_VERSION_V3));
-        }
-        if (!s_labor) {
-            s_labor = static_cast<const TsmCitizenLaborApi*>(
-                g_host->consume(TSM_SERVICE_CITIZEN_LABOR, TSM_CITIZEN_LABOR_VERSION_V2));
-        }
-
-        s_enterprise = static_cast<const TsmEnterpriseBaseApi*>(
-            g_host->consume(TSM_SERVICE_ENTERPRISE_BASE, TSM_ENTERPRISE_BASE_VERSION));
-        if (!s_enterprise) {
-            s_enterprise = static_cast<const TsmEnterpriseBaseApi*>(
-                g_host->consume(TSM_SERVICE_ENTERPRISE_BASE, TSM_ENTERPRISE_BASE_VERSION_V7));
-        }
-
-        s_b2b = static_cast<const TsmB2bLogisticsApi*>(
-            g_host->consume(TSM_SERVICE_B2B_LOGISTICS, TSM_B2B_LOGISTICS_VERSION));
-
-        s_servicesLookedUp = true;
-    }
+    const TsmSimClockApi*       s_clock      = g_svcClock;
+    const TsmCurrencyApi*       s_currency   = g_svcCurrency;
+    const TsmTaxesApi*          s_taxes      = g_svcTaxes;
+    const TsmRepublicBankApi*   s_bank       = g_svcBank;
+    const TsmCitizenLaborApi*   s_labor      = g_svcLabor;
+    const TsmEnterpriseBaseApi* s_enterprise = g_svcEnterprise;
+    const TsmB2bLogisticsApi*   s_b2b        = g_svcB2b;
 
     const bool anyService = s_clock || s_currency || s_taxes || s_bank ||
                             s_labor || s_enterprise || s_b2b;
@@ -269,9 +320,11 @@ const PanelModel* SampleLiveModel(bool worldLoaded)
 
     PanelModel m{};
     m.hasLiveData = true;
-    m.dataNotice  = "Live republic telemetry (read-only)";
+    m.dataNotice  = "Live republic telemetry & controls";
 
     const char* sym = TsmCurrencySymbol(s_currency);
+    std::snprintf(m.controls.currencySymbol, sizeof(m.controls.currencySymbol),
+                  "%s", sym);
 
     // --- Tab 0: Economy ---
     TabData& econ = m.tabs[0];
@@ -314,6 +367,15 @@ const PanelModel* SampleLiveModel(bool worldLoaded)
                       snap.configured[TSM_TAX_PROPERTY], sym,
                       snap.propertyLandValue ? "land value" : "flat",
                       snap.enabled[TSM_TAX_PROPERTY] ? "enabled" : "suspended");
+            if (TsmTaxesHasPolicy(s_taxes)) {
+                m.controls.hasTaxControls  = true;
+                m.controls.vatEnabled      = snap.enabled[TSM_TAX_VAT] != 0;
+                m.controls.vatRate         = snap.configured[TSM_TAX_VAT];
+                m.controls.profitEnabled   = snap.enabled[TSM_TAX_PROFIT] != 0;
+                m.controls.profitRate      = snap.configured[TSM_TAX_PROFIT];
+                m.controls.propertyEnabled = snap.enabled[TSM_TAX_PROPERTY] != 0;
+                m.controls.propertyBase    = snap.configured[TSM_TAX_PROPERTY];
+            }
         } else {
             if (s_taxes->getVatRate) {
                 AppendRow(econ, "VAT", "%.1f%%", s_taxes->getVatRate() * 100.0f);
@@ -324,8 +386,12 @@ const PanelModel* SampleLiveModel(bool worldLoaded)
         }
     }
     if (s_bank && s_bank->getAnnualInterestRate) {
-        AppendRow(econ, "Republic bank rate", "%.2f%% / yr",
-                  s_bank->getAnnualInterestRate() * 100.0);
+        const double rate = s_bank->getAnnualInterestRate();
+        AppendRow(econ, "Republic bank rate", "%.2f%% / yr", rate * 100.0);
+        if (s_bank->setAnnualInterestRate) {
+            m.controls.hasBankControl = true;
+            m.controls.bankRate       = rate;
+        }
     }
 
     // --- Tab 1: Labour ---
@@ -346,8 +412,13 @@ const PanelModel* SampleLiveModel(bool worldLoaded)
                 "Sector: Services",
                 "Sector: Agriculture",
             };
+            m.controls.minWage = s_labor->getMinimumWage();
+            if (TsmLaborHasV4(s_labor)) {
+                m.controls.hasSectorWages = true;
+            }
             for (int s = 0; s < TSM_SECTOR_COUNT; ++s) {
                 const float w = s_labor->getSectorWage(s);
+                m.controls.sectorWages[s] = w;
                 if (w > 0.0f) {
                     AppendRow(labour, kSectors[s], "%.2f %s / day", w, sym);
                 }
@@ -436,12 +507,14 @@ void DrawFrame(IDXGISwapChain* swap)
 
     const bool worldLoaded = IsWorldLoaded();
     const PanelModel* liveModel = SampleLiveModel(worldLoaded);
-    if (!g_panel.Render(swap, keyDown, worldLoaded, liveModel)) {
+    PanelAction action{};
+    if (!g_panel.Render(swap, keyDown, worldLoaded, liveModel, &action)) {
         g_panelFailed = true;
         Log("frame failed (device removed or back buffer unavailable); drawing "
             "stopped, Present result unchanged");
         return;
     }
+    ApplyPanelAction(action);
     if (g_panel.Visible() && !g_loggedShown) {
         g_loggedShown = true;
         Log("panel visible; key 0x%X hides and reopens it", g_toggleKey);

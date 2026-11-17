@@ -187,6 +187,151 @@ void DrawLiveTable(const TabData& data)
     ImGui::EndTable();
 }
 
+void DrawEconomyControls(const ControlState& ctrl, PanelAction* outAction)
+{
+    if (!ctrl.hasTaxControls && !ctrl.hasBankControl) return;
+
+    ImGui::Spacing();
+    Rule();
+    ImGui::TextColored(kInk, "Fiscal Policy Controls");
+    ImGui::Spacing();
+
+    auto emit = [outAction](PanelAction::Kind k, int idx, bool flg, float val) {
+        if (outAction && outAction->kind == PanelAction::Kind::None) {
+            outAction->kind  = k;
+            outAction->index = idx;
+            outAction->flag  = flg;
+            outAction->value = val;
+        }
+    };
+
+    if (ctrl.hasTaxControls) {
+        // VAT
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextColored(kInk, "VAT (%.0f%%)", ctrl.vatRate * 100.0f);
+        ImGui::SameLine(180.0f);
+        if (ImGui::SmallButton(ctrl.vatEnabled ? "ON##vat" : "OFF##vat")) {
+            emit(PanelAction::Kind::SetTaxEnabled, 0, !ctrl.vatEnabled, 0.0f);
+        }
+        ImGui::SameLine();
+        if (ImGui::SmallButton("-2%##vat")) {
+            float v = ctrl.vatRate - 0.02f;
+            if (v < 0.0f) v = 0.0f;
+            emit(PanelAction::Kind::SetTaxRate, 0, false, v);
+        }
+        ImGui::SameLine();
+        if (ImGui::SmallButton("+2%##vat")) {
+            float v = ctrl.vatRate + 0.02f;
+            if (v > 1.0f) v = 1.0f;
+            emit(PanelAction::Kind::SetTaxRate, 0, false, v);
+        }
+
+        // Profit Tax
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextColored(kInk, "Profit Tax (%.0f%%)", ctrl.profitRate * 100.0f);
+        ImGui::SameLine(180.0f);
+        if (ImGui::SmallButton(ctrl.profitEnabled ? "ON##prof" : "OFF##prof")) {
+            emit(PanelAction::Kind::SetTaxEnabled, 1, !ctrl.profitEnabled, 0.0f);
+        }
+        ImGui::SameLine();
+        if (ImGui::SmallButton("-2%##prof")) {
+            float v = ctrl.profitRate - 0.02f;
+            if (v < 0.0f) v = 0.0f;
+            emit(PanelAction::Kind::SetTaxRate, 1, false, v);
+        }
+        ImGui::SameLine();
+        if (ImGui::SmallButton("+2%##prof")) {
+            float v = ctrl.profitRate + 0.02f;
+            if (v > 1.0f) v = 1.0f;
+            emit(PanelAction::Kind::SetTaxRate, 1, false, v);
+        }
+
+        // Property Tax
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextColored(kInk, "Property (%.0f %s)", ctrl.propertyBase, ctrl.currencySymbol);
+        ImGui::SameLine(180.0f);
+        if (ImGui::SmallButton(ctrl.propertyEnabled ? "ON##prop" : "OFF##prop")) {
+            emit(PanelAction::Kind::SetTaxEnabled, 2, !ctrl.propertyEnabled, 0.0f);
+        }
+        ImGui::SameLine();
+        if (ImGui::SmallButton("-25##prop")) {
+            float v = ctrl.propertyBase - 25.0f;
+            if (v < 0.0f) v = 0.0f;
+            emit(PanelAction::Kind::SetTaxRate, 2, false, v);
+        }
+        ImGui::SameLine();
+        if (ImGui::SmallButton("+25##prop")) {
+            emit(PanelAction::Kind::SetTaxRate, 2, false, ctrl.propertyBase + 25.0f);
+        }
+
+        ImGui::Spacing();
+        if (ImGui::SmallButton("Settle Accrued Taxes Now")) {
+            emit(PanelAction::Kind::SettleTaxesNow, 0, false, 0.0f);
+        }
+    }
+
+    if (ctrl.hasBankControl) {
+        ImGui::Spacing();
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextColored(kInk, "Bank Rate (%.1f%%)", ctrl.bankRate * 100.0);
+        ImGui::SameLine(180.0f);
+        if (ImGui::SmallButton("-0.5%##bank")) {
+            float v = static_cast<float>(ctrl.bankRate) - 0.005f;
+            if (v < 0.0f) v = 0.0f;
+            emit(PanelAction::Kind::SetBankRate, 0, false, v);
+        }
+        ImGui::SameLine();
+        if (ImGui::SmallButton("+0.5%##bank")) {
+            float v = static_cast<float>(ctrl.bankRate) + 0.005f;
+            if (v > 0.50f) v = 0.50f;
+            emit(PanelAction::Kind::SetBankRate, 0, false, v);
+        }
+    }
+}
+
+void DrawLabourControls(const ControlState& ctrl, PanelAction* outAction)
+{
+    if (!ctrl.hasSectorWages) return;
+
+    ImGui::Spacing();
+    Rule();
+    ImGui::TextColored(kInk, "Sector Wage Controls (min %.2f %s/day)",
+                       ctrl.minWage, ctrl.currencySymbol);
+    ImGui::Spacing();
+
+    static const char* const kSectorLabels[6] = {
+        "Heavy industry", "Infrastructure", "Care & Education",
+        "Light industry", "Services",       "Agriculture",
+    };
+
+    for (int s = 0; s < 6; ++s) {
+        if (!(ctrl.sectorWages[s] > 0.0f)) continue;
+        ImGui::PushID(s);
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextColored(kInk, "%s (%.2f)", kSectorLabels[s], ctrl.sectorWages[s]);
+        ImGui::SameLine(200.0f);
+        if (ImGui::SmallButton("-0.20")) {
+            float v = ctrl.sectorWages[s] - 0.20f;
+            if (v < ctrl.minWage) v = ctrl.minWage;
+            if (outAction && outAction->kind == PanelAction::Kind::None) {
+                outAction->kind  = PanelAction::Kind::SetSectorWage;
+                outAction->index = s;
+                outAction->value = v;
+            }
+        }
+        ImGui::SameLine();
+        if (ImGui::SmallButton("+0.20")) {
+            float v = ctrl.sectorWages[s] + 0.20f;
+            if (outAction && outAction->kind == PanelAction::Kind::None) {
+                outAction->kind  = PanelAction::Kind::SetSectorWage;
+                outAction->index = s;
+                outAction->value = v;
+            }
+        }
+        ImGui::PopID();
+    }
+}
+
 } // namespace
 
 LauncherRect DrawAlmanacLauncherButton(bool panelOpen, bool hovered,
@@ -250,9 +395,12 @@ LauncherRect DrawAlmanacLauncherButton(bool panelOpen, bool hovered,
     return rect;
 }
 
-bool DrawAlmanacPanel(const PanelModel& model, LauncherRect* outRect, int* activeTab)
+bool DrawAlmanacPanel(const PanelModel& model, LauncherRect* outRect,
+                      int* activeTab, PanelAction* outAction,
+                      const PanelLayout* initialLayout)
 {
     if (outRect) *outRect = LauncherRect{};
+    if (outAction) *outAction = PanelAction{};
     int localTab = 0;
     int& tab = activeTab ? *activeTab : localTab;
     const ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -305,11 +453,18 @@ bool DrawAlmanacPanel(const PanelModel& model, LauncherRect* outRect, int* activ
     if (height > maxHeight) height = maxHeight;
     if (width < 200.0f) width = 200.0f;
 
-    // Initial placement top-left below the launcher button; user may drag and
-    // resize freely afterwards.
-    ImGui::SetNextWindowPos(ImVec2(origin.x + 24.0f, origin.y + 104.0f),
-                            ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_FirstUseEver);
+    // Initial placement from saved layout (if any) or top-left below the
+    // launcher button; user may drag and resize freely afterwards.
+    const float initX = (initialLayout && initialLayout->hasSavedPos)
+                            ? initialLayout->x : (origin.x + 24.0f);
+    const float initY = (initialLayout && initialLayout->hasSavedPos)
+                            ? initialLayout->y : (origin.y + 104.0f);
+    const float initW = (initialLayout && initialLayout->hasSavedSize)
+                            ? initialLayout->w : width;
+    const float initH = (initialLayout && initialLayout->hasSavedSize)
+                            ? initialLayout->h : (height + 120.0f);
+    ImGui::SetNextWindowPos(ImVec2(initX, initY), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(initW, initH), ImGuiCond_FirstUseEver);
     const float maxW = (extent.x - 32.0f > 420.0f) ? (extent.x - 32.0f) : 420.0f;
     const float maxH = (extent.y - 48.0f > 240.0f) ? (extent.y - 48.0f) : 240.0f;
     ImGui::SetNextWindowSizeConstraints(ImVec2(420.0f, 240.0f), ImVec2(maxW, maxH));
@@ -359,6 +514,11 @@ bool DrawAlmanacPanel(const PanelModel& model, LauncherRect* outRect, int* activ
                               ImGuiWindowFlags_None)) {
             if (model.hasLiveData) {
                 DrawLiveTable(model.tabs[tab]);
+                if (tab == 0) {
+                    DrawEconomyControls(model.controls, outAction);
+                } else if (tab == 1) {
+                    DrawLabourControls(model.controls, outAction);
+                }
             } else {
                 DrawTable(kTabRows[tab], kTabRowCounts[tab]);
             }
