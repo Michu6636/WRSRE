@@ -67,6 +67,12 @@ IDXGISwapChain* g_chain          = nullptr;     // one reference held
 bool            g_presentHooked  = false;
 int             g_path           = 0;           // 0 none, 1 creation, 2 vtable
 
+// Set once when our Present slot is found to have been replaced by something
+// else after we installed it. Our detour then stays reachable only through
+// whatever that something else chains to, so drawing is no longer guaranteed
+// and saying so beats a panel that silently stops appearing.
+bool g_slotLost = false;
+
 Panel g_panel;
 bool  g_panelFailed = false;
 
@@ -105,18 +111,6 @@ bool IsD3D11Chain(IDXGISwapChain* swap)
         return false;
     }
     if (device) device->Release();
-    return true;
-}
-
-bool ReplacePointer(void** slot, void* replacement, void** original)
-{
-    DWORD protect = 0;
-    if (!VirtualProtect(slot, sizeof(void*), PAGE_READWRITE, &protect))
-        return false;
-    *original = *slot;
-    *slot     = replacement;
-    DWORD ignored = 0;
-    VirtualProtect(slot, sizeof(void*), protect, &ignored);
     return true;
 }
 
@@ -180,10 +174,70 @@ void AdoptOnFirstPresent(IDXGISwapChain* swap)
         static_cast<void*>(desc.OutputWindow));
 }
 
+// Declared here because the helpers below compare a slot against its address
+// before the detour's body is reached.
+HRESULT STDMETHODCALLTYPE HookPresent(IDXGISwapChain* swap, UINT sync, UINT flags);
+
+// Write our detour into the chain's Present slot and remember the exact value it
+// replaced. Used by both hook paths so the ownership check below has something
+// definite to compare against.
+bool InstallPresentSlot(IDXGISwapChain* swap, HWND window)
+{
+    void** vtable = *reinterpret_cast<void***>(swap);
+    if (!vtable || !vtable[kPresentVtableIndex]) return false;
+
+    // Store the previous target before publishing the replacement, so the
+    // watchdog can tell "still ours" from "someone else took it".
+    void* previous = vtable[kPresentVtableIndex];
+    if (previous == reinterpret_cast<void*>(&HookPresent)) return true;   // ours
+
+    g_realPresent = reinterpret_cast<PresentFn>(previous);
+    DWORD protect = 0;
+    if (!VirtualProtect(&vtable[kPresentVtableIndex], sizeof(void*),
+                        PAGE_READWRITE, &protect)) {
+        Log("Present slot on hwnd %p is not writable", static_cast<void*>(window));
+        return false;
+    }
+    InterlockedExchangePointer(
+        reinterpret_cast<void* volatile*>(&vtable[kPresentVtableIndex]),
+        reinterpret_cast<void*>(&HookPresent));
+    DWORD ignored = 0;
+    VirtualProtect(&vtable[kPresentVtableIndex], sizeof(void*), protect, &ignored);
+
+    g_presentHooked = true;
+    return true;
+}
+
+// Is the slot still holding our detour?
+//
+// A vtable slot is a plain pointer that anything can write: another overlay
+// installed after us, a graphics-hook library, or the driver's own wrapper may
+// replace it, and nothing tells us when it happens. The visible result would be
+// the panel disappearing with no log entry to explain it, which is the kind of
+// silence this plugin exists to remove. One compare every frame is cheaper than
+// that.
+void CheckPresentSlotOwnership(IDXGISwapChain* swap)
+{
+    if (g_slotLost || !swap) return;
+
+    void** vtable = *reinterpret_cast<void***>(swap);
+    if (!vtable) return;
+    void* current = vtable[kPresentVtableIndex];
+    if (current == reinterpret_cast<void*>(&HookPresent)) return;
+
+    g_slotLost = true;
+    if (g_host && g_host->log) {
+        Log("Present slot was taken over by %p after we installed; our hook is "
+            "now only reached if that hook chains to it. The panel may stop "
+            "appearing or flicker. Nothing here un-hooks or fights for the slot.",
+            current);
+    }
+}
+
 // Runs inside the game's Present, on the game's present thread, before the frame
 // is handed to the driver. The original result and arguments are passed through
-// untouched, so Steam, the game's own present handling and any other overlay see
-// exactly what they would have seen. A drawing failure stops drawing; it never
+// untouched, so the game's own present handling and any other overlay see exactly
+// what they would have seen. A drawing failure stops drawing; it never
 // swallows or fakes a Present result.
 HRESULT STDMETHODCALLTYPE HookPresent(IDXGISwapChain* swap, UINT sync, UINT flags)
 {
@@ -194,7 +248,10 @@ HRESULT STDMETHODCALLTYPE HookPresent(IDXGISwapChain* swap, UINT sync, UINT flag
             // process is taken as the game's. Later presents on it are ours;
             // everything else is forwarded untouched.
             if (!g_chain) AdoptOnFirstPresent(swap);
-            if (swap == g_chain) DrawFrame(swap);
+            if (swap == g_chain) {
+                CheckPresentSlotOwnership(swap);
+                DrawFrame(swap);
+            }
         } catch (...) {
             g_panelFailed = true;
             Log("drawing threw; no further drawing this session");
@@ -218,20 +275,13 @@ bool AdoptChain(IDXGISwapChain* swap)
         return false;
     }
 
-    void** vtable = *reinterpret_cast<void***>(swap);
-    if (!vtable || !vtable[kPresentVtableIndex]) return false;
-
     swap->AddRef();                               // pinned for the session
     g_chain = swap;
-    if (!ReplacePointer(&vtable[kPresentVtableIndex],
-                        reinterpret_cast<void*>(&HookPresent),
-                        reinterpret_cast<void**>(&g_realPresent))) {
+    if (!InstallPresentSlot(swap, desc.OutputWindow)) {
         swap->Release();
         g_chain = nullptr;
-        Log("Present slot is not writable; this chain cannot be hooked");
         return false;
     }
-    g_presentHooked = true;
     Log("Present hooked on the game's swap chain (hwnd %p)",
         static_cast<void*>(desc.OutputWindow));
     return true;
@@ -336,29 +386,30 @@ bool InstallVtableHook()
 
     void** vtable  = *reinterpret_cast<void***>(throwaway);
     void*  present = vtable ? vtable[kPresentVtableIndex] : nullptr;
+    if (!present) {
+        throwaway->Release();
+        if (context) context->Release();
+        if (device) device->Release();
+        Log("throwaway chain has no Present slot");
+        return false;
+    }
 
-    // Copy the slot, then release the scratch objects before anything global is
-    // touched. `vtable` itself belongs to the D3D runtime's object and outlives
-    // the throwaway chain.
-    const bool replaced = present && ReplacePointer(
-        &vtable[kPresentVtableIndex], reinterpret_cast<void*>(&HookPresent),
-        reinterpret_cast<void**>(&g_realPresent));
+    // Write the slot while the scratch objects are still alive, then release
+    // them. The vtable belongs to the D3D runtime's interface, not to any one
+    // chain, which is exactly why this works for the game's chain too.
+    const bool installed = InstallPresentSlot(throwaway, nullptr);
 
     throwaway->Release();
     if (context) context->Release();
     if (device) device->Release();
 
-    if (!present) {
-        Log("throwaway chain has no Present slot");
-        return false;
-    }
-    if (!replaced) {
+    if (!installed) {
         Log("Present vtable slot is not writable");
         return false;
     }
-    g_presentHooked = true;
-    g_path          = 2;
-    Log("Present hooked through the shared DXGI vtable at slot %d",
+    g_path = 2;
+    Log("Present hooked through the shared DXGI vtable at slot %d; the "
+        "ownership check reports if anything replaces that slot later",
         kPresentVtableIndex);
     return true;
 }
