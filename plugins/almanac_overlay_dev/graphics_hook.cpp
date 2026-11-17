@@ -332,7 +332,7 @@ bool ReadBuildingDisplayName(void* bldg, wchar_t* out, size_t maxChars,
 
     const uintptr_t addr = reinterpret_cast<uintptr_t>(bldg);
     if (addr < 0x10000ULL || addr > 0x00007FFFFFFFFFFFULL) return false;
-    if (g_host && g_host->isReadable && !g_host->isReadable(bldg, 0xC00)) {
+    if (g_host && g_host->readablePtr && !g_host->readablePtr(bldg, 0xC00)) {
         return false;
     }
 
@@ -369,8 +369,8 @@ bool ReadBuildingDisplayName(void* bldg, wchar_t* out, size_t maxChars,
                 const void* p = *reinterpret_cast<void* const*>(b + off);
                 const uintptr_t pa = reinterpret_cast<uintptr_t>(p);
                 if (pa < 0x10000ULL || pa > 0x00007FFFFFFFFFFFULL) continue;
-                if (g_host && g_host->isReadable &&
-                    !g_host->isReadable(p, (len + 1) * sizeof(wchar_t))) {
+                if (g_host && g_host->readablePtr &&
+                    !g_host->readablePtr(p, (len + 1) * sizeof(wchar_t))) {
                     continue;
                 }
                 ws = static_cast<const wchar_t*>(p);
