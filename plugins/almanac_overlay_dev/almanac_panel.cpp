@@ -18,7 +18,6 @@
 #include "almanac_panel.h"
 
 #include <windowsx.h>
-#include <dxgi1_4.h>
 
 #include "almanac_panel_view.h"
 
@@ -332,21 +331,13 @@ bool Panel::CreateFontsAndContext(ID3D11Device* device,
 
 bool Panel::AcquireBackBuffer(IDXGISwapChain* swap)
 {
-    // Buffer 0 is what Present is about to flip away, but a flip-model chain
-    // (DX11.1, which the engine's own log line reports) rotates buffers and
-    // GetBuffer(0) may name one that is not the current back buffer. Ask
-    // IDXGISwapChain3 when it is there, and fall back to 0 when it is not.
-    UINT index = 0;
-    IDXGISwapChain3* swap3 = nullptr;
-    if (SUCCEEDED(swap->QueryInterface(__uuidof(IDXGISwapChain3),
-                                       reinterpret_cast<void**>(&swap3))) &&
-        swap3) {
-        index = swap3->GetCurrentBackBufferIndex();
-        swap3->Release();
-    }
+    ReleaseBackBuffer();
 
+    // In Direct3D 11, buffer 0 is always the writable back buffer (even on
+    // flip-model DX11.1 swap chains; GetCurrentBackBufferIndex is D3D12-only
+    // and passing index > 0 to GetBuffer returns DXGI_ERROR_INVALID_CALL).
     ID3D11Texture2D* buffer = nullptr;
-    if (FAILED(swap->GetBuffer(index, __uuidof(ID3D11Texture2D),
+    if (FAILED(swap->GetBuffer(0, __uuidof(ID3D11Texture2D),
                                reinterpret_cast<void**>(&buffer))) || !buffer) {
         return false;
     }
@@ -358,20 +349,13 @@ bool Panel::AcquireBackBuffer(IDXGISwapChain* swap)
         return false;
     }
 
-    // The back buffer is recreated by the game's own resize, which invalidates
-    // any view we held. Rebuild the view when the size or the buffer changed.
-    const bool sizeChanged = desc.Width != bufferWidth_ ||
-                             desc.Height != bufferHeight_;
-    if (!target_ || sizeChanged) {
-        ReleaseBackBuffer();
-        if (FAILED(device_->CreateRenderTargetView(buffer, nullptr, &target_)) ||
-            !target_) {
-            buffer->Release();
-            return false;
-        }
-        bufferWidth_  = desc.Width;
-        bufferHeight_ = desc.Height;
+    if (FAILED(device_->CreateRenderTargetView(buffer, nullptr, &target_)) ||
+        !target_) {
+        buffer->Release();
+        return false;
     }
+    bufferWidth_  = desc.Width;
+    bufferHeight_ = desc.Height;
     buffer->Release();
     return true;
 }
@@ -415,7 +399,10 @@ bool Panel::Render(IDXGISwapChain* swap, bool keyDown)
         g_pendingButtonClick.exchange(false, std::memory_order_acq_rel);
     const bool show = toggle_.Frame(keyDown, true, buttonClicked);
 
-    if (!AcquireBackBuffer(swap)) return false;
+    // A transient back-buffer failure (e.g. during a resize or mode switch)
+    // skips this frame rather than permanently stopping drawing; real device
+    // removal is already caught above by GetDeviceRemovedReason().
+    if (!AcquireBackBuffer(swap)) return true;
 
     // Another overlay may have made its own context current since the last
     // frame; this puts ours back for the duration of the frame and restores
@@ -461,6 +448,10 @@ bool Panel::Render(IDXGISwapChain* swap, bool keyDown)
         deviceCtx_->OMSetRenderTargets(1, &target, nullptr);
         ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
     }
+
+    // Never hold a back-buffer RTV across Present so the game's ResizeBuffers
+    // calls always see zero outstanding references from this plugin.
+    ReleaseBackBuffer();
 
     return true;
 }
