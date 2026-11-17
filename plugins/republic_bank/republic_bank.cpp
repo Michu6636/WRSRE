@@ -131,6 +131,7 @@ static double requestCreditDrawImpl(void* building, double neededAmount, const c
 static void repayPrincipalImpl(void* building, double amount) {
     if (!building) return;
     LoanKey k = keyForBuilding(building);
+    if (IsSessionOnlyLoanKey(k)) return;
     double p = 0.0, mi = 0.0; int m = 0;
     EnterCriticalSection(&g_lock);
     g_book.getEnterpriseDebt(k, p, mi, m);
@@ -150,9 +151,11 @@ static void repayPrincipalImpl(void* building, double amount) {
 static void getEnterpriseDebtImpl(void* building, double* outP, double* outMI, int* outMissed) {
     LoanKey k = keyForBuilding(building);
     double p = 0.0, mi = 0.0; int m = 0;
-    EnterCriticalSection(&g_lock);
-    g_book.getEnterpriseDebt(k, p, mi, m);
-    LeaveCriticalSection(&g_lock);
+    if (!IsSessionOnlyLoanKey(k)) {
+        EnterCriticalSection(&g_lock);
+        g_book.getEnterpriseDebt(k, p, mi, m);
+        LeaveCriticalSection(&g_lock);
+    }
     if (outP) *outP = p;
     if (outMI) *outMI = mi;
     if (outMissed) *outMissed = m;
@@ -224,6 +227,7 @@ static void onMonth(void* userData, int day, int month, int year) {
         void* b = g_enterprise->getEnterpriseByIndex(i);
         if (!b) continue;
         LoanKey k = keyForBuilding(b);
+        if (IsSessionOnlyLoanKey(k)) continue;
         double capital = g_enterprise->getCompanyCapital(b);
         EnterCriticalSection(&g_lock);
         Settlement s = g_book.monthlySettle(k, capital);

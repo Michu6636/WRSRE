@@ -379,8 +379,11 @@ static void ReadSettings()
 
     g_startingWalletSet = 0;
     if (H->configString(ini, "currency", "starting_wallet", v, sizeof(v), "150.0") && v[0]) {
-        g_startingWalletCfg = (float)atof(v);
-        g_startingWalletSet = 1;
+        float w = (float)atof(v);
+        if (std::isfinite(w) && w >= 0.0f && w <= 1.0e9f) {
+            g_startingWalletCfg = w;
+            g_startingWalletSet = 1;
+        }
     }
 
     // v4 scale calibration: USD numbers run far smaller than RUB

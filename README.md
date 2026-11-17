@@ -27,9 +27,12 @@ not use the historical sidebar prototypes as the panel's launcher.
 
 ```text
 WRSRE/
-├── AGENTS.md                 # AI agent entry point & coordination rules
+├── AGENTS.md                 # Lean AI entry point and lazy load map
 ├── INSTRUCTIONS.md           # Project, reverse-engineering & C++ safety standards
-├── KILO_AGENT_WORKFLOW.md    # Worker/Reviewer loop, delegation, evidence gates & chunking rules
+├── KILO_AGENT_WORKFLOW.md    # Compatibility router + native-evidence/chunking reference
+├── GEMINI.md                 # Antigravity Architect/Ghidra Lead/Final Auditor adapter
+├── .kilo/                    # Tracked Kilo config and referenced prompt bodies
+├── .github/                  # Copilot instructions and worker/reviewer agents
 ├── build.bat                 # MSVC x64 plugin builder (build.bat [clean|<plugin>|loader])
 ├── clean.bat                 # Removes root compiler/linker temporaries
 ├── src/                      # Shared TesmioLoader host ABI, service APIs & RVA headers
@@ -43,7 +46,10 @@ WRSRE/
     ├── ghidra-exports/       # Cached raw Ghidra decompilations, disassemblies & xrefs
     ├── private-logistics-runtime/ # Private DO logistics investigations, evidence & packets
     ├── schemas/              # Telemetry & data schemas
-    ├── tasks/active/         # Active bounded engineering & verification tasks
+    ├── workflow/             # Canonical execution, review, Kilo and provider contracts
+    ├── tasks/                # Tracked task records, Finding Ledgers and TEMPLATE.md
+    │   ├── active/           # Current/historical task packets (check each status)
+    │   └── archive/          # Completed/retired records with final dispositions
     └── visions/              # Whole-mod & subsystem design visions
 ```
 
@@ -98,16 +104,23 @@ python3 tools/scan_exe_update.py path/to/SOVIET64.exe
 
 ## Agent and reverse-engineering workflow
 
-Start with [`AGENTS.md`](AGENTS.md), then the project rules in
-[`INSTRUCTIONS.md`](INSTRUCTIONS.md) and the relevant sections of
-[`KILO_AGENT_WORKFLOW.md`](KILO_AGENT_WORKFLOW.md). Check the actual host,
-branch, tools and task authorization; Windows game and Ghidra files may not be
-present in a remote checkout. Use the function index and accessible raw exports
-before requesting another query. Substantive deliverables use the bounded
-Worker/Reviewer loop in `KILO_AGENT_WORKFLOW.md`: an independent child inspects
-the actual diff/evidence, and the parent repairs and rechecks findings. Verify
-consequential claims against actual instructions or code, not a second summary,
-and stop repeated report-only passes when no new evidence is being produced.
+Start with the lean [`AGENTS.md`](AGENTS.md) load map. For an autonomous goal,
+use [`docs/workflow/EXECUTION.md`](docs/workflow/EXECUTION.md),
+[`docs/workflow/REVIEW.md`](docs/workflow/REVIEW.md) and a tracked record from
+[`docs/tasks/TEMPLATE.md`](docs/tasks/TEMPLATE.md). Kilo setup and provider
+handoff are in [`docs/workflow/KILO.md`](docs/workflow/KILO.md) and
+[`docs/workflow/PROVIDERS.md`](docs/workflow/PROVIDERS.md). Load
+[`INSTRUCTIONS.md`](INSTRUCTIONS.md) and the relevant native-evidence sections of
+[`KILO_AGENT_WORKFLOW.md`](KILO_AGENT_WORKFLOW.md) only when needed.
+
+The lead runs Investigate → Plan → Implement → Build/Test → Review → Repair
+without a repository round cap. Both strictly read-only reviewers inspect all
+three stages; every prior in-scope finding is reconciled in a Finding Ledger.
+Check the actual host, branch, tools and authorization; Windows game/Ghidra
+files may be absent remotely. Reuse the function index and tracked raw exports
+before querying, and stop repeated report-only passes when no new evidence is
+being produced. Static review, build/test evidence and live runtime validation
+are separate statuses.
 
 The existing [`tools/ghidra/`](tools/ghidra/README.md) scripts use Ghidra
 headlessly; a GUI window or MCP server is not required for that workflow. MCP is

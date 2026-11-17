@@ -3,13 +3,15 @@
 ## Agent coordination and prompt writing
 
 Before planning delegated work or writing prompts for other agents, read
-[`KILO_AGENT_WORKFLOW.md`](KILO_AGENT_WORKFLOW.md). Use one accountable Worker
-parent; for every substantive deliverable, consult at least one independent,
-read-only child Reviewer before calling it fully reviewed. Use distinct review
-focuses for material changes and follow the bounded repair loop in that guide.
-Do not make the user relay routine dependencies. Shared Ghidra queries remain
-serialized. The root `AGENTS.md` is the discovery entry point; workflow guidance
-does not expand the user's task authorization.
+[`docs/workflow/EXECUTION.md`](docs/workflow/EXECUTION.md) and
+[`docs/workflow/REVIEW.md`](docs/workflow/REVIEW.md). Use one accountable Worker
+parent and strictly read-only independent reviewers. WRSRE engineering goals
+send all three stages to both review focuses and repair/re-review without a
+repository round cap. Do not make the user relay routine dependencies. Shared
+Ghidra queries remain serialized. The root `AGENTS.md` is the lean discovery
+entry point; workflow guidance does not expand the user's task authorization.
+Use [`KILO_AGENT_WORKFLOW.md`](KILO_AGENT_WORKFLOW.md) only for the relevant
+native-evidence and long-write reference sections.
 
 ## Mandatory small-chunk writes
 
@@ -181,10 +183,12 @@ The "ONE RUN AT A TIME" rule above is not just about your own calls. Kilo Code
 Agent Manager sessions run in parallel; if two sessions each invoke
 `ghidra_run.bat`, the second dies with `LockException`. Therefore:
 
-- **Route all Ghidra calls through a single designated "Ghidra agent"** (the
-  orchestrator). Parallel analysis agents must consume the orchestrator's
-  exported artifacts (`scratch\out\*`, `docs\ghidra-index\`) and must NOT
-  invoke the wrapper themselves.
+- **Route all Ghidra calls through one designated Ghidra operator** named in
+  the tracked task record (Kilo lead, Antigravity or Copilot, never more than
+  one at a time). Parallel analysis agents consume that operator's exported
+  artifacts (`docs/ghidra-index/`, `docs/ghidra-exports/`, accessible
+  `scratch/out/`) and must NOT invoke the wrapper themselves. Do not build a
+  workflow around Kilo's deprecated Orchestrator mode.
 - If an out-of-band call is genuinely unavoidable, acquire
   `scratch\.ghidra.lock` (create-exclusive) before running, and release it
   after. If the lock exists, wait or fail loudly - do not delete another

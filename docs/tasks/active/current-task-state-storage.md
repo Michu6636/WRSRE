@@ -64,7 +64,7 @@ Do not conflate billing dry-run with automatic-target dry-run. Billing configura
 - No global reservation across DOs is established. Start with one DO.
 - The panel checkbox buffer at `panel + 0x310 + idx * 4` is not proven safe above five, so do not raise the staged cap based on a displayed row count or observed vector length.
 
-See [`ghidra-do-storage-findings.md`](ghidra-do-storage-findings.md) for function names, offsets, superseded conclusions, and the full analysis caveats.
+See [`ghidra-do-storage-findings.md`](../../ghidra-do-storage-findings.md) for function names, offsets, superseded conclusions, and the full analysis caveats.
 
 ## Acceptance criteria
 
