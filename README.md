@@ -6,7 +6,22 @@ Native x64 C++17 plugin suite (`TesmioLoader` API v4) introducing a mixed state/
 
 ## Almanac development
 
-Start with the [Almanac engineering status and handoff](docs/almanac-engineering-status.md): current source inventory, verified evidence/corrections, missing native integration, test limits and concrete next tasks. The ImGui/F8 candidate is **not yet a working in-game panel**; do not use historical sidebar prototypes as its launcher.
+The in-game ImGui panel is [`plugins/almanac_overlay_dev`](plugins/almanac_overlay_dev/README.md).
+Build it by name and stage it like any other plugin:
+
+```cmd
+build.bat almanac_overlay_dev
+```
+
+It draws one read-only panel inside the game window; `F8` hides and reopens it.
+[TESTING.md](plugins/almanac_overlay_dev/TESTING.md) lists the expected loader
+lines and what each failure means. Its README explains why the earlier isolated
+ImGui candidate never appeared in game.
+
+For the wider Almanac picture — source inventory, verified evidence and
+corrections, missing native integration and test limits — read the
+[Almanac engineering status and handoff](docs/almanac-engineering-status.md). Do
+not use the historical sidebar prototypes as the panel's launcher.
 
 ## Repository Layout
 
