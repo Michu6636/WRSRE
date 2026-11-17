@@ -30,6 +30,7 @@
 #include "graphics_hook.h"
 
 #include "almanac_panel.h"
+#include "../../src/sim_clock_api.h"
 
 #include <cstdarg>
 #include <cstddef>
@@ -121,6 +122,24 @@ bool ToggleKeyDown()
     return (GetAsyncKeyState(g_toggleKey) & 0x8000) != 0;
 }
 
+// Check sim_clock to see whether a game save/world is currently loaded.
+// Returns false on the splash screen, loading screen, and main menu.
+// If sim_clock is not present (e.g. standalone test), defaults to true.
+bool IsWorldLoaded()
+{
+    static const TsmSimClockApi* s_simClock = nullptr;
+    static bool s_lookedUp = false;
+    if (!s_lookedUp && g_host && g_host->getService) {
+        s_simClock = static_cast<const TsmSimClockApi*>(
+            g_host->getService(TSM_SERVICE_SIM_CLOCK, TSM_SIM_CLOCK_VERSION));
+        s_lookedUp = true;
+    }
+    if (s_simClock && s_simClock->getYear) {
+        return s_simClock->getYear() >= 0;
+    }
+    return true;
+}
+
 // Drawing for one frame. Owns the "is the panel ready, and did it draw" state so
 // both hook paths behave identically.
 void DrawFrame(IDXGISwapChain* swap)
@@ -141,7 +160,7 @@ void DrawFrame(IDXGISwapChain* swap)
         Log("panel initialized; waiting for the first visible frame");
     }
 
-    if (!g_panel.Render(swap, keyDown)) {
+    if (!g_panel.Render(swap, keyDown, IsWorldLoaded())) {
         g_panelFailed = true;
         Log("frame failed (device removed or back buffer unavailable); drawing "
             "stopped, Present result unchanged");

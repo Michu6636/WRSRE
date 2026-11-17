@@ -46,6 +46,6 @@ LauncherRect DrawAlmanacLauncherButton(bool panelOpen, bool hovered,
 // over the game without stealing clicks or keys from the game or from another
 // overlay. Returns true while the panel is still being drawn; false only if the
 // viewport is too small to lay out, which the caller treats as "not shown".
-bool DrawAlmanacPanel(const PanelModel& model);
+bool DrawAlmanacPanel(const PanelModel& model, LauncherRect* outRect = nullptr);
 
 } // namespace almanac

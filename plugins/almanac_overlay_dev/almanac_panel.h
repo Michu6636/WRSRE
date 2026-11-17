@@ -45,7 +45,7 @@ public:
     // Draws one frame into the swap chain's current back buffer. `keyDown` is
     // the physical key level. Returns false if the panel had to give up (device
     // removed, back buffer unavailable); the caller then stops calling it.
-    bool Render(IDXGISwapChain* swap, bool keyDown);
+    bool Render(IDXGISwapChain* swap, bool keyDown, bool worldLoaded = true);
 
     // Drops the GPU objects and the ImGui context. Only from the owner thread,
     // and only while no Present callback can be running.

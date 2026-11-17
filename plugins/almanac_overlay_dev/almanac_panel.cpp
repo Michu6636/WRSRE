@@ -25,6 +25,7 @@
 #include "backends/imgui_impl_dx11.h"
 
 #include <atomic>
+#include <cfloat>
 #include <cstdio>
 #include <mutex>
 
@@ -92,12 +93,36 @@ double NowSeconds()
 // Shared between the window message thread and the D3D11 present thread.
 std::mutex        g_launcherMutex;
 LauncherRect      g_launcherRect{};
+LauncherRect      g_panelRect{};
 unsigned          g_surfaceWidth  = 0;
 unsigned          g_surfaceHeight = 0;
 std::atomic<bool> g_launcherHovered{false};
 std::atomic<bool> g_pendingButtonClick{false};
 WNDPROC           g_originalWndProc = nullptr;
 HWND              g_subclassedWindow = nullptr;
+
+bool PointInRect(const LauncherRect& rect, float x, float y)
+{
+    return rect.valid && x >= rect.left && x <= rect.right &&
+           y >= rect.top && y <= rect.bottom;
+}
+
+bool GetSurfaceCursorPos(HWND hwnd, unsigned surfW, unsigned surfH,
+                         float& outX, float& outY)
+{
+    if (!hwnd || !surfW || !surfH) return false;
+    POINT pt{};
+    if (!GetCursorPos(&pt)) return false;
+    if (!ScreenToClient(hwnd, &pt)) return false;
+    RECT client{};
+    if (!GetClientRect(hwnd, &client)) return false;
+    const float clientW = static_cast<float>(client.right - client.left);
+    const float clientH = static_cast<float>(client.bottom - client.top);
+    if (!(clientW > 0.0f) || !(clientH > 0.0f)) return false;
+    outX = static_cast<float>(pt.x) * (static_cast<float>(surfW) / clientW);
+    outY = static_cast<float>(pt.y) * (static_cast<float>(surfH) / clientH);
+    return true;
+}
 
 bool PointInLauncherButton(HWND hwnd, LPARAM lParam)
 {
@@ -370,7 +395,7 @@ void Panel::ReleaseBackBuffer()
     bufferHeight_ = 0;
 }
 
-bool Panel::Render(IDXGISwapChain* swap, bool keyDown)
+bool Panel::Render(IDXGISwapChain* swap, bool keyDown, bool worldLoaded)
 {
     static std::mutex s_renderMutex;
     std::lock_guard<std::mutex> renderLock(s_renderMutex);
@@ -383,14 +408,15 @@ bool Panel::Render(IDXGISwapChain* swap, bool keyDown)
 
     if (FAILED(device_->GetDeviceRemovedReason())) return false;
 
-    // Eligibility: the overlay only exists over the foreground, unminimised game
-    // window. Behind another window it would paint over the desktop owner.
-    bool eligible = IsWindow(window_) && !IsIconic(window_);
+    // Eligibility: the overlay only exists inside a loaded game save over the
+    // foreground, unminimised game window.
+    bool eligible = worldLoaded && IsWindow(window_) && !IsIconic(window_);
     if (eligible && !settings_.drawWhenUnfocused)
         eligible = GetForegroundWindow() == window_;
 
     if (!eligible) {
         PublishLauncherRect(LauncherRect{}, 0, 0);
+        g_panelRect = LauncherRect{};
         g_launcherHovered.store(false, std::memory_order_relaxed);
         g_pendingButtonClick.store(false, std::memory_order_relaxed);
         toggle_.Frame(keyDown, false, false);
@@ -415,6 +441,27 @@ bool Panel::Render(IDXGISwapChain* swap, bool keyDown)
                             static_cast<float>(bufferHeight_));
     io.DisplayFramebufferScale = ImVec2(1.0f, 1.0f);
 
+    float mx = 0.0f, my = 0.0f;
+    const bool hasCursor = GetSurfaceCursorPos(window_, bufferWidth_,
+                                               bufferHeight_, mx, my);
+    if (hasCursor) {
+        io.MousePos = ImVec2(mx, my);
+    } else {
+        io.MousePos = ImVec2(-FLT_MAX, -FLT_MAX);
+    }
+
+    // Workers & Resources renders its own software cursor before Present, so
+    // anything drawn in Present paints over it. Draw ImGui's own cursor on top
+    // whenever the pointer is over our launcher button or open panel.
+    LauncherRect prevBtnRect{};
+    {
+        std::lock_guard<std::mutex> lock(g_launcherMutex);
+        prevBtnRect = g_launcherRect;
+    }
+    const bool overButton = hasCursor && PointInRect(prevBtnRect, mx, my);
+    const bool overPanel  = hasCursor && show && PointInRect(g_panelRect, mx, my);
+    io.MouseDrawCursor = overButton || overPanel;
+
     const double now = NowSeconds();
     float delta = static_cast<float>(now - lastTime_);
     lastTime_ = now;
@@ -425,7 +472,7 @@ bool Panel::Render(IDXGISwapChain* swap, bool keyDown)
     ImGui::NewFrame();
 
     const char* keyName = HotkeyDisplayName(settings_.toggleKey);
-    const bool hovered  = g_launcherHovered.load(std::memory_order_relaxed);
+    const bool hovered  = overButton || g_launcherHovered.load(std::memory_order_relaxed);
     const LauncherRect btnRect = DrawAlmanacLauncherButton(show, hovered, keyName);
     PublishLauncherRect(btnRect, bufferWidth_, bufferHeight_);
 
@@ -439,8 +486,10 @@ bool Panel::Render(IDXGISwapChain* swap, bool keyDown)
         model.processId     = static_cast<int>(GetCurrentProcessId());
         model.autoShow      = settings_.autoShow;
         model.toggleKeyName = keyName;
-        DrawAlmanacPanel(model);
+        DrawAlmanacPanel(model, &g_panelRect);
         ++drawnFrames_;
+    } else {
+        g_panelRect = LauncherRect{};
     }
 
     ImGui::Render();

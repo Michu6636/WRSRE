@@ -203,8 +203,9 @@ LauncherRect DrawAlmanacLauncherButton(bool panelOpen, bool hovered,
     return rect;
 }
 
-bool DrawAlmanacPanel(const PanelModel& model)
+bool DrawAlmanacPanel(const PanelModel& model, LauncherRect* outRect)
 {
+    if (outRect) *outRect = LauncherRect{};
     const ImGuiViewport* viewport = ImGui::GetMainViewport();
     if (!viewport) return false;
 
@@ -275,6 +276,13 @@ bool DrawAlmanacPanel(const PanelModel& model)
     bool shown = false;
     if (open) {
         shown = true;
+        if (outRect) {
+            outRect->left   = origin.x + 24.0f;
+            outRect->top    = origin.y + 104.0f;
+            outRect->right  = origin.x + 24.0f + width;
+            outRect->bottom = origin.y + 104.0f + height;
+            outRect->valid  = true;
+        }
 
         ImGui::TextColored(kInk, "%s", model.subtitle);
         ImGui::SameLine();
