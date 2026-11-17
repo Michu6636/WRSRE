@@ -129,9 +129,9 @@ bool IsWorldLoaded()
 {
     static const TsmSimClockApi* s_simClock = nullptr;
     static bool s_lookedUp = false;
-    if (!s_lookedUp && g_host && g_host->getService) {
+    if (!s_lookedUp && g_host && g_host->consume) {
         s_simClock = static_cast<const TsmSimClockApi*>(
-            g_host->getService(TSM_SERVICE_SIM_CLOCK, TSM_SIM_CLOCK_VERSION));
+            g_host->consume(TSM_SERVICE_SIM_CLOCK, TSM_SIM_CLOCK_VERSION));
         s_lookedUp = true;
     }
     if (s_simClock && s_simClock->getYear) {
