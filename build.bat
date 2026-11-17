@@ -127,14 +127,8 @@ set "SKIPPED=0"
 set "FAILED=0"
 set "MATCHED=0"
 
-REM --- Loader ---
-REM
-REM Built for an explicit `build.bat loader`, and for the default build too,
-REM because the point of a default build is ONE set of files to copy: the
-REM loader DLL and every plugin, side by side in build\plugins. A build of a
-REM named plugin leaves the loader alone.
+REM --- Loader (explicit opt-in only: `build.bat loader`) ---
 if /i "%WHICH%"=="loader" goto :build_loader
-if "%WHICH%"==""        goto :build_loader
 goto :after_loader
 
 :build_loader
