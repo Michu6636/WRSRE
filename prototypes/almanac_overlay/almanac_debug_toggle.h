@@ -2,10 +2,21 @@
 #pragma once
 namespace almanac {
 // One serialized UI owner. Visibility is NOT resource ownership or readiness.
-// Future adapter supplies physical F8 state and explicit permission each tick.
+// The adapter supplies physical F8 state and explicit permission each tick.
 class DebugOverlayToggle {
 public:
     bool Visible() const { return visible_; }
+
+    // Show automatically on the first eligible foreground frame. Later focus
+    // loss still hides/disarms; subsequent reopening remains an explicit F8.
+    bool ShowOnFirstAllowedFrame(bool allowed) {
+        if (autoShowConsumed_ || !allowed) return false;
+        autoShowConsumed_ = true;
+        const bool changed = !visible_;
+        visible_ = true;
+        armed_ = false;
+        return changed;
+    }
 
     // Returns true only when visibility changes. Disallowed input hides the
     // panel and disarms until an allowed key-up is observed. Thus holding F8
@@ -30,5 +41,6 @@ public:
 private:
     bool visible_ = false;
     bool armed_ = false;
+    bool autoShowConsumed_ = false;
 };
 } // namespace almanac
