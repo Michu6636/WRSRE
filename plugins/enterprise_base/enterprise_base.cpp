@@ -1443,7 +1443,9 @@ static void GetAccrualsImpl(void* building, double* outVat, double* outProfit)
 static void AddAccrualImpl(void* building, TsmAccrualKind kind, double amount)
 {
     if (!TsmIsValidGamePtr(building)) return;
-    if (!(amount == amount) || amount <= 0.0) return;
+    // +inf passes an equality-only NaN test; reject both non-finite ends so
+    // the liability and period totals can never become non-finite.
+    if (!(amount > 0.0) || !(amount <= 1.0e300)) return;
 
     EnterCriticalSection(&g_lock);
     auto it = g_companies.find(building);
@@ -3386,9 +3388,19 @@ static void ProcessDeferredLoadMatches(TsmBuildingSpan* span)
                                        rec.markup <= 100.0f)
                                         ? rec.markup : g_defaultMarkup;
         // Capital may legitimately be negative (debt/insolvency), but not
-        // non-finite or beyond any plausible economy. A corrupt figure
-        // becomes zero, not a fresh starting grant.
-        e.capital = SanitizeLoadedMoney(rec.capital, -1.0e12, 1.0e12, 0.0);
+        // non-finite. Finite values are clamped into the plausible ±1e12
+        // band (the configured starting-capital maximum) so a corrupt
+        // figure cannot mint or forgive an unbounded amount, while growth
+        // just above the band survives a save/load instead of vanishing.
+        // Non-finite becomes zero - never a fresh starting grant.
+        if (!std::isfinite(rec.capital))
+            e.capital = 0.0;
+        else if (rec.capital < -1.0e12)
+            e.capital = -1.0e12;
+        else if (rec.capital > 1.0e12)
+            e.capital = 1.0e12;
+        else
+            e.capital = rec.capital;
         // Accruals and period totals are running charges: never negative.
         e.accruedVatLiability =
             SanitizeLoadedMoney(rec.accruedVat, 0.0, 1.0e12, 0.0);

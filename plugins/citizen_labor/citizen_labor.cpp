@@ -778,7 +778,9 @@ static float ClampToMinimum(float wage)
     // bound mirrors the sidecar/sector-wage limit: inf here would flow
     // into payroll and capital, and worker credits reject non-finite pay.
     float floor = (g_minimumWage > 0.0f) ? g_minimumWage : 0.0f;
-    if (!(wage == wage)) return floor;
+    // A non-finite input is not a wage: return zero so the payment is
+    // dropped rather than minting a floor payment from corrupt data.
+    if (!(wage == wage)) return 0.0f;
     if (wage > 1.0e6f) wage = 1.0e6f;
     return (wage < floor) ? floor : wage;
 }
@@ -2728,6 +2730,19 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
                 g_minimumWage = g_minimumWageUsdCfg;
             else
                 g_minimumWage = g_minimumWageCfg / d;
+
+            // The override/load bands are RUB-denominated. Keep the floor's
+            // RUB equivalent inside 1e6 on BOTH paths (explicit USD floor
+            // and RUB floor divided by the divisor), or every override
+            // would fail the rub > 1e6 check. 1e6f / d can round up, so
+            // step down until the product re-enters the bound.
+            if (g_minimumWage > 0.0f &&
+                !(g_minimumWage * d <= 1.0e6f)) {
+                g_minimumWage = 1.0e6f / d;
+                while (!(g_minimumWage * d <= 1.0e6f) &&
+                       g_minimumWage > 0.0f)
+                    g_minimumWage = nextafterf(g_minimumWage, 0.0f);
+            }
         } else {
             g_minimumWage = g_minimumWageCfg;
         }

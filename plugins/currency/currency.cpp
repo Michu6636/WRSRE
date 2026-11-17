@@ -27,6 +27,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 #include <cmath>
 
@@ -311,6 +312,11 @@ static void LoadWallets(const char* dir)
     // B5: loaded survivors get a fresh lease - stamp now (memory-only,
     // no format change) so a long-lived save is not pruned on arrival.
     int now = CurrentAbsDay();
+    // Duplicate IDs should not exist, but a damaged file can carry one.
+    // Track which inserted entries needed sanitising so a later sane
+    // duplicate can replace the placeholder instead of being discarded.
+    std::unordered_set<uint64_t> sanitizedIds;
+    sanitizedIds.reserve(hdr.count);
     const BYTE* p = (const BYTE*)raw + sizeof(hdr);
     for (uint32_t i = 0; i < hdr.count; i++) {
         WalletSaveRecord r;
@@ -320,13 +326,23 @@ static void LoadWallets(const char* dir)
         // be worse: a missing ID reads as a fresh starting wallet. Clamp
         // into the same [0, 1e9] band WalletChange enforces, so a damaged
         // balance becomes zero (or the ceiling) instead of a new grant.
+        bool sane = std::isfinite(r.wallet) &&
+                    r.wallet >= 0.0f && r.wallet <= 1.0e9f;
         float balance = r.wallet;
         if (!std::isfinite(balance) || balance < 0.0f) balance = 0.0f;
         if (balance > 1.0e9f) balance = 1.0e9f;
         WalletEntry e;
         e.balance        = balance;
         e.lastSeenAbsDay = now;
-        g_wallets.emplace(r.citizenId, e);
+        auto ins = g_wallets.emplace(r.citizenId, e);
+        if (!ins.second) {
+            if (sane && sanitizedIds.count(r.citizenId)) {
+                ins.first->second = e;          // prefer the sane duplicate
+                sanitizedIds.erase(r.citizenId);
+            }
+        } else if (!sane) {
+            sanitizedIds.insert(r.citizenId);
+        }
     }
     size_t loaded = g_wallets.size();
     LeaveCriticalSection(&g_lock);

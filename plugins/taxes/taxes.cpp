@@ -600,7 +600,10 @@ static float GetProfitTaxRateImpl(void)
 static void RecordVatAccrualImpl(void* entity, double amount)
 {
     if (!entity) return;
-    if (!(amount == amount) || amount <= 0.0) return;
+    // Positive, finite amount only: +inf would pass the old NaN test and
+    // poison both the liability and periodVatAccrued (the API contract says
+    // non-finite amounts are ignored).
+    if (!(amount > 0.0) || !(amount <= 1.0e300)) return;
     if (!g_enterprise) return;
 
     TaxSettlementLock settleLock;

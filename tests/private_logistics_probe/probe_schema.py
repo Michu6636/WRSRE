@@ -158,6 +158,7 @@ class ProbeSnapshot:
     A readable mirror does NOT validate the authoritative fuel slot.
     """
     header: ProbeHeader
+    observation_seq: int     # independent snapshot counter (drain thread), starts at 1
     day: int                 # sim day (from sim_clock getDay, -1 when no world)
     mon: int                 # sim month (from sim_clock getMonth, -1 when no world)
     yr: int                  # sim year (from sim_clock getYear, -1 when no world)

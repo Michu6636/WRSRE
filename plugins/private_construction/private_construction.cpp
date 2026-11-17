@@ -354,8 +354,9 @@ static float  g_maxTickAdvance   = 0.02f;
 static int    g_probeCompletion  = 1;
 
 // Day-delta accumulated across throttled frames. The per-site step is
-// bounded by g_maxTickAdvance, so OnTick consumes at most that much per
-// pass and leaves the remainder queued; a world load drops it.
+// bounded by g_maxTickAdvance (a progress fraction), so OnTick consumes at
+// most its day-equivalent, g_maxTickAdvance / g_dailyBuildRate, per pass and
+// leaves the remainder queued; a world load drops it.
 static float  g_pendingDayDelta  = 0.0f;
 // Unconsumed day fragments are a smoothing buffer, not a ledger: a long
 // stall at high time scale must not accumulate an unbounded backlog that

@@ -295,6 +295,7 @@ def build_probe_record(ra: AssembledProbeRecord) -> ProbeRecord:
     elif header.record_kind == "SNAPSHOT":
         kind_record = ProbeSnapshot(
             header=header,
+            observation_seq=int(cf.get('observation_seq', '-1')),
             day=int(cf.get('day', '-1')),
             mon=int(cf.get('mon', '-1')),
             yr=int(cf.get('yr', '-1')),
