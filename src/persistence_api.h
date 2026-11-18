@@ -38,6 +38,7 @@
 #define TSM_PERSISTENCE_API_H
 
 #include <stddef.h>
+#include <stdlib.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -95,12 +96,37 @@ typedef struct TsmPersistenceApi {
     int  (*writeAtomic)(const char* dir, const char* filename,
                         const void* data, size_t len);
 
-    // Read <dir>/<filename> whole into a malloc'd buffer. Returns NULL
-    // on failure. The caller frees with free(). `*outLen` is set on
-    // success and left untouched on failure.
+    // Read <dir>/<filename> whole into a buffer owned by persistence.dll.
+    // Returns NULL on failure. Release with TsmPersistenceFree(api, buf)
+    // (or api->freeBuffer when present) so the allocation is freed on the
+    // provider's own /MT CRT heap. `*outLen` is set on success and left
+    // untouched on failure.
     void* (*readFile)(const char* dir, const char* filename,
                       size_t* outLen);
+
+    // --- v1, appended (check structSize before calling) --------------------
+    //
+    // Free a buffer returned by readFile() on persistence.dll's own CRT heap.
+    // Safe to call with NULL.
+    void  (*freeBuffer)(void* buf);
 } TsmPersistenceApi;
+
+// ABI-safe helper: frees a buffer returned by readFile() using the provider's
+// freeBuffer when available (structSize check), falling back to free() only
+// against older persistence.dll builds.
+static inline void TsmPersistenceFree(const TsmPersistenceApi* api, void* buf)
+{
+    if (!buf) return;
+    if (api &&
+        api->structSize >= offsetof(TsmPersistenceApi, freeBuffer) +
+                               sizeof(api->freeBuffer) &&
+        api->freeBuffer)
+    {
+        api->freeBuffer(buf);
+        return;
+    }
+    free(buf);
+}
 
 #ifdef __cplusplus
 }

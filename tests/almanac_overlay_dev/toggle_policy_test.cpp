@@ -86,6 +86,18 @@ void ToggleTests()
         Check(!t.Visible(), "Hide hides");
         CheckEqual(t.Frame(false, true) ? 1 : 0, 0, "Hide does not re-show by itself");
     }
+
+    {   // floating launcher button clicks toggle visibility
+        almanac::OverlayToggle t;
+        t.SetAutoShow(false);
+        CheckEqual(t.Frame(false, true, false) ? 1 : 0, 0, "idle frame stays hidden");
+        CheckEqual(t.Frame(false, true, true) ? 1 : 0, 1, "launcher click opens panel");
+        CheckEqual(t.Frame(false, true, false) ? 1 : 0, 1, "panel stays open after click");
+        CheckEqual(t.Frame(false, true, true) ? 1 : 0, 0, "second launcher click closes panel");
+        CheckEqual(t.Frame(false, false, true) ? 1 : 0, 0, "ineligible frame ignores click");
+        CheckEqual(t.Frame(false, true, true) ? 1 : 0, 1, "click reopens when eligible");
+        CheckEqual(t.Frame(true, true, false) ? 1 : 0, 0, "hotkey closes panel opened by click");
+    }
 }
 
 } // namespace

@@ -54,8 +54,8 @@ bool g_started        = false;
 
 // Read once in Init. Defaults mirror the shipped INI.
 int  g_enabled    = 1;
-int  g_autoShow   = 1;
-int  g_toggleKey  = VK_F8;
+int  g_autoShow   = 0;
+int  g_toggleKey  = VK_F9;
 int  g_fontScale  = 100;      // percent
 int  g_unfocused  = 0;        // draw while the game is not the foreground window
 
@@ -76,12 +76,12 @@ constexpr const char* kIni = "plugins\\almanac_overlay_dev.ini";
 void ReadSettings(const TsmHost* host)
 {
     g_enabled   = host->configInt(kIni, "almanac_overlay_dev", "enabled", 1);
-    g_autoShow  = host->configInt(kIni, "almanac_overlay_dev", "show_on_start", 1);
-    g_toggleKey = host->configInt(kIni, "almanac_overlay_dev", "toggle_key", VK_F8);
+    g_autoShow  = host->configInt(kIni, "almanac_overlay_dev", "show_on_start", 0);
+    g_toggleKey = host->configInt(kIni, "almanac_overlay_dev", "toggle_key", VK_F9);
     g_fontScale = host->configInt(kIni, "almanac_overlay_dev", "font_scale_percent", 100);
     g_unfocused = host->configInt(kIni, "almanac_overlay_dev", "draw_when_unfocused", 0);
 
-    if (g_toggleKey < 0x08 || g_toggleKey > 0xFE) g_toggleKey = VK_F8;
+    if (g_toggleKey < 0x08 || g_toggleKey > 0xFE) g_toggleKey = VK_F9;
     if (g_fontScale < 75)  g_fontScale = 75;
     if (g_fontScale > 250) g_fontScale = 250;
 }

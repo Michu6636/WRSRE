@@ -18,8 +18,8 @@ build\plugins\almanac_overlay_dev.ini
 ...every other plugin DLL and INI
 ```
 
-Launch the game through Tesmio. The panel starts hidden, so press `F8` once to
-show it; `F8` again hides it.
+Launch the game through Tesmio. The panel starts hidden, so press `F9` once to
+show it; `F9` again hides it.
 
 ## Expected loader log, in order
 
@@ -51,7 +51,7 @@ the problem, and each case below is distinguishable.
 | `frame failed …` | The device was removed or the back buffer was unavailable | Read the game's own graphics state; the plugin stops drawing rather than guessing |
 
 `Present hooked` + `panel initialized` without `panel visible` means the panel is
-hidden, which is the normal start with `show_on_start = 0`: press `F8` once,
+hidden, which is the normal start with `show_on_start = 0`: press `F9` once,
 making sure the game window has focus.
 
 ## Visual check on a disposable install
@@ -59,9 +59,9 @@ making sure the game window has focus.
 1. The panel is a paper-and-ink window anchored near the top-left, titled
    `Almanac`, over the game view. Not a separate desktop window.
 2. It says `SYNTHETIC`/placeholder values — the numbers are not your republic's.
-3. The first `F8` shows it; the next `F8` hides it. Holding `F8` must not flicker:
+3. The first `F9` shows it; the next `F9` hides it. Holding `F9` must not flicker:
    it takes exactly one press per change.
-4. Alt-tab away and back: the panel hides while unfocused and needs a fresh `F8`
+4. Alt-tab away and back: the panel hides while unfocused and needs a fresh `F9`
    press afterwards. Holding the key through the alt-tab must not reopen it.
 5. Minimise, restore and resize the game window: the panel re-anchors and stays
    readable; nothing crashes.

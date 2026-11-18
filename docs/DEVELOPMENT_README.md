@@ -7,6 +7,8 @@
 ---
 
 > **Update 2026-10-22 (Rev 4):** Added `private_logistics` L3, corrected `TSM_GO_BUILDINGS_VEC` to `0x11B08/0x11B10`, added DO task/storage/connection offsets. Previous staging docs in `docs/README.md` and `docs/ghidra-do-storage-findings.md` supersede `docs/Logistics_Investigation.md` for DO task details. See evidence labels in `docs/README.md`.
+>
+> **Update 2026-11-17 (Rev 5):** Added single-DLL build target (`build.bat wrsre` → `wrsre.dll`, default for VS Code `Ctrl+Shift+B`), appended `freeBuffer` to `TsmPersistenceApi`, and removed `map_expander`. See `docs/SINGLE_DLL_ARCHITECTURE.md`.
 
 ## Historical gameplay test profile (2026-10-24)
 
@@ -85,7 +87,6 @@ The ecosystem is organized into a strict **4-Tier Level Hierarchy**. Higher leve
 | **`private_shops`**        |   3   |   3.4   | `sim_clock`, `currency`, `resource_pricing`, `enterprise_base`, `taxes`, `persistence`                        | _None_                    | Auto-imports foreign restock, bills state wholesale delivery, credits state procurement revenue on export-flagged storages (`+0x85`), collects pub service fees.                  |
 | **`private_logistics`**    |   3   |  0.17   | `sim_clock`, `currency`, `resource_pricing`, `enterprise_base`, `ui_panels`, `persistence`                                                    | _None_                    | Transfer accounting, producer settlement (90% retail), freight/fuel billing, and bounded opt-in state-storage targets (load-only `TaskCfg+0x04=1.0/+0xC8=0/+0xCC=0`, cap 5, `auto_targets_dry_run=1`). See `docs/ghidra-do-storage-findings.md` and `docs/current-task-state-storage.md`. |
 | **`private_construction`** |   3   |  3.5.2  | `sim_clock`, `enterprise_base`, `ui_overlay`, `citizen_labor`, `currency`, `resource_pricing`, `persistence`  | _None_                    | Autonomously builds `[P]` sites using investment pool funds; prices natively via type descriptor phases (`typedesc+0x370`); implements State Acceptance Commission (99% handoff). |
-| **`map_expander`**         |  util |   1.0   | _None_                                                                                                        | _None_                    | Map/placement expansion utilities. Separate from core economic loop. |
 | **`state_ledger`**         |   3   |   1.4   | `sim_clock`, `currency`, `persistence`, `ui_overlay`                                                          | _None_                    | Observes all macro cash movements; records monthly double-entry statements to `tesmio_ledger.csv`; renders financial HUD card.                                                    |
 
 ---

@@ -11,15 +11,20 @@ may be on a different host: check actual availability before claiming access.
 | `DecompAt.java` | `out.c VA [VA ...]`: decompile one or more functions. |
 | `DisasmMany.java` | `out.asm start:end` or `out.asm start end`: disassemble **one** range of instruction start addresses, inclusive, with raw bytes. With only `start`, end defaults to start. |
 | `FindDisp.java` | `out.txt displacement [block]`: find possible displacement uses; inspect each instruction, receiver and path. |
+| `Xrefs.java` | `out.txt <addr1> [addr2 ...]`: cross-references to one or more addresses. Restored 2026-11-18 from the source quoted in `docs/private-logistics-runtime/RAW_EXPORTS_34D590.md` §10.4. |
+| `ListFuncs.java` | `out.txt <start> <end>`: enumerate functions overlapping a file-based address range, with sizes. Restored 2026-11-18 from `RAW_EXPORTS_34D590.md` §10.1. |
 | `dump_all_strings.java` | Dump narrow ASCII/UTF-8 strings to the hardcoded `C:\WRSRE\scratch\all_strings_decoded.txt`. |
 | `dump_wide_strings.java` | Dump UTF-16LE strings to the hardcoded `scratch/wide_strings_decoded.txt`. |
 
-All five scripts overwrite their output file. Inspect the destination and script
+All seven scripts overwrite their output file. Inspect the destination and script
 first; do not overwrite an existing artifact without authorization.
 
-Historical wrappers may also reference `Xrefs.java` or `ListFuncs.java`, but
-those files are not in this tracked directory. Check the actual operator's
-script paths; do not assume they exist or silently substitute another script.
+`Xrefs.java` and `ListFuncs.java` were re-added on 2026-11-18 from the verbatim
+source preserved in
+[`RAW_EXPORTS_34D590.md`](../../docs/private-logistics-runtime/RAW_EXPORTS_34D590.md)
+sections 10.1 and 10.4; the historical `scratch\ghidra_run.bat` wrapper that
+called them was never tracked. Check the actual operator's wrapper path rather
+than assuming it exists.
 
 ## Addresses and evidence
 

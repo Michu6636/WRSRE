@@ -1,5 +1,33 @@
 # Almanac engineering status and handoff
 
+> **STATUS UPDATE 2026-11-18 — supersedes the "not read-only / not built / not
+> seen" statements below.** The panel shipped as `plugins/almanac_overlay_dev`
+> and has since gained Milestones 1–4 on `Almanac`: a floating top-left launcher
+> button, four interactive tabs (Economy, Labour, Logistics, Enterprises),
+> draggable/resizable layout with WndProc mouse and wheel capture, live
+> read-only telemetry for Economy/Labour/Logistics, an Enterprises directory with
+> capital, net profit, markup and bank debt, editable fiscal and wage controls,
+> bank-rate stepping, and INI layout persistence.
+>
+> Consequences for the text below:
+>
+> - The panel is **not read-only**. Fiscal sliders, wage steppers and the bank
+>   rate call `taxes`, `citizen_labor` and `republic_bank` write APIs.
+> - The default toggle key is **`F9`** (`toggle_key = 0x78`), not `F8`. `F8`
+>   remains `ui_overlay`'s HUD key. Older sections of this file describe the
+>   superseded prototype, which used `F8`.
+> - `plugins/almanac_overlay_dev/preview-host-render.png` is the current panel
+>   geometry rendered from its own ImGui draw list. It is **not** a game
+>   screenshot and does not constitute runtime validation.
+> - Statements below that "no Windows build, staging or Almanac game test has
+>   occurred" describe the earlier prototype candidate, not current `Almanac`
+>   HEAD. Live in-game verification of the **write** controls (taxes, wages,
+>   bank rate) is still pending and must not be claimed.
+>
+> Current feature and build truth lives in
+> [`plugins/almanac_overlay_dev/README.md`](../plugins/almanac_overlay_dev/README.md)
+> and [`TESTING.md`](../plugins/almanac_overlay_dev/TESTING.md).
+
 **Start here for current implementation status.** Baseline: `Almanac` merge `f3c2bd598d77b42fe2e4cec84bc10b8405e1d037` ([PR #88](https://github.com/Michu6636/WRSRE/pull/88)). That merge added auto-show behavior to the isolated Almanac development DLL source, but the latest user log shows the DLL was absent from Tesmio's plugin scan. This branch adds an explicit build target; Windows build, runtime staging and in-game visual acceptance remain outstanding. Older Almanac plans/reviews remain historical evidence; their sidebar approach and implementation-status statements are not the current delivery plan.
 
 ## Superseding implementation: `plugins/almanac_overlay_dev`

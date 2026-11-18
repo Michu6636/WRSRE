@@ -108,7 +108,7 @@ This table is a reverse-engineering aid, not a substitute for examining the exac
 
 ## Counts and UI checkbox storage
 
-**2026-11-03 cached-evidence addendum:** the generic window creator's previously overlooked initializer fills 100 DWORD values in `[receiver+0x310, receiver+0x4A0)`; the next distinct field starts at `+0x4A0`. See [the partial 6EE2A0 claim ledger](ghidra-index/6EE2A0.md). This narrows the older unknown-capacity statement below, but does not yet close allocation/table/dispatcher receiver flow and all rail consumers. The five-total production policy is unchanged. Use [the focused Test15 closure request](tasks/active/TEST15_NATIVE_CLOSURE.md), not another broad offset investigation.
+**2026-11-03 cached-evidence addendum:** the generic window creator's previously overlooked initializer fills 100 DWORD values in `[receiver+0x310, receiver+0x4A0)`; the next distinct field starts at `+0x4A0`. See [the partial 6EE2A0 claim ledger](ghidra-index/6EE2A0.md). This narrows the older unknown-capacity statement below, but does not yet close allocation/table/dispatcher receiver flow and all rail consumers. The five-total production policy is unchanged. Use [the focused Test15 closure request](tasks/archive/TEST15_NATIVE_CLOSURE.md), not another broad offset investigation.
 
 - One observed native add flow handles at most five targets in that session. This is **not** proof of a hard native vector limit.
 - Other observed UI loops/rows do not establish safe storage for an arbitrary count.

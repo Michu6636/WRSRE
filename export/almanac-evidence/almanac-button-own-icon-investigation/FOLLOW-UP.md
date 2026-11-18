@@ -1,4 +1,4 @@
-# Almanac Button — Follow-Up Investigation (Static, v3.3 codebase)
+# Almanac Button â€” Follow-Up Investigation (Static, v3.3 codebase)
 
 Static investigation only. No source edits, builds, game launches, hooks,
 deployments, save edits, or click tests. Ghidra queries run one at a time;
@@ -6,7 +6,7 @@ the `soviet_trade` project lock was not touched. C3DDLL64.dll was imported
 into the `soviet_trade` Ghidra project to enable cross-module queries.
 
 Source commit: `e949ff3` (the crashed build). Current worktree commit:
-`09dc3e0` (crash fix — texture binding and text rendering removed).
+`09dc3e0` (crash fix â€” texture binding and text rendering removed).
 
 Binary identity:
 - SOVIET64.exe v1.1.1.9, PE TimeDateStamp `0x6A3EB6AD`, preferred image base
@@ -24,20 +24,20 @@ Binary identity:
 
 ---
 
-## Item 1 — Crash attribution and texture-loader instance
+## Item 1 â€” Crash attribution and texture-loader instance
 
 ### Facts
 
 **Crash instruction** (`scratch/out/crash_0xD1780.asm`):
 - Address: `C3DDLL64.dll + 0xD1780` (VA `0x1800D1780`, matches log `0x7FF956F61780`)
 - Function: `FindElement@0x1800D1730`
-- Instruction: `MOVZX EDX,byte ptr [RAX]` — reads a byte from RAX
+- Instruction: `MOVZX EDX,byte ptr [RAX]` â€” reads a byte from RAX
 - Read address: `0x7FF957082078` = `C3DDLL64.dll + 0x1F2078` (within C3DDLL64.dll itself)
 - RDI at crash: `0x7FF6F2FAFF58` = `exeBase + 0x9DFF58`
 
 **Call chain** (`scratch/out/xrefs_FindElement.txt`):
 - `FindElement` is called from `CreateManagedTexture@0x1800B0190` at call site
-  `0x1800B01A4` — 55 total callers, but `CreateManagedTexture` is the one on
+  `0x1800B01A4` â€” 55 total callers, but `CreateManagedTexture` is the one on
   the plugin's path.
 - `CreateManagedTexture` actual RVA = `0xB0190` (NOT `0x99`).
 
@@ -53,14 +53,14 @@ Binary identity:
 
 **`game + 0xB048` is not a valid address** (`scratch/out/game_0x9DFF58.txt`):
 - `game + 0xB048` = RVA `0x9D4F10 + 0xB048` = `0x9DFF58`
-- DumpBytes at `0x1409DFF58`-`0x1409DFFF` returned **empty** — not a mapped/
+- DumpBytes at `0x1409DFF58`-`0x1409DFFF` returned **empty** â€” not a mapped/
   readable address in the SOVIET64.exe image.
 - Crash log RDI `0x7FF6F2FAFF58` = `exeBase + 0x9DFF58` confirms the plugin
   passed exactly this invalid address as `middlepoint`.
 
 **`DAT_1409EACD0` is all zeros** (`scratch/out/dat_0x9EACD0.txt`):
 - RVA `0x9EACD0`-`0x1409EAD00`: 48 bytes of `0x00`. Not a C3D_MIDDLEPOINT
-  instance — treated as a lead, not an assumption, it is a dead end.
+  instance â€” treated as a lead, not an assumption, it is a dead end.
 
 **`game + 0xEAD08` (panel state) is all zeros** (`scratch/out/dat_0x9EAD08.txt`):
 - RVA `0x9EAD08`-`0x1409EAD18`: 16 bytes of `0x00`. Runtime-initialized global,
@@ -89,7 +89,7 @@ which eventually computes `RAX = C3DDLL64.dll + 0x1F2078` and crashes on
 `MOVZX EDX,byte ptr [RAX]` at `0x1800D1780`.
 
 **RDI at crash** = `game + 0xB048` confirms `middlepoint` was the first argument
-(RCX→RDI move at `0x1800B019A`) and survived into `FindElement`'s frame.
+(RCXâ†’RDI move at `0x1800B019A`) and survived into `FindElement`'s frame.
 
 **The earlier "game was null at Start" explanation does NOT apply to `e949ff3`**:
 In `e949ff3`, texture loading is done lazily in `DrawNinthTile` (not in
@@ -99,7 +99,7 @@ with the bad `middlepoint`.
 
 **Separate from the earlier Start-time crash**: The earlier crash (before
 `09dc3e0`) was at `Start()` time from texture binding via `vtable[0x70]` on an
-invalid texture object. This crash is different — it's inside
+invalid texture object. This crash is different â€” it's inside
 `CreateManagedTexture` called from `DrawNinthTile`, with `middlepoint =
 game_global_addr + 0xB048`.
 
@@ -109,12 +109,12 @@ Crash is attributed to `CreateManagedTexture` receiving an invalid
 `middlepoint` (`exeBase + 0x9D4F10 + 0xB048` instead of
 `*(exeBase + 0x9D4F10) + 0xB048`). The fault occurs inside `FindElement`
 (called from `CreateManagedTexture` at `0x1800B01A4`) when it reads from
-`RAX = C3DDLL64.dll + 0x1F2078`. `DAT_1409EACD0` is all zeros — not the
+`RAX = C3DDLL64.dll + 0x1F2078`. `DAT_1409EACD0` is all zeros â€” not the
 C3D_MIDDLEPOINT instance.
 
 ---
 
-## Item 2 — Function ABI and addresses
+## Item 2 â€” Function ABI and addresses
 
 ### Facts
 
@@ -131,7 +131,7 @@ C3D_MIDDLEPOINT instance.
 ```cpp
 typedef float* (*t_GetMouseSolid)(void* input);
 ```
-- Returns `float*` by value, takes only `input` — **WRONG ABI**.
+- Returns `float*` by value, takes only `input` â€” **WRONG ABI**.
 - Missing the hidden result pointer parameter (passed in RDX under MSVC x64
   sret convention).
 
@@ -139,10 +139,10 @@ typedef float* (*t_GetMouseSolid)(void* input);
 ```cpp
 typedef void  (*t_GetMouseSolid)(void* input, C3DVec3* out);
 ```
-- Takes `(this, out*)` — `this` in RCX, hidden result pointer in RDX.
+- Takes `(this, out*)` â€” `this` in RCX, hidden result pointer in RDX.
 - Documented in ui_panels.cpp v6.0 as the ABI fix for WASD/mouse-camera/ESC
   corruption: "the old `typedef C3DVec3 (*t_GetMouseSolid)(void*)` returned
-  the 12-byte struct BY VALUE, so MSVC passed nothing in RDX — the callee
+  the 12-byte struct BY VALUE, so MSVC passed nothing in RDX â€” the callee
   wrote 12 bytes of mouse vector through whatever garbage was in RDX."
 
 **ExtSym results** (`scratch/out/extsym_texture.txt`, `extsym_font.txt`,
@@ -155,18 +155,18 @@ typedef void  (*t_GetMouseSolid)(void* input, C3DVec3* out);
 - `CreateManagedFontBitmap` actual RVA = `0xB0F70` (from XrefsTo caller list).
 
 **Texture/font creation signatures** (from C3DDLL64.dll disassembly):
-- `CreateManagedTexture(middlepoint, filename)` — RCX=middlepoint, RDX=filename,
+- `CreateManagedTexture(middlepoint, filename)` â€” RCX=middlepoint, RDX=filename,
   confirmed by `CreateManagedTexture` entry disassembly.
-- `CreateManagedFontBitmap(middlepoint, filename)` — same calling convention
+- `CreateManagedFontBitmap(middlepoint, filename)` â€” same calling convention
   (calls `FindElement` at `0x1800B0F9B`).
-- `PrintLeftUnicode(fontMgr, font, x, y, color, text)` — variadic, mangled
+- `PrintLeftUnicode(fontMgr, font, x, y, color, text)` â€” variadic, mangled
   name `?PrintLeftUnicode@C3D_FONTMANAGER@@QEAAXPEAVC3D_FONT@@MMKPEB_WZZ`.
 
 **`TexBind` vtable offset**:
-- `ui_panels.cpp:598`: "vtable+0x70 bind" — confirmed by multiple sources.
+- `ui_panels.cpp:598`: "vtable+0x70 bind" â€” confirmed by multiple sources.
 - `almanac_button.cpp` (e949ff3): `#define ALM_TEX_BIND_OFFSET 0x70u`.
 - The `C3DAPI_TEXTURE*` returned by `CreateManagedTexture` has an unknown
-  vtable layout — offset `0x70` was assumed but caused a crash (see Item 3).
+  vtable layout â€” offset `0x70` was assumed but caused a crash (see Item 3).
 
 ### Inferences
 
@@ -176,10 +176,10 @@ native function expects `(this, out*)` with the output pointer in RDX. The
 callee writes 12 bytes through whatever garbage is in RDX, corrupting
 adjacent stack/registers. This is the same bug class fixed in ui_panels v6.0.
 However, this corruption does NOT explain the `CreateManagedTexture` crash
-(Item 1) — it's a separate latent defect.
+(Item 1) â€” it's a separate latent defect.
 
 **ExtSym symbol IDs vs code RVAs**: The values `0x99`, `0x10E`, `0x111`,
-`0x1C0` reported in REPORT.md as "DLL RVAs" are incorrect — they are Ghidra
+`0x1C0` reported in REPORT.md as "DLL RVAs" are incorrect â€” they are Ghidra
 external symbol table indices. Actual code RVAs must be obtained via
 DisasmMany/XrefsTo on the loaded program.
 
@@ -195,12 +195,12 @@ crash there or later.
   ui_panels.cpp v6.0).
 - Texture/font creation signatures: RESOLVED (confirmed by disassembly).
 - ExtSym vs code RVA confusion: RESOLVED (ExtSym IDs are not RVAs).
-- `C3DAPI_TEXTURE` vtable layout for TexBind: UNRESOLVED — offset `0x70`
+- `C3DAPI_TEXTURE` vtable layout for TexBind: UNRESOLVED â€” offset `0x70`
   assumed but caused crash; actual offset unknown.
 
 ---
 
-## Item 3 — Remaining integration gates
+## Item 3 â€” Remaining integration gates
 
 ### Facts
 
@@ -211,15 +211,15 @@ crash there or later.
 - `FindElement` is called to look up an existing texture by some key derived
   from `*(middlepoint + 8)`.
 - `vtable[0x70]` bind was attempted in e949ff3's `DrawNinthTile` after the
-  native Draw call — this caused the earlier Start-time/maintab crash and was
+  native Draw call â€” this caused the earlier Start-time/maintab crash and was
   removed in `09dc3e0`.
-- The `C3DAPI_TEXTURE*` vtable layout is UNKNOWN — offset `0x70` is an
+- The `C3DAPI_TEXTURE*` vtable layout is UNKNOWN â€” offset `0x70` is an
   assumption from `ui_panels.cpp` comment ("vtable+0x70 bind") but was never
   verified against the actual texture object type.
 
 **Ninth-tile clipping** (from prior investigation, not re-run):
 - `DrawFrom9Patch` (C3DDLL64.dll RVA `0xB99C0`) checks `byte ptr [RCX + 0x6760]`
-  at entry — if 0, jumps to function return (no drawing).
+  at entry â€” if 0, jumps to function return (no drawing).
 - `DrawFrom3Patch` (C3DDLL64.dll RVA `0xB9680`) checks the same `+0x6760` flag.
 - COMISS floating-point comparisons determine bounds clipping.
 - Whether panel+0x6760 is set at runtime, and whether the ninth tile's rect
@@ -268,7 +268,7 @@ texture state that subsequent native draws (overlay at `0x1403745B0`,
 content at `0x140374606`) would use. The plugin would need to restore the
 original binding after its Draw, but there's no verified save/restore
 mechanism for texture state. The vtable offset `0x70` assumption caused a
-crash — the actual `C3DAPI_TEXTURE` vtable layout is unknown.
+crash â€” the actual `C3DAPI_TEXTURE` vtable layout is unknown.
 
 **Ninth-tile clipping**: Cannot be established statically. `DrawFrom9Patch`/
 `DrawFrom3Patch` perform clipping via `panel+0x6760` flag + COMISS bounds
@@ -276,7 +276,7 @@ checks, but whether the flag is set and whether the ninth tile's rect is
 within bounds depends on runtime state. Left as UNRESOLVED.
 
 **Read-only latch observation**: Can detect a first click (latch transitions
-0→1 while mouse is over the ninth tile). May MISSED a re-click if the latch
+0â†’1 while mouse is over the ninth tile). May MISSED a re-click if the latch
 was already set (native code may have set it) or if the plugin's read happens
 before the native setter in the same frame. No clean observation point exists
 at the click-write sites (no 14-byte whole-instruction boundary at
@@ -285,16 +285,16 @@ at the click-write sites (no 14-byte whole-instruction boundary at
 **Content suppression via `game+0x5E6`**: BLOCKED. Requires writing native
 state (`game+0x5E6 = 1` every frame when Almanac is open, restore to 0 when
 closed). Issues:
-1. Suppression requires `FUN_140335bc0() != 0` — behavior unknown (not
+1. Suppression requires `FUN_140335bc0() != 0` â€” behavior unknown (not
    decompilable with current Ghidra setup).
 2. Native code toggles `game+0x5E6` on certain clicks (when latch is set),
    so the plugin's write may be immediately flipped back.
-3. `cVar4` also controls tab open/close state rendering — side effects of
+3. `cVar4` also controls tab open/close state rendering â€” side effects of
    writing `game+0x5E6` beyond content suppression are unknown.
-4. No clean hook point at `FUN_14035f3e0` call site (`0x140374606`) — no
+4. No clean hook point at `FUN_14035f3e0` call site (`0x140374606`) â€” no
    14-byte whole-instruction boundary.
 
-**`FUN_1403613B0` navigation/cleanup**: Cannot be analyzed statically — Ghidra
+**`FUN_1403613B0` navigation/cleanup**: Cannot be analyzed statically â€” Ghidra
 has not created a function body (size=1, only function pointer references).
 Cannot determine if calling it with a synthetic index would cause faults.
 
@@ -303,16 +303,16 @@ Cannot determine if calling it with a synthetic index would cause faults.
 
 ### Status: BLOCKED
 
-- Texture binding via `C3DAPI_TEXTURE` vtable: BLOCKED — vtable layout
+- Texture binding via `C3DAPI_TEXTURE` vtable: BLOCKED â€” vtable layout
   unknown, offset `0x70` assumption caused crash.
-- Ninth-tile clipping: UNRESOLVED — runtime-dependent.
-- Read-only latch observation: PARTIAL — can detect first click, may miss
+- Ninth-tile clipping: UNRESOLVED â€” runtime-dependent.
+- Read-only latch observation: PARTIAL â€” can detect first click, may miss
   re-clicks, no clean observation point.
-- Content suppression via `game+0x5E6`: BLOCKED — requires native state write,
+- Content suppression via `game+0x5E6`: BLOCKED â€” requires native state write,
   depends on unknown `FUN_140335bc0`, native toggling may flip it back.
-- `FUN_1403613B0`/`FUN_140335BC0`: BLOCKED — not decompilable with current
+- `FUN_1403613B0`/`FUN_140335BC0`: BLOCKED â€” not decompilable with current
   Ghidra setup.
-- Alternate handler path: NOT APPLICABLE — trade row uses `FUN_140373EA0`.
+- Alternate handler path: NOT APPLICABLE â€” trade row uses `FUN_140373EA0`.
 
 ---
 
@@ -320,7 +320,7 @@ Cannot determine if calling it with a synthetic index would cause faults.
 
 | Item | Status | Key evidence |
 |------|--------|--------------|
-| 1. Crash attribution | RESOLVED | `middlepoint = exeBase + 0x9D4F10 + 0xB048` is invalid (adds offset to global pointer address, not dereferenced game object). `CreateManagedTexture` at `0x1800B0190` dereferences `*(middlepoint+8)` then calls `FindElement` which crashes reading `C3DDLL64.dll + 0x1F2078`. `DAT_1409EACD0` is all zeros — not the C3D_MIDDLEPOINT. |
+| 1. Crash attribution | RESOLVED | `middlepoint = exeBase + 0x9D4F10 + 0xB048` is invalid (adds offset to global pointer address, not dereferenced game object). `CreateManagedTexture` at `0x1800B0190` dereferences `*(middlepoint+8)` then calls `FindElement` which crashes reading `C3DDLL64.dll + 0x1F2078`. `DAT_1409EACD0` is all zeros â€” not the C3D_MIDDLEPOINT. |
 | 2a. GetMouseSolid ABI | RESOLVED | Plugin typedef `float* (*)(void*)` is WRONG. Native is `void (*)(void*, C3DVec3* out)` with hidden sret pointer in RDX (confirmed by mangled name and ui_panels.cpp v6.0). |
 | 2b. ExtSym vs code RVAs | RESOLVED | `0x99`, `0x10E`, `0x111`, `0x1C0` are Ghidra external symbol IDs, not code RVAs. Actual `CreateManagedTexture` RVA = `0xB0190`. |
 | 2c. Texture/font signatures | RESOLVED | Confirmed by disassembly: `CreateManagedTexture(middlepoint, filename)`, `CreateManagedFontBitmap(middlepoint, filename)`. |
@@ -340,7 +340,7 @@ runtime (it may be a valid C3D_MIDDLEPOINT or something else entirely). Until
 this is resolved, any texture loading via `CreateManagedTexture` will crash.
 ---
 
-## Item 4 � Delta check: DAT_1409EACD0 reconciliation
+## Item 4 — Delta check: DAT_1409EACD0 reconciliation
 
 ### Facts
 
@@ -445,7 +445,7 @@ Two errors:
 3. Verify the vtable offsets against the actual C3DAPI_TEXTURE type in C3DDLL64.dll before calling them.
 ---
 
-## Item 5 � Crash dump pointer-chain analysis (SOVIET64.exe.11880.dmp)
+## Item 5 — Crash dump pointer-chain analysis (SOVIET64.exe.11880.dmp)
 
 Dump: C:\Users\EricM\AppData\Local\CrashDumps\SOVIET64.exe.11880.dmp (26,574,449 bytes).
 Module bases from dump: SOVIET64.exe = 0x7FF6F25D0000, C3DDLL64.dll = 0x7FF956E90000.
@@ -464,14 +464,14 @@ Fault read address: 0x7FF957082078 = C3DDLL64.dll + 0x1F2078 (0x78 bytes past en
 | RDX | 0xFFFFFFBD | Intermediate value in FindElement |
 
 **Memory at RDI** (in dump, SOVIET64.exe .data section):
-- [RDI]     = 0x22B109FA800 (heap address � container begin pointer)
-- [RDI+8]   = 0x22B10A10B80 (heap address � container end / key pointer)
+- [RDI]     = 0x22B109FA800 (heap address — container begin pointer)
+- [RDI+8]   = 0x22B10A10B80 (heap address — container end / key pointer)
 - 32 bytes at RDI: `00 a8 9f 10 2b 02 00 00 80 0b a1 10 2b 02 00 00 00 cb a0 10 2b 02 00 00 80 c7 9f 10 2b 02 00 00`
 
 **Heap addresses NOT in dump**:
-- 0x22B109FA800 ([RDI], container begin) � NOT captured in minidump
-- 0x22B10A10B80 ([RDI+8], container end / key) � NOT captured in minidump
-- 0x7FF957082078 (RAX, fault read) � NOT in dump (past end of C3DDLL64.dll)
+- 0x22B109FA800 ([RDI], container begin) — NOT captured in minidump
+- 0x22B10A10B80 ([RDI+8], container end / key) — NOT captured in minidump
+- 0x7FF957082078 (RAX, fault read) — NOT in dump (past end of C3DDLL64.dll)
 
 **FindElement disassembly** (C3DDLL64.dll RVA 0xD1730-0xD17C0):
 ```

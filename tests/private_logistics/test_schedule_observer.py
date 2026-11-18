@@ -43,7 +43,14 @@ class ScheduleObserverTest(unittest.TestCase):
         self.assertIn('16 schedule runtime host-shim scenarios PASS', result.stdout)
 
     def test_native_fingerprints_match_existing_raw_bytes(self):
-        raw = (ROOT / 'docs/private-logistics-runtime/RAW_EXPORTS_VEHICLE_DETAIL_RENDERER.md').read_bytes().decode('utf-16')
+        # The export was UTF-16LE until 2026-11-18 and is now UTF-8; accept
+        # either encoding so the fixture's provenance does not pin a codec.
+        export = ROOT / 'docs/private-logistics-runtime/RAW_EXPORTS_VEHICLE_DETAIL_RENDERER.md'
+        data = export.read_bytes()
+        try:
+            raw = data.decode('utf-8')
+        except UnicodeDecodeError:
+            raw = data.decode('utf-16')
         instructions = {}
         for line in raw.splitlines():
             m = re.match(r'^(140[0-9a-f]+):\s+((?:[0-9A-F]{2} )*[0-9A-F]{2})\s+', line)

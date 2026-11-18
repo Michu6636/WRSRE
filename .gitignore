@@ -4,7 +4,6 @@ x64/
 Debug/
 Release/
 .vs/
-.kilo/
 scratch/
 tools/peinfo-out/
 # Kilo writes local state here; track project config and referenced prompts.
@@ -18,6 +17,7 @@ tools/peinfo-out/
 *.obj
 *.ilk
 *.exe
+*.exp
 # Local agent review exports and Python-generated files
 .cache/
 __pycache__/

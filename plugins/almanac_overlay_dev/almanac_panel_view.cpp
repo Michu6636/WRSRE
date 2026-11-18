@@ -24,14 +24,23 @@
 namespace almanac {
 namespace {
 
-// Window flags shared by the panel and its child regions. NoInputs is the
-// important one; the rest keep the panel from dragging, resizing, colliding
-// with another overlay's name, or being persisted to imgui.ini.
-constexpr ImGuiWindowFlags kPanelFlags =
+// Window flags for the non-interactive launcher button (clicks are handled
+// directly by WndProc hit-testing against the published rect).
+constexpr ImGuiWindowFlags kLauncherFlags =
     ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoSavedSettings |
     ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove |
     ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar |
     ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoNav |
+    ImGuiWindowFlags_NoFocusOnAppearing |
+    ImGuiWindowFlags_NoBringToFrontOnFocus |
+    ImGuiWindowFlags_NoTitleBar;
+
+// Window flags for the interactive Almanac panel (Milestone 2): draggable,
+// resizable, scrollable, with clickable tabs.
+constexpr ImGuiWindowFlags kInteractivePanelFlags =
+    ImGuiWindowFlags_NoSavedSettings |
+    ImGuiWindowFlags_NoCollapse |
+    ImGuiWindowFlags_NoNav |
     ImGuiWindowFlags_NoFocusOnAppearing |
     ImGuiWindowFlags_NoBringToFrontOnFocus;
 
@@ -40,6 +49,7 @@ constexpr ImGuiWindowFlags kPanelFlags =
 const ImVec4 kInk   = ImVec4(0.22f, 0.17f, 0.12f, 1.00f);
 const ImVec4 kQuiet = ImVec4(0.42f, 0.35f, 0.27f, 1.00f);
 const ImVec4 kWarn  = ImVec4(0.55f, 0.18f, 0.12f, 1.00f);
+const ImVec4 kLive  = ImVec4(0.16f, 0.42f, 0.20f, 1.00f);
 const ImU32  kRule  = IM_COL32(0x38, 0x2B, 0x1E, 0x55);
 
 struct Row {
@@ -76,14 +86,14 @@ const Row kLogisticsRows[] = {
     {"Shipments in transit",         "158"},
 };
 
-const char* const kTabNames[] = {"Economy", "Labour", "Logistics"};
+const char* const kTabNames[] = {"Economy", "Labour", "Logistics", "Enterprises"};
 const Row* const   kTabRows[]  = {kEconomyRows, kLabourRows, kLogisticsRows};
 const int          kTabRowCounts[] = {
     static_cast<int>(sizeof(kEconomyRows) / sizeof(kEconomyRows[0])),
     static_cast<int>(sizeof(kLabourRows) / sizeof(kLabourRows[0])),
     static_cast<int>(sizeof(kLogisticsRows) / sizeof(kLogisticsRows[0])),
 };
-constexpr int kTabCount = 3;
+constexpr int kTabCount = 4;
 
 void Rule()
 {
@@ -94,29 +104,44 @@ void Rule()
     ImGui::Dummy(ImVec2(w, 1.0f));
 }
 
-// Tabs are drawn, not owned. A real ImGui tab bar keeps selection state and
-// takes focus; for a read-only smoke panel the "selected" tab is simply the
-// first one, always, and none of them respond to the pointer.
-void DrawTabStrip()
+// Interactive tab strip: clicking any tab switches the active table.
+void DrawTabStrip(int& activeTab)
 {
+    if (activeTab < 0 || activeTab >= kTabCount) activeTab = 0;
     ImDrawList* draw = ImGui::GetWindowDrawList();
     for (int i = 0; i < kTabCount; ++i) {
         if (i) ImGui::SameLine(0.0f, 6.0f);
-        const ImVec2 at = ImGui::GetCursorScreenPos();
+        const ImVec2 at   = ImGui::GetCursorScreenPos();
         const ImVec2 size = ImGui::CalcTextSize(kTabNames[i]);
-        const ImVec2 pad(10.0f, 4.0f);
-        const bool   selected = i == 0;
+        const ImVec2 pad(12.0f, 5.0f);
+        const ImVec2 btnSize(size.x + pad.x * 2.0f, size.y + pad.y * 2.0f);
+
+        char btnId[48];
+        std::snprintf(btnId, sizeof(btnId), "##almanac_tab_%d", i);
+        if (ImGui::InvisibleButton(btnId, btnSize)) {
+            activeTab = i;
+        }
+        const bool selected = (i == activeTab);
+        const bool hovered  = ImGui::IsItemHovered();
+
+        const ImU32 fillCol = selected
+            ? IM_COL32(0x66, 0x1A, 0x17, 0xFF)
+            : (hovered ? IM_COL32(0xDF, 0xCF, 0xAF, 0xFF)
+                       : IM_COL32(0xD3, 0xC1, 0x9F, 0xFF));
+        const ImU32 borderCol = selected || hovered
+            ? IM_COL32(0x66, 0x1A, 0x17, 0xDD)
+            : kRule;
+        const ImVec4 textCol = selected
+            ? ImVec4(0.96f, 0.91f, 0.82f, 1.00f)
+            : (hovered ? kInk : kQuiet);
+
         draw->AddRectFilled(
-            at, ImVec2(at.x + size.x + pad.x * 2.0f, at.y + size.y + pad.y * 2.0f),
-            selected ? IM_COL32(0xE8, 0xD9, 0xBC, 0xFF) : IM_COL32(0xD3, 0xC1, 0x9F, 0xFF), 4.0f);
+            at, ImVec2(at.x + btnSize.x, at.y + btnSize.y), fillCol, 4.0f);
         draw->AddRect(
-            at, ImVec2(at.x + size.x + pad.x * 2.0f, at.y + size.y + pad.y * 2.0f),
-            kRule, 4.0f);
-        ImGui::SetCursorScreenPos(ImVec2(at.x + pad.x, at.y + pad.y));
-        ImGui::TextColored(selected ? kInk : kQuiet,
-                           "%s", kTabNames[i]);
-        ImGui::SetCursorScreenPos(ImVec2(at.x + size.x + pad.x * 2.0f, at.y));
-        ImGui::Dummy(ImVec2(0.0f, size.y + pad.y * 2.0f));
+            at, ImVec2(at.x + btnSize.x, at.y + btnSize.y), borderCol, 4.0f);
+        draw->AddText(
+            ImVec2(at.x + pad.x, at.y + pad.y),
+            ImGui::ColorConvertFloat4ToU32(textCol), kTabNames[i]);
     }
 }
 
@@ -139,10 +164,298 @@ void DrawTable(const Row* rows, int count)
     ImGui::EndTable();
 }
 
+void DrawLiveTable(const TabData& data)
+{
+    if (data.count <= 0) {
+        ImGui::TextColored(kQuiet, "No live service data available for this tab.");
+        return;
+    }
+    if (!ImGui::BeginTable("##almanac_rows", 2,
+            ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerH |
+            ImGuiTableFlags_SizingStretchProp)) {
+        return;
+    }
+    ImGui::TableSetupColumn("Item", ImGuiTableColumnFlags_WidthStretch, 1.6f);
+    ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch, 1.0f);
+    for (int i = 0; i < data.count; ++i) {
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::TextColored(kInk, "%s", data.rows[i].label);
+        ImGui::TableSetColumnIndex(1);
+        ImGui::TextColored(kQuiet, "%s", data.rows[i].value);
+    }
+    ImGui::EndTable();
+}
+
+void DrawEconomyControls(const ControlState& ctrl, PanelAction* outAction)
+{
+    if (!ctrl.hasTaxControls && !ctrl.hasBankControl) return;
+
+    ImGui::Spacing();
+    Rule();
+    ImGui::TextColored(kInk, "Fiscal Policy Controls");
+    ImGui::Spacing();
+
+    auto emit = [outAction](PanelAction::Kind k, int idx, bool flg, float val) {
+        if (outAction && outAction->kind == PanelAction::Kind::None) {
+            outAction->kind  = k;
+            outAction->index = idx;
+            outAction->flag  = flg;
+            outAction->value = val;
+        }
+    };
+
+    if (ctrl.hasTaxControls) {
+        // VAT
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextColored(kInk, "VAT (%.0f%%)", ctrl.vatRate * 100.0f);
+        ImGui::SameLine(180.0f);
+        if (ImGui::SmallButton(ctrl.vatEnabled ? "ON##vat" : "OFF##vat")) {
+            emit(PanelAction::Kind::SetTaxEnabled, 0, !ctrl.vatEnabled, 0.0f);
+        }
+        ImGui::SameLine();
+        if (ImGui::SmallButton("-2%##vat")) {
+            float v = ctrl.vatRate - 0.02f;
+            if (v < 0.0f) v = 0.0f;
+            emit(PanelAction::Kind::SetTaxRate, 0, false, v);
+        }
+        ImGui::SameLine();
+        if (ImGui::SmallButton("+2%##vat")) {
+            float v = ctrl.vatRate + 0.02f;
+            if (v > 1.0f) v = 1.0f;
+            emit(PanelAction::Kind::SetTaxRate, 0, false, v);
+        }
+
+        // Profit Tax
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextColored(kInk, "Profit Tax (%.0f%%)", ctrl.profitRate * 100.0f);
+        ImGui::SameLine(180.0f);
+        if (ImGui::SmallButton(ctrl.profitEnabled ? "ON##prof" : "OFF##prof")) {
+            emit(PanelAction::Kind::SetTaxEnabled, 1, !ctrl.profitEnabled, 0.0f);
+        }
+        ImGui::SameLine();
+        if (ImGui::SmallButton("-2%##prof")) {
+            float v = ctrl.profitRate - 0.02f;
+            if (v < 0.0f) v = 0.0f;
+            emit(PanelAction::Kind::SetTaxRate, 1, false, v);
+        }
+        ImGui::SameLine();
+        if (ImGui::SmallButton("+2%##prof")) {
+            float v = ctrl.profitRate + 0.02f;
+            if (v > 1.0f) v = 1.0f;
+            emit(PanelAction::Kind::SetTaxRate, 1, false, v);
+        }
+
+        // Property Tax
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextColored(kInk, "Property (%.0f %s)", ctrl.propertyBase, ctrl.currencySymbol);
+        ImGui::SameLine(180.0f);
+        if (ImGui::SmallButton(ctrl.propertyEnabled ? "ON##prop" : "OFF##prop")) {
+            emit(PanelAction::Kind::SetTaxEnabled, 2, !ctrl.propertyEnabled, 0.0f);
+        }
+        ImGui::SameLine();
+        if (ImGui::SmallButton("-25##prop")) {
+            float v = ctrl.propertyBase - 25.0f;
+            if (v < 0.0f) v = 0.0f;
+            emit(PanelAction::Kind::SetTaxRate, 2, false, v);
+        }
+        ImGui::SameLine();
+        if (ImGui::SmallButton("+25##prop")) {
+            emit(PanelAction::Kind::SetTaxRate, 2, false, ctrl.propertyBase + 25.0f);
+        }
+
+        ImGui::Spacing();
+        if (ImGui::SmallButton("Settle Accrued Taxes Now")) {
+            emit(PanelAction::Kind::SettleTaxesNow, 0, false, 0.0f);
+        }
+    }
+
+    if (ctrl.hasBankControl) {
+        ImGui::Spacing();
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextColored(kInk, "Bank Rate (%.0f%%)", ctrl.bankRate * 100.0);
+        ImGui::SameLine(180.0f);
+        if (ImGui::SmallButton("-1%##bank")) {
+            float v = static_cast<float>(ctrl.bankRate) - 0.01f;
+            if (v < 0.0f) v = 0.0f;
+            emit(PanelAction::Kind::SetBankRate, 0, false, v);
+        }
+        ImGui::SameLine();
+        if (ImGui::SmallButton("+1%##bank")) {
+            float v = static_cast<float>(ctrl.bankRate) + 0.01f;
+            if (v > 0.25f) v = 0.25f;
+            emit(PanelAction::Kind::SetBankRate, 0, false, v);
+        }
+    }
+}
+
+void DrawLabourControls(const ControlState& ctrl, PanelAction* outAction)
+{
+    if (!ctrl.hasSectorWages) return;
+
+    ImGui::Spacing();
+    Rule();
+    ImGui::TextColored(kInk, "Sector Wage Controls (min %.2f %s/day)",
+                       ctrl.minWage, ctrl.currencySymbol);
+    ImGui::Spacing();
+
+    static const char* const kSectorLabels[6] = {
+        "Heavy industry", "Infrastructure", "Care & Education",
+        "Light industry", "Services",       "Agriculture",
+    };
+
+    for (int s = 0; s < 6; ++s) {
+        if (!(ctrl.sectorWages[s] > 0.0f)) continue;
+        ImGui::PushID(s);
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextColored(kInk, "%s (%.2f)", kSectorLabels[s], ctrl.sectorWages[s]);
+        ImGui::SameLine(200.0f);
+        if (ImGui::SmallButton("-0.20")) {
+            float v = ctrl.sectorWages[s] - 0.20f;
+            if (v < ctrl.minWage) v = ctrl.minWage;
+            if (outAction && outAction->kind == PanelAction::Kind::None) {
+                outAction->kind  = PanelAction::Kind::SetSectorWage;
+                outAction->index = s;
+                outAction->value = v;
+            }
+        }
+        ImGui::SameLine();
+        if (ImGui::SmallButton("+0.20")) {
+            float v = ctrl.sectorWages[s] + 0.20f;
+            if (outAction && outAction->kind == PanelAction::Kind::None) {
+                outAction->kind  = PanelAction::Kind::SetSectorWage;
+                outAction->index = s;
+                outAction->value = v;
+            }
+        }
+        ImGui::PopID();
+    }
+}
+
+void DrawEnterprisesTable(const EnterpriseList& list, const char* sym)
+{
+    if (list.totalCount <= 0) {
+        ImGui::TextColored(kQuiet,
+            "No private enterprises registered yet.");
+        ImGui::TextColored(kQuiet,
+            "Tag a building [P] or click its Privatise button to register one.");
+        return;
+    }
+
+    ImGui::TextColored(kQuiet, "Showing %d of %d private enterprise(s) (%s)",
+                       list.count, list.totalCount, (sym && sym[0]) ? sym : "RUB");
+    ImGui::Spacing();
+
+    if (!ImGui::BeginTable("##almanac_enterprises", 5,
+            ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerH |
+            ImGuiTableFlags_SizingStretchProp)) {
+        return;
+    }
+    ImGui::TableSetupColumn("Enterprise", ImGuiTableColumnFlags_WidthStretch, 2.0f);
+    ImGui::TableSetupColumn("Capital",    ImGuiTableColumnFlags_WidthStretch, 1.0f);
+    ImGui::TableSetupColumn("Month Net",  ImGuiTableColumnFlags_WidthStretch, 1.0f);
+    ImGui::TableSetupColumn("Markup",     ImGuiTableColumnFlags_WidthStretch, 0.7f);
+    ImGui::TableSetupColumn("Debt",       ImGuiTableColumnFlags_WidthStretch, 0.9f);
+    ImGui::TableHeadersRow();
+
+    for (int i = 0; i < list.count; ++i) {
+        const EnterpriseRow& r = list.rows[i];
+        ImGui::TableNextRow();
+
+        ImGui::TableSetColumnIndex(0);
+        ImGui::TextColored(r.solvent ? kInk : kWarn, "%s%s",
+                           r.name, r.solvent ? "" : " [!]");
+
+        ImGui::TableSetColumnIndex(1);
+        ImGui::TextColored(r.capital >= 0.0 ? kInk : kWarn, "%.0f", r.capital);
+
+        ImGui::TableSetColumnIndex(2);
+        ImGui::TextColored(r.monthNet >= 0.0 ? kLive : kWarn, "%+.0f", r.monthNet);
+
+        ImGui::TableSetColumnIndex(3);
+        ImGui::TextColored(kQuiet, "x%.2f", r.markup);
+
+        ImGui::TableSetColumnIndex(4);
+        if (r.debt > 0.5) {
+            ImGui::TextColored(kWarn, "%.0f", r.debt);
+        } else {
+            ImGui::TextColored(kQuiet, "-");
+        }
+    }
+    ImGui::EndTable();
+}
+
 } // namespace
 
-bool DrawAlmanacPanel(const PanelModel& model)
+LauncherRect DrawAlmanacLauncherButton(bool panelOpen, bool hovered,
+                                       const char* toggleKeyName)
 {
+    LauncherRect rect{};
+    const ImGuiViewport* viewport = ImGui::GetMainViewport();
+    if (!viewport) return rect;
+
+    const ImVec2 origin = viewport->WorkPos;
+    const ImVec2 extent = viewport->WorkSize;
+    if (!(extent.x > 240.0f) || !(extent.y > 120.0f)) return rect;
+
+    const char* key = (toggleKeyName && toggleKeyName[0]) ? toggleKeyName : "F9";
+    char label[64];
+    std::snprintf(label, sizeof(label), "%s (%s)",
+                  panelOpen ? "Almanac [Open]" : "Almanac", key);
+
+    const ImVec2 textSize = ImGui::CalcTextSize(label);
+    const float  padX     = 14.0f;
+    const float  padY     = 6.0f;
+    const float  btnW     = textSize.x + padX * 2.0f;
+    const float  btnH     = textSize.y + padY * 2.0f;
+    const ImVec2 pos(origin.x + 24.0f, origin.y + 64.0f);
+
+    ImGui::SetNextWindowPos(pos, ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2(btnW, btnH), ImGuiCond_Always);
+
+    const ImVec4 bg = panelOpen
+        ? (hovered ? ImVec4(0.56f, 0.17f, 0.13f, 0.98f)
+                   : ImVec4(0.46f, 0.12f, 0.10f, 0.96f))
+        : (hovered ? ImVec4(0.95f, 0.90f, 0.79f, 0.98f)
+                   : ImVec4(0.91f, 0.85f, 0.74f, 0.95f));
+    const ImVec4 border = hovered
+        ? ImVec4(0.65f, 0.22f, 0.16f, 1.00f)
+        : ImVec4(0.36f, 0.25f, 0.16f, 0.90f);
+    const ImVec4 textCol = panelOpen
+        ? ImVec4(0.96f, 0.91f, 0.82f, 1.00f)
+        : kInk;
+
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(1.0f, 1.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 6.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, hovered ? 1.5f : 1.0f);
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, bg);
+    ImGui::PushStyleColor(ImGuiCol_Border, border);
+
+    if (ImGui::Begin("##almanac_launcher_btn", nullptr, kLauncherFlags)) {
+        ImGui::SetCursorPos(ImVec2(padX, padY));
+        ImGui::TextColored(textCol, "%s", label);
+        rect.left   = pos.x;
+        rect.top    = pos.y;
+        rect.right  = pos.x + btnW;
+        rect.bottom = pos.y + btnH;
+        rect.valid  = true;
+    }
+    ImGui::End();
+
+    ImGui::PopStyleColor(2);
+    ImGui::PopStyleVar(4);
+    return rect;
+}
+
+bool DrawAlmanacPanel(const PanelModel& model, LauncherRect* outRect,
+                      int* activeTab, PanelAction* outAction,
+                      const PanelLayout* initialLayout)
+{
+    if (outRect) *outRect = LauncherRect{};
+    if (outAction) *outAction = PanelAction{};
+    int localTab = 0;
+    int& tab = activeTab ? *activeTab : localTab;
     const ImGuiViewport* viewport = ImGui::GetMainViewport();
     if (!viewport) return false;
 
@@ -188,16 +501,26 @@ bool DrawAlmanacPanel(const PanelModel& model)
                  + 1.0f + gap + line                           // footer rule + line
                  + gap;                                        // child gap allowance
 
-    float maxHeight = extent.y - 96.0f;
+    float maxHeight = extent.y - 128.0f;
     if (maxHeight < 120.0f) maxHeight = 120.0f;
     if (height > maxHeight) height = maxHeight;
     if (width < 200.0f) width = 200.0f;
 
-    // Anchored top-left with a small margin, matching the game's own tool
-    // panels, so it does not sit on the centre of the map.
-    ImGui::SetNextWindowPos(ImVec2(origin.x + 24.0f, origin.y + 64.0f),
-                            ImGuiCond_Always);
-    ImGui::SetNextWindowSize(ImVec2(width, height), ImGuiCond_Always);
+    // Initial placement from saved layout (if any) or top-left below the
+    // launcher button; user may drag and resize freely afterwards.
+    const float initX = (initialLayout && initialLayout->hasSavedPos)
+                            ? initialLayout->x : (origin.x + 24.0f);
+    const float initY = (initialLayout && initialLayout->hasSavedPos)
+                            ? initialLayout->y : (origin.y + 104.0f);
+    const float initW = (initialLayout && initialLayout->hasSavedSize)
+                            ? initialLayout->w : width;
+    const float initH = (initialLayout && initialLayout->hasSavedSize)
+                            ? initialLayout->h : (height + 120.0f);
+    ImGui::SetNextWindowPos(ImVec2(initX, initY), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(initW, initH), ImGuiCond_FirstUseEver);
+    const float maxW = (extent.x - 32.0f > 420.0f) ? (extent.x - 32.0f) : 420.0f;
+    const float maxH = (extent.y - 48.0f > 240.0f) ? (extent.y - 48.0f) : 240.0f;
+    ImGui::SetNextWindowSizeConstraints(ImVec2(420.0f, 240.0f), ImVec2(maxW, maxH));
 
     // ###  separates the visible title from the window's identity, so changing
     // the visible text never creates a new window.
@@ -208,12 +531,21 @@ bool DrawAlmanacPanel(const PanelModel& model)
     // the light text colour is pushed for the call that draws it and popped
     // before any content: the body keeps the dark ink colour.
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.95f, 0.90f, 0.80f, 1.00f));
-    const bool open = ImGui::Begin(title, nullptr, kPanelFlags);
+    const bool open = ImGui::Begin(title, nullptr, kInteractivePanelFlags);
     ImGui::PopStyleColor();
 
     bool shown = false;
     if (open) {
         shown = true;
+        if (outRect) {
+            const ImVec2 wPos  = ImGui::GetWindowPos();
+            const ImVec2 wSize = ImGui::GetWindowSize();
+            outRect->left   = wPos.x;
+            outRect->top    = wPos.y;
+            outRect->right  = wPos.x + wSize.x;
+            outRect->bottom = wPos.y + wSize.y;
+            outRect->valid  = true;
+        }
 
         ImGui::TextColored(kInk, "%s", model.subtitle);
         ImGui::SameLine();
@@ -221,26 +553,30 @@ bool DrawAlmanacPanel(const PanelModel& model)
                            model.toggleKeyName);
         Rule();
 
-        ImGui::TextColored(kWarn, "%s", model.dataNotice);
+        ImGui::TextColored(model.hasLiveData ? kLive : kWarn,
+                           "%s", model.dataNotice);
         ImGui::Spacing();
 
-        DrawTabStrip();
+        DrawTabStrip(tab);
         ImGui::Spacing();
         Rule();
 
-        // The body takes whatever is left above the footer. On a surface so
-        // short that the footer would be squeezed out, the child has no room and
-        // the rows are clipped - which is visible, and better than a footer
-        // drawn over them.
-        // Exactly the two terms the height calculation reserves for the footer.
         const float footer = gap + 1.0f + gap + line;
         if (ImGui::BeginChild("##almanac_body", ImVec2(0.0f, -footer),
                               ImGuiChildFlags_None,
-                              ImGuiWindowFlags_NoInputs)) {
-            DrawTable(kTabRows[0], kTabRowCounts[0]);
-            ImGui::TextColored(kQuiet,
-                               "Tabs are drawn for layout review only; only the "
-                               "first is populated.");
+                              ImGuiWindowFlags_None)) {
+            if (tab == 3) {
+                DrawEnterprisesTable(model.enterprises, model.controls.currencySymbol);
+            } else if (model.hasLiveData) {
+                DrawLiveTable(model.tabs[tab]);
+                if (tab == 0) {
+                    DrawEconomyControls(model.controls, outAction);
+                } else if (tab == 1) {
+                    DrawLabourControls(model.controls, outAction);
+                }
+            } else {
+                DrawTable(kTabRows[tab], kTabRowCounts[tab]);
+            }
         }
         ImGui::EndChild();
 

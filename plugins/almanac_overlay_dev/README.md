@@ -1,8 +1,17 @@
 # almanac_overlay_dev — the Almanac ImGui panel
 
 One panel, drawn with Dear ImGui, composited into the game's **own** back buffer
-inside the game window. `F8` hides and reopens it. It is read-only and its values
-are labelled placeholders.
+inside the game window. `F9` hides and reopens it (`F8` is `ui_overlay`'s HUD
+key; set `toggle_key = 0x77` if you prefer it). A floating `Almanac` button in
+the top-left corner toggles it too.
+
+The panel has four tabs — **Economy**, **Labour**, **Logistics** and
+**Enterprises** — and is draggable and resizable. Economy, Labour and Logistics
+are read-only telemetry from the `currency`, `citizen_labor`,
+`resource_pricing`, `state_ledger` and `b2b_logistics` services. The fiscal
+sliders, wage steppers and bank-rate control **write** to the republic through
+the `taxes`, `citizen_labor` and `republic_bank` APIs. Layout and control state
+persist in the plugin INI.
 
 ```cmd
 build.bat
@@ -17,8 +26,8 @@ This is a **new plugin**. The earlier `prototypes/almanac_overlay/native/` CMake
 candidate is untouched and still not built by anything; a plain `build.bat` now
 builds this one along with everything else.
 
-The panel starts hidden (`show_on_start = 0`), so the first `F8` shows it and the
-next `F8` hides it.
+The panel starts hidden (`show_on_start = 0`), so the first `F9` shows it and the
+next `F9` hides it.
 
 ![The panel as drawn by the host renderer](preview-host-render.png)
 
@@ -130,16 +139,18 @@ ran.
   `toggle_key`, `font_scale_percent`, `draw_when_unfocused`.
 - **Coexistence.** The context is saved and restored around every use. It has no
   ImGui globals, no `imgui.ini` (`IniFilename = nullptr`) and no cursor changes.
-  `F8` is also `ui_overlay`'s HUD key; both toggle on the same press, which is
-  existing behaviour, not a new conflict.
-- **No game access.** No RVA, no exported game function, no service `consume`,
-  no read or write of game state, no save interaction.
+- **Game access.** The panel consumes the `sim_clock`, `ui_overlay`, `currency`,
+  `taxes`, `republic_bank`, `citizen_labor`, `enterprise_base` and
+  `b2b_logistics` service APIs. It reads their snapshots for the telemetry tabs
+  and calls their write APIs for the fiscal, wage and bank-rate controls. It
+  installs no RVA hook and patches no game code.
 
 ### What it does not do
 
-Interactive widgets, tabs that switch, live Finance/currency readout, typing,
-mouse capture, a native sidebar entry, or device-loss recovery. `Present1` is not
-hooked; a title-bar Close button is not drawn; the panel is hidden by `F8` only.
+Typing into text fields, a native sidebar entry, device-loss recovery, or a
+title-bar Close button (the panel is hidden by `F9` or the launcher button).
+`Present1` is not hooked. Live game verification of the write controls is still
+pending — treat the fiscal and wage widgets as host-tested, not runtime-proven.
 
 ---
 

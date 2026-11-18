@@ -5,7 +5,7 @@
             "label": "build",
             "type": "shell",
             "command": "cmd",
-            "args": ["/c", "${workspaceFolder}\\build.bat"],
+            "args": ["/c", "${workspaceFolder}\\build.bat", "wrsre"],
             "group": {
                 "kind": "build",
                 "isDefault": true
@@ -22,7 +22,7 @@
             "label": "build (clean)",
             "type": "shell",
             "command": "cmd",
-            "args": ["/c", "${workspaceFolder}\\build.bat", "clean"],
+            "args": ["/c", "${workspaceFolder}\\build.bat", "clean", "wrsre"],
             "presentation": {
                 "reveal": "always",
                 "panel": "dedicated",
@@ -32,7 +32,7 @@
             "problemMatcher": "$msCompile"
         },
         {
-            "label": "build (release)",
+            "label": "build (all separate plugins)",
             "type": "shell",
             "command": "cmd",
             "args": ["/c", "${workspaceFolder}\\build.bat"],

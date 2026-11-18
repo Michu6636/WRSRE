@@ -16,10 +16,10 @@
 //   clickable regardless.
 //
 // DEFAULT
-//   The shipped INI and missing-key fallback are enabled = 1. If installed,
-//   Init accepts the plugin and Start attempts the guarded import swap. Set
-//   enabled = 0 in the active INI and restart to opt out. This experimental
-//   hook is active by default on supported builds.
+//   OFF as of 2026-11-18. The shipped INI and the missing-key fallback are both
+//   enabled = 0, so installing the DLL does nothing until a tester opts in with
+//   enabled = 1 on a disposable game copy. Start then attempts the guarded
+//   import swap. This plugin is a superseded prototype; prefer almanac_overlay_dev.
 //
 // MECHANISM
 //   One import swap: C3D_PANEL2D::Draw at IAT slot RVA 0x86C860, called by the
@@ -1002,7 +1002,10 @@ static void InstallSidebarHook(void)
 static void ReadSettings(void)
 {
     const char* ini = "plugins\\almanac_button.ini";
-    g_enabled = (H->configInt(ini, "almanac_button", "enabled", 1) == 1) ? 1 : 0;
+    // Missing-key default is OFF: this is a disposable test build whose fail-stop
+    // path calls TerminateProcess. A shipped INI that omits the key must not
+    // arm the draw hook. Opt in explicitly with enabled = 1.
+    g_enabled = (H->configInt(ini, "almanac_button", "enabled", 0) == 1) ? 1 : 0;
     H->configString(ini, "almanac_button", "texture_asset", g_textureAsset,
                     (int)sizeof(g_textureAsset), "icon_inspectnumbers.png");
     g_contentSuppressionEnabled = (H->configInt(ini, "almanac_button", "content_suppression", 1) == 1) ? 1 : 0;

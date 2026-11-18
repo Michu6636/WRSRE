@@ -22,9 +22,12 @@ struct ImGuiContext;
 
 namespace almanac {
 
+struct PanelModel;
+struct PanelAction;
+
 struct PanelSettings {
-    bool  autoShow     = true;   // show once without a key press
-    int   toggleKey    = VK_F8;  // launcher
+    bool  autoShow     = false;  // wait for launcher click or F9 by default
+    int   toggleKey    = VK_F9;  // launcher hotkey
     float fontScale    = 1.0f;   // 0.75 .. 2.5
     bool  drawWhenUnfocused = false;
 };
@@ -45,7 +48,9 @@ public:
     // Draws one frame into the swap chain's current back buffer. `keyDown` is
     // the physical key level. Returns false if the panel had to give up (device
     // removed, back buffer unavailable); the caller then stops calling it.
-    bool Render(IDXGISwapChain* swap, bool keyDown);
+    bool Render(IDXGISwapChain* swap, bool keyDown, bool worldLoaded = true,
+                const PanelModel* liveModel = nullptr,
+                PanelAction* outAction = nullptr);
 
     // Drops the GPU objects and the ImGui context. Only from the owner thread,
     // and only while no Present callback can be running.

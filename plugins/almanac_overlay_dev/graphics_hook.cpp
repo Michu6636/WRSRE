@@ -30,9 +30,20 @@
 #include "graphics_hook.h"
 
 #include "almanac_panel.h"
+#include "almanac_panel_view.h"
+#include "../../src/b2b_logistics_api.h"
+#include "../../src/citizen_labor_api.h"
+#include "../../src/currency_api.h"
+#include "../../src/enterprise_base_api.h"
+#include "../../src/republic_bank_api.h"
+#include "../../src/sim_clock_api.h"
+#include "../../src/taxes_api.h"
+#include "../../src/ui_overlay_api.h"
 
+#include <atomic>
 #include <cstdarg>
 #include <cstddef>
+#include <cstdint>
 #include <cstdio>
 
 #pragma comment(lib, "d3d11.lib")
@@ -51,8 +62,8 @@ constexpr int kPresentVtableIndex = 8;
 // Published before any detour that reads them becomes reachable, and never
 // mutated afterwards.
 const TsmHost* g_host      = nullptr;
-unsigned       g_toggleKey = VK_F8;
-bool           g_autoShow  = true;
+unsigned       g_toggleKey = VK_F9;
+bool           g_autoShow  = false;
 
 using CreateAndSwapChainFn = HRESULT(WINAPI*)(IDXGIAdapter*, D3D_DRIVER_TYPE,
     HMODULE, UINT, const D3D_FEATURE_LEVEL*, UINT, UINT,
@@ -121,6 +132,693 @@ bool ToggleKeyDown()
     return (GetAsyncKeyState(g_toggleKey) & 0x8000) != 0;
 }
 
+std::atomic<ULONGLONG> g_lastTerrainFrameMs{0};
+
+float AlmanacWorldHeartbeat(void*, float, float y, float)
+{
+    g_lastTerrainFrameMs.store(GetTickCount64(), std::memory_order_relaxed);
+    return y;
+}
+
+// Detect whether a game save/world is currently loaded.
+// Uses a lightweight ui_overlay drawer (C3D_TERRAIN::Render heartbeat), which
+// runs every frame in a loaded save (paused or unpaused) and never runs on the
+// splash screen, loading screen, or main menu. Falls back to sim_clock if the
+// HUD is hidden, or defaults to true if neither service is present.
+bool IsWorldLoaded()
+{
+    static const TsmUiOverlayApi* s_uiOverlay = nullptr;
+    static const TsmSimClockApi*  s_simClock  = nullptr;
+    static bool s_lookedUp = false;
+
+    if (!s_lookedUp && g_host && g_host->consume) {
+        s_uiOverlay = static_cast<const TsmUiOverlayApi*>(
+            g_host->consume(TSM_SERVICE_UI_OVERLAY, TSM_UI_OVERLAY_VERSION));
+        if (s_uiOverlay && s_uiOverlay->registerDrawer) {
+            s_uiOverlay->registerDrawer(&AlmanacWorldHeartbeat, nullptr);
+        }
+        s_simClock = static_cast<const TsmSimClockApi*>(
+            g_host->consume(TSM_SERVICE_SIM_CLOCK, TSM_SIM_CLOCK_VERSION));
+        s_lookedUp = true;
+    }
+
+    if (s_uiOverlay) {
+        const ULONGLONG last = g_lastTerrainFrameMs.load(std::memory_order_relaxed);
+        if (last != 0 && (GetTickCount64() - last) < 1000ULL) {
+            return true;
+        }
+    }
+
+    if (s_simClock && s_simClock->getYear && s_simClock->getYear() >= 0) {
+        return true;
+    }
+
+    return !s_uiOverlay && !s_simClock;
+}
+
+void AppendRow(TabData& tab, const char* label, const char* fmt, ...)
+{
+    if (tab.count >= TabData::kMaxRows) return;
+    TabRow& row = tab.rows[tab.count++];
+    std::snprintf(row.label, sizeof(row.label), "%s", label ? label : "");
+    va_list ap;
+    va_start(ap, fmt);
+    std::vsnprintf(row.value, sizeof(row.value), fmt, ap);
+    va_end(ap);
+    row.value[sizeof(row.value) - 1] = '\0';
+}
+
+const TsmSimClockApi*       g_svcClock      = nullptr;
+const TsmCurrencyApi*       g_svcCurrency   = nullptr;
+const TsmTaxesApi*          g_svcTaxes      = nullptr;
+const TsmRepublicBankApi*   g_svcBank       = nullptr;
+const TsmCitizenLaborApi*   g_svcLabor      = nullptr;
+const TsmEnterpriseBaseApi* g_svcEnterprise = nullptr;
+const TsmB2bLogisticsApi*   g_svcB2b        = nullptr;
+bool                        g_servicesLookedUp = false;
+ULONGLONG                   g_lastSampleMs     = 0;
+
+void EnsureServicesLookedUp()
+{
+    if (g_servicesLookedUp || !g_host || !g_host->consume) return;
+    g_svcClock = static_cast<const TsmSimClockApi*>(
+        g_host->consume(TSM_SERVICE_SIM_CLOCK, TSM_SIM_CLOCK_VERSION));
+
+    g_svcCurrency = static_cast<const TsmCurrencyApi*>(
+        g_host->consume(TSM_SERVICE_CURRENCY, TSM_CURRENCY_VERSION));
+    if (!g_svcCurrency) {
+        g_svcCurrency = static_cast<const TsmCurrencyApi*>(
+            g_host->consume(TSM_SERVICE_CURRENCY, TSM_CURRENCY_VERSION_V3));
+    }
+
+    g_svcTaxes = static_cast<const TsmTaxesApi*>(
+        g_host->consume(TSM_SERVICE_TAXES, TSM_TAXES_VERSION));
+    if (!g_svcTaxes) {
+        g_svcTaxes = static_cast<const TsmTaxesApi*>(
+            g_host->consume(TSM_SERVICE_TAXES, TSM_TAXES_VERSION_V2));
+    }
+    if (!g_svcTaxes) {
+        g_svcTaxes = static_cast<const TsmTaxesApi*>(
+            g_host->consume(TSM_SERVICE_TAXES, TSM_TAXES_VERSION_V1));
+    }
+
+    g_svcBank = static_cast<const TsmRepublicBankApi*>(
+        g_host->consume(TSM_SERVICE_REPUBLIC_BANK, TSM_REPUBLIC_BANK_VERSION));
+
+    g_svcLabor = static_cast<const TsmCitizenLaborApi*>(
+        g_host->consume(TSM_SERVICE_CITIZEN_LABOR, TSM_CITIZEN_LABOR_VERSION));
+    if (!g_svcLabor) {
+        g_svcLabor = static_cast<const TsmCitizenLaborApi*>(
+            g_host->consume(TSM_SERVICE_CITIZEN_LABOR, TSM_CITIZEN_LABOR_VERSION_V4));
+    }
+    if (!g_svcLabor) {
+        g_svcLabor = static_cast<const TsmCitizenLaborApi*>(
+            g_host->consume(TSM_SERVICE_CITIZEN_LABOR, TSM_CITIZEN_LABOR_VERSION_V3));
+    }
+    if (!g_svcLabor) {
+        g_svcLabor = static_cast<const TsmCitizenLaborApi*>(
+            g_host->consume(TSM_SERVICE_CITIZEN_LABOR, TSM_CITIZEN_LABOR_VERSION_V2));
+    }
+
+    g_svcEnterprise = static_cast<const TsmEnterpriseBaseApi*>(
+        g_host->consume(TSM_SERVICE_ENTERPRISE_BASE, TSM_ENTERPRISE_BASE_VERSION));
+    if (!g_svcEnterprise) {
+        g_svcEnterprise = static_cast<const TsmEnterpriseBaseApi*>(
+            g_host->consume(TSM_SERVICE_ENTERPRISE_BASE, TSM_ENTERPRISE_BASE_VERSION_V7));
+    }
+
+    g_svcB2b = static_cast<const TsmB2bLogisticsApi*>(
+        g_host->consume(TSM_SERVICE_B2B_LOGISTICS, TSM_B2B_LOGISTICS_VERSION));
+
+    g_servicesLookedUp = true;
+}
+
+void ApplyPanelAction(const PanelAction& action)
+{
+    if (action.kind == PanelAction::Kind::None) return;
+    EnsureServicesLookedUp();
+
+    switch (action.kind) {
+    case PanelAction::Kind::SetTaxEnabled:
+        if (TsmTaxesHasPolicy(g_svcTaxes)) {
+            g_svcTaxes->setTaxEnabled(action.index, action.flag ? 1 : 0);
+        }
+        break;
+    case PanelAction::Kind::SetTaxRate:
+        if (TsmTaxesHasPolicy(g_svcTaxes)) {
+            g_svcTaxes->setTaxRate(action.index, action.value);
+        }
+        break;
+    case PanelAction::Kind::SettleTaxesNow:
+        if (g_svcTaxes && g_svcTaxes->settleNow) {
+            g_svcTaxes->settleNow();
+        }
+        break;
+    case PanelAction::Kind::SetBankRate:
+        if (g_svcBank && g_svcBank->setAnnualInterestRate) {
+            g_svcBank->setAnnualInterestRate(static_cast<double>(action.value));
+        }
+        break;
+    case PanelAction::Kind::SetSectorWage:
+        if (TsmLaborHasV4(g_svcLabor)) {
+            g_svcLabor->setSectorWage(action.index, action.value);
+        }
+        break;
+    case PanelAction::Kind::None:
+        break;
+    }
+
+    // Force immediate telemetry refresh on the next frame.
+    g_lastSampleMs = 0;
+}
+
+// Sample live read-only data from WRSRE services (throttled to ~4 Hz).
+// Native C3D_LANGUAGE::GetString resolver (verified via Ghidra FUN_1403329E0):
+//   - Language singleton: exeBase + 0x997590 (DAT_140997590)
+//   - Export in C3DDLL64.dll: "?GetString@C3D_LANGUAGE@@QEAAPEB_WK@Z"
+//     (also present at IAT slot exeBase + 0x86C890)
+//   - Building+0x108 -> NamePoint* -> +0x10: wchar_t[128] city/town name
+//   - Building+0x110 -> int32 instance index (when > 0, display appends " <n+1>")
+//   - Building+0x318 -> TypeDescriptor*:
+//       +0x200: int32 localized string ID ($NAME or $NAME_STR custom ID)
+//       +0x204: int32 optional suffix string ID (used only when >= 0)
+using LanguageGetStringFn = const wchar_t*(__fastcall*)(void* langThis, unsigned int id);
+
+constexpr size_t kRvaLanguageSingleton = 0x997590;
+constexpr size_t kRvaGetStringIat      = 0x86C890;
+
+LanguageGetStringFn ResolveLanguageGetString()
+{
+    static LanguageGetStringFn s_fn = nullptr;
+    static bool s_resolved = false;
+    if (s_resolved) return s_fn;
+    s_resolved = true;
+
+    if (!g_host) return nullptr;
+    if (g_host->engineModule) {
+        s_fn = reinterpret_cast<LanguageGetStringFn>(
+            GetProcAddress(static_cast<HMODULE>(g_host->engineModule),
+                           "?GetString@C3D_LANGUAGE@@QEAAPEB_WK@Z"));
+    }
+    if (!s_fn && g_host->exeBase &&
+        (!g_host->readablePtr ||
+         g_host->readablePtr(g_host->exeBase + kRvaGetStringIat, sizeof(void*)))) {
+        s_fn = *reinterpret_cast<LanguageGetStringFn const*>(
+            g_host->exeBase + kRvaGetStringIat);
+    }
+    return s_fn;
+}
+
+bool IsLegitNameChar(wchar_t c)
+{
+    return (c >= 0x0020 && c <= 0x007E) ||
+           (c >= 0x00C0 && c <= 0x024F) ||
+           (c >= 0x0400 && c <= 0x04FF);
+}
+
+bool IsLetterChar(wchar_t c)
+{
+    return (c >= L'A' && c <= L'Z') ||
+           (c >= L'a' && c <= L'z') ||
+           (c >= 0x00C0 && c <= 0x024F) ||
+           (c >= 0x0400 && c <= 0x04FF);
+}
+
+bool ValidateWideName(const wchar_t* ws, size_t maxScan, size_t* outLen)
+{
+    size_t len = 0;
+    size_t letters = 0;
+    while (len < maxScan) {
+        const wchar_t c = ws[len];
+        if (c == 0) break;
+        if (!IsLegitNameChar(c)) return false;
+        if (IsLetterChar(c)) ++letters;
+        ++len;
+    }
+    if (len < 2 || len >= maxScan || ws[len] != 0 || letters < 2) return false;
+    *outLen = len;
+    return true;
+}
+
+// Reads the verified city/town name from bld+0x108 (NamePoint*) -> +0x10 (wchar_t[128]).
+size_t ReadBuildingCityName(void* bldg, wchar_t* out, size_t maxChars)
+{
+    if (!bldg || !out || maxChars < 2) return 0;
+    out[0] = L'\0';
+    const uintptr_t addr = reinterpret_cast<uintptr_t>(bldg);
+    if (addr < 0x10000ULL || addr > 0x00007FFFFFFEFFFFULL) return 0;
+    if (g_host && g_host->readablePtr && !g_host->readablePtr(bldg, 0x110)) return 0;
+
+    __try {
+        const BYTE* b = static_cast<const BYTE*>(bldg);
+        const void* np = *reinterpret_cast<void* const*>(b + 0x108);
+        const uintptr_t npAddr = reinterpret_cast<uintptr_t>(np);
+        if (npAddr < 0x10000ULL || npAddr > 0x00007FFFFFFEFFFFULL) return 0;
+        if (g_host && g_host->readablePtr && !g_host->readablePtr(np, 0x110)) return 0;
+
+        const wchar_t* ws = reinterpret_cast<const wchar_t*>(static_cast<const BYTE*>(np) + 0x10);
+        size_t len = 0;
+        if (!ValidateWideName(ws, 128, &len)) return 0;
+        const size_t cp = (len < maxChars - 1) ? len : (maxChars - 1);
+        for (size_t k = 0; k < cp; ++k) out[k] = ws[k];
+        out[cp] = L'\0';
+        return cp;
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        out[0] = L'\0';
+        return 0;
+    }
+}
+
+void AppendWide(wchar_t* dst, size_t maxChars, size_t* pos, const wchar_t* src)
+{
+    if (!dst || !pos || !src || maxChars == 0) return;
+    size_t i = *pos;
+    while (*src && i + 1 < maxChars) {
+        dst[i++] = *src++;
+    }
+    dst[i] = L'\0';
+    *pos = i;
+}
+
+void AppendWideInt(wchar_t* dst, size_t maxChars, size_t* pos, int value)
+{
+    if (!dst || !pos || maxChars == 0) return;
+    wchar_t tmp[16]{};
+    int n = 0;
+    unsigned int v = (value < 0) ? static_cast<unsigned int>(-value)
+                                 : static_cast<unsigned int>(value);
+    if (value < 0 && *pos + 1 < maxChars) {
+        dst[(*pos)++] = L'-';
+    }
+    do {
+        tmp[n++] = static_cast<wchar_t>(L'0' + (v % 10u));
+        v /= 10u;
+    } while (v > 0 && n < 15);
+    while (n > 0 && *pos + 1 < maxChars) {
+        dst[(*pos)++] = tmp[--n];
+    }
+    dst[*pos] = L'\0';
+}
+
+// Mirrors FUN_1403329E0 read-only:
+//   "<City> <GetString(TD+0x200)>[ <GetString(TD+0x204)>][ <Building+0x110 + 1>]"
+bool ReadNativeBuildingDisplayName(void* bldg, const wchar_t* cityName, size_t cityLen,
+                                   wchar_t* out, size_t maxChars,
+                                   int* outNameId, int* outSuffixId, int* outInstNum)
+{
+    if (!bldg || !out || maxChars < 2) return false;
+    out[0] = L'\0';
+    if (outNameId) *outNameId = -1;
+    if (outSuffixId) *outSuffixId = -1;
+    if (outInstNum) *outInstNum = 0;
+
+    if (!g_host || !g_host->exeBase) return false;
+    const LanguageGetStringFn getString = ResolveLanguageGetString();
+    if (!getString) return false;
+
+    const uintptr_t addr = reinterpret_cast<uintptr_t>(bldg);
+    if (addr < 0x10000ULL || addr > 0x00007FFFFFFEFFFFULL) return false;
+    if (g_host->readablePtr && !g_host->readablePtr(bldg, 0x320)) return false;
+
+    void* langThis = g_host->exeBase + kRvaLanguageSingleton;
+    if (g_host->readablePtr && !g_host->readablePtr(langThis, 0x10)) return false;
+
+    __try {
+        const BYTE* b = static_cast<const BYTE*>(bldg);
+        const void* td = *reinterpret_cast<void* const*>(b + 0x318);
+        const uintptr_t tdAddr = reinterpret_cast<uintptr_t>(td);
+        if (tdAddr < 0x10000ULL || tdAddr > 0x00007FFFFFFEFFFFULL) return false;
+        if (g_host->readablePtr && !g_host->readablePtr(td, 0x208)) return false;
+
+        const BYTE* tdBytes = static_cast<const BYTE*>(td);
+        const int32_t nameId   = *reinterpret_cast<const int32_t*>(tdBytes + 0x200);
+        const int32_t suffixId = *reinterpret_cast<const int32_t*>(tdBytes + 0x204);
+        const int32_t instNum  = *reinterpret_cast<const int32_t*>(b + 0x110);
+
+        if (outNameId) *outNameId = static_cast<int>(nameId);
+        if (outSuffixId) *outSuffixId = static_cast<int>(suffixId);
+        if (outInstNum) *outInstNum = static_cast<int>(instNum);
+
+        const wchar_t* typeStr = getString(langThis, static_cast<unsigned int>(nameId));
+        if (!typeStr) return false;
+        const uintptr_t tsAddr = reinterpret_cast<uintptr_t>(typeStr);
+        if (tsAddr < 0x10000ULL || tsAddr > 0x00007FFFFFFEFFFFULL) return false;
+        if (g_host->readablePtr && !g_host->readablePtr(typeStr, sizeof(wchar_t) * 2)) return false;
+        if (typeStr[0] == L'\0') return false;
+
+        const wchar_t* suffixStr = nullptr;
+        if (suffixId >= 0) {
+            const wchar_t* s = getString(langThis, static_cast<unsigned int>(suffixId));
+            const uintptr_t sAddr = reinterpret_cast<uintptr_t>(s);
+            if (s && sAddr >= 0x10000ULL && sAddr <= 0x00007FFFFFFEFFFFULL &&
+                (!g_host->readablePtr || g_host->readablePtr(s, sizeof(wchar_t) * 2)) &&
+                s[0] != L'\0') {
+                suffixStr = s;
+            }
+        }
+
+        size_t pos = 0;
+        if (cityName && cityLen > 0) {
+            AppendWide(out, maxChars, &pos, cityName);
+            AppendWide(out, maxChars, &pos, L" ");
+        }
+        AppendWide(out, maxChars, &pos, typeStr);
+        if (suffixStr) {
+            AppendWide(out, maxChars, &pos, L" ");
+            AppendWide(out, maxChars, &pos, suffixStr);
+        }
+        if (instNum > 0) {
+            AppendWide(out, maxChars, &pos, L" ");
+            AppendWideInt(out, maxChars, &pos, static_cast<int>(instNum + 1));
+        }
+        return pos > 0;
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        out[0] = L'\0';
+        return false;
+    }
+}
+
+void FormatHumanizedObjectName(const char* objName, char* out, size_t outSize)
+{
+    if (!out || outSize == 0) return;
+    out[0] = '\0';
+    if (!objName || !objName[0]) return;
+
+    const char* start = objName;
+    for (const char* p = objName; *p; ++p) {
+        if (*p == '/' || *p == '\\') start = p + 1;
+    }
+
+    size_t len = 0;
+    while (start[len] != '\0') ++len;
+    if (len > 4 && start[len - 4] == '.' &&
+        (start[len - 3] == 'i' || start[len - 3] == 'I') &&
+        (start[len - 2] == 'n' || start[len - 2] == 'N') &&
+        (start[len - 1] == 'i' || start[len - 1] == 'I')) {
+        len -= 4;
+    }
+
+    size_t w = 0;
+    bool prevSpace = true;
+    for (size_t i = 0; i < len && w + 1 < outSize; ++i) {
+        char c = start[i];
+        if (c == '_' || c == '-') c = ' ';
+        if (c == ' ') {
+            if (!prevSpace) {
+                out[w++] = ' ';
+                prevSpace = true;
+            }
+            continue;
+        }
+        if (w == 0 && c >= 'a' && c <= 'z') {
+            c = static_cast<char>(c - 'a' + 'A');
+        }
+        out[w++] = c;
+        prevSpace = false;
+    }
+    while (w > 0 && out[w - 1] == ' ') --w;
+    out[w] = '\0';
+}
+
+const PanelModel* SampleLiveModel(bool worldLoaded)
+{
+    static PanelModel s_model{};
+
+    if (!worldLoaded || !g_host || !g_host->consume) return nullptr;
+
+    const ULONGLONG now = GetTickCount64();
+    if (g_lastSampleMs != 0 && (now - g_lastSampleMs) < 250ULL && s_model.hasLiveData) {
+        return &s_model;
+    }
+    g_lastSampleMs = now;
+
+    EnsureServicesLookedUp();
+
+    const TsmSimClockApi*       s_clock      = g_svcClock;
+    const TsmCurrencyApi*       s_currency   = g_svcCurrency;
+    const TsmTaxesApi*          s_taxes      = g_svcTaxes;
+    const TsmRepublicBankApi*   s_bank       = g_svcBank;
+    const TsmCitizenLaborApi*   s_labor      = g_svcLabor;
+    const TsmEnterpriseBaseApi* s_enterprise = g_svcEnterprise;
+    const TsmB2bLogisticsApi*   s_b2b        = g_svcB2b;
+
+    const bool anyService = s_clock || s_currency || s_taxes || s_bank ||
+                            s_labor || s_enterprise || s_b2b;
+    if (!anyService) return nullptr;
+
+    PanelModel m{};
+    m.hasLiveData = true;
+    m.dataNotice  = "Live republic telemetry & controls";
+
+    const char* sym = TsmCurrencySymbol(s_currency);
+    std::snprintf(m.controls.currencySymbol, sizeof(m.controls.currencySymbol),
+                  "%s", sym);
+
+    // --- Tab 0: Economy ---
+    TabData& econ = m.tabs[0];
+    if (s_clock && s_clock->getYear && s_clock->getMonth && s_clock->getDay) {
+        const int y = s_clock->getYear();
+        const int mo = s_clock->getMonth();
+        const int d = s_clock->getDay();
+        const bool paused = s_clock->isPaused && s_clock->isPaused() != 0;
+        if (y >= 0) {
+            AppendRow(econ, "Republic date", "Year %d, Month %d, Day %d%s",
+                      y, mo, d + 1, paused ? " (paused)" : "");
+        } else {
+            AppendRow(econ, "Republic date", "Paused (waiting for first tick)");
+        }
+    }
+    if (s_currency) {
+        AppendRow(econ, "Active currency", "%s", sym);
+        if (s_currency->getTreasuryBalance) {
+            AppendRow(econ, "Treasury (RUB)", "%.2f RUB",
+                      s_currency->getTreasuryBalance(TSM_CURRENCY_RUB));
+            AppendRow(econ, "Treasury (USD)", "%.2f USD",
+                      s_currency->getTreasuryBalance(TSM_CURRENCY_USD));
+        }
+        if (s_currency->getTotalWalletBalance) {
+            AppendRow(econ, "Citizen wallets total", "%.2f %s",
+                      s_currency->getTotalWalletBalance(), sym);
+        }
+    }
+    if (s_taxes) {
+        TsmTaxPolicySnapshot snap{};
+        if (TsmTaxesHasPolicySnapshot(s_taxes) &&
+            s_taxes->getPolicySnapshot(&snap, sizeof(snap))) {
+            AppendRow(econ, "VAT", "%.1f%% (%s)",
+                      snap.configured[TSM_TAX_VAT] * 100.0f,
+                      snap.enabled[TSM_TAX_VAT] ? "enabled" : "suspended");
+            AppendRow(econ, "Profit tax", "%.1f%% (%s)",
+                      snap.configured[TSM_TAX_PROFIT] * 100.0f,
+                      snap.enabled[TSM_TAX_PROFIT] ? "enabled" : "suspended");
+            AppendRow(econ, "Property tax base", "%.2f %s (%s, %s)",
+                      snap.configured[TSM_TAX_PROPERTY], sym,
+                      snap.propertyLandValue ? "land value" : "flat",
+                      snap.enabled[TSM_TAX_PROPERTY] ? "enabled" : "suspended");
+            if (TsmTaxesHasPolicy(s_taxes)) {
+                m.controls.hasTaxControls  = true;
+                m.controls.vatEnabled      = snap.enabled[TSM_TAX_VAT] != 0;
+                m.controls.vatRate         = snap.configured[TSM_TAX_VAT];
+                m.controls.profitEnabled   = snap.enabled[TSM_TAX_PROFIT] != 0;
+                m.controls.profitRate      = snap.configured[TSM_TAX_PROFIT];
+                m.controls.propertyEnabled = snap.enabled[TSM_TAX_PROPERTY] != 0;
+                m.controls.propertyBase    = snap.configured[TSM_TAX_PROPERTY];
+            }
+        } else {
+            if (s_taxes->getVatRate) {
+                AppendRow(econ, "VAT", "%.1f%%", s_taxes->getVatRate() * 100.0f);
+            }
+            if (s_taxes->getProfitTaxRate) {
+                AppendRow(econ, "Profit tax", "%.1f%%", s_taxes->getProfitTaxRate() * 100.0f);
+            }
+        }
+    }
+    if (s_bank && s_bank->getAnnualInterestRate) {
+        const double rate = s_bank->getAnnualInterestRate();
+        AppendRow(econ, "Republic bank rate", "%.2f%% / yr", rate * 100.0);
+        if (s_bank->setAnnualInterestRate) {
+            m.controls.hasBankControl = true;
+            m.controls.bankRate       = rate;
+        }
+    }
+
+    // --- Tab 1: Labour ---
+    TabData& labour = m.tabs[1];
+    if (s_labor) {
+        if (s_labor->getDefaultDailyWage) {
+            AppendRow(labour, "Default daily wage", "%.2f %s / day",
+                      s_labor->getDefaultDailyWage(), sym);
+        }
+        if (TsmLaborHasV3(s_labor)) {
+            AppendRow(labour, "Statutory minimum wage", "%.2f %s / day",
+                      s_labor->getMinimumWage(), sym);
+            static const char* const kSectors[TSM_SECTOR_COUNT] = {
+                "Sector: Heavy industry",
+                "Sector: Infrastructure",
+                "Sector: Care & Education",
+                "Sector: Light industry",
+                "Sector: Services",
+                "Sector: Agriculture",
+            };
+            m.controls.minWage = s_labor->getMinimumWage();
+            if (TsmLaborHasV4(s_labor)) {
+                m.controls.hasSectorWages = true;
+            }
+            for (int s = 0; s < TSM_SECTOR_COUNT; ++s) {
+                const float w = s_labor->getSectorWage(s);
+                m.controls.sectorWages[s] = w;
+                if (w > 0.0f) {
+                    AppendRow(labour, kSectors[s], "%.2f %s / day", w, sym);
+                }
+            }
+        }
+        if (s_labor->getUnemployedWelfare) {
+            AppendRow(labour, "Unemployed welfare", "%.2f %s / day",
+                      s_labor->getUnemployedWelfare(), sym);
+        }
+        if (s_labor->getStudentStipend) {
+            AppendRow(labour, "Student stipend", "%.2f %s / day",
+                      s_labor->getStudentStipend(), sym);
+        }
+        if (s_labor->getRetireePension) {
+            AppendRow(labour, "Retiree pension", "%.2f %s / day",
+                      s_labor->getRetireePension(), sym);
+        }
+        if (TsmLaborHasV5(s_labor)) {
+            AppendRow(labour, "Dynamic wage mobility", "%s",
+                      s_labor->isWageMobilityHookInstalled() ? "active" : "static INI");
+        }
+    }
+
+    // --- Tab 2: Logistics & Private Sector ---
+    TabData& logi = m.tabs[2];
+    if (s_enterprise) {
+        if (s_enterprise->getEnterpriseCount) {
+            AppendRow(logi, "Private enterprises", "%zu",
+                      s_enterprise->getEnterpriseCount());
+        }
+        if (s_enterprise->getPrivateInvestmentPool) {
+            AppendRow(logi, "Private investment pool", "%.2f %s",
+                      s_enterprise->getPrivateInvestmentPool(), sym);
+        }
+        if (s_enterprise->getMonthlyPoolInflow) {
+            AppendRow(logi, "Pool inflow (this month)", "%.2f %s",
+                      s_enterprise->getMonthlyPoolInflow(), sym);
+        }
+        if (s_enterprise->getMonthlyEconomySummary) {
+            double sales = 0.0, wages = 0.0, taxes = 0.0, inflow = 0.0;
+            s_enterprise->getMonthlyEconomySummary(&sales, &wages, &taxes, &inflow);
+            AppendRow(logi, "Last month private sales", "%.2f %s", sales, sym);
+            AppendRow(logi, "Last month private wages", "%.2f %s", wages, sym);
+            AppendRow(logi, "Last month private taxes", "%.2f %s", taxes, sym);
+        }
+        if (s_enterprise->getMonthlyEvictionCount) {
+            AppendRow(logi, "Evictions (this month)", "%zu",
+                      s_enterprise->getMonthlyEvictionCount());
+        }
+        if (s_enterprise->structSize >=
+                offsetof(TsmEnterpriseBaseApi, getResidentialRentMonthly) +
+                    sizeof(s_enterprise->getResidentialRentMonthly) &&
+            s_enterprise->getResidentialRentMonthly) {
+            AppendRow(logi, "Base residential rent", "%.2f %s / month",
+                      s_enterprise->getResidentialRentMonthly(), sym);
+        }
+    }
+    if (s_b2b) {
+        AppendRow(logi, "B2B counterparty billing", "%s",
+                  TsmB2bCounterpartyActive(s_b2b) ? "active" : "inactive");
+    }
+
+    // --- Tab 3: Enterprises Directory ---
+    if (s_enterprise && s_enterprise->getEnterpriseCount &&
+        s_enterprise->getEnterpriseByIndex && s_enterprise->describeEnterprise) {
+        const size_t total = s_enterprise->getEnterpriseCount();
+        m.enterprises.totalCount = static_cast<int>(total);
+        const size_t limit = (total < static_cast<size_t>(EnterpriseList::kMaxEnterprises))
+                                 ? total
+                                 : static_cast<size_t>(EnterpriseList::kMaxEnterprises);
+        for (size_t i = 0; i < limit; ++i) {
+            void* bldg = s_enterprise->getEnterpriseByIndex(i);
+            if (!bldg) continue;
+            TsmEnterpriseInfo info{};
+            info.structSize = sizeof(info);
+            if (!s_enterprise->describeEnterprise(bldg, &info) || !info.isPrivate) {
+                continue;
+            }
+            EnterpriseRow& row = m.enterprises.rows[m.enterprises.count++];
+            row.solvent  = info.solvent != 0;
+            row.capital  = info.capital;
+            row.monthNet = info.monthNet;
+            row.markup   = info.markup;
+            row.debt     = 0.0;
+
+            bool gotName = false;
+            int nameId = -1;
+            int suffixId = -1;
+            int instNum = 0;
+            wchar_t cityW[64]{};
+            const size_t cityLen = ReadBuildingCityName(bldg, cityW, 64);
+            char cityUtf8[48]{};
+            if (cityLen > 0) {
+                WideCharToMultiByte(CP_UTF8, 0, cityW, -1, cityUtf8,
+                                    static_cast<int>(sizeof(cityUtf8)), nullptr, nullptr);
+            }
+
+            wchar_t wbuf[96]{};
+            if (s_enterprise->getBuildingCustomName &&
+                s_enterprise->getBuildingCustomName(bldg, wbuf, 96) > 0 && wbuf[0]) {
+                const int n = WideCharToMultiByte(
+                    CP_UTF8, 0, wbuf, -1, row.name,
+                    static_cast<int>(sizeof(row.name)), nullptr, nullptr);
+                if (n > 1) gotName = true;
+            }
+            if (!gotName &&
+                ReadNativeBuildingDisplayName(bldg, cityW, cityLen, wbuf, 96,
+                                              &nameId, &suffixId, &instNum)) {
+                const int n = WideCharToMultiByte(
+                    CP_UTF8, 0, wbuf, -1, row.name,
+                    static_cast<int>(sizeof(row.name)), nullptr, nullptr);
+                if (n > 1) gotName = true;
+            }
+            const char* objName = s_enterprise->getBuildingObjectName
+                                      ? s_enterprise->getBuildingObjectName(bldg)
+                                      : nullptr;
+            if (!gotName && objName && objName[0]) {
+                char prettyObj[48]{};
+                FormatHumanizedObjectName(objName, prettyObj, sizeof(prettyObj));
+                const char* typeLabel = prettyObj[0] ? prettyObj : objName;
+                if (cityUtf8[0]) {
+                    std::snprintf(row.name, sizeof(row.name), "%s %s", cityUtf8, typeLabel);
+                } else {
+                    std::snprintf(row.name, sizeof(row.name), "%s", typeLabel);
+                }
+                gotName = true;
+            }
+            if (!gotName) {
+                std::snprintf(row.name, sizeof(row.name), "Enterprise #%zu", i + 1);
+            }
+            static int s_nameProbeCount = 0;
+            if (s_nameProbeCount < 3) {
+                ++s_nameProbeCount;
+                Log("enterprise name probe: city=\"%s\" obj=\"%s\" nameId=%d suffixId=%d inst=%d resolved=\"%s\"",
+                    cityUtf8[0] ? cityUtf8 : "(none)",
+                    (objName && objName[0]) ? objName : "(none)",
+                    nameId, suffixId, instNum, row.name);
+            }
+
+            if (s_bank && s_bank->getEnterpriseDebt) {
+                double principal = 0.0, monthlyInt = 0.0;
+                int missed = 0;
+                s_bank->getEnterpriseDebt(bldg, &principal, &monthlyInt, &missed);
+                row.debt = principal;
+            }
+        }
+    }
+
+    s_model = m;
+    return &s_model;
+}
+
 // Drawing for one frame. Owns the "is the panel ready, and did it draw" state so
 // both hook paths behave identically.
 void DrawFrame(IDXGISwapChain* swap)
@@ -141,12 +839,16 @@ void DrawFrame(IDXGISwapChain* swap)
         Log("panel initialized; waiting for the first visible frame");
     }
 
-    if (!g_panel.Render(swap, keyDown)) {
+    const bool worldLoaded = IsWorldLoaded();
+    const PanelModel* liveModel = SampleLiveModel(worldLoaded);
+    PanelAction action{};
+    if (!g_panel.Render(swap, keyDown, worldLoaded, liveModel, &action)) {
         g_panelFailed = true;
         Log("frame failed (device removed or back buffer unavailable); drawing "
             "stopped, Present result unchanged");
         return;
     }
+    ApplyPanelAction(action);
     if (g_panel.Visible() && !g_loggedShown) {
         g_loggedShown = true;
         Log("panel visible; key 0x%X hides and reopens it", g_toggleKey);
@@ -462,7 +1164,7 @@ bool StartGraphicsHook(const TsmHost* host, unsigned toggleKey, bool autoShow)
         return false;
 
     g_host      = host;
-    g_toggleKey = toggleKey ? toggleKey : static_cast<unsigned>(VK_F8);
+    g_toggleKey = toggleKey ? toggleKey : static_cast<unsigned>(VK_F9);
     g_autoShow  = autoShow;
 
     HANDLE thread = CreateThread(nullptr, 0, &InstallThread, nullptr, 0, nullptr);

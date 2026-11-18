@@ -45,12 +45,6 @@ import re
 import struct
 import sys
 
-
-import argparse
-import re
-import struct
-import sys
-
 # ----------------------------------------------------------------- PE reading
 
 IMAGE_DOS_SIGNATURE = 0x5A4D
