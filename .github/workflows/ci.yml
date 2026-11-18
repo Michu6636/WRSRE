@@ -1,0 +1,231 @@
+name: CI
+
+# Host-side verification only. Nothing here launches SOVIET64.exe, deploys a
+# DLL or touches a game install. STATIC REVIEW, BUILD/TEST EVIDENCE and RUNTIME
+# VALIDATION stay separate statuses: a green run does not prove the plugins
+# work in game.
+
+on:
+  push:
+    branches: ["main", "Almanac"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Linux: every check that needs no MSVC. Mirrors the commands in README.md.
+  # ---------------------------------------------------------------------------
+  test:
+    name: Python + host C++ tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Compiler
+        run: g++ --version
+
+      - name: Plugin and tool test suites
+        env:
+          PYTHONPATH: .
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: |
+          set -o pipefail
+          fail=0
+          while IFS= read -r f; do
+            echo "::group::$f"
+            if python3 "$f"; then echo "PASS $f"; else echo "::error file=$f::test suite failed"; fail=1; fi
+            echo "::endgroup::"
+          done < <(find tests -name 'test_*.py' | sort)
+          exit $fail
+
+      - name: Almanac host compile tests
+        env:
+          PYTHONPATH: .
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: |
+          set -o pipefail
+          python3 tests/almanac_button/run_host_tests.py
+          python3 tests/almanac_button/run_binary_sha256_tests.py
+          python3 tests/almanac_button/run_tax_policy_tests.py
+
+      - name: Tool self-tests
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: |
+          python3 tools/audit_economy_csv.py selftest
+          python3 tools/peinfo.py selftest
+
+      - name: Upload host test summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: almanac-host-summary
+          path: build/almanac_host/**/summary.json
+          if-no-files-found: ignore
+          retention-days: 14
+
+  # ---------------------------------------------------------------------------
+  # Repository hygiene. These are the manual checks a cleanup pass used to do
+  # by hand; a mangled hex literal or broken link fails the build now.
+  # ---------------------------------------------------------------------------
+  hygiene:
+    name: Docs and encoding hygiene
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: No NUL bytes or invalid UTF-8 in tracked text
+        run: |
+          python3 - <<'PY'
+          import subprocess, sys
+          EXT = (".md", ".txt", ".py", ".cpp", ".h", ".ini", ".json", ".bat", ".java", ".jsonc")
+          files = [f.decode() for f in subprocess.check_output(["git", "ls-files", "-z"]).split(b"\0") if f]
+          candidates = [f for f in files if f.lower().endswith(EXT)]
+          # Honour .gitattributes. Files marked `-text` are binary by intent:
+          # raw memory dumps and vendor sources whose bytes are the evidence.
+          attrs = subprocess.run(["git", "check-attr", "text", "--"] + candidates,
+                                 capture_output=True, text=True).stdout
+          opted_out = {line.split(": ")[0] for line in attrs.splitlines()
+                       if line.endswith(": unset")}
+          checked = [f for f in candidates if f not in opted_out]
+          bad = []
+          for f in checked:
+              data = open(f, "rb").read()
+              if b"\x00" in data:
+                  bad.append((f, "NUL byte"))
+                  continue
+              try:
+                  data.decode("utf-8")
+              except UnicodeDecodeError:
+                  bad.append((f, "invalid UTF-8"))
+          for f, why in bad:
+              print("::error file=%s::%s" % (f, why))
+          print("%d text files checked, %d skipped as -text, %d problem(s)"
+                % (len(checked), len(opted_out), len(bad)))
+          sys.exit(1 if bad else 0)
+          PY
+
+      - name: Local Markdown links resolve
+        run: |
+          python3 - <<'PY'
+          import os, re, subprocess, sys
+          LINK = re.compile(r"\[[^\]]*\]\(([^)]+)\)")
+          files = [f.decode() for f in subprocess.check_output(["git", "ls-files", "-z"]).split(b"\0") if f]
+          broken = []
+          for f in (x for x in files if x.lower().endswith(".md")):
+              try:
+                  text = open(f, encoding="utf-8").read()
+              except (UnicodeDecodeError, OSError):
+                  continue
+              if len(text) > 400_000:      # skip the append-only investigation log
+                  continue
+              base = os.path.dirname(f)
+              for match in LINK.finditer(text):
+                  target = match.group(1).strip()
+                  if target.startswith(("http://", "https://", "mailto:", "#")):
+                      continue
+                  target = target.split("#")[0].split("?")[0].replace("%20", " ")
+                  if not target:
+                      continue
+                  if not os.path.exists(os.path.normpath(os.path.join(base, target))):
+                      broken.append((f, target))
+          for f, t in broken:
+              print("::error file=%s::broken link -> %s" % (f, t))
+          print("%d broken relative link(s)" % len(broken))
+          sys.exit(1 if broken else 0)
+          PY
+
+      - name: build.bat is CRLF-only and parenthesis-balanced
+        run: |
+          python3 - <<'PY'
+          import re, sys
+          raw = open("build.bat", "rb").read()
+          crlf, lf = raw.count(b"\r\n"), raw.count(b"\n")
+          problems = []
+          if crlf != lf:
+              problems.append("build.bat has mixed line endings (CRLF=%d LF=%d)" % (crlf, lf))
+          depth = 0
+          for number, line in enumerate(raw.decode("utf-8", "replace").splitlines(), 1):
+              stripped = line.strip()
+              if stripped.startswith(("REM", "::")) or re.match(r"^echo", stripped, re.I):
+                  continue
+              depth += len(re.findall(r"(?<!\^)\(", line)) - len(re.findall(r"(?<!\^)\)", line))
+              if depth < 0:
+                  problems.append("build.bat:%d closes more parens than it opens" % number)
+                  depth = 0
+          if depth != 0:
+              problems.append("build.bat ends with parenthesis depth %d" % depth)
+          for p in problems:
+              print("::error::%s" % p)
+          sys.exit(1 if problems else 0)
+          PY
+
+      - name: ImGui pin is declared once and consistent
+        env:
+          PYTHONPATH: .
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: python3 tests/agent_workflow/test_imgui_pin.py
+
+  # ---------------------------------------------------------------------------
+  # Windows: does the C++ actually compile? This is the gap the Linux job cannot
+  # cover. Kept separate so an MSVC problem is visibly distinct from a test
+  # failure, and non-blocking until it has a track record.
+  # ---------------------------------------------------------------------------
+  build-windows:
+    name: MSVC compile (informational)
+    runs-on: windows-latest
+    timeout-minutes: 45
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure MSVC environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: cl version
+        run: cl 2>&1 | findstr /C:"Version"
+
+      - name: Build every plugin into build\plugins
+        shell: cmd
+        run: build.bat
+
+      - name: Build the single-DLL wrsre.dll
+        shell: cmd
+        run: build.bat clean wrsre
+
+      - name: List staged output
+        shell: pwsh
+        run: |
+          if (Test-Path build\plugins) {
+            Get-ChildItem build\plugins | Format-Table Name, Length
+          } else {
+            Write-Error "build\plugins was not produced"
+          }
+
+      - name: Upload built DLLs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-plugins
+          path: build/plugins/
+          if-no-files-found: warn
+          retention-days: 7

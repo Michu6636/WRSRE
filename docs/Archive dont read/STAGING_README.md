@@ -1,3 +1,16 @@
+> **SUPERSEDED — archived 2026-11-18. Do not action this document.**
+>
+> This described a staging package for `private_logistics` **v0.17** and
+> `ui_panels` **v6.11**. The shipped source is now `private_logistics`
+> **0.19.0-simplified-settlement** and `ui_panels` **6.16**, so the versions,
+> the "Arena workspace only" scope and the required pairing below are all out
+> of date. No staged package remains in the tree.
+>
+> Kept for its design reasoning and native offsets only. For current behaviour
+> read `plugins/private_logistics/private_logistics.ini` and
+> [`docs/private-logistics-runtime/`](../private-logistics-runtime/README.md).
+> Historical record; not build- or runtime-verified.
+
 # Storage source-only staging package — not a compiled release
 
 Contains staged candidate sources/configuration for `private_logistics` v0.17 and `ui_panels` v6.11, plus incremental diffs and updated review notes. No DLLs are included.

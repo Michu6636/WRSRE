@@ -116,6 +116,12 @@ build.bat clean               REM Remove build\plugins\ before building
 > never both: copying `build\plugins\*` after both builds ships every plugin
 > twice (once monolithic, once standalone). Run `build.bat clean` between them.
 
+The pinned Dear ImGui version is declared **once**, as `IMGUI_TAG` and
+`IMGUI_NUM` at the top of `build.bat`. `plugins/almanac_overlay_dev/almanac_version.h`
+carries the same tag for the panel's version string;
+`tests/agent_workflow/test_imgui_pin.py` fails if either drifts or if a literal
+version reappears in `build.bat`. Bump all of it in one change.
+
 ### Run Automated Tests (Cross-Platform Python 3 + C++17)
 ```bash
 # Run all Python + C++17 plugin test suites
@@ -139,6 +145,21 @@ python3 tools/scan_exe_update.py path/to/SOVIET64.exe
 > These are host checks. None of them is a live-game test: STATIC REVIEW,
 > BUILD/TEST EVIDENCE and RUNTIME VALIDATION are separate statuses, and a
 > passing suite does not prove the panel or the plugins work in `SOVIET64.exe`.
+
+### Continuous Integration
+
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs the same commands on
+every push and pull request:
+
+| Job | Runner | What it proves |
+|---|---|---|
+| `test` | ubuntu | all Python suites, the Almanac host C++ tests, tool self-tests |
+| `hygiene` | ubuntu | no NUL/invalid UTF-8 in tracked text (honours `.gitattributes` `-text`), no broken local Markdown links, `build.bat` is CRLF-only and paren-balanced, the ImGui pin is consistent |
+| `build-windows` | windows | `build.bat` and `build.bat clean wrsre` actually compile; **informational** (`continue-on-error`) until it has a track record |
+
+The Linux jobs are the ones that gate a merge. `build-windows` is the only
+signal on whether the C++ still compiles, and it is deliberately non-blocking:
+treat a red run as a finding, not a flake.
 
 ---
 

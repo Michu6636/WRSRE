@@ -58,7 +58,7 @@ and testing guide, then the status handoff.
 These are real, current-ish records that are not subsystem plans:
 
 - [Single-DLL architecture](SINGLE_DLL_ARCHITECTURE.md) — how `wrsre.dll` links the 15 modules
-- [Staging readme](STAGING_README.md), [Superseded conclusions index](SUPERSEDED.md) — **check `SUPERSEDED.md` before trusting an older finding**
+- [Superseded conclusions index](SUPERSEDED.md) — **check `SUPERSEDED.md` before trusting an older finding**. The staging package readme was archived to [`Archive dont read/`](Archive%20dont%20read/STAGING_README.md) on 2026-11-18: it described `private_logistics` v0.17 / `ui_panels` v6.11, both long superseded.
 - [Codebase review 2026-11-08](codebase-review-2026-11-08.md), [crit/high fix plan 2026-10-22](fix-plan-critical-high-2026-10-22.md), [remaining logic bugs audit 2026-10-22](remaining-logic-bugs-audit-2026-10-22.md)
 - [Private industry agent report](AGENT_REPORT_private_industry.md)
 - [Ghidra request — warehouse storage v6.15](ghidra-request-warehouse-storage-v6.15.md), [Ghidra request — warehouse builder 2026-10-23](ghidra-request-warehouse-builder-2026-10-23.md)
