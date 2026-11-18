@@ -32,8 +32,20 @@ static bool DryIdentitySnapshot(uintptr_t address,private_logistics_dry::Identit
 }
 // 0 missing, 1 exists, -1 inaccessible/error. Called only on the file thread.
 static int DryFileState(const char* dir,const char* filename) {
-    char path[MAX_PATH];const int n=std::snprintf(path,sizeof(path),"%s\\%s",dir,filename);
-    if(n<0 || (size_t)n>=sizeof(path)) return -1;
+    if(!dir || !filename) return -1;
+    // Build the path by hand instead of snprintf: snprintf can only *report*
+    // truncation after the fact, so GCC 13+ rejects the call outright under
+    // -Werror=format-truncation. This form has no format string to analyse and
+    // keeps the previous limit exactly (reject when the joined length would
+    // reach MAX_PATH).
+    const std::size_t dirLength=std::strlen(dir),fileLength=std::strlen(filename);
+    if(dirLength+1+fileLength>=(std::size_t)MAX_PATH) return -1;
+    char path[MAX_PATH];
+    std::memcpy(path,dir,dirLength);
+    path[dirLength]='\\';
+    std::memcpy(path+dirLength+1,filename,fileLength+1);   // copies the NUL
+    const int n=(int)(dirLength+1+fileLength);
+    if(n<0 || (std::size_t)n>=(std::size_t)MAX_PATH) return -1;
     const DWORD attributes=GetFileAttributesA(path);
     if(attributes!=INVALID_FILE_ATTRIBUTES) return (attributes&FILE_ATTRIBUTE_DIRECTORY)?-1:1;
     const DWORD error=GetLastError();
