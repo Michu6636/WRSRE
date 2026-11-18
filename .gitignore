@@ -18,6 +18,7 @@ tools/peinfo-out/
 *.obj
 *.ilk
 *.exe
+*.exp
 # Local agent review exports and Python-generated files
 .cache/
 __pycache__/
