@@ -249,10 +249,24 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
+          mkdir -p build/test-logs
           fail=0
           for f in $(find tests -name 'test_*.py' | sort); do
-            echo "--- $f"
-            python3 "$f" || { echo "FAIL $f"; fail=1; }
+            log="build/test-logs/win_$(echo "$f" | tr '/' '_').log"
+            if python3 "$f" > "$log" 2>&1; then
+              echo "PASS $f"
+              if grep -qE 'skipped=[0-9]+|skipped [0-9]+' "$log"; then
+                echo "::warning file=$f::passed but skipped on Windows: $(grep -oE 'skipped[= ][0-9]+' "$log" | head -1)"
+              fi
+            else
+              echo "FAIL $f"
+              tail -30 "$log"
+              echo "::error file=$f::test suite failed on Windows"
+              grep -m5 -E 'error|Error|assert|Assertion|Traceback' "$log" 2>/dev/null | while IFS= read -r line; do
+                echo "::error file=$f::$(echo "$line" | tr -d '\r' | cut -c1-500)"
+              done
+              fail=1
+            fi
           done
           exit $fail
 
