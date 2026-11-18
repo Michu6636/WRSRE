@@ -163,12 +163,18 @@ every push and pull request:
 |---|---|---|
 | `test` | ubuntu | all Python suites, all four Almanac host C++ runners, tool self-tests. Warns if a passing suite **skipped** tests on this platform. |
 | `hygiene` | ubuntu | no NUL/invalid UTF-8 in tracked text (honours `.gitattributes` `-text`), no broken local Markdown links, `build.bat` is CRLF-only and paren-balanced, the ImGui pin is consistent |
-| `Windows (MSVC + SEH)` | windows | `build.bat` and `build.bat clean wrsre` compile **and** the Python suites run where `test_real_native_write_faults` can execute against real SEH |
+| `Windows (MSVC + SEH)` | windows | `test_real_native_write_faults` against real SEH, then `build.bat` and `build.bat clean wrsre` compile |
 
-All three gate merges. The Windows job is not optional coverage: it is the only
-place `test_real_native_write_faults` runs at all, and it fails loudly if that
-test silently skips there (e.g. `cl` missing from `PATH`) rather than reporting
-a green run that measured nothing.
+All three gate merges. The Windows job exists for exactly two things Linux
+cannot do. It fails loudly if the SEH test *skips* (e.g. `cl` missing from
+`PATH`) rather than reporting a green run that measured nothing.
+
+It deliberately does **not** run the other Python suites. Windows runners ship a
+preinstalled MinGW `g++` 15, which `shutil.which('g++')` picks up in the
+`private_logistics` host tests. Those are written for Linux GCC: they shim
+`#define __fastcall` (collides with MinGW's own attribute under `-Werror`) and
+pass `-fsanitize=address,undefined` (MinGW ships no `libasan`). Running them
+under MinGW tests the MinGW port, not the plugin.
 
 ---
 

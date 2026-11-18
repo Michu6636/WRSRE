@@ -241,49 +241,45 @@ jobs:
       # The currency suite contains test_real_native_write_faults, which needs
       # real Windows SEH (cl /W4 /WX). It is skipped on Linux, so this is the
       # only place the CommitNative rollback contract is exercised.
-      - name: Python suites on Windows (real SEH)
+      # The ONLY thing on this runner that cannot be done on Linux.
+      #
+      # tests/currency/test_transactions.py contains test_real_native_write_faults,
+      # which needs real Windows SEH: __try/__except cannot be emulated, and the
+      # test drives CommitNative's rollback by making a field PAGE_READONLY so the
+      # second write faults after the first already landed.
+      #
+      # Deliberately does NOT run the other suites here. Windows runners ship a
+      # preinstalled MinGW g++ 15, which shutil.which('g++') picks up in the
+      # private_logistics host tests. Those are written for Linux GCC: they shim
+      # '#define __fastcall' (collides with MinGW's own attribute under -Werror)
+      # and pass -fsanitize=address,undefined (MinGW ships no libasan). Running
+      # them on MinGW tests the MinGW port, not the plugin.
+      - name: Real-SEH currency test (Windows only)
         env:
           PYTHONPATH: .
           PYTHONDONTWRITEBYTECODE: "1"
-          CXX: cl
         shell: bash
         run: |
           set -o pipefail
-          mkdir -p build/test-logs
-          fail=0
-          for f in $(find tests -name 'test_*.py' | sort); do
-            log="build/test-logs/win_$(echo "$f" | tr '/' '_').log"
-            if python3 "$f" > "$log" 2>&1; then
-              echo "PASS $f"
-              if grep -qE 'skipped=[0-9]+|skipped [0-9]+' "$log"; then
-                echo "::warning file=$f::passed but skipped on Windows: $(grep -oE 'skipped[= ][0-9]+' "$log" | head -1)"
-              fi
-            else
-              echo "FAIL $f"
-              tail -30 "$log"
-              echo "::error file=$f::test suite failed on Windows"
-              grep -m5 -E 'error|Error|assert|Assertion|Traceback' "$log" 2>/dev/null | while IFS= read -r line; do
-                echo "::error file=$f::$(echo "$line" | tr -d '\r' | cut -c1-500)"
-              done
-              fail=1
-            fi
-          done
-          exit $fail
-
-      - name: Assert the SEH test actually ran
-        env:
-          PYTHONPATH: .
-          PYTHONDONTWRITEBYTECODE: "1"
-        shell: bash
-        run: |
-          # If cl is missing this test silently skips and the job still passes,
-          # which would be the exact blind spot this job exists to close.
-          out=$(python3 tests/currency/test_transactions.py -v 2>&1)
-          echo "$out" | grep -E 'test_real_native_write_faults'
-          if echo "$out" | grep -q 'skipped.*native_write_faults'; then
-            echo "::error::SEH test skipped on Windows - cl not on PATH, coverage silently absent"
+          mkdir -p build
+          log=build/seh-test.log
+          python3 tests/currency/test_transactions.py -v \
+            CurrencyTransactions.test_real_native_write_faults 2>&1 | tee "$log"
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            echo "::error file=tests/currency/test_transactions.py::real-SEH rollback test failed on Windows"
+            grep -m5 -E 'AssertionError|error|assert' "$log" | while IFS= read -r line; do
+              echo "::error file=tests/currency/test_transactions.py::$(echo "$line" | tr -d '\r' | cut -c1-500)"
+            done
             exit 1
           fi
+          # A skip means cl was not on PATH: the job would be green while
+          # measuring nothing, which is the whole reason this job exists.
+          if grep -qE 'skipped' "$log"; then
+            echo "::error file=tests/currency/test_transactions.py::SEH test SKIPPED on Windows - cl missing from PATH, coverage silently absent"
+            exit 1
+          fi
+          echo "real-SEH rollback test executed and passed"
 
       - name: Build every plugin into build\plugins
         shell: cmd
