@@ -121,12 +121,24 @@ build.bat clean               REM Remove build\plugins\ before building
 # Run all Python + C++17 plugin test suites
 for f in $(find tests -name "test_*.py" | sort); do PYTHONPATH=. PYTHONDONTWRITEBYTECODE=1 python3 "$f" || exit 1; done
 
-# Run the standalone CSV economy ledger auditor self-test
+# Almanac host tests: compiles the panel's headers with g++/clang and runs them.
+# Needs a host C++17 compiler; run_native_dependency_tests.py additionally needs
+# --imgui-dir <checkout> and a host CMake.
+PYTHONPATH=. PYTHONDONTWRITEBYTECODE=1 python3 tests/almanac_button/run_host_tests.py
+PYTHONPATH=. PYTHONDONTWRITEBYTECODE=1 python3 tests/almanac_button/run_binary_sha256_tests.py
+PYTHONPATH=. PYTHONDONTWRITEBYTECODE=1 python3 tests/almanac_button/run_tax_policy_tests.py
+
+# Tool self-tests
 PYTHONDONTWRITEBYTECODE=1 python3 tools/audit_economy_csv.py selftest
+PYTHONDONTWRITEBYTECODE=1 python3 tools/peinfo.py selftest
 
 # Scan a new SOVIET64.exe update against baseline RVAs
 python3 tools/scan_exe_update.py path/to/SOVIET64.exe
 ```
+
+> These are host checks. None of them is a live-game test: STATIC REVIEW,
+> BUILD/TEST EVIDENCE and RUNTIME VALIDATION are separate statuses, and a
+> passing suite does not prove the panel or the plugins work in `SOVIET64.exe`.
 
 ---
 
