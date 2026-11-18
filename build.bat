@@ -42,6 +42,15 @@ REM ----------------------------------------------------------------------------
 set "ROOT=%~dp0"
 pushd "%ROOT%"
 
+REM -----------------------------------------------------------------------------
+REM Dear ImGui pin. Change it HERE and nowhere else.
+REM   IMGUI_TAG  git tag cloned when no checkout is supplied
+REM   IMGUI_NUM  the tag's IMGUI_VERSION_NUM, checked before compiling
+REM plugins\almanac_overlay_dev\almanac_version.h carries the same tag for
+REM the panel version string; keep the two in step (a test enforces this).
+set "IMGUI_TAG=v1.91.9b"
+set "IMGUI_NUM=19191"
+
 REM --- Optional: clean ---
 if /i "%~1"=="clean" (
     if exist build\plugins (
@@ -94,8 +103,8 @@ if not exist "!IMGUI_DIR!\imgui.cpp" (
         set "IMGUI_NO_GIT=1"
     ) else (
         if not exist ".cache" mkdir ".cache"
-        echo [dependency] fetching Dear ImGui v1.91.9b into !IMGUI_DIR!
-        git -c core.autocrlf=false clone --depth 1 --branch v1.91.9b https://github.com/ocornut/imgui.git "!IMGUI_DIR!"
+        echo [dependency] fetching Dear ImGui !IMGUI_TAG! into !IMGUI_DIR!
+        git -c core.autocrlf=false clone --depth 1 --branch !IMGUI_TAG! https://github.com/ocornut/imgui.git "!IMGUI_DIR!"
     )
 )
 
@@ -207,16 +216,16 @@ goto :done
 :build_almanac_panel
 echo [build] plugins\almanac_overlay_dev (ImGui from !IMGUI_DIR!)
 if "!IMGUI_OK!"=="0" (
-    echo ERROR: Dear ImGui v1.91.9b is not available.
+    echo ERROR: Dear ImGui !IMGUI_TAG! is not available.
     if defined IMGUI_NO_GIT echo        git was not found on PATH; it is needed for the one-time fetch.
-    echo        Set ALMANAC_IMGUI_DIR to an existing checkout of the v1.91.9b tag
+    echo        Set ALMANAC_IMGUI_DIR to an existing checkout of the !IMGUI_TAG! tag
     echo        ^(the folder containing imgui.cpp^) and run this again.
     goto :failed
 )
 REM Version warning only: a different checkout still compiles, but the host
 REM drawing checks were written against this one.
-findstr /r /c:"#define IMGUI_VERSION_NUM  *19191" "!IMGUI_DIR!\imgui.h" >nul 2>nul
-if errorlevel 1 echo [build] WARNING: IMGUI_DIR is not v1.91.9b (IMGUI_VERSION_NUM 19191)
+findstr /r /c:"#define IMGUI_VERSION_NUM  *!IMGUI_NUM!" "!IMGUI_DIR!\imgui.h" >nul 2>nul
+if errorlevel 1 echo [build] WARNING: IMGUI_DIR is not !IMGUI_TAG! (IMGUI_VERSION_NUM !IMGUI_NUM!)
 call :compile_almanac_panel
 if errorlevel 1 goto :failed
 goto :done
@@ -238,12 +247,12 @@ if not defined IMGUI_DIR (
     if not exist "!IMGUI_DIR!\imgui.cpp" (
         where git >nul 2>nul
         if errorlevel 1 (
-            echo ERROR: Git is required to fetch pinned Dear ImGui v1.91.9b.
+            echo ERROR: Git is required to fetch pinned Dear ImGui !IMGUI_TAG!.
             goto :failed
         )
         if not exist ".cache" mkdir ".cache"
-        echo [dependency] fetching Dear ImGui v1.91.9b into !IMGUI_DIR!
-        git -c core.autocrlf=false clone --depth 1 --branch v1.91.9b https://github.com/ocornut/imgui.git "!IMGUI_DIR!"
+        echo [dependency] fetching Dear ImGui !IMGUI_TAG! into !IMGUI_DIR!
+        git -c core.autocrlf=false clone --depth 1 --branch !IMGUI_TAG! https://github.com/ocornut/imgui.git "!IMGUI_DIR!"
         if errorlevel 1 goto :failed
     )
 ) else (
@@ -338,7 +347,7 @@ for /d %%d in (plugins\*) do (
                 REM not break a build of the plugins the game plays with.
                 echo [skip]  plugins\!NAME! - Dear ImGui not available
                 echo         One-time fetch needs git and network access, or set
-                echo         ALMANAC_IMGUI_DIR to a v1.91.9b checkout and rebuild.
+                echo         ALMANAC_IMGUI_DIR to a !IMGUI_TAG! checkout and rebuild.
                 set /a SKIPPED+=1
             )
         ) else if exist "%%d\!NAME!.cpp" (
