@@ -15,4 +15,8 @@ export/almanac-evidence/almanac-button-visual-test-run1/tesmioloader-log.txt -te
 # They are evidence inputs (see "Mods for analysis"/README.md), not WRSRE code.
 "Mods for analysis/**" -text
 # Legacy Ghidra/PE asm dumps keep whatever the tool emitted.
+# Some are UTF-16LE Ghidra output and some are raw byte dumps; normalising
+# them would destroy the bytes they exist to preserve.
 *.asm -text
+# A raw memory hexdump: the non-ASCII bytes ARE the dumped data.
+export/almanac-evidence/c3ddll64-panel-init-search-20261109/panel_raw_hex.txt -text
