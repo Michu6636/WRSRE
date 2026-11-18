@@ -27,9 +27,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 
@@ -42,12 +42,34 @@ jobs:
           PYTHONDONTWRITEBYTECODE: "1"
         run: |
           set -o pipefail
+          mkdir -p build/test-logs
           fail=0
+          failing=""
           while IFS= read -r f; do
             echo "::group::$f"
-            if python3 "$f"; then echo "PASS $f"; else echo "::error file=$f::test suite failed"; fail=1; fi
+            if python3 "$f" > "build/test-logs/$(echo "$f" | tr '/' '_').log" 2>&1; then
+              echo "PASS $f"
+            else
+              echo "FAIL $f"
+              tail -40 "build/test-logs/$(echo "$f" | tr '/' '_').log"
+              echo "::error file=$f::test suite failed (see the tail above or the artifact)"
+              fail=1
+              failing="$failing
+          * \`$f\`"
+            fi
             echo "::endgroup::"
           done < <(find tests -name 'test_*.py' | sort)
+          if [ -n "$failing" ]; then
+            {
+              echo "## Failing suites"
+              echo "$failing"
+              echo
+              echo "### Compiler version"
+              echo '```'
+              g++ --version
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
           exit $fail
 
       - name: Almanac host compile tests
@@ -69,10 +91,12 @@ jobs:
 
       - name: Upload host test summary
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
-          name: almanac-host-summary
-          path: build/almanac_host/**/summary.json
+          name: test-logs
+          path: |
+            build/test-logs/
+            build/almanac_host/**/summary.json
           if-no-files-found: ignore
           retention-days: 14
 
@@ -85,9 +109,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 
@@ -194,7 +218,7 @@ jobs:
     timeout-minutes: 45
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Configure MSVC environment
         uses: ilammy/msvc-dev-cmd@v1
@@ -223,7 +247,7 @@ jobs:
 
       - name: Upload built DLLs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: windows-plugins
           path: build/plugins/
