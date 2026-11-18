@@ -51,8 +51,14 @@ jobs:
               echo "PASS $f"
             else
               echo "FAIL $f"
-              tail -40 "build/test-logs/$(echo "$f" | tr '/' '_').log"
+              log="build/test-logs/$(echo "$f" | tr '/' '_').log"
+              tail -40 "$log"
               echo "::error file=$f::test suite failed (see the tail above or the artifact)"
+              # Compiler diagnostics are the usual cause; surface them as
+              # annotations so they are readable without the log artifact.
+              grep -m5 -E 'error:|warning:|assert|FAIL' "$log" 2>/dev/null | while IFS= read -r line; do
+                echo "::error file=$f::$(echo "$line" | tr -d '\r' | cut -c1-500)"
+              done
               fail=1
               failing="$failing
           * \`$f\`"
