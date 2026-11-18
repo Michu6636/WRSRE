@@ -4,10 +4,13 @@ setlocal enabledelayedexpansion
 REM -----------------------------------------------------------------------------
 REM Build plugins for tesmioloader.
 REM
-REM By default this builds every plugin in plugins\ AND tesmioloader.dll into
-REM build\plugins, so that folder is the complete set of files to copy into a
-REM game's tesmioloader directory. Anything the Almanac ImGui panel needs is
-REM fetched and built by the same run; there is no second command.
+REM By default this builds every plugin in plugins\ into build\plugins. The
+REM upstream tesmioloader.dll is NOT built by default - it is opt-in via
+REM `build.bat loader`. Anything the Almanac ImGui panel needs is fetched and
+REM built by the same run; there is no second command.
+REM
+REM `build.bat` and `build.bat wrsre` share build\plugins. Stage one or the
+REM other, never both, or every plugin ships twice (monolithic + standalone).
 REM
 REM Requires Visual Studio Build Tools 2022 with "Desktop development with
 REM C++". Free download: https://visualstudio.microsoft.com/downloads/
@@ -21,8 +24,8 @@ REM preference - the contract in src/tesmio_api.h says nothing may be
 REM freed across the loader/plugin boundary. Do not change it.
 REM
 REM Usage:
-REM   build.bat              build tesmioloader.dll + every plugin into
-REM                          build\plugins - the full copy set
+REM   build.bat              build every plugin into build\plugins
+REM   build.bat wrsre        build the single-DLL wrsre.dll + all INIs
 REM   build.bat clean        remove build\plugins\ first
 REM   build.bat <name>       build one plugin, e.g. `build.bat sim_clock`
 REM   build.bat almanac_overlay_dev
@@ -192,7 +195,13 @@ if errorlevel 1 (
     goto :failed
 )
 set /a BUILT+=1
-echo [build] wrsre.dll ready in build\plugins (remove individual plugin DLLs when staging wrsre.dll)
+REM The monolith and the per-plugin DLLs must never be staged together.
+REM Remove only the stale standalone DLLs. The INIs stay: wrsre.dll reads
+REM them too, so deleting them would leave an incomplete staging set.
+for %%m in (!WRSRE_MODS!) do (
+    if exist "build\plugins\%%m.dll" del /q "build\plugins\%%m.dll" >nul 2>&1
+)
+echo [build] wrsre.dll ready in build\plugins (stale standalone plugin DLLs removed)
 goto :done
 
 :build_almanac_panel
@@ -292,6 +301,13 @@ if errorlevel 1 (
 del /q "plugins\almanac_overlay_dev\*.obj" "plugins\almanac_overlay_dev\*.exp" "plugins\almanac_overlay_dev\*.lib" "plugins\almanac_overlay_dev\*.ilk" "plugins\almanac_overlay_dev\*.pdb" >nul 2>nul
 exit /b 0
 
+
+REM --- Staging guard: do not leave wrsre.dll beside per-plugin DLLs ---
+if exists "build\plugins\wrsre.dll" (
+    echo [build] NOTE: removing stale wrsre.dll - this target produces separate
+    echo         plugin DLLs. Use "build.bat wrsre" for the monolith instead.
+    del /q "build\plugins\wrsre.dll" >nul 2>&1
+)
 :plugins
 
 REM --- Plugins ---
@@ -367,10 +383,13 @@ if !FAILED! gtr 0 (
 )
 echo -----------------------------------------------------------------------------
 if "%WHICH%"=="" (
-    echo   Copy build\plugins\* into the game\tesmioloader\plugins folder.
-    echo   That is the complete set: tesmioloader.dll plus every plugin DLL and INI.
+    echo   Copy the DLLs and INIs into the game\tesmioloader\plugins folder.
+    echo   tesmioloader.dll is NOT built here - use "build.bat loader" for it.
+    echo   Do not mix these per-plugin DLLs with wrsre.dll from "build.bat wrsre".
+    echo   NOTE: almanac_button.dll is a disposable test build that ends the
+    echo         game process if its guard fails. Do not ship it normally.
     if not defined ALMANAC_BUILT echo   NOTE: almanac_overlay_dev was skipped - see the line above.
-    if defined ALMANAC_BUILT echo   Includes the Almanac panel: press F8 in game to open it.
+    if defined ALMANAC_BUILT echo   Includes the Almanac panel: press F9 in game to open it.
 )
 echo.
 

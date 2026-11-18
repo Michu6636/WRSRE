@@ -18,11 +18,25 @@ review rounds, separate validation statuses and resume checkpoint.
   verified. Read each status and reconcile it before reuse; do not silently
   reclassify or rerun old native requests.
 
-## Current and historical index
+## Active index
 
-- [active/current-task-state-storage.md](active/current-task-state-storage.md) — staged v0.17/v6.11 opt-in source-only, cap 5, dry_run=1
-- [active/NEXT_PHASE.md](active/NEXT_PHASE.md) — staged status + 6 validations
-- [active/GHIDRA_REQUEST.md](active/GHIDRA_REQUEST.md) — read-only probe panel+0x310 capacity
+Reconciled 2026-11-18. `private_logistics` is now at `0.19.0-simplified-settlement`
+and `ui_panels` well past v6.11, so every packet below predates the current
+source. None of them is the current goal.
+
+- [active/NEXT_PHASE.md](active/NEXT_PHASE.md) — **BLOCKED.** Staged v0.17 opt-in
+  state-storage targets, cap 5, `dry_run=1`. Superseded in source by the shipped
+  road-20/rail-5 policy; keep for its reasoning, not as an implementation plan.
+- [active/TEST16_ROAD_TARGETS.md](active/TEST16_ROAD_TARGETS.md) — **IMPLEMENTED, native
+  acceptance PENDING.** Road type 43 = 20 total targets, rail type 52 = 5. Host
+  regressions pass; no live-game confirmation.
+- [active/TEST15_INSERTION_CONTRACT.md](active/TEST15_INSERTION_CONTRACT.md) — read-only
+  native question about `FUN_14001E140`. Not started here; needs the Windows
+  Ghidra operator.
+- [active/GHIDRA_REQUEST.md](active/GHIDRA_REQUEST.md) — read-only DO-panel capacity
+  probe above five entries.
+
+See [`archive/`](archive/README.md) for the six records retired on 2026-11-18.
 
 The controlling workflow is [`../workflow/EXECUTION.md`](../workflow/EXECUTION.md)
 and [`../workflow/REVIEW.md`](../workflow/REVIEW.md). Ignored `scratch/` may hold

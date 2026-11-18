@@ -1,6 +1,6 @@
 # Almanac: implementation specification (decision draft, not code)
 
-**Status:** specification only. D1–D6 are **proposals, not approved implementation decisions**. Neither proof of concept (§6) is authorized or read-only. No code, no game or mod execution, no hooks, no deployment, no live test. The existing tax rules are unchanged by this specification. Builds on [`almanac-design-comparison.md`](almanac-design-comparison.md) (committed `d0b3f05`).
+**Status:** specification only. D1–D6 are **proposals, not approved implementation decisions**. Neither proof of concept (§6) is authorized or read-only. No code, no game or mod execution, no hooks, no deployment, no live test. The existing tax rules are unchanged by this specification. Builds on [`almanac-design-comparison.md`](../../../docs/almanac-design-comparison.md) (committed `d0b3f05`).
 
 **Labels**
 

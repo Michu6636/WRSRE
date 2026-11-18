@@ -119,7 +119,7 @@ All preserved under `export/almanac-evidence/c3ddll64-draw-complete-20261109/`:
 | File | Description |
 |------|-------------|
 | `draw_tail_disasm.asm` | Ghidra disassembly of Draw range `0x1800BB1D0:0x1800BB400` |
-| `draw_tail2_disasm.asm` | (attempted — see Notes) |
+| `draw_tail2_disasm.asm` | **Not produced** — see Notes. The empty placeholder was removed on 2026-11-18. |
 | `draw_tail3_raw.asm` | Raw hex bytes of Draw from `0x1800BB400` to `0x1800BB900` (manual decode) |
 | `collision_draw_disasm.asm` | Ghidra disassembly of Collision `0x1800BC690:0x1800BD000` and Draw `0x1800BAF40:0x1800BB200` |
 | `export_directory_raw.bin` | Raw 40-byte IMAGE_EXPORT_DIRECTORY |

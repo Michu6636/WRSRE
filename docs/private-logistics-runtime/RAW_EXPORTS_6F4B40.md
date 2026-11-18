@@ -330,7 +330,7 @@ for i from count-1 down to 0:
 1. Saves and restores *param_4 (vertical layout value) via FUN_140042de0 after each callee that may modify it  
 2. Calls three layout-adjustment callees (FUN_140772400, FUN_1407752a0, FUN_140775000) that modify *param_4  
 3. Conditionally calls FUN_140702730 when window + 0x240 != 0, window + 0x248 == 0, *window+0x240+0x318 != 0, and float/type conditions at +0x77c, +0x780, +0x360 are met  
-4. Conditionally iterates a list at window + 0x240 + 0x970/+0x978 with stride 0xe0, looking for entry type  xf, then calls FUN_1406f4db0  
+4. Conditionally iterates a list at window + 0x240 + 0x970/+0x978 with stride 0xe0, looking for entry type 0xf, then calls FUN_1406f4db0  
 5. Conditionally calls FUN_1407a2a60 when window + 0x24c == 2  
 
 ### 3.5 Conclusion

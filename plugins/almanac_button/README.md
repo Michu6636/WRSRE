@@ -1,10 +1,16 @@
-# almanac_button (experimental prototype, enabled by default)
+> **Superseded prototype — disabled by default.** Use
+> [`plugins/almanac_overlay_dev`](../almanac_overlay_dev/README.md) instead. This
+> plugin is kept only as a disposable-test reference. As of 2026-11-18 the
+> shipped INI **and** the missing-key fallback are `enabled = 0`; installing the
+> DLL patches nothing until a tester opts in on a throwaway game copy.
+
+# almanac_button (experimental prototype, disabled by default)
 
 A clickable ninth tile beside the Economy & Trade row. It draws one extra
 game-style backdrop tile after the eighth tile and checks for a click on it
 (mouse over rect + click latch set, read-only). Clicking the ninth tile toggles
 a mod-owned Almanac open/close state; clicking another native row button closes
-the Almanac. The shipped INI and missing-key fallback set `enabled = 1`.
+the Almanac. The shipped INI and missing-key fallback set `enabled = 0`.
 
 **Caution:** when installed, this experimental plugin attempts its guarded draw
 hook automatically. It can end the game process on certain faults. It is not a

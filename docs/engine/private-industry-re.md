@@ -201,10 +201,10 @@ So `order+0x50[i]` is a pointer to a record whose `+0x28` is a pointer to a **co
 **Changes:** forecloses "read buyer at the call site"; S2 must bill sea/rail via `param_9` now, road via the completed-delivery log once its building field is confirmed.
 
 ### H2 — G3: vehicle purchase *(blocks the private-logistics cost model)*
-**Answer:** **Found.** FUN_1401aad70 (RVA  x1AAD70) is the vehicle purchase transaction: it checks the vehicle type (0x14), reads the price, verifies treasury sufficiency, deducts cost from game+0x580 (USD) and game+0x588 (RUB), creates the vehicle via FUN_1403e4a00, and sets 
+**Answer:** **Found.** FUN_1401aad70 (RVA 0x1AAD70) is the vehicle purchase transaction: it checks the vehicle type (0x14), reads the price, verifies treasury sufficiency, deducts cost from game+0x580 (USD) and game+0x588 (RUB), creates the vehicle via FUN_1403e4a00, and sets 
 ehicle+0x4F8 via FUN_1401aaaa0 — all at purchase time, not just at assignment.
 
-**Ask #1 — purchase transaction:** FUN_1401aad70 (RVA  x1AAD70). Deducts local_res20 from RUB treasury (DAT_1409d5498 = game+0x588) and 
+**Ask #1 — purchase transaction:** FUN_1401aad70 (RVA 0x1AAD70). Deducts local_res20 from RUB treasury (DAT_1409d5498 = game+0x588) and 
 StackX_24 from USD treasury (DAT_1409d5490 = game+0x580), then calls FUN_1403e4a00 to spawn the vehicle and FUN_1401aaaa0 to assign it to the buying building. Aborts if treasury insufficient.
 
 **Ask #2 — price location:** Two-part price passed via param_4 (64-bit): high 32 bits = USD cost (
@@ -214,14 +214,14 @@ StackX_24 = param_4 >> 32), low 32 bits → RUB base from FUN_1403e3f40 then mod
 
 **Ask #4 — state vs private:** Engine has no concept of mod [P] tags. All purchases read as state purchases from the engine's POV. Confirmed by absence of any owner/company field (round-1 Q6, x_q6_owner.txt).
 
-**Offset(s):** game+0x580 (treasury USD), game+0x588 (treasury RUB) — confirmed from 17-ui-and-integration.md and treasury xrefs. Vehicle record stride  x9f08, +0x200 = object name, +0x9c88 = ownership flag (from FUN_1402ff840 world saver, d_worldwrite.txt).
+**Offset(s):** game+0x580 (treasury USD), game+0x588 (treasury RUB) — confirmed from 17-ui-and-integration.md and treasury xrefs. Vehicle record stride 0x9f08, +0x200 = object name, +0x9c88 = ownership flag (from FUN_1402ff840 world saver, d_worldwrite.txt).
 
-**Function(s):** FUN_1401aad70 (RVA  x1AAD70), game-tick/UI thread — purchase transaction. FUN_1403e4a00 — vehicle spawn. FUN_1401aaaa0 — sets 
-ehicle+0x4F8 = building (likely, pattern match). FUN_1401C6DD0 (RVA  x1C6DD0) — +0x4F8 setter, assignment only.
+**Function(s):** FUN_1401aad70 (RVA x1AAD70), game-tick/UI thread — purchase transaction. FUN_1403e4a00 — vehicle spawn. FUN_1401aaaa0 — sets 
+ehicle+0x4F8 = building (likely, pattern match). FUN_1401C6DD0 (RVA x1C6DD0) — +0x4F8 setter, assignment only.
 
-**Evidence:** scratch/d_h2_purchase.c (full decompile of  x1AAD70 — treasury check/deduct, vehicle spawn, +0x4F8 assignment), scratch/x_h2_treasury2.txt (xrefs to game+0x580 showing writes at  x1401AAF12 in FUN_1401AAD70), scratch/d_h2_setter.c:318 (assignment-time +0x4F8 write), scratch/x_q6_owner.txt (no owner field).
+**Evidence:** scratch/d_h2_purchase.c (full decompile of x1AAD70 — treasury check/deduct, vehicle spawn, +0x4F8 assignment), scratch/x_h2_treasury2.txt (xrefs to game+0x580 showing writes at x1401AAF12 in FUN_1401AAD70), scratch/d_h2_setter.c:318 (assignment-time +0x4F8 write), scratch/x_q6_owner.txt (no owner field).
 
-**Two sources:** (a) decompile shows DAT_1409d5498 -= local_res20 and DAT_1409d5490 -= fStackX_24 (treasury deduction) at d_h2_purchase.c:LAB_1401aaef3; (b) xrefs confirm  x1401AAF12 writes to game+0x580 from FUN_1401AAD70 (x_h2_treasury2.txt).
+**Two sources:** (a) decompile shows DAT_1409d5498 -= local_res20 and DAT_1409d5490 -= fStackX_24 (treasury deduction) at d_h2_purchase.c:LAB_1401aaef3; (b) xrefs confirm x1401AAF12 writes to game+0x580 from FUN_1401AAD70 (x_h2_treasury2.txt).
 
 **Confidence:** proven (treasury deduction + vehicle spawn in same function) / likely (FUN_1401aaaa0 sets +0x4F8 — pattern match, not directly decompiled).
 
@@ -390,9 +390,9 @@ Runs this round:
 ## Part 8 - round 8
 
 ### H8 â€” is param_2 a Vehicle*, or a storage container?
-**Answer:** param_2 is a **Vehicle\*** inside FUN_140420350 at every call site, including refuel. The apparent contradiction (refuel passes [RBX+0x4F8] which Q1 proved is a home Building*) is resolved: RBX at  x14016F827 is NOT a vehicle â€” it is the output base from FUN_140427340 (a route-planning function that processed the home building's storages). [RBX+0x4F8] evaluates to a Vehicle\* stored in that output data.
+**Answer:** param_2 is a **Vehicle\*** inside FUN_140420350 at every call site, including refuel. The apparent contradiction (refuel passes [RBX+0x4F8] which Q1 proved is a home Building*) is resolved: RBX at x14016F827 is NOT a vehicle â€” it is the output base from FUN_140427340 (a route-planning function that processed the home building's storages). [RBX+0x4F8] evaluates to a Vehicle\* stored in that output data.
 
-**Offset(s) / call sites:** refuel at  x14016F831 inside vehicle AI upkeep function.
+**Offset(s) / call sites:** refuel at x14016F831 inside vehicle AI upkeep function.
 
 **First dereference inside FUN_140420350** (proves param_2 = Vehicle*):
 `
@@ -401,7 +401,7 @@ reads param_2+0x3C0 (vehicle cargo vector end)
 `
 Then param_2+0x610/+0x618 (line stops), param_2+0xEA8, param_2+0x604, param_2+0x1708 â€” all vehicle fields, not building storage (+0x970).
 
-**At the refuel call site  x14016F831:**
+**At the refuel call site x14016F831:**
 `
 14016f81d:  MOV R9,qword ptr [R15 + 0xc330]   ; R9 = param_4 = fuel resource (game+0xC330)
 14016f824:  XOR R8D,R8D                       ; R8D = param_3 = mode = 0 (load/consume)
@@ -417,12 +417,12 @@ RBX here = R8 = output base from FUN_140427340(game, home_building, &output) (se
 
 **Confidence:** proven (param_2 = Vehicle* inside callee) / likely (that [RBX+0x4F8] evaluates to a Vehicle* â€” required for callee to work, but the exact output-entry offset holding the Vehicle* is not isolated)
 
-**Changes:** Answer A â€” the fuel charge is two lines at  x16F831 (mode=0/consume from vehicle cargo), as planned. No discriminator needed. All other hook sites that pass param_2 as Vehicle* remain valid.
+**Changes:** Answer A â€” the fuel charge is two lines at x16F831 (mode=0/consume from vehicle cargo), as planned. No discriminator needed. All other hook sites that pass param_2 as Vehicle* remain valid.
 
 ### H9 â€” at a load, is param_9 the source building?
-**Answer:** No â€” at load site  x1401CB7FF, param_9 = bld = NULL. The transfer resolves the source internally via the order scan (order+0x30 == veh).
+**Answer:** No â€” at load site x1401CB7FF, param_9 = bld = NULL. The transfer resolves the source internally via the order scan (order+0x30 == veh).
 
-**Offset(s) / call sites:** loader  x1401CB2A0 at call site  x1401CB7FF.
+**Offset(s) / call sites:** loader x1401CB2A0 at call site x1401CB7FF.
 
 `
 1401cb7ca:  MOV qword ptr [RSP + 0x40],0x0    ; param_9 = bld = NULL
@@ -447,7 +447,7 @@ RBX here = R8 = output base from FUN_140427340(game, home_building, &output) (se
 **Answer:** Deferred â€” not run this round. The log entry at *(*(order+0x50)[i] + 0x28) has +0x188 (done=1.0) and +0x198 (Resource*) proven. The Building* offset remains unconfirmed. Not blocking â€” Â§3.4f fallback stands.
 
 ### H10 â€” param_9 at 0x6953C4 re-derived
-**Answer:** Deferred â€” not run this round. H6 (round 7) showed RSI=RCX=game at  x68B3AD, invalidating the "straight param_9 read" hypothesis for sea/rail. Re-deriving param_9 at  x6953C4 requires one more DisasmMany of  x14068B330's body.
+**Answer:** Deferred â€” not run this round. H6 (round 7) showed RSI=RCX=game at x68B3AD, invalidating the "straight param_9 read" hypothesis for sea/rail. Re-deriving param_9 at x6953C4 requires one more DisasmMany of x14068B330's body.
 
 ## Corrections
 - ~~order+0x10 = source Building~~ corrected in round 7 H5: +0x10 is the DO task record's source Building* (stride 0x80).

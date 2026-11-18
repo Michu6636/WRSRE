@@ -1,3 +1,15 @@
 {
-  "cmake.sourceDirectory": "C:/WRSRE/Mods for analysis/wrsr-Earthworks-main"
+  "files.eol": "\n",
+  "[bat]": {
+    "files.eol": "\r\n"
+  },
+  "files.associations": {
+    "*.ini": "ini"
+  },
+  "search.exclude": {
+    "**/build": true,
+    "**/.cache": true,
+    "**/Mods for analysis": true,
+    "**/export": true
+  }
 }

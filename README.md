@@ -13,7 +13,15 @@ Build it by name and stage it like any other plugin:
 build.bat almanac_overlay_dev
 ```
 
-It draws one read-only panel inside the game window; `F8` hides and reopens it.
+It draws one panel inside the game window with four tabs (Economy, Labour,
+Logistics, Enterprises), a floating `Almanac` launcher button, and editable
+fiscal and wage controls. Economy, Labour and Logistics are read-only telemetry;
+the fiscal sliders and wage steppers **write** through the `taxes`,
+`citizen_labor` and `republic_bank` service APIs, so the panel is not read-only.
+
+`F9` shows and hides it by default (`toggle_key` in
+`plugins/almanac_overlay_dev/almanac_overlay_dev.ini`; `0x77` selects `F8`,
+which `ui_overlay` also uses for its HUD). The panel starts hidden.
 [TESTING.md](plugins/almanac_overlay_dev/TESTING.md) lists the expected loader
 lines and what each failure means. Its README explains why the earlier isolated
 ImGui candidate never appeared in game.
@@ -33,13 +41,17 @@ WRSRE/
 ├── GEMINI.md                 # Antigravity Architect/Ghidra Lead/Final Auditor adapter
 ├── .kilo/                    # Tracked Kilo config and referenced prompt bodies
 ├── .github/                  # Copilot instructions and worker/reviewer agents
-├── build.bat                 # MSVC x64 plugin builder (build.bat [clean|<plugin>|loader])
+├── build.bat                 # MSVC x64 plugin builder (build.bat [clean|<plugin>|loader|wrsre])
 ├── clean.bat                 # Removes root compiler/linker temporaries
 ├── src/                      # Shared TesmioLoader host ABI, service APIs & RVA headers
 ├── plugins/                  # Isolated native DLL plugins (<name>/<name>.cpp + <name>.ini)
 ├── tests/                    # Standalone C++17 & Python test suites + headless mock_host
 ├── tools/                    # PE scanners, CSV economy auditor & Ghidra headless scripts
 │   └── ghidra/               # Headless Ghidra .java query scripts (DecompAt, DisasmMany, ...)
+├── prototypes/               # Historical Almanac overlay prototypes (legacy, not built by default)
+├── export/                   # Cached Ghidra/PE evidence bundles (almanac-evidence/, analyses)
+├── "Mods for analysis"/      # Vendored upstream mod sources reviewed read-only (see its README)
+├── "Autosave bin files"/     # Captured private_logistics_costs.bin save fixtures
 └── docs/                     # Design docs, Ghidra index/exports, runtime evidence & tasks
     ├── engine/               # Reverse-engineered engine layouts & mechanics
     ├── ghidra-index/         # Function-by-RVA knowledge base (read before querying Ghidra)
@@ -75,6 +87,14 @@ WRSRE/
 | `state_ledger` | Monthly Treasury & full Republic money-supply reconciliation (`tesmio_ledger.csv`) |
 | `ui_overlay` | Top-level HUD economy & enterprise cards |
 | `ui_panels` | Native building-window row injection & interactive slider/checkbox widgets |
+| `almanac_overlay_dev` | In-game ImGui panel: Economy/Labour/Logistics telemetry, Enterprises directory & fiscal controls |
+| `almanac_button` | Experimental ninth sidebar tile (prototype; superseded by `almanac_overlay_dev`) |
+
+Not part of the `wrsre.dll` monolith: `almanac_overlay_dev`, `almanac_button`
+and `private_logistics_probe` are standalone-only DLLs. `almanac_overlay_dev`
+links Dear ImGui and is skipped by a plain `build.bat` when the pinned dependency
+is unavailable. `almanac_button` is a disposable test build that ends the game
+process on a failed guard — do not stage it in a normal install.
 
 ---
 
@@ -84,9 +104,17 @@ WRSRE/
 ```bat
 build.bat wrsre               REM Build single-DLL wrsre.dll + all INIs (VS Code Ctrl+Shift+B default)
 build.bat clean wrsre         REM Clean build\plugins\ and rebuild wrsre.dll
-build.bat                     REM Build all separate plugin DLLs into build\plugins\ (excludes tesmioloader.dll)
+build.bat                     REM Build all separate plugin DLLs into build\plugins\
 build.bat private_logistics   REM Build a single plugin DLL
+build.bat almanac_overlay_dev REM Build the Almanac ImGui panel by name
+build.bat loader              REM Build upstream tesmioloader.dll (opt-in)
+build.bat clean               REM Remove build\plugins\ before building
 ```
+
+> **Staging caution.** `build.bat` and `build.bat wrsre` write to the same
+> `build\plugins\` directory. Stage `wrsre.dll` **or** the separate plugin DLLs,
+> never both: copying `build\plugins\*` after both builds ships every plugin
+> twice (once monolithic, once standalone). Run `build.bat clean` between them.
 
 ### Run Automated Tests (Cross-Platform Python 3 + C++17)
 ```bash

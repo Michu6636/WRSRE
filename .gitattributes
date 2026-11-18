@@ -11,3 +11,8 @@ export/almanac-evidence/almanac-button-visual-test-run1/tesmioloader-log.txt -te
 *.json text eol=lf
 # Windows batch files keep CRLF
 *.bat text eol=crlf
+# Vendored third-party mod sources keep their upstream bytes and hashes.
+# They are evidence inputs (see "Mods for analysis"/README.md), not WRSRE code.
+"Mods for analysis/**" -text
+# Legacy Ghidra/PE asm dumps keep whatever the tool emitted.
+*.asm -text
