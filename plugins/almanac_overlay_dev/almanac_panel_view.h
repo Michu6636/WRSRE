@@ -19,7 +19,7 @@ struct TabData {
 };
 
 struct EnterpriseRow {
-    char   name[48]{};
+    char   name[80]{};
     bool   solvent  = true;
     double capital  = 0.0;
     double monthNet = 0.0;

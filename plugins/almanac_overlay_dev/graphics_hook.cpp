@@ -43,6 +43,7 @@
 #include <atomic>
 #include <cstdarg>
 #include <cstddef>
+#include <cstdint>
 #include <cstdio>
 
 #pragma comment(lib, "d3d11.lib")
@@ -292,9 +293,40 @@ void ApplyPanelAction(const PanelAction& action)
 }
 
 // Sample live read-only data from WRSRE services (throttled to ~4 Hz).
-wchar_t ToLowerAsciiW(wchar_t c)
+// Native C3D_LANGUAGE::GetString resolver (verified via Ghidra FUN_1403329E0):
+//   - Language singleton: exeBase + 0x997590 (DAT_140997590)
+//   - Export in C3DDLL64.dll: "?GetString@C3D_LANGUAGE@@QEAAPEB_WK@Z"
+//     (also present at IAT slot exeBase + 0x86C890)
+//   - Building+0x108 -> NamePoint* -> +0x10: wchar_t[128] city/town name
+//   - Building+0x110 -> int32 instance index (when > 0, display appends " <n+1>")
+//   - Building+0x318 -> TypeDescriptor*:
+//       +0x200: int32 localized string ID ($NAME or $NAME_STR custom ID)
+//       +0x204: int32 optional suffix string ID (used only when >= 0)
+using LanguageGetStringFn = const wchar_t*(__fastcall*)(void* langThis, unsigned int id);
+
+constexpr size_t kRvaLanguageSingleton = 0x997590;
+constexpr size_t kRvaGetStringIat      = 0x86C890;
+
+LanguageGetStringFn ResolveLanguageGetString()
 {
-    return (c >= L'A' && c <= L'Z') ? static_cast<wchar_t>(c - L'A' + L'a') : c;
+    static LanguageGetStringFn s_fn = nullptr;
+    static bool s_resolved = false;
+    if (s_resolved) return s_fn;
+    s_resolved = true;
+
+    if (!g_host) return nullptr;
+    if (g_host->engineModule) {
+        s_fn = reinterpret_cast<LanguageGetStringFn>(
+            GetProcAddress(static_cast<HMODULE>(g_host->engineModule),
+                           "?GetString@C3D_LANGUAGE@@QEAAPEB_WK@Z"));
+    }
+    if (!s_fn && g_host->exeBase &&
+        (!g_host->readablePtr ||
+         g_host->readablePtr(g_host->exeBase + kRvaGetStringIat, sizeof(void*)))) {
+        s_fn = *reinterpret_cast<LanguageGetStringFn const*>(
+            g_host->exeBase + kRvaGetStringIat);
+    }
+    return s_fn;
 }
 
 bool IsLegitNameChar(wchar_t c)
@@ -328,78 +360,6 @@ bool ValidateWideName(const wchar_t* ws, size_t maxScan, size_t* outLen)
     return true;
 }
 
-// Rejects generic auto-numbered placeholder names like "Building 185" or "Building #12".
-bool IsGenericBuildingNumberName(const wchar_t* ws, size_t len)
-{
-    static const wchar_t kPrefix[] = L"building ";
-    constexpr size_t kPrefixLen = 9;
-    if (len <= kPrefixLen) return false;
-    for (size_t i = 0; i < kPrefixLen; ++i) {
-        if (ToLowerAsciiW(ws[i]) != kPrefix[i]) return false;
-    }
-    size_t digits = 0;
-    for (size_t i = kPrefixLen; i < len; ++i) {
-        const wchar_t c = ws[i];
-        if (c >= L'0' && c <= L'9') {
-            ++digits;
-        } else if (c != L' ' && c != L'#') {
-            return false;
-        }
-    }
-    return digits > 0;
-}
-
-bool EndsWithInsensitiveW(const wchar_t* ws, size_t len, const wchar_t* suffix, size_t suffixLen)
-{
-    if (len < suffixLen) return false;
-    for (size_t i = 0; i < suffixLen; ++i) {
-        if (ToLowerAsciiW(ws[len - suffixLen + i]) != suffix[i]) return false;
-    }
-    return true;
-}
-
-bool IsPathOrAssetToken(const wchar_t* ws, size_t len)
-{
-    for (size_t i = 0; i < len; ++i) {
-        if (ws[i] == L'\\' || ws[i] == L'/') return true;
-    }
-    return EndsWithInsensitiveW(ws, len, L".ini", 4) ||
-           EndsWithInsensitiveW(ws, len, L".dds", 4) ||
-           EndsWithInsensitiveW(ws, len, L".nmf", 4) ||
-           EndsWithInsensitiveW(ws, len, L".mtl", 4) ||
-           EndsWithInsensitiveW(ws, len, L".png", 4) ||
-           EndsWithInsensitiveW(ws, len, L".wav", 4) ||
-           EndsWithInsensitiveW(ws, len, L".ogg", 4) ||
-           EndsWithInsensitiveW(ws, len, L".bin", 4) ||
-           EndsWithInsensitiveW(ws, len, L".txt", 4);
-}
-
-bool EqualsInsensitiveW(const wchar_t* a, size_t aLen, const wchar_t* b, size_t bLen)
-{
-    if (aLen != bLen) return false;
-    for (size_t i = 0; i < aLen; ++i) {
-        if (ToLowerAsciiW(a[i]) != ToLowerAsciiW(b[i])) return false;
-    }
-    return true;
-}
-
-bool ContainsSubstrInsensitiveW(const wchar_t* hay, size_t hayLen,
-                                const wchar_t* needle, size_t needleLen)
-{
-    if (needleLen == 0 || hayLen < needleLen) return false;
-    for (size_t i = 0; i + needleLen <= hayLen; ++i) {
-        bool match = true;
-        for (size_t j = 0; j < needleLen; ++j) {
-            if (ToLowerAsciiW(hay[i + j]) != ToLowerAsciiW(needle[j])) {
-                match = false;
-                break;
-            }
-        }
-        if (match) return true;
-    }
-    return false;
-}
-
 // Reads the verified city/town name from bld+0x108 (NamePoint*) -> +0x10 (wchar_t[128]).
 size_t ReadBuildingCityName(void* bldg, wchar_t* out, size_t maxChars)
 {
@@ -429,144 +389,113 @@ size_t ReadBuildingCityName(void* bldg, wchar_t* out, size_t maxChars)
     }
 }
 
-int ScoreNameCandidate(const wchar_t* ws, size_t len,
-                       const wchar_t* cityName, size_t cityLen)
+void AppendWide(wchar_t* dst, size_t maxChars, size_t* pos, const wchar_t* src)
 {
-    if (IsGenericBuildingNumberName(ws, len)) return -1;
-    if (IsPathOrAssetToken(ws, len)) return -1;
-    if (cityLen > 0 && EqualsInsensitiveW(ws, len, cityName, cityLen)) return -1;
-
-    int score = 10;
-    bool hasSpace = false;
-    bool hasUnderscore = false;
-    for (size_t i = 0; i < len; ++i) {
-        if (ws[i] == L' ') hasSpace = true;
-        if (ws[i] == L'_') hasUnderscore = true;
+    if (!dst || !pos || !src || maxChars == 0) return;
+    size_t i = *pos;
+    while (*src && i + 1 < maxChars) {
+        dst[i++] = *src++;
     }
-    if (cityLen >= 2 && ContainsSubstrInsensitiveW(ws, len, cityName, cityLen)) {
-        score += 100;
-    }
-    if (hasSpace) score += 50;
-    if (!hasUnderscore) score += 20;
-    score += static_cast<int>((len < 40) ? len : 40);
-    return score;
+    dst[i] = L'\0';
+    *pos = i;
 }
 
-bool ReadBuildingDisplayName(void* bldg, const wchar_t* cityName, size_t cityLen,
-                             wchar_t* out, size_t maxChars, size_t* outOffset)
+void AppendWideInt(wchar_t* dst, size_t maxChars, size_t* pos, int value)
+{
+    if (!dst || !pos || maxChars == 0) return;
+    wchar_t tmp[16]{};
+    int n = 0;
+    unsigned int v = (value < 0) ? static_cast<unsigned int>(-value)
+                                 : static_cast<unsigned int>(value);
+    if (value < 0 && *pos + 1 < maxChars) {
+        dst[(*pos)++] = L'-';
+    }
+    do {
+        tmp[n++] = static_cast<wchar_t>(L'0' + (v % 10u));
+        v /= 10u;
+    } while (v > 0 && n < 15);
+    while (n > 0 && *pos + 1 < maxChars) {
+        dst[(*pos)++] = tmp[--n];
+    }
+    dst[*pos] = L'\0';
+}
+
+// Mirrors FUN_1403329E0 read-only:
+//   "<City> <GetString(TD+0x200)>[ <GetString(TD+0x204)>][ <Building+0x110 + 1>]"
+bool ReadNativeBuildingDisplayName(void* bldg, const wchar_t* cityName, size_t cityLen,
+                                   wchar_t* out, size_t maxChars,
+                                   int* outNameId, int* outSuffixId, int* outInstNum)
 {
     if (!bldg || !out || maxChars < 2) return false;
     out[0] = L'\0';
-    if (outOffset) *outOffset = 0;
+    if (outNameId) *outNameId = -1;
+    if (outSuffixId) *outSuffixId = -1;
+    if (outInstNum) *outInstNum = 0;
+
+    if (!g_host || !g_host->exeBase) return false;
+    const LanguageGetStringFn getString = ResolveLanguageGetString();
+    if (!getString) return false;
 
     const uintptr_t addr = reinterpret_cast<uintptr_t>(bldg);
     if (addr < 0x10000ULL || addr > 0x00007FFFFFFEFFFFULL) return false;
-    if (g_host && g_host->readablePtr && !g_host->readablePtr(bldg, 0xC00)) {
+    if (g_host->readablePtr && !g_host->readablePtr(bldg, 0x320)) return false;
+
+    void* langThis = g_host->exeBase + kRvaLanguageSingleton;
+    if (g_host->readablePtr && !g_host->readablePtr(langThis, 0x10)) return false;
+
+    __try {
+        const BYTE* b = static_cast<const BYTE*>(bldg);
+        const void* td = *reinterpret_cast<void* const*>(b + 0x318);
+        const uintptr_t tdAddr = reinterpret_cast<uintptr_t>(td);
+        if (tdAddr < 0x10000ULL || tdAddr > 0x00007FFFFFFEFFFFULL) return false;
+        if (g_host->readablePtr && !g_host->readablePtr(td, 0x208)) return false;
+
+        const BYTE* tdBytes = static_cast<const BYTE*>(td);
+        const int32_t nameId   = *reinterpret_cast<const int32_t*>(tdBytes + 0x200);
+        const int32_t suffixId = *reinterpret_cast<const int32_t*>(tdBytes + 0x204);
+        const int32_t instNum  = *reinterpret_cast<const int32_t*>(b + 0x110);
+
+        if (outNameId) *outNameId = static_cast<int>(nameId);
+        if (outSuffixId) *outSuffixId = static_cast<int>(suffixId);
+        if (outInstNum) *outInstNum = static_cast<int>(instNum);
+
+        const wchar_t* typeStr = getString(langThis, static_cast<unsigned int>(nameId));
+        if (!typeStr) return false;
+        const uintptr_t tsAddr = reinterpret_cast<uintptr_t>(typeStr);
+        if (tsAddr < 0x10000ULL || tsAddr > 0x00007FFFFFFEFFFFULL) return false;
+        if (g_host->readablePtr && !g_host->readablePtr(typeStr, sizeof(wchar_t) * 2)) return false;
+        if (typeStr[0] == L'\0') return false;
+
+        const wchar_t* suffixStr = nullptr;
+        if (suffixId >= 0) {
+            const wchar_t* s = getString(langThis, static_cast<unsigned int>(suffixId));
+            const uintptr_t sAddr = reinterpret_cast<uintptr_t>(s);
+            if (s && sAddr >= 0x10000ULL && sAddr <= 0x00007FFFFFFEFFFFULL &&
+                (!g_host->readablePtr || g_host->readablePtr(s, sizeof(wchar_t) * 2)) &&
+                s[0] != L'\0') {
+                suffixStr = s;
+            }
+        }
+
+        size_t pos = 0;
+        if (cityName && cityLen > 0) {
+            AppendWide(out, maxChars, &pos, cityName);
+            AppendWide(out, maxChars, &pos, L" ");
+        }
+        AppendWide(out, maxChars, &pos, typeStr);
+        if (suffixStr) {
+            AppendWide(out, maxChars, &pos, L" ");
+            AppendWide(out, maxChars, &pos, suffixStr);
+        }
+        if (instNum > 0) {
+            AppendWide(out, maxChars, &pos, L" ");
+            AppendWideInt(out, maxChars, &pos, static_cast<int>(instNum + 1));
+        }
+        return pos > 0;
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        out[0] = L'\0';
         return false;
     }
-    size_t scanEnd = 0xC00;
-    if (g_host && g_host->readablePtr && g_host->readablePtr(bldg, 0x1200)) {
-        scanEnd = 0x1200;
-    }
-
-    int bestScore = -1;
-    size_t bestOff = 0;
-    wchar_t bestBuf[64]{};
-
-    const BYTE* b = static_cast<const BYTE*>(bldg);
-    __try {
-        // Pass 1: inline null-terminated UTF-16 names at both byte parities (0x10..scanEnd).
-        for (size_t parity = 0; parity < 2; ++parity) {
-            for (size_t off = 0x10 + parity; off + 6 <= scanEnd; off += 2) {
-                if (off >= 0x10 + 2) {
-                    const wchar_t prev = *reinterpret_cast<const wchar_t*>(b + off - 2);
-                    if (IsLegitNameChar(prev)) continue;
-                }
-                const wchar_t* ws = reinterpret_cast<const wchar_t*>(b + off);
-                const size_t avail = (scanEnd - off) / sizeof(wchar_t);
-                const size_t limit = (avail < 64) ? avail : 64;
-                size_t len = 0;
-                if (ValidateWideName(ws, limit, &len)) {
-                    const int sc = ScoreNameCandidate(ws, len, cityName, cityLen);
-                    if (sc > bestScore) {
-                        bestScore = sc;
-                        bestOff = off;
-                        const size_t cp = (len < 63) ? len : 63;
-                        for (size_t k = 0; k < cp; ++k) bestBuf[k] = ws[k];
-                        bestBuf[cp] = L'\0';
-                    }
-                    off += len * sizeof(wchar_t);
-                }
-            }
-        }
-
-        // Pass 2: MSVC std::wstring (SSO or heap-spilled) in 0x10..scanEnd.
-        for (size_t off = 0x10; off + 0x20 <= scanEnd; off += 8) {
-            const size_t len = *reinterpret_cast<const size_t*>(b + off + 0x10);
-            const size_t cap = *reinterpret_cast<const size_t*>(b + off + 0x18);
-            if (len < 2 || len > 63 || cap < len || cap > 256) continue;
-            const wchar_t* ws = nullptr;
-            if (cap < 8) {
-                ws = reinterpret_cast<const wchar_t*>(b + off);
-            } else {
-                const void* p = *reinterpret_cast<void* const*>(b + off);
-                const uintptr_t pa = reinterpret_cast<uintptr_t>(p);
-                if (pa < 0x10000ULL || pa > 0x00007FFFFFFEFFFFULL) continue;
-                if (g_host && g_host->readablePtr &&
-                    !g_host->readablePtr(p, (len + 1) * sizeof(wchar_t))) {
-                    continue;
-                }
-                ws = static_cast<const wchar_t*>(p);
-            }
-            size_t vlen = 0;
-            if (ValidateWideName(ws, len + 1, &vlen) && vlen == len) {
-                const int sc = ScoreNameCandidate(ws, len, cityName, cityLen);
-                if (sc > bestScore) {
-                    bestScore = sc;
-                    bestOff = off;
-                    const size_t cp = (len < 63) ? len : 63;
-                    for (size_t k = 0; k < cp; ++k) bestBuf[k] = ws[k];
-                    bestBuf[cp] = L'\0';
-                }
-            }
-        }
-
-        // Pass 3: direct heap wchar_t* pointers in 0x10..scanEnd (only if Pass 1/2 had no strong hit).
-        if (bestScore < 80) {
-            for (size_t off = 0x10; off + 8 <= scanEnd; off += 8) {
-                if (off == 0x108 || off == 0x318) continue;
-                const void* p = *reinterpret_cast<void* const*>(b + off);
-                const uintptr_t pa = reinterpret_cast<uintptr_t>(p);
-                if (pa < 0x100000ULL || pa > 0x00007FFFFFFEFFFFULL || (pa & 1u) != 0) continue;
-                if (g_host && g_host->readablePtr && !g_host->readablePtr(p, 128)) continue;
-                const wchar_t* ws = static_cast<const wchar_t*>(p);
-                size_t len = 0;
-                if (ValidateWideName(ws, 64, &len)) {
-                    const int sc = ScoreNameCandidate(ws, len, cityName, cityLen);
-                    if (sc > bestScore) {
-                        bestScore = sc;
-                        bestOff = off;
-                        const size_t cp = (len < 63) ? len : 63;
-                        for (size_t k = 0; k < cp; ++k) bestBuf[k] = ws[k];
-                        bestBuf[cp] = L'\0';
-                    }
-                }
-            }
-        }
-    } __except (EXCEPTION_EXECUTE_HANDLER) {
-        bestScore = -1;
-    }
-
-    if (bestScore < 0 || bestBuf[0] == L'\0') return false;
-
-    size_t cp = 0;
-    while (cp < maxChars - 1 && bestBuf[cp] != L'\0') {
-        out[cp] = bestBuf[cp];
-        ++cp;
-    }
-    out[cp] = L'\0';
-    if (outOffset) *outOffset = bestOff;
-    return true;
 }
 
 void FormatHumanizedObjectName(const char* objName, char* out, size_t outSize)
@@ -824,7 +753,9 @@ const PanelModel* SampleLiveModel(bool worldLoaded)
             row.debt     = 0.0;
 
             bool gotName = false;
-            size_t nameOff = 0;
+            int nameId = -1;
+            int suffixId = -1;
+            int instNum = 0;
             wchar_t cityW[64]{};
             const size_t cityLen = ReadBuildingCityName(bldg, cityW, 64);
             char cityUtf8[48]{};
@@ -833,16 +764,17 @@ const PanelModel* SampleLiveModel(bool worldLoaded)
                                     static_cast<int>(sizeof(cityUtf8)), nullptr, nullptr);
             }
 
-            wchar_t wbuf[64]{};
+            wchar_t wbuf[96]{};
             if (s_enterprise->getBuildingCustomName &&
-                s_enterprise->getBuildingCustomName(bldg, wbuf, 64) > 0 && wbuf[0]) {
+                s_enterprise->getBuildingCustomName(bldg, wbuf, 96) > 0 && wbuf[0]) {
                 const int n = WideCharToMultiByte(
                     CP_UTF8, 0, wbuf, -1, row.name,
                     static_cast<int>(sizeof(row.name)), nullptr, nullptr);
                 if (n > 1) gotName = true;
             }
             if (!gotName &&
-                ReadBuildingDisplayName(bldg, cityW, cityLen, wbuf, 64, &nameOff)) {
+                ReadNativeBuildingDisplayName(bldg, cityW, cityLen, wbuf, 96,
+                                              &nameId, &suffixId, &instNum)) {
                 const int n = WideCharToMultiByte(
                     CP_UTF8, 0, wbuf, -1, row.name,
                     static_cast<int>(sizeof(row.name)), nullptr, nullptr);
@@ -868,10 +800,10 @@ const PanelModel* SampleLiveModel(bool worldLoaded)
             static int s_nameProbeCount = 0;
             if (s_nameProbeCount < 3) {
                 ++s_nameProbeCount;
-                Log("enterprise name probe: city=\"%s\" obj=\"%s\" resolved=\"%s\" off=0x%zX",
+                Log("enterprise name probe: city=\"%s\" obj=\"%s\" nameId=%d suffixId=%d inst=%d resolved=\"%s\"",
                     cityUtf8[0] ? cityUtf8 : "(none)",
                     (objName && objName[0]) ? objName : "(none)",
-                    row.name, nameOff);
+                    nameId, suffixId, instNum, row.name);
             }
 
             if (s_bank && s_bank->getEnterpriseDebt) {
