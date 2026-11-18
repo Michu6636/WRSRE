@@ -133,6 +133,7 @@ for f in $(find tests -name "test_*.py" | sort); do PYTHONPATH=. PYTHONDONTWRITE
 PYTHONPATH=. PYTHONDONTWRITEBYTECODE=1 python3 tests/almanac_button/run_host_tests.py
 PYTHONPATH=. PYTHONDONTWRITEBYTECODE=1 python3 tests/almanac_button/run_binary_sha256_tests.py
 PYTHONPATH=. PYTHONDONTWRITEBYTECODE=1 python3 tests/almanac_button/run_tax_policy_tests.py
+PYTHONPATH=. PYTHONDONTWRITEBYTECODE=1 python3 tests/almanac_overlay_dev/run_host_tests.py
 
 # Tool self-tests
 PYTHONDONTWRITEBYTECODE=1 python3 tools/audit_economy_csv.py selftest
@@ -141,6 +142,13 @@ PYTHONDONTWRITEBYTECODE=1 python3 tools/peinfo.py selftest
 # Scan a new SOVIET64.exe update against baseline RVAs
 python3 tools/scan_exe_update.py path/to/SOVIET64.exe
 ```
+
+> **One test needs real Windows.** `tests/currency/test_transactions.py` contains
+> `test_real_native_write_faults`, which compiles a probe with `cl /W4 /WX` and
+> exercises `CommitNative`'s rollback through genuine SEH (`__try`/`__except`
+> cannot be emulated on Linux). On any other platform it is **skipped**, so a
+> green Linux run says nothing about it. CI runs the whole Python suite set on
+> `windows-latest` as well, and fails if that test silently skips there too.
 
 > These are host checks. None of them is a live-game test: STATIC REVIEW,
 > BUILD/TEST EVIDENCE and RUNTIME VALIDATION are separate statuses, and a
@@ -153,13 +161,20 @@ every push and pull request:
 
 | Job | Runner | What it proves |
 |---|---|---|
-| `test` | ubuntu | all Python suites, the Almanac host C++ tests, tool self-tests |
+| `test` | ubuntu | all Python suites, all four Almanac host C++ runners, tool self-tests. Warns if a passing suite **skipped** tests on this platform. |
 | `hygiene` | ubuntu | no NUL/invalid UTF-8 in tracked text (honours `.gitattributes` `-text`), no broken local Markdown links, `build.bat` is CRLF-only and paren-balanced, the ImGui pin is consistent |
-| `build-windows` | windows | `build.bat` and `build.bat clean wrsre` actually compile; **informational** (`continue-on-error`) until it has a track record |
+| `Windows (MSVC + SEH)` | windows | `test_real_native_write_faults` against real SEH, then `build.bat` and `build.bat clean wrsre` compile |
 
-The Linux jobs are the ones that gate a merge. `build-windows` is the only
-signal on whether the C++ still compiles, and it is deliberately non-blocking:
-treat a red run as a finding, not a flake.
+All three gate merges. The Windows job exists for exactly two things Linux
+cannot do. It fails loudly if the SEH test *skips* (e.g. `cl` missing from
+`PATH`) rather than reporting a green run that measured nothing.
+
+It deliberately does **not** run the other Python suites. Windows runners ship a
+preinstalled MinGW `g++` 15, which `shutil.which('g++')` picks up in the
+`private_logistics` host tests. Those are written for Linux GCC: they shim
+`#define __fastcall` (collides with MinGW's own attribute under `-Werror`) and
+pass `-fsanitize=address,undefined` (MinGW ships no `libasan`). Running them
+under MinGW tests the MinGW port, not the plugin.
 
 ---
 
