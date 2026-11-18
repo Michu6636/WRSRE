@@ -47,11 +47,15 @@ jobs:
           failing=""
           while IFS= read -r f; do
             echo "::group::$f"
-            if python3 "$f" > "build/test-logs/$(echo "$f" | tr '/' '_').log" 2>&1; then
+            log="build/test-logs/$(echo "$f" | tr '/' '_').log"
+            if python3 "$f" -v > "$log" 2>&1; then
               echo "PASS $f"
+              # A green tick that skipped a test is not coverage. Surface it.
+              if grep -qE 'skipped=[0-9]+|skipped [0-9]+' "$log"; then
+                echo "::warning file=$f::suite passed but skipped tests on this platform: $(grep -oE 'skipped[= ][0-9]+' "$log" | head -1)"
+              fi
             else
               echo "FAIL $f"
-              log="build/test-logs/$(echo "$f" | tr '/' '_').log"
               tail -40 "$log"
               echo "::error file=$f::test suite failed (see the tail above or the artifact)"
               # Compiler diagnostics are the usual cause; surface them as
@@ -87,6 +91,7 @@ jobs:
           python3 tests/almanac_button/run_host_tests.py
           python3 tests/almanac_button/run_binary_sha256_tests.py
           python3 tests/almanac_button/run_tax_policy_tests.py
+          python3 tests/almanac_overlay_dev/run_host_tests.py
 
       - name: Tool self-tests
         env:
@@ -219,10 +224,9 @@ jobs:
   # failure, and non-blocking until it has a track record.
   # ---------------------------------------------------------------------------
   build-windows:
-    name: MSVC compile (informational)
+    name: Windows (MSVC + SEH)
     runs-on: windows-latest
     timeout-minutes: 45
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v5
 
@@ -233,6 +237,39 @@ jobs:
 
       - name: cl version
         run: cl 2>&1 | findstr /C:"Version"
+
+      # The currency suite contains test_real_native_write_faults, which needs
+      # real Windows SEH (cl /W4 /WX). It is skipped on Linux, so this is the
+      # only place the CommitNative rollback contract is exercised.
+      - name: Python suites on Windows (real SEH)
+        env:
+          PYTHONPATH: .
+          PYTHONDONTWRITEBYTECODE: "1"
+          CXX: cl
+        shell: bash
+        run: |
+          set -o pipefail
+          fail=0
+          for f in $(find tests -name 'test_*.py' | sort); do
+            echo "--- $f"
+            python3 "$f" || { echo "FAIL $f"; fail=1; }
+          done
+          exit $fail
+
+      - name: Assert the SEH test actually ran
+        env:
+          PYTHONPATH: .
+          PYTHONDONTWRITEBYTECODE: "1"
+        shell: bash
+        run: |
+          # If cl is missing this test silently skips and the job still passes,
+          # which would be the exact blind spot this job exists to close.
+          out=$(python3 tests/currency/test_transactions.py -v 2>&1)
+          echo "$out" | grep -E 'test_real_native_write_faults'
+          if echo "$out" | grep -q 'skipped.*native_write_faults'; then
+            echo "::error::SEH test skipped on Windows - cl not on PATH, coverage silently absent"
+            exit 1
+          fi
 
       - name: Build every plugin into build\plugins
         shell: cmd
