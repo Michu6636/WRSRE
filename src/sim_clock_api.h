@@ -196,7 +196,46 @@ typedef struct TsmSimClockApi {
     // in any case (with days_per_month = 30, month 12 has 35 days).
     int (*getDaysPerMonth)(void);
 
+    // --- v1, appended (check structSize before calling) --------------------
+    //
+    // Schedule a day callback with an explicit execution phase. Within a
+    // single calendar boundary (e.g. TSM_FREQ_MONTHLY), subscribers run in
+    // ascending `phase` order, breaking ties by registration order (FIFO).
+    // Legacy registerScheduled() calls default to TSM_PHASE_DEFAULT (25).
+    int (*registerScheduledPhase)(TsmScheduleFrequency freq, int phase,
+                                  TsmDayCallback cb, void* userData);
+
 } TsmSimClockApi;
+
+// Canonical month-close execution phases for registerScheduledPhase().
+// Subscribers with smaller phase values execute first on a boundary tick;
+// state_ledger runs in FireTick() after all FireScheduled() passes.
+typedef enum TsmSchedulePhase {
+    TSM_PHASE_PRE_FISCAL       = 10, // labor record prune, market rebalance
+    TSM_PHASE_FISCAL           = 20, // bank interest/sweeps, taxes
+    TSM_PHASE_DEFAULT          = 25, // legacy registerScheduled() callers
+    TSM_PHASE_ENTERPRISE_CLOSE = 30, // rent, profit siphon, wage bid, insolvency, P&L reset
+    TSM_PHASE_POST_CLOSE       = 35  // idle wallet pruning
+} TsmSchedulePhase;
+
+#include <stddef.h>
+
+static inline int TsmSimClockRegisterScheduledPhase(
+    const TsmSimClockApi* clock,
+    TsmScheduleFrequency freq,
+    int phase,
+    TsmDayCallback cb,
+    void* userData)
+{
+    if (!clock || !cb) return 0;
+    if (clock->structSize >= offsetof(TsmSimClockApi, registerScheduledPhase) +
+                             sizeof(clock->registerScheduledPhase) &&
+        clock->registerScheduledPhase)
+    {
+        return clock->registerScheduledPhase(freq, phase, cb, userData);
+    }
+    return clock->registerScheduled ? clock->registerScheduled(freq, cb, userData) : 0;
+}
 
 #ifdef __cplusplus
 }

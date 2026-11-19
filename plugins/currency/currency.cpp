@@ -480,7 +480,8 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
     g_simClock = (const TsmSimClockApi*)
         H->consume(TSM_SERVICE_SIM_CLOCK, TSM_SIM_CLOCK_VERSION);
     if (g_simClock && g_pruneAfterDays > 0)
-        g_simClock->registerScheduled(TSM_FREQ_MONTHLY, OnMonthPrune, nullptr);
+        TsmSimClockRegisterScheduledPhase(g_simClock, TSM_FREQ_MONTHLY,
+                                          TSM_PHASE_POST_CLOSE, OnMonthPrune, nullptr);
     else if (!g_simClock && g_probe)
         Logf("currency  no sim_clock - wallet GC disabled for this session");
 

@@ -618,6 +618,28 @@ static float  g_wageRateCeiling       = 8.0f;
 // g_privateWageBonus above applies ONLY when dynamic_bidding is off -
 // it is the off-switch fallback, not the engine.
 static int   g_dynamicBidding        = 1;      // state machine on/off
+static int   g_dynamicBiddingVerified = 0;     // latched post-Start
+
+// One-shot post-Start verification of citizen_labor's wage mobility hook.
+// Deferred out of TsmPluginStart so monolithic (wrsre.dll) and standalone
+// builds do not depend on Start() order, and called from both simulation
+// and paused-frame UI paths (EnterprisePanelRows).
+static int DynamicBiddingActive()
+{
+    if (!g_dynamicBidding) return 0;
+    if (!g_dynamicBiddingVerified) {
+        g_dynamicBiddingVerified = 1;
+        if (g_labor && TsmLaborHasV5(g_labor) &&
+            !g_labor->isWageMobilityHookInstalled())
+        {
+            Logf("enterprise_base  WARN  citizen_labor wage mobility hook not installed — "
+                 "private_market_wages dynamic bidding disabled, using static INI wages");
+            g_dynamicBidding = 0;
+            return 0;
+        }
+    }
+    return g_dynamicBidding;
+}
 static float g_maxPrivatePremium     = 1.50f;  // wageBonusMult ceiling (+50%)
 static float g_understaffedThreshold = 0.75f;  // staffing ratio that bids up
 static float g_wageBiddingStep       = 0.05f;  // monthly +/- adjustment step
@@ -2492,7 +2514,8 @@ static void EnterprisePanelRows(void* building, TsmPanelRows* out,
         LeaveCriticalSection(&g_lock);
         if (!(mult >= 1.0f)) mult = 1.0f;
 
-        float eff = baseWage * (g_dynamicBidding ? mult : g_privateWageBonus);
+        int dynBid = DynamicBiddingActive();
+        float eff = baseWage * (dynBid ? mult : g_privateWageBonus);
         if (TsmLaborHasV3(g_labor)) {
             float minw = g_labor->getMinimumWage();
             if (eff < minw) eff = minw;
@@ -2503,7 +2526,7 @@ static void EnterprisePanelRows(void* building, TsmPanelRows* out,
             if (aust)
                 _snwprintf_s(v, _countof(v), _TRUNCATE,
                              L"%.2f %ls (Austerity Mode)", eff, sym);
-            else if (g_dynamicBidding && mult > 1.005f)
+            else if (dynBid && mult > 1.005f)
                 _snwprintf_s(v, _countof(v), _TRUNCATE,
                              L"%.2f %ls (+%.0f%% Market Bonus)",
                              eff, sym, (mult - 1.0f) * 100.0f);
@@ -2635,7 +2658,7 @@ static int StaffCountsImpl(void* b, int* outCap)
 // here - the multiplier only scales.
 static void EvaluateWageBidding(void)
 {
-    if (!g_dynamicBidding) return;
+    if (!DynamicBiddingActive()) return;
 
     EnterCriticalSection(&g_lock);
     for (auto& kv : g_companies) {
@@ -2884,7 +2907,7 @@ static int OnPayroll(void* workplace, void* person, float grossWage,
     // statutory minimum (citizen_labor v3; v2 has no floor accessor and
     // citizen_labor's own resolver already floors its grossWage).
     if (!(mult >= 1.0f)) mult = 1.0f;
-    float wage = grossWage * (g_dynamicBidding ? mult : g_privateWageBonus);
+    float wage = grossWage * (DynamicBiddingActive() ? mult : g_privateWageBonus);
     if (TsmLaborHasV3(g_labor)) {
         float minw = g_labor->getMinimumWage();
         if (wage < minw) wage = minw;
@@ -2989,7 +3012,7 @@ static int OnPayroll(void* workplace, void* person, float grossWage,
              "contract %.2f (%s, capital now %.2f)",
              workplace, buildingType, (double)grossWage, (double)mult,
              (double)wage, contract,
-             g_dynamicBidding ? "bidding" : "legacy bonus",
+             DynamicBiddingActive() ? "bidding" : "legacy bonus",
              GetCapitalImpl(workplace));
     }
 
@@ -4736,12 +4759,8 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
         if (!TsmLaborHasV3(g_labor))
             Logf("enterprise_base  WARN  citizen_labor v3 not available - "
                  "wages will not be floored to the statutory minimum");
-        // H4 FIX: degrade private_market_wages if mobility hook missing
-        if (TsmLaborHasV5(g_labor) && !g_labor->isWageMobilityHookInstalled()) {
-            Logf("enterprise_base  WARN  citizen_labor wage mobility hook not installed — "
-                 "private_market_wages dynamic bidding disabled, using static INI wages");
-            g_dynamicBidding = 0;
-        }
+        // Wage-mobility hook presence is verified lazily via
+        // DynamicBiddingActive() after all plugins finish TsmPluginStart.
     } else {
         Logf("enterprise_base  WARN  citizen_labor not available - "
              "private wages will not be intercepted");
@@ -4781,7 +4800,9 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
              "destitute eviction stage is inert (burden/short tests only)");
 
     g_simClock->registerTick(OnTick, nullptr);
-    g_simClock->registerScheduled(TSM_FREQ_MONTHLY, OnMonth, nullptr);
+    TsmSimClockRegisterScheduledPhase(g_simClock, TSM_FREQ_MONTHLY,
+                                      TSM_PHASE_ENTERPRISE_CLOSE,
+                                      OnMonth, nullptr);
 
     if (g_ui && g_card) g_ui->registerDrawer(DrawEnterpriseCard, nullptr);
 
@@ -4835,7 +4856,7 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
          g_parkCapEnabled ? "on" : "off");
     Logf("enterprise_base  M2 wage bidding: %s, premium cap +%.0f%%, "
          "understaffed < %.0f%%, step +/-%.1f%%, wage floor %s",
-         g_dynamicBidding ? "on" : "off",
+         g_dynamicBidding ? "enabled (pending post-start hook check)" : "off",
          (g_maxPrivatePremium - 1.0f) * 100.0f,
          g_understaffedThreshold * 100.0f,
          g_wageBiddingStep * 100.0f,

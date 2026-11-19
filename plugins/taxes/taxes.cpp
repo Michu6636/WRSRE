@@ -1334,9 +1334,9 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
             g_propertyTaxFlat = 0.0f;
     }
 
-    g_simClock->registerScheduled(TSM_FREQ_MONTHLY,   OnMonthly,   nullptr);
-    g_simClock->registerScheduled(TSM_FREQ_QUARTERLY, OnQuarterly, nullptr);
-    g_simClock->registerScheduled(TSM_FREQ_YEARLY,    OnYearly,    nullptr);
+    TsmSimClockRegisterScheduledPhase(g_simClock, TSM_FREQ_MONTHLY,   TSM_PHASE_FISCAL, OnMonthly,   nullptr);
+    TsmSimClockRegisterScheduledPhase(g_simClock, TSM_FREQ_QUARTERLY, TSM_PHASE_FISCAL, OnQuarterly, nullptr);
+    TsmSimClockRegisterScheduledPhase(g_simClock, TSM_FREQ_YEARLY,    TSM_PHASE_FISCAL, OnYearly,    nullptr);
 
     // v3.2: City Hall fiscal panel. ui_panels is the optional in-window
     // layer; TaxPanelRows renders the read-only dashboard, TaxPanelWidgets
