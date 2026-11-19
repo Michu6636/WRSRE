@@ -362,7 +362,8 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void) {
         g_persistenceHandle = g_persistence->registerHandler("republic_bank", onSave, nullptr);
     }
     if (g_clock) {
-        g_clock->registerScheduled(TSM_FREQ_MONTHLY, onMonth, nullptr);
+        TsmSimClockRegisterScheduledPhase(g_clock, TSM_FREQ_MONTHLY,
+                                          TSM_PHASE_FISCAL, onMonth, nullptr);
         g_clock->registerDay(onDay, nullptr);
     }
     if (g_ui && TsmUiPanelsHasWidgets(g_ui)) {

@@ -2877,8 +2877,9 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
         OnDay(day, month, year);
     }, nullptr);
 
-    g_simClock->registerScheduled(TSM_FREQ_MONTHLY,
-                                  OnMonthPruneRecords, nullptr);
+    TsmSimClockRegisterScheduledPhase(g_simClock, TSM_FREQ_MONTHLY,
+                                      TSM_PHASE_PRE_FISCAL,
+                                      OnMonthPruneRecords, nullptr);
 
     Logf("citizen_labor  live v4.8: %d wage entries, payday %d, %s, wage_mobility %d, "
          "workplace range %d..%d, days_per_month %d, prune_after_days %d, "

@@ -45,6 +45,7 @@ enum { SUB_TICK = 0, SUB_DAY, SUB_PAUSE, SUB_SCHED };
 struct Sub {
     int   kind;
     int   freq;         // SUB_SCHED only
+    int   phase;        // SUB_SCHED only; lower runs first, ties break by index
     void* cb;
     void* userData;
     int   active;
@@ -54,7 +55,8 @@ struct Sub {
 static Sub g_subs[MAX_SUBS];
 static int g_subCount;
 
-static int Register(int kind, void* cb, void* userData, int freq)
+static int Register(int kind, void* cb, void* userData, int freq,
+                    int phase = TSM_PHASE_DEFAULT)
 {
     if (!cb) return 0;
     if (g_subCount >= MAX_SUBS) {
@@ -64,6 +66,7 @@ static int Register(int kind, void* cb, void* userData, int freq)
     int i = g_subCount++;
     g_subs[i].kind     = kind;
     g_subs[i].freq     = freq;
+    g_subs[i].phase    = phase;
     g_subs[i].cb       = cb;
     g_subs[i].userData = userData;
     g_subs[i].active   = 1;
@@ -105,10 +108,28 @@ static void FireDay(int day, int month, int year)
 static void FireScheduled(TsmScheduleFrequency freq,
                           int day, int month, int year)
 {
+    int order[MAX_SUBS];
+    int n = 0;
     for (int i = 0; i < g_subCount; i++) {
         Sub* s = &g_subs[i];
         if (!s->active || s->kind != SUB_SCHED || s->freq != (int)freq)
             continue;
+        order[n++] = i;
+    }
+    // Stable insertion sort by (phase, registrationIndex).
+    for (int i = 1; i < n; i++) {
+        int idx = order[i];
+        int keyPhase = g_subs[idx].phase;
+        int j = i - 1;
+        while (j >= 0 && g_subs[order[j]].phase > keyPhase) {
+            order[j + 1] = order[j];
+            j--;
+        }
+        order[j + 1] = idx;
+    }
+    for (int k = 0; k < n; k++) {
+        Sub* s = &g_subs[order[k]];
+        if (!s->active) continue;
         __try { ((TsmDayCallback)s->cb)(s->userData, day, month, year); }
         __except (FaultFilter("sim_clock scheduled subscriber",
                               GetExceptionInformation()))
@@ -280,7 +301,14 @@ static int api_RegisterScheduled(TsmScheduleFrequency freq,
 {
     if (freq == TSM_FREQ_INSTANT) return 0;
     if (freq == TSM_FREQ_DAILY)   return Register(SUB_DAY, (void*)cb, u, 0);
-    return Register(SUB_SCHED, (void*)cb, u, (int)freq);
+    return Register(SUB_SCHED, (void*)cb, u, (int)freq, TSM_PHASE_DEFAULT);
+}
+static int api_RegisterScheduledPhase(TsmScheduleFrequency freq, int phase,
+                                      TsmDayCallback cb, void* u)
+{
+    if (freq == TSM_FREQ_INSTANT) return 0;
+    if (freq == TSM_FREQ_DAILY)   return Register(SUB_DAY, (void*)cb, u, 0);
+    return Register(SUB_SCHED, (void*)cb, u, (int)freq, phase);
 }
 static void api_Unregister(int handle)
 {
@@ -327,7 +355,8 @@ static const TsmSimClockApi kApi = {
     api_IsPaused,
     api_GetDayLength,
     api_ParseFrequency,
-    api_GetDaysPerMonth
+    api_GetDaysPerMonth,
+    api_RegisterScheduledPhase
 };
 
 // ---------------------------------------------------------------- setup

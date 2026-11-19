@@ -238,6 +238,7 @@
 #include <unordered_set>
 #include <vector>
 #include <stdint.h>
+#include "utility_filter.h"
 
 // ---------------------------------------------------------------- services
 
@@ -437,6 +438,13 @@ static bool ForEachSlot(void* building, SlotVisitor cb, void* userData)
         for (size_t sj = 0; sj < slotCount; sj++) {
             BYTE* slot = (BYTE*)slotBegin + sj * TSM_SLOT_STRIDE;
             void* res  = *(void**)(slot + TSM_SLOT_RESOURCE);
+            char rname[64];
+            if (TsmIsValidGamePtr(res) &&
+                TsmResourceName(res, rname, sizeof(rname)) &&
+                wrsre_shops::IsUtilityResourceName(rname))
+            {
+                continue;
+            }
             float cnt  = *(float*)(slot + TSM_SLOT_CONTENT);
             cb(storage, slot, res, cnt, perSlot, globalIndex, userData);
             globalIndex++;
@@ -699,8 +707,9 @@ struct WholesaleContext {
     double     revenue;       // v2.8: procurement credited this walk
     int        billed;
     double     charged;
-    int        storCount;     // v3.3: storages on the building (last = output)
-    int        fallback;      // v3.3: credits that needed the flag fallback
+    int        storCount;            // non-utility storage blocks on building
+    int        lastFreightStorIndex; // raw index of last non-utility block (-1 if none)
+    int        fallback;             // v3.3: credits that needed the flag fallback
 };
 
 // perSlotCap is unused here: wholesale bills the delta the state
@@ -775,7 +784,7 @@ static void WholesaleMarketOnlySlot(void* storage, void* slotBytes, void* res,
 
     bool flagless = storage && !isExport && !isImport;
     if (g_procureFallback && !ctx->isRetail && flagless &&
-        storIndex >= 0 && storIndex == ctx->storCount - 1 &&
+        storIndex >= 0 && storIndex == ctx->lastFreightStorIndex &&
         DispatchFallbackAllowed(TsmBuildingType(ctx->shop), ctx->storCount)) {
         isExport = true;
     }
@@ -892,7 +901,7 @@ static void WholesaleSlot(void* storage, void* slotBytes, void* res,
     // time it decides a credit, so the next session can confirm or refute.
     bool flagless = storage && !isExport && !isImport;
     if (g_procureFallback && !ctx->isRetail && flagless &&
-        storIndex >= 0 && storIndex == ctx->storCount - 1 &&
+        storIndex >= 0 && storIndex == ctx->lastFreightStorIndex &&
         DispatchFallbackAllowed(TsmBuildingType(ctx->shop),
                                 ctx->storCount)) {
         isExport = true;
@@ -991,15 +1000,56 @@ static void RunWholesaleBilling(void* building, ShopState& st)
 {
     int type = TsmBuildingType(building);
     bool isRetail = IsRetailType(type);
-    // v3.3: how many storage blocks this building carries - the fallback
-    // needs the ordinal to know which one is the last (the output).
-    int storCount = 0;
+    // Compute the number of non-utility storage blocks and the raw index of
+    // the last non-utility block so trailing electricity/water/sewage/heating
+    // buffers neither inflate DispatchFallbackAllowed nor mask a factory's
+    // unmarked freight output block.
+    int freightStorCount = 0;
+    int lastFreightStorIndex = -1;
     {
         void** sb = *(void***)((BYTE*)building + TSM_BLD_STORAGES_BEGIN);
         void** se = *(void***)((BYTE*)building + TSM_BLD_STORAGES_END);
-        if (sb && se && (BYTE*)se > (BYTE*)sb) {
-            storCount = (int)(((BYTE*)se - (BYTE*)sb) / TSM_STORAGE_STRIDE);
-            if (storCount > 16) storCount = 16;
+        if (sb && se && (BYTE*)se > (BYTE*)sb &&
+            TsmIsValidGamePtr(sb) && ReadablePtr(sb, sizeof(void*))) {
+            size_t storBytes = (size_t)((BYTE*)se - (BYTE*)sb);
+            if ((storBytes % TSM_STORAGE_STRIDE) == 0) {
+                size_t rawCount = storBytes / TSM_STORAGE_STRIDE;
+                if (rawCount > 16) rawCount = 16;
+                if (ReadablePtr(sb, rawCount * TSM_STORAGE_STRIDE)) {
+                    for (size_t si = 0; si < rawCount; si++) {
+                        BYTE* storage = (BYTE*)sb + si * TSM_STORAGE_STRIDE;
+                        if (!ReadablePtr(storage, 0xA0)) continue;
+                        void** slotBegin = *(void***)(storage + TSM_ST_SLOTS_BEGIN);
+                        void** slotEnd   = *(void***)(storage + TSM_ST_SLOTS_END);
+                        if (!slotBegin || !slotEnd || slotEnd <= slotBegin) continue;
+                        if (!TsmIsValidGamePtr(slotBegin)) continue;
+                        size_t slotBytes = (size_t)((BYTE*)slotEnd - (BYTE*)slotBegin);
+                        if ((slotBytes % TSM_SLOT_STRIDE) != 0) continue;
+                        size_t slotCount = slotBytes / TSM_SLOT_STRIDE;
+                        if (slotCount > 32) slotCount = 32;
+                        if (!ReadablePtr(slotBegin, slotCount * TSM_SLOT_STRIDE)) continue;
+
+                        bool hasFreight = false;
+                        for (size_t sj = 0; sj < slotCount; sj++) {
+                            BYTE* slot = (BYTE*)slotBegin + sj * TSM_SLOT_STRIDE;
+                            void* res  = *(void**)(slot + TSM_SLOT_RESOURCE);
+                            char rname[64];
+                            if (TsmIsValidGamePtr(res) &&
+                                TsmResourceName(res, rname, sizeof(rname)) &&
+                                wrsre_shops::IsUtilityResourceName(rname))
+                            {
+                                continue;
+                            }
+                            hasFreight = true;
+                            break;
+                        }
+                        if (hasFreight) {
+                            freightStorCount++;
+                            lastFreightStorIndex = (int)si;
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -1009,7 +1059,7 @@ static void RunWholesaleBilling(void* building, ShopState& st)
         isRetail,
         0, 0.0,
         0, 0.0,
-        storCount, 0
+        freightStorCount, lastFreightStorIndex, 0
     };
     ForEachSlot(building,
                 TsmB2bCounterpartyActive(g_b2bLogistics) ? WholesaleMarketOnlySlot

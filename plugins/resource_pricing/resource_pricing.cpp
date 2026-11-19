@@ -800,8 +800,9 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
         if (g_simClock) {
             g_marketFreq = g_simClock->parseFrequency(g_marketFreqStr,
                                                       TSM_FREQ_MONTHLY);
-            g_simClock->registerScheduled(g_marketFreq,
-                                          OnMarketRebalance, nullptr);
+            TsmSimClockRegisterScheduledPhase(g_simClock, g_marketFreq,
+                                              TSM_PHASE_PRE_FISCAL,
+                                              OnMarketRebalance, nullptr);
         } else {
             // No calendar: the book still records, it just never rebalances,
             // so the multiplier stays at its last (or neutral 1.0) value.
