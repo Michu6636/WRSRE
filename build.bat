@@ -56,6 +56,7 @@ if /i "%~1"=="clean" (
     if exist build\plugins (
         rmdir /s /q build\plugins
     )
+    call "%ROOT%clean.bat" >nul
     shift
 )
 
@@ -77,6 +78,7 @@ if errorlevel 1 (
 REM --- Directories ---
 if not exist build          mkdir build
 if not exist build\plugins  mkdir build\plugins
+if not exist build\obj      mkdir build\obj
 
 REM --- Dear ImGui (optional) ---
 
@@ -150,7 +152,7 @@ if not exist "src\tesmioloader.cpp" (
     goto :after_loader
 )
 echo [build] tesmioloader.dll
-cl %COMMON% /LD "src\tesmioloader.cpp" /link /OUT:build\plugins\tesmioloader.dll user32.lib
+cl %COMMON% /LD /Fobuild\obj\ "src\tesmioloader.cpp" /link /IMPLIB:build\obj\tesmioloader.lib /OUT:build\plugins\tesmioloader.dll user32.lib
 if errorlevel 1 (
     echo [FAIL]  tesmioloader
     set /a FAILED+=1
@@ -176,6 +178,8 @@ echo [build] wrsre.dll (single-DLL monolithic build)
 if not exist "build\wrsre_obj" mkdir "build\wrsre_obj"
 set "WRSRE_MODS=sim_clock persistence currency resource_pricing enterprise_base republic_bank taxes state_ledger citizen_labor citizen_retail private_shops private_logistics private_construction ui_panels ui_overlay"
 set "WRSRE_OBJS="
+set "WRSRE_ENTRY_FLAGS="
+set "WRSRE_EXTRA_LIBS="
 for %%m in (%WRSRE_MODS%) do (
     echo   [cc]  plugins\%%m\%%m.cpp
     cl %COMMON% /c /DWRSRE_MONOLITHIC_MODULE=%%m /Fo"build\wrsre_obj\%%m.obj" "plugins\%%m\%%m.cpp"
@@ -189,15 +193,41 @@ for %%m in (%WRSRE_MODS%) do (
         copy /Y "plugins\%%m\%%m.ini" "build\plugins\%%m.ini" >nul
     )
 )
+if "!IMGUI_OK!"=="1" (
+    echo   [cc]  plugins\almanac_overlay_dev - ImGui from !IMGUI_DIR!
+    cl %COMMON% /c /I"!IMGUI_DIR!" /I"!IMGUI_DIR!\backends" /Fobuild\wrsre_obj\ ^
+       /DWRSRE_MONOLITHIC_MODULE=almanac_overlay_dev ^
+       "plugins\almanac_overlay_dev\almanac_overlay_dev.cpp" ^
+       "plugins\almanac_overlay_dev\graphics_hook.cpp" ^
+       "plugins\almanac_overlay_dev\almanac_panel.cpp" ^
+       "plugins\almanac_overlay_dev\almanac_panel_view.cpp" ^
+       "!IMGUI_DIR!\imgui.cpp" "!IMGUI_DIR!\imgui_draw.cpp" ^
+       "!IMGUI_DIR!\imgui_tables.cpp" "!IMGUI_DIR!\imgui_widgets.cpp" ^
+       "!IMGUI_DIR!\backends\imgui_impl_dx11.cpp"
+    if errorlevel 1 (
+        echo [FAIL]  almanac_overlay_dev
+        set /a FAILED+=1
+        goto :failed
+    )
+    set "WRSRE_OBJS=!WRSRE_OBJS! build\wrsre_obj\almanac_overlay_dev.obj build\wrsre_obj\graphics_hook.obj build\wrsre_obj\almanac_panel.obj build\wrsre_obj\almanac_panel_view.obj build\wrsre_obj\imgui.obj build\wrsre_obj\imgui_draw.obj build\wrsre_obj\imgui_tables.obj build\wrsre_obj\imgui_widgets.obj build\wrsre_obj\imgui_impl_dx11.obj"
+    set "WRSRE_ENTRY_FLAGS=/DWRSRE_WITH_ALMANAC"
+    set "WRSRE_EXTRA_LIBS=d3d11.lib dxgi.lib d3dcompiler.lib gdi32.lib"
+    if exist "plugins\almanac_overlay_dev\almanac_overlay_dev.ini" (
+        copy /Y "plugins\almanac_overlay_dev\almanac_overlay_dev.ini" "build\plugins\almanac_overlay_dev.ini" >nul
+    )
+    if exist "build\plugins\almanac_overlay_dev.dll" del /q "build\plugins\almanac_overlay_dev.dll" >nul 2>&1
+) else (
+    echo [skip]  plugins\almanac_overlay_dev in wrsre.dll - Dear ImGui not available
+)
 echo   [cc]  src\wrsre_entry.cpp
-cl %COMMON% /c /Fo"build\wrsre_obj\wrsre_entry.obj" "src\wrsre_entry.cpp"
+cl %COMMON% /c !WRSRE_ENTRY_FLAGS! /Fo"build\wrsre_obj\wrsre_entry.obj" "src\wrsre_entry.cpp"
 if errorlevel 1 (
     echo [FAIL]  wrsre_entry
     set /a FAILED+=1
     goto :failed
 )
 echo   [link] build\plugins\wrsre.dll
-link /NOLOGO /DLL /OUT:build\plugins\wrsre.dll build\wrsre_obj\wrsre_entry.obj !WRSRE_OBJS! user32.lib
+link /NOLOGO /DLL /IMPLIB:build\wrsre_obj\wrsre.lib /OUT:build\plugins\wrsre.dll build\wrsre_obj\wrsre_entry.obj !WRSRE_OBJS! user32.lib !WRSRE_EXTRA_LIBS!
 if errorlevel 1 (
     echo [FAIL]  wrsre.dll
     set /a FAILED+=1
@@ -288,7 +318,8 @@ REM Expects IMGUI_DIR (absolute) and IMGUI_OK=1 to be set. Returns errorlevel 1
 REM on failure so the caller decides whether that is fatal. Writes the DLL and
 REM its INI into build\plugins, exactly like a one-file plugin.
 echo [build] plugins\almanac_overlay_dev.dll
-cl %COMMON% /LD /I"!IMGUI_DIR!" /I"!IMGUI_DIR!\backends" ^
+if not exist "build\obj" mkdir "build\obj"
+cl %COMMON% /LD /Fobuild\obj\ /I"!IMGUI_DIR!" /I"!IMGUI_DIR!\backends" ^
    "plugins\almanac_overlay_dev\almanac_overlay_dev.cpp" ^
    "plugins\almanac_overlay_dev\graphics_hook.cpp" ^
    "plugins\almanac_overlay_dev\almanac_panel.cpp" ^
@@ -296,7 +327,7 @@ cl %COMMON% /LD /I"!IMGUI_DIR!" /I"!IMGUI_DIR!\backends" ^
    "!IMGUI_DIR!\imgui.cpp" "!IMGUI_DIR!\imgui_draw.cpp" ^
    "!IMGUI_DIR!\imgui_tables.cpp" "!IMGUI_DIR!\imgui_widgets.cpp" ^
    "!IMGUI_DIR!\backends\imgui_impl_dx11.cpp" ^
-   /link /OUT:build\plugins\almanac_overlay_dev.dll
+   /link /IMPLIB:build\obj\almanac_overlay_dev.lib /OUT:build\plugins\almanac_overlay_dev.dll
 if errorlevel 1 (
     echo [FAIL]  almanac_overlay_dev
     exit /b 1
@@ -307,17 +338,16 @@ if errorlevel 1 (
     echo [FAIL]  almanac_overlay_dev.ini could not be copied
     exit /b 1
 )
-del /q "plugins\almanac_overlay_dev\*.obj" "plugins\almanac_overlay_dev\*.exp" "plugins\almanac_overlay_dev\*.lib" "plugins\almanac_overlay_dev\*.ilk" "plugins\almanac_overlay_dev\*.pdb" >nul 2>nul
 exit /b 0
 
 
+:plugins
 REM --- Staging guard: do not leave wrsre.dll beside per-plugin DLLs ---
-if exists "build\plugins\wrsre.dll" (
+if exist "build\plugins\wrsre.dll" (
     echo [build] NOTE: removing stale wrsre.dll - this target produces separate
     echo         plugin DLLs. Use "build.bat wrsre" for the monolith instead.
     del /q "build\plugins\wrsre.dll" >nul 2>&1
 )
-:plugins
 
 REM --- Plugins ---
 
@@ -352,7 +382,7 @@ for /d %%d in (plugins\*) do (
             )
         ) else if exist "%%d\!NAME!.cpp" (
             echo [build] plugins\!NAME!.dll
-            cl %COMMON% /LD "%%d\!NAME!.cpp" /link /OUT:build\plugins\!NAME!.dll
+            cl %COMMON% /LD /Fobuild\obj\ "%%d\!NAME!.cpp" /link /IMPLIB:build\obj\!NAME!.lib /OUT:build\plugins\!NAME!.dll
             if errorlevel 1 (
                 set /a FAILED+=1
                 echo [FAIL]  !NAME!
@@ -362,8 +392,6 @@ for /d %%d in (plugins\*) do (
                     if exist "build\plugins\!NAME!.ini" del /q "build\plugins\!NAME!.ini" >nul 2>&1
                     copy /Y "%%d\!NAME!.ini" "build\plugins\!NAME!.ini" >nul
                 )
-                REM Remove intermediate compiler files from the source directory
-                del /q "%%d\!NAME!.obj" "%%d\!NAME!.exp" "%%d\!NAME!.lib" "%%d\!NAME!.ilk" "%%d\!NAME!.pdb" >nul 2>nul
             )
         ) else (
             echo [skip]  plugins\!NAME! - no !NAME!.cpp
@@ -402,10 +430,9 @@ if "%WHICH%"=="" (
 )
 echo.
 
-REM --- Auto-clean intermediate build files at the end ---
-call "%ROOT%clean.bat"
-
 :done
+REM --- Auto-clean intermediate build files on every exit path ---
+call "%ROOT%clean.bat"
 popd
 if !FAILED! gtr 0 exit /b 1
 exit /b 0
@@ -422,6 +449,7 @@ popd
 exit /b 1
 
 :failed
+call "%ROOT%clean.bat"
 echo.
 echo BUILD FAILED.
 popd

@@ -33,6 +33,9 @@ WRSRE_DECLARE_MOD(private_construction);
 // UI
 WRSRE_DECLARE_MOD(ui_panels);
 WRSRE_DECLARE_MOD(ui_overlay);
+#ifdef WRSRE_WITH_ALMANAC
+WRSRE_DECLARE_MOD(almanac_overlay_dev);
+#endif
 
 struct WrsreModule {
     const char*      name;
@@ -63,6 +66,9 @@ static WrsreModule g_modules[] = {
     // UI
     WRSRE_MOD_ENTRY(ui_panels),
     WRSRE_MOD_ENTRY(ui_overlay),
+#ifdef WRSRE_WITH_ALMANAC
+    WRSRE_MOD_ENTRY(almanac_overlay_dev),
+#endif
 };
 
 static const int kModuleCount = (int)(sizeof(g_modules) / sizeof(g_modules[0]));

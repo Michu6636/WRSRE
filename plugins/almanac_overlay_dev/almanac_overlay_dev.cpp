@@ -33,6 +33,17 @@
 //   removal: once Present is replaced, this DLL stays loaded for the session.
 #include "../../src/tesmio_api.h"
 
+#ifdef WRSRE_MONOLITHIC_MODULE
+#define WRSRE_CAT2(a, b)    a##b
+#define WRSRE_CAT(a, b)     WRSRE_CAT2(a, b)
+#define TsmPluginApiVersion WRSRE_CAT(WrsreApiVersion_, WRSRE_MONOLITHIC_MODULE)
+#define TsmPluginInit       WRSRE_CAT(WrsreInit_,       WRSRE_MONOLITHIC_MODULE)
+#define TsmPluginStart      WRSRE_CAT(WrsreStart_,      WRSRE_MONOLITHIC_MODULE)
+#define ALMANAC_PLUGIN_EXPORT
+#else
+#define ALMANAC_PLUGIN_EXPORT __declspec(dllexport)
+#endif
+
 #include "almanac_panel.h"
 #include "almanac_version.h"
 #include "graphics_hook.h"
@@ -88,12 +99,12 @@ void ReadSettings(const TsmHost* host)
 
 } // namespace
 
-extern "C" __declspec(dllexport) unsigned TsmPluginApiVersion(void)
+extern "C" ALMANAC_PLUGIN_EXPORT unsigned TsmPluginApiVersion(void)
 {
     return TSM_API_VERSION;
 }
 
-extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
+extern "C" ALMANAC_PLUGIN_EXPORT int TsmPluginInit(const TsmHost* host,
                                                    TsmPluginInfo* info)
 {
     if (!host || !info || host->apiVersion != TSM_API_VERSION) return 1;
@@ -127,7 +138,7 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
     return 0;
 }
 
-extern "C" __declspec(dllexport) int TsmPluginStart(void)
+extern "C" ALMANAC_PLUGIN_EXPORT int TsmPluginStart(void)
 {
     if (!g_host || g_started) return 1;
     g_started = true;

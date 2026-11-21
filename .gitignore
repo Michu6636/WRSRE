@@ -15,6 +15,7 @@ tools/peinfo-out/
 *.log
 *.pdb
 *.obj
+*.lib
 *.ilk
 *.exe
 *.exp
