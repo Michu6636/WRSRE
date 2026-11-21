@@ -187,6 +187,86 @@ void DrawLiveTable(const TabData& data)
     ImGui::EndTable();
 }
 
+void DrawStateBudgetSection(const StateBudgetData& b, const char* sym)
+{
+    if (!b.hasLedger) return;
+    const char* currency = (sym && sym[0]) ? sym : "RUB";
+
+    ImGui::Spacing();
+    Rule();
+    ImGui::TextColored(kInk, "State Budget (%s)", currency);
+    if (b.closedYear <= 0) {
+        ImGui::SameLine();
+        ImGui::TextColored(kQuiet, "  - awaiting first month close");
+    }
+    ImGui::Spacing();
+
+    char closedHdr[40];
+    if (b.closedYear > 0) {
+        std::snprintf(closedHdr, sizeof(closedHdr), "Closed %d-%02d",
+                      b.closedYear, b.closedMonth);
+    } else {
+        std::snprintf(closedHdr, sizeof(closedHdr), "Last Closed");
+    }
+
+    if (!ImGui::BeginTable("##almanac_state_budget", 3,
+            ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerH |
+            ImGuiTableFlags_SizingStretchProp)) {
+        return;
+    }
+    ImGui::TableSetupColumn("Budget Line", ImGuiTableColumnFlags_WidthStretch, 1.5f);
+    ImGui::TableSetupColumn(closedHdr,     ImGuiTableColumnFlags_WidthStretch, 1.0f);
+    ImGui::TableSetupColumn("Live Month",  ImGuiTableColumnFlags_WidthStretch, 1.0f);
+    ImGui::TableHeadersRow();
+
+    auto fmtMoney = [](char* buf, size_t n, double val, bool valid) {
+        if (!valid) {
+            std::snprintf(buf, n, "-");
+            return;
+        }
+        std::snprintf(buf, n, "%+.2f", val);
+    };
+
+    struct BudgetLine {
+        const char* label;
+        double      closedVal;
+        double      liveVal;
+        bool        isNet;
+    };
+    const BudgetLine lines[] = {
+        {"Monthly Net",              b.closedNet,       b.liveNet,       true },
+        {"Wages / Pensions / Welf.", b.closedWages,     b.liveWages,     false},
+        {"State Store Sales",        b.closedSales,     b.liveSales,     false},
+        {"Wholesale B2B",            b.closedWholesale, b.liveWholesale, false},
+        {"Corporate Taxes",          b.closedTaxes,     b.liveTaxes,     false},
+        {"Other / Procurement",      b.closedOther,     b.liveOther,     false},
+    };
+
+    const bool hasClosed = (b.closedYear > 0);
+    for (const BudgetLine& row : lines) {
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::TextColored(kInk, "%s", row.label);
+
+        char cBuf[32], lBuf[32];
+        fmtMoney(cBuf, sizeof(cBuf), row.closedVal, hasClosed);
+        fmtMoney(lBuf, sizeof(lBuf), row.liveVal,   true);
+
+        const ImVec4 cCol = !hasClosed
+            ? kQuiet
+            : (row.isNet ? (row.closedVal >= 0.0 ? kLive : kWarn) : kQuiet);
+        const ImVec4 lCol = row.isNet
+            ? (row.liveVal >= 0.0 ? kLive : kWarn)
+            : kQuiet;
+
+        ImGui::TableSetColumnIndex(1);
+        ImGui::TextColored(cCol, "%s", cBuf);
+        ImGui::TableSetColumnIndex(2);
+        ImGui::TextColored(lCol, "%s", lBuf);
+    }
+    ImGui::EndTable();
+}
+
 void DrawEconomyControls(const ControlState& ctrl, PanelAction* outAction)
 {
     if (!ctrl.hasTaxControls && !ctrl.hasBankControl) return;
@@ -570,6 +650,7 @@ bool DrawAlmanacPanel(const PanelModel& model, LauncherRect* outRect,
             } else if (model.hasLiveData) {
                 DrawLiveTable(model.tabs[tab]);
                 if (tab == 0) {
+                    DrawStateBudgetSection(model.budget, model.controls.currencySymbol);
                     DrawEconomyControls(model.controls, outAction);
                 } else if (tab == 1) {
                     DrawLabourControls(model.controls, outAction);

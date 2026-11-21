@@ -113,6 +113,50 @@ void DrawingTests()
     const int narrow = DrawAndCountVertices(ImVec2(200.0f, 1080.0f), &degenerateShown);
     Check(!degenerateShown, "panel refuses a 200px-wide surface");
     Check(narrow == 0, "panel emits no geometry at 200px wide");
+
+    // Live Economy tab with State Budget table enabled: verify geometry builds cleanly.
+    ImGuiContext* context = ImGui::CreateContext();
+    ImGui::SetCurrentContext(context);
+    ImGuiIO& io = ImGui::GetIO();
+    io.IniFilename = nullptr;
+    io.LogFilename = nullptr;
+    io.DisplaySize = ImVec2(1280.0f, 720.0f);
+    io.DeltaTime = 1.0f / 60.0f;
+    io.Fonts->AddFontDefault();
+    unsigned char* pixels = nullptr;
+    int width = 0, height = 0;
+    io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
+    if (io.Fonts->IsBuilt()) {
+        io.Fonts->SetTexID(static_cast<ImTextureID>(1));
+        almanac::PanelModel liveModel;
+        liveModel.hasLiveData = true;
+        liveModel.tabs[0].count = 1;
+        std::snprintf(liveModel.tabs[0].rows[0].label, 64, "Treasury (RUB)");
+        std::snprintf(liveModel.tabs[0].rows[0].value, 64, "9796000.12 RUB");
+        liveModel.budget.hasLedger = true;
+        liveModel.budget.closedYear = 1960;
+        liveModel.budget.closedMonth = 3;
+        liveModel.budget.closedNet = 6549.74;
+        liveModel.budget.liveNet = -120.50;
+        int tab = 0;
+        bool liveShown = false;
+        int liveVerts = 0;
+        for (int frame = 0; frame < 2; ++frame) {
+            ImGui::NewFrame();
+            liveShown = almanac::DrawAlmanacPanel(liveModel, nullptr, &tab);
+            ImGui::Render();
+            const ImDrawData* data = ImGui::GetDrawData();
+            liveVerts = 0;
+            if (data) {
+                for (int i = 0; i < data->CmdListsCount; ++i)
+                    liveVerts += data->CmdLists[i]->VtxBuffer.Size;
+            }
+        }
+        Check(liveShown, "live model with state budget draws");
+        Check(liveVerts > normal, "live state budget table adds visible geometry");
+    }
+    ImGui::DestroyContext(context);
+    ImGui::SetCurrentContext(nullptr);
 }
 
 } // namespace

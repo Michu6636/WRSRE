@@ -74,6 +74,24 @@ struct PanelLayout {
     float h            = 420.0f;
 };
 
+struct StateBudgetData {
+    bool   hasLedger       = false;
+    int    closedYear      = 0;
+    int    closedMonth     = 0;
+    double closedWages     = 0.0;
+    double closedSales     = 0.0;
+    double closedWholesale = 0.0;
+    double closedTaxes     = 0.0;
+    double closedOther     = 0.0;
+    double closedNet       = 0.0;
+    double liveWages       = 0.0;
+    double liveSales       = 0.0;
+    double liveWholesale   = 0.0;
+    double liveTaxes       = 0.0;
+    double liveOther       = 0.0;
+    double liveNet         = 0.0;
+};
+
 // Everything the panel displays. Deliberately a value type: no service
 // pointers, no game handles, no live repository state. When hasLiveData is
 // true, tabs[0..2] hold live read-only values sampled from WRSRE services;
@@ -89,6 +107,7 @@ struct PanelModel {
     bool         autoShow       = false;
     bool           hasLiveData    = false;
     TabData        tabs[3]{};
+    StateBudgetData budget{};
     ControlState   controls{};
     EnterpriseList enterprises{};
 };

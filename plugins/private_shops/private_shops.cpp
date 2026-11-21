@@ -673,9 +673,20 @@ static void RunForeignRestock(void* building, ShopState& st, int day)
 
     if (g_probe) {
         wchar_t name[128] = {0};
-        g_enterprise->getBuildingCustomName(building, name, 128);
+        if (g_enterprise->getBuildingCustomName)
+            g_enterprise->getBuildingCustomName(building, name, 128);
+        if (!name[0] && g_enterprise->getBuildingObjectName) {
+            const char* obj = g_enterprise->getBuildingObjectName(building);
+            if (obj && obj[0]) {
+                size_t i = 0;
+                for (; i + 1 < _countof(name) && obj[i]; ++i)
+                    name[i] = (wchar_t)(unsigned char)obj[i];
+                name[i] = L'\0';
+            }
+        }
         Logf("private_shops  \"%ls\" imported %d slot(s) for %.2f %s",
-             name, ctx.bought, ctx.spent, TsmCurrencySymbol(g_currency));
+             name[0] ? name : L"(unnamed)", ctx.bought, ctx.spent,
+             TsmCurrencySymbol(g_currency));
     }
 }
 
@@ -1066,9 +1077,25 @@ static void RunWholesaleBilling(void* building, ShopState& st)
                                                          : WholesaleSlot,
                 &ctx);
 
+    auto fillName = [building](wchar_t* out, size_t cap) {
+        out[0] = L'\0';
+        if (g_enterprise->getBuildingCustomName)
+            g_enterprise->getBuildingCustomName(building, out, cap);
+        if (!out[0] && g_enterprise->getBuildingObjectName) {
+            const char* obj = g_enterprise->getBuildingObjectName(building);
+            if (obj && obj[0]) {
+                size_t i = 0;
+                for (; i + 1 < cap && obj[i]; ++i)
+                    out[i] = (wchar_t)(unsigned char)obj[i];
+                out[i] = L'\0';
+            }
+        }
+        if (!out[0]) wcsncpy_s(out, cap, L"(unnamed)", _TRUNCATE);
+    };
+
     if (ctx.revenue > 0.0 && g_probe) {
         wchar_t name[128] = {0};
-        g_enterprise->getBuildingCustomName(building, name, 128);
+        fillName(name, _countof(name));
         Logf("private_shops  \"%ls\" procured %d dispatch(es) for %.2f %s "
              "(%d of them on an UNMARKED storage - the +0x85 export flag was "
              "not set; see [PROC])",
@@ -1080,7 +1107,7 @@ static void RunWholesaleBilling(void* building, ShopState& st)
         st.monthlyWholesale += ctx.charged;
         if (g_probe) {
             wchar_t name[128] = {0};
-            g_enterprise->getBuildingCustomName(building, name, 128);
+            fillName(name, _countof(name));
             const double capital = g_enterprise->getCompanyCapital(building);
             Logf("private_shops  \"%ls\" charged %.2f for state delivery (%d slot(s)); capital %.2f%s",
                  name, ctx.charged, ctx.billed, capital,

@@ -23,7 +23,9 @@
 #include "../../src/persistence_api.h"
 #include "../../src/ui_overlay_api.h"
 #include "../../src/enterprise_base_api.h"
+#include "../../src/state_ledger_api.h"
 #include "ledger_reconcile.h"
+#include "save_dir_policy.h"
 
 #include <string>
 #include <vector>
@@ -44,7 +46,7 @@ static int                      g_persHandle  = -1;
 static int   g_enabled      = 1;
 static int   g_probe        = 1;
 static int   g_csvEnabled   = 1;
-static int   g_showOverlay  = 1;
+static int   g_showOverlay  = 0;
 static int   g_crossCheck   = 0;
 
 static char  g_csvFilename[64] = "tesmio_ledger.csv";
@@ -455,7 +457,7 @@ static void OnSaveLoad(TsmSaveEvent ev, const char* dir, void* /*ud*/)
         if (g_probe)
             Logf("state_ledger  loaded - accumulator reset, ledger file %s\\%s",
                  dir, g_csvFilename);
-    } else {
+    } else if (state_ledger::policy::ShouldUpdateSaveDir(g_saveDir, dir, false)) {
         _snprintf_s(g_saveDir, sizeof(g_saveDir), _TRUNCATE, "%s", dir);
     }
 }
@@ -527,6 +529,54 @@ static float DrawCard(void* /*ud*/, float x, float y, float step)
     return y;
 }
 
+// ---------------------------------------------------------------- service API
+
+static int GetBudgetSnapshotImpl(TsmStateBudgetSnapshot* outSnap, unsigned snapSize)
+{
+    if (!outSnap || snapSize < sizeof(unsigned)) return 0;
+
+    TsmStateBudgetSnapshot snap{};
+    snap.structSize = (unsigned)sizeof(TsmStateBudgetSnapshot);
+
+    EnterCriticalSection(&g_lock);
+    snap.closedYear       = g_hudClosedYear;
+    snap.closedMonth      = g_hudClosedMonth;
+    snap.closedWages      = g_hudClosedWages;
+    snap.closedStoreSales = g_hudClosedSales;
+    snap.closedWholesale  = g_hudClosedWhole;
+    snap.closedTaxes      = g_hudClosedTaxes;
+    snap.closedNet        = g_hudClosedNet;
+    snap.closedOther      = g_hudClosedNet
+                          - (g_hudClosedWages + g_hudClosedSales +
+                             g_hudClosedWhole + g_hudClosedTaxes);
+
+    auto val = [](const char* k) -> double {
+        auto it = g_monthFlows.find(k);
+        return (it == g_monthFlows.end()) ? 0.0 : it->second;
+    };
+    snap.liveWages      = val("wage") + val("pension") + val("welfare");
+    snap.liveStoreSales = val("state_store_sale");
+    snap.liveWholesale  = val("wholesale_b2b");
+    snap.liveTaxes      = val("vat") + val("profit_tax") + val("property_tax");
+    snap.liveNet        = g_flowSum;
+    snap.liveOther      = g_flowSum
+                        - (snap.liveWages + snap.liveStoreSales +
+                           snap.liveWholesale + snap.liveTaxes);
+    LeaveCriticalSection(&g_lock);
+
+    unsigned copyBytes = snapSize < sizeof(TsmStateBudgetSnapshot)
+                       ? snapSize
+                       : (unsigned)sizeof(TsmStateBudgetSnapshot);
+    memcpy(outSnap, &snap, copyBytes);
+    outSnap->structSize = copyBytes;
+    return 1;
+}
+
+static const TsmStateLedgerApi kLedgerApi = {
+    sizeof(TsmStateLedgerApi),
+    GetBudgetSnapshotImpl,
+};
+
 // ---------------------------------------------------------------- settings
 
 static void ReadSettings(void)
@@ -537,7 +587,7 @@ static void ReadSettings(void)
     g_enabled     = H->configInt(ini, "state_ledger", "enabled",      1);
     g_probe       = H->configInt(ini, "state_ledger", "probe",        1);
     g_csvEnabled  = H->configInt(ini, "state_ledger", "csv",          1);
-    g_showOverlay = H->configInt(ini, "state_ledger", "show_overlay",  1);
+    g_showOverlay = H->configInt(ini, "state_ledger", "show_overlay",  0);
     g_crossCheck  = H->configInt(ini, "state_ledger", "cross_check",   0);
 
     if (H->configString(ini, "state_ledger", "csv_filename",
@@ -557,13 +607,14 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
 {
     TsmBind(host);
     info->name    = "state_ledger";
-    info->version = "2.0";
+    info->version = "2.1";
 
     ReadSettings();
     if (!g_enabled) {
         Logf("state_ledger  disabled");
         return 1;
     }
+    H->provide(TSM_SERVICE_STATE_LEDGER, TSM_STATE_LEDGER_VERSION, &kLedgerApi);
     return 0;
 }
 

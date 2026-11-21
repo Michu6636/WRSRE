@@ -1,4 +1,5 @@
 #include "ledger_reconcile.h"
+#include "save_dir_policy.h"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -96,6 +97,25 @@ TEST(csv_row_contains_columns) {
     CHECK(row.size() > 10);
 }
 
+TEST(autosave_does_not_override_loaded_save_dir) {
+    namespace sp = state_ledger::policy;
+    CHECK(sp::IsAutoSaveSlot("media_soviet/save/autosave3"));
+    CHECK(sp::IsAutoSaveSlot("media_soviet/save\\autosave"));
+    CHECK(sp::IsAutoSaveSlot("media_soviet/save/AutoSave12/"));
+    CHECK(!sp::IsAutoSaveSlot("media_soviet/save\\22467 - Test 02"));
+    CHECK(!sp::IsAutoSaveSlot("media_soviet/save/autosaver_republic"));
+
+    const char* loaded = "media_soviet/save\\22467 - Test 02";
+    // Autosave write after loading a manual save must be ignored.
+    CHECK(!sp::ShouldUpdateSaveDir(loaded, "media_soviet/save/autosave3", false));
+    // Manual Save-As updates the pinned save dir.
+    CHECK(sp::ShouldUpdateSaveDir(loaded, "media_soviet/save/manual_slot", false));
+    // Loading an autosave deliberately switches to it.
+    CHECK(sp::ShouldUpdateSaveDir(loaded, "media_soviet/save/autosave3", true));
+    // Before any save dir is known (fresh unsaved game), autosave initializes it.
+    CHECK(sp::ShouldUpdateSaveDir("", "media_soviet/save/autosave1", false));
+}
+
 int main(int argc, char** argv) {
     // run all TEST functions via registry? The python discovers TEST names and calls binary with name.
     // We need dispatch by argv.
@@ -112,6 +132,7 @@ int main(int argc, char** argv) {
     else if (std::strcmp(name, "drift_detection") == 0) drift_detection();
     else if (std::strcmp(name, "money_supply_velocity_and_share") == 0) money_supply_velocity_and_share();
     else if (std::strcmp(name, "csv_row_contains_columns") == 0) csv_row_contains_columns();
+    else if (std::strcmp(name, "autosave_does_not_override_loaded_save_dir") == 0) autosave_does_not_override_loaded_save_dir();
     else { std::printf("unknown test %s\n", name); return 2; }
     std::printf("PASS %s\n", name);
     return 0;

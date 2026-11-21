@@ -750,8 +750,10 @@ struct Enterprise {
     // isAbandoned latches once the native ruins swap has fired and prevents
     // re-registration even if the [P] tag survives on the name. Both are
     // persisted in save v4 (v1..v3 records load with the defaults 0/false).
-    int    insolventMonths = 0;
-    bool   isAbandoned     = false;
+    int    insolventMonths  = 0;
+    bool   isAbandoned      = false;
+    bool   payrollDefaulted = false;
+    bool   stalledOnDust    = false;
 
     // v9.16: the player pressed RELEASE on this building in the panel.
     // The 300 ms registration sweep re-privatises anything that
@@ -1033,6 +1035,25 @@ static const char* Internal_GetBuildingObjectName(void* building)
 
     SafeReadStr((const BYTE*)td + TSM_TD_NAME, buf, sizeof(buf));
     return buf;
+}
+
+static void FillLogBuildingName(void* building, wchar_t* out, size_t maxChars)
+{
+    if (!out || maxChars == 0) return;
+    out[0] = L'\0';
+    if (Internal_GetBuildingCustomName(building, out, maxChars) && out[0]) {
+        return;
+    }
+    const char* obj = Internal_GetBuildingObjectName(building);
+    if (obj && obj[0]) {
+        size_t i = 0;
+        for (; i + 1 < maxChars && obj[i]; ++i) {
+            out[i] = (wchar_t)(unsigned char)obj[i];
+        }
+        out[i] = L'\0';
+        return;
+    }
+    wcsncpy_s(out, maxChars, L"(unnamed)", _TRUNCATE);
 }
 
 static bool IsAutoPrivateType(int type)
@@ -1342,6 +1363,7 @@ static int ApplyCapital(void* building, double delta,
     if (next < -1.0e12) next = -1.0e12;
     if (next >  1.0e12) next =  1.0e12;
     e.capital = next;
+    if (delta > 0.0) e.stalledOnDust = false;
     ApplyCategory(e, delta, category);
 
     LeaveCriticalSection(&g_lock);
@@ -2777,12 +2799,14 @@ static void EvaluateInsolvency(void)
             continue;
         if (TsmIsDemolished(b) || !TsmIsFinished(b)) continue;
 
-        if (e.capital > 0.0) {
+        const bool payrollFailed = e.payrollDefaulted;
+        e.payrollDefaulted = false;
+
+        if (e.capital > 0.0 && !payrollFailed && !e.stalledOnDust) {
             if (e.insolventMonths > 0) {
                 if (g_probe) {
                     wchar_t nm[128] = {0};
-                    if (!Internal_GetBuildingCustomName(b, nm, 128) || !nm[0])
-                        wcsncpy_s(nm, _countof(nm), L"(unnamed)", _TRUNCATE);
+                    FillLogBuildingName(b, nm, _countof(nm));
                     Logf("enterprise_base  [RECOVERED] %ls is solvent again "
                          "(capital %.2f)", nm, e.capital);
                 }
@@ -2791,7 +2815,7 @@ static void EvaluateInsolvency(void)
             continue;
         }
 
-        // capital <= 0: advance one month down the ladder.
+        // capital <= 0 or stalled after a payroll default: advance one month down the ladder.
         e.insolventMonths++;
 
         if (e.insolventMonths >= g_monthsToAbandon) {
@@ -2804,16 +2828,14 @@ static void EvaluateInsolvency(void)
             toAbandon.push_back(b);
             if (g_probe) {
                 wchar_t nm[128] = {0};
-                if (!Internal_GetBuildingCustomName(b, nm, 128) || !nm[0])
-                    wcsncpy_s(nm, _countof(nm), L"(unnamed)", _TRUNCATE);
+                FillLogBuildingName(b, nm, _countof(nm));
                 Logf("enterprise_base  [ABANDONED] %ls collapsed into ruins "
                      "after %d distressed month(s)", nm, e.insolventMonths);
             }
         } else if (e.insolventMonths == 1) {
             if (g_probe) {
                 wchar_t nm[128] = {0};
-                if (!Internal_GetBuildingCustomName(b, nm, 128) || !nm[0])
-                    wcsncpy_s(nm, _countof(nm), L"(unnamed)", _TRUNCATE);
+                FillLogBuildingName(b, nm, _countof(nm));
                 Logf("enterprise_base  [DISTRESSED] %ls (capital %.2f) - "
                      "hiring frozen, no further staff assigned",
                      nm, e.capital);
@@ -2833,11 +2855,12 @@ static void EvaluateInsolvency(void)
                     Logf("enterprise_base  [CAP] direct %p %+.3f by=buyout  "
                          "%.2f -> %.2f",
                          b, e.capital - _capBefore, _capBefore, e.capital);
-                e.insolventMonths = 0;
+                e.insolventMonths  = 0;
+                e.payrollDefaulted = false;
+                e.stalledOnDust    = false;
                 if (g_probe) {
                     wchar_t nm[128] = {0};
-                    if (!Internal_GetBuildingCustomName(b, nm, 128) || !nm[0])
-                        wcsncpy_s(nm, _countof(nm), L"(unnamed)", _TRUNCATE);
+                    FillLogBuildingName(b, nm, _countof(nm));
                     Logf("enterprise_base  [AUCTION BUYOUT] investment pool "
                          "acquired %ls for %.2f %ls (capital restored to %.2f)",
                          nm, buyoutCost, IsUsdActive() ? L"USD" : L"RUB",
@@ -2845,8 +2868,7 @@ static void EvaluateInsolvency(void)
                 }
             } else if (g_probe) {
                 wchar_t nm[128] = {0};
-                if (!Internal_GetBuildingCustomName(b, nm, 128) || !nm[0])
-                    wcsncpy_s(nm, _countof(nm), L"(unnamed)", _TRUNCATE);
+                FillLogBuildingName(b, nm, _countof(nm));
                 Logf("enterprise_base  [AUCTION FAILED] pool %.2f cannot cover "
                      "%.2f - %ls faces ruin", g_pool, buyoutCost, nm);
             }
@@ -3022,9 +3044,16 @@ static int OnPayroll(void* workplace, void* person, float grossWage,
     // paid, which is what a wage is: an obligation the firm must be able
     // to meet. allow_debt makes CanPayWage unconditional.
     if (!IsSolventImpl(workplace) || !CanPayWage(workplace, (double)wage)) {
+        EnterCriticalSection(&g_lock);
+        auto it = g_companies.find(workplace);
+        if (it != g_companies.end() && it->second.isPrivate) {
+            it->second.payrollDefaulted = true;
+            it->second.stalledOnDust    = (it->second.capital > 0.0);
+        }
+        LeaveCriticalSection(&g_lock);
         if (g_probe) {
             wchar_t name[128] = {0};
-            Internal_GetBuildingCustomName(workplace, name, 128);
+            FillLogBuildingName(workplace, name, _countof(name));
             double capNow = GetCapitalImpl(workplace);
             Logf("enterprise_base  \"%ls\" defaulted on a %.2f wage "
                  "(capital %.2f, short %.2f)",
@@ -3041,14 +3070,30 @@ static int OnPayroll(void* workplace, void* person, float grossWage,
     // credited. TryModifyCapital logs the refusal; return DEFAULTED so
     // citizen_labor sees an unpaid worker instead of a free one.
     if (!TryModifyCapital(workplace, -(double)wage, TSM_CAP_WAGE, "wage")) {
+        EnterCriticalSection(&g_lock);
+        auto it = g_companies.find(workplace);
+        if (it != g_companies.end() && it->second.isPrivate) {
+            it->second.payrollDefaulted = true;
+            it->second.stalledOnDust    = (it->second.capital > 0.0);
+        }
+        LeaveCriticalSection(&g_lock);
         if (g_probe) {
             wchar_t name[128] = {0};
-            Internal_GetBuildingCustomName(workplace, name, 128);
+            FillLogBuildingName(workplace, name, _countof(name));
             Logf("enterprise_base  \"%ls\" wage debit refused for %.2f - "
                  "worker not paid", name, wage);
         }
         return TSM_PAYROLL_DEFAULTED;
     }
+    EnterCriticalSection(&g_lock);
+    {
+        auto it = g_companies.find(workplace);
+        if (it != g_companies.end()) {
+            it->second.payrollDefaulted = false;
+            it->second.stalledOnDust    = false;
+        }
+    }
+    LeaveCriticalSection(&g_lock);
     g_currency->addWalletBalance(person, wage);
     return TSM_PAYROLL_PAID;
 }

@@ -37,6 +37,7 @@
 #include "../../src/enterprise_base_api.h"
 #include "../../src/republic_bank_api.h"
 #include "../../src/sim_clock_api.h"
+#include "../../src/state_ledger_api.h"
 #include "../../src/taxes_api.h"
 #include "../../src/ui_overlay_api.h"
 
@@ -195,6 +196,7 @@ const TsmRepublicBankApi*   g_svcBank       = nullptr;
 const TsmCitizenLaborApi*   g_svcLabor      = nullptr;
 const TsmEnterpriseBaseApi* g_svcEnterprise = nullptr;
 const TsmB2bLogisticsApi*   g_svcB2b        = nullptr;
+const TsmStateLedgerApi*    g_svcLedger     = nullptr;
 bool                        g_servicesLookedUp = false;
 ULONGLONG                   g_lastSampleMs     = 0;
 
@@ -249,6 +251,9 @@ void EnsureServicesLookedUp()
 
     g_svcB2b = static_cast<const TsmB2bLogisticsApi*>(
         g_host->consume(TSM_SERVICE_B2B_LOGISTICS, TSM_B2B_LOGISTICS_VERSION));
+
+    g_svcLedger = static_cast<const TsmStateLedgerApi*>(
+        g_host->consume(TSM_SERVICE_STATE_LEDGER, TSM_STATE_LEDGER_VERSION));
 
     g_servicesLookedUp = true;
 }
@@ -602,9 +607,10 @@ const PanelModel* SampleLiveModel(bool worldLoaded)
     const TsmCitizenLaborApi*   s_labor      = g_svcLabor;
     const TsmEnterpriseBaseApi* s_enterprise = g_svcEnterprise;
     const TsmB2bLogisticsApi*   s_b2b        = g_svcB2b;
+    const TsmStateLedgerApi*    s_ledger     = g_svcLedger;
 
     const bool anyService = s_clock || s_currency || s_taxes || s_bank ||
-                            s_labor || s_enterprise || s_b2b;
+                            s_labor || s_enterprise || s_b2b || s_ledger;
     if (!anyService) return nullptr;
 
     PanelModel m{};
@@ -680,6 +686,27 @@ const PanelModel* SampleLiveModel(bool worldLoaded)
         if (s_bank->setAnnualInterestRate) {
             m.controls.hasBankControl = true;
             m.controls.bankRate       = rate;
+        }
+    }
+    if (s_ledger && s_ledger->getBudgetSnapshot) {
+        TsmStateBudgetSnapshot snap{};
+        snap.structSize = sizeof(snap);
+        if (s_ledger->getBudgetSnapshot(&snap, sizeof(snap))) {
+            m.budget.hasLedger       = true;
+            m.budget.closedYear      = snap.closedYear;
+            m.budget.closedMonth     = snap.closedMonth;
+            m.budget.closedWages     = snap.closedWages;
+            m.budget.closedSales     = snap.closedStoreSales;
+            m.budget.closedWholesale = snap.closedWholesale;
+            m.budget.closedTaxes     = snap.closedTaxes;
+            m.budget.closedOther     = snap.closedOther;
+            m.budget.closedNet       = snap.closedNet;
+            m.budget.liveWages       = snap.liveWages;
+            m.budget.liveSales       = snap.liveStoreSales;
+            m.budget.liveWholesale   = snap.liveWholesale;
+            m.budget.liveTaxes       = snap.liveTaxes;
+            m.budget.liveOther       = snap.liveOther;
+            m.budget.liveNet         = snap.liveNet;
         }
     }
 
