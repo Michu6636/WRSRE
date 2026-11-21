@@ -389,6 +389,47 @@ size_t ReadBuildingCityName(void* bldg, wchar_t* out, size_t maxChars)
     }
 }
 
+// Reads a player-assigned custom building name directly from bld+0x114 (wchar_t[64]),
+// matching FUN_1403329E0 / FUN_140333040 (skips empty strings and the generated
+// "Building " prefix). Returns 0 when the building uses its default name.
+size_t ReadBuildingCustomNameDirect(void* bldg, wchar_t* out, size_t maxChars)
+{
+    if (!bldg || !out || maxChars < 2) return 0;
+    out[0] = L'\0';
+    const uintptr_t addr = reinterpret_cast<uintptr_t>(bldg);
+    if (addr < 0x10000ULL || addr > 0x00007FFFFFFEFFFFULL) return 0;
+    if (g_host && g_host->readablePtr && !g_host->readablePtr(bldg, 0x194)) return 0;
+
+    __try {
+        const wchar_t* ws = reinterpret_cast<const wchar_t*>(
+            static_cast<const BYTE*>(bldg) + 0x114);
+        if (ws[0] == L'\0') return 0;
+        // FUN_140333040: generated default names begin with L"Building " (9 wchars).
+        static constexpr wchar_t kDefaultPrefix[9] = {
+            L'B', L'u', L'i', L'l', L'd', L'i', L'n', L'g', L' '
+        };
+        bool isDefault = true;
+        for (size_t k = 0; k < 9; ++k) {
+            if (ws[k] != kDefaultPrefix[k]) {
+                isDefault = false;
+                break;
+            }
+        }
+        if (isDefault) return 0;
+
+        size_t len = 0;
+        if (!ValidateWideName(ws, 64, &len)) return 0;
+        const size_t cp = (len < maxChars - 1) ? len : (maxChars - 1);
+        for (size_t k = 0; k < cp; ++k) out[k] = ws[k];
+        out[cp] = L'\0';
+        return cp;
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        out[0] = L'\0';
+        return 0;
+    }
+}
+
+
 void AppendWide(wchar_t* dst, size_t maxChars, size_t* pos, const wchar_t* src)
 {
     if (!dst || !pos || !src || maxChars == 0) return;
@@ -737,6 +778,8 @@ const PanelModel* SampleLiveModel(bool worldLoaded)
         const size_t limit = (total < static_cast<size_t>(EnterpriseList::kMaxEnterprises))
                                  ? total
                                  : static_cast<size_t>(EnterpriseList::kMaxEnterprises);
+        static int s_lastLoggedCount = -1;
+        const bool logThisRefresh = (static_cast<int>(total) != s_lastLoggedCount);
         for (size_t i = 0; i < limit; ++i) {
             void* bldg = s_enterprise->getEnterpriseByIndex(i);
             if (!bldg) continue;
@@ -765,12 +808,25 @@ const PanelModel* SampleLiveModel(bool worldLoaded)
             }
 
             wchar_t wbuf[96]{};
+            const char* nameSrc = "fallback";
             if (s_enterprise->getBuildingCustomName &&
                 s_enterprise->getBuildingCustomName(bldg, wbuf, 96) > 0 && wbuf[0]) {
                 const int n = WideCharToMultiByte(
                     CP_UTF8, 0, wbuf, -1, row.name,
                     static_cast<int>(sizeof(row.name)), nullptr, nullptr);
-                if (n > 1) gotName = true;
+                if (n > 1) {
+                    gotName = true;
+                    nameSrc = "custom_tag";
+                }
+            }
+            if (!gotName && ReadBuildingCustomNameDirect(bldg, wbuf, 96) > 0 && wbuf[0]) {
+                const int n = WideCharToMultiByte(
+                    CP_UTF8, 0, wbuf, -1, row.name,
+                    static_cast<int>(sizeof(row.name)), nullptr, nullptr);
+                if (n > 1) {
+                    gotName = true;
+                    nameSrc = "custom_0x114";
+                }
             }
             if (!gotName &&
                 ReadNativeBuildingDisplayName(bldg, cityW, cityLen, wbuf, 96,
@@ -778,7 +834,10 @@ const PanelModel* SampleLiveModel(bool worldLoaded)
                 const int n = WideCharToMultiByte(
                     CP_UTF8, 0, wbuf, -1, row.name,
                     static_cast<int>(sizeof(row.name)), nullptr, nullptr);
-                if (n > 1) gotName = true;
+                if (n > 1) {
+                    gotName = true;
+                    nameSrc = "native";
+                }
             }
             const char* objName = s_enterprise->getBuildingObjectName
                                       ? s_enterprise->getBuildingObjectName(bldg)
@@ -793,17 +852,17 @@ const PanelModel* SampleLiveModel(bool worldLoaded)
                     std::snprintf(row.name, sizeof(row.name), "%s", typeLabel);
                 }
                 gotName = true;
+                nameSrc = "obj";
             }
             if (!gotName) {
                 std::snprintf(row.name, sizeof(row.name), "Enterprise #%zu", i + 1);
             }
-            static int s_nameProbeCount = 0;
-            if (s_nameProbeCount < 3) {
-                ++s_nameProbeCount;
-                Log("enterprise name probe: city=\"%s\" obj=\"%s\" nameId=%d suffixId=%d inst=%d resolved=\"%s\"",
+            if (logThisRefresh) {
+                Log("enterprise[%zu/%zu] src=%s city=\"%s\" obj=\"%s\" nameId=%d inst=%d resolved=\"%s\"",
+                    i + 1, total, nameSrc,
                     cityUtf8[0] ? cityUtf8 : "(none)",
                     (objName && objName[0]) ? objName : "(none)",
-                    nameId, suffixId, instNum, row.name);
+                    nameId, instNum, row.name);
             }
 
             if (s_bank && s_bank->getEnterpriseDebt) {
@@ -812,6 +871,11 @@ const PanelModel* SampleLiveModel(bool worldLoaded)
                 s_bank->getEnterpriseDebt(bldg, &principal, &monthlyInt, &missed);
                 row.debt = principal;
             }
+        }
+        if (logThisRefresh) {
+            s_lastLoggedCount = static_cast<int>(total);
+            Log("enterprises directory refreshed: showing %d of %d",
+                m.enterprises.count, m.enterprises.totalCount);
         }
     }
 
