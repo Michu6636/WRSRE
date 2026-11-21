@@ -11,5 +11,6 @@
     "**/.cache": true,
     "**/Mods for analysis": true,
     "**/export": true
-  }
+  },
+  "cmake.sourceDirectory": "C:/WRSRE/Mods for analysis/wrsr-Earthworks-main"
 }
