@@ -5,6 +5,15 @@
 - **Aligns With:** `docs/implementation-plan-per-trip-fuel.md` (v0.18 Option A deferred mode-1 billing) and `docs/review-per-trip-fuel-plan.md`
 - **Service ABI Impact:** **Zero new ABI versions required** (`enterprise_base` v8, `currency` v4, and `resource_pricing` v3 already provide every required primitive; optional lightweight query flag noted in §7.3 for automatic `private_shops` cutover)
 
+
+> **2026-11-22 owner decisions ([economy direction §4](visions/economy-direction-2026-11-22.md)):**
+> - The source implements a simplified version (`private_logistics` `0.19.0-simplified-settlement`).
+> - The goods price is the **native price only**: drop `getMarketMultiplier(R)` and `wholesale_Factor` from §3. The market multiplier is obsolete.
+> - The `private_shops` dispatch procurement and 0.70 delivery billing are to be **deleted**, not kept alongside. Stage 2 therefore becomes the target, and live billing (`billing = 1`, `dry_run = 0`) becomes the **default**.
+> - §7.1's "keep `TsmPricingRecordDemand`/`RecordSupply` active" is withdrawn: the market book is being removed.
+> - Customs houses must not be treated as a state buyer (`b2b_state_buy`). Company exports receive the native customs proceeds directly (Ghidra target G1).
+> - Foreign restock writes shelf stock directly and is to be deleted.
+
 ---
 
 ## 1. Executive Summary & Economic Motivation

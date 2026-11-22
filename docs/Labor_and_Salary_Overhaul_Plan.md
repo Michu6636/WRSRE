@@ -4,6 +4,8 @@
 
 > Saved from the plan-only investigation (Ghidra + code + game files). M1 executes the foundation; M2–M3 follow in order.
 
+> **2026-11-22:** The owner's amendments (two-tier slot premium instead of education pay, player-chosen welfare levels, CPI indexation by decree for the state and automatically for private firms) are recorded in the [specification amendment](Labor_and_Salary_Overhaul_Specification.md) and [economy direction §6](visions/economy-direction-2026-11-22.md).
+
 ---
 
 ## 1. Baseline (verified)

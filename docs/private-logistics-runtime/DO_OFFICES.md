@@ -1,5 +1,18 @@
 # How distribution offices work in WRSRE
 
+> **2026-11-22 owner decision:** B2B billing must be **live by default** (`billing = 1`, `dry_run = 0`).
+>
+> **Current source:** `private_logistics` **`0.19.0-simplified-settlement`**. With both switches set that way, the plugin settles for real (`cb.dryRun = g_dryRun != 0 || g_billing == 0`):
+> - The unloading buyer pays the verified loading seller.
+> - The unloading buyer pays the vehicle-owning private DO's observed trip fuel.
+>
+> Before the defaults flip, see [economy direction §4.4](../visions/economy-direction-2026-11-22.md):
+> - Remove the `private_shops` procurement and delivery billing, so the same delivery is not settled twice.
+> - Remove the market multiplier.
+> - Exclude customs houses from `b2b_state_buy`.
+>
+> The 0.18.x text below, including "billing OFF" and "`billing=1` would opt into legacy behavior", is a historical record of the dry-ledger period.
+
 **Current working source:** `private_logistics` **0.18.19-road-targets** (bounded road target policy; host-tested, not yet Windows-built/deployed in this review). Last observed native version: **0.18.18-census-guard**, merged in [PR #43](https://github.com/Michu6636/WRSRE/pull/43) at `2d83fdc41d99f0a98ab00ea2ae2292dc6e78ba2f`, following **0.18.17-dry-ledger** from [PR #42](https://github.com/Michu6636/WRSRE/pull/42). The user reports a successful Windows build; Test15 now logs this version running natively across 30 daily summaries. It exposes the existing five-total-target automatic-connection restriction and unresolved secondary-goods dispatch symptoms; it is not a clean overall dispatch acceptance, a >64-slot stress test or a source/binary hash-parity check.
 **Documentation review:** updated 2026-11-04 with the bounded target-policy implementation. All 147 private-logistics host tests pass (including extracted production reconciliation/preflight, optimized and ASan+UBSan); this is not a Windows build or native gameplay result. See `docs/tasks/active/TEST16_ROAD_TARGETS.md` for the exact policy and pending acceptance. Source behaviour and native observations remain distinguished; a logged version is not byte-for-byte compiler/source parity.
 

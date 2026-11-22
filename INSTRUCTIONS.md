@@ -212,7 +212,8 @@ To prevent bloat and crashes as the mod grows, you MUST adhere to these boundari
 
 - **NO CROSS-PLUGIN LINKING:** Never `#include` a `.cpp` or internal `.h` from another plugin.
 - **USE THE API:** Plugins MUST communicate exclusively via the shared headers in `src/` (e.g., `currency_api.h`, `ui_panels_api.h`).
-- **FALLBACKS:** When consuming a service (e.g., `H->consume(TSM_SERVICE_CURRENCY)`), always handle `NULL`. If a plugin is missing, your code must degrade gracefully (e.g., hide the UI row, do not crash).
+- **FALLBACKS:** When consuming a service (e.g., `H->consume(TSM_SERVICE_CURRENCY)`), always handle `NULL`. If a plugin is missing, your code must degrade gracefully: do not crash, and **make the gap obvious**. Show `UNAVAILABLE` / `ERROR <reason>` in a warning colour and log it. Never hide it silently.
+- **NO MADE-UP DATA (owner rule, 2026-11-22):** Never display, charge or compute with sample, synthetic, placeholder or invented fallback values: no fake rows, no fallback prices, no invented exchange rates. Every number must trace to a native field, a player policy or a documented INI balancing constant. A missing native price means *unpriced and refused*. See `docs/visions/economy-direction-2026-11-22.md` (D8).
 - **NO GLOBAL STATE BLEEDING:** Each DLL has its own global state. Do not try to share raw pointers across DLL boundaries unless they are opaque handles wrapped in an API function.
 
 ### B. Memory Safety & Hooking

@@ -1,5 +1,8 @@
 # Local Markets Investigation — City Hall Catchment & Local Resource Stocks
 
+> **2026-11-22:** The local town markets / local scarcity **feature is cancelled** by the owner. The game is treated as one domestic market at native prices ([economy direction D3](../visions/economy-direction-2026-11-22.md)). This page remains valid as **engine reference** (towns, City Hall path, storage aggregation, town treasury `townStats+0x3E0/+0x3E4`, price fields `+0x60/+0x64`). Its "Recommendation for localized city market prices" sections are historical.
+
+
 **Target:** `SOVIET64.exe` v1.1.1.9 (image base `0x140000000`).
 **Scope:** Reverse-engineering analysis only (no source/INI/build changes).
 **Raw evidence:** `scratch/cityhall_catchment.txt` (all decompiles/disassembly referenced below).
