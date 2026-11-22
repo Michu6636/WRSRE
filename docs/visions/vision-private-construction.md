@@ -105,9 +105,13 @@ roubles, outside realistic mode) already almost simulates that.
 
 | ID | Owner statement | Status |
 |---|---|---|
-| O1 | **State construction offices can build private sites.** They already do with auto search on, or when the player assigns the site. In that case the money **goes to the player (state)**. | O1a (state offices may build private sites) is decided. O1b (the state receives the money) was stated with "maybe". |
+| O1 | **State construction offices can build private sites.** They already do with auto search on, or when the player assigns the site. The office **gets the money and operates as a normal state office does, with its income going to the treasury.** | Decided |
 | O2 | **Workdays are billed to the site owner**, and the money goes **to the workers**, who are marked as **construction workers**, because construction offices have no fixed workplace for them. | Decided (the marker's form is open, §5.5) |
 | O3 | **The site owner pays for materials loaded and workdays done**, as the work happens, **not when the building is finished**. | Decided |
+| O4 | **Construction workdays are paid at a separate construction wage**, if workers on a site can be identified (C8). | Decided, conditional on C8 |
+| O5 | **Private payers build only with construction offices (private or state).** The instant build is not available to them: realistic mode has no instant build for the player either. | Decided (§5.7) |
+| O6 | **"Allow private construction" on state sites is OFF by default.** | Decided |
+| O7 | **If the payer cannot pay, construction is stopped.** | Decided |
 
 ---
 
@@ -207,7 +211,7 @@ stays state-owned.
 | Client ↓ / Builder → | State construction office | Private construction office | Native instant build (USD/RUB) |
 |---|---|---|---|
 | **State** | Native game, no mod bills (as today) | **Public contract:** the treasury pays the company as work is done. Needs "Allow private construction" on the site (§5.3) | Native turnkey, unchanged |
-| **Private** | **The state as contractor (O1):** the owner pays as work is done (§5.4) | **Private contract:** the owner pays the company as work is done | **Open** (§10, Q4) |
+| **Private** | **The state as contractor (O1):** the owner pays as work is done (§5.4) | **Private contract:** the owner pays the company as work is done | **Not available (O5)** |
 
 Several offices can work on the same site in the native game, so one site
 can have mixed builders. Per-load billing (§5.4) handles that without
@@ -234,12 +238,12 @@ office brought it.
 - **Outside realistic mode**, the instant build already is the state hiring
   a turnkey contractor, as the owner noted. Nothing more is needed.
 - **In realistic mode**, the per-site checkbox **"Allow private
-  construction"** (default OFF) is the contract. The player ticks it on a
+  construction"** (default OFF, O6) is the contract. The player ticks it on a
   state site, and private offices may then build it and bill the treasury.
   This needs no new mode or menu, and the player chooses per site, which
   matches "the state vs private balance is the player's choice".
-- **Proposed:** a state site without the checkbox is never touched by a
-  private office.
+- A state site without the checkbox is never touched by a private office
+  (follows from O6).
 
 ### 5.4 Paying as work is done (Owner: O3)
 
@@ -248,29 +252,71 @@ Each event is billed once, at the moment it happens, to the site's client:
 | Event | Payer → payee | Amount |
 |---|---|---|
 | Material **loaded** for the site at a storage | client → storage owner (state treasury or private company) | tons × native price at loading (the same lot rule as goods) |
-| Workday **done** at the site | client → the citizens who worked it (O2) | workdays × wage rate (**Open**, §10 Q2) |
-| Transport (fuel) | client → builder (treasury for a state office, company for a private office) | observed fuel × fuel price (the same rule as a DO trip) |
-| Contractor margin, private offices only | client → construction company | **Open** (§10 Q3). The existing `contractor_markup` INI knob is 1.00 (no margin) |
+| Workday **done** at the site | client → the citizens who worked it (O2) | workdays × construction wage (O4, §5.5) |
+| Transport (fuel) | client → the building office | observed fuel × fuel price (the same rule as a DO trip) |
+| Contractor fee | client → the building office | **Recommended, awaiting owner:** a percentage of the load's materials + workdays (§5.4.1) |
 
-- **O1b, the state as contractor:** with a state office on a private site,
-  the treasury receives payment for materials from state storages and for
-  transport. The workday money goes to the workers (O2). If O1b is
-  confirmed, the state's income is the materials and transport.
+- **State office on a private site (O1):** the office receives transport and
+  the fee, and its income goes to the treasury like any state office. Payment
+  for materials taken from state storages goes to the treasury as the storage
+  owner. Workday money goes to the workers (O2).
+
+#### 5.4.1 Contractor fee (Recommended, awaiting owner decision)
+
+**Why a fee is needed:** under O2 and O3 the client pays materials to the
+storage owner and workdays to the workers directly. Without a fee, a private
+construction office would earn only fuel reimbursement. It could never
+recover its vehicles, electricity or upkeep, so it could never make a profit,
+build a reserve or pay anything to the fund. Real contractors price overhead
+and profit into every job.
+
+**Real-world reference points:**
+- Soviet and Russian construction estimates include "planned savings", the
+  builder's planned profit, at about **6–8 %** of direct costs plus overheads
+  ([Jarvis Group, Construction Costs](https://www.jarvisgroup.net/construction-costs)).
+- A US government report on Soviet building notes that estimated costs were
+  usually set about **12–15 %** above current costs. Its US comparison
+  estimate (April 1969 prices) uses **15 %** for contractors' overhead and
+  profit
+  ([US report, Industrialized building in the Soviet Union](https://www.govinfo.gov/content/pkg/GOVPUB-C13-7d84f08cc44cb9903107dd699b9bfa39/pdf/GOVPUB-C13-7d84f08cc44cb9903107dd699b9bfa39.pdf)).
+
+**Recommendation:**
+1. One INI value, `contractor_fee_percent`, applied to the materials +
+   workdays value of every load and workday billed, and paid to the office
+   that did the work.
+2. **The same percentage for state and private offices.** The private payer
+   then chooses between offices on availability and speed, not price, and the
+   state office's fee is ordinary state income (O1).
+3. **Shipped value 8 %**, the top of the Soviet planned-savings norm. It
+   covers vehicles and upkeep without making private building far dearer than
+   state building. The player can change it, and a later decree could expose
+   it.
+4. If the value is missing or invalid, the fee shows `UNAVAILABLE` and
+   private billing stays off. There is no hidden fallback.
 - **Proposed:** materials loaded but not yet unloaded at the site stay paid.
   If the site is cancelled or demolished, they are not refunded, which keeps
   the rule simple.
-- **Proposed:** if the client cannot pay, the site is **halted**, not served
-  on credit. Its status says `UNPAID — construction halted`, the same way
-  real work stops when a client stops paying. Native research C9 checks
-  whether the game has a suspend flag the mod can set.
-- **Proposed:** a state client (public contract) pays from the treasury.
-  Below zero, the same halt rule applies.
+- **Owner (O7):** if the client cannot pay, construction is **stopped**, not
+  served on credit. Its status says `UNPAID — construction stopped`.
+  Native research C9 checks whether the game has a suspend flag the mod can
+  set.
+- **Proposed:** before every load or workday, the payer must be able to pay
+  that event in full. Otherwise the event is not billed and the site stops.
+  When money is available again (the fund receives income, or the player
+  tops it up), construction resumes.
+- **Proposed:** a state client (public contract) pays from the treasury, and
+  the same stop rule applies when the treasury cannot pay.
 
 ### 5.5 Workers (Owner: O2)
 
 - **Owner:** workdays are billed to the client, and the money goes to the
   citizens who did the work. They are marked as **construction workers**,
   because offices have no fixed workplace for them.
+- **Owner (O4):** they are paid a **separate construction wage**, if they can
+  be identified (C8).
+- **Open:** the construction wage's value. It must be a configured or
+  native value, never a placeholder. If it is missing, the workday bill shows
+  `UNAVAILABLE`.
 - **Proposed form of the marker:** a per-citizen, per-day flag
   "construction worker at site X". `citizen_labor` uses it for that day's
   wage and status instead of a workplace. The Almanac can count construction
@@ -307,6 +353,23 @@ Each event is billed once, at the moment it happens, to the site's client:
   settled as a B2B purchase.
 - **Progress (Proposed):** comes only from the native mechanism. The mod
   writes no progress on sites built by offices.
+
+### 5.7 No instant build for private payers (Owner: O5)
+
+The owner asked whether private construction should be instant instead. The
+recommendation agreed with O5: **no**. The reasons:
+
+- **Realistic mode has no instant build**, and realistic mode is where this
+  economy matters most. A private feature that only exists outside it would
+  behave differently in each mode.
+- **An instant build skips the domestic economy.** It uses no domestic
+  materials, no construction workers and no transport, so private
+  investment would create no demand for factories, storages or jobs.
+- **It brings back the problem §5.2 removes.** An instant private build would
+  mean money in, building out, with the mod writing build progress itself,
+  which is the source of the invisible-finish bug.
+- **Speed already has a lever.** A payer who wants faster building uses more
+  offices (state or private) on the site, as the native game allows.
 
 ---
 
@@ -351,7 +414,7 @@ useful step, and it removes the plugin's progress writes.
 
 | Mode | State client | Private client |
 |---|---|---|
-| Instant build (not realistic) | native price, unchanged | **Open** (§10 Q4) |
+| Instant build (not realistic) | native price, unchanged | not available (O5) |
 | Realistic, state office | native, no bills | owner pays per load (O1, O3) |
 | Realistic, private office | treasury pays per load (checkbox) | owner pays per load |
 
@@ -378,15 +441,10 @@ work.
 
 ## 10. Open owner questions
 
-1. **O1b:** when a state office builds a private site, does the treasury
-   receive the materials and transport money (the owner said "maybe")?
-2. **Wage rate for a construction workday:** the normal `citizen_labor`
-   wage, or a separate construction rate? It must be a real configured or
-   native value, never a placeholder.
-3. **Contractor margin** for private offices: none (cost only), or a
-   percentage the player sets?
-4. **Instant build for a private client** (non-realistic mode): may the
-   fund pay the native instant price, or is the instant build state-only?
-5. **"Allow private construction" checkbox**, default OFF, as the state's
-   way to hire contractors (§5.3)?
-6. **Halt on non-payment** (§5.4) instead of debt?
+1. **Contractor fee:** accept the recommendation in §5.4.1 (one percentage
+   for all offices, shipped at 8 %)?
+2. **Construction wage value** (O4): which configured or native figure, and
+   who sets it?
+3. **Proposed rules** still awaiting a decision: paid loads are not refunded
+   on cancellation (§5.4), and each event must be paid in full or the site
+   stops (§5.4).
