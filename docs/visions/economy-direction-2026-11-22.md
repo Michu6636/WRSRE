@@ -54,7 +54,7 @@ the owner yet; *hypothesis* = needs verification before use.
 | D28 | **Toggle cooldown:** after a building is privatised or nationalised, the PRIV button is locked for a countdown on the sim clock (about one month). | Decided; §4.5.6 |
 | D29 | **Starting capital differs per building**, by size and kind: it is computed from the building's own staff and inputs. | Decided; formula approved (§4.5.7) |
 | D30 | **On nationalisation the company's leftover money returns to the fund**, and an overdraft is covered by the fund. | Decided; §4.5.6 |
-| D31 | **Founding capital must not depend on population.** A new map may have nobody living on it, so the amount comes from native prices only. | Decided; method in §4.5.1 (proposal) |
+| D31 | **Founding capital must not depend on population.** A new map may have nobody living on it, so the amount comes from native prices only. | Decided; method approved (§4.5.1) |
 
 ---
 
@@ -317,7 +317,7 @@ burn are still unproven at native level. Unpriced or uncertain events stay
 - A persisted "founded" flag makes it impossible to repeat. An unreadable
   fund balance on load is shown as `ERROR` in the Almanac and the fund is
   frozen; it is **never** reset or re-founded.
-- **How much (D31, *proposal*).** It cannot depend on population (a new map
+- **How much (D31, approved).** It cannot depend on population (a new map
   may be empty) or on the CPI basket (which is priced per citizen). It must
   be stable, the same for the same map start, and correct in either currency
   (D21). Recommended: a **reference bundle of construction materials** at
@@ -976,13 +976,20 @@ result in `docs/ghidra-index/`, and keep bounded raw exports in
 
 ## 10. Open questions for the owner
 
-Answered on 2026-11-22: Q1 → D19, Q2 → D20, Q3 → D18, Q4 → D21, Q5 → D23,
-Q6 → D22, Q8 → D26, Q9 → D25, Q10 → D23, Q11 → D27, Q13 → D29, Q14 → D30.
-Q7 (age rule) is withdrawn and replaced by D28.
+All questions answered on 2026-11-22: Q1 → D19, Q2 → D20, Q3 → D18,
+Q4 → D21, Q5 → D23, Q6 → D22, Q8 → D26, Q9 → D25, Q10 → D23, Q11 → D27,
+Q12 → D31, Q13 → D29, Q14 → D30. Q7 (age rule) is withdrawn and replaced by
+D28.
 
-| ID | Question |
-|---|---|
-| Q12 | Approve the founding-capital method in §4.5.1: a reference bundle of construction materials at native base prices, calibrated to about 10 typical privatisations. |
+**No owner questions are open.** What remains is verification, not decisions:
+
+- the Ghidra and runtime queue in §9.1 (G1–G9);
+- which native price field is *base* and which is *trade* (§3.2 point 5);
+- calibration from captured data (§9): the founding-capital bundle, the
+  welfare tier values, the sale discount and `norm_days`.
+
+Deferred by the owner for later: whether the toggle cooldown also starts
+when a new building is completed (§4.5.6).
 
 ---
 
