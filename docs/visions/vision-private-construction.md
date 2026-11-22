@@ -114,6 +114,8 @@ roubles, outside realistic mode) already almost simulates that.
 | O7 | **If the payer cannot pay, construction is stopped.** | Decided |
 | O8 | **Contractor fee of 8 %** as recommended in §5.4.1. | Decided |
 | O9 | **Materials already loaded are not refunded** if the site is cancelled or demolished. | Decided |
+| O10 | **Option B for stopping:** every step is billed, and the site stops right after the step that takes the payer below zero. | Decided |
+| O11 | **The construction wage has a default** in the Almanac like every other sector wage, at a balanced value. | Decided; value in §5.5 |
 
 ---
 
@@ -301,19 +303,14 @@ and profit into every job.
   served on credit. Its status says `UNPAID — construction stopped`.
   Native research C9 checks whether the game has a suspend flag the mod can
   set.
-- **Open: when exactly the site stops (§10 Q1).** O7 says it stops. What is
-  left to decide is the moment:
-  - **(A) Check before each step.** Before a truck loads or a workday counts,
-    the mod checks whether the payer has enough for that one step. If not,
-    the step does not happen and the site stops. The payer never goes below
-    zero.
-  - **(B) Stop after the money runs out.** Every step is billed. When a bill
-    takes the payer below zero, the site stops after that step. The payer
-    can go slightly negative, by at most one load or workday.
-
-  Either way, construction **resumes automatically** once the payer has
-  money again. (A) needs the mod to block a native load before it happens,
-  which may not be possible (C5, C9). (B) only needs to react after a load.
+- **Owner (O10): stop after the money runs out.** Every load and workday is
+  billed. When a bill takes the payer below zero, the site stops after that
+  step. The payer can be negative by at most one load or workday.
+  Construction **resumes automatically** once the payer's balance is
+  positive again (fund income, company income, or the player topping it up).
+  This only needs the mod to react after a load, not to block native loads
+  in advance. Stopping still needs C9 (a suspend flag) or removal of the site
+  from offices' lists.
 - **Proposed:** a state client (public contract) pays from the treasury, and
   the same stop rule applies when the treasury cannot pay.
 
@@ -332,12 +329,29 @@ and profit into every job.
     private wage mechanism, which first needs the fix described in the
     economy direction §6.3 (code check 2026-11-22). Today private wages are
     the state rate × a premium, and nothing reads the CPI.
-- **Proposed:** the new sector starts at the current infrastructure rate
-  (3.50 RUB/day), so nothing changes on day one, and the player tunes it.
-  Reference only: in the Soviet Interview Project data, construction workers
-  earned about 191 RUB/month against about 160 RUB/month for all non-farm
-  workers, roughly 19 % above average
-  ([Gregory and Kohlhase 1988](https://www.uh.edu/~kohlhase/GregoryKohlhase_RESTAT_1988.pdf)).
+- **Default (O11): 3.75 RUB/day, 0.75 USD/day.** The player can change it in
+  the Almanac like any other sector.
+  - **Derivation:** in the Soviet Interview Project data, construction
+    workers earned about 191 RUB/month against about 160 RUB/month for all
+    non-farm workers, about 1.19 × average
+    ([Gregory and Kohlhase 1988](https://www.uh.edu/~kohlhase/GregoryKohlhase_RESTAT_1988.pdf)).
+    The mean of the six shipped sector bases is 3.15 RUB/day
+    ((3.80 + 3.50 + 3.20 + 3.00 + 2.80 + 2.60) / 6). 1.19 × 3.15 = 3.75.
+  - **Balance check:** 3.75 sits between infrastructure (3.50, where
+    construction is today) and heavy industry (3.80, the top sector). The
+    same source shows construction above industry (191 against 177), so a
+    rate at the top of the table matches it without exceeding mining.
+  - **USD:** 0.75, following the shipped `[sector_wages_usd]` rule of RUB ÷ 5.
+- **Implementation notes** (for when this is scheduled):
+  - `TSM_SECTOR_COUNT` (`src/citizen_labor_api.h`) goes from 6 to 7. That is
+    a service-version change, and every consumer must be checked.
+  - `citizen_labor` needs a new `construction` key in `[sector_wages]` and
+    `[sector_wages_usd]`, and a type → sector mapping. Construction office
+    types move out of infrastructure (C1 gives the type numbers).
+  - The workday pay of §5.4 resolves to the construction sector wage.
+  - The `tesmio_labor.dat` sector block currently has six entries. Old saves
+    must load with the new sector at its INI default.
+  - Add the Almanac label (`almanac_panel_view.cpp` `kSectorLabels`).
 - **Proposed form of the marker:** a per-citizen, per-day flag
   "construction worker at site X". `citizen_labor` uses it for that day's
   wage and status instead of a workplace. The Almanac can count construction
@@ -462,8 +476,5 @@ work.
 
 ## 10. Open owner questions
 
-1. **When the site stops** for non-payment: (A) check before each step, so
-   the payer never goes negative, or (B) stop right after the step that
-   empties the account, at most one step negative (§5.4)?
-2. **Starting value of the construction sector wage:** the current
-   infrastructure rate of 3.50 RUB/day (§5.5)?
+None at the moment. The remaining unknowns are native research (§9). The
+owner has kept this vision unscheduled (D13).
