@@ -988,7 +988,7 @@ D28.
 - calibration from captured data (§9): the founding-capital bundle, the
   welfare tier values, the sale discount and `norm_days`.
 
-Deferred by the owner for later: whether the toggle cooldown also starts
+Left open for later (raised in this doc, not yet put to the owner): whether the toggle cooldown also starts
 when a new building is completed (§4.5.6).
 
 ---
