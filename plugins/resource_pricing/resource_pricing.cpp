@@ -172,9 +172,9 @@ static float GetPriceImpl(void* resRecord, int currency)
 //
 // Q* are the [cpi_basket] tonnes/day quantities (calibrated to the
 // engine's own demand ladder - docs/CPI_Survival_Basket_Investigation.md
-// S1/S2). injectedDailyRent > 0 replaces the [cpi_basket]
-// default_daily_rent so a Level 2 caller - taxes - can inject the true
-// enterprise_base rent average instead of the neutral base.
+// S1/S2). injectedDailyRent > 0 replaces the active currency's default
+// (default_daily_rent or default_daily_rent_usd, D35) so a Level 2 caller -
+// taxes - can inject the true enterprise_base rent average instead.
 //
 // Returns 0.0f when the basket is UNAVAILABLE (D34): no world, a fault, or
 // any of the three goods without a native price. It never returns a default

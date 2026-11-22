@@ -46,8 +46,8 @@
 - **Non-goals:** live B2B billing defaults (roadmap step 3), the 0.70 delivery
   bill and foreign restock removal (step 3), `*_usd` keys outside the price
   path and flat-money re-basing (step 7), wage indexation (step 5), City Hall
-  tile removal (step 6). `default_daily_rent`, `reference_cpi_rub` and
-  `min_cost` remain documented constants until step 7.
+  tile removal (step 6). `default_daily_rent`, `default_daily_rent_usd`,
+  `reference_cpi_rub` and `min_cost` remain documented constants until step 7.
 - **Authorized:** inspect repo files; small verified edits; host tests;
   documentation updates. No Windows build or game launch available here.
 - **Forbidden:** launching `SOVIET64.exe`, deploying DLLs, writing game memory,
