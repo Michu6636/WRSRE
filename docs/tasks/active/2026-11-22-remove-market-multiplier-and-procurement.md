@@ -3,7 +3,8 @@
 ## Contract
 
 - **Status:** active, waiting for merge. Host tests and the CI Windows build
-  pass (PR #100). The owner ran the PR build in game on 2026-11-22.
+  pass (PR #100). The owner ran the PR build in game on 2026-11-22 (save
+  "Test 02"); the step-1 acceptance check below is not yet recorded.
 - **Task record:** `docs/tasks/active/2026-11-22-remove-market-multiplier-and-procurement.md`
 - **Baseline:** branch `arena/672c9ef4-wrsre` from `main` `01ff95a` (PR #99
   merged), clean worktree.
@@ -78,22 +79,19 @@
 
 - **STATIC REVIEW:** self-review only.
 - **BUILD/TEST EVIDENCE:** PASS. Host tests and the CI MSVC build pass.
-- **RUNTIME VALIDATION:** PASS (owner session 2026-11-22, save "Test 02",
-  `tesmioloader.log`):
-  - the startup lines show resource_pricing v5 "native prices only",
-    private_shops v3.6 "no state procurement", citizen_retail v3.0 and
-    enterprise_base v9.20;
-  - no `procured` or `[PROC]` lines;
-  - all 33 "charged … for state delivery" lines (`fabric_factory` 26,
-    `MIRRORZ_clothing_factory` 7) follow real input unloads into the
-    factory at 0.70 × native value, which is expected until step 3 of the
-    roadmap.
-
-  Not covered: a dollar-mode session.
+- **RUNTIME VALIDATION:** PENDING. The owner ran the PR #100 build (save
+  "Test 02"), and that log produced the
+  [under-construction bug](2026-11-22-private-do-under-construction.md). No
+  step-1 acceptance result is recorded yet. To check: the log has no
+  `procured` / `[PROC]` lines, and every "charged … for state delivery" line
+  follows a real input unload into that building (still at 0.70 × native
+  value until roadmap step 3), not growth of the building's own output.
+  Dollar mode is not covered.
 
 ## Resume checkpoint
 
-- **Next action:** owner merge of PR #100, then step 2 of
+- **Next action:** the step-1 in-game check above and the owner's merge of
+  PR #100 ([`ROADMAP.md`](../../ROADMAP.md) step 0), then step 2 of
   [`ROADMAP.md`](../../ROADMAP.md) (fallback prices and made-up sample data).
 - **Save compatibility:** unchanged. Neither the market book nor procurement
   persisted anything. Old INI keys are ignored.

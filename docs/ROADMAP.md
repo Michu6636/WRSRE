@@ -12,7 +12,7 @@ file in the same pull request (see "How to run a step").
 | Item | State |
 |---|---|
 | Owner decisions | Complete for the economy: D1–D31 in [economy direction](visions/economy-direction-2026-11-22.md) §1. No owner questions are open there. |
-| **Code step 1**: native prices only, no state procurement | Done in [PR #100](https://github.com/Michu6636/WRSRE/pull/100). Host tests and the CI Windows build pass. The owner ran it in game (save "Test 02"): no procurement lines, and state delivery bills appear only after real deliveries. [Task record](tasks/active/2026-11-22-remove-market-multiplier-and-procurement.md). |
+| **Code step 1**: native prices only, no state procurement | Done in [PR #100](https://github.com/Michu6636/WRSRE/pull/100). Host tests and the CI Windows build pass. The owner ran the build (save "Test 02"), but **no step-1 acceptance result is recorded yet**. [Task record](tasks/active/2026-11-22-remove-market-multiplier-and-procurement.md). |
 | **Bug fix**: private DOs served buildings under construction | Done in PR #100. Host tests and CI pass. **Not yet checked in game.** [Task record](tasks/active/2026-11-22-private-do-under-construction.md). |
 | Construction vision (state and private offices) | Owner decisions O1–O11 recorded; **not scheduled** (D13). [Vision](visions/vision-private-construction.md). |
 | PR #100 | Open, not merged. It holds step 1, the bug fix and the docs above. |
@@ -45,6 +45,10 @@ This is the recommended order. The owner may reorder it. Item numbers
 ### Step 0: close out PR #100
 
 - The owner reviews and merges PR #100.
+- **In-game check of step 1:** no `procured` / `[PROC]` log lines. Every
+  "charged … for state delivery" line follows a real input unload into that
+  building, never growth of its own output. Real deliveries are still billed
+  at 0.70 until step 3.
 - **In-game check of the bug fix** on a save with a private site under
   construction. Expected log lines:
   - `[AUTO DO] day N under construction: K storage/consumer site(s) excluded`;
@@ -192,7 +196,7 @@ Three separate tasks, each with its own task record.
 | G2, G9, G3 | Person health/loyalty, building-type catalogue, price recompute | Almanac readouts, later work |
 | C1–C9 | Construction office internals | Construction vision (unscheduled) |
 | Runtime | A broke citizen's happiness and health fall over the following days (D9) | Any step; economy direction §9 |
-| Runtime | The under-construction fix in game | Step 0 |
+| Runtime | Step 1 and the under-construction fix in game | Step 0 |
 
 Details: [economy direction §9.1](visions/economy-direction-2026-11-22.md#91-ghidra-queue)
 and [construction vision §9](visions/vision-private-construction.md). One

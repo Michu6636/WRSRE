@@ -27,8 +27,8 @@ The ordered plan of future tasks is in [`../ROADMAP.md`](../ROADMAP.md).
 
 - [active/2026-11-22-remove-market-multiplier-and-procurement.md](active/2026-11-22-remove-market-multiplier-and-procurement.md) —
   **CURRENT.** Economy code step 1: native prices only, no state procurement.
-  Host tests and CI pass; the owner's in-game run confirms it. Waiting for the
-  merge of PR #100.
+  Host tests and CI pass; in-game acceptance check and merge of PR #100
+  pending (roadmap step 0).
 - [active/2026-11-22-private-do-under-construction.md](active/2026-11-22-private-do-under-construction.md) —
   **CURRENT.** Bug fix on the same PR: private DOs no longer target or charge
   for buildings under construction. Host tests and CI pass; in-game check

@@ -1047,7 +1047,8 @@ Each item is a separate engineering task with its own task record
 (`docs/tasks/TEMPLATE.md`).
 
 **Status, 2026-11-22.** Code step 1 is implemented in PR #100. Host tests and
-the CI Windows build pass, and the owner checked it in game. It covers the
+the CI Windows build pass; the in-game acceptance check is still pending
+(roadmap step 0). It covers the
 market-book part of item 1, all of item 2, and the procurement part of
 item 3. See the
 [task record](../tasks/active/2026-11-22-remove-market-multiplier-and-procurement.md).
