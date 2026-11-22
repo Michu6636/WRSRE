@@ -127,15 +127,16 @@ typedef struct TsmResourcePricingApi {
     // P* are the native getPrice answers for the provider's own
     // getFood/getMeat/getClothes records; Q* are the [cpi_basket]
     // quantities (tons/day); dailyRent is the injected per-day rent average,
-    // or the active currency's documented default when injectedDailyRent
-    // <= 0: default_daily_rent (RUB) or default_daily_rent_usd (USD). No rate
-    // is applied to either value (D35).
+    // or the active currency's REQUIRED default when injectedDailyRent <= 0:
+    // default_daily_rent (RUB) or default_daily_rent_usd (USD). No rate is
+    // applied to either value (D35).
     //
     // Returns 0.0f when the basket is UNAVAILABLE: no world, an unreadable
-    // record, any of the three goods without a native price, or USD mode with
-    // no usable default_daily_rent_usd. There is no default basket (D34).
-    // Callers must show UNAVAILABLE and pause what depends on CPI rather than
-    // substituting a number.
+    // record, any of the three goods without a native price, or a missing,
+    // 0, negative, NaN or implausible rent key in EITHER currency. Both keys
+    // are required and behave the same way; 0 is not a "no rent" option.
+    // There is no default basket (D34). Callers must show UNAVAILABLE and
+    // pause what depends on CPI rather than substituting a number.
     //
     // Pure query: reads records and config. Safe from any thread.
     float (*getCpiDailyBasket)(float injectedDailyRent);

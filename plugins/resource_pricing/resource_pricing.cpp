@@ -60,20 +60,21 @@ static bool WarnOnce(const char* name, int currency)
 //   clothes  0.0005 t - calibrated clothing wear
 // The rent term is TWO documented INI constants, never one number divided by
 // a rate (D35):
-//   default_daily_rent      0.33 RUB/day (10.0 RUB/month / 30, enterprise_base)
-//   default_daily_rent_usd  0.33 USD/day (native USD prices are the same size
-//                           as RUB prices, usually 10-30% higher; no 50:1)
-// Both are ordinary constants that step 7 re-bases. In USD mode a missing or
-// invalid USD key makes the basket UNAVAILABLE; it is never replaced by the
-// RUB figure or by a divisor. Missing goods prices do the same.
+//   default_daily_rent      RUB/day (shipped 0.33 = 10.0 RUB/month / 30)
+//   default_daily_rent_usd  USD/day (shipped 0.33, the same size as RUB;
+//                           native USD prices are usually 10-30% higher)
+// Both keys are REQUIRED. There is no compiled-in default: a missing key, 0,
+// a negative value, NaN or an implausible value makes the basket UNAVAILABLE
+// in EITHER currency, and the log names the offending key. Neither key is
+// ever replaced by the other or by a divisor. Missing goods prices do the same.
 static float g_cpiFoodTons       = 0.0020f;
 static float g_cpiMeatTons       = 0.0006f;
 static float g_cpiClothesTons    = 0.0005f;
-static float g_cpiDefaultRent    = 0.33f;
-static float g_cpiDefaultRentUsd = 0.0f;   // 0 = key absent/invalid: USD UNAVAILABLE
+static float g_cpiDefaultRent    = 0.0f;   // no compiled-in default
+static float g_cpiDefaultRentUsd = 0.0f;   // no compiled-in default
 
-static bool g_cpiWarned            = false;
-static bool g_cpiUsdRentWarned     = false;
+static bool        g_cpiWarned        = false;
+static const char* g_cpiRentWarnedKey = nullptr;
 
 static const TsmCurrencyApi* g_currency = nullptr;   // CPI prices in the active currency
 
@@ -172,29 +173,35 @@ static float GetPriceImpl(void* resRecord, int currency)
 //
 // Q* are the [cpi_basket] tonnes/day quantities (calibrated to the
 // engine's own demand ladder - docs/CPI_Survival_Basket_Investigation.md
-// S1/S2). injectedDailyRent > 0 replaces the active currency's default
-// (default_daily_rent or default_daily_rent_usd, D35) so a Level 2 caller -
-// taxes - can inject the true enterprise_base rent average instead.
+// S1/S2). injectedDailyRent > 0 replaces the active currency's required
+// default (default_daily_rent or default_daily_rent_usd, D35) so a Level 2
+// caller - taxes - can inject the true enterprise_base rent average instead.
 //
-// Returns 0.0f when the basket is UNAVAILABLE (D34): no world, a fault, or
-// any of the three goods without a native price. It never returns a default
-// basket. Pure query: no subscriptions, no state. POD-only so the __try
-// frame stays C2712-clean (no locals with unwinding).
+// Returns 0.0f when the basket is UNAVAILABLE (D34): no world, a fault, any
+// of the three goods without a native price, or a missing/0/negative/NaN rent
+// key. It never returns a default basket. Pure query: no subscriptions, no
+// state. POD-only so the __try frame stays C2712-clean (no locals with
+// unwinding).
 static float GetCpiDailyBasketImpl(float injectedDailyRent)
 {
     const int cur = TsmCurrencyActive(g_currency);
 
-    // D35: injected rent wins; otherwise the active currency's own documented
-    // default. A missing USD key is UNAVAILABLE, not the RUB number.
+    // D35: injected rent wins; otherwise the active currency's own REQUIRED
+    // key. A missing/invalid key is UNAVAILABLE in either currency, and the
+    // log names that key - never the other currency's number, never 0.
     const wrsre::pricing::CpiRent rentChoice =
         wrsre::pricing::ChooseCpiRent(cur, injectedDailyRent,
                                       g_cpiDefaultRent, g_cpiDefaultRentUsd);
     if (!rentChoice.available) {
-        if (rentChoice.usdKeyMissing && !g_cpiUsdRentWarned) {
-            g_cpiUsdRentWarned = true;
-            Logf("resource_pricing  ERROR CPI UNAVAILABLE  \"default_daily_rent_usd\" "
-                 "is missing or invalid; the USD basket has no rent and is "
-                 "UNAVAILABLE (D34/D35)");
+        if (rentChoice.missingKey &&
+            (!g_cpiRentWarnedKey ||
+             strcmp(g_cpiRentWarnedKey, rentChoice.missingKey) != 0)) {
+            g_cpiRentWarnedKey = rentChoice.missingKey;
+            Logf("resource_pricing  ERROR CPI UNAVAILABLE  \"%s\" is missing or "
+                 "invalid (0, negative, NaN or implausible); the %s basket has "
+                 "no rent and is UNAVAILABLE (D34/D35)",
+                 rentChoice.missingKey,
+                 (cur == TSM_CURRENCY_USD) ? "USD" : "RUB");
         }
         return 0.0f;
     }
@@ -279,23 +286,23 @@ static void ReadSettings(void)
         float f = (float)atof(v);
         if (f > 0.0f && f <= 1.0f && f == f) g_cpiClothesTons = f;
     }
-    g_cpiDefaultRent = 0.33f;
+    // D35: BOTH keys are required and behave the same way. No compiled-in
+    // default: a missing key, 0, a negative value, NaN or an implausible
+    // value leaves the field at 0.0f, and ChooseCpiRent makes the basket
+    // UNAVAILABLE with one log line naming that key.
+    g_cpiDefaultRent = 0.0f;
     if (H->configString(ini, "cpi_basket", "default_daily_rent",
                         v, sizeof(v), "") && v[0]) {
         float f = (float)atof(v);
-        if (f >= 0.0f && f <= 10000.0f && f == f) g_cpiDefaultRent = f;
+        if (f > 0.0f && f <= 10000.0f && f == f) g_cpiDefaultRent = f;
     }
-
-    // D35: USD has its own documented default. There is no shipped fallback
-    // here on purpose: a missing key in USD mode must make the basket
-    // UNAVAILABLE rather than silently reuse the RUB rent.
     g_cpiDefaultRentUsd = 0.0f;
     if (H->configString(ini, "cpi_basket", "default_daily_rent_usd",
                         v, sizeof(v), "") && v[0]) {
         float f = (float)atof(v);
-        if (f >= 0.0f && f <= 10000.0f && f == f) g_cpiDefaultRentUsd = f;
+        if (f > 0.0f && f <= 10000.0f && f == f) g_cpiDefaultRentUsd = f;
     }
-    g_cpiUsdRentWarned = false;
+    g_cpiRentWarnedKey = nullptr;
 }
 
 // ---------------------------------------------------------------- lifecycle

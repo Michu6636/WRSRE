@@ -61,7 +61,7 @@ the owner yet; *hypothesis* = needs verification before use.
 | D32 | **Unpriced shop sale: native give, no charge, loud error.** When a shop good has no native price (in practice an unproduced mod good, or the moments after a load), the game hands out the good as in vanilla and no money moves. It is logged as `ERROR UNPRICED` and counted for the Almanac. Owner answer 2026-11-22. | Decided; code step 2 |
 | D33 | **Unpriced business bill: refuse the whole transaction, loud error.** A private construction estimate, wholesale delivery bill or B2B freight bill that includes a resource with no native price is refused as a whole, never billed partly. For example, private construction does not claim the site. Owner answer 2026-11-22. | Decided; code step 2 |
 | D34 | **CPI unavailable: pause what depends on it.** When the cost-of-living basket cannot be computed (food, meat or clothes has no price), wealth-class demand scaling is skipped that day, the runway and CPI show `UNAVAILABLE`, and the bank refuses new credit until CPI is available again. Owner answer 2026-11-22. | Decided; code step 2 |
-| D35 | **The USD CPI default rent is its own INI constant.** `[cpi_basket]` carries `default_daily_rent` (RUB) and `default_daily_rent_usd` (USD), both shipped as 0.33. Native dollar prices are of the same size as rouble prices (usually 10–30 % higher); a dollar is not a rouble ÷ 50, and nothing divides either rent. In USD mode a missing or invalid `default_daily_rent_usd` makes the basket UNAVAILABLE, never the RUB figure. Owner answer 2026-11-22 (after correcting the divisor assumption). | Decided; code step 2 |
+| D35 | **The USD CPI default rent is its own INI key.** The owner decided that (a) USD gets its own `default_daily_rent_usd` setting and (b) a dollar is about the same size as a rouble, not a rouble ÷ 50. The shipped **value 0.33** was proposed in the reviewer comment following the owner's "more or less the same"; the owner has **not chosen or confirmed it** — **open: owner may tune it**. Both `default_daily_rent` (RUB) and `default_daily_rent_usd` (USD) are required and behave the same way: missing, 0, negative, NaN or implausible means the basket is UNAVAILABLE and one log line names the key. 0 is rejected; there is no "no rent" setting. No rate is applied to either value. | Decided (structure and same-size relation); value open |
 
 ---
 
@@ -1062,8 +1062,9 @@ item 3. See the
 on `arena/c676e273-wrsre` (PR #101), together with D32–D34 in their consumers.
 Host tests and the Windows CI build pass; independent review and the in-game
 check are still to do. `resource_pricing` is now v6 and returns `0.0f` for `UNPRICED` and for
-an unavailable CPI basket. D35 gives RUB and USD their own documented default
-rent (`0.33` each) instead of dividing one number. The 0.70 `wholesale_ratio`, foreign restock and
+an unavailable CPI basket. D35 gives RUB and USD their own required rent key
+(both shipped at 0.33, a reviewer-proposed value the owner may tune) instead
+of dividing one number. The 0.70 `wholesale_ratio`, foreign restock and
 `private_logistics` billing defaults remain open for step 3. See the
 [task record](../tasks/active/2026-11-22-remove-fallbacks-and-made-up-data.md).
 

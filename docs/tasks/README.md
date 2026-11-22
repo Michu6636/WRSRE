@@ -26,7 +26,7 @@ source. None of them is the current goal except the 2026-11-22 records.
 The ordered plan of future tasks is in [`../ROADMAP.md`](../ROADMAP.md).
 
 - [active/2026-11-22-remove-fallbacks-and-made-up-data.md](active/2026-11-22-remove-fallbacks-and-made-up-data.md) —
-  **CURRENT.** Roadmap step 2 / D32–D34: no fallback prices, no default CPI
+  **CURRENT.** Roadmap step 2 / D32–D35: no fallback prices, no default CPI
   basket, `UNPRICED`/`UNAVAILABLE` made visible, Almanac sample rows removed.
   Host tests and the Windows CI build pass; independent review and the owner's in-game check are pending.
 - [active/2026-11-22-remove-market-multiplier-and-procurement.md](active/2026-11-22-remove-market-multiplier-and-procurement.md) —
