@@ -10,6 +10,7 @@ namespace almanac {
 struct TabRow {
     char label[64]{};
     char value[64]{};
+    bool warn = false;   // an error fact (D8): drawn in warning colour
 };
 
 struct TabData {

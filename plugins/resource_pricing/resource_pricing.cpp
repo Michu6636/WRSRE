@@ -4,11 +4,11 @@
 // implementation: a linear resource-name scan, four direct reads of the
 // game object's shop-good cache, a native-price lookup, and the CPI basket.
 //
-// v6 (2026-11-22 economy direction step 2, D8/D32/D33/D34): the fallback
+// v6 (2026-11-22 economy direction step 2, D8/D32/D33/D34/D35): the fallback
 // price table, the `default` price and every usd divisor are gone. A resource
 // with no native price is UNPRICED and answers 0.0f. The CPI basket answers
-// 0.0f when food, meat or clothes cannot be priced. Nothing here invents a
-// number.
+// 0.0f when food, meat or clothes cannot be priced, and has separate RUB/USD
+// default rents instead of one divided number. Nothing here invents a number.
 //
 // No hooks. No subscriptions. No state that survives across a world
 // load. Every call re-reads what it needs from the game object or from
@@ -20,6 +20,7 @@
 #include "../../src/game_world.h"
 #include "../../src/price_guards.h"
 #include "../../src/resource_pricing_api.h"
+#include "cpi_rent.h"
 
 // ---------------------------------------------------------------- config
 
@@ -57,17 +58,22 @@ static bool WarnOnce(const char* name, int currency)
 //   meat     0.0006 t - the live probe value for the demand minted at
 //                       RVA 0x83817A (v1.1.1.9)
 //   clothes  0.0005 t - calibrated clothing wear
-// default_daily_rent is a documented INI constant (0.33 = 10.0 RUB/month /
-// 30, enterprise_base's residential_rent). It is not a fallback price and
-// does not scale by currency: in USD mode it is as written until step 7
-// re-bases it. Missing goods prices make the basket UNAVAILABLE, never the
-// default rent alone.
-static float g_cpiFoodTons    = 0.0020f;
-static float g_cpiMeatTons    = 0.0006f;
-static float g_cpiClothesTons = 0.0005f;
-static float g_cpiDefaultRent = 0.33f;
+// The rent term is TWO documented INI constants, never one number divided by
+// a rate (D35):
+//   default_daily_rent      0.33 RUB/day (10.0 RUB/month / 30, enterprise_base)
+//   default_daily_rent_usd  0.33 USD/day (native USD prices are the same size
+//                           as RUB prices, usually 10-30% higher; no 50:1)
+// Both are ordinary constants that step 7 re-bases. In USD mode a missing or
+// invalid USD key makes the basket UNAVAILABLE; it is never replaced by the
+// RUB figure or by a divisor. Missing goods prices do the same.
+static float g_cpiFoodTons       = 0.0020f;
+static float g_cpiMeatTons       = 0.0006f;
+static float g_cpiClothesTons    = 0.0005f;
+static float g_cpiDefaultRent    = 0.33f;
+static float g_cpiDefaultRentUsd = 0.0f;   // 0 = key absent/invalid: USD UNAVAILABLE
 
-static bool g_cpiWarned = false;
+static bool g_cpiWarned            = false;
+static bool g_cpiUsdRentWarned     = false;
 
 static const TsmCurrencyApi* g_currency = nullptr;   // CPI prices in the active currency
 
@@ -178,9 +184,21 @@ static float GetCpiDailyBasketImpl(float injectedDailyRent)
 {
     const int cur = TsmCurrencyActive(g_currency);
 
-    float rent = injectedDailyRent;
-    if (!(rent > 0.0f) || !(rent == rent))
-        rent = g_cpiDefaultRent;
+    // D35: injected rent wins; otherwise the active currency's own documented
+    // default. A missing USD key is UNAVAILABLE, not the RUB number.
+    const wrsre::pricing::CpiRent rentChoice =
+        wrsre::pricing::ChooseCpiRent(cur, injectedDailyRent,
+                                      g_cpiDefaultRent, g_cpiDefaultRentUsd);
+    if (!rentChoice.available) {
+        if (rentChoice.usdKeyMissing && !g_cpiUsdRentWarned) {
+            g_cpiUsdRentWarned = true;
+            Logf("resource_pricing  ERROR CPI UNAVAILABLE  \"default_daily_rent_usd\" "
+                 "is missing or invalid; the USD basket has no rent and is "
+                 "UNAVAILABLE (D34/D35)");
+        }
+        return 0.0f;
+    }
+    const float rent = rentChoice.value;
 
     float goods = -1.0f;                 // negative = fault sentinel
     __try {
@@ -267,6 +285,17 @@ static void ReadSettings(void)
         float f = (float)atof(v);
         if (f >= 0.0f && f <= 10000.0f && f == f) g_cpiDefaultRent = f;
     }
+
+    // D35: USD has its own documented default. There is no shipped fallback
+    // here on purpose: a missing key in USD mode must make the basket
+    // UNAVAILABLE rather than silently reuse the RUB rent.
+    g_cpiDefaultRentUsd = 0.0f;
+    if (H->configString(ini, "cpi_basket", "default_daily_rent_usd",
+                        v, sizeof(v), "") && v[0]) {
+        float f = (float)atof(v);
+        if (f >= 0.0f && f <= 10000.0f && f == f) g_cpiDefaultRentUsd = f;
+    }
+    g_cpiUsdRentWarned = false;
 }
 
 // ---------------------------------------------------------------- lifecycle
@@ -289,16 +318,12 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
         return 1;
     }
 
-    // v6 ABI: publish TWO views. v1 is the unchanged price-only prefix
-    // (through getPrice, under the same UNPRICED contract); v6 is the full
-    // struct. The removed v2/v3/v4/v5 layouts are deliberately not published.
-    static TsmResourcePricingApi kApiV1;
-    memcpy(&kApiV1, &kApi, sizeof(kApiV1));
-    kApiV1.structSize = (unsigned)offsetof(TsmResourcePricingApi,
-                                           getCpiDailyBasket);
-    H->provide(TSM_SERVICE_RESOURCE_PRICING,
-               TSM_RESOURCE_PRICING_VERSION_V1, &kApiV1);
-
+    // v6 ABI: one full view. The v1 prefix is deliberately NOT published: its
+    // old contract promised a non-zero price, so a pre-step-2 consumer would
+    // read UNPRICED 0.0f as "free" and move no money. Such a consumer now
+    // fails to resolve the service and must degrade as it already does when
+    // resource_pricing is absent. The removed v2/v3/v4/v5 layouts are not
+    // published either.
     H->provide(TSM_SERVICE_RESOURCE_PRICING,
                TSM_RESOURCE_PRICING_VERSION, &kApi);
     return 0;
@@ -329,17 +354,20 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
          "UNPRICED (no fallback table, no default)");
 
     // v3 (Task 7): the CPI survival basket, priced in the active currency
-    // with the neutral default rent (injectedDailyRent = 0). This line is
-    // informational: a world may not be loaded yet, in which case the
-    // basket is reported UNAVAILABLE and no number is invented.
+    // with that currency's documented default rent (injectedDailyRent = 0).
+    // This line is informational: a world may not be loaded yet, in which
+    // case the basket is reported UNAVAILABLE and no number is invented.
     {
         const int cur = TsmCurrencyActive(g_currency);
+        const wrsre::pricing::CpiRent rentChoice =
+            wrsre::pricing::ChooseCpiRent(cur, 0.0f,
+                                          g_cpiDefaultRent, g_cpiDefaultRentUsd);
         const float cpi = GetCpiDailyBasketImpl(0.0f);
         if (cpi > 0.0f) {
             Logf("resource_pricing    cpi basket: food %.4f t, meat %.4f t, "
                  "clothes %.4f t, rent %.3f %s/day -> %.3f %s/day",
                  g_cpiFoodTons, g_cpiMeatTons, g_cpiClothesTons,
-                 (double)g_cpiDefaultRent, TsmCurrencySymbol(g_currency),
+                 (double)rentChoice.value, TsmCurrencySymbol(g_currency),
                  (double)cpi, TsmCurrencySymbol(g_currency));
         } else {
             Logf("resource_pricing    cpi basket: UNAVAILABLE (no world/prices "

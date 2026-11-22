@@ -178,16 +178,18 @@ bool IsWorldLoaded()
     return !s_uiOverlay && !s_simClock;
 }
 
-void AppendRow(TabData& tab, const char* label, const char* fmt, ...)
+TabRow* AppendRow(TabData& tab, const char* label, const char* fmt, ...)
 {
-    if (tab.count >= TabData::kMaxRows) return;
+    if (tab.count >= TabData::kMaxRows) return nullptr;
     TabRow& row = tab.rows[tab.count++];
+    row.warn = false;
     std::snprintf(row.label, sizeof(row.label), "%s", label ? label : "");
     va_list ap;
     va_start(ap, fmt);
     std::vsnprintf(row.value, sizeof(row.value), fmt, ap);
     va_end(ap);
     row.value[sizeof(row.value) - 1] = '\0';
+    return &row;
 }
 
 const TsmSimClockApi*       g_svcClock      = nullptr;
@@ -652,10 +654,15 @@ const PanelModel* SampleLiveModel(bool worldLoaded)
         }
     }
     if (TsmCitizenRetailHasUnpriced(s_retail)) {
-        // D32: a sale with no native price gave the good for free. The count
-        // is the Almanac's record of how often that happened this session.
-        AppendRow(econ, "Unpriced shop sales", "%u this session",
-                  s_retail->getUnpricedSaleCount());
+        // D32/D8: a sale with no native price gave the good for free. The
+        // count is the Almanac's record of how often that happened this
+        // session; any count above zero is an error fact and is drawn in
+        // warning colour.
+        const unsigned unpriced = s_retail->getUnpricedSaleCount();
+        if (TabRow* row = AppendRow(econ, "Unpriced shop sales",
+                                    "%u this session", unpriced)) {
+            row->warn = unpriced > 0;
+        }
     }
     if (s_currency) {
         AppendRow(econ, "Active currency", "%s", sym);

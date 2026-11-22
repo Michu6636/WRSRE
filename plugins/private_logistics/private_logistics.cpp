@@ -452,6 +452,22 @@ static void BuildingName(void* b, char* out, size_t n)
 static char g_unpricedLogged[16][LOGI_UNPRICED_NAME];
 static int  g_unpricedLoggedCount = 0;
 
+// The delivery-level detail line is latched per resource too, so a repeating
+// unpriced delivery does not print the same buyer/resource pair every time.
+static char g_b2bUnpricedLogged[16][LOGI_UNPRICED_NAME];
+static int  g_b2bUnpricedLoggedCount = 0;
+
+static bool FirstB2bUnpricedDetail(const char* name)
+{
+    if (!name || !name[0]) name = "?";
+    for (int i = 0; i < g_b2bUnpricedLoggedCount; i++)
+        if (strcmp(g_b2bUnpricedLogged[i], name) == 0) return false;
+    if (g_b2bUnpricedLoggedCount >= 16) return false;
+    strncpy_s(g_b2bUnpricedLogged[g_b2bUnpricedLoggedCount++],
+              sizeof(g_b2bUnpricedLogged[0]), name, _TRUNCATE);
+    return true;
+}
+
 static double UnitPrice(void* res)
 {
     if (!res || !TsmIsValidGamePtr(res)) return 0.0;
@@ -825,9 +841,7 @@ static int DetourTransfer(void* game, void* p2, unsigned mode, void* res,
                 EnterCriticalSection(&g_lock);
                 ++g_b2bUnpricedCount;
                 LeaveCriticalSection(&g_lock);
-                static bool loggedOnce = false;
-                if (!loggedOnce) {
-                    loggedOnce = true;
+                if (FirstB2bUnpricedDetail(resourceName)) {
                     Logf("[B2B GOODS] ERROR UNPRICED  Buyer \"%s\" delivery of "
                          "%s has a lot with no native price - the whole "
                          "delivery is refused, nothing is billed (D33)",

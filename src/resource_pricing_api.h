@@ -57,20 +57,18 @@ extern "C" {
 // removed. getPrice returns 0.0f for a resource with no native price
 // (UNPRICED) and getCpiDailyBasket returns 0.0f when the basket cannot be
 // priced. A v5 consumer would misinterpret 0.0f as a real price, so v6 is
-// the only full view published; the v1 prefix remains available for callers
-// that only need the record lookups and getPrice.
+// the only view published AT ALL.
 //
 // Removing fields changes the layout after getPrice, so v6 is a NEW layout,
-// not an append: getCpiDailyBasket sits directly after getPrice.
-// The provider publishes two views:
-//   v1  prefix through getPrice (record lookups + getPrice with the same
-//       UNPRICED contract);
-//   v6  the full struct below.
-// The old v2/v3/v4/v5 layouts are no longer published. A stale consumer built
-// against them fails to resolve the service and must degrade as it already
-// does when resource_pricing is absent. build.bat rebuilds every in-tree
-// consumer against this header.
+// not an append: getCpiDailyBasket sits directly after getPrice. The old
+// v1/v2/v3/v4/v5 layouts are not published. v1 is included in that list
+// because its old contract promised a non-zero price: a pre-step-2 consumer
+// would read UNPRICED 0.0f as "free". A stale consumer now fails to resolve
+// the service and must degrade as it already does when resource_pricing is
+// absent. build.bat rebuilds every in-tree consumer against this header.
 #define TSM_RESOURCE_PRICING_VERSION    6u
+// Legacy probe name, kept so consumers can still ask. Version 6 does NOT
+// publish it: its old non-zero contract is incompatible with UNPRICED.
 #define TSM_RESOURCE_PRICING_VERSION_V1 1u
 
 typedef struct TsmResourcePricingApi {
@@ -129,13 +127,15 @@ typedef struct TsmResourcePricingApi {
     // P* are the native getPrice answers for the provider's own
     // getFood/getMeat/getClothes records; Q* are the [cpi_basket]
     // quantities (tons/day); dailyRent is the injected per-day rent average,
-    // or the documented [cpi_basket] default_daily_rent when
-    // injectedDailyRent <= 0.
+    // or the active currency's documented default when injectedDailyRent
+    // <= 0: default_daily_rent (RUB) or default_daily_rent_usd (USD). No rate
+    // is applied to either value (D35).
     //
     // Returns 0.0f when the basket is UNAVAILABLE: no world, an unreadable
-    // record, or any of the three goods without a native price. There is no
-    // default basket (D34). Callers must show UNAVAILABLE and pause what
-    // depends on CPI rather than substituting a number.
+    // record, any of the three goods without a native price, or USD mode with
+    // no usable default_daily_rent_usd. There is no default basket (D34).
+    // Callers must show UNAVAILABLE and pause what depends on CPI rather than
+    // substituting a number.
     //
     // Pure query: reads records and config. Safe from any thread.
     float (*getCpiDailyBasket)(float injectedDailyRent);
@@ -144,7 +144,8 @@ typedef struct TsmResourcePricingApi {
 // --- CPI consumer guard -----------------------------------------------------
 //
 // structSize-prefix guard: true when the provider carries getCpiDailyBasket
-// (the v6 view). A v1 view ends at getPrice, so this is false for it.
+// (the v6 view). A hand-built v1 prefix ends at getPrice, so this is false
+// for it; the provider itself no longer publishes v1.
 static inline int TsmPricingHasCpi(const TsmResourcePricingApi* api)
 {
     return api &&

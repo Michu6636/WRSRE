@@ -29,6 +29,15 @@ class NoSyntheticDataTest(unittest.TestCase):
         self.assertIn('NO DATA: live service unavailable', header)
         self.assertNotIn('Synthetic placeholder values', header)
 
+    def test_unpriced_sales_are_an_error_fact(self):
+        hook = (PLUGIN / 'graphics_hook.cpp').read_text(encoding='utf-8')
+        self.assertIn('row->warn = unpriced > 0', hook)
+        header = (PLUGIN / 'almanac_panel_view.h').read_text(encoding='utf-8')
+        self.assertIn('bool warn = false', header)
+        view = (PLUGIN / 'almanac_panel_view.cpp').read_text(encoding='utf-8')
+        self.assertIn('data.rows[i].warn ? kWarn : kInk', view)
+        self.assertIn('data.rows[i].warn ? kWarn : kQuiet', view)
+
     def test_testing_doc_no_longer_accepts_synthetic_rows(self):
         testing = (PLUGIN / 'TESTING.md').read_text(encoding='utf-8')
         self.assertIn('NO DATA: <service> unavailable', testing)

@@ -1048,9 +1048,9 @@ static double NativeCostForBuilding(void* b, const char** failOut)
             const float pActive = (cur == TSM_CURRENCY_USD) ? pUsd : pRub;
             if (!TsmNativePriceUsable(pActive))
             {
-                Logf("private_construction  ERROR UNPRICED  construction "
-                     "material \"%s\" has no native price - the whole "
-                     "estimate is refused (D33)", rname);
+                NoteUnpricedMaterial(rname, "construction material has no "
+                                            "native price - the whole estimate "
+                                            "is refused (D33)");
                 if (failOut) *failOut = "unpriced construction material";
                 return 0.0;
             }
@@ -1807,7 +1807,11 @@ static void RunConstructionPass(float dayDelta)
                     if (g_probe) {
                         wchar_t name[128] = {0};
                         GetSiteName(b, name, 128);
-                        if (g_lastNativeFail)
+                        if (g_lastNativeFail &&
+                            strcmp(g_lastNativeFail, "unpriced construction material") == 0)
+                            Logf("private_construction  [WAITING] \"%ls\" estimate refused: %s - no site is claimed; opening the panel cannot price a material the engine has not priced",
+                                 name, g_lastNativeFail);
+                        else if (g_lastNativeFail)
                             Logf("private_construction  [WAITING] \"%ls\" native unavailable: %s - open its construction panel once",
                                  name, g_lastNativeFail);
                         else if (g_lastLegacyFail)

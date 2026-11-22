@@ -138,9 +138,11 @@ void DrawLiveTable(const TabData& data, const char* service)
     for (int i = 0; i < data.count; ++i) {
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
-        ImGui::TextColored(kInk, "%s", data.rows[i].label);
+        const ImVec4 labelCol = data.rows[i].warn ? kWarn : kInk;
+        ImGui::TextColored(labelCol, "%s", data.rows[i].label);
         ImGui::TableSetColumnIndex(1);
-        ImGui::TextColored(kQuiet, "%s", data.rows[i].value);
+        const ImVec4 valueCol = data.rows[i].warn ? kWarn : kQuiet;
+        ImGui::TextColored(valueCol, "%s", data.rows[i].value);
     }
     ImGui::EndTable();
 }

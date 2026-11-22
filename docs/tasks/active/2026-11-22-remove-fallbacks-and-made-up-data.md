@@ -25,6 +25,9 @@
   - D34 in `citizen_retail`, `republic_bank` and `taxes`: no default basket;
     demand scaling is skipped that day, CPI/runway show `UNAVAILABLE`, and the
     bank refuses new credit until CPI returns.
+  - D35: `[cpi_basket]` carries separate RUB (`default_daily_rent`) and USD
+    (`default_daily_rent_usd`) defaults, both 0.33; nothing divides either. A
+    missing USD key makes the USD basket UNAVAILABLE.
   - `almanac_overlay_dev`: no synthetic rows; `NO DATA: <service>
     unavailable` in warning colour.
   - New host tests under `tests/resource_pricing`, `tests/citizen_retail`,
@@ -80,7 +83,7 @@
 These are the step-2 call sites listed in `docs/ROADMAP.md` and the economy
 direction. Each row is the finding as written there, not a new claim.
 
-| Finding ID | Source path/line/address | Exact statement | Initial status |
+| Finding ID | Source path/line/address | Exact statement | Initial status (pre-change) |
 |---|---|---|---|
 | F1 | `resource_pricing.ini` / `resource_pricing.cpp` | `[fallback_prices]`, `[fallback_prices_usd]`, `default`, `default_usd` and `usd_divisor` invent prices. | open |
 | F2 | `resource_pricing.cpp` `GetCpiDailyBasketImpl` | A faulted/unpriced basket falls back to 2.15 RUB/day. | open |
@@ -94,6 +97,11 @@ direction. Each row is the finding as written there, not a new claim.
 | F10 | `republic_bank.cpp` `CurrentEconomicScale` | Missing CPI substitutes a neutral/divisor scale and still lends. | open |
 | F11 | `taxes.cpp` City Hall macro rows | CPI/poverty show `n/a` and the log claims a 2.15 default. | open |
 | F12 | `almanac_overlay_dev/almanac_panel_view.cpp` | `kEconomyRows`/`kLabourRows`/`kLogisticsRows` and `DrawTable` show synthetic values. | open |
+| F13 | `resource_pricing.cpp` `GetCpiDailyBasketImpl` | USD mode used the RUB `default_daily_rent` without conversion (D35 review). | open |
+| F14 | `resource_pricing.cpp` `TsmPluginInit` | Publishing the v1 prefix lets a pre-step-2 consumer read UNPRICED `0.0f` as free. | open |
+| F15 | `private_construction.cpp` `NativeCostForBuilding` / `[WAITING]` | UNPRICED logs every pass and the waiting line tells the player to open a panel that cannot help. | open |
+| F16 | `almanac_overlay_dev/graphics_hook.cpp` | The “Unpriced shop sales” row is drawn in normal colour. | open |
+| F17 | `private_logistics.cpp` B2B goods refusal | Only the first refused delivery is ever described (session-wide bool). | open |
 
 ## Gate status
 
@@ -124,6 +132,14 @@ recorded as **not available**, not passed. Static review below is a self-review.
 | F10 | high | Neutral scale/lending without CPI | fixed | `CurrentEconomicScale` returns 0.0f; `requestCreditDrawImpl` and `onDay` refuse; daily/save logs say UNAVAILABLE | `tests/republic_bank/test_credit_without_cpi.py` (executes the scale) | no native loan run |
 | F11 | low | `n/a` and a 2.15 log claim | fixed | both rows say `UNAVAILABLE (no CPI)`; startup log says UNAVAILABLE | `tests/taxes/test_cpi_unavailable.py` | source contract |
 | F12 | high | Synthetic Almanac rows | fixed | arrays and `DrawTable` removed; `DrawNoData` prints `NO DATA: <service> unavailable`; default notice changed | `tests/almanac_overlay_dev/test_no_synthetic_data.py` | ImGui drawing needs external checkout |
+| F13 | medium | USD CPI rent reused the RUB constant | fixed | `cpi_rent.h` `ChooseCpiRent` selects `default_daily_rent_usd`; both ship as 0.33; a missing key answers 0.0f (UNAVAILABLE) | `tests/resource_pricing/test_no_fallbacks.py::test_usd_rent_uses_its_own_ini_key` | choice helper + INI, not a live basket |
+| F14 | medium | v1 prefix can be misread as free | fixed | v1 is no longer published; a pre-step-2 consumer now fails to resolve and degrades like a missing service | same suite, source assertion | mixed-install behaviour not executed |
+| F15 | low | construction log spam and misleading hint | fixed | native refusals go through `NoteUnpricedMaterial` (once per resource); `[WAITING]` says the estimate is refused and the panel cannot price an unpriced material | `tests/private_construction/test_unpriced_estimate.py` | source + extracted helper |
+| F16 | low | unpriced-sale row not emphasised | fixed | `TabRow::warn`; count > 0 draws label and value in `kWarn` | `tests/almanac_overlay_dev/test_no_synthetic_data.py` | drawing test needs ImGui |
+| F17 | low | B2B detail logged once per session | fixed | `FirstB2bUnpricedDetail` latches per resource; daily `unpriced=` still counts every refusal | source review | no live delivery run |
+
+All twelve original rows and the five review follow-ups (F13–F17) are resolved;
+the `Initial status` column records the state before this change.
 
 ## Native claim evidence
 
@@ -139,6 +155,7 @@ basket quantities) are unchanged from step 1 and the economy direction.
 | D32 gate | `python3 tests/citizen_retail/test_unpriced_sale.py` | 0 | terminal | compiles the production policy header |
 | D33 estimate | `python3 tests/private_construction/test_unpriced_estimate.py` | 0 | terminal | executes extracted `PriceOne` |
 | D34 bank | `python3 tests/republic_bank/test_credit_without_cpi.py` | 0 | terminal | executes extracted `CurrentEconomicScale` |
+| D35 rent choice | `python3 tests/resource_pricing/test_no_fallbacks.py` | 0 | terminal | compiles and runs `ChooseCpiRent`; USD key missing answers UNAVAILABLE |
 | Almanac D8 | `python3 tests/almanac_overlay_dev/test_no_synthetic_data.py` | 0 | terminal | source contract only |
 | Enterprise bread-day | `python3 tests/enterprise_base/test_unpriced_bread.py` | 0 | terminal | source contract only |
 | Taxes CPI readout | `python3 tests/taxes/test_cpi_unavailable.py` | 0 | terminal | source contract only |
@@ -184,6 +201,7 @@ basket quantities) are unchanged from step 1 and the economy direction.
   - unpriced sale is free and counted → `tests/citizen_retail`
   - unpriced estimate refused whole → `tests/private_construction`
   - no CPI, no credit → `tests/republic_bank`
+  - separate RUB/USD rent defaults, no divisor → `tests/resource_pricing`
   - Almanac has no sample rows → `tests/almanac_overlay_dev`
   - enterprise bread-day and taxes readout → their source tests
 - **Ledger reconciliation:** all twelve imported findings fixed; review and

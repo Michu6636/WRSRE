@@ -200,7 +200,11 @@ Three separate tasks, each with its own task record.
   §11 item 14).
 - Remove every remaining `usd_divisor` and `*_usd` conversion, and re-base
   flat money constants on the CPI basket or native construction cost (D21;
-  §11 item 12).
+  §11 item 12). **The divisor was an assumption, not an exchange rate:** native
+  USD prices are of the same size as RUB prices (usually 10–30 % higher), so
+  `usd_divisor = 50` made USD-mode amounts about 50× too small. Do not replace
+  it with another rate. D35 already gives the CPI rent a separate USD constant;
+  re-base `reference_cpi_rub` on captured native prices here too.
 
 ### Step 8: calibration
 
