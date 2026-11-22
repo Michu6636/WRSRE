@@ -2,8 +2,8 @@
 
 ## Contract
 
-- **Status:** active — implementation and host tests complete; independent
-  review and the owner's in-game check are outstanding.
+- **Status:** active — implementation, host tests and the Windows CI build
+  complete; independent review and the owner's in-game check are outstanding.
 - **Task record:** `docs/tasks/active/2026-11-22-remove-fallbacks-and-made-up-data.md`
 - **Baseline:** branch `arena/c676e273-wrsre`, from `main` at `71e2fb0`
   (PR #100 merged). Working tree contains only this task's changes.
@@ -143,7 +143,7 @@ basket quantities) are unchanged from step 1 and the economy direction.
 | Enterprise bread-day | `python3 tests/enterprise_base/test_unpriced_bread.py` | 0 | terminal | source contract only |
 | Taxes CPI readout | `python3 tests/taxes/test_cpi_unavailable.py` | 0 | terminal | source contract only |
 | Bank ledger arithmetic | `g++ ... tests/republic_bank/test_ledger.cpp` | 0 | terminal | `BankEconomicScale` now answers 0, no fallback |
-| Windows build | not run | — | — | no MSVC in this environment; CI is the build gate |
+| Windows build | CI run 45078257208 (PR #101) | 0 | GitHub Actions `windows-plugins` artifact | MSVC + SEH job built every plugin and `wrsre.dll`; not run locally |
 | In-game check | not run | — | — | requires the owner's Windows game |
 
 ## Review rounds
@@ -188,8 +188,9 @@ basket quantities) are unchanged from step 1 and the economy direction.
   - enterprise bread-day and taxes readout → their source tests
 - **Ledger reconciliation:** all twelve imported findings fixed; review and
   runtime gates recorded separately.
-- **Checks actually run:** the full `find tests -name 'test_*.py'` loop (exit 0)
-  and the new tests individually.
+- **Checks actually run:** the full `find tests -name 'test_*.py'` loop (exit 0),
+  the new tests individually, and CI run 45078257208 (host C++, docs hygiene and
+  the Windows MSVC + SEH build all green).
 - **Independent coverage:** none available in this session.
 - **Remaining unknowns:** Windows compilation, in-game appearance of the
   `UNPRICED`/`NO DATA` messages, and whether any out-of-tree consumer still

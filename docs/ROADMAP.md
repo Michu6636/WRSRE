@@ -14,7 +14,7 @@ file in the same pull request (see "How to run a step").
 | Owner decisions | Complete for the economy: D1–D34 in [economy direction](visions/economy-direction-2026-11-22.md) §1. No owner questions are open there. |
 | **Code step 1**: native prices only, no state procurement | Done in [PR #100](https://github.com/Michu6636/WRSRE/pull/100). Host tests and the CI Windows build pass. The owner ran the build (save "Test 02"), but **no step-1 acceptance result is recorded yet**. [Task record](tasks/active/2026-11-22-remove-market-multiplier-and-procurement.md). |
 | **Bug fix**: private DOs served buildings under construction | Done in PR #100. Host tests and CI pass. **Not yet checked in game.** [Task record](tasks/active/2026-11-22-private-do-under-construction.md). |
-| **Code step 2**: no fallbacks or made-up data | Implemented on `arena/c676e273-wrsre` from `main` at `71e2fb0`. Host tests pass. Windows CI build, independent review and the in-game check are pending. [Task record](tasks/active/2026-11-22-remove-fallbacks-and-made-up-data.md). |
+| **Code step 2**: no fallbacks or made-up data | Implemented on `arena/c676e273-wrsre` from `main` at `71e2fb0` (PR #101). Host tests and the Windows CI build pass. Independent review and the in-game check are pending. [Task record](tasks/active/2026-11-22-remove-fallbacks-and-made-up-data.md). |
 | Construction vision (state and private offices) | Owner decisions O1–O11 recorded; **not scheduled** (D13). [Vision](visions/vision-private-construction.md). |
 | PR #100 | Merged into `main` on 2026-11-22 by the owner's instruction. It holds step 1, the bug fix and the docs above. The in-game checks of step 0 are still to do. |
 
@@ -61,11 +61,11 @@ This is the recommended order. The owner may reorder it. Item numbers
 
 ### Step 2: remove fallbacks and made-up data
 
-**Status 2026-11-22:** implemented on `arena/c676e273-wrsre`; all host tests
-pass. `resource_pricing` v6 removes the fallback/default/divisor settings and
-answers `UNPRICED`/`UNAVAILABLE`; D32–D34 are wired into the consumers; the
-Almanac has no sample rows. Windows CI build, independent review and the
-in-game acceptance check are still to do.
+**Status 2026-11-22:** implemented on `arena/c676e273-wrsre` (PR #101); all
+host tests and the Windows CI build pass. `resource_pricing` v6 removes the
+fallback/default/divisor settings and answers `UNPRICED`/`UNAVAILABLE`;
+D32–D34 are wired into the consumers; the Almanac has no sample rows.
+Independent review and the in-game acceptance check are still to do.
 [Task record](tasks/active/2026-11-22-remove-fallbacks-and-made-up-data.md).
 
 **Goal:** every number comes from the game, a player policy or a documented

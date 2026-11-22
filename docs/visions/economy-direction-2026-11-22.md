@@ -1058,9 +1058,9 @@ item 3. See the
 
 **Status, 2026-11-22 (step 2).** The rest of item 1 (fallback prices, `default`,
 `default_usd`, `usd_divisor`) and item 9 (Almanac sample rows) are implemented
-on `arena/c676e273-wrsre`, together with D32–D34 in their consumers. Host tests
-pass; the Windows CI build, independent review and the in-game check are still
-to do. `resource_pricing` is now v6 and returns `0.0f` for `UNPRICED` and for
+on `arena/c676e273-wrsre` (PR #101), together with D32–D34 in their consumers.
+Host tests and the Windows CI build pass; independent review and the in-game
+check are still to do. `resource_pricing` is now v6 and returns `0.0f` for `UNPRICED` and for
 an unavailable CPI basket. The 0.70 `wholesale_ratio`, foreign restock and
 `private_logistics` billing defaults remain open for step 3. See the
 [task record](../tasks/active/2026-11-22-remove-fallbacks-and-made-up-data.md).
