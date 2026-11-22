@@ -2,7 +2,7 @@
 
 ## Contract
 
-- **Status:** active (host tests pass; Windows build via CI; no in-game run)
+- **Status:** active (host tests and CI Windows build pass; no in-game run)
 - **Task record:** `docs/tasks/active/2026-11-22-private-do-under-construction.md`
 - **Baseline:** branch `arena/672c9ef4-wrsre` (PR #100), on top of economy
   step 1 (`50c293c`).
@@ -56,12 +56,12 @@
 |---|---|---|---|
 | host suite | `for f in $(find tests -name 'test_*.py'); do PYTHONPATH=. python3 $f; done` (repo root) | 0 failures | host only |
 | syntax | `g++ -std=c++17 -fsyntax-only -fno-exceptions -fpermissive -w -I/tmp/shim -include new private_logistics.cpp` | 29 shim errors before and after; none in new code | not MSVC |
-| Windows | CI `build-windows` on PR #100 | see PR | build only |
+| Windows | CI run 45067152128 on PR #100 (`03ef0bc`): hygiene, host tests, Windows (MSVC + SEH) | pass | build only, no in-game run |
 
 ## Separate validation statuses
 
 - **STATIC REVIEW:** self-review only.
-- **BUILD/TEST EVIDENCE:** PASS (host); Windows via CI.
+- **BUILD/TEST EVIDENCE:** PASS: host suite and CI Windows build (run 45067152128).
 - **RUNTIME VALIDATION:** NOT RUN. Expected in a new log: `[AUTO DO] day N
   under construction: K storage/consumer site(s) excluded`, no new
   `[B2B SITE] ... commit=0` lines at a `[BUILDING]` site, and an existing
