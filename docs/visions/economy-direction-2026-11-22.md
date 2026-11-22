@@ -61,6 +61,7 @@ the owner yet; *hypothesis* = needs verification before use.
 | D32 | **Unpriced shop sale: native give, no charge, loud error.** When a shop good has no native price (in practice an unproduced mod good, or the moments after a load), the game hands out the good as in vanilla and no money moves. It is logged as `ERROR UNPRICED` and counted for the Almanac. Owner answer 2026-11-22. | Decided; code step 2 |
 | D33 | **Unpriced business bill: refuse the whole transaction, loud error.** A private construction estimate, wholesale delivery bill or B2B freight bill that includes a resource with no native price is refused as a whole, never billed partly. For example, private construction does not claim the site. Owner answer 2026-11-22. | Decided; code step 2 |
 | D34 | **CPI unavailable: pause what depends on it.** When the cost-of-living basket cannot be computed (food, meat or clothes has no price), wealth-class demand scaling is skipped that day, the runway and CPI show `UNAVAILABLE`, and the bank refuses new credit until CPI is available again. Owner answer 2026-11-22. | Decided; code step 2 |
+| D35 | **The USD CPI default rent is its own INI key.** The owner decided that (a) USD gets its own `default_daily_rent_usd` setting and (b) a dollar is about the same size as a rouble, not a rouble ÷ 50. The shipped **value 0.33** was proposed in the reviewer comment following the owner's "more or less the same"; the owner has **not chosen or confirmed it** — **open: owner may tune it**. Both `default_daily_rent` (RUB) and `default_daily_rent_usd` (USD) are required and behave the same way: missing, 0, negative, NaN or implausible means the basket is UNAVAILABLE and one log line names the key. 0 is rejected; there is no "no rent" setting. No rate is applied to either value. | Decided (structure and same-size relation); value open |
 
 ---
 
@@ -1055,16 +1056,25 @@ the CI Windows build pass; the in-game acceptance check is still pending
 market-book part of item 1, all of item 2, and the procurement part of
 item 3. See the
 [task record](../tasks/active/2026-11-22-remove-market-multiplier-and-procurement.md).
-Fallback prices, `usd_divisor`, `UNPRICED`, `wholesale_ratio` and foreign
-restock are still open.
+
+**Status, 2026-11-22 (step 2).** The rest of item 1 (fallback prices, `default`,
+`default_usd`, `usd_divisor`) and item 9 (Almanac sample rows) are implemented
+on `arena/c676e273-wrsre` (PR #101), together with D32–D34 in their consumers.
+Host tests and the Windows CI build pass; independent review and the in-game
+check are still to do. `resource_pricing` is now v6 and returns `0.0f` for `UNPRICED` and for
+an unavailable CPI basket. D35 gives RUB and USD their own required rent key
+(both shipped at 0.33, a reviewer-proposed value the owner may tune) instead
+of dividing one number. The 0.70 `wholesale_ratio`, foreign restock and
+`private_logistics` billing defaults remain open for step 3. See the
+[task record](../tasks/active/2026-11-22-remove-fallbacks-and-made-up-data.md).
 
 **Order of work:** the items below are grouped into ordered steps in
 [`ROADMAP.md`](../ROADMAP.md) §3. Use the roadmap for "what next" and this
 list for the detail of each item.
 
 1. **resource_pricing:** remove the market book and multiplier *(done:
-   v5)*, fallback prices and `usd_divisor`. Missing native price means `UNPRICED`. Bump the
-   API version. Keep the CPI basket.
+   v5)*, fallback prices and `usd_divisor` *(done: v6, step 2)*. Missing native
+   price means `UNPRICED`. Bump the API version. Keep the CPI basket.
 2. **Multiplier consumers:** `citizen_retail.cpp` 613 and 983,
    `enterprise_base.cpp` 1985 and 2504, `private_logistics.cpp` 455,
    `private_shops.cpp` 948. Switch them to the plain native price. *(Done.)*
@@ -1096,7 +1106,8 @@ list for the detail of each item.
    poverty rate, commercial solvency) into the Almanac first.
 9. **almanac_overlay_dev:** delete the synthetic sample rows
    (`almanac_panel_view.cpp` `kEconomyRows` / `kLabourRows` /
-   `kLogisticsRows`, about 60–95) and the `DrawTable` fallback (about 659).
+   `kLogisticsRows`, about 60–95) and the `DrawTable` fallback (about 659)
+   *(done: step 2)*.
    With no live data, show a full-panel **"NO DATA: <service> unavailable"**
    in warning colour. Per row, show `UNAVAILABLE` / `ERROR <reason>`, never a
    number. Update `TESTING.md`, which still expects `SYNTHETIC` values.

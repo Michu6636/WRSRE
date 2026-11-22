@@ -10,12 +10,11 @@
 //     price are read fresh from the game object or from the record, so a
 //     world load is invisible to this service.
 //
-//   - it owns the answer to "what is one ton of this worth in roubles".
-//     The engine keeps a per-resource price field (+0x58 RUB, +0x5C USD)
-//     and recomputes it on its own schedule. That field is the truth.
-//     For a resource the engine prices at zero - a mod resource that no
-//     building type produces - the service falls back to a table in its
-//     .ini, and then to a default.
+//   - it owns the answer to "what is one ton of this worth in the active
+//     currency". The engine keeps a per-resource price field (+0x58 RUB,
+//     +0x5C USD) and recomputes it on its own schedule. That field is the
+//     truth. There is no fallback table and no default price: a resource the
+//     engine has not priced is UNPRICED and getPrice answers 0.0f.
 //
 //   - it looks up a resource record by name. The engine has its own
 //     resolver, but it is hooked by plugins/resources and a Level 1
@@ -23,29 +22,28 @@
 //     the vector itself, which finds both base-game and mod resources,
 //     and does not care what other plugins are installed.
 //
-// THE PRICE FALLBACK TABLE, AND WHY IT IS NOT A PRICE OVERRIDE
+// UNPRICED IS NOT ZERO MONEY
 //
-// The engine's own price recompute overwrites +0x58 and +0x5C for every
-// resource it knows how to compute. To force a price that survives that
-// recompute, a user writes [price] in plugins/resources.ini, and the
-// resources plugin re-applies it after every recompute. That is the
-// override mechanism, and it lives where the resource is declared.
+// Economy direction D2/D8: all money uses the game's native prices. A
+// missing price must never be replaced by a made-up value. Consumers must
+// test the answer with TsmNativePriceUsable (src/price_guards.h) and then:
 //
-// This service's fallback table is for the other case: a resource the
-// engine prices at zero because nothing produces it. The engine will
-// happily leave +0x58 at 0.0 forever for such a resource, and a shop
-// that tries to sell it charges 0.00. The table lets a user give it a
-// value without needing a production chain to be built first.
+//   - D32 shop sale: give the good as vanilla, move no money, log
+//     "ERROR UNPRICED" and count it for the Almanac;
+//   - D33 business bill (construction estimate, wholesale delivery, B2B
+//     freight): refuse the whole transaction, loudly;
+//   - D34 CPI: treat the basket as unavailable, skip wealth-class demand
+//     scaling, show UNAVAILABLE and refuse new bank credit.
 //
-// The two are complementary, not redundant:
-//
-//   [price] in resources.ini    a resource that IS produced, wanting a
-//                               different number than the engine computes
-//   [fallback_prices] here      a resource that is NOT produced, so the
-//                               engine has nothing to compute from
+// There is no separate price-override mechanism here. A resource that IS
+// produced can already be forced through [price] in plugins/resources.ini;
+// a resource the engine has never priced stays UNPRICED until something
+// produces it.
 
 #ifndef TSM_RESOURCE_PRICING_API_H
 #define TSM_RESOURCE_PRICING_API_H
+
+#include <stddef.h>            // offsetof, for the structSize guard
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,25 +52,23 @@ extern "C" {
 #include "currency_api.h"      // TSM_CURRENCY_RUB, TSM_CURRENCY_USD
 
 #define TSM_SERVICE_RESOURCE_PRICING "resource_pricing"
-// v5 (2026-11-22 economy direction, D2/D3): the Republic market order book
-// (v2: recordSupply/recordDemand/getMarketMultiplier/getMarketBalance) and
-// the local per-building scarcity quotes (v4) are REMOVED. All money uses the
-// game's native price and nothing else; a future market model may change the
-// native prices themselves, but never adds a second price layer. See
-// docs/visions/economy-direction-2026-11-22.md section 3.
+// v6 (2026-11-22 economy direction step 2, D8/D32/D33/D34): the fallback
+// price table, the `default` price, `default_usd` and `usd_divisor` are
+// removed. getPrice returns 0.0f for a resource with no native price
+// (UNPRICED) and getCpiDailyBasket returns 0.0f when the basket cannot be
+// priced. A v5 consumer would misinterpret 0.0f as a real price, so v6 is
+// the only view published AT ALL.
 //
-// Removing fields changes the layout after getPrice, so v5 is a NEW layout,
-// not an append: getCpiDailyBasket moved up to sit directly after getPrice.
-// The provider publishes two views:
-//   v1  prefix through getPrice (unchanged layout - private_construction and
-//       any other price-only consumer keeps working);
-//   v5  the full struct below.
-// The old v2/v3/v4 layouts are no longer published. A stale consumer built
-// against them fails to resolve the service and must degrade as it already
-// does when resource_pricing is absent. build.bat rebuilds every in-tree
-// consumer against this header.
-#define TSM_RESOURCE_PRICING_VERSION    5u
-#define TSM_RESOURCE_PRICING_VERSION_V5 5u
+// Removing fields changes the layout after getPrice, so v6 is a NEW layout,
+// not an append: getCpiDailyBasket sits directly after getPrice. The old
+// v1/v2/v3/v4/v5 layouts are not published. v1 is included in that list
+// because its old contract promised a non-zero price: a pre-step-2 consumer
+// would read UNPRICED 0.0f as "free". A stale consumer now fails to resolve
+// the service and must degrade as it already does when resource_pricing is
+// absent. build.bat rebuilds every in-tree consumer against this header.
+#define TSM_RESOURCE_PRICING_VERSION    6u
+// Legacy probe name, kept so consumers can still ask. Version 6 does NOT
+// publish it: its old non-zero contract is incompatible with UNPRICED.
 #define TSM_RESOURCE_PRICING_VERSION_V1 1u
 
 typedef struct TsmResourcePricingApi {
@@ -105,25 +101,22 @@ typedef struct TsmResourcePricingApi {
 
     // --- prices ------------------------------------------------------------
     //
-    // The live price of one ton of the given resource, in the requested
-    // currency. The lookup order is:
+    // The live native price of one ton of the given resource, in the
+    // requested currency: the engine's own +0x58 / +0x5C field.
     //
-    //   1. the engine's own +0x58 / +0x5C field, if it is a finite value
-    //      greater than 0.01;
-    //   2. the [fallback_prices] table in plugins/resource_pricing.ini,
-    //      keyed on the record's name;
-    //   3. the `default` from that file.
+    // Returns 0.0f when there is no native price. That means UNPRICED:
+    // it is not "worth nothing", and callers must not charge it as zero.
+    // The same 0.0f comes back for a NULL record, an unreadable record, a
+    // non-finite field, a negative field and a field at or below 0.01.
+    // Never returns NaN, infinity or a negative number.
     //
-    // Never returns a negative number, zero, NaN, or infinity. A caller
-    // that needs to distinguish "the engine priced this" from "the
-    // service supplied a fallback" reads the record's price field
-    // directly through TsmResourceLivePrice.
-    //
-    // A NULL record is legal and returns the default.
+    // The provider logs "ERROR UNPRICED" once per resource and currency
+    // when it answers 0.0f, so a missing price is visible in the log even
+    // when a caller forgets to report it.
 
     float (*getPrice)(void* resRecord, int currency);
 
-    // --- v5: CPI survival basket (was the v3 tail) --------------------------
+    // --- v6: CPI survival basket (was the v3 tail) --------------------------
     //
     // Daily Basket Cost (CPI), in the ACTIVE currency units the provider
     // resolves through TsmCurrencyActive (same convention as getPrice):
@@ -134,23 +127,26 @@ typedef struct TsmResourcePricingApi {
     // P* are the native getPrice answers for the provider's own
     // getFood/getMeat/getClothes records; Q* are the [cpi_basket]
     // quantities (tons/day); dailyRent is the injected per-day rent average,
-    // or the [cpi_basket] default_daily_rent fallback (USD-scaled in USD
-    // mode) when injectedDailyRent <= 0.
+    // or the active currency's REQUIRED default when injectedDailyRent <= 0:
+    // default_daily_rent (RUB) or default_daily_rent_usd (USD). No rate is
+    // applied to either value (D35).
     //
-    // Pure query: reads records and config. Safe from any thread. Always
-    // returns a finite value > 0 (falls back to the configured default
-    // basket, ~2.15 RUB/day at shipped fallbacks, when no world/prices
-    // are readable).
+    // Returns 0.0f when the basket is UNAVAILABLE: no world, an unreadable
+    // record, any of the three goods without a native price, or a missing,
+    // 0, negative, NaN or implausible rent key in EITHER currency. Both keys
+    // are required and behave the same way; 0 is not a "no rent" option.
+    // There is no default basket (D34). Callers must show UNAVAILABLE and
+    // pause what depends on CPI rather than substituting a number.
+    //
+    // Pure query: reads records and config. Safe from any thread.
     float (*getCpiDailyBasket)(float injectedDailyRent);
 } TsmResourcePricingApi;
 
 // --- CPI consumer guard -----------------------------------------------------
 //
 // structSize-prefix guard: true when the provider carries getCpiDailyBasket
-// (the v5 view). A v1 view ends at getPrice, so this is false for it.
-// TsmPricingCpiBasket wraps the call with the null/finite guards so a
-// missing tail degrades to the documented ~2.15 RUB/day fallback instead of
-// faulting.
+// (the v6 view). A hand-built v1 prefix ends at getPrice, so this is false
+// for it; the provider itself no longer publishes v1.
 static inline int TsmPricingHasCpi(const TsmResourcePricingApi* api)
 {
     return api &&
@@ -158,12 +154,14 @@ static inline int TsmPricingHasCpi(const TsmResourcePricingApi* api)
                               sizeof(api->getCpiDailyBasket) &&
         api->getCpiDailyBasket;
 }
+// Returns 0.0f when the basket is UNAVAILABLE. It never invents a default:
+// callers must treat 0.0f as "no CPI today" (D34).
 static inline float TsmPricingCpiBasket(const TsmResourcePricingApi* api,
                                         float injectedDailyRent)
 {
-    if (!TsmPricingHasCpi(api)) return 2.15f;
+    if (!TsmPricingHasCpi(api)) return 0.0f;
     float c = api->getCpiDailyBasket(injectedDailyRent);
-    return (c == c && c > 0.0f) ? c : 2.15f;
+    return (c == c && c > 0.0f) ? c : 0.0f;
 }
 
 #ifdef __cplusplus

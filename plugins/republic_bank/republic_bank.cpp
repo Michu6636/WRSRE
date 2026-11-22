@@ -33,7 +33,6 @@ static int g_persistenceHandle = 0;
 
 static LoanBook g_book;
 static double g_referenceCpiRub = 2.15;
-static double g_usdDivisor = 50.0;
 static double g_lastLoggedScale = -1.0;
 static int g_lastLoggedCurrency = -1;
 
@@ -86,25 +85,45 @@ static LoanKey keyForBuilding(void* b) {
 // LoanBook::requestCreditDraw / dailyOverdraftRescue.)
 
 // The INI limits are reference-RUB amounts, not live nominal constants.
-// resource_pricing's v5 CPI basket is already denominated in the ACTIVE
+// resource_pricing's v6 CPI basket is already denominated in the ACTIVE
 // currency, so live CPI / reference RUB CPI performs currency conversion and
-// inflation/deflation indexation together.  With an older/missing pricing
-// service, retain neutral prices but still honour the active currency.
+// inflation/deflation indexation together.
+//
+// D34: when CPI is unavailable this answers 0.0 = UNAVAILABLE. There is no
+// neutral 1.0 and no USD divisor to fall back to: the bank refuses new credit
+// until the basket returns, and existing loans keep the last scale that was
+// actually derived from prices.
 static double CurrentEconomicScale(void) {
-    const int currency = TsmCurrencyActive(g_currency);
-    const double divisor = (g_usdDivisor >= 1.0) ? g_usdDivisor : 50.0;
-    const double fallback = (currency == TSM_CURRENCY_USD) ? 1.0 / divisor : 1.0;
-    if (!TsmPricingHasCpi(g_pricing)) return fallback;
+    if (!TsmPricingHasCpi(g_pricing)) return 0.0;
     const float cpi = g_pricing->getCpiDailyBasket(0.0f);
-    return BankEconomicScale((double)cpi, g_referenceCpiRub, fallback);
+    if (!(cpi == cpi) || !(cpi > 0.0f) || !(g_referenceCpiRub > 0.0))
+        return 0.0;
+    const double scale = (double)cpi / g_referenceCpiRub;
+    return (std::isfinite(scale) && scale > 0.0) ? scale : 0.0;
 }
 
+// Returns the live scale, or 0.0 when unavailable. The stored scale is only
+// replaced by a real value: an unavailable CPI must not erase the last one
+// that was priced, because existing-loan settlement still uses it.
 static double RefreshEconomicScale(void) {
     const double scale = CurrentEconomicScale();
-    EnterCriticalSection(&g_lock);
-    g_book.config.currencyScale = scale;
-    LeaveCriticalSection(&g_lock);
+    if (scale > 0.0) {
+        EnterCriticalSection(&g_lock);
+        g_book.config.currencyScale = scale;
+        LeaveCriticalSection(&g_lock);
+    }
     return scale;
+}
+
+// D34: no CPI, no new credit. Logged once per unavailable period.
+static bool NoteNoCreditWithoutCpi(void) {
+    static bool logged = false;
+    if (!logged) {
+        logged = true;
+        Logf("republic_bank  ERROR CPI UNAVAILABLE  new credit refused until "
+             "resource_pricing can price food, meat and clothes");
+    }
+    return true;
 }
 
 static double getRateImpl(void) { EnterCriticalSection(&g_lock); double r=g_book.getAnnualInterestRate(); LeaveCriticalSection(&g_lock); return r; }
@@ -112,7 +131,8 @@ static void setRateImpl(double r) { EnterCriticalSection(&g_lock); g_book.setAnn
 
 static double requestCreditDrawImpl(void* building, double neededAmount, const char* reason) {
     if (!g_enterprise || !building || !g_enabled) return 0.0;
-    RefreshEconomicScale();
+    const double scale = RefreshEconomicScale();
+    if (!(scale > 0.0)) { NoteNoCreditWithoutCpi(); return 0.0; }
     LoanKey k = keyForBuilding(building);
     // No usable coordinates -> pointer key. Opening debt there would be
     // unfindable after the next save/load.
@@ -210,10 +230,18 @@ static void onSave(TsmSaveEvent event, const char* dir, void* userData) {
         // derived runtime value.  Never let a stale saved scale freeze the
         // limits against the newly loaded world's prices or currency.
         const double scale = RefreshEconomicScale();
-        Logf("republic_bank  %s %s\\republic_bank.bin: rate %.2f%%, "
-             "ledger entries %zu, economic index x%.4f",
-             hadState ? "loaded state from" : "no saved state at", dir,
-             rate * 100.0, entries, scale);
+        if (scale > 0.0) {
+            Logf("republic_bank  %s %s\\republic_bank.bin: rate %.2f%%, "
+                 "ledger entries %zu, economic index x%.4f",
+                 hadState ? "loaded state from" : "no saved state at", dir,
+                 rate * 100.0, entries, scale);
+        } else {
+            Logf("republic_bank  %s %s\\republic_bank.bin: rate %.2f%%, "
+                 "ledger entries %zu, economic index UNAVAILABLE (no CPI); "
+                 "new credit refused",
+                 hadState ? "loaded state from" : "no saved state at", dir,
+                 rate * 100.0, entries);
+        }
         g_lastLoggedScale = -1.0;
         g_lastLoggedCurrency = -1;
     }
@@ -244,8 +272,17 @@ static void onMonth(void* userData, int day, int month, int year) {
 static void onDay(void* userData, int day, int month, int year) {
     const double scale = RefreshEconomicScale();
     const int currency = TsmCurrencyActive(g_currency);
-    if (g_lastLoggedScale < 0.0 || currency != g_lastLoggedCurrency ||
-        fabs(scale - g_lastLoggedScale) > 0.0001) {
+    if (!(scale > 0.0)) {
+        NoteNoCreditWithoutCpi();
+        if (g_lastLoggedScale != 0.0 || currency != g_lastLoggedCurrency) {
+            Logf("republic_bank  economic index UNAVAILABLE (%s): no CPI, "
+                 "new credit refused; existing limits left at the last "
+                 "priced value", TsmCurrencySymbol(g_currency));
+            g_lastLoggedScale = 0.0;
+            g_lastLoggedCurrency = currency;
+        }
+    } else if (g_lastLoggedScale <= 0.0 || currency != g_lastLoggedCurrency ||
+               fabs(scale - g_lastLoggedScale) > 0.0001) {
         EnterCriticalSection(&g_lock);
         const double maxDebt = g_book.config.maxDebtPerEnterprise * scale;
         const double creditLimit = g_book.config.creditLimit * scale;
@@ -259,6 +296,7 @@ static void onDay(void* userData, int day, int month, int year) {
         g_lastLoggedCurrency = currency;
     }
     if (!g_autoOverdraft) return;
+    if (!(scale > 0.0)) return;   // D34: also no automatic overdraft credit
     if (!g_enterprise) return;
     size_t n = g_enterprise->getEnterpriseCount();
     for (size_t i = 0; i < n; i++) {
@@ -311,10 +349,6 @@ static void readSettings() {
         const double ref = atof(v);
         if (std::isfinite(ref) && ref > 0.0) g_referenceCpiRub = ref;
     }
-    if (H->configString(ini, "republic_bank", "usd_divisor", v, sizeof(v), "") && v[0]) {
-        const double d = atof(v);
-        if (std::isfinite(d) && d >= 1.0 && d <= 1000.0) g_usdDivisor = d;
-    }
     g_book.config.maxMissedMonths = H->configInt(ini, "republic_bank", "max_missed_months", 3);
 }
 
@@ -347,8 +381,8 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void) {
     if (!g_pricing) g_pricing = (const TsmResourcePricingApi*)H->consume(
         TSM_SERVICE_RESOURCE_PRICING, TSM_RESOURCE_PRICING_VERSION_V1);
     if (!TsmPricingHasCpi(g_pricing))
-        Logf("republic_bank  WARN  resource_pricing v5 CPI unavailable - "
-             "using neutral prices with active-currency scaling");
+        Logf("republic_bank  WARN  resource_pricing v6 CPI unavailable - "
+             "the economic index is UNAVAILABLE and new credit is refused");
     g_enterprise = (TsmEnterpriseBaseApi*)H->consume(TSM_SERVICE_ENTERPRISE_BASE, TSM_ENTERPRISE_BASE_VERSION);
     if (!g_enterprise) g_enterprise = (TsmEnterpriseBaseApi*)H->consume(TSM_SERVICE_ENTERPRISE_BASE, TSM_ENTERPRISE_BASE_VERSION_V7);
     g_persistence = (TsmPersistenceApi*)H->consume(TSM_SERVICE_PERSISTENCE, TSM_PERSISTENCE_VERSION);

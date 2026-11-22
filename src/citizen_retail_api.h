@@ -62,12 +62,19 @@
 #ifndef TSM_CITIZEN_RETAIL_API_H
 #define TSM_CITIZEN_RETAIL_API_H
 
+#include <stddef.h>   // offsetof, for the v3 structSize guard
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #define TSM_SERVICE_CITIZEN_RETAIL "citizen_retail"
-#define TSM_CITIZEN_RETAIL_VERSION 2u
+// v3 (economy direction D32, step 2): appends the UNPRICED sale counter so the
+// Almanac can show how often a shop gave a good for free. The v2 prefix
+// (structSize + register/clear interceptor) keeps its layout and is published
+// under 2u, and the v1 view under 1u, for out-of-tree consumers.
+#define TSM_CITIZEN_RETAIL_VERSION    3u
+#define TSM_CITIZEN_RETAIL_VERSION_V2 2u
 #define TSM_CITIZEN_RETAIL_VERSION_V1 1u
 
 // Interceptor return values. chargeCitizenPartial takes partial funds
@@ -115,7 +122,24 @@ typedef struct TsmCitizenRetailApi {
     // does it inside its own single callback.
     int  (*registerRetailInterceptor)(TsmRetailInterceptor cb, void* userData);
     void (*clearRetailInterceptor)(void);
+
+    // --- v3: UNPRICED sales (economy direction D32) -------------------------
+    //
+    // A sale whose resource has no native price is given as vanilla does and
+    // moves no money. The provider logs "ERROR UNPRICED" once per resource
+    // and counts every such sale here, so the Almanac can show the count.
+    // Safe to call from the render thread; the counter is atomic.
+    unsigned (*getUnpricedSaleCount)(void);
 } TsmCitizenRetailApi;
+
+// structSize-prefix guard for the v3 tail.
+static inline int TsmCitizenRetailHasUnpriced(const TsmCitizenRetailApi* api)
+{
+    return api &&
+        api->structSize >= offsetof(TsmCitizenRetailApi, getUnpricedSaleCount) +
+                               sizeof(api->getUnpricedSaleCount) &&
+        api->getUnpricedSaleCount;
+}
 
 #ifdef __cplusplus
 }

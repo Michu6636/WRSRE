@@ -52,22 +52,18 @@ inline double NormalizeBankRate(double annualRate) {
     return BankRateFromSlider(BankRateToSlider(annualRate));
 }
 
-// Configured bank amounts are reference-RUB values.  A CPI of 2.15 RUB/day
+// Configured bank amounts are reference-RUB values. A CPI of 2.15 RUB/day
 // therefore gives scale 1; 4.30 gives 2 (inflation), 1.075 gives 0.5
-// (deflation), and 0.043 gives 0.02 (the neutral USD basket at divisor 50).
-// fallbackScale is the neutral active-currency scale used if pricing is
-// absent or returns an invalid value.
+// (deflation). D34: an absent or invalid basket answers 0.0 = UNAVAILABLE -
+// there is no neutral fallback scale.
 inline double BankEconomicScale(double cpiDailyBasket,
-                                double referenceCpiDailyBasket,
-                                double fallbackScale = 1.0) {
-    if (!std::isfinite(fallbackScale) || fallbackScale <= 0.0)
-        fallbackScale = 1.0;
+                                double referenceCpiDailyBasket) {
     if (!std::isfinite(cpiDailyBasket) || cpiDailyBasket <= 0.0 ||
         !std::isfinite(referenceCpiDailyBasket) ||
         referenceCpiDailyBasket <= 0.0)
-        return fallbackScale;
+        return 0.0;
     const double scale = cpiDailyBasket / referenceCpiDailyBasket;
-    return (std::isfinite(scale) && scale > 0.0) ? scale : fallbackScale;
+    return (std::isfinite(scale) && scale > 0.0) ? scale : 0.0;
 }
 
 struct LoanKey {

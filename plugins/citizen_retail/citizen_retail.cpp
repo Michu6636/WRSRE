@@ -12,9 +12,20 @@
 //     and retail wants are no longer recorded as market demand - the
 //     per-citizen g_demandDay dedup and its ShopStocksResource probe
 //     went with that tap. The v2.0 notes below describe the removed path.
-//   - resource_pricing is consumed v5 -> v1. v1 has no CPI tail, so the
-//     runway degrades to the 2.15 default basket exactly as before.
+//   - resource_pricing is consumed v6 -> v1. v1 has no CPI tail; the runway
+//     then shows UNAVAILABLE and wealth-class scaling is skipped that day
+//     (D34). There is no default basket any more.
 //   - Version -> 3.0; save format unchanged.
+//
+// v3.1 updates (economy-direction step 2, D32/D34):
+//   - UNPRICED SALE. A native price of 0 means the resource is UNPRICED. The
+//     gate lets the vanilla give happen, moves no money, logs ERROR UNPRICED
+//     and counts the sale for the Almanac. min_cost never turns that into a
+//     charge.
+//   - CPI UNAVAILABLE. No 2.15 default basket. If the basket cannot be
+//     priced, ApplySolScaling skips the day and logs it once; runway/CPI are
+//     shown as UNAVAILABLE wherever they are displayed.
+//   - citizen_retail API v3 exposes the UNPRICED sale count to the Almanac.
 //
 // v2.9 updates (checkout stub: sub/add rsp, 0x80 imm8 sign-extension - the crash):
 //   - BUG 3 (the ACCESS_VIOLATION at stub+0x85): step 3 / step 9 emitted
@@ -119,7 +130,7 @@
 //     checkout fulfillment gate). Before the engine decrements shelf stock or
 //     satisfies citizen demand, the hook checks whether the customer can afford
 //     the per-frame dispensed amount (amount = min(shelf, rate x time), priced
-//     at getPrice(res, active currency) x market multiplier). If wallet < cost,
+//     at getPrice(res, active currency)). If wallet < cost,
 //     fulfillment is aborted by jumping to the engine's native skip target
 //     0x17293A - shelf stock is untouched, demand remains unsatisfied, and the
 //     citizen leaves empty-handed to suffer native hunger/health penalties.
@@ -203,6 +214,7 @@
 #include "../../src/persistence_api.h"
 #include "../../src/citizen_retail_api.h"
 #include "../../src/citizen_labor_api.h"
+#include "checkout_policy.h"
 
 #include <unordered_map>
 #include <vector>
@@ -227,6 +239,36 @@ static float  g_minCost        = 0.01f;
 // Start (min_cost_usd or usd_divisor).
 static float  g_minCostCfg     = 0.01f;
 static float  g_usdDivisor     = 50.0f;
+
+// v3.1 (D32): UNPRICED shop sales this session. Counted for the Almanac;
+// the gate logs the resource separately. Atomic because the Almanac reads it
+// from the render thread while the shop walk writes it from the game thread.
+static volatile LONG g_unpricedSales = 0;
+
+// One ERROR line per resource name. A shop can attempt the same unpriced
+// sale every tick; the fact is the same fact.
+#define UNPRICED_NAME_LEN 32
+#define MAX_UNPRICED_WARNED 64
+static char g_unpricedWarned[MAX_UNPRICED_WARNED][UNPRICED_NAME_LEN];
+static int  g_unpricedWarnedCount = 0;
+
+static void NoteUnpricedSale(void* res)
+{
+    InterlockedIncrement(&g_unpricedSales);
+
+    char name[UNPRICED_NAME_LEN] = {0};
+    if (!res || !TsmResourceName(res, name, sizeof(name)) || !name[0])
+        _snprintf_s(name, sizeof(name), _TRUNCATE, "?");
+
+    for (int i = 0; i < g_unpricedWarnedCount; i++)
+        if (strcmp(g_unpricedWarned[i], name) == 0) return;
+    if (g_unpricedWarnedCount >= MAX_UNPRICED_WARNED) return;
+    strncpy_s(g_unpricedWarned[g_unpricedWarnedCount++],
+              sizeof(g_unpricedWarned[0]), name, _TRUNCATE);
+
+    Logf("citizen_retail  ERROR UNPRICED  shop sale of \"%s\": no native "
+         "price, the good is given as vanilla and no money moves", name);
+}
 
 // ---------------------------------------------------------------- v2.4 native checkout hook
 #define TSM_CHECKOUT_HOOK_RVA   (g_tsmAddr.retail_checkout_hook)
@@ -509,13 +551,18 @@ static int CheckoutAffordabilityGate(void* shop, void* person, void* res, float 
 
         // Native unit price in the active currency (no market multiplier).
         int cur = TsmCurrencyActive(g_currency);
-        float pricePerTon = g_pricing->getPrice(res, cur);
-        float cost = amount * pricePerTon;
-        if (!(cost == cost) || cost < 0.0f) cost = 0.0f;
+        const float pricePerTon = g_pricing->getPrice(res, cur);
 
-        // Configured sale floor: apply min_cost to the amount actually
-        // charged so a cheap sale still produces a non-zero transaction.
-        if (cost < g_minCost) cost = g_minCost;
+        // D32: no native price means UNPRICED, not "free" and not min_cost.
+        // The engine's vanilla give proceeds and no money moves; count it and
+        // make it loud. The portable decision lives in checkout_policy.h.
+        const wrsre::retail::CheckoutQuote quote =
+            wrsre::retail::QuoteSale(pricePerTon, amount, g_minCost);
+        if (!quote.priced) {
+            NoteUnpricedSale(res);
+            return 1;   // allow: vanilla gives the good, nothing is charged
+        }
+        const float cost = quote.cost;
 
         // Negligible cost: don't bother the citizen, allow the give.
         if (cost < 0.0001f) return 1;
@@ -846,20 +893,33 @@ static void WalkShop(BYTE* shop, int day)
 
 // v2.1 (Task 7): the ONE absolute daily basket cost, cached per absolute
 // day. The walk asks every shopper to classify, so the read is hoisted:
-// first shopper of the day queries resource_pricing v5, everyone else
-// reuses the answer. injectedDailyRent = 0 - the Level 1 provider's
+// first shopper of the day queries resource_pricing, everyone else reuses
+// the answer. injectedDailyRent = 0 - the Level 1 provider's documented
 // neutral default daily rent rides along (retail must not reach into
-// enterprise_base for rent). The helper guards the CPI field via
-// TsmPricingHasCpi and falls back to the documented ~2.15 RUB/day when
-// only the v1 view resolved. POD-only: no __try needed (the provider
-// fault-guards its own reads; the helpers are pure float math).
+// enterprise_base for rent).
+//
+// v3.1 (D34): no default basket. When the provider cannot price food, meat
+// or clothes (or only the v1 view resolved), the answer is 0.0f =
+// UNAVAILABLE. The day is not cached as a value; ApplySolScaling skips the
+// day and this function logs it once per day. POD-only: no __try needed
+// (the provider fault-guards its own reads; the helpers are pure float math).
 static float SolCpiDaily(int absDay)
 {
-    static int   s_cpiDay = -1;
+    static int   s_cpiDay  = -1;
     static float s_cpi     = 0.0f;
+    static int   s_warnDay = -1;
     if (absDay == s_cpiDay && s_cpi > 0.0f) return s_cpi;
-    float c = TsmPricingCpiBasket(g_pricing, 0.0f);
-    if (!(c == c) || !(c > 0.0f)) c = 2.15f;
+
+    const float c = TsmPricingCpiBasket(g_pricing, 0.0f);
+    if (!(c == c) || !(c > 0.0f)) {
+        if (absDay != s_warnDay) {
+            s_warnDay = absDay;
+            Logf("citizen_retail  ERROR CPI UNAVAILABLE  day %d: wealth-class "
+                 "demand scaling skipped, runway unavailable", absDay);
+        }
+        return 0.0f;
+    }
+
     s_cpi    = c;
     s_cpiDay = absDay;
     return c;
@@ -1317,10 +1377,17 @@ static void ReadSettings(void)
     if (g_tickIntervalMs > 5000)   g_tickIntervalMs = 5000;
 }
 
+static unsigned GetUnpricedSaleCountImpl(void)
+{
+    // InterlockedCompareExchange(0,0) is an atomic read with no side effect.
+    return (unsigned)InterlockedCompareExchange(&g_unpricedSales, 0, 0);
+}
+
 static const TsmCitizenRetailApi kApi = {
     sizeof(TsmCitizenRetailApi),
     RegisterInterceptor,
     ClearInterceptor,
+    GetUnpricedSaleCountImpl,
 };
 
 extern "C" __declspec(dllexport) unsigned TsmPluginApiVersion(void)
@@ -1332,7 +1399,7 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host, TsmPlugi
 {
     TsmBind(host);
     info->name    = "citizen_retail";
-    info->version = "3.0";
+    info->version = "3.1";
 
     ReadSettings();
     if (!g_enabled) {
@@ -1340,13 +1407,18 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host, TsmPlugi
         return 1;
     }
 
-    // v2.5 ABI: the interceptor return contract gained
-    // TSM_RETAIL_INSUFFICIENT (-1). The struct layout is unchanged
-    // (structSize + 2 fn ptrs, same bytes), so the v1 prefix view is
-    // the same struct - it is published under version 1u because the
-    // registry matches versions exactly and an out-of-tree consumer
-    // built against the v1 header must still resolve the service.
-    H->provide(TSM_SERVICE_CITIZEN_RETAIL, TSM_CITIZEN_RETAIL_VERSION_V1, &kApi);
+    // ABI history. The v2.5 interceptor return contract gained
+    // TSM_RETAIL_INSUFFICIENT (-1) with no layout change. v3 (2026-11-22,
+    // D32) appends getUnpricedSaleCount. Publish the v1 and v2 prefix views
+    // under their own versions - the registry matches versions exactly, so
+    // an out-of-tree consumer built against either header still resolves -
+    // and the full v3 view.
+    static TsmCitizenRetailApi kApiV2;
+    memcpy(&kApiV2, &kApi, sizeof(kApiV2));
+    kApiV2.structSize = (unsigned)offsetof(TsmCitizenRetailApi,
+                                           getUnpricedSaleCount);
+    H->provide(TSM_SERVICE_CITIZEN_RETAIL, TSM_CITIZEN_RETAIL_VERSION_V1, &kApiV2);
+    H->provide(TSM_SERVICE_CITIZEN_RETAIL, TSM_CITIZEN_RETAIL_VERSION_V2, &kApiV2);
     H->provide(TSM_SERVICE_CITIZEN_RETAIL, TSM_CITIZEN_RETAIL_VERSION, &kApi);
     return 0;
 }
@@ -1379,12 +1451,12 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
         return 1;
     }
     if (g_probe) {
-        // v2.1 (Task 7): confirm the runway engine's basket source.
+        // v3.1 (Task 7/D34): confirm the runway engine's basket source.
         if (TsmPricingHasCpi(g_pricing))
-            Logf("citizen_retail  CPI runway engine available (pricing v5)");
+            Logf("citizen_retail  CPI runway engine available (pricing v6)");
         else
             Logf("citizen_retail  WARN  pricing has no CPI tail (v1 view) - "
-                 "runway degrades to the 2.15 default basket");
+                 "runway and wealth-class scaling will show UNAVAILABLE");
     }
 
     // v2.3: income flow (daily wage / transfer) for the SoL matrix.
@@ -1413,9 +1485,8 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
             float d = (g_usdDivisor >= 1.0f) ? g_usdDivisor : 50.0f;
             g_minCost = g_minCostCfg / d;
         }
-        // v2.1 (Task 7): no benchmark scaling needed - the CPI basket
-        // already answers in the active currency (pricing divides its
-        // fallbacks by usd_divisor in USD mode).
+        // v3.1 (Task 7/D34): no benchmark scaling needed - the CPI basket
+        // already answers in the active currency, or is 0 = UNAVAILABLE.
     }
 
     // v2.4: install the native atomic checkout hook at FUN_140171E10+0x1725DE.
@@ -1447,7 +1518,7 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
          (double)g_runwayAffluentDays, (double)g_runwayLowDays,
          (double)g_runwayLowDays,
          (double)g_breadTons,
-         TsmPricingHasCpi(g_pricing) ? " v5 CPI" : ", default 2.15");
+         TsmPricingHasCpi(g_pricing) ? " v6 CPI" : ", CPI UNAVAILABLE");
     return 0;
 }
 

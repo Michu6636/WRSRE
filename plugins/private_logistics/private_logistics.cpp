@@ -17,6 +17,7 @@
 #include "../../src/enterprise_base_api.h"
 #include "../../src/currency_api.h"
 #include "../../src/resource_pricing_api.h"
+#include "../../src/price_guards.h"
 #include "../../src/b2b_logistics_api.h"
 #include "../../src/persistence_api.h"
 #include "b2b_settlement.h"
@@ -65,6 +66,7 @@ static unsigned g_b2bLoadsMatched    = 0;
 static unsigned g_b2bDelivMode0      = 0;
 static unsigned g_b2bDelivMatched    = 0;
 static unsigned g_b2bSettleCount     = 0;
+static unsigned g_b2bUnpricedCount   = 0;   // D33: deliveries refused for want of a native price
 static double   g_b2bPrincipalSum    = 0.0;
 static double   g_b2bTripFuelSum      = 0.0;
 static double   g_b2bStateNetSum     = 0.0;
@@ -440,12 +442,32 @@ static void BuildingName(void* b, char* out, size_t n)
 
 // The suite's single price function. Everything this plugin charges is
 // expressed against THIS number, and every pay line names it, so a change of
-// price source can never silently halve or double a payment. Since
-// resource_pricing v5 it is the native price only - no market multiplier.
+// price source can never silently halve or double a payment. It is the native
+// price only - no market multiplier and no fallback (D2/D8).
 //
-// NOTE: resource_pricing itself may be returning its shipped fallbacks
-// (RE_DIGEST Part 12 section 3). That is fine and consistent - what must not
-// happen is this plugin mixing a raw Res+0x58 read with a priced figure.
+// 0.0 means UNPRICED. It is not "free": the caller refuses the transaction
+// (D33) and this function logs it once per resource, so a missing price is
+// visible even when settlement is skipped.
+#define LOGI_UNPRICED_NAME 32
+static char g_unpricedLogged[16][LOGI_UNPRICED_NAME];
+static int  g_unpricedLoggedCount = 0;
+
+// The delivery-level detail line is latched per resource too, so a repeating
+// unpriced delivery does not print the same buyer/resource pair every time.
+static char g_b2bUnpricedLogged[16][LOGI_UNPRICED_NAME];
+static int  g_b2bUnpricedLoggedCount = 0;
+
+static bool FirstB2bUnpricedDetail(const char* name)
+{
+    if (!name || !name[0]) name = "?";
+    for (int i = 0; i < g_b2bUnpricedLoggedCount; i++)
+        if (strcmp(g_b2bUnpricedLogged[i], name) == 0) return false;
+    if (g_b2bUnpricedLoggedCount >= 16) return false;
+    strncpy_s(g_b2bUnpricedLogged[g_b2bUnpricedLoggedCount++],
+              sizeof(g_b2bUnpricedLogged[0]), name, _TRUNCATE);
+    return true;
+}
+
 static double UnitPrice(void* res)
 {
     if (!res || !TsmIsValidGamePtr(res)) return 0.0;
@@ -453,10 +475,24 @@ static double UnitPrice(void* res)
     if (g_pricing) {
         const int cur = g_currency ? TsmCurrencyActive(g_currency) : 0;
         const double quote = (double)g_pricing->getPrice(res, cur);
-        if (std::isfinite(quote) && quote > 0.01 && quote < 1e9) return quote;
+        if (std::isfinite(quote) && TsmNativePriceUsable((float)quote) &&
+            quote < 1e9)
+            return quote;
     }
 
-    return 0.0; // no global market service: explicitly unpriced
+    char name[LOGI_UNPRICED_NAME] = {0};
+    if (TsmResourceName(res, name, sizeof(name)) && name[0]) {
+        bool seen = false;
+        for (int i = 0; i < g_unpricedLoggedCount; i++)
+            if (strcmp(g_unpricedLogged[i], name) == 0) { seen = true; break; }
+        if (!seen && g_unpricedLoggedCount < 16) {
+            strncpy_s(g_unpricedLogged[g_unpricedLoggedCount++],
+                      sizeof(g_unpricedLogged[0]), name, _TRUNCATE);
+            Logf("[B2B] ERROR UNPRICED  \"%s\" has no native price - the "
+                 "delivery cannot be settled (D33)", name);
+        }
+    }
+    return 0.0;
 }
 
 // One guard, used everywhere the treasury is read: an older currency host may
@@ -748,10 +784,21 @@ static int DetourTransfer(void* game, void* p2, unsigned mode, void* res,
         char bname[64], rname[64];
         BuildingName(building, bname, sizeof(bname));
         ResourceName(res, rname, sizeof(rname));
-        Logf("[B2B] #%u %-6s bld=%p \"%s\" priv=%d res=%s %.2ft @%.2f = %.2f "
-             "(site 0x%06X, mode %u)",
-             shipId, KindName(s.kind), building, bname, IsPrivate(building) ? 1 : 0,
-             rname, (double)s.tons, s.unitPrice, s.value, siteRva, mode);
+        if (TsmNativePriceUsable((float)s.unitPrice)) {
+            Logf("[B2B] #%u %-6s bld=%p \"%s\" priv=%d res=%s %.2ft @%.2f = %.2f "
+                 "(site 0x%06X, mode %u)",
+                 shipId, KindName(s.kind), building, bname,
+                 IsPrivate(building) ? 1 : 0, rname, (double)s.tons,
+                 s.unitPrice, s.value, siteRva, mode);
+        } else {
+            // D8/D33: the price is missing, so there is no value to print.
+            Logf("[B2B] #%u %-6s bld=%p \"%s\" priv=%d res=%s %.2ft "
+                 "@UNPRICED (no native price; bill refused) "
+                 "(site 0x%06X, mode %u)",
+                 shipId, KindName(s.kind), building, bname,
+                 IsPrivate(building) ? 1 : 0, rname, (double)s.tons,
+                 siteRva, mode);
+        }
     }
 
     // ---- Ship 2 counterparty settlement (mode-1 delivery commit: 0x68F7F9) --
@@ -775,8 +822,34 @@ static int DetourTransfer(void* game, void* p2, unsigned mode, void* res,
             ResourceName(res, resourceName, sizeof(resourceName));
 
             // Goods only. Each physical seller lot keeps its own quantity and
-            // global market quote locked at loading. DO fuel is settled by the
+            // global native price locked at loading. DO fuel is settled by the
             // observed assignment lifecycle, never by a transfer fragment.
+            //
+            // D33: if ANY seller lot in this delivery has no native price, the
+            // WHOLE delivery is refused. Parts are never settled selectively:
+            // a partly billed delivery would be a made-up allocation.
+            bool anyUnpriced = false;
+            for (unsigned i = 0; md.cargoFound && i < md.partCount; ++i) {
+                const auto& part = md.parts[i];
+                if (part.tons <= 0.0f) continue;
+                if (!TsmNativePriceUsable((float)part.unitPrice)) {
+                    anyUnpriced = true;
+                    break;
+                }
+            }
+            if (anyUnpriced) {
+                EnterCriticalSection(&g_lock);
+                ++g_b2bUnpricedCount;
+                LeaveCriticalSection(&g_lock);
+                if (FirstB2bUnpricedDetail(resourceName)) {
+                    Logf("[B2B GOODS] ERROR UNPRICED  Buyer \"%s\" delivery of "
+                         "%s has a lot with no native price - the whole "
+                         "delivery is refused, nothing is billed (D33)",
+                         buyerName, resourceName);
+                }
+                return r;
+            }
+
             double dryBuyerAlreadySpent = 0.0;
             for (unsigned i = 0; md.cargoFound && i < md.partCount; ++i) {
                 const auto& part = md.parts[i];
@@ -948,6 +1021,7 @@ static void OnDay(void*, int day, int month, int year)
     unsigned calls,committed,noop,unknown,stag,nonPriv;
     unsigned siteSupp,attrSupp,paySupp,skTreasury,skBuyerInsolv;
     unsigned b2bLoad0,b2bLoadM,b2bDeliv0,b2bDelivM,b2bSettleN,fuelEvents;
+    unsigned b2bUnpriced;
     double b2bPrin,b2bFrt,b2bStateNet,fuelValue;
     static double cIn[BAL_CARRIERS];
     static void* cPt[BAL_CARRIERS];
@@ -964,6 +1038,7 @@ static void OnDay(void*, int day, int month, int year)
     b2bDeliv0=g_b2bDelivMode0;b2bDelivM=g_b2bDelivMatched;
     b2bSettleN=g_b2bSettleCount;b2bPrin=g_b2bPrincipalSum;
     b2bFrt=g_b2bTripFuelSum;b2bStateNet=g_b2bStateNetSum;
+    b2bUnpriced=g_b2bUnpricedCount;
     fuelEvents=g_fuelEvents;fuelValue=g_wouldPayFuel;
     cCount=g_balCarrierCount;
     for(int i=0;i<BAL_CARRIERS;++i) {
@@ -976,6 +1051,7 @@ static void OnDay(void*, int day, int month, int year)
     g_skipTreasury=0;g_skipBuyerInsolvent=0;
     g_b2bLoadsMode0=g_b2bLoadsMatched=g_b2bDelivMode0=g_b2bDelivMatched=0;
     g_b2bSettleCount=0;g_b2bPrincipalSum=g_b2bTripFuelSum=g_b2bStateNetSum=0.0;
+    g_b2bUnpricedCount=0;
     g_fuelEvents=0;g_wouldPayFuel=0.0;g_fuelRes=nullptr;
     g_siteLoggedToday=g_attrLoggedToday=g_payLoggedToday=0;
     if(g_summaryDay>day) g_summaryDay=-1;
@@ -987,9 +1063,9 @@ static void OnDay(void*, int day, int month, int year)
          "staging %u, non-private %u | suppressed site %u attrib %u pay %u",
          closedDay,calls,committed,noop,unknown,stag,nonPriv,siteSupp,attrSupp,paySupp);
     Logf("[B2B DAY] day %d joins: load %u/%u, delivery %u/%u | settlements=%u "
-         "goods=%.2f observed_assignment_fuel=%.2f state_net=%+.2f "
+         "unpriced=%u goods=%.2f observed_assignment_fuel=%.2f state_net=%+.2f "
          "buyer_insolvent=%u treasury_skips=%u (%s)",
-         closedDay,b2bLoadM,b2bLoad0,b2bDelivM,b2bDeliv0,b2bSettleN,
+         closedDay,b2bLoadM,b2bLoad0,b2bDelivM,b2bDeliv0,b2bSettleN,b2bUnpriced,
          b2bPrin,b2bFrt,b2bStateNet,skBuyerInsolv,skTreasury,
          (g_dryRun||!g_billing)?"dry_run":"live");
 
