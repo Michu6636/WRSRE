@@ -20,5 +20,8 @@ Updated 2026-11-22. Table of earlier findings now replaced.
 | City Hall TAX tile and fiscal panel are the fiscal policy UI. | **Obsolete.** The Almanac is the only policy surface. | economy direction D7 |
 | Missing service: hide the UI row, or show synthetic/sample values. | **Never.** Show `UNAVAILABLE` / `ERROR <reason>` visibly; no invented data. | economy direction D8 |
 | Skill or education wage premium. | **Withdrawn.** Only a premium on high-education *slots* in two-tier buildings. | economy direction D15, §6.2 |
+| USD mode divides RUB amounts by `usd_divisor` (50) or uses `*_usd` overrides. | **No exchange rate.** Resources use the native USD price; every other amount is a ratio of native-priced bases. | economy direction D21, §3.2 |
+| Investment fund `starting_pool`, per-building `starting_capital` and citizen `starting_wallet` are credited from nothing. | **No money from nothing.** Privatisation capital comes out of the investment fund; other sources are open questions Q7–Q9. | economy direction D20, §4.5 |
+| Mod-side relocation search (`FindRelocationCandidate`) drives housing moves. | **Proposal:** extend the native rent-versus-wealth gate in `FUN_140834DE0` instead (Q10). | economy direction D23, §8 |
 
 See `docs/ghidra-do-storage-findings.md#superseded-conclusions` for full narrative.
