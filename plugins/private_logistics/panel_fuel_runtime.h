@@ -229,11 +229,10 @@ static PanelEndpointPrice DiagnosticFuelPrice()
     const bool currencyTail=g_currency && g_currency->structSize>=
         offsetof(TsmCurrencyApi,getCurrencySymbol)+sizeof(g_currency->getCurrencySymbol);
     q.currency=TsmCurrencyActive(currencyTail ? g_currency : nullptr); // RUB fallback.
-    const float price=g_pricing->getPrice(resource,q.currency);
-    const double market=(double)TsmPricingMarketMult(g_pricing,resource);
-    const double quote=(double)price*market;
+    // resource_pricing v5: native price only, no market multiplier.
+    const double quote=(double)g_pricing->getPrice(resource,q.currency);
     q.reason="invalid_price";if(!std::isfinite(quote) || quote<=0 || quote>1e9) return q;
-    q.perTonne=(float)quote;q.available=true;q.reason="global_market_quote";
+    q.perTonne=(float)quote;q.available=true;q.reason="global_native_price";
     return q;
 }
 static PanelEndpointPrice PanelHypotheticalPrice(const private_logistics_assignment::Event& event,

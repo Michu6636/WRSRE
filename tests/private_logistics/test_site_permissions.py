@@ -59,6 +59,12 @@ int main(int argc, char**) {
             assert(AutoPermissionToggle(mask,1,1,caps)==((mask|1)&caps));
             assert(AutoPermissionToggle(mask,2,0,caps)==((mask&~2u)&caps));
         }
+    // Under construction: no load, no unload, whatever the permission says;
+    // finished buildings keep exactly their effective directions.
+    for (unsigned d=0; d<8; ++d) {
+        assert(AutoDirectionsForBuildState(d,false)==0);
+        assert(AutoDirectionsForBuildState(d,true)==(d&3u));
+    }
     // Legacy 100%/90% or player-adjusted values converge to company defaults,
     // then daily reconciliation is idempotent instead of fighting native clamp.
     alignas(8) unsigned char legacy[0x198] = {};
@@ -143,3 +149,25 @@ class SitePermissionsTest(unittest.TestCase):
         wrapper = source.split('static bool AutoSetTargetDirections(',1)[1].split('static void AutoTargetsOnDay(int day, int closedDay)\n{',1)[0]
         self.assertIn('AutoTaskConfigValid(cfg)', wrapper)
         self.assertIn('AutoApplyEntryActivation(entry, directions)', wrapper)
+
+    def test_under_construction_targets_are_gated(self):
+        """Owner bug 2026-11-22: private DOs kept unloading at an unfinished
+        privately funded site (302 x commit=0) and each trip was charged."""
+        plugin = ROOT / 'plugins/private_logistics'
+        source = (plugin / 'private_logistics.cpp').read_text()
+        helper = source.split('static bool AutoBuildingFinished(void* building)', 1)[1].split('\n}\n', 1)[0]
+        self.assertIn('ReadablePtr((BYTE*)building + TSM_BLD_BUILT, sizeof(float))', helper)
+        self.assertIn('TsmIsFinished(building)', helper)
+        discovery = source.split('unsigned entityCount = 0, officeCount = 0, candidateCount = 0', 1)[1].split('AutoProbeStateInfrastructure(closedDay, entityCount);', 1)[0]
+        self.assertIn('if (isOffice && !finished) continue;', discovery)
+        self.assertIn('.hasStorage = (isOffice || !finished) ? 0 : 1;', discovery)
+        self.assertIn('else if (finished) ++candidateCount;', discovery)
+        self.assertIn('e.hasStorage = site.permission != 0 && finished;', source)
+        self.assertIn('AutoDirectionsForBuildState(\n                AutoEffectiveDirections(isPrivate, permissions, capabilities), targetFinished)', source)
+        runtime = (plugin / 'dry_assignment_runtime.h').read_text()
+        self.assertIn('!AutoBuildingFinished((void*)token.buyer)', runtime)
+        self.assertIn('reason="target_under_construction"', runtime)
+
+
+if __name__ == '__main__':
+    unittest.main()

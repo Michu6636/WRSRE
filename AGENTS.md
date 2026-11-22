@@ -7,6 +7,9 @@ acting, and preserve existing user changes.
 
 ## Load only what the task needs
 
+- **What to work on next:** [`docs/ROADMAP.md`](docs/ROADMAP.md) (ordered
+  steps, current state, how to run a step).
+
 - **Goal execution/delegation:** [`docs/workflow/EXECUTION.md`](docs/workflow/EXECUTION.md)
   and [`docs/workflow/REVIEW.md`](docs/workflow/REVIEW.md). Use the tracked task
   record and Finding Ledger, not a chat-only handover.

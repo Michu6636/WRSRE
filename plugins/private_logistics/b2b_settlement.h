@@ -43,7 +43,7 @@ struct PendingLoad {
     std::uintptr_t res          = 0;
     float  tons                 = 0.0f; // positive magnitude
     double t                    = 0.0;
-    double unitPrice            = 0.0; // global market quote locked at loading
+    double unitPrice            = 0.0; // global native price locked at loading
     std::uint64_t  sellerKey    = 0;
     bool           active       = false;
     bool           sourceIsPriv = false;

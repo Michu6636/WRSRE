@@ -96,3 +96,7 @@ int main() {
         body = source.split('static void StateStorageWidgetProvider(', 1)[1].split('static bool AutoHasNativeStorage(void* b)\n{', 1)[0]
         self.assertIn('g_enterprise->isBuildingPrivate(building)) return;', body)
         self.assertIn('if (!capabilities) return;', body)
+
+
+if __name__ == '__main__':
+    unittest.main()

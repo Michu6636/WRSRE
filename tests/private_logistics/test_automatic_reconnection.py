@@ -23,7 +23,7 @@ class AutomaticReconnectionTest(unittest.TestCase):
         self.assertIn('g_autoMemo[memoIndex].state = 1;', self.sync)
 
     def test_state_opt_in_and_native_capacity_guards_are_not_removed(self):
-        self.assertIn('e.hasStorage = site.permission != 0;', self.sync)
+        self.assertIn('e.hasStorage = site.permission != 0 && finished;', self.sync)
         self.assertIn('if (!target.hasStorage || target.building == office.building) continue;', self.sync)
         self.assertIn('!AutoCanAppendTarget(office.type, entryCountAtStart, projectedAdds)', self.sync)
 

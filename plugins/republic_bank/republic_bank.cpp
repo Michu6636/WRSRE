@@ -86,7 +86,7 @@ static LoanKey keyForBuilding(void* b) {
 // LoanBook::requestCreditDraw / dailyOverdraftRescue.)
 
 // The INI limits are reference-RUB amounts, not live nominal constants.
-// resource_pricing's v3 CPI basket is already denominated in the ACTIVE
+// resource_pricing's v5 CPI basket is already denominated in the ACTIVE
 // currency, so live CPI / reference RUB CPI performs currency conversion and
 // inflation/deflation indexation together.  With an older/missing pricing
 // service, retain neutral prices but still honour the active currency.
@@ -345,13 +345,9 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void) {
     g_pricing = (const TsmResourcePricingApi*)H->consume(
         TSM_SERVICE_RESOURCE_PRICING, TSM_RESOURCE_PRICING_VERSION);
     if (!g_pricing) g_pricing = (const TsmResourcePricingApi*)H->consume(
-        TSM_SERVICE_RESOURCE_PRICING, TSM_RESOURCE_PRICING_VERSION_V3);
-    if (!g_pricing) g_pricing = (const TsmResourcePricingApi*)H->consume(
-        TSM_SERVICE_RESOURCE_PRICING, TSM_RESOURCE_PRICING_VERSION_V2);
-    if (!g_pricing) g_pricing = (const TsmResourcePricingApi*)H->consume(
         TSM_SERVICE_RESOURCE_PRICING, TSM_RESOURCE_PRICING_VERSION_V1);
     if (!TsmPricingHasCpi(g_pricing))
-        Logf("republic_bank  WARN  resource_pricing v3 CPI unavailable - "
+        Logf("republic_bank  WARN  resource_pricing v5 CPI unavailable - "
              "using neutral prices with active-currency scaling");
     g_enterprise = (TsmEnterpriseBaseApi*)H->consume(TSM_SERVICE_ENTERPRISE_BASE, TSM_ENTERPRISE_BASE_VERSION);
     if (!g_enterprise) g_enterprise = (TsmEnterpriseBaseApi*)H->consume(TSM_SERVICE_ENTERPRISE_BASE, TSM_ENTERPRISE_BASE_VERSION_V7);

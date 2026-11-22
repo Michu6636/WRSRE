@@ -1,9 +1,12 @@
 # Economy direction: owner decisions of 2026-11-22
 
 **Status:** Design decisions, updated the same day with the owner's follow-up
-answers (D19–D31). **No code or INI file has been changed yet.** This
-record shows how the code works today and lists the changes needed to match the
-decisions. Code citations refer to commit `d4d9628`.
+answers (D19–D31), and the step-2 answers (D32–D34). Code step 1 (§11) is implemented in PR #100. Everything
+else in §11 is still to do. **For the ordered plan of what to do next, read
+[`ROADMAP.md`](../ROADMAP.md).** This record shows how the code worked and
+lists the changes needed to match the decisions. Code citations refer to
+commit `d4d9628` unless a section says otherwise. Line numbers move, so
+search for the names.
 
 **Precedence:** where this document conflicts with
 [`WRSRE DESIGN DOC.md`](../WRSRE%20DESIGN%20DOC.md),
@@ -55,6 +58,9 @@ the owner yet; *hypothesis* = needs verification before use.
 | D29 | **Starting capital differs per building**, by size and kind: it is computed from the building's own staff and inputs. | Decided; formula approved (§4.5.7) |
 | D30 | **On nationalisation the company's leftover money returns to the fund**, and an overdraft is covered by the fund. | Decided; §4.5.6 |
 | D31 | **Founding capital must not depend on population.** A new map may have nobody living on it, so the amount comes from native prices only. | Decided; method approved (§4.5.1) |
+| D32 | **Unpriced shop sale: native give, no charge, loud error.** When a shop good has no native price (in practice an unproduced mod good, or the moments after a load), the game hands out the good as in vanilla and no money moves. It is logged as `ERROR UNPRICED` and counted for the Almanac. Owner answer 2026-11-22. | Decided; code step 2 |
+| D33 | **Unpriced business bill: refuse the whole transaction, loud error.** A private construction estimate, wholesale delivery bill or B2B freight bill that includes a resource with no native price is refused as a whole, never billed partly. For example, private construction does not claim the site. Owner answer 2026-11-22. | Decided; code step 2 |
+| D34 | **CPI unavailable: pause what depends on it.** When the cost-of-living basket cannot be computed (food, meat or clothes has no price), wealth-class demand scaling is skipped that day, the runway and CPI show `UNAVAILABLE`, and the bank refuses new credit until CPI is available again. Owner answer 2026-11-22. | Decided; code step 2 |
 
 ---
 
@@ -697,6 +703,51 @@ skill premium.
   private wages derive from the *state* sector table, so they would freeze
   with it if the state does not index; that link must be cut.
 - Today `citizen_labor` never reads the CPI (*code*).
+- **Code check 2026-11-22** (`enterprise_base.cpp` `OnPayroll` and
+  `EvaluateWageBidding`, `citizen_labor.cpp`; owner log of the PR #100
+  build):
+  - **It runs.** Private payroll is debited from company capital (for
+    example `[WAGE] ... type 6 gross 18.00 x 1.00 = 18.00` then
+    `[CAP] ok ... cat=3 by=wage`). The wage-mobility hook is installed, so a
+    higher wage does make a job more attractive to citizens
+    (`0.35 × ln(wage / minimum)`, clamped −30 % … +60 %).
+  - **Formula today:** private daily wage = state rate for the building (its
+    sector wage, which the player's "Whole Sector" slider changes) ×
+    `wageBonusMult`, floored at the minimum wage. At each month boundary
+    `wageBonusMult` rises by 5 % (up to 1.50) if the firm made a profit, has
+    capital above `legal_reserve_flat` (5000) and is below 75 % staffed. It
+    falls by 5 % (down to 1.00) if the firm made a loss or has no capital.
+  - **Flaw 1:** the private wage is tied to the *state* sector table. When
+    the player changes a state sector wage, every private firm in that
+    sector changes too. This contradicts D14 and "private wages are set
+    automatically".
+  - **Flaw 2:** no CPI indexation anywhere. With stable state rates, private
+    wages never follow prices.
+  - **Flaw 3:** the multiplier cannot go below 1.00. A private firm can never
+    pay less than the state rate, even in distress. A high state wage forces
+    every private firm in that sector into losses.
+  - **Flaw 4:** the hike test uses the flat `legal_reserve_flat`, not the
+    per-building reserve of D29 (not implemented yet).
+  - **Cosmetic:** the `[WAGE AUDIT]` log line always prints the services
+    sector (`TSM_SECTOR_SERVICES`) as "sector 4 rate 2.80", whatever the
+    building's real sector is.
+  - **How real economies do it** (*external*):
+    - Euro-area wages are mostly set by collective agreements lasting about
+      two years. Productivity and price inflation have historically been the
+      main drivers of wage growth
+      ([ECB Occasional Paper 338](https://www.ecb.europa.eu/pub/pdf/scpops/ecb.op338~dd97c1f69e.en.pdf)).
+    - Statutory minimum wages have mostly kept pace with inflation, while
+      negotiated wages lagged it
+      ([OECD Employment Outlook 2023](https://www.oecd.org/content/dam/oecd/en/publications/reports/2023/07/oecd-employment-outlook-2023_904bcef3/08785bba-en.pdf)).
+    - In the Soviet system, state committees set industry base rates and
+      skill differentials, with coefficients for undesirable jobs and
+      locations. Managers had bonuses, premiums and piece rates to respond
+      to local labour markets
+      ([Gregory and Kohlhase 1988](https://www.uh.edu/~kohlhase/GregoryKohlhase_RESTAT_1988.pdf)).
+  - **Fix direction, already decided (D14):** private reference wage =
+    sector baseline (from the INI at map start, *not* the live state rate) ×
+    CPI index, then the profit/understaffing premium on top. This is §11
+    item 6, step 5 of the [roadmap](../ROADMAP.md).
 
 ### 6.4 Social transfers (D18)
 
@@ -993,19 +1044,32 @@ when a new building is completed (§4.5.6).
 
 ---
 
-## 11. Change list (follow-up tasks, not done yet)
+## 11. Change list (follow-up tasks)
 
 Each item is a separate engineering task with its own task record
 (`docs/tasks/TEMPLATE.md`).
 
-1. **resource_pricing:** remove the market book and multiplier, fallback
-   prices and `usd_divisor`. Missing native price means `UNPRICED`. Bump the
+**Status, 2026-11-22.** Code step 1 is implemented in PR #100. Host tests and
+the CI Windows build pass; the in-game acceptance check is still pending
+(roadmap step 0). It covers the
+market-book part of item 1, all of item 2, and the procurement part of
+item 3. See the
+[task record](../tasks/active/2026-11-22-remove-market-multiplier-and-procurement.md).
+Fallback prices, `usd_divisor`, `UNPRICED`, `wholesale_ratio` and foreign
+restock are still open.
+
+**Order of work:** the items below are grouped into ordered steps in
+[`ROADMAP.md`](../ROADMAP.md) §3. Use the roadmap for "what next" and this
+list for the detail of each item.
+
+1. **resource_pricing:** remove the market book and multiplier *(done:
+   v5)*, fallback prices and `usd_divisor`. Missing native price means `UNPRICED`. Bump the
    API version. Keep the CPI basket.
 2. **Multiplier consumers:** `citizen_retail.cpp` 613 and 983,
    `enterprise_base.cpp` 1985 and 2504, `private_logistics.cpp` 455,
-   `private_shops.cpp` 948. Switch them to the plain native price.
+   `private_shops.cpp` 948. Switch them to the plain native price. *(Done.)*
 3. **private_shops:** delete the dispatch procurement (`"procurement"`,
-   `procurement_price_mult`, `procure_fallback`), the 0.70 delivery billing
+   `procurement_price_mult`, `procure_fallback`) *(done: v3.6)*, the 0.70 delivery billing
    (`wholesale_ratio`) and foreign restock. Keep pub service charges.
 4. **private_logistics:** exclude customs from `b2b_state_buy`. Defaults
    `billing = 1`, `dry_run = 0`. After G1: company export revenue and company

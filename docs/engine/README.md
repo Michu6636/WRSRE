@@ -25,7 +25,7 @@ label is not blanket proof of semantics or runtime behavior.
 - [building-vectors.md](building-vectors.md) — `0xBC0` workers vs `0xBD8` visitors (factory vs shop tick)
 - [private-industry-re.md](private-industry-re.md) — attribution of goods movement (vehicle+0x4F8 home, +0x4F0 current, cargo 0x3B8)
 - [logistics.md](logistics.md) — superseded DO overview; use ghidra-do-storage-findings as source of truth
-- [local-markets.md](local-markets.md) — town `0x108` NamePoint, aggregator `0xC858/0xC898`
+- [local-markets.md](local-markets.md) — town `0x108` NamePoint, aggregator `0xC858/0xC898`. Engine reference only: local markets were cancelled on 2026-11-22 (one domestic market, [economy direction D3](../visions/economy-direction-2026-11-22.md))
 - [vehicle-fuel-system.md](vehicle-fuel-system.md) — historical fuel attribution; read its correction notice before reuse
 - [almanac-ui.md](almanac-ui.md) — Almanac UI & plugin exports; check current findings/reviews for superseded conclusions
 - [native-verification-results.md](native-verification-results.md) — recorded native verdicts and affected review findings

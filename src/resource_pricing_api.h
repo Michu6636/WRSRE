@@ -54,23 +54,25 @@ extern "C" {
 #include "currency_api.h"      // TSM_CURRENCY_RUB, TSM_CURRENCY_USD
 
 #define TSM_SERVICE_RESOURCE_PRICING "resource_pricing"
-// v2 appends the Republic macro market order book (Victoria-3 style
-// supply/demand balance). The registry matches versions EXACTLY, so the
-// provider publishes BOTH the v1 view (prefix only, for any consumer built
-// against the old header - e.g. private_construction) and the v2 view
-// (full struct). This mirrors the currency (v3/v4) and citizen_labor
-// (v2/v3) dual-provide precedent. build.bat rebuilds every consumer with
-// this header, so an in-tree consumer asking for v2 always resolves.
+// v5 (2026-11-22 economy direction, D2/D3): the Republic market order book
+// (v2: recordSupply/recordDemand/getMarketMultiplier/getMarketBalance) and
+// the local per-building scarcity quotes (v4) are REMOVED. All money uses the
+// game's native price and nothing else; a future market model may change the
+// native prices themselves, but never adds a second price layer. See
+// docs/visions/economy-direction-2026-11-22.md section 3.
 //
-// v3 appends getCpiDailyBasket (Task 7, absolute CPI survival basket).
-// Same dual-provide pattern: the provider publishes v1, v2 AND v3 views.
-// A v2 consumer asking for v2 reads exactly the prefix it expects;
-// a v3 consumer asks for v3 and gets the CPI tail. Purely additive:
-// no existing field moved, no existing meaning changed.
-#define TSM_RESOURCE_PRICING_VERSION    4u
-#define TSM_RESOURCE_PRICING_VERSION_V4 4u
-#define TSM_RESOURCE_PRICING_VERSION_V3 3u
-#define TSM_RESOURCE_PRICING_VERSION_V2 2u
+// Removing fields changes the layout after getPrice, so v5 is a NEW layout,
+// not an append: getCpiDailyBasket moved up to sit directly after getPrice.
+// The provider publishes two views:
+//   v1  prefix through getPrice (unchanged layout - private_construction and
+//       any other price-only consumer keeps working);
+//   v5  the full struct below.
+// The old v2/v3/v4 layouts are no longer published. A stale consumer built
+// against them fails to resolve the service and must degrade as it already
+// does when resource_pricing is absent. build.bat rebuilds every in-tree
+// consumer against this header.
+#define TSM_RESOURCE_PRICING_VERSION    5u
+#define TSM_RESOURCE_PRICING_VERSION_V5 5u
 #define TSM_RESOURCE_PRICING_VERSION_V1 1u
 
 typedef struct TsmResourcePricingApi {
@@ -121,112 +123,34 @@ typedef struct TsmResourcePricingApi {
 
     float (*getPrice)(void* resRecord, int currency);
 
-    // --- v2: Republic macro market order book -----------------------------
-    //
-    // A Victoria-3-style supply/demand balance, aggregated Republic-wide
-    // per resource. Producers call recordSupply when finished goods leave
-    // an export storage or cross the border; consumers call recordDemand
-    // for citizen retail wants (serviced or turned away) and factory input
-    // draws. At each market_rebalance_freq boundary the service folds the
-    // accumulated totals into a clamped multiplier that getMarketMultiplier
-    // returns until the next boundary, then resets the accumulators.
-    //
-    // All four are safe from any thread and take the register's own lock.
-    // A null resRecord is ignored (record*) or returns the neutral 1.0
-    // multiplier / zero balance (get*).
-
-    // Add `tons` of sell-order volume for a resource (>= 0).
-    void   (*recordSupply)(void* resRecord, double tons);
-    // Add `tons` of buy-order volume for a resource (>= 0).
-    void   (*recordDemand)(void* resRecord, double tons);
-
-    // The current market multiplier for a resource, in
-    // [min_glut_mult, max_shortage_mult]. 1.0 when the book is balanced,
-    // the market is disabled, or the record is unknown.
-    float  (*getMarketMultiplier)(void* resRecord);
-
-    // The raw accumulated supply/demand for the current period and the
-    // multiplier last computed for this resource. Any out pointer may be
-    // null. Used by the in-window "Market Condition" row and probes.
-    void   (*getMarketBalance)(void* resRecord, double* outSupply,
-                               double* outDemand, float* outMultiplier);
-
-    // --- v3: Task 7 absolute CPI survival basket ---------------------------
+    // --- v5: CPI survival basket (was the v3 tail) --------------------------
     //
     // Daily Basket Cost (CPI), in the ACTIVE currency units the provider
     // resolves through TsmCurrencyActive (same convention as getPrice):
     //
-    //   CPI = (Pfood x multFood x Qfood)
-    //       + (Pmeat x multMeat x Qmeat)
-    //       + (Pclothes x multClothes x Qclothes)
+    //   CPI = (Pfood x Qfood) + (Pmeat x Qmeat) + (Pclothes x Qclothes)
     //       + dailyRent
     //
-    // P* are the live getPrice answers for the provider's own
-    // getFood/getMeat/getClothes records; mult* are the live market-book
-    // multipliers (neutral 1.0 when the book is absent or disabled);
-    // Q* are the [cpi_basket] quantities (tons/day); dailyRent is the
-    // injected per-day rent average, or the [cpi_basket] default_daily_rent
-    // fallback (USD-scaled in USD mode) when injectedDailyRent <= 0.
+    // P* are the native getPrice answers for the provider's own
+    // getFood/getMeat/getClothes records; Q* are the [cpi_basket]
+    // quantities (tons/day); dailyRent is the injected per-day rent average,
+    // or the [cpi_basket] default_daily_rent fallback (USD-scaled in USD
+    // mode) when injectedDailyRent <= 0.
     //
-    // Pure query: reads records and config, takes the register's own lock
-    // where the market book needs it. Safe from any thread. Always
+    // Pure query: reads records and config. Safe from any thread. Always
     // returns a finite value > 0 (falls back to the configured default
     // basket, ~2.15 RUB/day at shipped fallbacks, when no world/prices
     // are readable).
     float (*getCpiDailyBasket)(float injectedDailyRent);
-
-    // --- v4: local per-building inventory scarcity/glut quote spreads -----
-    //
-    // Purely local signal: remote under-stocked shops and over-stocked
-    // factories produce organic local price signals WITHOUT splitting the
-    // Republic baseline price. Reads the building's own storage slots; never
-    // touches getCpiDailyBasket or the market book. Multiplier is 1.0 in the
-    // neutral deadband and clamped to [full_discount_min, empty_markup_max].
-    float (*getLocalScarcityMultiplier)(void* building, void* resRecord);
-    float (*getLocalPriceQuote)(void* building, void* resRecord, int currency);
 } TsmResourcePricingApi;
 
-// --- v2 consumer guard ------------------------------------------------------
+// --- CPI consumer guard -----------------------------------------------------
 //
-// The registry matches versions exactly, so a v2 consumer asks for v2 and a
-// v1 consumer keeps asking for v1. These helpers let one binary tolerate
-// whichever iface it was handed: they check structSize before touching the
-// appended market-book tail and fall back to neutral behaviour (multiplier
-// 1.0, no recording) when the provider is a v1 build.
-static inline int TsmPricingHasMarket(const TsmResourcePricingApi* api)
-{
-    return api &&
-        api->structSize >= offsetof(TsmResourcePricingApi, getMarketBalance) +
-                              sizeof(api->getMarketBalance) &&
-        api->recordSupply && api->recordDemand &&
-        api->getMarketMultiplier && api->getMarketBalance;
-}
-static inline void TsmPricingRecordSupply(const TsmResourcePricingApi* api,
-                                          void* res, double tons)
-{
-    if (TsmPricingHasMarket(api) && res && tons > 0.0) api->recordSupply(res, tons);
-}
-static inline void TsmPricingRecordDemand(const TsmResourcePricingApi* api,
-                                          void* res, double tons)
-{
-    if (TsmPricingHasMarket(api) && res && tons > 0.0) api->recordDemand(res, tons);
-}
-static inline float TsmPricingMarketMult(const TsmResourcePricingApi* api,
-                                         void* res)
-{
-    if (!TsmPricingHasMarket(api) || !res) return 1.0f;
-    float m = api->getMarketMultiplier(res);
-    return (m == m && m > 0.0f) ? m : 1.0f;
-}
-
-// --- v3 consumer guard ------------------------------------------------------
-//
-// Same structSize-prefix pattern as TsmPricingHasMarket: true when the
-// provider carries the getCpiDailyBasket tail. A v2 consumer never touches
-// it (reads exactly its prefix); a v3 consumer asks for v3 and calls the
-// tail directly. TsmPricingCpiBasket wraps the call with the null/finite
-// guards so a missing tail degrades to the documented ~2.15 RUB/day
-// fallback instead of faulting.
+// structSize-prefix guard: true when the provider carries getCpiDailyBasket
+// (the v5 view). A v1 view ends at getPrice, so this is false for it.
+// TsmPricingCpiBasket wraps the call with the null/finite guards so a
+// missing tail degrades to the documented ~2.15 RUB/day fallback instead of
+// faulting.
 static inline int TsmPricingHasCpi(const TsmResourcePricingApi* api)
 {
     return api &&
@@ -240,35 +164,6 @@ static inline float TsmPricingCpiBasket(const TsmResourcePricingApi* api,
     if (!TsmPricingHasCpi(api)) return 2.15f;
     float c = api->getCpiDailyBasket(injectedDailyRent);
     return (c == c && c > 0.0f) ? c : 2.15f;
-}
-
-// --- v4 consumer guard ------------------------------------------------------
-//
-// structSize-prefix guard for the local-quote tail. True when the provider
-// carries getLocalScarcityMultiplier + getLocalPriceQuote. Falls back to 1.0
-// / (getPrice * market mult) when absent.
-static inline int TsmPricingHasLocalQuote(const TsmResourcePricingApi* api)
-{
-    return api &&
-        api->structSize >= offsetof(TsmResourcePricingApi, getLocalPriceQuote) +
-                               sizeof(api->getLocalPriceQuote) &&
-        api->getLocalScarcityMultiplier && api->getLocalPriceQuote;
-}
-static inline float TsmPricingLocalMult(const TsmResourcePricingApi* api,
-                                        void* bld, void* res)
-{
-    if (!TsmPricingHasLocalQuote(api) || !bld || !res) return 1.0f;
-    float m = api->getLocalScarcityMultiplier(bld, res);
-    return (m == m && m > 0.0f) ? m : 1.0f;
-}
-static inline float TsmPricingLocalQuote(const TsmResourcePricingApi* api,
-                                         void* bld, void* res, int cur)
-{
-    if (TsmPricingHasLocalQuote(api) && bld && res)
-        return api->getLocalPriceQuote(bld, res, cur);
-    // fallback: getPrice * TsmPricingMarketMult
-    float base = api ? api->getPrice(res, cur) : 0.0f;
-    return base * TsmPricingMarketMult(api, res);
 }
 
 #ifdef __cplusplus

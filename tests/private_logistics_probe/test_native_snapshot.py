@@ -40,3 +40,7 @@ class TestNativeSnapshot(unittest.TestCase):
         self.assertEqual(r.mirror_valid, 0)
         self.assertEqual(r.home_matches, 1)
         self.assertIn(" observation_seq=71 ", output)
+
+
+if __name__ == '__main__':
+    unittest.main()

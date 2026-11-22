@@ -52,6 +52,17 @@ inline unsigned AutoEffectiveDirections(bool isPrivate, unsigned permissions,
     return (isPrivate ? capabilities : (permissions & capabilities)) & AUTO_ALLOW_BOTH;
 }
 
+// A building still under construction has no working storage: the engine
+// refuses every unload there (in-game log 2026-11-22: 302 attempts at a
+// privately funded pub site, all commit=0) and it has nothing to load.
+// Unfinished targets therefore get NO directions. The entry itself is kept
+// and the daily reconcile restores its directions once the building is
+// finished, so neither the player's list nor the native planner is fought.
+inline unsigned AutoDirectionsForBuildState(unsigned directions, bool finished)
+{
+    return finished ? (directions & AUTO_ALLOW_BOTH) : 0u;
+}
+
 inline unsigned char AutoMigratePermission(unsigned char value, bool legacy)
 {
     // PLSTOR17: 1=LOAD, 2=explicit OFF. Never turn old OFF into UNLOAD.

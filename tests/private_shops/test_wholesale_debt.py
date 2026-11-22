@@ -31,7 +31,6 @@ static float price=10.0f;
 static float g_wholesaleRatio=0.7f;
 static int g_currency;
 static int TsmCurrencyActive(int) { return 0; }
-static void TsmPricingRecordDemand(void*, void*, double) {}
 static float Price(void*, int) { return price; }
 struct Pricing { float (*getPrice)(void*, int); } pricing{Price};
 static Pricing* g_pricing=&pricing;
@@ -42,8 +41,7 @@ struct Enterprise { void (*chargeWholesaleDelivery)(void*, double); } enterprise
 static Enterprise* g_enterprise=&enterprise;
 struct Snapshot { void* resource; float content; };
 struct Context { void* shop; double capital; double charged; unsigned billed; };
-static void Settle(float content, Snapshot& snap, Context* ctx) {
-    bool isExport=false, isImport=false;
+static void Settle(float content, Snapshot& snap, Context* ctx, bool isExport=false) {
     void* res=snap.resource;
 ''' + tail + r'''
 static bool Near(double a, double b) { return std::abs(a-b)<0.001; }
@@ -70,6 +68,17 @@ int main() {
         assert(charges==2 && Near(treasury,31.5));
         assert(Near(balance,initial-31.5) && shelf==3.5f);
     }
+    // Own production filling an export-flagged storage is not a delivery.
+    {
+        balance=0; treasury=0; charges=0;
+        Snapshot snap{reinterpret_cast<void*>(1), 1.0f};
+        Context ctx{reinterpret_cast<void*>(2), 0, 0, 0};
+        Settle(6.0f,snap,&ctx,true);
+        assert(charges==0 && Near(treasury,0.0) && snap.content==6.0f);
+        // Same growth in a non-export storage is billed.
+        Settle(8.0f,snap,&ctx,false);
+        assert(charges==1 && Near(treasury,14.0));
+    }
     // Missing/zero price does not modify inventory or create a charge.
     price=0; charges=0;
     Snapshot snap{reinterpret_cast<void*>(1),0}; Context ctx{nullptr,0,0,0};
@@ -90,6 +99,25 @@ int main() {
         self.assertNotIn('TSM_SLOT_CONTENT', wholesale)
         self.assertNotIn('allowDebt', wholesale)
         self.assertIn('RunWholesaleBilling(b, *st);', source)
+
+    def test_state_procurement_and_market_book_are_gone(self):
+        # Economy-direction step 1: the treasury never buys private output,
+        # and no market supply/demand is recorded or applied.
+        source = (ROOT / 'plugins/private_shops/private_shops.cpp').read_text()
+        code = '\n'.join(line for line in source.splitlines()
+                         if not line.lstrip().startswith('//'))
+        for removed in ('moveTreasury', '"procurement"', 'TSM_CAP_PRODUCTION',
+                        'g_procurementMult', 'g_procureFallback',
+                        'DispatchFallbackAllowed', 'TsmPricingRecordSupply',
+                        'TsmPricingRecordDemand', 'TsmPricingMarketMult',
+                        'TsmPricingHasMarket'):
+            self.assertNotIn(removed, code)
+        ini = (ROOT / 'plugins/private_shops/private_shops.ini').read_text()
+        for line in ini.splitlines():
+            if line.lstrip().startswith(';'):
+                continue
+            self.assertNotIn('procurement_price_mult', line)
+            self.assertNotIn('procurement_flag_fallback', line)
 
 
 if __name__ == '__main__':

@@ -52,7 +52,7 @@ class TargetPolicyTest(unittest.TestCase):
             result = subprocess.run([str(path / 'target_policy')], capture_output=True, text=True, env=env)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             self.assertEqual(result.stderr, '')
-            self.assertIn('6 extracted daily-reconciliation groups PASS', result.stdout)
+            self.assertIn('7 extracted daily-reconciliation groups PASS', result.stdout)
             self.assertIn('extracted live append preflight PASS', result.stdout)
 
     def test_optimized_production_reconciliation(self):

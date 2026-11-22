@@ -63,6 +63,8 @@ static bool AutoBuildingKey(void* b,std::uint64_t* key,int*) {
     return true;
 }
 static bool IsPrivate(void* b) {return b!=nullptr;}
+static uintptr_t unfinishedBuilding=0;
+static bool AutoBuildingFinished(void* b) {return b!=nullptr && (uintptr_t)b!=unfinishedBuilding;}
 static wrsre::b2b::FundsTransferCallbacks MakeTransferCallbacks(unsigned* insolvent,unsigned* treasury) {
     wrsre::b2b::FundsTransferCallbacks cb{};
     cb.isLivePrivate=[](void*,void* b){return b!=nullptr;};
@@ -321,6 +323,18 @@ static void assignment_close_charges_original_buyer_once_only_when_complete() {
     Feed(v,empty,.9f,1000);Feed(v,ambiguous,.8f,2000);Feed(v,empty,.7f,3000);
     CHECK(capitals[Ptr(0x20000)]==10000 && capitals[Ptr(0x50000)]==0);
     CHECK(g_b2bSettleCount==0);
+
+    // Buyer still under construction: the engine refused the unload, so the
+    // otherwise complete trip is never charged.
+    PrepareDry();ReadyQuote();g_billing=1;g_dryRun=0;unfinishedBuilding=Ptr(0x20000);
+    v=Truck();Feed(v,empty,.9f,1000);Feed(v,Task(),.8f,2000);Feed(v,Task(),.6f,3000);
+    FleetEvents(v.Observe(empty,Fuel(v.root,.5f),2,4000));
+    CHECK(capitals[Ptr(0x20000)]==10000 && capitals[Ptr(0x50000)]==0);
+    CHECK(g_b2bSettleCount==0);
+    bool logged=false;
+    for(const auto& line:logs) logged|=line.find("reason=target_under_construction")!=std::string::npos;
+    CHECK(logged);
+    unfinishedBuilding=0;
 }
 int main() {
     FleetRegressionMain();

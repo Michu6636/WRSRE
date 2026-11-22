@@ -1297,15 +1297,11 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
     }
 
     // v4.2 (Task 7): the true daily CPI survival basket for the City Hall
-    // macro rows. Prefer pricing v3 (getCpiDailyBasket); fall back v2/v1
-    // - the TsmPricingCpiBasket helper then degrades to the documented
+    // macro rows. Prefer pricing v5 (getCpiDailyBasket); fall back v1 -
+    // the TsmPricingCpiBasket helper then degrades to the documented
     // ~2.15 default basket. Level 2 -> 1 consume is hierarchy-legal.
     g_pricing = (const TsmResourcePricingApi*)
         H->consume(TSM_SERVICE_RESOURCE_PRICING, TSM_RESOURCE_PRICING_VERSION);
-    if (!g_pricing)
-        g_pricing = (const TsmResourcePricingApi*)
-            H->consume(TSM_SERVICE_RESOURCE_PRICING,
-                       TSM_RESOURCE_PRICING_VERSION_V2);
     if (!g_pricing)
         g_pricing = (const TsmResourcePricingApi*)
             H->consume(TSM_SERVICE_RESOURCE_PRICING,
@@ -1395,7 +1391,7 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
     Logf("taxes  live v4.6 (currency %s, macro readouts %s, CPI %s)",
          CurSym(),
          g_macroIndicators ? "on" : "off",
-         TsmPricingHasCpi(g_pricing) ? "live (pricing v3)"
+         TsmPricingHasCpi(g_pricing) ? "live (pricing v5)"
                                      : "default 2.15 fallback");
     Logf("taxes    VAT %.0f%% (%d, %s), profit %.0f%% (%d, %s), "
          "property %.2f flat (%d, %s%s)",
