@@ -2,8 +2,8 @@
 
 ## Contract
 
-- **Status:** active. Host-side work is done. The Windows build is pending
-  CI, and nothing has been run in-game.
+- **Status:** active. Host tests and the CI Windows build pass (PR #100).
+  Nothing has been run in-game.
 - **Task record:** `docs/tasks/active/2026-11-22-remove-market-multiplier-and-procurement.md`
 - **Baseline:** branch `arena/672c9ef4-wrsre` from `main` `01ff95a` (PR #99
   merged), clean worktree.
@@ -72,17 +72,18 @@
 | Almanac + tools | `run_host_tests.py`, `run_binary_sha256_tests.py`, `run_tax_policy_tests.py`, `almanac_overlay_dev/run_host_tests.py`, `audit_economy_csv.py selftest`, `peinfo.py selftest` | 0 | Host only |
 | Header compile | g++ C++17 and gcc C11, `-Wall -Wextra -Werror`, layout `static_assert`s | 0 | Header only |
 | Plugin syntax | g++ `-fsyntax-only` with a throwaway Windows shim, base vs new | No new errors in any edited plugin | Not MSVC; SEH is faked |
-| Windows build | CI `build-windows` | pending | Real MSVC verification |
+| Windows build | CI `Windows (MSVC + SEH)`, run 45063617384 | pass | Real MSVC build; no game run |
 
 ## Separate validation statuses
 
 - **STATIC REVIEW:** self-review only.
-- **BUILD/TEST EVIDENCE:** PARTIAL. Host tests pass; the MSVC build is pending CI.
+- **BUILD/TEST EVIDENCE:** PASS. Host tests and the CI MSVC build pass.
 - **RUNTIME VALIDATION:** NOT RUN. No in-game session.
 
 ## Resume checkpoint
 
-- **Next action:** confirm CI `build-windows` on the PR. Then run code step 2
-  (fallback prices and made-up sample data).
+- **Next action:** owner review and merge of PR #100, then an in-game check
+  that factories are no longer billed for their own output. After that, code
+  step 2 (fallback prices and made-up sample data).
 - **Save compatibility:** unchanged. Neither the market book nor procurement
   persisted anything. Old INI keys are ignored.

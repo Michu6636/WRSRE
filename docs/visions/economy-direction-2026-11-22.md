@@ -998,8 +998,8 @@ when a new building is completed (§4.5.6).
 Each item is a separate engineering task with its own task record
 (`docs/tasks/TEMPLATE.md`).
 
-**Status, 2026-11-22.** Code step 1 is implemented on the host side (Windows
-build pending CI, no in-game run). It covers the market-book part of item 1,
+**Status, 2026-11-22.** Code step 1 is implemented (host tests and the CI
+Windows build pass; no in-game run). It covers the market-book part of item 1,
 all of item 2, and the procurement part of item 3. See the
 [task record](../tasks/active/2026-11-22-remove-market-multiplier-and-procurement.md).
 Fallback prices, `usd_divisor`, `UNPRICED`, `wholesale_ratio` and foreign
