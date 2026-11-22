@@ -20,7 +20,7 @@ struct Entry { alignas(8) BYTE bytes[0x18]{}; alignas(8) BYTE cfg[0x198]{}; };
 struct Building {
     alignas(8) BYTE native[0x1100]{};
     uint64_t key=0; int type=5; unsigned caps=3, permission=0;
-    bool privateSite=true, readable=true;
+    bool privateSite=true, readable=true, finished=true;
     std::vector<void*> tasks;
 };
 struct AutoEntity { void* building; uint64_t key; int type; int hasStorage; unsigned char isStateStorage, statePermission, targetPresent; };
@@ -57,6 +57,8 @@ static bool AutoBuildingKey(void* b,uint64_t* k,int* t) {
     auto* x=static_cast<Building*>(b); *k=x->key; if(t)*t=x->type; return true;
 }
 static unsigned AutoBuildingCapabilities(void* b) { return static_cast<Building*>(b)->caps; }
+static bool AutoBuildingFinished(void* b) { return b && static_cast<Building*>(b)->finished; }
+static void AutoBuildingName(void* b,char* out,size_t n) { snprintf(out,n,"site%llu",(unsigned long long)static_cast<Building*>(b)->key); }
 static bool AutoReadBuildingType(void* b,int* t) { *t=static_cast<Building*>(b)->type; return true; }
 static unsigned AutoStatePermissionGet(uint64_t k) {
     for(auto* b:publicSites) if(b->key==k)return b->permission;
@@ -212,6 +214,35 @@ static void FailedAppendDoesNotSpendBudget() {
     // The failed candidate is still omitted at the full total count next day.
     Tick(2); assert(o->tasks.size()==20 && appendCalls==2);
 }
+static bool Logged(const char* text) {
+    for(const auto& l:logs) if(l.find(text)!=std::string::npos) return true;
+    return false;
+}
+static void UnderConstruction() {
+    // Owner bug 2026-11-22: a privately funded pub still under construction
+    // became a managed delivery target; every unload was refused (commit=0).
+    Reset(); auto* o=Add(43,0); auto* pub=Add(23,2); pub->finished=false;
+    Tick(); assert(o->tasks.empty() && appendCalls==0);
+    assert(Logged("under construction: 1 storage/consumer site(s) excluded"));
+    pub->finished=true; Tick(2); assert(o->tasks.size()==1 && appendCalls==1);
+    auto* e=static_cast<BYTE*>(o->tasks.back()); void* cfg=nullptr; memcpy(&cfg,e+16,8);
+    assert(e[0]==1 && static_cast<BYTE*>(cfg)[0xC8]==1);
+    // An existing entry (manual or generated) to an unfinished building gets
+    // no directions; the entry is KEPT and restored once it is finished.
+    pub->finished=false; logs.clear(); Tick(3);
+    assert(o->tasks.size()==1 && e[0]==0 && static_cast<BYTE*>(cfg)[0]==0 && static_cast<BYTE*>(cfg)[0xC8]==0);
+    assert(Logged("under construction: directions 0 (entry kept; restored once finished)"));
+    assert(!Logged("absent; eligible for automatic reconnection")); // still indexed
+    pub->finished=true; Tick(4);
+    assert(o->tasks.size()==1 && appendCalls==1 && e[0]==1 && static_cast<BYTE*>(cfg)[0xC8]==1);
+    // Opted-in state storage still under construction is not a source yet.
+    Reset(); o=Add(43,0); auto* state=Add(5,3,false); state->permission=1; state->finished=false;
+    Tick(); assert(o->tasks.empty() && appendCalls==0);
+    state->finished=true; Tick(2); assert(o->tasks.size()==1);
+    // An unfinished DO is not an office: nothing is appended to it.
+    Reset(); o=Add(43,0); o->finished=false; Add(); Tick();
+    assert(o->tasks.empty() && appendCalls==0);
+}
 static void LiveAppendPreflight() {
     Reset(); auto* o=Add(43,0); for(int i=0;i<19;++i)Manual(o,Add());
     assert(AutoAppendPrefix(o,nullptr,3));
@@ -229,6 +260,6 @@ static void LiveAppendPreflight() {
 }
 int main() {
     LiveAppendPreflight(); Limits(); SixthAndDedup(); TotalBoundsAndDryRun(); RailAndInvalid();
-    PermissionsAndCustoms(); FailedAppendDoesNotSpendBudget();
-    std::puts("6 extracted daily-reconciliation groups PASS (host stubs, not native gameplay)");
+    PermissionsAndCustoms(); FailedAppendDoesNotSpendBudget(); UnderConstruction();
+    std::puts("7 extracted daily-reconciliation groups PASS (host stubs, not native gameplay)");
 }

@@ -47,3 +47,7 @@ class PermissionTestDefaults(unittest.TestCase):
         self.assertNotIn('*(BYTE*)entry = 0;', append)
         self.assertIn('AutoApplyEntryActivation(entry, directions)', source.split('static bool AutoSetTargetDirections(', 1)[1])
         self.assertIn('entry_enabled=%u', source)
+
+
+if __name__ == '__main__':
+    unittest.main()

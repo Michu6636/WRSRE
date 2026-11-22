@@ -1229,6 +1229,15 @@ static bool AutoStatePermissionSet(uint64_t key, unsigned char mode)
 
 static bool AutoHasNativeStorage(void* b);
 
+// Fail closed: an unreadable progress float counts as unfinished, so no
+// delivery is directed at a building whose build state is unknown.
+static bool AutoBuildingFinished(void* building)
+{
+    return building && TsmIsValidGamePtr(building) &&
+           ReadablePtr((BYTE*)building + TSM_BLD_BUILT, sizeof(float)) &&
+           TsmIsFinished(building);
+}
+
 static unsigned AutoBuildingCapabilities(void* building)
 {
     int type = -1;
@@ -1764,7 +1773,7 @@ static void AutoTargetsOnDay(int day, int closedDay)
         return;
     }
 
-    unsigned entityCount = 0, officeCount = 0, candidateCount = 0;
+    unsigned entityCount = 0, officeCount = 0, candidateCount = 0, unfinishedCount = 0;
     for (size_t i = 0; i < n; ++i) {
         void* b = g_enterprise->getEnterpriseByIndex(i);
         if (!b || !TsmIsValidGamePtr(b) || !ReadablePtr(b, TSM_BLD_MIN_READABLE) ||
@@ -1773,18 +1782,24 @@ static void AutoTargetsOnDay(int day, int closedDay)
         uint64_t key = 0; int type = -1;
         if (!AutoBuildingKey(b, &key, &type)) continue;
         const bool isOffice = (type == AUTO_DO_ROAD_TYPE || type == AUTO_DO_RAIL_TYPE);
+        const bool finished = AutoBuildingFinished(b);
+        // An unfinished DO has no fleet to direct: not an office yet.
+        if (isOffice && !finished) continue;
         const unsigned capabilities = isOffice ? 0 : AutoBuildingCapabilities(b);
         const bool hasStorage = isOffice || capabilities != 0;
         if (!hasStorage) continue;
+        // An unfinished site stays INDEXED (existing entries and memos still
+        // match it) but is never a candidate until it is finished.
+        if (!isOffice && !finished) ++unfinishedCount;
         g_autoEntities[entityCount].building = b;
         g_autoEntities[entityCount].key = key;
         g_autoEntities[entityCount].type = type;
-        g_autoEntities[entityCount].hasStorage = isOffice ? 0 : 1;
+        g_autoEntities[entityCount].hasStorage = (isOffice || !finished) ? 0 : 1;
         g_autoEntities[entityCount].isStateStorage = 0;
         g_autoEntities[entityCount].statePermission = (unsigned char)capabilities;
         g_autoEntities[entityCount].targetPresent = 0;
         ++entityCount;
-        if (isOffice) ++officeCount; else ++candidateCount;
+        if (isOffice) ++officeCount; else if (finished) ++candidateCount;
     }
 
     AutoProbeStateInfrastructure(closedDay, entityCount);
@@ -1795,11 +1810,16 @@ static void AutoTargetsOnDay(int day, int closedDay)
         AutoStateStorageSite& site = g_autoStateStorageSites[si];
         if (!site.building || !site.key) continue;
         AutoEntity& e = g_autoEntities[entityCount++];
+        const bool finished = AutoBuildingFinished(site.building);
+        if (!finished) ++unfinishedCount;
         e.building = site.building; e.key = site.key; e.type = AUTO_STORAGE_BUILDING_TYPE;
-        e.hasStorage = site.permission != 0;
+        e.hasStorage = site.permission != 0 && finished;
         e.isStateStorage = 1; e.statePermission = site.permission; e.targetPresent = 0;
-        if (site.permission != 0) ++candidateCount;
+        if (e.hasStorage) ++candidateCount;
     }
+    if (unfinishedCount)
+        Logf("[AUTO DO] day %d under construction: %u storage/consumer site(s) excluded "
+             "until finished (no load, no unload)", closedDay, unfinishedCount);
 
     if (officeCount == 0) return;
     if (!AutoBuildPointerIndex(entityCount)) {
@@ -1857,7 +1877,15 @@ static void AutoTargetsOnDay(int day, int closedDay)
                 permissions = AutoBuildingKey(targetBuilding, &key, nullptr) ?
                     AutoStatePermissionGet(key) : 0;
             }
-            const unsigned directions = AutoEffectiveDirections(isPrivate, permissions, capabilities);
+            const bool targetFinished = AutoBuildingFinished(targetBuilding);
+            const unsigned directions = AutoDirectionsForBuildState(
+                AutoEffectiveDirections(isPrivate, permissions, capabilities), targetFinished);
+            if (!targetFinished && g_autoLogLines < (unsigned)g_autoTargetLogLimit) {
+                char asset[128]; AutoBuildingName(targetBuilding, asset, sizeof(asset));
+                Logf("[AUTO DO] day %d target=%p asset=%s under construction: directions 0 "
+                     "(entry kept; restored once finished)", closedDay, targetBuilding, asset);
+                ++g_autoLogLines;
+            }
             if (!g_autoTargetsDryRun)
                 doConfigChanged |= AutoSetTargetDirections(entry, directions);
             AutoLogNativeTarget(entry, targetType, directions, false);
@@ -2684,7 +2712,7 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
     if (g_simClock) g_simClock->registerDay(OnDay, nullptr);
 
     Logf("private_logistics live v%s: billing=%d dry_run=%d sites=%d | "
-         "goods=locked_global_base_x_market, DO=observed_assignment_fuel_x_global_close | "
+         "goods=locked_global_native_price, DO=observed_assignment_fuel_x_global_close | "
          "no wholesale, cargo-value freight, fragment tariff, margin, wear or upkeep",
          PL_VERSION,g_billing,g_dryRun,g_siteCount);
     Logf("private_logistics [AUTO DO] enabled=%d dry_run=%d cadence=once/day; "

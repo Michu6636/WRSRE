@@ -123,6 +123,11 @@ static void AssignmentSettlementEvent(const fleet::a::Event& e,
                                !AssignmentPartyCurrent(token.carrier,token.carrierKey))) {
         assessment.billable=false;assessment.reason="identity_changed_or_demolished";
     }
+    // A site under construction cannot receive goods (the engine refuses the
+    // unload), so a trip to it delivered nothing and is never charged.
+    if(assessment.billable && !AutoBuildingFinished((void*)token.buyer)) {
+        assessment.billable=false;assessment.reason="target_under_construction";
+    }
 
     double paid=0.0;
     const bool dry=g_dryRun!=0 || g_billing==0;

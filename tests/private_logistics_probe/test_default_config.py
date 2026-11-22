@@ -21,3 +21,7 @@ class DefaultConfigTest(unittest.TestCase):
         self.assertIn('H->configInt(ini, "private_logistics_probe", "enabled", 1)', source)
         self.assertRegex(source, re.compile(
             r'if \(!g_enabled\) \{\s*LogSession\("disabled".*?return 0;', re.S))
+
+
+if __name__ == '__main__':
+    unittest.main()

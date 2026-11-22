@@ -182,3 +182,7 @@ class TaskAuditTest(unittest.TestCase):
         self.assertIn('if (doAdded > 0 || doConfigChanged)', body)
         self.assertEqual(body.count('*((BYTE*)office.building + AUTO_DO_DIRTY) = 1;'),1)
         self.assertEqual(body.count('*(float*)((BYTE*)office.building + AUTO_DO_UI_TIMER) = 3.0f;'),1)
+
+
+if __name__ == '__main__':
+    unittest.main()
