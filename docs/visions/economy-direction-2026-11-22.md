@@ -1,7 +1,7 @@
 # Economy direction: owner decisions of 2026-11-22
 
 **Status:** Design decisions, updated the same day with the owner's follow-up
-answers (D19–D29). **No code or INI file has been changed yet.** This
+answers (D19–D31). **No code or INI file has been changed yet.** This
 record shows how the code works today and lists the changes needed to match the
 decisions. Code citations refer to commit `d4d9628`.
 
@@ -52,7 +52,9 @@ the owner yet; *hypothesis* = needs verification before use.
 | D26 | **Fund income:** company profit above the legal reserve, and rich citizens' savings above the line that keeps them in the Affluent class. | Decided; §4.5 |
 | D27 | **Nationalisation is a purchase by the treasury:** the state pays the fund for the building. (Replaces the owner's earlier age-rule remark, which is withdrawn.) | Decided; §4.5.6 |
 | D28 | **Toggle cooldown:** after a building is privatised or nationalised, the PRIV button is locked for a countdown on the sim clock (about one month). | Decided; §4.5.6 |
-| D29 | **Starting capital differs per building**, by size and kind: it is computed from the building's own staff and inputs. | Decided in principle; formula in §4.5.7 (proposal) |
+| D29 | **Starting capital differs per building**, by size and kind: it is computed from the building's own staff and inputs. | Decided; formula approved (§4.5.7) |
+| D30 | **On nationalisation the company's leftover money returns to the fund**, and an overdraft is covered by the fund. | Decided; §4.5.6 |
+| D31 | **Founding capital must not depend on population.** A new map may have nobody living on it, so the amount comes from native prices only. | Decided; method in §4.5.1 (proposal) |
 
 ---
 
@@ -315,9 +317,42 @@ burn are still unproven at native level. Unpriced or uncertain events stay
 - A persisted "founded" flag makes it impossible to repeat. An unreadable
   fund balance on load is shown as `ERROR` in the Almanac and the fund is
   frozen; it is **never** reset or re-founded.
-- The amount (today 5 000 000) must be re-based on something native-priced
-  (D21), for example a number of days of the CPI basket per citizen.
-  Owner question Q12.
+- **How much (D31, *proposal*).** It cannot depend on population (a new map
+  may be empty) or on the CPI basket (which is priced per citizen). It must
+  be stable, the same for the same map start, and correct in either currency
+  (D21). Recommended: a **reference bundle of construction materials** at
+  native prices:
+
+  ```
+  founding capital = Σ over the bundle: amount (tons) × native base price
+  ```
+
+  - The bundle is a documented INI list, for example steel, concrete,
+    bricks, prefab panels, gravel, asphalt. Amounts are calibrated once from
+    **measured** native construction costs (`NativeCostForBuilding`
+    `[COST]` logs) so that the fund can privatise a set number of typical
+    buildings, suggested about 10. They are never guessed: until the
+    calibration has been captured, the INI ships empty and the Almanac shows
+    the fund as `NOT FOUNDED: calibration missing`.
+  - **Why construction materials:** the fund's biggest spending is building
+    prices, which are native construction costs (§4.5.3). A bundle of the
+    same materials tracks those costs as prices change between a 1960 start
+    and a 1990 start, in either currency, with no population and no exchange
+    rate.
+  - **Price used:** the native *base* price, not the temporary customs trade
+    price (§3.2 point 5), so a burst of exports in the first days does not
+    change the amount. Which field is base is still to be verified (§3.2
+    point 5).
+  - Priced **once**, at the moment of founding, then stored. Later
+    inflation does not top it up.
+  - **Later improvement:** "N times the native construction cost of a
+    reference building type" says the same thing more directly. It needs the
+    mod to read the cost of a building type nobody has placed yet, which
+    needs the game's building-type catalogue (G9).
+  - **Rejected alternative:** a share of the game's starting treasury. It
+    would scale with difficulty, but it breaks in unlimited-money games and
+    when the mod is installed mid-game. And reading the original starting
+    amount from the save is not mapped.
 
 #### 4.5.2 Fund income (D26)
 
@@ -410,12 +445,26 @@ symmetric prices and a cooldown instead (§4.5.6).
 1. **The treasury pays the fund the building price**, using the same formula
    as the sale (§4.5.3), at today's native prices and condition
    (`"nationalisation_purchase"`).
-2. **The company's remaining capital goes back to the fund**, because it was
-   the fund's money (`"nationalisation_capital_return"`). If the company is
-   in overdraft, the fund covers the debt. *(Proposal. Today the code keeps
-   the capital parked on the building record and hands it back on
-   re-privatisation, `enterprise_base` `ApplyPrivateState` about line 3662,
-   so that money sits outside every account.)*
+2. **The company's remaining capital goes back to the fund (D30)**, because
+   it was the fund's money (`"nationalisation_capital_return"`). If the
+   company is in overdraft, the fund covers the debt
+   (`"nationalisation_debt_cover"`). Today the code keeps the capital parked
+   on the building record and hands it back on re-privatisation
+   (`enterprise_base` `ApplyPrivateState`, about line 3662), so that money
+   sits outside every account.
+
+   Why this is the right choice:
+   - **Conservation (I5):** the money stays in a real account instead of
+     sitting on a building nobody owns.
+   - **Fair to the state:** the treasury paid for the *building* only. If
+     the state also kept the cash, nationalising a cash-rich company would
+     be a way to seize fund money for less than its worth.
+   - **No double pay on re-privatisation:** a later privatisation gets fresh
+     starting capital from the fund by the §4.5.7 formula, rather than
+     stale parked money.
+   - **Real-world parallel:** in a nationalisation with compensation, the
+     owners are paid for the business, which includes its cash. Returning
+     the cash to the owner (the fund) is the simple version of that.
 
 **Why symmetric prices matter:** if selling and buying back use the same
 formula, a round trip moves no money (apart from real changes such as wear
@@ -437,7 +486,7 @@ nationalising a company only for its loss-making months.
 - Optional, owner to decide later: also start the countdown when a new
   building is completed.
 
-#### 4.5.7 Starting capital per building (D29, *proposal*)
+#### 4.5.7 Starting capital per building (D29, approved)
 
 A pub and a steel mill should not start with the same 10 000. The real-world
 model is the Soviet **normed working capital**: the planners gave each
@@ -915,6 +964,7 @@ Owner question: "Do we need Ghidra to find loyalty, health and productivity?"
 | G2 | Person health, loyalty and productivity fields | Almanac readouts, housing choice, politics module | Medium |
 | G6 | How `FUN_14083A6D0` maintains `person+0xE4` (native living standard), the exact dorm affordability branch in `FUN_140834DE0`, and the tenure field `person+0x2D` | §8.3 housing by wealth | Medium |
 | G7 | Native building wear/condition field, if it exists | §4.5.3 privatisation price | Medium |
+| G9 | Native building-type catalogue (every type descriptor, including unplaced types), to price a reference building's construction cost | §4.5.1 founding capital (later improvement) | Low |
 | G8 | Native production recipe in memory (`$PRODUCTION` / `$CONSUMPTION` per building type) and its units (believed to be per worker-day) | §4.5.7 starting capital | Medium |
 | G3 | Native price recompute site (to later write market-adjusted native prices) | Future market model (D2) | Deferred |
 
@@ -927,14 +977,12 @@ result in `docs/ghidra-index/`, and keep bounded raw exports in
 ## 10. Open questions for the owner
 
 Answered on 2026-11-22: Q1 → D19, Q2 → D20, Q3 → D18, Q4 → D21, Q5 → D23,
-Q6 → D22, Q8 → D26, Q9 → D25, Q10 → D23, Q11 → D27. Q7 (age rule) is
-withdrawn and replaced by D28.
+Q6 → D22, Q8 → D26, Q9 → D25, Q10 → D23, Q11 → D27, Q13 → D29, Q14 → D30.
+Q7 (age rule) is withdrawn and replaced by D28.
 
 | ID | Question |
 |---|---|
-| Q13 | Approve the starting-capital formula in §4.5.7 (45 days of wages and inputs, equal to the legal reserve). |
-| Q14 | On nationalisation, does the company's remaining capital go back to the fund (§4.5.6)? |
-| Q12 | Size of the once-per-map founding capital, re-based on something native-priced (for example days of basket per citizen). |
+| Q12 | Approve the founding-capital method in §4.5.1: a reference bundle of construction materials at native base prices, calibrated to about 10 typical privatisations. |
 
 ---
 
@@ -960,8 +1008,8 @@ Each item is a separate engineering task with its own task record
    `SetMarkupImpl`. Remove the single `default_markup`. Privatisation pays
    the building price to the treasury and the starting capital from the fund
    (§4.5.3). Founding capital once per map with a persisted flag; no load-time
-   reset (§4.5.1). Nationalisation paid by the treasury, capital returned to
-   the fund, and a saved per-building toggle cooldown (§4.5.6). Starting
+   reset (§4.5.1), amount from the construction-materials bundle (D31).
+   Nationalisation paid by the treasury, capital returned to the fund, and a saved per-building toggle cooldown (§4.5.6). Starting
    capital and legal reserve from the per-building formula (§4.5.7), replacing
    `starting_capital` and `legal_reserve_flat`. Set
    `all_enterprises_private = 0` and `auto_private_types` back to the
