@@ -1,7 +1,7 @@
 # Economy direction: owner decisions of 2026-11-22
 
 **Status:** Design decisions, updated the same day with the owner's follow-up
-answers (D19–D23). **No code or INI file has been changed yet.** This
+answers (D19–D29). **No code or INI file has been changed yet.** This
 record shows how the code works today and lists the changes needed to match the
 decisions. Code citations refer to commit `d4d9628`.
 
@@ -47,9 +47,12 @@ the owner yet; *hypothesis* = needs verification before use.
 | D21 | **No exchange rate.** In dollar mode resources use the native dollar price, and everything else is derived the same way as in rubles. | Decided (follow-up); consequences in §3.2 point 4 |
 | D22 | **The starting decree list (§7) is accepted** for now. | Decided (follow-up) |
 | D23 | **Housing uses the game's own flat check.** The native flat search (used today for 21-year-olds leaving home; new arrivals and demolition victims are also placed natively) is also triggered for ordinary established households. No parallel mod search. | Decided; §8 |
-| D24 | **The fund pays the state for a privatised building**, based on its native construction cost, a little below it. No price when the building was built privately. An age rule stops build-and-sell abuse. | Decided in principle; §4.5 (age rule wording: Q7) |
+| D24 | **The fund pays the state for a privatised building**, based on its native construction cost, a little below it. No price when the building was built privately. | Decided; §4.5.3 |
 | D25 | **Citizen wallets start at 0.** A player decree may pay new citizens a grant from the treasury. | Decided; §4.5, §7 |
 | D26 | **Fund income:** company profit above the legal reserve, and rich citizens' savings above the line that keeps them in the Affluent class. | Decided; §4.5 |
+| D27 | **Nationalisation is a purchase by the treasury:** the state pays the fund for the building. (Replaces the owner's earlier age-rule remark, which is withdrawn.) | Decided; §4.5.6 |
+| D28 | **Toggle cooldown:** after a building is privatised or nationalised, the PRIV button is locked for a countdown on the sim clock (about one month). | Decided; §4.5.6 |
+| D29 | **Starting capital differs per building**, by size and kind: it is computed from the building's own staff and inputs. | Decided in principle; formula in §4.5.7 (proposal) |
 
 ---
 
@@ -383,24 +386,8 @@ price = native construction cost × condition × sale discount
 **When no price is paid:** buildings built by private construction. The
 fund already paid for them, so nothing goes to the state.
 
-**Anti-abuse age rule (owner question Q7):** without a rule, the player
-could build state buildings cheaply from their own materials and sell them
-straight to the fund, turning the fund into a cash machine for the
-treasury. Two readings of the owner's instruction:
-
-- **A.** A state building can only be privatised once it is at least a
-  minimum age (for example 1 in-game year). Younger buildings cannot be
-  privatised at all.
-- **B.** A young state building can be privatised, but the state receives
-  **no price** for it. Only buildings above the minimum age are paid for.
-
-Either way, a building that was nationalised and privatised again inside the
-minimum age is treated as young, so toggling cannot pump money.
-
-**Building age:** the game's own build date is not mapped (G7). The mod can
-stamp the day it first sees each completed building. A building that
-already existed when the mod was installed is recorded as "existed at
-install"; that fact is true, so it counts as old.
+The earlier age rule is withdrawn by the owner. Abuse is handled by
+symmetric prices and a cooldown instead (§4.5.6).
 
 #### 4.5.4 Citizen wallets (D25)
 
@@ -415,6 +402,88 @@ install"; that fact is true, so it counts as old.
   starting capital to restore a distressed company (design doc §5).
 - Bank credit to the fund stays possible later. It is treasury money lent
   out (`"bank_loan_issue"`), so it is not creation.
+
+#### 4.5.6 Nationalisation and the toggle cooldown (D27, D28)
+
+**Nationalisation** is the mirror of privatisation:
+
+1. **The treasury pays the fund the building price**, using the same formula
+   as the sale (§4.5.3), at today's native prices and condition
+   (`"nationalisation_purchase"`).
+2. **The company's remaining capital goes back to the fund**, because it was
+   the fund's money (`"nationalisation_capital_return"`). If the company is
+   in overdraft, the fund covers the debt. *(Proposal. Today the code keeps
+   the capital parked on the building record and hands it back on
+   re-privatisation, `enterprise_base` `ApplyPrivateState` about line 3662,
+   so that money sits outside every account.)*
+
+**Why symmetric prices matter:** if selling and buying back use the same
+formula, a round trip moves no money (apart from real changes such as wear
+or inflation). The player cannot pump money from the fund to the treasury or
+back by clicking.
+
+**Cooldown (D28):** the cooldown stops rapid flipping, for example
+nationalising a company only for its loss-making months.
+
+- After every privatisation or nationalisation, the PRIV button on that
+  building is locked for `toggle_cooldown_days`, suggested **one in-game
+  month** (`sim_clock` `getDaysPerMonth`).
+- The button shows the countdown, for example *"Can change ownership again
+  in 12 days"*.
+- The last toggle date is saved per building (absolute day from `sim_clock`
+  year and day), so saving and loading does not reset it.
+- An unreadable saved date shows `ERROR` and keeps the button locked. It is
+  never treated as "cooldown over".
+- Optional, owner to decide later: also start the countdown when a new
+  building is completed.
+
+#### 4.5.7 Starting capital per building (D29, *proposal*)
+
+A pub and a steel mill should not start with the same 10 000. The real-world
+model is the Soviet **normed working capital**: the planners gave each
+enterprise its "own working capital" equal to a norm in days times its
+one-day need for wages and materials, set per industry and revised with the
+production plan
+([NBER, The Role and Structure of Credit](https://www.nber.org/system/files/chapters/c4158/c4158.pdf)).
+The same rule fits the mod, using only native data:
+
+```
+daily wages   = basic slots × basic wage + university slots × university wage
+daily inputs  = Σ over the recipe's inputs:
+                consumption per worker-day × worker slots × native price
+                (shops: one fill of their sales storage at native prices, spread
+                over norm_days)
+starting capital = norm_days × (daily wages + daily inputs)
+```
+
+- **Worker slots** are native: `TSM_BLD_MAX_WORKERS` (`bld+0xDEC`) is
+  already read by `enterprise_base`. The split into basic and university
+  slots needs G4.
+- **Wages** come from `citizen_labor` (sector rate, and the two-tier premium
+  from §6.2).
+- **Inputs** come from the building's native recipe (`$CONSUMPTION` lines,
+  for example the fabric factory's plants, chemicals and water). The units,
+  believed to be tons per worker-day, and where the game keeps the recipe in
+  memory need checking (G8). A building with no inputs (a farm, a mine)
+  needs wages only.
+- **`norm_days` = 45**, the same 1.5 months the company's legal reserve
+  already uses (`payroll_buffer_months = 1.5`,
+  `wholesale_buffer_months = 1.5`). Then **starting capital equals the
+  legal reserve**: a new company starts with exactly what it is required to
+  keep, so the monthly fund siphon does not take it straight back. The flat
+  `legal_reserve_flat = 5000` is replaced by the same formula, which also
+  settles its D21 re-basing.
+- It scales with the currency by itself (D21), because wages and inputs are
+  native-priced.
+- If any part cannot be read, the Almanac shows the starting capital as
+  `UNAVAILABLE` with the missing part named, and privatisation is refused
+  until it is fixed. Nothing is guessed (D8).
+
+**Illustration only** (not data): a pub with 5 workers and no recipe inputs
+needs 45 days of 5 wages. A factory with 200 workers needs 45 days of 200
+wages plus 45 days of its raw materials, so it starts with 40 times more
+for wages alone, plus its inputs. The insolvency buyout (1.5× starting capital, design doc §5)
+then also scales per building.
 
 ---
 
@@ -845,7 +914,8 @@ Owner question: "Do we need Ghidra to find loyalty, health and productivity?"
 | G5 | Native price of the `"workers"` pseudo-resource (H1). May need only a runtime log, not Ghidra | §6.1 wage anchor | High (cheap) |
 | G2 | Person health, loyalty and productivity fields | Almanac readouts, housing choice, politics module | Medium |
 | G6 | How `FUN_14083A6D0` maintains `person+0xE4` (native living standard), the exact dorm affordability branch in `FUN_140834DE0`, and the tenure field `person+0x2D` | §8.3 housing by wealth | Medium |
-| G7 | Native building build date and wear/condition fields, if they exist | §4.5.3 privatisation price and age rule | Medium |
+| G7 | Native building wear/condition field, if it exists | §4.5.3 privatisation price | Medium |
+| G8 | Native production recipe in memory (`$PRODUCTION` / `$CONSUMPTION` per building type) and its units (believed to be per worker-day) | §4.5.7 starting capital | Medium |
 | G3 | Native price recompute site (to later write market-adjusted native prices) | Future market model (D2) | Deferred |
 
 Follow [`docs/AGENTS.md`](../AGENTS.md): one Ghidra operator, index each
@@ -857,13 +927,13 @@ result in `docs/ghidra-index/`, and keep bounded raw exports in
 ## 10. Open questions for the owner
 
 Answered on 2026-11-22: Q1 → D19, Q2 → D20, Q3 → D18, Q4 → D21, Q5 → D23,
-Q6 → D22, Q8 → D26, Q9 → D25, Q10 → D23. Q7 is decided in principle (D24)
-apart from the age rule.
+Q6 → D22, Q8 → D26, Q9 → D25, Q10 → D23, Q11 → D27. Q7 (age rule) is
+withdrawn and replaced by D28.
 
 | ID | Question |
 |---|---|
-| Q7 | Age rule (§4.5.3): **A**, young state buildings cannot be privatised at all, or **B**, they can, but the state receives no price for them? And what minimum age? |
-| Q11 | Nationalisation (un-privatising a company): does the treasury pay the fund back for the building? Today the company's capital is kept in reserve and nothing is paid. |
+| Q13 | Approve the starting-capital formula in §4.5.7 (45 days of wages and inputs, equal to the legal reserve). |
+| Q14 | On nationalisation, does the company's remaining capital go back to the fund (§4.5.6)? |
 | Q12 | Size of the once-per-map founding capital, re-based on something native-priced (for example days of basket per citizen). |
 
 ---
@@ -890,7 +960,10 @@ Each item is a separate engineering task with its own task record
    `SetMarkupImpl`. Remove the single `default_markup`. Privatisation pays
    the building price to the treasury and the starting capital from the fund
    (§4.5.3). Founding capital once per map with a persisted flag; no load-time
-   reset (§4.5.1). Re-base `legal_reserve_flat` (D21). Set
+   reset (§4.5.1). Nationalisation paid by the treasury, capital returned to
+   the fund, and a saved per-building toggle cooldown (§4.5.6). Starting
+   capital and legal reserve from the per-building formula (§4.5.7), replacing
+   `starting_capital` and `legal_reserve_flat`. Set
    `all_enterprises_private = 0` and `auto_private_types` back to the
    shipped default, because auto-privatising every DO contradicts D1 now that
    `ui_panels` ≥ 6.7 provides the DO PRIV tile.
