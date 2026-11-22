@@ -108,10 +108,12 @@ roubles, outside realistic mode) already almost simulates that.
 | O1 | **State construction offices can build private sites.** They already do with auto search on, or when the player assigns the site. The office **gets the money and operates as a normal state office does, with its income going to the treasury.** | Decided |
 | O2 | **Workdays are billed to the site owner**, and the money goes **to the workers**, who are marked as **construction workers**, because construction offices have no fixed workplace for them. | Decided (the marker's form is open, §5.5) |
 | O3 | **The site owner pays for materials loaded and workdays done**, as the work happens, **not when the building is finished**. | Decided |
-| O4 | **Construction workdays are paid at a separate construction wage**, if workers on a site can be identified (C8). | Decided, conditional on C8 |
+| O4 | **Construction workdays are paid at a separate construction wage**, if workers on a site can be identified (C8). The construction wage works like any other wage: **construction is its own industry category.** The player sets it in the Almanac for state offices, and private offices set it automatically like other private firms. | Decided, conditional on C8 |
 | O5 | **Private payers build only with construction offices (private or state).** The instant build is not available to them: realistic mode has no instant build for the player either. | Decided (§5.7) |
 | O6 | **"Allow private construction" on state sites is OFF by default.** | Decided |
 | O7 | **If the payer cannot pay, construction is stopped.** | Decided |
+| O8 | **Contractor fee of 8 %** as recommended in §5.4.1. | Decided |
+| O9 | **Materials already loaded are not refunded** if the site is cancelled or demolished. | Decided |
 
 ---
 
@@ -254,14 +256,14 @@ Each event is billed once, at the moment it happens, to the site's client:
 | Material **loaded** for the site at a storage | client → storage owner (state treasury or private company) | tons × native price at loading (the same lot rule as goods) |
 | Workday **done** at the site | client → the citizens who worked it (O2) | workdays × construction wage (O4, §5.5) |
 | Transport (fuel) | client → the building office | observed fuel × fuel price (the same rule as a DO trip) |
-| Contractor fee | client → the building office | **Recommended, awaiting owner:** a percentage of the load's materials + workdays (§5.4.1) |
+| Contractor fee | client → the building office | 8 % of the load's materials + workdays (O8, §5.4.1) |
 
 - **State office on a private site (O1):** the office receives transport and
   the fee, and its income goes to the treasury like any state office. Payment
   for materials taken from state storages goes to the treasury as the storage
   owner. Workday money goes to the workers (O2).
 
-#### 5.4.1 Contractor fee (Recommended, awaiting owner decision)
+#### 5.4.1 Contractor fee (Owner: O8, 8 % accepted)
 
 **Why a fee is needed:** under O2 and O3 the client pays materials to the
 storage owner and workdays to the workers directly. Without a fee, a private
@@ -293,17 +295,25 @@ and profit into every job.
    it.
 4. If the value is missing or invalid, the fee shows `UNAVAILABLE` and
    private billing stays off. There is no hidden fallback.
-- **Proposed:** materials loaded but not yet unloaded at the site stay paid.
-  If the site is cancelled or demolished, they are not refunded, which keeps
-  the rule simple.
+- **Owner (O9):** materials loaded but not yet unloaded at the site stay
+  paid. If the site is cancelled or demolished, they are not refunded.
 - **Owner (O7):** if the client cannot pay, construction is **stopped**, not
   served on credit. Its status says `UNPAID — construction stopped`.
   Native research C9 checks whether the game has a suspend flag the mod can
   set.
-- **Proposed:** before every load or workday, the payer must be able to pay
-  that event in full. Otherwise the event is not billed and the site stops.
-  When money is available again (the fund receives income, or the player
-  tops it up), construction resumes.
+- **Open: when exactly the site stops (§10 Q1).** O7 says it stops. What is
+  left to decide is the moment:
+  - **(A) Check before each step.** Before a truck loads or a workday counts,
+    the mod checks whether the payer has enough for that one step. If not,
+    the step does not happen and the site stops. The payer never goes below
+    zero.
+  - **(B) Stop after the money runs out.** Every step is billed. When a bill
+    takes the payer below zero, the site stops after that step. The payer
+    can go slightly negative, by at most one load or workday.
+
+  Either way, construction **resumes automatically** once the payer has
+  money again. (A) needs the mod to block a native load before it happens,
+  which may not be possible (C5, C9). (B) only needs to react after a load.
 - **Proposed:** a state client (public contract) pays from the treasury, and
   the same stop rule applies when the treasury cannot pay.
 
@@ -313,10 +323,21 @@ and profit into every job.
   citizens who did the work. They are marked as **construction workers**,
   because offices have no fixed workplace for them.
 - **Owner (O4):** they are paid a **separate construction wage**, if they can
-  be identified (C8).
-- **Open:** the construction wage's value. It must be a configured or
-  native value, never a placeholder. If it is missing, the workday bill shows
-  `UNAVAILABLE`.
+  be identified (C8). Construction becomes its **own wage sector** in
+  `citizen_labor`. Today it is part of "infrastructure" (energy, transport,
+  storage, construction), with a 3.50 RUB/day base.
+  - **State offices:** the player sets the construction sector wage in the
+    Almanac, like any other sector.
+  - **Private offices:** automatic, like any private firm. That uses the
+    private wage mechanism, which first needs the fix described in the
+    economy direction §6.3 (code check 2026-11-22). Today private wages are
+    the state rate × a premium, and nothing reads the CPI.
+- **Proposed:** the new sector starts at the current infrastructure rate
+  (3.50 RUB/day), so nothing changes on day one, and the player tunes it.
+  Reference only: in the Soviet Interview Project data, construction workers
+  earned about 191 RUB/month against about 160 RUB/month for all non-farm
+  workers, roughly 19 % above average
+  ([Gregory and Kohlhase 1988](https://www.uh.edu/~kohlhase/GregoryKohlhase_RESTAT_1988.pdf)).
 - **Proposed form of the marker:** a per-citizen, per-day flag
   "construction worker at site X". `citizen_labor` uses it for that day's
   wage and status instead of a workplace. The Almanac can count construction
@@ -441,10 +462,8 @@ work.
 
 ## 10. Open owner questions
 
-1. **Contractor fee:** accept the recommendation in §5.4.1 (one percentage
-   for all offices, shipped at 8 %)?
-2. **Construction wage value** (O4): which configured or native figure, and
-   who sets it?
-3. **Proposed rules** still awaiting a decision: paid loads are not refunded
-   on cancellation (§5.4), and each event must be paid in full or the site
-   stops (§5.4).
+1. **When the site stops** for non-payment: (A) check before each step, so
+   the payer never goes negative, or (B) stop right after the step that
+   empties the account, at most one step negative (§5.4)?
+2. **Starting value of the construction sector wage:** the current
+   infrastructure rate of 3.50 RUB/day (§5.5)?
