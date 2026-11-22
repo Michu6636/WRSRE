@@ -2,6 +2,10 @@
 
 Native x64 C++17 plugin suite (`TesmioLoader` API v4) introducing a mixed state/private market economy, citizen wallets, labor mobility, wholesale & retail pricing, B2B counterparty logistics settlement, commercial banking, taxes, and money-supply reconciliation to **Workers & Resources: Soviet Republic** (`SOVIET64.exe`).
 
+**What to do next:** [`docs/ROADMAP.md`](docs/ROADMAP.md) has the current
+state, the ordered plan and how to run each step. The decisions behind it are
+in the [economy direction](docs/visions/economy-direction-2026-11-22.md).
+
 ---
 
 ## Almanac development

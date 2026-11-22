@@ -8,7 +8,8 @@
 
 | Path | Contents |
 |---|---|
-| [`visions/economy-direction-2026-11-22.md`](visions/economy-direction-2026-11-22.md) | **Owner decisions of 2026-11-22 — read first; overrides older economic docs where they conflict** |
+| [`ROADMAP.md`](ROADMAP.md) | **What to do next, in order** — current state, the step plan, the verification queue and how to run a step. Start here. |
+| [`visions/economy-direction-2026-11-22.md`](visions/economy-direction-2026-11-22.md) | **Owner decisions of 2026-11-22 (D1–D31); overrides older economic docs where they conflict** |
 | [`WRSRE DESIGN DOC.md`](WRSRE%20DESIGN%20DOC.md) | Master economic architecture, subsystem boundaries & design invariants (Rev 5 banner) |
 | [`DEVELOPMENT_README.md`](DEVELOPMENT_README.md) | Developer onboarding, plugin ABI conventions & debugging workflow |
 | [`DLC_UPDATE_PLAYBOOK.md`](DLC_UPDATE_PLAYBOOK.md) | Re-targeting RVAs/offsets after game updates via `tools/scan_exe_update.py` |
@@ -20,7 +21,7 @@
 | [`schemas/`](schemas/telemetry_schema.json) | JSON schemas for telemetry & diagnostics |
 | [`workflow/`](workflow/README.md) | Canonical goal execution, independent review, Kilo setup and provider handoff contracts |
 | [`tasks/`](tasks/README.md) | Tracked task records, Finding Ledgers, [`TEMPLATE.md`](tasks/TEMPLATE.md), active packets and archive |
-| [`visions/`](visions/README.md) | Long-term design visions (`vision-whole-mod.md`, `vision-private-logistics.md`) |
+| [`visions/`](visions/README.md) | Design visions: economy direction, private logistics, construction (state and private offices, unscheduled), whole mod |
 | [`evidence/`](evidence/) | Almanac launcher/overlay runtime evidence (logs, captures, Windows checks) |
 | [`reviews/`](reviews/) | Independent Almanac overlay backend and PR #81 follow-up reviews |
 | `Archive dont read/` | Historical early-phase notes superseded by current docs |

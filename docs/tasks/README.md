@@ -23,13 +23,16 @@ review rounds, separate validation statuses and resume checkpoint.
 Reconciled 2026-11-18. `private_logistics` is now at `0.19.0-simplified-settlement`
 and `ui_panels` well past v6.11, so every packet below predates the current
 source. None of them is the current goal except the two 2026-11-22 records.
+The ordered plan of future tasks is in [`../ROADMAP.md`](../ROADMAP.md).
 
 - [active/2026-11-22-remove-market-multiplier-and-procurement.md](active/2026-11-22-remove-market-multiplier-and-procurement.md) —
   **CURRENT.** Economy code step 1: native prices only, no state procurement.
-  Host tests pass; Windows build via CI; no in-game run.
+  Host tests and CI pass; the owner's in-game run confirms it. Waiting for the
+  merge of PR #100.
 - [active/2026-11-22-private-do-under-construction.md](active/2026-11-22-private-do-under-construction.md) —
   **CURRENT.** Bug fix on the same PR: private DOs no longer target or charge
-  for buildings under construction. Host tests pass; no in-game run.
+  for buildings under construction. Host tests and CI pass; in-game check
+  pending (roadmap step 0).
 - [active/NEXT_PHASE.md](active/NEXT_PHASE.md) — **BLOCKED.** Staged v0.17 opt-in
   state-storage targets, cap 5, `dry_run=1`. Superseded in source by the shipped
   road-20/rail-5 policy; keep for its reasoning, not as an implementation plan.

@@ -1,9 +1,12 @@
 # Economy direction: owner decisions of 2026-11-22
 
 **Status:** Design decisions, updated the same day with the owner's follow-up
-answers (D19–D31). **No code or INI file has been changed yet.** This
-record shows how the code works today and lists the changes needed to match the
-decisions. Code citations refer to commit `d4d9628`.
+answers (D19–D31). Code step 1 (§11) is implemented in PR #100. Everything
+else in §11 is still to do. **For the ordered plan of what to do next, read
+[`ROADMAP.md`](../ROADMAP.md).** This record shows how the code worked and
+lists the changes needed to match the decisions. Code citations refer to
+commit `d4d9628` unless a section says otherwise. Line numbers move, so
+search for the names.
 
 **Precedence:** where this document conflicts with
 [`WRSRE DESIGN DOC.md`](../WRSRE%20DESIGN%20DOC.md),
@@ -740,8 +743,8 @@ skill premium.
       ([Gregory and Kohlhase 1988](https://www.uh.edu/~kohlhase/GregoryKohlhase_RESTAT_1988.pdf)).
   - **Fix direction, already decided (D14):** private reference wage =
     sector baseline (from the INI at map start, *not* the live state rate) ×
-    CPI index, then the profit/understaffing premium on top. This belongs
-    to code step 6 (§11).
+    CPI index, then the profit/understaffing premium on top. This is §11
+    item 6, step 5 of the [roadmap](../ROADMAP.md).
 
 ### 6.4 Social transfers (D18)
 
@@ -1043,12 +1046,17 @@ when a new building is completed (§4.5.6).
 Each item is a separate engineering task with its own task record
 (`docs/tasks/TEMPLATE.md`).
 
-**Status, 2026-11-22.** Code step 1 is implemented (host tests and the CI
-Windows build pass; no in-game run). It covers the market-book part of item 1,
-all of item 2, and the procurement part of item 3. See the
+**Status, 2026-11-22.** Code step 1 is implemented in PR #100. Host tests and
+the CI Windows build pass, and the owner checked it in game. It covers the
+market-book part of item 1, all of item 2, and the procurement part of
+item 3. See the
 [task record](../tasks/active/2026-11-22-remove-market-multiplier-and-procurement.md).
 Fallback prices, `usd_divisor`, `UNPRICED`, `wholesale_ratio` and foreign
 restock are still open.
+
+**Order of work:** the items below are grouped into ordered steps in
+[`ROADMAP.md`](../ROADMAP.md) §3. Use the roadmap for "what next" and this
+list for the detail of each item.
 
 1. **resource_pricing:** remove the market book and multiplier *(done:
    v5)*, fallback prices and `usd_divisor`. Missing native price means `UNPRICED`. Bump the
