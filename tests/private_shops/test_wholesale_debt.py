@@ -21,12 +21,15 @@ class WholesaleDebtTest(unittest.TestCase):
         end = source.index('\nstatic void RunWholesaleBilling(', start)
         tail = source[start:end]
         harness = r'''
+#include "price_guards.h"
 #include <cassert>
 #include <cmath>
 #include <initializer_list>
 using BYTE = unsigned char;
 static double balance, treasury;
 static unsigned charges;
+static unsigned unpricedNotes;
+static void NoteUnpricedShop(const char*, void*) { ++unpricedNotes; }
 static float price=10.0f;
 static float g_wholesaleRatio=0.7f;
 static int g_currency;
@@ -79,18 +82,21 @@ int main() {
         Settle(8.0f,snap,&ctx,false);
         assert(charges==1 && Near(treasury,14.0));
     }
-    // Missing/zero price does not modify inventory or create a charge.
-    price=0; charges=0;
+    // D33: a missing/zero price refuses the whole delivery. It does not
+    // modify inventory, create a charge, or silently treat the price as zero.
+    price=0; charges=0; unpricedNotes=0;
     Snapshot snap{reinterpret_cast<void*>(1),0}; Context ctx{nullptr,0,0,0};
     Settle(4,snap,&ctx);
-    assert(charges==0 && snap.content==4);
+    assert(charges==0 && snap.content==4 && unpricedNotes==1);
 }
 '''
         with tempfile.TemporaryDirectory() as directory:
             cpp = Path(directory) / 'wholesale.cpp'
             exe = Path(directory) / 'wholesale'
             cpp.write_text(harness)
-            subprocess.run([compiler, '-std=c++17', '-Wall', '-Wextra', '-Werror', str(cpp), '-o', str(exe)], check=True, capture_output=True)
+            subprocess.run([compiler, '-std=c++17', '-Wall', '-Wextra', '-Werror',
+                            '-I', str(ROOT / 'src'), str(cpp), '-o', str(exe)],
+                           check=True, capture_output=True)
             subprocess.run([str(exe)], check=True, capture_output=True)
 
     def test_live_caller_cannot_select_inventory_rollback(self):

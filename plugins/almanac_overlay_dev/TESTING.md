@@ -58,7 +58,10 @@ making sure the game window has focus.
 
 1. The panel is a paper-and-ink window anchored near the top-left, titled
    `Almanac`, over the game view. Not a separate desktop window.
-2. **Defect to remove (owner rule D8, 2026-11-22):** the current build can still fall back to `SYNTHETIC`/placeholder rows when live data is missing. That fallback is forbidden. The target behaviour is a visible `NO DATA: <service> unavailable` / `ERROR <reason>` in warning colour, never sample numbers. Treat any sample value on screen as a failure.
+2. **No made-up data (owner rule D8, 2026-11-22).** With a service missing or
+   not loaded, the body shows a visible `NO DATA: <service> unavailable` in
+   warning colour. Economy, Labour and Logistics have no sample tables at all.
+   Treat any sample, synthetic or placeholder value on screen as a failure.
 3. The first `F9` shows it; the next `F9` hides it. Holding `F9` must not flicker:
    it takes exactly one press per change.
 4. Alt-tab away and back: the panel hides while unfocused and needs a fresh `F9`

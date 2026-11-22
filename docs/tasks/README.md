@@ -20,11 +20,15 @@ review rounds, separate validation statuses and resume checkpoint.
 
 ## Active index
 
-Reconciled 2026-11-18. `private_logistics` is now at `0.19.0-simplified-settlement`
-and `ui_panels` well past v6.11, so every packet below predates the current
-source. None of them is the current goal except the two 2026-11-22 records.
+Reconciled 2026-11-22. `private_logistics` is now at `0.19.0-simplified-settlement`
+and `ui_panels` well past v6.11, so every older packet below predates the current
+source. None of them is the current goal except the 2026-11-22 records.
 The ordered plan of future tasks is in [`../ROADMAP.md`](../ROADMAP.md).
 
+- [active/2026-11-22-remove-fallbacks-and-made-up-data.md](active/2026-11-22-remove-fallbacks-and-made-up-data.md) —
+  **CURRENT.** Roadmap step 2 / D32–D34: no fallback prices, no default CPI
+  basket, `UNPRICED`/`UNAVAILABLE` made visible, Almanac sample rows removed.
+  Host tests pass; independent review and the owner's in-game check are pending.
 - [active/2026-11-22-remove-market-multiplier-and-procurement.md](active/2026-11-22-remove-market-multiplier-and-procurement.md) —
   **CURRENT.** Economy code step 1: native prices only, no state procurement.
   Host tests and CI pass; merged in PR #100. In-game acceptance check pending

@@ -32,6 +32,7 @@
 #include "almanac_panel.h"
 #include "almanac_panel_view.h"
 #include "../../src/b2b_logistics_api.h"
+#include "../../src/citizen_retail_api.h"
 #include "../../src/citizen_labor_api.h"
 #include "../../src/currency_api.h"
 #include "../../src/enterprise_base_api.h"
@@ -197,6 +198,7 @@ const TsmCitizenLaborApi*   g_svcLabor      = nullptr;
 const TsmEnterpriseBaseApi* g_svcEnterprise = nullptr;
 const TsmB2bLogisticsApi*   g_svcB2b        = nullptr;
 const TsmStateLedgerApi*    g_svcLedger     = nullptr;
+const TsmCitizenRetailApi*  g_svcRetail     = nullptr;
 bool                        g_servicesLookedUp = false;
 ULONGLONG                   g_lastSampleMs     = 0;
 
@@ -254,6 +256,18 @@ void EnsureServicesLookedUp()
 
     g_svcLedger = static_cast<const TsmStateLedgerApi*>(
         g_host->consume(TSM_SERVICE_STATE_LEDGER, TSM_STATE_LEDGER_VERSION));
+
+    // v3 (economy direction D32): the UNPRICED shop-sale count.
+    g_svcRetail = static_cast<const TsmCitizenRetailApi*>(
+        g_host->consume(TSM_SERVICE_CITIZEN_RETAIL, TSM_CITIZEN_RETAIL_VERSION));
+    if (!g_svcRetail) {
+        g_svcRetail = static_cast<const TsmCitizenRetailApi*>(
+            g_host->consume(TSM_SERVICE_CITIZEN_RETAIL, TSM_CITIZEN_RETAIL_VERSION_V2));
+    }
+    if (!g_svcRetail) {
+        g_svcRetail = static_cast<const TsmCitizenRetailApi*>(
+            g_host->consume(TSM_SERVICE_CITIZEN_RETAIL, TSM_CITIZEN_RETAIL_VERSION_V1));
+    }
 
     g_servicesLookedUp = true;
 }
@@ -608,9 +622,11 @@ const PanelModel* SampleLiveModel(bool worldLoaded)
     const TsmEnterpriseBaseApi* s_enterprise = g_svcEnterprise;
     const TsmB2bLogisticsApi*   s_b2b        = g_svcB2b;
     const TsmStateLedgerApi*    s_ledger     = g_svcLedger;
+    const TsmCitizenRetailApi*  s_retail     = g_svcRetail;
 
     const bool anyService = s_clock || s_currency || s_taxes || s_bank ||
-                            s_labor || s_enterprise || s_b2b || s_ledger;
+                            s_labor || s_enterprise || s_b2b || s_ledger ||
+                            s_retail;
     if (!anyService) return nullptr;
 
     PanelModel m{};
@@ -634,6 +650,12 @@ const PanelModel* SampleLiveModel(bool worldLoaded)
         } else {
             AppendRow(econ, "Republic date", "Paused (waiting for first tick)");
         }
+    }
+    if (TsmCitizenRetailHasUnpriced(s_retail)) {
+        // D32: a sale with no native price gave the good for free. The count
+        // is the Almanac's record of how often that happened this session.
+        AppendRow(econ, "Unpriced shop sales", "%u this session",
+                  s_retail->getUnpricedSaleCount());
     }
     if (s_currency) {
         AppendRow(econ, "Active currency", "%s", sym);

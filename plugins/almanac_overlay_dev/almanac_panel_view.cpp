@@ -3,10 +3,11 @@
 // Layout, in order down the window:
 //
 //   header      title, subtitle, and the key that hides/reopens the panel
-//   notice      a plain warning that the numbers are placeholders
-//   tabs        Economy / Labour / Logistics - fixed labels, no state read from
-//               anywhere, so the panel shows the shape of the finished product
-//   body        one labelled table per tab with synthetic values
+//   notice      live-data state, or the reason it is unavailable
+//   tabs        Economy / Labour / Logistics / Enterprises
+//   body        live rows when a service is connected; otherwise a full-panel
+//               "NO DATA: <service> unavailable" in warning colour. There are
+//               no sample, synthetic or placeholder values anywhere (D8).
 //   footer      frame/process readout, which is the cheapest proof in a
 //               screenshot that this is being drawn live rather than cached
 //
@@ -52,48 +53,14 @@ const ImVec4 kWarn  = ImVec4(0.55f, 0.18f, 0.12f, 1.00f);
 const ImVec4 kLive  = ImVec4(0.16f, 0.42f, 0.20f, 1.00f);
 const ImU32  kRule  = IM_COL32(0x38, 0x2B, 0x1E, 0x55);
 
-struct Row {
-    const char* label;
-    const char* value;
-};
-
-// Synthetic sample rows. Static storage, never written, one array per tab.
-// The numbers stand in for the live Finance/labour/logistics feeds that are not
-// connected yet; they are labels with plausible values, not derived results.
-const Row kEconomyRows[] = {
-    {"Treasury (RUB)",             "1,234,567.00"},
-    {"Active currency",            "RUB"},
-    {"VAT",                        "20% (enabled)"},
-    {"Profit tax",                 "15% (enabled)"},
-    {"Property tax per enterprise", "250.00 (land value)"},
-    {"Citizen wallets opened",     "18,402"},
-    {"Average household balance",  "412.60"},
-};
-const Row kLabourRows[] = {
-    {"Employed citizens",           "23,118"},
-    {"Vacancies",                   "1,744"},
-    {"Average wage",                "1,182.40 / month"},
-    {"Skill premium (skilled)",     "+18%"},
-    {"Payroll remittance (M)",      "27.30"},
-    {"Mobility last quarter",       "612 moved"},
-};
-const Row kLogisticsRows[] = {
-    {"Private distribution offices", "34"},
-    {"Trips settled today",          "1,209"},
-    {"Fuel burn (M litres)",         "0.42"},
-    {"B2B counterparty invoices",    "76 open"},
-    {"Foreign restock share",        "10% target"},
-    {"Shipments in transit",         "158"},
-};
-
-const char* const kTabNames[] = {"Economy", "Labour", "Logistics", "Enterprises"};
-const Row* const   kTabRows[]  = {kEconomyRows, kLabourRows, kLogisticsRows};
-const int          kTabRowCounts[] = {
-    static_cast<int>(sizeof(kEconomyRows) / sizeof(kEconomyRows[0])),
-    static_cast<int>(sizeof(kLabourRows) / sizeof(kLabourRows[0])),
-    static_cast<int>(sizeof(kLogisticsRows) / sizeof(kLogisticsRows[0])),
-};
-constexpr int kTabCount = 4;
+// There are no sample rows. Economy, Labour and Logistics show live rows when
+// their services are present and "NO DATA" when they are not. The height
+// estimate below still assumes a table-shaped body so the window does not jump
+// when live data appears; it is a layout constant, not a value on screen.
+const char* const kTabNames[]        = {"Economy", "Labour", "Logistics", "Enterprises"};
+const char* const kTabServiceNames[] = {"economy", "labour", "logistics", nullptr};
+constexpr int kTabCount      = 4;
+constexpr int kEmptyDataRows = 7;
 
 void Rule()
 {
@@ -145,29 +112,20 @@ void DrawTabStrip(int& activeTab)
     }
 }
 
-void DrawTable(const Row* rows, int count)
+// One unmistakable line, in warning colour, when a service is absent. This is
+// the whole body: never a sample table and never a plausible-looking number.
+void DrawNoData(const char* service)
 {
-    if (!ImGui::BeginTable("##almanac_rows", 2,
-            ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerH |
-            ImGuiTableFlags_SizingStretchProp)) {
-        return;
-    }
-    ImGui::TableSetupColumn("Item", ImGuiTableColumnFlags_WidthStretch, 1.6f);
-    ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch, 1.0f);
-    for (int i = 0; i < count; ++i) {
-        ImGui::TableNextRow();
-        ImGui::TableSetColumnIndex(0);
-        ImGui::TextColored(kInk, "%s", rows[i].label);
-        ImGui::TableSetColumnIndex(1);
-        ImGui::TextColored(kQuiet, "%s", rows[i].value);
-    }
-    ImGui::EndTable();
+    ImGui::TextColored(kWarn, "NO DATA: %s unavailable", service);
+    ImGui::Spacing();
+    ImGui::TextColored(kQuiet,
+        "The service is not installed, not loaded yet, or has not produced a value.");
 }
 
-void DrawLiveTable(const TabData& data)
+void DrawLiveTable(const TabData& data, const char* service)
 {
     if (data.count <= 0) {
-        ImGui::TextColored(kQuiet, "No live service data available for this tab.");
+        DrawNoData(service);
         return;
     }
     if (!ImGui::BeginTable("##almanac_rows", 2,
@@ -564,7 +522,7 @@ bool DrawAlmanacPanel(const PanelModel& model, LauncherRect* outRect,
     const float frame   = ImGui::GetFrameHeight();
     const float gap     = style.ItemSpacing.y;
     const float padding = style.WindowPadding.y;
-    const int   rows    = kTabRowCounts[0];
+    const int   rows    = kEmptyDataRows;
     // Terms top to bottom, in the order DrawAlmanacPanel emits them below. The
     // child gets the leftover, so an error here shows as padding at the bottom
     // of the body rather than as a clipped footer.
@@ -648,7 +606,7 @@ bool DrawAlmanacPanel(const PanelModel& model, LauncherRect* outRect,
             if (tab == 3) {
                 DrawEnterprisesTable(model.enterprises, model.controls.currencySymbol);
             } else if (model.hasLiveData) {
-                DrawLiveTable(model.tabs[tab]);
+                DrawLiveTable(model.tabs[tab], kTabServiceNames[tab]);
                 if (tab == 0) {
                     DrawStateBudgetSection(model.budget, model.controls.currencySymbol);
                     DrawEconomyControls(model.controls, outAction);
@@ -656,7 +614,7 @@ bool DrawAlmanacPanel(const PanelModel& model, LauncherRect* outRect,
                     DrawLabourControls(model.controls, outAction);
                 }
             } else {
-                DrawTable(kTabRows[tab], kTabRowCounts[tab]);
+                DrawNoData(kTabServiceNames[tab]);
             }
         }
         ImGui::EndChild();

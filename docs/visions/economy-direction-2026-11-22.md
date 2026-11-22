@@ -1055,16 +1055,23 @@ the CI Windows build pass; the in-game acceptance check is still pending
 market-book part of item 1, all of item 2, and the procurement part of
 item 3. See the
 [task record](../tasks/active/2026-11-22-remove-market-multiplier-and-procurement.md).
-Fallback prices, `usd_divisor`, `UNPRICED`, `wholesale_ratio` and foreign
-restock are still open.
+
+**Status, 2026-11-22 (step 2).** The rest of item 1 (fallback prices, `default`,
+`default_usd`, `usd_divisor`) and item 9 (Almanac sample rows) are implemented
+on `arena/c676e273-wrsre`, together with D32–D34 in their consumers. Host tests
+pass; the Windows CI build, independent review and the in-game check are still
+to do. `resource_pricing` is now v6 and returns `0.0f` for `UNPRICED` and for
+an unavailable CPI basket. The 0.70 `wholesale_ratio`, foreign restock and
+`private_logistics` billing defaults remain open for step 3. See the
+[task record](../tasks/active/2026-11-22-remove-fallbacks-and-made-up-data.md).
 
 **Order of work:** the items below are grouped into ordered steps in
 [`ROADMAP.md`](../ROADMAP.md) §3. Use the roadmap for "what next" and this
 list for the detail of each item.
 
 1. **resource_pricing:** remove the market book and multiplier *(done:
-   v5)*, fallback prices and `usd_divisor`. Missing native price means `UNPRICED`. Bump the
-   API version. Keep the CPI basket.
+   v5)*, fallback prices and `usd_divisor` *(done: v6, step 2)*. Missing native
+   price means `UNPRICED`. Bump the API version. Keep the CPI basket.
 2. **Multiplier consumers:** `citizen_retail.cpp` 613 and 983,
    `enterprise_base.cpp` 1985 and 2504, `private_logistics.cpp` 455,
    `private_shops.cpp` 948. Switch them to the plain native price. *(Done.)*
@@ -1096,7 +1103,8 @@ list for the detail of each item.
    poverty rate, commercial solvency) into the Almanac first.
 9. **almanac_overlay_dev:** delete the synthetic sample rows
    (`almanac_panel_view.cpp` `kEconomyRows` / `kLabourRows` /
-   `kLogisticsRows`, about 60–95) and the `DrawTable` fallback (about 659).
+   `kLogisticsRows`, about 60–95) and the `DrawTable` fallback (about 659)
+   *(done: step 2)*.
    With no live data, show a full-panel **"NO DATA: <service> unavailable"**
    in warning colour. Per row, show `UNAVAILABLE` / `ERROR <reason>`, never a
    number. Update `TESTING.md`, which still expects `SYNTHETIC` values.

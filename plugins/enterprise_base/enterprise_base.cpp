@@ -553,6 +553,7 @@
 #include "../../src/enterprise_base_api.h"
 #include "../../src/taxes_api.h"
 #include "../../src/resource_pricing_api.h"
+#include "../../src/price_guards.h"
 
 #include <unordered_map>
 #include <unordered_set>
@@ -1979,18 +1980,30 @@ static void CollectResidentialRent(void)
     if (!(g_residentialRent > 0.0)) return;
     if (!g_currency) return;
 
-    // v9.1 (Task 7): one day of staple bread - native Pfood x
-    // destitute_bread_tons, in the ACTIVE currency (getPrice resolves the
-    // currency leg). v9.20: no market multiplier. 0 disables the stage.
+    // v9.21 (economy direction step 2, D8/D33): one day of staple bread -
+    // native Pfood x destitute_bread_tons, in the ACTIVE currency (getPrice
+    // resolves the currency leg). A food price of 0 is UNPRICED, not free:
+    // the destitute test cannot be made up, so this stage is skipped and the
+    // gap is logged once. No fallback price ever enters it.
     float destituteDay = 0.0f;
     if (g_destituteEnabled && g_pricing &&
         g_pricing->getFood && g_pricing->getPrice) {
-        int cur = TsmCurrencyActive(g_currency);
+        const int cur = TsmCurrencyActive(g_currency);
         void* food = g_pricing->getFood();
-        float pFood = g_pricing->getPrice(food, cur);
-        destituteDay = pFood * g_destituteBreadTons;
-        if (!(destituteDay == destituteDay) || destituteDay <= 0.0f)
-            destituteDay = 0.0f;
+        const float pFood = g_pricing->getPrice(food, cur);
+        if (!TsmNativePriceUsable(pFood)) {
+            static bool warned = false;
+            if (!warned) {
+                warned = true;
+                Logf("enterprise_base  ERROR UNPRICED  food has no native "
+                     "price - the destitute bread-day is unavailable and the "
+                     "eviction stage is skipped (no fallback price)");
+            }
+        } else {
+            destituteDay = pFood * g_destituteBreadTons;
+            if (!(destituteDay == destituteDay) || destituteDay <= 0.0f)
+                destituteDay = 0.0f;
+        }
     }
 
     std::vector<void*> homes;
@@ -4794,6 +4807,12 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
 
     g_retail = (const TsmCitizenRetailApi*)
         H->consume(TSM_SERVICE_CITIZEN_RETAIL, TSM_CITIZEN_RETAIL_VERSION);
+    if (!g_retail)
+        g_retail = (const TsmCitizenRetailApi*)
+            H->consume(TSM_SERVICE_CITIZEN_RETAIL, TSM_CITIZEN_RETAIL_VERSION_V2);
+    if (!g_retail)
+        g_retail = (const TsmCitizenRetailApi*)
+            H->consume(TSM_SERVICE_CITIZEN_RETAIL, TSM_CITIZEN_RETAIL_VERSION_V1);
     if (g_retail)
         g_retail->registerRetailInterceptor(OnRetail, nullptr);
 

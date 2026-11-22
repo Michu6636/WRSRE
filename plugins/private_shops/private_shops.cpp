@@ -252,6 +252,7 @@
 #include "../../src/currency_api.h"
 #include "../../src/persistence_api.h"
 #include "../../src/resource_pricing_api.h"
+#include "../../src/price_guards.h"
 #include "../../src/enterprise_base_api.h"
 #include "../../src/b2b_logistics_api.h"
 #include "../../src/taxes_api.h"
@@ -294,6 +295,30 @@ static int    g_retailTypeCount;
 
 static float  g_wholesaleRatio       = 0.70f;
 static int    g_foreignEnabled       = 0;  // Physical deliveries by default; opt in to foreign restock.
+
+// v3.7 (economy direction step 2, D8/D33): a delivery or restock whose
+// resource has no native price is refused as a whole. Log it once per
+// resource and context so a per-tick retry cannot flood the log. The stock
+// is never written and the bill is never partly charged.
+#define SHOP_UNPRICED_NAME 32
+static char g_unpricedLogged[16][SHOP_UNPRICED_NAME + 16];
+static int  g_unpricedLoggedCount = 0;
+
+static void NoteUnpricedShop(const char* context, void* res)
+{
+    char name[SHOP_UNPRICED_NAME] = {0};
+    if (!res || !TsmResourceName(res, name, sizeof(name)) || !name[0])
+        _snprintf_s(name, sizeof(name), _TRUNCATE, "?");
+    char key[SHOP_UNPRICED_NAME + 16] = {0};
+    _snprintf_s(key, sizeof(key), _TRUNCATE, "%s|%s", context, name);
+    for (int i = 0; i < g_unpricedLoggedCount; i++)
+        if (strcmp(g_unpricedLogged[i], key) == 0) return;
+    if (g_unpricedLoggedCount >= 16) return;
+    strncpy_s(g_unpricedLogged[g_unpricedLoggedCount++],
+              sizeof(g_unpricedLogged[0]), key, _TRUNCATE);
+    Logf("private_shops  ERROR UNPRICED  %s of \"%s\": no native price - "
+         "the %s is refused and nothing is billed (D33)", context, name, context);
+}
 static float  g_foreignTargetRatio   = 0.30f;
 // v3.4: the shelf empties to this fraction of its capacity before an order is
 // placed, and is then filled back to foreign_restock_target. Two numbers, so
@@ -624,24 +649,50 @@ static void RestockSlot(void* /*storage*/, void* slotBytes, void* res,
     //
     // reorder_point = 0 is legal - it is what "wait until the shop is empty"
     // means - but the shop really is empty until the delivery arrives.
-    float base;
+    // D8: no invented 8 t cap. If the slot reports neither a quality limit
+    // nor a capacity, the order size is unknown - refuse the restock and say
+    // so once, rather than fill every shop to the same made-up number.
+    float base = 0.0f;
     if (limit > 0.01f)            base = limit;
     else if (perSlotCap > 0.01f)  base = perSlotCap;
-    else                          base = 8.0f;
+    if (!(base > 0.01f)) {
+        static bool loggedNoBase = false;
+        if (!loggedNoBase) {
+            loggedNoBase = true;
+            Logf("private_shops  WARN  foreign restock: a slot reports neither "
+                 "a quality limit nor a capacity - the order is refused (no "
+                 "invented 8 t cap)");
+        }
+        return;
+    }
 
     float target  = base * g_foreignTargetRatio;
     float reorder = base * g_restockReorderPoint;
 
     if (perSlotCap > 0.01f && target > perSlotCap) target = perSlotCap;
-    if (!(reorder < target)) reorder = target * 0.5f;   // misconfigured, keep sane
+    if (!(reorder < target)) {
+        // reorder_point is the player's policy; an incoherent pair is not
+        // repaired with an invented 0.5 fraction.
+        static bool loggedBadReorder = false;
+        if (!loggedBadReorder) {
+            loggedBadReorder = true;
+            Logf("private_shops  WARN  foreign restock: reorder_point (%.3f) "
+                 "is not below the target (%.3f) - the order is refused",
+                 (double)g_restockReorderPoint, (double)g_foreignTargetRatio);
+        }
+        return;
+    }
 
     if (content > reorder) return;
 
     float deficit = target - content;
     // v4: unified global currency - restock at the active price so the
     // capital math stays in the treasury's unit.
-    float perTon  = g_pricing->getPrice(res, TsmCurrencyActive(g_currency));
-    if (!(perTon > 0.0f)) return;
+    const float perTon = g_pricing->getPrice(res, TsmCurrencyActive(g_currency));
+    if (!TsmNativePriceUsable(perTon)) {
+        NoteUnpricedShop("foreign restock", res);
+        return;                       // whole order refused, shelf untouched
+    }
 
     double cost = (double)deficit * (double)perTon * (double)g_foreignMarkup;
     if (cost <= 0.0) return;
@@ -820,8 +871,16 @@ static void WholesaleSlot(void* storage, void* slotBytes, void* res,
     }
 
     // v4: state wholesale delivery bills the active-currency price.
-    float perTon = g_pricing->getPrice(res, TsmCurrencyActive(g_currency));
-    if (!(perTon > 0.0f)) { snap.content = content; return; }
+    // v3.7 (D33): no native price means the whole delivery bill is refused.
+    // The goods already arrived natively, so the snapshot advances with the
+    // refused delivery: it is never billed later at a price the seller did not
+    // have, never partly billed, and never billed at zero.
+    const float perTon = g_pricing->getPrice(res, TsmCurrencyActive(g_currency));
+    if (!TsmNativePriceUsable(perTon)) {
+        NoteUnpricedShop("wholesale delivery", res);
+        snap.content = content;
+        return;
+    }
 
     double wholesale = (double)delta * (double)perTon * (double)g_wholesaleRatio;
     if (wholesale <= 0.0) { snap.content = content; return; }

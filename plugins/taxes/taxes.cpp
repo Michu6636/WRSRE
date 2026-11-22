@@ -277,7 +277,8 @@ static void SnapshotMacroStats(MacroStats* out, float cpi)
     if (!hasFloor) {
         static bool logged = false;
         if (!logged) {
-            Logf("taxes  CPI unavailable (resource_pricing disabled) — poverty rate n/a");
+            Logf("taxes  CPI UNAVAILABLE (resource_pricing disabled) — the "
+                 "Cost of Living and Poverty Rate rows show UNAVAILABLE");
             logged = true;
         }
     }
@@ -1060,7 +1061,7 @@ static void TaxPanelRows(void* building, TsmPanelRows* out, void* /*ud*/)
 
         // Cost of Living: the TRUE daily CPI basket, "X.XX SYM/day" (or n/a if pricing disabled).
         if (!(s_macroCache.cpi > 0.0f)) {
-            _snwprintf_s(v, _countof(v), _TRUNCATE, L"n/a (no CPI)");
+            _snwprintf_s(v, _countof(v), _TRUNCATE, L"UNAVAILABLE (no CPI)");
         } else {
             _snwprintf_s(v, _countof(v), _TRUNCATE, L"%.2f %ls/day",
                          (double)s_macroCache.cpi, sym);
@@ -1070,7 +1071,7 @@ static void TaxPanelRows(void* building, TsmPanelRows* out, void* /*ud*/)
         // Poverty Rate: share of citizens below poverty_runway_days of
         // survival runway (wallet < days x CPI), "XX.X%" — H5 FIX: n/a when CPI missing
         if (!(stats.cpi > 0.0f)) {
-            _snwprintf_s(v, _countof(v), _TRUNCATE, L"n/a (no CPI)");
+            _snwprintf_s(v, _countof(v), _TRUNCATE, L"UNAVAILABLE (no CPI)");
         } else if (stats.count == 0) {
             _snwprintf_s(v, _countof(v), _TRUNCATE, L"0.0%% (no wallets yet)");
         } else {
@@ -1297,9 +1298,10 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
     }
 
     // v4.2 (Task 7): the true daily CPI survival basket for the City Hall
-    // macro rows. Prefer pricing v5 (getCpiDailyBasket); fall back v1 -
-    // the TsmPricingCpiBasket helper then degrades to the documented
-    // ~2.15 default basket. Level 2 -> 1 consume is hierarchy-legal.
+    // macro rows. Prefer pricing v6 (getCpiDailyBasket); with a v1-only
+    // provider TsmPricingCpiBasket answers 0 and the readout shows
+    // UNAVAILABLE. There is no default basket (D34). Level 2 -> 1 consume is
+    // hierarchy-legal.
     g_pricing = (const TsmResourcePricingApi*)
         H->consume(TSM_SERVICE_RESOURCE_PRICING, TSM_RESOURCE_PRICING_VERSION);
     if (!g_pricing)
@@ -1308,7 +1310,7 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
                        TSM_RESOURCE_PRICING_VERSION_V1);
     if (!g_pricing)
         Logf("taxes  WARN  resource_pricing not installed - the Cost of "
-             "Living row degrades to the fixed 2.15 default basket");
+             "Living and Poverty Rate rows will show UNAVAILABLE");
 
     // v4 USD scale: the flat property tax divides the RUB base by
     // usd_divisor unless property_tax_flat_usd is set explicitly.
@@ -1391,8 +1393,8 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
     Logf("taxes  live v4.6 (currency %s, macro readouts %s, CPI %s)",
          CurSym(),
          g_macroIndicators ? "on" : "off",
-         TsmPricingHasCpi(g_pricing) ? "live (pricing v5)"
-                                     : "default 2.15 fallback");
+         TsmPricingHasCpi(g_pricing) ? "live (pricing v6)"
+                                     : "UNAVAILABLE (no CPI)");
     Logf("taxes    VAT %.0f%% (%d, %s), profit %.0f%% (%d, %s), "
          "property %.2f flat (%d, %s%s)",
          g_vatRate * 100.0f, g_vatSchedule, g_vatEnabled ? "on" : "off",

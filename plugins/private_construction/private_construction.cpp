@@ -277,6 +277,7 @@
 #include "../../src/citizen_labor_api.h"
 #include "../../src/ui_panels_api.h"
 #include "../../src/resource_pricing_api.h"
+#include "../../src/price_guards.h"
 #include "../../src/persistence_api.h"
 
 #include <unordered_map>
@@ -723,11 +724,8 @@ static void h_PanelBuilder(void* game, void* window, void* a3, void* a4)
 static float EffectiveWorkdayRate(void)
 {
     int cur = TsmCurrencyActive(g_currency);
-    if (cur == TSM_CURRENCY_USD) {
-        if (g_wagePerDayUsd >= 0.0f)   // keyed config value wins
-            return g_wagePerDayUsd;
-        return 13.30f;                // realistic Western fallback
-    }
+    if (cur == TSM_CURRENCY_USD)
+        return g_wagePerDayUsd;       // one documented default (INI 13.30)
 
     // RUB mode: live citizen-labor default x contractor overhead,
     // with the static INI wage as the only fallback.
@@ -742,28 +740,83 @@ static float EffectiveWorkdayRate(void)
 
 // ---------------------------------------------------------------- pricing maths
 
-static double PriceOne(const char* name, float tons)
+// Why an estimate was refused, when the native phase walk was not the source.
+// The claim site logs it the same way it logs g_lastNativeFail.
+static const char* g_lastLegacyFail = nullptr;
+
+// One ERROR line per material name. The panel estimate can run every frame
+// while a site waits; the same missing price is the same fact.
+#define MAX_UNPRICED_MATERIALS 16
+static char g_unpricedMaterials[MAX_UNPRICED_MATERIALS][32];
+static int  g_unpricedMaterialCount = 0;
+
+static void NoteUnpricedMaterial(const char* name, const char* why)
 {
-    if (tons <= 0.0f || !g_pricing) return 0.0;
+    if (!name || !name[0]) name = "?";
+    for (int i = 0; i < g_unpricedMaterialCount; i++)
+        if (strcmp(g_unpricedMaterials[i], name) == 0) return;
+    if (g_unpricedMaterialCount >= MAX_UNPRICED_MATERIALS) return;
+    char* slot = g_unpricedMaterials[g_unpricedMaterialCount++];
+    int n = 0;
+    for (; n < (int)sizeof(g_unpricedMaterials[0]) - 1 && name[n]; n++)
+        slot[n] = name[n];
+    slot[n] = 0;
+    Logf("private_construction  ERROR UNPRICED  \"%s\" %s", name, why);
+}
+
+// Prices one material for the panel-materials estimate. Returns false when
+// the material has NO native price: economy direction D33 says the whole
+// estimate is refused, never billed partly and never filled from a fallback
+// (D8). A zero tonnage is not an error - that material is not in the phase.
+static bool PriceOne(const char* name, float tons, double* out)
+{
+    if (out) *out = 0.0;
+    if (!(tons > 0.0f)) return true;
+    if (!g_pricing || !g_pricing->getByName || !g_pricing->getPrice) {
+        NoteUnpricedMaterial(name, "cannot be priced: resource_pricing is "
+                                   "unavailable - estimate refused");
+        return false;
+    }
     void* r = g_pricing->getByName(name);
-    if (!r) return 0.0;
+    if (!r) {
+        NoteUnpricedMaterial(name, "has no resource record - estimate refused");
+        return false;
+    }
     // v4: price in the active currency so construction costs always come
     // out in the same unit the investment pool is held in.
-    return (double)tons * (double)g_pricing->getPrice(r, TsmCurrencyActive(g_currency));
+    const float price = g_pricing->getPrice(r, TsmCurrencyActive(g_currency));
+    if (!TsmNativePriceUsable(price)) {
+        NoteUnpricedMaterial(name, "has no native price - the whole estimate "
+                                   "is refused (D33)");
+        return false;
+    }
+    if (out) *out = (double)tons * (double)price;
+    return true;
 }
 
 static double CostFromPanelMats(const PanelMats& m)
 {
     double material = 0.0;
-    material += PriceOne("concrete",     m.concrete);
-    material += PriceOne("gravel",       m.gravel);
-    material += PriceOne("asphalt",      m.asphalt);
-    material += PriceOne("steel",        m.steel);
-    material += PriceOne("bricks",       m.bricks);
-    material += PriceOne("boards",       m.boards);
-    material += PriceOne("prefabpanels", m.prefabs);
-    material += PriceOne("ecomponents",  m.ecomps);
-    material += PriceOne("mcomponents",  m.mcomps);
+    double one = 0.0;
+    g_lastLegacyFail = nullptr;
+#define PANEL_MATERIAL(field, resname) \
+    do { \
+        if (!PriceOne(resname, m.field, &one)) { \
+            g_lastLegacyFail = "unpriced material in the panel estimate"; \
+            return 0.0; \
+        } \
+        material += one; \
+    } while (0)
+    PANEL_MATERIAL(concrete, "concrete");
+    PANEL_MATERIAL(gravel,   "gravel");
+    PANEL_MATERIAL(asphalt,  "asphalt");
+    PANEL_MATERIAL(steel,    "steel");
+    PANEL_MATERIAL(bricks,   "bricks");
+    PANEL_MATERIAL(boards,   "boards");
+    PANEL_MATERIAL(prefabs,  "prefabpanels");
+    PANEL_MATERIAL(ecomps,   "ecomponents");
+    PANEL_MATERIAL(mcomps,   "mcomponents");
+#undef PANEL_MATERIAL
 
     // v4: panel-materials path - labour and the floor follow the
     // active currency the same way the native walk does; materials
@@ -942,6 +995,7 @@ static double NativeCostForBuilding(void* b, const char** failOut)
 
     double matRub = 0.0, matUsd = 0.0, workdays = 0.0;
     int    matEntries = 0;
+    const int cur = TsmCurrencyActive(g_currency);
 
     for (size_t p = 0; p < phaseCount; p++)
     {
@@ -984,13 +1038,22 @@ static double NativeCostForBuilding(void* b, const char** failOut)
                 continue;
             }
 
-            // Live price via the Level 1 service (its fallback table
-            // covers mod resources the engine prices at 0), then the
-            // record's import buy multiplier when enabled. A multiplier
-            // outside (0, 10] is treated as absent - the raw price still
-            // beats refusing the whole estimate.
-            float pRub = g_pricing->getPrice(res, TSM_CURRENCY_RUB);
-            float pUsd = g_pricing->getPrice(res, TSM_CURRENCY_USD);
+            // Live native price via the Level 1 service. D8/D33: the
+            // resource must have a native price in the ACTIVE currency.
+            // If it does not, the whole estimate is refused - no partial
+            // bill and no fallback price. The import buy multiplier is a
+            // real native field, applied only when it is inside (0, 10].
+            const float pRub = g_pricing->getPrice(res, TSM_CURRENCY_RUB);
+            const float pUsd = g_pricing->getPrice(res, TSM_CURRENCY_USD);
+            const float pActive = (cur == TSM_CURRENCY_USD) ? pUsd : pRub;
+            if (!TsmNativePriceUsable(pActive))
+            {
+                Logf("private_construction  ERROR UNPRICED  construction "
+                     "material \"%s\" has no native price - the whole "
+                     "estimate is refused (D33)", rname);
+                if (failOut) *failOut = "unpriced construction material";
+                return 0.0;
+            }
             double mRub = 1.0, mUsd = 1.0;
             if (g_applyBuyMult)
             {
@@ -1014,8 +1077,7 @@ static double NativeCostForBuilding(void* b, const char** failOut)
     // which reads the game's own +0x5C price and its +0xAC import buy
     // multiplier; labour follows citizen_labor's effective default rate
     // (already USD-calibrated) x contractor overhead.
-    int cur = TsmCurrencyActive(g_currency);
-
+    //
     // $COST_WORK rides in the same vector as a "workers" record:
     // workdays, not a border-importable good, so it is priced at
     // our wage below instead of at a market price it has not got.
@@ -1053,12 +1115,19 @@ static double CostForBuilding(void* b)
     // phase vector is on the type descriptor whether or not anyone has
     // opened a window - so with cost_source = auto a site prices on the
     // tick it is tagged. fund/panel below stay as the fallback (and as
-    // the whole of cost_source = fund/panel).
+    // the whole of cost_source = fund/panel), except after a hard D33
+    // UNPRICED refusal.
     double native = 0.0;
     g_lastNativeFail = nullptr;
+    g_lastLegacyFail = nullptr;
     if (g_costSource == COST_NATIVE || g_costSource == COST_AUTO)
         native = NativeCostForBuilding(b, &g_lastNativeFail);
     g_lastNative = native;
+
+    // D33: an UNPRICED native estimate is a hard refusal. Do not replace it
+    // with a fund row or a panel estimate - a different number is not a fix.
+    const bool nativeUnpriced =
+        g_lastNativeFail && strcmp(g_lastNativeFail, "unpriced construction material") == 0;
 
     auto it = g_buildingCaptures.find(b);
     if (it != g_buildingCaptures.end())
@@ -1067,7 +1136,7 @@ static double CostForBuilding(void* b)
         bool acceptFund  = (g_costSource == COST_FUND  || g_costSource == COST_AUTO);
         bool acceptPanel = (g_costSource == COST_PANEL || g_costSource == COST_AUTO);
 
-        if (acceptFund)
+        if (acceptFund && !nativeUnpriced)
         {
             out = FundCostLocked(cap);
 
@@ -1082,7 +1151,7 @@ static double CostForBuilding(void* b)
             }
         }
 
-        if (out <= 0.0 && acceptPanel && cap.lastEntire.workdays > 0)
+        if (out <= 0.0 && acceptPanel && !nativeUnpriced && cap.lastEntire.workdays > 0)
             out = CostFromPanelMats(cap.lastEntire);
     }
     g_lastLegacy = out;
@@ -1741,6 +1810,9 @@ static void RunConstructionPass(float dayDelta)
                         if (g_lastNativeFail)
                             Logf("private_construction  [WAITING] \"%ls\" native unavailable: %s - open its construction panel once",
                                  name, g_lastNativeFail);
+                        else if (g_lastLegacyFail)
+                            Logf("private_construction  [WAITING] \"%ls\" estimate refused: %s - no site is claimed",
+                                 name, g_lastLegacyFail);
                         else
                             Logf("private_construction  [WAITING] \"%ls\" no captured price yet - open its construction panel once",
                                  name);

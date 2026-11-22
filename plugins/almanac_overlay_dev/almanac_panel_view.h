@@ -95,11 +95,12 @@ struct StateBudgetData {
 // Everything the panel displays. Deliberately a value type: no service
 // pointers, no game handles, no live repository state. When hasLiveData is
 // true, tabs[0..2] hold live read-only values sampled from WRSRE services;
-// otherwise the view falls back to its built-in synthetic placeholder tables.
+// otherwise the view shows "NO DATA: <service> unavailable". It never falls
+// back to sample or synthetic values (economy direction D8).
 struct PanelModel {
     const char*  title          = "Almanac";
     const char*  subtitle       = "Market economy suite";
-    const char*  dataNotice     = "Synthetic placeholder values - not read from your republic.";
+    const char*  dataNotice     = "NO DATA: live service unavailable.";
     const char*  toggleKeyName  = "F9";
     const char*  buildNotice    = "";
     int          drawnFrames    = 0;

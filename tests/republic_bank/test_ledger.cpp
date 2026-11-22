@@ -116,8 +116,8 @@ int main() {
         assert(near(deflated.requestCreditDraw(kd, 30000.0, 1), 25000.0));
 
         const double inf = std::numeric_limits<double>::infinity();
-        assert(near(BankEconomicScale(inf, 2.15, 0.02), 0.02));
-        assert(near(BankEconomicScale(2.15, 0.0, 0.02), 0.02));
+        assert(BankEconomicScale(inf, 2.15) == 0.0);
+        assert(BankEconomicScale(2.15, 0.0) == 0.0);
     }
 
     // (d2) The retained cash buffer uses the same live scale as credit caps.
