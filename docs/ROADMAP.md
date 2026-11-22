@@ -11,11 +11,11 @@ file in the same pull request (see "How to run a step").
 
 | Item | State |
 |---|---|
-| Owner decisions | Complete for the economy: D1–D31 in [economy direction](visions/economy-direction-2026-11-22.md) §1. No owner questions are open there. |
+| Owner decisions | Complete for the economy: D1–D34 in [economy direction](visions/economy-direction-2026-11-22.md) §1. No owner questions are open there. |
 | **Code step 1**: native prices only, no state procurement | Done in [PR #100](https://github.com/Michu6636/WRSRE/pull/100). Host tests and the CI Windows build pass. The owner ran the build (save "Test 02"), but **no step-1 acceptance result is recorded yet**. [Task record](tasks/active/2026-11-22-remove-market-multiplier-and-procurement.md). |
 | **Bug fix**: private DOs served buildings under construction | Done in PR #100. Host tests and CI pass. **Not yet checked in game.** [Task record](tasks/active/2026-11-22-private-do-under-construction.md). |
 | Construction vision (state and private offices) | Owner decisions O1–O11 recorded; **not scheduled** (D13). [Vision](visions/vision-private-construction.md). |
-| PR #100 | Open, not merged. It holds step 1, the bug fix and the docs above. |
+| PR #100 | Merged into `main` on 2026-11-22 by the owner's instruction. It holds step 1, the bug fix and the docs above. The in-game checks of step 0 are still to do. |
 
 ---
 
@@ -44,7 +44,8 @@ This is the recommended order. The owner may reorder it. Item numbers
 
 ### Step 0: close out PR #100
 
-- The owner reviews and merges PR #100.
+- PR #100 merged by the owner's instruction on 2026-11-22 (step 1, the bug
+  fix and the docs). Work continues in a new session from `main`.
 - **In-game check of step 1:** no `procured` / `[PROC]` log lines. Every
   "charged … for state delivery" line follows a real input unload into that
   building, never growth of its own output. Real deliveries are still billed
@@ -61,6 +62,37 @@ This is the recommended order. The owner may reorder it. Item numbers
 
 **Goal:** every number comes from the game, a player policy or a documented
 INI constant (invariant I6).
+
+**Decided behaviour when data is missing** (owner answers, 2026-11-22):
+- **D32, shop sale with no native price:** the game gives the good as in
+  vanilla and no money moves. Log `ERROR UNPRICED` and count it for the
+  Almanac.
+- **D33, business bill with an unpriced resource** (construction estimate,
+  wholesale delivery bill, B2B freight): refuse the whole transaction, with a
+  loud error. Never bill partly.
+- **D34, CPI unavailable:** skip wealth-class demand scaling that day, show
+  `UNAVAILABLE` for runway and CPI, and the bank refuses new credit until CPI
+  is back.
+
+**Callers of `getPrice` / `getCpiDailyBasket` to update** (found
+2026-11-22; search for the names):
+- `citizen_retail.cpp`: `CheckoutAffordabilityGate` (D32; note that
+  `min_cost` must not turn a missing price into a charge), `SolCpiDaily`
+  and its 2.15 fallback (D34), `DestituteBreadCost`.
+- `enterprise_base.cpp`: `CollectResidentialRent` destitute bread-day.
+- `private_construction.cpp`: `PriceOne` and the panel-materials estimate
+  loop (D33).
+- `private_shops.cpp`: the foreign restock and the 0.70 delivery bill. Both
+  go in step 3, but until then an unpriced delivery is refused (D33).
+- `private_logistics.cpp`: `UnitPrice` (already returns 0 for unpriced;
+  make the refusal per D33 and loud). `panel_fuel_runtime.h`
+  `DiagnosticFuelPrice` already reports `invalid_price`.
+- `republic_bank.cpp`: `CurrentEconomicScale` (D34: no CPI, no new credit).
+- `taxes.cpp`: the City Hall CPI readout (removed in step 6; until then it
+  shows `UNAVAILABLE`).
+- `src/resource_pricing_api.h`: change the contract. `getPrice` returns
+  `0.0f` for "no native price". `getCpiDailyBasket` returns `0.0f` for
+  unavailable. Remove the 2.15 default from `TsmPricingCpiBasket`.
 
 - `resource_pricing`: delete `[fallback_prices]`, `[fallback_prices_usd]` and
   `default` (`resource_pricing.cpp` about 41, 204, 285–295). A missing native

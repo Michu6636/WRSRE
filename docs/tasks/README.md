@@ -27,12 +27,12 @@ The ordered plan of future tasks is in [`../ROADMAP.md`](../ROADMAP.md).
 
 - [active/2026-11-22-remove-market-multiplier-and-procurement.md](active/2026-11-22-remove-market-multiplier-and-procurement.md) —
   **CURRENT.** Economy code step 1: native prices only, no state procurement.
-  Host tests and CI pass; in-game acceptance check and merge of PR #100
-  pending (roadmap step 0).
+  Host tests and CI pass; merged in PR #100. In-game acceptance check pending
+  (roadmap step 0).
 - [active/2026-11-22-private-do-under-construction.md](active/2026-11-22-private-do-under-construction.md) —
   **CURRENT.** Bug fix on the same PR: private DOs no longer target or charge
-  for buildings under construction. Host tests and CI pass; in-game check
-  pending (roadmap step 0).
+  for buildings under construction. Host tests and CI pass; merged in PR #100.
+  In-game check pending (roadmap step 0).
 - [active/NEXT_PHASE.md](active/NEXT_PHASE.md) — **BLOCKED.** Staged v0.17 opt-in
   state-storage targets, cap 5, `dry_run=1`. Superseded in source by the shipped
   road-20/rail-5 policy; keep for its reasoning, not as an implementation plan.

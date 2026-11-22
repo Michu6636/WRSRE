@@ -71,6 +71,6 @@
 ## Blocker / resume checkpoint
 
 - **Next action:** owner in-game check on a save with a private site under
-  construction ([`ROADMAP.md`](../../ROADMAP.md) step 0); then merge with
-  PR #100.
+  construction ([`ROADMAP.md`](../../ROADMAP.md) step 0). PR #100 is
+  merged (2026-11-22).
 - **Unresolved finding IDs:** none in scope.

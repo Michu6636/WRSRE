@@ -2,7 +2,7 @@
 
 ## Contract
 
-- **Status:** active, waiting for merge. Host tests and the CI Windows build
+- **Status:** active, merged (PR #100), waiting for the in-game check. Host tests and the CI Windows build
   pass (PR #100). The owner ran the PR build in game on 2026-11-22 (save
   "Test 02"); the step-1 acceptance check below is not yet recorded.
 - **Task record:** `docs/tasks/active/2026-11-22-remove-market-multiplier-and-procurement.md`
@@ -90,8 +90,8 @@
 
 ## Resume checkpoint
 
-- **Next action:** the step-1 in-game check above and the owner's merge of
-  PR #100 ([`ROADMAP.md`](../../ROADMAP.md) step 0), then step 2 of
+- **Next action:** PR #100 is merged (2026-11-22). Do the step-1 in-game
+  check above ([`ROADMAP.md`](../../ROADMAP.md) step 0), then step 2 of
   [`ROADMAP.md`](../../ROADMAP.md) (fallback prices and made-up sample data).
 - **Save compatibility:** unchanged. Neither the market book nor procurement
   persisted anything. Old INI keys are ignored.

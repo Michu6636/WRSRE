@@ -1,7 +1,7 @@
 # Economy direction: owner decisions of 2026-11-22
 
 **Status:** Design decisions, updated the same day with the owner's follow-up
-answers (D19–D31). Code step 1 (§11) is implemented in PR #100. Everything
+answers (D19–D31), and the step-2 answers (D32–D34). Code step 1 (§11) is implemented in PR #100. Everything
 else in §11 is still to do. **For the ordered plan of what to do next, read
 [`ROADMAP.md`](../ROADMAP.md).** This record shows how the code worked and
 lists the changes needed to match the decisions. Code citations refer to
@@ -58,6 +58,9 @@ the owner yet; *hypothesis* = needs verification before use.
 | D29 | **Starting capital differs per building**, by size and kind: it is computed from the building's own staff and inputs. | Decided; formula approved (§4.5.7) |
 | D30 | **On nationalisation the company's leftover money returns to the fund**, and an overdraft is covered by the fund. | Decided; §4.5.6 |
 | D31 | **Founding capital must not depend on population.** A new map may have nobody living on it, so the amount comes from native prices only. | Decided; method approved (§4.5.1) |
+| D32 | **Unpriced shop sale: native give, no charge, loud error.** When a shop good has no native price (in practice an unproduced mod good, or the moments after a load), the game hands out the good as in vanilla and no money moves. It is logged as `ERROR UNPRICED` and counted for the Almanac. Owner answer 2026-11-22. | Decided; code step 2 |
+| D33 | **Unpriced business bill: refuse the whole transaction, loud error.** A private construction estimate, wholesale delivery bill or B2B freight bill that includes a resource with no native price is refused as a whole, never billed partly. For example, private construction does not claim the site. Owner answer 2026-11-22. | Decided; code step 2 |
+| D34 | **CPI unavailable: pause what depends on it.** When the cost-of-living basket cannot be computed (food, meat or clothes has no price), wealth-class demand scaling is skipped that day, the runway and CPI show `UNAVAILABLE`, and the bank refuses new credit until CPI is available again. Owner answer 2026-11-22. | Decided; code step 2 |
 
 ---
 
