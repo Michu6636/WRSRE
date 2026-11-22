@@ -41,12 +41,15 @@ the owner yet; *hypothesis* = needs verification before use.
 | D15 | **No general education pay.** The premium applies only to **high-education job slots** in buildings that have two job tiers. Details in §6.2. | Decided (owner asked for a sanity check: §6.2 answers it) |
 | D16 | **Live B2B billing by default:** `billing = 1`, `dry_run = 0` in `private_logistics.ini`. | Decided (prerequisites in §4.4) |
 | D17 | **Politics later.** Factions, elections and approval go in a separate politics module, after the economy is right. | Decided (deferred) |
-| D18 | **Welfare level is player policy:** low, medium or high, with consequences either way. The same applies to pensions and student stipends. | Decided (recommended scales in §6.4, owner to approve) |
+| D18 | **Welfare level is player policy**, enacted as **one Tropico-style decree** with four tiers (None / Low / Medium / High) covering the unemployed, students and pensioners. Kept simple. | Decided (tiers approved; §6.4) |
 | D19 | **The state pays the native price for private goods delivered into state buildings**, and private buyers pay the state the native price for state goods (§4.3). | Decided (follow-up) |
-| D20 | **No money is created from nothing.** Every amount comes out of a named account. Privatised buildings get their starting capital **from the private investment fund**. | Decided (follow-up); design in §4.5 |
+| D20 | **No money is created from nothing.** Every amount comes out of a named account. Privatised buildings get their starting capital **from the private investment fund**. The only exception is the fund's **founding capital, created once per map** and never again. | Decided; design in §4.5 |
 | D21 | **No exchange rate.** In dollar mode resources use the native dollar price, and everything else is derived the same way as in rubles. | Decided (follow-up); consequences in §3.2 point 4 |
 | D22 | **The starting decree list (§7) is accepted** for now. | Decided (follow-up) |
-| D23 | **Housing: native mechanics first.** The game already moves young households and dorm residents by a native rent-versus-wealth test; the mod extends that rather than adding a parallel system. | Proposal after the owner's question; §8 |
+| D23 | **Housing uses the game's own flat check.** The native flat search (used today for 21-year-olds leaving home; new arrivals and demolition victims are also placed natively) is also triggered for ordinary established households. No parallel mod search. | Decided; §8 |
+| D24 | **The fund pays the state for a privatised building**, based on its native construction cost, a little below it. No price when the building was built privately. An age rule stops build-and-sell abuse. | Decided in principle; §4.5 (age rule wording: Q7) |
+| D25 | **Citizen wallets start at 0.** A player decree may pay new citizens a grant from the treasury. | Decided; §4.5, §7 |
+| D26 | **Fund income:** company profit above the legal reserve, and rich citizens' savings above the line that keeps them in the Affluent class. | Decided; §4.5 |
 
 ---
 
@@ -142,8 +145,20 @@ sales do not cover wages. *Hypothesis: confirm with the `[PROC]` and
    - margins: ratios of landed cost;
    - shop and B2B prices: native prices.
 
-   Flat money constants in INI files cannot survive this rule. Each needs a
-   native-priced base instead:
+   This is what the owner described: switching currency only changes the
+   nominal numbers. Everything computed from native prices already behaves
+   that way, because the game keeps a separate RUB field (`0x58`) and USD
+   field (`0x5C`) per resource, each with its own inflation (RUB up to
+   10 %/yr, USD up to 3 %), so no single conversion factor exists.
+
+   The exceptions are amounts **typed into the mod's INI files as plain
+   numbers**. `residential_rent = 10` means 10 rubles in ruble mode, and in
+   dollar mode the same 10 would be read as 10 dollars, which is far more
+   relative to dollar goods prices (the mod's own divisor of 50 implies
+   dollar prices are roughly 50 times smaller). Today the mod hides this by
+   dividing by 50, the exchange rate D21 rejects. Nothing in the design
+   breaks; it is cleanup work: each typed amount is rewritten as a ratio of a
+   native-priced base, and then it scales by itself. The typed amounts are:
    - `residential_rent`, `starting_capital`, `legal_reserve_flat`,
      `starting_pool` (`enterprise_base.ini`);
    - `property_tax_flat = 250` (`taxes`);
@@ -264,7 +279,7 @@ Known limits, unchanged: observed-assignment coverage, fuel units and exact
 burn are still unproven at native level. Unpriced or uncertain events stay
 **refused and visible** rather than guessed (D8).
 
-### 4.5 No money from nothing (D20)
+### 4.5 No money from nothing (D20, D24, D25, D26)
 
 **Today (*code*), money is created from nothing in these places:**
 
@@ -272,48 +287,134 @@ burn are still unproven at native level. Unpriced or uncertain events stay
 |---|---|
 | `enterprise_base` `ApplyPrivateState` (about line 3615) | A newly privatised building gets `starting_capital` (10 000). Nothing pays for it. |
 | `enterprise_base` `starting_pool` | The investment fund starts a new game with 5 000 000, from nowhere. |
-| `enterprise_base` load path (about line 4285) | An unreadable saved fund balance is reset to `starting_pool`. |
+| `enterprise_base` load path (about line 4285) | An unreadable saved fund balance is reset to `starting_pool`, so the fund can be re-created on any bad load. |
 | `currency` `starting_wallet` | Every new citizen wallet opens with 15, from nowhere. |
 
-**Target:**
+**Target money flows for the fund:**
 
-1. **Privatisation is a purchase by the investment fund.** The fund moves the
-   new company's starting capital from its own balance to the company
-   (`"privatisation_capital"`). If the fund cannot afford it, the PRIV button
-   shows why and nothing happens.
-2. *Owner question (Q7):* should the fund **also pay the treasury a price for
-   the building itself**? This is what "a buyer funding it" meant in the
-   first draft. A privatisation has two separate amounts: the price the state
-   receives for the asset, and the working capital the new company starts
-   with. D20 settles the second (the fund pays it). The first is optional.
-   - With a purchase price, the state is paid for what it sells, as in real
-     privatisations. The price could be based on the building's native
-     construction cost.
-   - Without one, the state gives the building away and only the working
-     capital moves.
-   - An insolvency buyout already works this way: the fund pays 1.5× the
-     starting capital to restore a distressed company (design doc §5).
-3. **The fund needs a real source of money** once `starting_pool` goes.
-   Otherwise it starts at 0, no company can be privatised, and no profits
-   ever flow in. Options, which can be combined (owner question Q8):
-   - **A. Player transfer.** The player moves money from the treasury into
-     the fund from the Almanac (`"state_capital_injection"`). This fits D1:
-     a planned-economy player never does it, and a hybrid player chooses how
-     much.
-   - **B. Household savings.** Citizens with savings above a runway threshold
-     invest a share of their wallet in the fund. This is how real economies
-     fund investment, and it pairs with the planned dividends to rich
-     citizens (D12).
-   - **C. Bank credit.** The fund borrows from `republic_bank`. The bank lends
-     treasury money (`moveTreasury(-approved, "bank_loan_issue")`), so this
-     is not creation either.
-4. **Citizen wallets** open at 0, or receive an endowment paid by the
-   treasury (`"household_endowment"`), owner question Q9. With 0, new citizens
-   cannot buy anything until their first wage or transfer, and native hunger
-   applies in the meantime.
-5. **Load failures never invent money.** An unreadable fund balance is an
-   `ERROR` shown in the Almanac, and the fund stays frozen until resolved. It
-   is not reset to a default.
+```
+           founding capital (once per map)
+                      │
+                      ▼
+  company profit ──► INVESTMENT FUND ──► privatisation: building price ──► TREASURY
+  above reserve       ▲        │                       + starting capital ──► NEW COMPANY
+                      │        └──► (later, D12) dividends ──► rich citizens
+  rich citizens' savings
+  above the Affluent line
+```
+
+#### 4.5.1 Founding capital: once per map
+
+- The fund receives its founding capital **once per map**: at the start of a
+  new game, or the first time the mod sees a save that has no fund record
+  (the mod installed mid-game). It is the only money creation in the mod and
+  is booked in the ledger as `"fund_founding_capital"`.
+- A persisted "founded" flag makes it impossible to repeat. An unreadable
+  fund balance on load is shown as `ERROR` in the Almanac and the fund is
+  frozen; it is **never** reset or re-founded.
+- The amount (today 5 000 000) must be re-based on something native-priced
+  (D21), for example a number of days of the CPI basket per citizen.
+  Owner question Q12.
+
+#### 4.5.2 Fund income (D26)
+
+Two sources, both already half-present in the code. Suggested player-facing
+wording in quotes:
+
+1. **Company profit above the legal reserve.** *"Each month, private
+   companies send part of their profit above their legal reserve to the
+   investment fund."* This already exists (*code*): `siphon_rate = 0.50` of
+   capital above the reserve, where reserve = `legal_reserve_flat` + 1.5
+   months of wages + 1.5 months of purchases (`enterprise_base.ini`
+   `[investment_pool]`). Only `legal_reserve_flat` (5 000) needs a
+   native-priced base (D21).
+2. **Rich citizens' savings.** *"Wealthy citizens invest part of the savings
+   they don't need to stay wealthy."* The Affluent class already has an
+   exact definition (*code*, `citizen_retail.ini`): a citizen is Affluent
+   when their wallet covers at least `runway_affluent_days = 30` days of the
+   CPI basket. So the rule is:
+
+   ```
+   investable   = wallet − (runway_affluent_days + safety_days) × daily basket
+   contribution = invest_rate × investable      (only if investable > 0)
+   ```
+
+   With, for example, `safety_days = 10` and `invest_rate = 10 %` per month,
+   an Affluent citizen always keeps at least 40 days of basket, so **the fund
+   alone can never push them out of the Affluent class.** Both numbers are
+   proposals for calibration. Ledger reason: `"household_investment"`.
+
+Later (D12), dividends flow back to those citizens, which closes the loop.
+
+#### 4.5.3 Privatisation price (D24)
+
+A privatisation moves two amounts out of the fund:
+
+1. **The building price, to the treasury** (`"privatisation_sale"`).
+2. **The new company's starting capital, to the company**
+   (`"privatisation_capital"`).
+
+If the fund cannot afford both, the PRIV button says so and nothing happens.
+
+**Price formula (*proposal*):**
+
+```
+price = native construction cost × condition × sale discount
+```
+
+- **Native construction cost** is already computed by the mod:
+  `private_construction` `NativeCostForBuilding` (about line 914) walks the
+  building type's native construction phases (materials and the "workers"
+  workdays) and prices them at native prices. Its labour part still uses the
+  INI `contractor_wage_per_day`; that should become the native workday price
+  (G5).
+- **Condition**: if the game keeps a building wear or condition value, an
+  old, worn building sells for less. The field is not mapped yet (G7).
+  Until it is, the factor is 1.0 and the Almanac says that condition is not
+  taken into account. Nothing is guessed.
+- **Sale discount**: a single documented setting, suggested **0.75**. Real
+  privatisations rarely fetched full value: Soviet 1991 rules debated
+  depreciated book value versus market value, large industry was sold at a
+  "discounted market level", and insiders often bought at a discount
+  ([World Bank, Privatization in the Soviet Union](https://www.researchgate.net/publication/23550783_Privatization_in_the_Soviet_Union_the_beginnings_of_a_transition);
+  [Estonia](https://www.researchgate.net/publication/380237052_PRIVATIZATION_OF_STATE-OWNED_ENTERPRISES_IN_ESTONIA_POLICIES_AND_IMPLEMENTATION)).
+  A discount also leaves the buyer a reason to buy.
+
+**When no price is paid:** buildings built by private construction. The
+fund already paid for them, so nothing goes to the state.
+
+**Anti-abuse age rule (owner question Q7):** without a rule, the player
+could build state buildings cheaply from their own materials and sell them
+straight to the fund, turning the fund into a cash machine for the
+treasury. Two readings of the owner's instruction:
+
+- **A.** A state building can only be privatised once it is at least a
+  minimum age (for example 1 in-game year). Younger buildings cannot be
+  privatised at all.
+- **B.** A young state building can be privatised, but the state receives
+  **no price** for it. Only buildings above the minimum age are paid for.
+
+Either way, a building that was nationalised and privatised again inside the
+minimum age is treated as young, so toggling cannot pump money.
+
+**Building age:** the game's own build date is not mapped (G7). The mod can
+stamp the day it first sees each completed building. A building that
+already existed when the mod was installed is recorded as "existed at
+install"; that fact is true, so it counts as old.
+
+#### 4.5.4 Citizen wallets (D25)
+
+- New citizen wallets open at **0** (`starting_wallet = 0`). Until the first
+  wage or transfer they cannot buy, and native need penalties apply (D9).
+- An optional **Settlement grant** decree (§7) has the treasury pay each new
+  citizen a grant, sized in days of the CPI basket (`"settlement_grant"`).
+
+#### 4.5.5 Other rules
+
+- An insolvency buyout already works this way: the fund pays 1.5× the
+  starting capital to restore a distressed company (design doc §5).
+- Bank credit to the fund stays possible later. It is treasury money lent
+  out (`"bank_loan_issue"`), so it is not creation.
 
 ---
 
@@ -516,7 +617,10 @@ penalties on the other.
 - Benefits fixed in money lose value to inflation (OECD 2023), which is why
   indexation (§6.3) matters.
 
-**Recommendation (*proposal*, owner to approve the numbers):**
+**Decided (D18): one Welfare decree, four tiers.** The owner approved the
+system below and asked that it stay simple. Like Tropico's "Social Security"
+edict, the player picks a tier in one place and sees its daily cost there.
+The numbers are starting values for calibration.
 
 - **Base welfare and stipends on the CPI basket.** It is the mod's
   subsistence minimum, it is computed from native prices in either currency
@@ -543,12 +647,13 @@ the CPI basket **including rent**. The levels describe consequences:
 
 A one-time insurance-style benefit (a share of the citizen's last wage for a
 limited time, falling to the basket level) would be more realistic. It needs
-per-citizen wage history and is left for later.
+per-citizen wage history and is left out to keep the system simple.
+
 - Today (*code*) the ratio keys override the old absolutes:
   `welfare_ratio_to_min = 0.40`, `stipend = 0.60`, `pension = 0.80` of
   `minimum_wage = 2.50`, so 1.00 / 1.50 / 2.00 RUB/day. Those sit below the
-  CPI basket, which makes "low welfare" the current *default*. Under D18 that
-  must become a visible player choice.
+  CPI basket, which makes "low welfare" the current *default*. Under D18 these
+  keys are replaced by the decree tier.
 
 ---
 
@@ -564,13 +669,12 @@ pattern
 "Tax Cut". Faction effects are **left out** until the politics module exists
 (D17), but the decree record keeps a slot for them.
 
-*Proposed initial list (owner to confirm or trim):*
+*Initial list (accepted by the owner, D22; welfare merged into one decree per D18):*
 
 | Decree | Levels | Effect | Cost or revenue |
 |---|---|---|---|
-| Welfare level | low / medium / high | Unemployed transfer (§6.4) | Treasury per recipient-day |
-| Pension level | low / medium / high | Retiree transfer | Treasury |
-| Student stipend | low / medium / high | Student transfer | Treasury |
+| Welfare | none / low / medium / high | Unemployed, student and pension transfers together (§6.4) | Treasury per recipient-day |
+| Settlement grant | off / small / large | One-off grant to each new citizen, in days of basket (§4.5.4) | Treasury per new citizen |
 | Wage indexation (state) | off / on | §6.3 | Treasury grows with CPI |
 | Minimum wage | ratio to CPI | Floor for all wages | Paid by employers |
 | State retail price level | free / subsidised / native / above native | §5.3 | Treasury forgoes or earns revenue |
@@ -610,27 +714,61 @@ apartment **never moves because its income changed**. The rent test exists
 only in the dorm branch. Also, `person+0xE4` is the game's own living
 standard, driven by native city statistics, not by the mod's wallets.
 
-### 8.2 Target (*proposal*)
+### 8.2 What the mod already does (*code*)
 
-Use the native mechanism and change only what is missing:
+The owner thought the mod already triggered moves for ordinary citizens. It
+does, but only in a narrow case, and with its own search instead of the
+game's (`enterprise_base` `CollectResidentialRent`, about line 2015):
 
-1. **Widen the native affordability test** from dorms to all apartments. This
-   is hook point 1 in `Citizen_Housing_Relocation.md` §4: the
-   `2.0 <= person+0xA8 || person+0xE4 + bonus < bld+0x13E0` test in
-   `FUN_140834DE0`. Then the native search, gate and executor do the moving.
-2. **Feed the mod economy into that test** instead of writing a separate
-   search. Either compare the mod's rent with the wallet runway at that gate,
-   or bias `person+0xE4` from the wallet stratum. The choice needs a Ghidra
-   look at how `FUN_14083A6D0` maintains `person+0xE4` (target G6), because
-   it overwrites that field continuously.
-3. **Retire the mod's own relocation search** (`FindRelocationCandidate`, `enterprise_base.cpp` about line 1866) in
-   favour of the native one once point 1 works. Keep the anti-despawn guard:
-   never move a citizen when no flat is free.
+- **Only private residential buildings.** Residents of state housing are
+  never checked.
+- **Only downward, as an eviction.** Once a month, a tenant whose rent is
+  more than 35 % of their wallet (`rent_burden_threshold`), who paid less
+  than 95 % of the rent, or who cannot afford a day of bread is evicted, with
+  a happiness penalty (`eviction_penalty_happiness = 0.15`). Nobody ever
+  moves *up* when they get richer.
+- **The mod's own search** (`FindRelocationCandidate`, about line 1866) picks
+  the new flat: poor (wealth < 0.40) to state or cheap flats, rich (≥ 0.70)
+  to the most attractive ones. Only the final move uses the native executor
+  `FUN_14083CA50`.
+- It reads unreadable wealth, rent level and attractiveness as **0.5**,
+  which is invented data (D8) and must become a visible error.
+
+### 8.3 Target (D23)
+
+Use the game's own flat check for everyone:
+
+1. **Trigger the native search for established households.** The game
+   already searches for flats natively for 21-year-olds leaving their
+   parents (verified in `FUN_140834DE0`). New arrivals and residents of
+   demolished buildings are also placed natively; whether they go through
+   the same scorer is not mapped yet. The cleanest hook is the dorm
+   affordability test in `FUN_140834DE0`
+   (`2.0 <= person+0xA8 || person+0xE4 + bonus < bld+0x13E0`, hook point 1
+   in `Citizen_Housing_Relocation.md` §4), widened from dorms to all
+   apartments. Trigger it in two cases:
+   - **Can't afford**: the household's wealth is below its building's rent
+     level. It moves down.
+   - **Can afford better**: the household's wealth is clearly above its
+     building's rent level. The native scorer only moves on a strict
+     improvement, so it moves up only if a better flat is free.
+2. **Which wealth the test reads.** The native test reads the game's own
+   living standard `person+0xE4`, which the game recomputes all the time. To
+   make the mod's money count, either the gate compares the wallet runway
+   (§4.5.2) with the rent, or `person+0xE4` is nudged from the wallet class.
+   This is decided after mapping how `FUN_14083A6D0` writes `person+0xE4`
+   (G6).
+3. **Retire the mod's own search and the eviction penalty** once point 1
+   works. A move the citizen chooses is not an eviction. Keep the
+   anti-despawn guard: nobody moves when no flat is free.
+4. **No ping-pong.** If testing shows households moving back and forth, add
+   a minimum time between moves per household. The native tenure value
+   (`person+0x2D`) may already provide this (G6).
 
 The earlier open question about search radius and cadence (old Q5) goes away:
 the native search has its own scope and timing.
 
-### 8.3 Building blocks already in the mod (*code/static*)
+### 8.4 Building blocks already in the mod (*code/static*)
 
 - The native living-standard / wealth float is `person + 0xE4` (0..1,
   maintained by the game; `TSM_PERSON_WEALTH`).
@@ -678,7 +816,7 @@ attractiveness and dwelling quality as today.
 | I5 | **Money conservation:** the sum of wallets, company capital, investment fund and treasury changes only by customs flows and explicitly labelled policy flows. `state_ledger` reconciliation shows zero unexplained delta. |
 | I6 | **No invented values:** every number displayed or charged traces to a native field, a player policy or a documented INI constant. Anything else shows `UNAVAILABLE` / `ERROR`. |
 | I7 | **Work pays:** at every welfare level, welfare is below the minimum wage. |
-| I8 | **No creation:** no code path credits any account without debiting another, except native customs flows (D20). |
+| I8 | **No creation:** no code path credits any account without debiting another, except native customs flows and the once-per-map fund founding capital (D20). |
 | I9 | **Currency parity:** with no exchange rate (D21), the same republic gives the same *ratios* (wage to basket, margin to cost, transfer to basket) in rubles and in dollars. |
 
 **Runtime check for D9 (static support exists):** the checkout gate skips the
@@ -706,7 +844,8 @@ Owner question: "Do we need Ghidra to find loyalty, health and productivity?"
 | G4 | Building `$WORKERS_NEEDED` / `$PROFESORS_NEEDED` counts (`0xDEC` is the basic max) and which slot each worker in `0xBC0` occupies; the person education field | D15 two-tier pay | High |
 | G5 | Native price of the `"workers"` pseudo-resource (H1). May need only a runtime log, not Ghidra | §6.1 wage anchor | High (cheap) |
 | G2 | Person health, loyalty and productivity fields | Almanac readouts, housing choice, politics module | Medium |
-| G6 | How `FUN_14083A6D0` maintains `person+0xE4` (native living standard), and the exact dorm affordability branch in `FUN_140834DE0` | §8.2 housing by wealth | Medium |
+| G6 | How `FUN_14083A6D0` maintains `person+0xE4` (native living standard), the exact dorm affordability branch in `FUN_140834DE0`, and the tenure field `person+0x2D` | §8.3 housing by wealth | Medium |
+| G7 | Native building build date and wear/condition fields, if they exist | §4.5.3 privatisation price and age rule | Medium |
 | G3 | Native price recompute site (to later write market-adjusted native prices) | Future market model (D2) | Deferred |
 
 Follow [`docs/AGENTS.md`](../AGENTS.md): one Ghidra operator, index each
@@ -717,16 +856,15 @@ result in `docs/ghidra-index/`, and keep bounded raw exports in
 
 ## 10. Open questions for the owner
 
-Answered on 2026-11-22: Q1 → D19, Q2 → D20, Q4 → D21, Q6 → D22. Q3 has a
-recommendation in §6.4. Q5 is replaced by §8 (native housing mechanics).
+Answered on 2026-11-22: Q1 → D19, Q2 → D20, Q3 → D18, Q4 → D21, Q5 → D23,
+Q6 → D22, Q8 → D26, Q9 → D25, Q10 → D23. Q7 is decided in principle (D24)
+apart from the age rule.
 
 | ID | Question |
 |---|---|
-| Q3 | Approve the transfer bases and levels in §6.4 (welfare and stipend on the basket, pensions on the average wage with a basket floor, plus a "None" welfare level). |
-| Q7 | Privatisation: should the investment fund also pay the treasury a purchase price for the building (for example its native construction cost), or only fund the company's starting capital (§4.5)? |
-| Q8 | Where does the investment fund's money come from once the 5 000 000 start goes: player transfer from the treasury, household savings, bank credit, or a combination (§4.5)? |
-| Q9 | New citizen wallets: open at 0, or with a treasury-paid endowment (§4.5)? |
-| Q10 | Housing: approve extending the native rent-versus-wealth test (§8.2) instead of a separate mod system. |
+| Q7 | Age rule (§4.5.3): **A**, young state buildings cannot be privatised at all, or **B**, they can, but the state receives no price for them? And what minimum age? |
+| Q11 | Nationalisation (un-privatising a company): does the treasury pay the fund back for the building? Today the company's capital is kept in reserve and nothing is paid. |
+| Q12 | Size of the once-per-map founding capital, re-based on something native-priced (for example days of basket per citizen). |
 
 ---
 
@@ -749,9 +887,10 @@ Each item is a separate engineering task with its own task record
    import cost.
 5. **enterprise_base:** private shop price = landed cost × (1 + category
    margin) × (1 + VAT), with bounded monthly adaptation through
-   `SetMarkupImpl`. Remove the single `default_markup`. Fund privatisation
-   capital from the investment fund, remove `starting_pool` creation and the
-   load-time reset (§4.5). Set
+   `SetMarkupImpl`. Remove the single `default_markup`. Privatisation pays
+   the building price to the treasury and the starting capital from the fund
+   (§4.5.3). Founding capital once per map with a persisted flag; no load-time
+   reset (§4.5.1). Re-base `legal_reserve_flat` (D21). Set
    `all_enterprises_private = 0` and `auto_private_types` back to the
    shipped default, because auto-privatising every DO contradicts D1 now that
    `ui_panels` ≥ 6.7 provides the DO PRIV tile.
@@ -775,5 +914,11 @@ Each item is a separate engineering task with its own task record
 12. **Currency parity (D21):** remove every `usd_divisor` and `*_usd`
     conversion. Re-base each flat money constant listed in §3.2 point 4 on
     the CPI basket or the building's native construction cost.
-13. **currency:** `starting_wallet` becomes 0 or a treasury-paid endowment
-    (Q9).
+13. **currency:** `starting_wallet = 0`; Settlement grant decree (§4.5.4).
+14. **Household investment** into the fund (§4.5.2), in `currency` or
+    `citizen_retail`, which already know wallets and the Affluent line.
+15. **Housing (§8.3):** trigger the native flat search for established
+    households; retire `FindRelocationCandidate` and the eviction penalty;
+    replace the 0.5 fallbacks with visible errors.
+16. **Welfare decree (§6.4):** one decree, four tiers, replacing the
+    `*_ratio_to_min` keys in `citizen_labor`.
