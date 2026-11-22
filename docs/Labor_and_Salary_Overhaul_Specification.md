@@ -7,6 +7,20 @@
 
 ---
 
+> **Amendment 2026-11-22 (owner decisions; overrides this spec where it conflicts).** See [economy direction §6 and §7](visions/economy-direction-2026-11-22.md).
+>
+> 1. **No general education or skill pay.** A university-educated worker in a basic slot, for example at a mine, earns the basic wage. A premium applies only to **high-education job slots** (`$PROFESORS_NEEDED`) in buildings that also have basic slots (`$WORKERS_NEEDED`), such as doctors vs. cleaning staff in a hospital. Whether a building has two tiers is decided by its native blueprint.
+>    - State buildings: the player sets the premium per sector, with a per-building override (same hierarchy as §3.1).
+>    - Private firms: they bid for high-education slots separately.
+>    - Until the slot occupancy is reverse-engineered (Ghidra target G4), the premium is inactive and shown as `UNAVAILABLE`.
+> 2. **Welfare, pension and stipend levels are player decrees** (low / medium / high or a slider), and the player bears the consequences. §2.1's "derive transfers from the minimum wage at 40/60/80 %" becomes the mechanism behind those levels. It is not a hidden default. Today's ratio defaults (1.00 / 1.50 / 2.00 RUB/day) sit below the CPI basket.
+> 3. **Indexation:**
+>    - State wages and transfers follow the CPI only while the player's *wage indexation* decree is on.
+>    - Private wages follow the CPI **automatically**: private reference wage = sector baseline × CPI index, then the §2.3 bidding. They must no longer freeze with an unindexed state table.
+> 4. **Wages are balanced against native prices.** A default wage must lie between the household floor (CPI basket + rent) and the firm ceiling (native value added per worker-day). The candidate anchor is the native price of the `"workers"` workday pseudo-resource (hypothesis H1, target G5). See economy direction §6.1 and §9.
+> 5. **No invented numbers.** The `usd_divisor` conversion and any fallback wage shown to the player must not appear as if real. Missing values show `UNAVAILABLE`.
+> 6. §2.2's "Tropico-style" state wage control stays. The fixed RUB figures in the Milestone examples (§7) are illustrations, not targets.
+
 ## 1. Executive Summary & Design Vision
 
 The objective of this overhaul is to transform the rigid, static wage table of `citizen_labor` into an interactive, reactive **Labor Market Simulation** combining:

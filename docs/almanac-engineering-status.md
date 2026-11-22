@@ -24,6 +24,11 @@
 >   HEAD. Live in-game verification of the **write** controls (taxes, wages,
 >   bank rate) is still pending and must not be claimed.
 >
+> **2026-11-22 owner decisions** ([economy direction](visions/economy-direction-2026-11-22.md)):
+> - **No synthetic or sample data may ever be displayed.** The sample rows in `almanac_panel_view.cpp` (`kEconomyRows`/`kLabourRows`/`kLogisticsRows`) and the `DrawTable` fallback must be replaced with an obvious `UNAVAILABLE`/`ERROR` display.
+> - The Almanac becomes the **only** policy surface: the City Hall TAX tile, fiscal panel and bank-rate slider are obsolete.
+> - References below to a "synthetic view" describe the earlier prototype and are not acceptable behaviour for the product.
+>
 > Current feature and build truth lives in
 > [`plugins/almanac_overlay_dev/README.md`](../plugins/almanac_overlay_dev/README.md)
 > and [`TESTING.md`](../plugins/almanac_overlay_dev/TESTING.md).

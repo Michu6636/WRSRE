@@ -7,6 +7,19 @@
 > **Design Philosophy:** _Victoria 3_ mixed-economy simulation (laws, markets, interest groups) built on top of _Workers & Resources_ physical logistics.  
 > **Status:** Living Master Specification & Engineering Reference, **Revision 3** (Vector Grounding & Native Municipal Hierarchy Pass).
 
+> **Revision 5 — owner decisions of 2026-11-22 (read first).** The economic direction changed. [`visions/economy-direction-2026-11-22.md`](visions/economy-direction-2026-11-22.md) **overrides this document wherever they conflict**. In short:
+> - The state/private balance is entirely the player's choice.
+> - Only **native game prices** are used. The market book and multiplier are obsolete.
+> - **Local town markets (Task 2) are cancelled**: there is one domestic market.
+> - The state no longer buys private output on dispatch. Companies keep their own customs export revenue, and state exports stay native.
+> - The City Hall TAX tile and fiscal panel are obsolete; the **Almanac** replaces them.
+> - **No sample, synthetic or invented fallback data, ever.** Missing data must be obvious.
+> - Private-logistics B2B billing is to be **live by default**.
+> - Decrees and housing choice by wealth are agreed.
+> - Politics comes later, as a separate module.
+>
+> **The code has not been changed yet.** Sections below describe the code as built, with Rev-5 notes where it is now obsolete.
+
 ---
 
 ```
@@ -17,7 +30,7 @@
                                          │
                                          ▼
   ┌─────────────────────────────────────────────────────────────────────────────┐
-  │ Task 4: Interactive Fiscal Policy & Native UI Panels (taxes/ui_panels v6.5) │ [COMPLETE]
+  │ Task 4: Interactive Fiscal Policy & Native UI Panels (taxes/ui_panels v6.5) │ [COMPLETE → City Hall UI OBSOLETE, Almanac replaces it (Rev 5)]
   └──────────────────────────────────────┬──────────────────────────────────────┘
                                          │
                                          ▼
@@ -33,19 +46,19 @@
                                          │
                                          ▼
   ┌─────────────────────────────────────────────────────────────────────────────┐
-  │ Task 2: Local Town Markets & Physical Scarcity Pricing                      │ [NEXT PRIORITY]
+  │ Task 2: Local Town Markets & Physical Scarcity Pricing                      │ [CANCELLED 2026-11-22 — single domestic market]
   │         (resource_pricing v4.0, private_shops v3.2, 14-cities.md grounding) │
   └──────────────────────────────────────┬──────────────────────────────────────┘
                                          │
                                          ▼
   ┌─────────────────────────────────────────────────────────────────────────────┐
-  │ Information Layer: Macro Economic Readouts & Native Warning Indicators     │ [PLANNED]
-  │                    (ui_panels v6.6, state_ledger v1.5, accounting_office)   │
+  │ Information Layer: Macro Economic Readouts & Native Warning Indicators     │ [PLANNED — in the Almanac]
+  │                    (almanac_overlay_dev, state_ledger; NO sample data)      │
   └──────────────────────────────────────┬──────────────────────────────────────┘
                                          │
                                          ▼
   ┌─────────────────────────────────────────────────────────────────────────────┐
-  │ Physical Logistics Grounding for Private Construction (private_construction)│ [PLANNED]
+  │ Physical Logistics Grounding for Private Construction (private_construction)│ [DEFERRED until core loop polished]
   └──────────────────────────────────────┬──────────────────────────────────────┘
                                          │
                                          ▼
@@ -66,8 +79,9 @@ Vanilla _Workers & Resources_ operates as a pure command economy where the playe
 
 This mod transforms the game into a **Realistic Mixed Economy**:
 
-- **The Sovereign State (The Player):** Retains direct control over heavy industry, infrastructure, energy, public services, and regulatory levers (minimum wages, price ceilings, subsidies, taxes, import tariffs).
-- **The Autonomous Private Sector:** Manages consumer retail, residential housing, private services, and commercial investment. Private enterprises autonomously accumulate profits, bid on wages, pay dividends into the Private Investment Pool, and face bankruptcy when insolvent.
+- **Rev 5 (2026-11-22): player choice of system.** How much of the economy is state-run and how much is private is **entirely the player's choice**, from a purely planned public economy to a capitalist-leaning hybrid. Nothing forces privatisation; privatisation is a manual player action. See [economy direction D1](visions/economy-direction-2026-11-22.md).
+- **The Sovereign State (The Player):** Controls whatever it keeps in state hands, and sets regulatory levers through Almanac controls and **decrees**: minimum wage, welfare/pension/stipend levels, wage indexation, state retail price level, taxes, and possible price ceilings or rent control (decree list: economy direction §7).
+- **The Private Sector (when the player allows it):** Private enterprises accumulate profits, bid on wages (indexed to CPI automatically), contribute to the Private Investment Pool, and face bankruptcy when insolvent. Dividends to rich citizens and fund-driven unlocking of building types are planned (D12). Automatic building placement is not.
 - **The Interaction:** The player does not micro-manage private shops or apartments; instead, the player guides, taxes, and competes with private capital through state policy.
 
 ### 1.2 Victoria 3 Alignment & Physical Logistics Grounding
@@ -78,12 +92,12 @@ _Victoria 3_ serves as our macroeconomic inspiration, but _Workers & Resources_ 
 | :--------------------------------- | :-------------------------------------------------------------------------------------------- | :---------------------------------------- | :---------------- |
 | **Pops & Strata**                  | Individual citizens (`TSM_PERSON_SIZE`), classified into 4 Strata; aggregated into Pop Groups | `citizen_retail.cpp`, `citizen_labor.cpp` | `[IN PROGRESS]`   |
 | **Standard of Living (SoL)**       | 4-Tier Hierarchy evaluated via Purchasing Power Ratio (Flow) and Liquidity Runway (Stock)     | `citizen_retail.cpp`                      | `[IN PROGRESS]`   |
-| **Goods Markets**                  | Local Town Markets grounded by physical stock cover via native `NamePoint` (`0x108`)          | `resource_pricing.cpp`, `14-cities.md`    | `[NEXT PRIORITY]` |
+| **Goods Markets**                  | **Rev 5:** one domestic market at **native game prices**; market book/multiplier obsolete; local town markets cancelled | `resource_pricing.cpp`                    | `[REDESIGN]` (see economy direction §3) |
 | **Market Access / Infrastructure** | Native physical logistics; private-DO access/target assistance and approximate road-assignment cost records (not live settlement) | `private_shops.cpp`, `private_logistics.cpp`; see section 12 | `[IMPLEMENTED / PARTIALLY VALIDATED]` (DO scope; payments OFF) |
 | **Corporate Balance Sheets**       | `[P]` enterprises with operating capital, wage bidding, and the 3-month distress ladder       | `enterprise_base.cpp`                     | `[COMPLETE]`      |
-| **Investment Pool**                | Capitalist Investment Pool accumulated strictly from net operating profits                    | `enterprise_base.cpp`                     | `[COMPLETE]`      |
-| **Construction Capacity**          | Turnkey private construction competing with state mega-projects for physical materials        | `private_construction.cpp`                | `[PLANNED]`       |
-| **Fiscal Policy & Taxation**       | Direct UI sliders for VAT, Corporate Profit Tax, and Land-Value Property Tax                  | `taxes.cpp`, `ui_panels.cpp`              | `[COMPLETE]`      |
+| **Investment Pool**                | Capitalist Investment Pool accumulated from net operating profits; Rev 5: dividends to rich citizens and building-type unlocks planned | `enterprise_base.cpp`                     | `[COMPLETE]` / extensions `[DEFERRED]` |
+| **Construction Capacity**          | Turnkey private construction competing with state mega-projects for physical materials        | `private_construction.cpp`                | `[DEFERRED]` (Rev 5: current simple system stays for now) |
+| **Fiscal Policy & Taxation**       | VAT, Corporate Profit Tax, Land-Value Property Tax; Rev 5: controls live in the **Almanac** only, City Hall UI to be removed; decrees planned | `taxes.cpp`, `almanac_overlay_dev`        | `[COMPLETE]` / City Hall UI `[OBSOLETE]` |
 | **Sovereign Debt**                 | State borrowing against the Private Investment Pool with credit rating spreads                | `enterprise_base.cpp`, `state_ledger.cpp` | `[PLANNED]`       |
 
 ---
@@ -167,7 +181,9 @@ $$\text{Tenant Rent} = \text{Base Rent} \times \Big(\text{MinMult} + (\text{MaxM
 
 ---
 
-# SECTION 4: TASK 4 — FISCAL POLICY & NATIVE UI PANELS [COMPLETE]
+# SECTION 4: TASK 4 — FISCAL POLICY & NATIVE UI PANELS [COMPLETE — CITY HALL UI OBSOLETE]
+
+> **Rev 5 (2026-11-22):** The City Hall TAX tile, the fiscal panel, the City Hall macro rows and `republic_bank`'s City Hall rate slider are **obsolete**. The Almanac (`plugins/almanac_overlay_dev`) is the single policy surface. Any readout that exists only on City Hall moves to the Almanac before removal. The description below is kept as a record of the built code. See [economy direction D7](visions/economy-direction-2026-11-22.md).
 
 ### 4.1 Native Hooking Architecture (`ui_panels.cpp` v6.5)
 
@@ -224,6 +240,8 @@ Living standards are anchored to an absolute physical basket calculated in the a
 
 $$\text{Daily Basket Cost (CPI)} = (P_{\text{food}} \cdot \text{mult}_{\text{food}} \cdot Q_{\text{food}}) + (P_{\text{meat}} \cdot \text{mult}_{\text{meat}} \cdot Q_{\text{meat}}) + (P_{\text{clothes}} \cdot \text{mult}_{\text{clothes}} \cdot Q_{\text{clothes}}) + \text{Daily Rent}$$
 
+> **Rev 5:** The `mult` terms (market multipliers) are obsolete. The basket uses plain native prices at the actual shelf price level (economy direction §3). The basket also becomes the CPI reference for wage indexation (§6.3 there).
+
 - **Calibrated Physical Intakes:**
   - $Q_{\text{food}} = 0.0020\text{ t}$ (Midpoint of native consumption ladder).
   - $Q_{\text{meat}} = 0.0006\text{ t}$ (Engine baseline demand).
@@ -264,7 +282,9 @@ $$\text{Liquidity Runway (Days)} = \frac{\text{Citizen Wallet Balance}}{\text{Da
 
 ---
 
-# SECTION 7: TASK 2 — LOCAL TOWN MARKETS & SCARCITY PRICING [NEXT PRIORITY]
+# SECTION 7: TASK 2 — LOCAL TOWN MARKETS & SCARCITY PRICING [CANCELLED 2026-11-22]
+
+> **Rev 5:** Cancelled by the owner. The whole map is **one domestic market** until the core loop is perfected. Prices are the **native game prices** with no scarcity, freight-surcharge or market multiplier. A future market model may adjust the native prices themselves (economy direction D2/D3). The text below is kept only as a historical design record. The reverse-engineering in [`engine/local-markets.md`](engine/local-markets.md) stays valid as engine reference.
 
 ### 7.1 Architecture: Grounded Local Catchment
 
@@ -284,11 +304,13 @@ $$\text{Shelf Price} = \text{Base Price} \times \text{Scarcity Mult} \times (1 +
 
 ---
 
-# SECTION 8: INFORMATION LAYER & DIAGNOSTIC LEGIBILITY [PLANNED]
+# SECTION 8: INFORMATION LAYER & DIAGNOSTIC LEGIBILITY [PLANNED — ALMANAC]
+
+> **Rev 5:** These readouts belong in the **Almanac**, not City Hall. **No sample, synthetic or invented value may ever be displayed.** A missing service or field shows `UNAVAILABLE` / `ERROR <reason>` in warning colour (economy direction D8). The example figures below illustrate the format only and must never appear in the mod.
 
 ### 8.1 Macroeconomic Readouts
 
-Integrated into the City Hall (`type 39`) and Accounting Office dashboard via `taxes.cpp`:
+Originally specified for the City Hall (`type 39`) and Accounting Office dashboard via `taxes.cpp` (superseded by the Almanac):
 
 1. **Cost of Living Index (CPI):** Live daily survival basket cost in active currency (`Cost of Living: 4.80 RUB/day`).
 2. **Poverty Rate:** Percentage of population currently in Low or Destitute SoL (`Poverty Rate: 8.4%`).
@@ -305,7 +327,9 @@ Surfacing commercial distress directly onto native building window banners:
 
 ---
 
-# SECTION 9: PHYSICAL LOGISTICS FOR PRIVATE CONSTRUCTION [PLANNED]
+# SECTION 9: PHYSICAL LOGISTICS FOR PRIVATE CONSTRUCTION [DEFERRED]
+
+> **Rev 5:** Still the goal, but deferred. The current simple private-construction system stays until the central economic loop is improved and polished (economy direction D13).
 
 Private construction must not conjure structures out of currency balances:
 
@@ -348,6 +372,13 @@ Private construction must not conjure structures out of currency balances:
 ---
 
 # SECTION 12: PRIVATE DISTRIBUTION OFFICES — IMPLEMENTED DRY ACCOUNTING, NOT LIVE SETTLEMENT
+
+> **Rev 5 (2026-11-22):** The owner decided that B2B billing must be **live by default** (`billing = 1`, `dry_run = 0`). The source is now `private_logistics` `0.19.0-simplified-settlement` (buyer pays verified seller; buyer pays private DO trip fuel). Before the defaults flip:
+> 1. Remove the `private_shops` dispatch procurement and 0.70 delivery billing, to avoid double settlement.
+> 2. Remove the market multiplier from the B2B price.
+> 3. Exclude customs houses from `b2b_state_buy`.
+>
+> See economy direction §4.4. The "payments remain OFF" statements below describe the 0.18.x evidence period and are historical once that work lands.
 
 **Source update 2026-11-02:** **0.18.18-census-guard** is a bounded legacy-census safety follow-up to **0.18.17-dry-ledger** from [PR #42](https://github.com/Michu6636/WRSRE/pull/42). It guards exhausted diagnostic slots and reports omitted visits, without changing caps, dispatch or billing. The follow-up passes 144 host tests and is now merged in PR #43 (`2d83fdc`). The user reports a Windows build; Test15 (2026-11-03) logs native 0.18.18 execution through 30 daily summaries, not an exhaustion test. That run exposes the existing five-total-target connection cap and unresolved secondary-goods dispatch behaviour; it is not full dispatch acceptance or a large-save benchmark. No further runtime changes are made by the Test15 investigation. This section supersedes earlier v0.17 source-only/dry-run snapshots for DO behavior; it does not change unrelated system status labels in this document. The detailed, plain-language implementation contract is [How distribution offices work in WRSRE](private-logistics-runtime/DO_OFFICES.md). That guide includes settings, examples, source links, limits and validation gates. Complete evidence stays in the [single cumulative report](private-logistics-runtime/VEHICLE_PANEL_FUEL_INVESTIGATION.md).
 

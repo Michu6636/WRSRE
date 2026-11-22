@@ -3,6 +3,13 @@
 **Current-status review:** 2026-11-01, source **0.18.17-dry-ledger** (PR #42 merged).
 **Role now:** bounded private-DO target assistance, road-fleet observation and persistent approximate dry costs; **payments OFF**.
 
+> **2026-11-22 owner decisions ([economy direction](economy-direction-2026-11-22.md), §4) override this file:**
+> - B2B billing is to be **live by default** (`billing = 1`, `dry_run = 0`), after the double-settlement prerequisites in §4.4 there.
+> - Goods are priced at the **native price**, with no market multiplier and no factory share.
+> - The "90 % factory share" producer settlement is **withdrawn**: producers are paid by the buyer on delivery.
+> - Companies receive their own customs export proceeds, and customs deliveries must not trigger `b2b_state_buy`.
+> - Source is now `0.19.0-simplified-settlement`.
+
 ## Current contract: read this before the historical vision
 
 The [main design document, section 12](../WRSRE%20DESIGN%20DOC.md) and [current DO implementation guide](../private-logistics-runtime/DO_OFFICES.md) describe what is implemented, how it works, evidence limits and next steps. The game still owns all physical logistics. State storage/factories now have independent default-OFF loading/delivery permissions; consumers are delivery-only. Private eligible sites follow their role; managed targets reconnect daily and use source10/destination30 policy. Target application is ON in source (`auto_targets_dry_run=0`) while billing remains OFF (`billing=0`).

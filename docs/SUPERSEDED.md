@@ -1,6 +1,6 @@
 # Superseded Conclusions Index
 
-Updated 2026-10-22. Table of earlier findings now replaced.
+Updated 2026-11-22. Table of earlier findings now replaced.
 
 | Earlier conclusion | Latest conclusion to use | Source |
 |---|---|---|
@@ -12,5 +12,13 @@ Updated 2026-10-22. Table of earlier findings now replaced.
 | Task 6 Dropped | Task 6b Bounded Source-Only Staged v0.17, Task 6 broad fleet remains dropped. | `WRSRE DESIGN DOC` Rev4, `current-task-state-storage.md` |
 | Panel safe above 5 | `panel+0x310+idx*4` allocation unproven above 5; conservative cap 5 policy, not engine max. | `ghidra-do-storage-findings.md` / `NEXT_PHASE.md` |
 | Native add_flow 5 = engine cap | 5 observed in one add session, not proven global; vector/planner/save iterate all. | `ghidra-do-storage-findings.md` |
+
+| Local town markets / scarcity pricing is the next priority (Task 2). | **Cancelled 2026-11-22.** There is one domestic market at native prices. | `visions/economy-direction-2026-11-22.md` D3 |
+| Prices = native price × Republic market multiplier (supply/demand book). | **Native price only.** The market book and multiplier are obsolete and to be removed. | economy direction D2, §3 |
+| Producer paid 90 % of retail on dispatch; shops procure at 70 %. | **Withdrawn.** The buyer pays the native price on delivery; companies receive their own customs export proceeds. | economy direction D4/D5, §4 |
+| B2B payments remain OFF / dry run is the safe default. | **Live billing by default** (`billing = 1`, `dry_run = 0`), after the §4.4 prerequisites. | economy direction D16 |
+| City Hall TAX tile and fiscal panel are the fiscal policy UI. | **Obsolete.** The Almanac is the only policy surface. | economy direction D7 |
+| Missing service: hide the UI row, or show synthetic/sample values. | **Never.** Show `UNAVAILABLE` / `ERROR <reason>` visibly; no invented data. | economy direction D8 |
+| Skill or education wage premium. | **Withdrawn.** Only a premium on high-education *slots* in two-tier buildings. | economy direction D15, §6.2 |
 
 See `docs/ghidra-do-storage-findings.md#superseded-conclusions` for full narrative.

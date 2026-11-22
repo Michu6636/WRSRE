@@ -74,16 +74,16 @@ WRSRE/
 | `sim_clock` | In-game tick, day, month, quarter, and year scheduling service |
 | `persistence` | Atomic save-directory file I/O (`writeAtomic`/`readFile`) & save/load dispatch |
 | `currency` | Dual-currency (`RUB`/`USD`) citizen wallets, Treasury accessors & flow observers |
-| `resource_pricing` | Resource price table, Republic supply/demand multipliers, CPI basket & v4 local scarcity quotes |
+| `resource_pricing` | Native resource prices & CPI basket (supply/demand multipliers and local scarcity are obsolete and scheduled for removal — see [economy direction](docs/visions/economy-direction-2026-11-22.md)) |
 | `enterprise_base` | Private company registry (`[P]`), balance sheets, P&L categories, rent & investment pool |
-| `republic_bank` | Working-capital credit lines, daily overdraft rescue, monthly interest/sweep & City Hall rate slider |
-| `citizen_labor` | Wage negotiation, skill premiums, payroll remittance & labor mobility |
+| `republic_bank` | Working-capital credit lines, daily overdraft rescue, monthly interest/sweep; rate control in the Almanac (City Hall slider obsolete) |
+| `citizen_labor` | Minimum wage, sector wages & overrides, private wage bidding, social transfers, payroll & wage-driven mobility (no skill premium exists; a high-education *slot* premium is planned) |
 | `citizen_retail` | Household retail checkout gate, CPI survival basket & store revenue settlement |
-| `private_shops` | Retail/service operations, foreign restock & macro supply/demand recording |
+| `private_shops` | Retail/service operations (dispatch procurement, 0.70 delivery billing, foreign restock and supply/demand recording are obsolete and scheduled for removal) |
 | `private_logistics` | Autonomous private DO target management, fuel/schedule observers & Ship 2 B2B counterparty settlement |
 | `private_logistics_probe` | Read-only vehicle fuel/snapshot diagnostic telemetry |
 | `private_construction` | Private construction financing, site progress & turnkey ownership transfer |
-| `taxes` | VAT, corporate profit tax, property tax & City Hall fiscal policy sliders |
+| `taxes` | VAT, corporate profit tax & property tax; controls in the Almanac (City Hall TAX tile/panel obsolete, scheduled for removal) |
 | `state_ledger` | Monthly Treasury & full Republic money-supply reconciliation (`tesmio_ledger.csv`) |
 | `ui_overlay` | Top-level HUD economy & enterprise cards |
 | `ui_panels` | Native building-window row injection & interactive slider/checkbox widgets |

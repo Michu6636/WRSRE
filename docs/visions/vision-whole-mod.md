@@ -1,7 +1,20 @@
 # Vision: WRSRE Economic Mod
 
-**Updated:** 2026-10-22  
+**Updated:** 2026-10-22 (product vision); **2026-11-22 owner decisions override the economics below. Read [`economy-direction-2026-11-22.md`](economy-direction-2026-11-22.md) first.**  
 **Reference snapshot:** supplied WRSRE code listing with 15 plugin names, prior work-plan/design notes, and the current staged private-logistics investigation. This is an updated product/architecture vision—not a claim that every named subsystem is implemented, integrated, or working in the live game.
+
+> **2026-11-22 corrections, in brief:**
+> - The state/private balance is the player's choice.
+> - Native game prices only: no market multiplier, no invented fallback prices.
+> - One domestic market: local markets are cancelled.
+> - The state does not buy private output on dispatch. Domestic sales settle on delivery at the native price, and companies receive their own customs export revenue.
+> - The 90 %/70 % producer/procurement shares below are **withdrawn**.
+> - B2B billing is to be live by default.
+> - No sample or synthetic data anywhere. Missing data must be obvious.
+> - Decrees and housing choice by wealth are agreed.
+> - Politics comes later, in its own module.
+>
+> Section 7 below is a 2026-10-22 snapshot and is out of date (`private_logistics` is now `0.19.0-simplified-settlement`).
 
 ## 1. Product vision
 
@@ -26,10 +39,11 @@ The player should be able to understand why money moved, which actor owns a buil
 - Use a shared currency/transaction service rather than ad hoc plugin-local wallets.
 - Preserve enough ledger detail to trace balances and resolve double-counting.
 - Fail closed on ambiguous ownership, missing prices, invalid participants, or duplicate events rather than inventing a charge.
+- **Never display or use sample, synthetic, placeholder or invented values.** When information is unavailable or an error occurs, make it obvious to the player (`UNAVAILABLE` / `ERROR <reason>`).
 
 ### Prices and costs are grounded
 
-- Use a shared price reference/index, not multiple conflicting price tables.
+- Use a shared price reference, not multiple conflicting price tables. **2026-11-22: that reference is the native game price, with no mod multiplier.** A missing native price means *unpriced and refused*, never an invented fallback.
 - Fuel expense is based on actual physical consumption and the live price.
 - Freight should be a transparent service/cost model, not an arbitrary hard-coded rouble amount.
 - Wage, tax, producer-share, procurement, and tariff values are explicit tunable policies; they should be documented as balancing decisions, not engine facts.
@@ -37,7 +51,8 @@ The player should be able to understand why money moved, which actor owns a buil
 ### Preserve player control
 
 - Avoid silently rewriting player-managed targets, building permissions, price policies, or business ownership.
-- Opt-ins default off for behavior that changes logistics access or money flows.
+- Opt-ins default off for behavior that changes logistics access. *(2026-11-22 exception: B2B delivery billing defaults **on**, per the owner.)*
+- The player alone decides how much of the economy is state-run or private; nothing auto-privatises.
 - Automation should add missing information, not erase manual choices.
 - State-run distribution offices remain player-managed unless the player later approves a separate automation feature.
 
@@ -54,13 +69,17 @@ This is the intended high-level loop. Individual links may be at different imple
 
 ### Production and wholesale supply
 
-Private producers create goods through the game's normal production/inventory simulation. When goods physically leave a private factory for the modeled market, the accounting layer recognizes the transfer and pays the producer a configured share of the retail reference price. The prior design's staged starting value is **90% of retail price**. The state sector can act as a wholesaler/market participant, but should not generate free stock or untraceable money.
+Private producers create goods through the game's normal production/inventory simulation. **2026-11-22:** goods leaving a factory are *not* a sale. A sale is recognized when the goods are **delivered**:
+- **To a domestic buyer:** the buyer pays the seller the **native price** on delivery. If the buyer is a state building, the treasury pays only for goods it actually receives (owner to confirm, economy direction Q1).
+- **At a customs house:** the company receives the exact native customs proceeds.
+
+The former "producer paid **90%** of retail on dispatch" rule is withdrawn. The state sector can act as a buyer or seller like any other counterparty, but must not generate free stock or untraceable money. State exports and imports stay native.
 
 ### Private procurement and retail
 
-Private shops obtain goods through native logistics and the mod's procurement rules. The prior design's starting point is that shops procure at **70% of retail price**. Shops then sell through the game's retail/citizen interaction model; citizens spend from wallets and the transaction is reflected in the shared economy.
+Private shops obtain goods through native logistics and pay the **native price** on delivery. The former "procure at **70%** of retail" rule is withdrawn: it sold state goods below their native price. Shops sell at `landed cost × (1 + category margin) × (1 + VAT)`. The margin defaults per category and adapts within bounds to refusals and sell-through. State shops sell at a player-set *state retail price level* (economy direction §5). Citizens spend from wallets; a citizen who cannot pay does not receive the goods, and the native unmet-need mechanics apply.
 
-These percentages are balancing inputs from the design documents, not Ghidra-confirmed behavior or current-runtime proof. They must be visible in configuration, tested against cash flow and stock turnover, and revised deliberately rather than embedded as unexplained constants.
+All ratios (margins, price levels, wage and transfer ratios) are explicit balancing inputs, visible in configuration or as player decrees. They are tested against the invariants in economy direction §9, never embedded as unexplained constants.
 
 ### Freight and fuel
 
@@ -198,6 +217,10 @@ Priorities:
 - [ ] The player can inspect and adjust approved policy rather than discover hidden constants.
 
 ## 9. Open design decisions
+
+**2026-11-22 status:**
+- **Decided:** whether prices respond to scarcity (not now; native prices only, and any future model adjusts native prices); which features are on by default (B2B billing live).
+- **Still open:** the remaining items below, plus the questions in economy direction §10.
 
 These are intentional decisions for the project owner, not questions that static reverse engineering can resolve:
 
