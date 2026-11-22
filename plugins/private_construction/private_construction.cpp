@@ -2282,7 +2282,6 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
     if (!g_currency) { Logf("private_construction  currency is not installed"); return 1; }
 
     g_pricing = (const TsmResourcePricingApi*)H->consume(TSM_SERVICE_RESOURCE_PRICING, TSM_RESOURCE_PRICING_VERSION);
-    if (!g_pricing) g_pricing = (const TsmResourcePricingApi*)H->consume(TSM_SERVICE_RESOURCE_PRICING, TSM_RESOURCE_PRICING_VERSION_V2);
     if (!g_pricing) g_pricing = (const TsmResourcePricingApi*)H->consume(TSM_SERVICE_RESOURCE_PRICING, TSM_RESOURCE_PRICING_VERSION_V1);
     if (!g_pricing) { Logf("private_construction  resource_pricing missing"); return 1; }
 

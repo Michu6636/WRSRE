@@ -4,6 +4,13 @@
 // ui_panels, citizen_labor, citizen_retail, taxes and resource_pricing;
 // provides enterprise_base.
 //
+// v9.20 NO MARKET MULTIPLIER (economy-direction 2026-11-22, code step 1).
+//
+//   resource_pricing v5 removed the Republic market order book. The
+//   destitute bread-day is now native P_food x destitute_bread_tons, and
+//   the v8.1 "Market" Shortage/Glut row in the building window is gone.
+//   resource_pricing is still consumed (v5 -> v1) for the food price.
+//
 // v9.15 PRIVATISATION BAR.
 //
 //   The PRIV control on a non-residential building was a 40-unit toolbar
@@ -566,7 +573,7 @@ static const TsmUiPanelsApi*       g_panels      = nullptr;
 static const TsmCitizenLaborApi*   g_labor       = nullptr;
 static const TsmCitizenRetailApi*  g_retail      = nullptr;
 static const TsmTaxesApi*          g_taxes       = nullptr;
-static const TsmResourcePricingApi* g_pricing    = nullptr;   // v8.1: market condition row
+static const TsmResourcePricingApi* g_pricing    = nullptr;   // destitute bread-day food price
 
 static int g_persHandle = -1;
 
@@ -1972,18 +1979,16 @@ static void CollectResidentialRent(void)
     if (!(g_residentialRent > 0.0)) return;
     if (!g_currency) return;
 
-    // v9.1 (Task 7): one day of staple bread - live Pfood x market mult x
+    // v9.1 (Task 7): one day of staple bread - native Pfood x
     // destitute_bread_tons, in the ACTIVE currency (getPrice resolves the
-    // currency leg; the market multiplier keeps the threshold in step with
-    // the CPI basket citizen_retail classifies on). 0 disables the stage.
+    // currency leg). v9.20: no market multiplier. 0 disables the stage.
     float destituteDay = 0.0f;
     if (g_destituteEnabled && g_pricing &&
         g_pricing->getFood && g_pricing->getPrice) {
         int cur = TsmCurrencyActive(g_currency);
         void* food = g_pricing->getFood();
         float pFood = g_pricing->getPrice(food, cur);
-        destituteDay = pFood * TsmPricingMarketMult(g_pricing, food) *
-                       g_destituteBreadTons;
+        destituteDay = pFood * g_destituteBreadTons;
         if (!(destituteDay == destituteDay) || destituteDay <= 0.0f)
             destituteDay = 0.0f;
     }
@@ -2489,30 +2494,6 @@ static void EnterprisePanelRows(void* building, TsmPanelRows* out,
     _snwprintf_s(v, _countof(v), _TRUNCATE, L"%-+.2f / %-+.2f",
                  info.monthWages, info.monthTaxes);
     PushPanelRow(out, L"Wages / taxes", v);
-
-    // v8.1 (Task 1 UI): the Victoria-3 Republic Market Condition, on the
-    // building types whose revenue is exposed to the macro order book -
-    // retail shops (3), factories (6) and service buildings (23). We read the
-    // food good as the Republic-wide bellwether: it is the dominant consumer
-    // commodity citizen_retail records demand for and private_shops records
-    // supply for, so its multiplier is the clearest single market signal a
-    // per-building row can show. getMarketBalance is thread-safe; the service
-    // is optional and pre-v2 builds simply skip the row.
-    if ((bldType == 3 || bldType == 6 || bldType == 23) &&
-        TsmPricingHasMarket(g_pricing)) {
-        void* res = g_pricing->getFood();
-        float mult = TsmPricingMarketMult(g_pricing, res);
-        if (!(mult == mult) || mult <= 0.0f) mult = 1.0f;
-
-        int pct = (int)((mult - 1.0f) * 100.0f + (mult >= 1.0f ? 0.5f : -0.5f));
-        if (pct > 0)
-            _snwprintf_s(v, _countof(v), _TRUNCATE, L"Shortage (+%d%%)", pct);
-        else if (pct < 0)
-            _snwprintf_s(v, _countof(v), _TRUNCATE, L"Glut (%d%%)", pct);
-        else
-            _snwprintf_s(v, _countof(v), _TRUNCATE, L"Balanced");
-        PushPanelRow(out, L"Market", v);
-    }
 
     // M2: effective daily wage + market state. The base comes from
     // citizen_labor's resolver (sector/override/floor aware on v3, type
@@ -4669,7 +4650,7 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
 {
     TsmBind(host);
     info->name    = "enterprise_base";
-    info->version = "9.19";
+    info->version = "9.20";
 
     g_simClock = (const TsmSimClockApi*)
         H->consume(TSM_SERVICE_SIM_CLOCK, TSM_SIM_CLOCK_VERSION);
@@ -4824,16 +4805,11 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
     if (!g_taxes)
         g_taxes = (const TsmTaxesApi*)H->consume(TSM_SERVICE_TAXES, TSM_TAXES_VERSION_V1);
 
-    // v8.1 (Task 1 UI): the Republic macro market book, for the in-window
-    // Market Condition row on retail/factory/service buildings. Optional -
-    // when resource_pricing is absent (or a pre-v2 build) the row is skipped
-    // and nothing else changes.
+    // The food price for the destitute bread-day. Optional - when
+    // resource_pricing is absent the destitute stage is disabled
+    // (destituteDay stays 0) and nothing else changes.
     g_pricing = (const TsmResourcePricingApi*)
         H->consume(TSM_SERVICE_RESOURCE_PRICING, TSM_RESOURCE_PRICING_VERSION);
-    if (!g_pricing)
-        g_pricing = (const TsmResourcePricingApi*)
-            H->consume(TSM_SERVICE_RESOURCE_PRICING,
-                       TSM_RESOURCE_PRICING_VERSION_V2);
     if (!g_pricing)
         g_pricing = (const TsmResourcePricingApi*)
             H->consume(TSM_SERVICE_RESOURCE_PRICING,
@@ -4881,10 +4857,10 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
         }
     }
 
-    Logf("enterprise_base  live v9.19 (unified currency %s, privatisation bar everywhere, net-profit siphon, attractiveness rent, park-cap, economic eviction + destitute bread-day, atomic retail charge+credit, in-window rows, wage bidding, phased insolvency, market-condition row, full-private-price retail pre-check, refusal-triggered capital watch, honest audit baseline, payroll affordability, wage provenance, visible revenue, wage contract cap %s, rate ceiling %.0fx minimum)",
+    Logf("enterprise_base  live v9.20 (unified currency %s, privatisation bar everywhere, net-profit siphon, attractiveness rent, park-cap, economic eviction + destitute bread-day, atomic retail charge+credit, in-window rows, wage bidding, phased insolvency, native prices (no market multiplier), full-private-price retail pre-check, refusal-triggered capital watch, honest audit baseline, payroll affordability, wage provenance, visible revenue, wage contract cap %s, rate ceiling %.0fx minimum)",
          TsmCurrencySymbol(g_currency), g_wageCapEnabled ? "on" : "off",
          (double)g_wageRateCeiling);
-    Logf("enterprise_base  *** BUILD v9.19 - wholesale income counts as revenue, every privatise click logged ***");
+    Logf("enterprise_base  *** BUILD v9.20 - no market multiplier, wholesale income counts as revenue, every privatise click logged ***");
     Logf("enterprise_base      [WATCH n]      armed by a refusal; logs every movement on that shop for %d ms", g_watchMs);
     Logf("enterprise_base      [WATCH n CAP]  a capital movement on the watched shop, with by=<caller>");
     Logf("enterprise_base      [WATCH n SALE] a completed sale on the watched shop, with the buyer");

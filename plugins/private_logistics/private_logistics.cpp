@@ -1,8 +1,8 @@
 // private_logistics -- simplified observed B2B settlement.
 //
 // Goods: unloading buyer -> verified loading seller. Each physical cargo lot
-// retains seller/resource/origin and global_base * global_market locked at
-// loading; residual lots are never reassigned to another seller.
+// retains seller/resource/origin and the native global price locked at
+// loading (no market multiplier since resource_pricing v5); residual lots are never reassigned to another seller.
 // DO trip fuel: original unloading buyer -> vehicle-owning private DO, using
 // sampled positive fuel decrease and the global fuel price at observed close.
 // Unknown starts, observation gaps, uncertain identities or missing prices are
@@ -440,7 +440,8 @@ static void BuildingName(void* b, char* out, size_t n)
 
 // The suite's single price function. Everything this plugin charges is
 // expressed against THIS number, and every pay line names it, so a change of
-// price source can never silently halve or double a payment.
+// price source can never silently halve or double a payment. Since
+// resource_pricing v5 it is the native price only - no market multiplier.
 //
 // NOTE: resource_pricing itself may be returning its shipped fallbacks
 // (RE_DIGEST Part 12 section 3). That is fine and consistent - what must not
@@ -451,9 +452,7 @@ static double UnitPrice(void* res)
 
     if (g_pricing) {
         const int cur = g_currency ? TsmCurrencyActive(g_currency) : 0;
-        const float p = g_pricing->getPrice(res, cur);
-        const double market = (double)TsmPricingMarketMult(g_pricing, res);
-        const double quote = (double)p * market;
+        const double quote = (double)g_pricing->getPrice(res, cur);
         if (std::isfinite(quote) && quote > 0.01 && quote < 1e9) return quote;
     }
 

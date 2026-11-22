@@ -14,8 +14,8 @@ Updated 2026-11-22. Table of earlier findings now replaced.
 | Native add_flow 5 = engine cap | 5 observed in one add session, not proven global; vector/planner/save iterate all. | `ghidra-do-storage-findings.md` |
 
 | Local town markets / scarcity pricing is the next priority (Task 2). | **Cancelled 2026-11-22.** There is one domestic market at native prices. | `visions/economy-direction-2026-11-22.md` D3 |
-| Prices = native price × Republic market multiplier (supply/demand book). | **Native price only.** The market book and multiplier are obsolete and to be removed. | economy direction D2, §3 |
-| Producer paid 90 % of retail on dispatch; shops procure at 70 %. | **Withdrawn.** The buyer pays the native price on delivery; companies receive their own customs export proceeds. | economy direction D4/D5, §4 |
+| Prices = native price × Republic market multiplier (supply/demand book). | **Native price only.** Code removed 2026-11-22: `resource_pricing` v5 has no market book, multiplier or local scarcity quote. | economy direction D2, §3; [task record](tasks/active/2026-11-22-remove-market-multiplier-and-procurement.md) |
+| Producer paid 90 % of retail on dispatch; shops procure at 70 %. | **Withdrawn.** The buyer pays the native price on delivery; companies receive their own customs export proceeds. The 90 % dispatch procurement was removed from code on 2026-11-22 (`private_shops` v3.6); the 70 % delivery bill (`wholesale_ratio`) is still in code until a later step. | economy direction D4/D5, §4 |
 | B2B payments remain OFF / dry run is the safe default. | **Live billing by default** (`billing = 1`, `dry_run = 0`), after the §4.4 prerequisites. | economy direction D16 |
 | City Hall TAX tile and fiscal panel are the fiscal policy UI. | **Obsolete.** The Almanac is the only policy surface. | economy direction D7 |
 | Missing service: hide the UI row, or show synthetic/sample values. | **Never.** Show `UNAVAILABLE` / `ERROR <reason>` visibly; no invented data. | economy direction D8 |

@@ -3,6 +3,28 @@
 // Level 3. Consumes sim_clock, currency, persistence, resource_pricing,
 // enterprise_base and taxes; provides nothing.
 //
+// v3.6 from v3.5 (economy-direction 2026-11-22, code step 1):
+//
+//   - NO STATE PROCUREMENT. The treasury no longer buys a private
+//     building's dispatched output (moveTreasury("procurement") +
+//     TSM_CAP_PRODUCTION). Goods move on the game's own logistics and are
+//     settled company-to-company; exports are paid by the game's customs.
+//     procurement_price_mult and procurement_flag_fallback are gone, and
+//     with them the export/import direction reads and the unmarked-storage
+//     fallback (DispatchFallbackAllowed, [PROC] logs) that only served it.
+//   - NO MARKET BOOK. resource_pricing v5 removed the v2 order book, so
+//     foreign restock and storage outflow no longer record supply/demand.
+//     The B2B-active visitor is now WholesaleSnapshotOnlySlot: it keeps
+//     the slot snapshots current and moves no money.
+//   - OWN PRODUCTION IS NOT A DELIVERY. Stock growth in an export-flagged
+//     storage is no longer billed at wholesale_ratio (it was, and the 0.90
+//     dispatch procurement used to pay it back). Deliveries into import,
+//     shop and warehouse storages are still billed. An unflagged factory
+//     output storage is still billed (known limit until B2B billing).
+//   - Unchanged: foreign restock (opt-in), the state wholesale delivery
+//     bill and the service fees. History below describes the removed
+//     paths as they were.
+//
 // v3.2 from v3.1:
 //
 //   - SLOT-IDENTITY SNAPSHOTS (money integrity). The per-building slot
@@ -361,17 +383,11 @@ static const ServiceFee* FeeForType(int type)
     return nullptr;
 }
 
-// v2.8: procurement dispatch applies to every private, finished building
-// EXCEPT retail/service - a shop or pub losing stock is a customer sale
-// (already credited by enterprise_base's retail interceptor), not a
-// state procurement dispatch from a factory/mine/farm. `restock_types =
-// all` walks every building for restock, so it cannot mark everything
-// retail: retail is type 3, the retail_types set, any service-fee type,
-// or - when a restock list is configured - any listed restock type.
-// v2.9: retail_types is consulted first and unconditionally, because
-// under `all` the list clause below is dead and a non-3 retail building
-// without a service fee read as non-retail - its customer sales were
-// credited by the retail interceptor AND paid again as procurement.
+// Retail is type 3, the retail_types set, any service-fee type, or - when
+// a restock list is configured - any listed restock type. v2.8-v3.5 used
+// this to keep customer sales out of state procurement; since v3.6 there
+// is no procurement and the classification only labels the one-shot
+// diagnostic dump of private buildings.
 static bool IsRetailType(int type)
 {
     if (type == 3) return true;
@@ -637,16 +653,10 @@ static void RestockSlot(void* /*storage*/, void* slotBytes, void* res,
         *(float*)((BYTE*)slotBytes + TSM_SLOT_CONTENT) = content + (float)affordableTons;
         ctx->spent += partialCost;
         ctx->capital = 0.0;
-        // v3.0 (Task 2): a partial cross-border purchase is a Republic
-        // SELL ORDER for exactly the tonnage that cleared customs.
-        TsmPricingRecordSupply(g_pricing, res, affordableTons);
     } else {
         *(float*)((BYTE*)slotBytes + TSM_SLOT_CONTENT) = content + deficit;
         ctx->spent += cost;
         ctx->capital -= cost;
-        // v3.0 (Task 2): a full cross-border purchase is a Republic SELL
-        // ORDER for the entire deficit that cleared customs.
-        TsmPricingRecordSupply(g_pricing, res, (double)deficit);
     }
     ctx->bought++;
 
@@ -692,66 +702,29 @@ static void RunForeignRestock(void* building, ShopState& st, int day)
 
 // ---------------------------------------------------------------- wholesale billing
 
-// v2.8: state procurement dispatch revenue. When a non-retail building's
-// EXPORT storage loses stock (delta < -0.001 t after the state's own tick
-// picked it up), the state procures that output at `procurement_price_mult`
-// of retail and the enterprise is credited TSM_CAP_PRODUCTION. Treasury
-// pays through moveTreasury("procurement") so state_ledger's flow
-// observers see it. v2.9: export storage ONLY - outflow from an import
-// or fuel storage is the building consuming its own inputs and is not
-// credited.
-
-static float  g_procurementMult        = 0.90f;  // v2.8: fraction of retail
-
-// v3.3: a storage that carries NO direction byte at +0x84/+0x85 cannot be
-// classified, and until now that meant a factory's output left unpaid. With
-// this on, an UNMARKED storage that is also the LAST block on a non-retail
-// building is treated as dispatch when it drains. 0 restores v3.2 exactly.
-static int    g_procureFallback        = 1;
+// v3.6 (2026-11-22, economy-direction D19/D23): the v2.8-v3.3 STATE
+// PROCUREMENT of private output is removed. A private factory whose export
+// storage drains is no longer paid by the treasury; its goods leave on the
+// game's own logistics and are settled between companies (private_logistics
+// B2B) or, for exports, paid by the game's customs directly. The v3.0 market
+// book recording is removed with resource_pricing v5. What remains here is
+// the wholesale bill for stock the state DELIVERS to a private building.
 
 struct WholesaleContext {
     void*      shop;
     ShopState* state;
     double     capital;
-    bool       isRetail;      // v2.8: retail still only gets billed
-    int        procured;      // v2.8: slots that dispatched output
-    double     revenue;       // v2.8: procurement credited this walk
     int        billed;
     double     charged;
-    int        storCount;            // non-utility storage blocks on building
-    int        lastFreightStorIndex; // raw index of last non-utility block (-1 if none)
-    int        fallback;             // v3.3: credits that needed the flag fallback
 };
 
-// perSlotCap is unused here: wholesale bills the delta the state
-// actually delivered, and the engine already bounded that delivery by
-// the storage's own capacity. The parameter exists to match
-// SlotVisitor.
-// v3.3: the flag fallback may only guess "this is output" on a building
-// that actually MAKES something. A warehouse, a depot and a distribution
-// centre are full of goods that are passing through, and paying the
-// treasury out for those would be a leak, not a repair. A production
-// building also declares at least two storages - inputs and output - which
-// is a second, independent reason to refuse a one-storage building.
-static int DispatchFallbackAllowed(int type, int storCount)
-{
-    if (storCount < 2) return 0;
-    switch (type) {
-    case 5:  case 14: case 15: case 20:      // storage, depots, customhouse
-    case 43: case 44:                        // distribution / container
-        return 0;
-    default:
-        return 1;
-    }
-}
-
-// When private_logistics Ship 2 counterparty billing is live, truck transfers
-// settle directly between Buyer, Seller, and Carrier at 0x68F7F9. Keep slot
-// snapshots and Republic macro supply/demand recording active without
-// running State-clearinghouse procurement or wholesale money transfers.
-static void WholesaleMarketOnlySlot(void* storage, void* slotBytes, void* res,
-                                    float content, float /*perSlotCap*/,
-                                    size_t globalIndex, void* ud)
+// When private_logistics counterparty billing is live, truck transfers settle
+// directly between buyer, seller and carrier. Keep the slot snapshots current
+// so the state-delivery path below has a trustworthy baseline if counterparty
+// billing switches off again, but move no money.
+static void WholesaleSnapshotOnlySlot(void* /*storage*/, void* slotBytes, void* res,
+                                      float content, float /*perSlotCap*/,
+                                      size_t globalIndex, void* ud)
 {
     WholesaleContext* ctx = (WholesaleContext*)ud;
     if (!ctx || !ctx->state) return;
@@ -761,68 +734,16 @@ static void WholesaleMarketOnlySlot(void* storage, void* slotBytes, void* res,
         ctx->state->slots.resize(globalIndex + 1,
                                  SlotSnapshot{ nullptr, nullptr, 0.0f });
     }
-    if (!ctx->state->snapshotDone) {
-        ctx->state->slots[globalIndex].resource = res;
-        ctx->state->slots[globalIndex].slot     = slotBytes;
-        ctx->state->slots[globalIndex].content  = content;
-        return;
-    }
-
     SlotSnapshot& snap = ctx->state->slots[globalIndex];
-    if (snap.slot != slotBytes) {
-        snap.slot     = slotBytes;
-        snap.resource = res;
-        snap.content  = content;
-        return;
-    }
-
-    bool isExport = storage &&
-        *(const BYTE*)((const BYTE*)storage + TSM_ST_EXPORT) != 0;
-    bool isImport = storage &&
-        *(const BYTE*)((const BYTE*)storage + TSM_ST_IMPORT) != 0;
-
-    int storIndex = -1;
-    {
-        void** sb = *(void***)((BYTE*)ctx->shop + TSM_BLD_STORAGES_BEGIN);
-        void** se = *(void***)((BYTE*)ctx->shop + TSM_BLD_STORAGES_END);
-        if (sb && se && (BYTE*)se > (BYTE*)sb && storage &&
-            (const BYTE*)storage >= (const BYTE*)sb &&
-            (const BYTE*)storage <  (const BYTE*)se) {
-            storIndex = (int)(((const BYTE*)storage - (const BYTE*)sb) /
-                              TSM_STORAGE_STRIDE);
-        }
-    }
-
-    bool flagless = storage && !isExport && !isImport;
-    if (g_procureFallback && !ctx->isRetail && flagless &&
-        storIndex >= 0 && storIndex == ctx->lastFreightStorIndex &&
-        DispatchFallbackAllowed(TsmBuildingType(ctx->shop), ctx->storCount)) {
-        isExport = true;
-    }
-
-    if (!ctx->isRetail && isExport && ctx->state->snapshotDone) {
-        double delta = (double)content - (double)snap.content;
-        if (delta < -0.001 && snap.resource && content >= 0.0f) {
-            TsmPricingRecordSupply(g_pricing, snap.resource, -(double)delta);
-        }
-        snap.resource = res;
-        snap.content  = content;
-        return;
-    }
-
-    if (snap.resource != res) {
-        snap.resource = res;
-        snap.content  = content;
-        return;
-    }
-
-    float delta = content - snap.content;
-    if (delta < -0.001f && !isExport && isImport && snap.resource) {
-        TsmPricingRecordDemand(g_pricing, snap.resource, (double)(-delta));
-    }
-    snap.content = content;
+    snap.resource = res;
+    snap.slot     = slotBytes;
+    snap.content  = content;
 }
 
+// perSlotCap is unused here: wholesale bills the delta the state
+// actually delivered, and the engine already bounded that delivery by
+// the storage's own capacity. The parameter exists to match
+// SlotVisitor.
 static void WholesaleSlot(void* storage, void* slotBytes, void* res,
                           float content, float /*perSlotCap*/, size_t globalIndex,
                           void* ud)
@@ -856,10 +777,7 @@ static void WholesaleSlot(void* storage, void* slotBytes, void* res,
     // slot than the one `snap` was written from.
     //
     // The delta below is then (content of slot A) - (content of slot B).
-    // A full slot compared against an empty one reads as a large outflow,
-    // and on an export storage outflow is paid out of the treasury as
-    // state procurement - income with no sale, no customer, no wallet
-    // debit and no shelf movement.
+    // A layout shift could otherwise read as a delivery and bill one.
     //
     // A record that does not describe this slot is re-synced. A re-sync
     // never bills: there is no trustworthy delta to bill.
@@ -878,113 +796,25 @@ static void WholesaleSlot(void* storage, void* slotBytes, void* res,
         return;
     }
 
-    // v2.9: dispatch means an EXPORT storage. Consumption draws from
-    // import-flagged storages ($CONSUMPTION fabric pulls the factory's
-    // $STORAGE_IMPORT; coal plants burn from $STORAGE_IMPORT_SPECIAL)
-    // and must not be paid for - the parser stamped the direction byte
-    // at +0x85 when it built this block (FUN_1400e40f0).
-    bool isExport = storage &&
-        *(const BYTE*)((const BYTE*)storage + TSM_ST_EXPORT) != 0;
-    bool isImport = storage &&
-        *(const BYTE*)((const BYTE*)storage + TSM_ST_IMPORT) != 0;
-
-    // v3.3: where is this storage in the building's list? The visitor is
-    // handed the block, not the array base, so re-read the base from the
-    // building - it is the same two pointers ForEachSlot walked.
-    int storIndex = -1;
-    {
-        void** sb = *(void***)((BYTE*)ctx->shop + TSM_BLD_STORAGES_BEGIN);
-        void** se = *(void***)((BYTE*)ctx->shop + TSM_BLD_STORAGES_END);
-        if (sb && se && (BYTE*)se > (BYTE*)sb && storage &&
-            (const BYTE*)storage >= (const BYTE*)sb &&
-            (const BYTE*)storage <  (const BYTE*)se) {
-            storIndex = (int)(((const BYTE*)storage - (const BYTE*)sb) /
-                              TSM_STORAGE_STRIDE);
-        }
-    }
-
-    // v3.3: an unmarked storage on a production building. Since v2.8 the
-    // only two directions this code understands are +0x84/+0x85; a block
-    // with neither is invisible to both the billing path and the
-    // procurement path, and a factory's output simply leaves unpaid. The
-    // observed fabric_factory declares plants+chemicals in storage #0 and
-    // fabric in storage #1, so the last block is the output. Logged every
-    // time it decides a credit, so the next session can confirm or refute.
-    bool flagless = storage && !isExport && !isImport;
-    if (g_procureFallback && !ctx->isRetail && flagless &&
-        storIndex >= 0 && storIndex == ctx->lastFreightStorIndex &&
-        DispatchFallbackAllowed(TsmBuildingType(ctx->shop),
-                                ctx->storCount)) {
-        isExport = true;
-    }
-
-    // v2.8: outgoing dispatch on a non-retail building = state procurement.
-    // Inflow (delta > +0.001) is still billed wholesale as before.
-    if (!ctx->isRetail && isExport && ctx->state->snapshotDone) {
-        double delta = (double)content - (double)snap.content;
-        if (delta < -0.001 && snap.resource && content >= 0.0f) {
-            double tons = -(double)delta;
-            // v3.0 (Task 2): dispatched output is a Republic SELL ORDER -
-            // record it in the market book before pricing it.
-            TsmPricingRecordSupply(g_pricing, snap.resource, tons);
-            // v4: state procurement pays the active-currency retail price.
-            float priceT = g_pricing->getPrice(snap.resource, TsmCurrencyActive(g_currency));
-            if (g_probe) {
-                static int drains;
-                if (++drains <= 40)
-                    Logf("private_shops  [PROC] %p storage #%d exp=%d imp=%d "
-                         "flagless=%d res %p %.3f -> %.3f (%.3f t left) "
-                         "price %.2f",
-                         ctx->shop, storIndex,
-                         isExport ? 1 : 0, isImport ? 1 : 0,
-                         flagless ? 1 : 0, snap.resource,
-                         (double)snap.content, (double)content, tons,
-                         (double)priceT);
-            }
-            if (priceT > 0.01f) {
-                // v3.0 (Task 2): factory payout = base x marketMult x 0.90 -
-                // the state adjusts its take for gluts and shortages, so a
-                // flooded Republic automatically earns less per batch.
-                float marketMult = TsmPricingMarketMult(g_pricing, snap.resource);
-                double value = tons * (double)priceT * (double)marketMult
-                             * (double)g_procurementMult;
-                if (value > 0.0) {
-                    g_currency->moveTreasury(-value, "procurement");
-                    g_enterprise->modifyCompanyCapital(
-                        ctx->shop, value, TSM_CAP_PRODUCTION);
-                    ctx->procured++;
-                    ctx->revenue += value;
-                    if (flagless) ctx->fallback++;   // v3.3: audited above
-                    snap.content = content;
-                    return;
-                }
-            }
-        }
-        // Resource changed under the dispatch: still procurement on what left.
-        if (snap.resource != res) {
-            snap.resource = res;
-            snap.content  = content;
-            return;
-        }
-    }
-
     if (snap.resource != res) {
         snap.resource = res;
         snap.content  = content;
         return;
     }
 
+    // v3.6: growth in an EXPORT-flagged storage (direction byte +0x85,
+    // stamped by the parser, FUN_1400e40f0) is the building's own
+    // production filling its output, not a delivery - never billed. Until
+    // v3.5 this growth was billed at wholesale_ratio and the dispatch
+    // procurement paid it back at 0.90 when it left; with procurement gone
+    // the bill alone would drain every producing company. Import-flagged,
+    // unflagged (warehouse, shop shelf) storages still bill deliveries.
+    // Limit: an unflagged factory output storage is still billed.
+    const bool isExport = storage &&
+        *(const BYTE*)((const BYTE*)storage + TSM_ST_EXPORT) != 0;
+
     float delta = content - snap.content;
-    // v3.0 (Task 2): stock drawn from an import/import-special/fuel
-    // storage is a factory feeding its production line - a Republic BUY
-    // ORDER for that input resource. Export outflow reaches here only
-    // when the dispatch branch above declined it (e.g. priceT unusable),
-    // and dispatch is NOT demand; the isImport gate keeps those cases
-    // strictly separated, exactly mirroring the v2.9 direction rule.
-    if (delta < -0.001f && !isExport && isImport && snap.resource) {
-        TsmPricingRecordDemand(g_pricing, snap.resource, (double)(-delta));
-    }
-    if (delta <= 0.001f) {
+    if (delta <= 0.001f || isExport) {
         snap.content = content;
         return;
     }
@@ -1009,71 +839,13 @@ static void WholesaleSlot(void* storage, void* slotBytes, void* res,
 
 static void RunWholesaleBilling(void* building, ShopState& st)
 {
-    int type = TsmBuildingType(building);
-    bool isRetail = IsRetailType(type);
-    // Compute the number of non-utility storage blocks and the raw index of
-    // the last non-utility block so trailing electricity/water/sewage/heating
-    // buffers neither inflate DispatchFallbackAllowed nor mask a factory's
-    // unmarked freight output block.
-    int freightStorCount = 0;
-    int lastFreightStorIndex = -1;
-    {
-        void** sb = *(void***)((BYTE*)building + TSM_BLD_STORAGES_BEGIN);
-        void** se = *(void***)((BYTE*)building + TSM_BLD_STORAGES_END);
-        if (sb && se && (BYTE*)se > (BYTE*)sb &&
-            TsmIsValidGamePtr(sb) && ReadablePtr(sb, sizeof(void*))) {
-            size_t storBytes = (size_t)((BYTE*)se - (BYTE*)sb);
-            if ((storBytes % TSM_STORAGE_STRIDE) == 0) {
-                size_t rawCount = storBytes / TSM_STORAGE_STRIDE;
-                if (rawCount > 16) rawCount = 16;
-                if (ReadablePtr(sb, rawCount * TSM_STORAGE_STRIDE)) {
-                    for (size_t si = 0; si < rawCount; si++) {
-                        BYTE* storage = (BYTE*)sb + si * TSM_STORAGE_STRIDE;
-                        if (!ReadablePtr(storage, 0xA0)) continue;
-                        void** slotBegin = *(void***)(storage + TSM_ST_SLOTS_BEGIN);
-                        void** slotEnd   = *(void***)(storage + TSM_ST_SLOTS_END);
-                        if (!slotBegin || !slotEnd || slotEnd <= slotBegin) continue;
-                        if (!TsmIsValidGamePtr(slotBegin)) continue;
-                        size_t slotBytes = (size_t)((BYTE*)slotEnd - (BYTE*)slotBegin);
-                        if ((slotBytes % TSM_SLOT_STRIDE) != 0) continue;
-                        size_t slotCount = slotBytes / TSM_SLOT_STRIDE;
-                        if (slotCount > 32) slotCount = 32;
-                        if (!ReadablePtr(slotBegin, slotCount * TSM_SLOT_STRIDE)) continue;
-
-                        bool hasFreight = false;
-                        for (size_t sj = 0; sj < slotCount; sj++) {
-                            BYTE* slot = (BYTE*)slotBegin + sj * TSM_SLOT_STRIDE;
-                            void* res  = *(void**)(slot + TSM_SLOT_RESOURCE);
-                            char rname[64];
-                            if (TsmIsValidGamePtr(res) &&
-                                TsmResourceName(res, rname, sizeof(rname)) &&
-                                wrsre_shops::IsUtilityResourceName(rname))
-                            {
-                                continue;
-                            }
-                            hasFreight = true;
-                            break;
-                        }
-                        if (hasFreight) {
-                            freightStorCount++;
-                            lastFreightStorIndex = (int)si;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     WholesaleContext ctx = {
         building, &st,
         g_enterprise->getCompanyCapital(building),
-        isRetail,
-        0, 0.0,
-        0, 0.0,
-        freightStorCount, lastFreightStorIndex, 0
+        0, 0.0
     };
     ForEachSlot(building,
-                TsmB2bCounterpartyActive(g_b2bLogistics) ? WholesaleMarketOnlySlot
+                TsmB2bCounterpartyActive(g_b2bLogistics) ? WholesaleSnapshotOnlySlot
                                                          : WholesaleSlot,
                 &ctx);
 
@@ -1092,16 +864,6 @@ static void RunWholesaleBilling(void* building, ShopState& st)
         }
         if (!out[0]) wcsncpy_s(out, cap, L"(unnamed)", _TRUNCATE);
     };
-
-    if (ctx.revenue > 0.0 && g_probe) {
-        wchar_t name[128] = {0};
-        fillName(name, _countof(name));
-        Logf("private_shops  \"%ls\" procured %d dispatch(es) for %.2f %s "
-             "(%d of them on an UNMARKED storage - the +0x85 export flag was "
-             "not set; see [PROC])",
-             name, ctx.procured, ctx.revenue, TsmCurrencySymbol(g_currency),
-             ctx.fallback);
-    }
 
     if (ctx.charged > 0.0) {
         st.monthlyWholesale += ctx.charged;
@@ -1619,8 +1381,8 @@ static void ParseRestockTypes(const char* s)
     }
 }
 
-// v2.9: the retail set - types whose customer sales must never be read
-// as state procurement dispatch. Absent/empty key gives the default
+// v2.9: the retail set (since v3.6 a diagnostic label only - there is no
+// state procurement left to keep retail out of). Absent/empty key gives the default
 // service-building set; a non-empty string is parsed as ints only, so
 // `none` (or any non-numeric text) deliberately empties the list. Type
 // 3 is hardcoded retail in IsRetailType regardless.
@@ -1801,12 +1563,6 @@ static void ReadSettings(void)
         Logf("private_shops  wholesale_ratio %.3f < 0.01 — clamped to 0.01 (C1 fix)", (double)g_wholesaleRatio);
         g_wholesaleRatio = 0.01f;
     }
-    g_procureFallback = H->configInt(ini, "private_shops",
-                                     "procurement_flag_fallback", 1);
-    if (H->configString(ini, "private_shops", "procurement_price_mult", v, sizeof(v), "") && v[0]) {
-        float f = (float)atof(v);
-        if (f > 0.0f && f <= 5.0f) g_procurementMult = f;
-    }
     // v4: USD divisor for service_fees without an explicit :fee_usd field.
     if (H->configString(ini, "private_shops", "usd_divisor", v, sizeof(v), "") && v[0]) {
         float f = (float)atof(v);
@@ -1842,7 +1598,7 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host, TsmPlugi
 {
     TsmBind(host);
     info->name    = "private_shops";
-    info->version = "3.5";
+    info->version = "3.6";
 
     ReadSettings();
     if (!g_enabled) {
@@ -1868,8 +1624,6 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
     if (!g_pricing)
         g_pricing = (const TsmResourcePricingApi*)H->consume(TSM_SERVICE_RESOURCE_PRICING, TSM_RESOURCE_PRICING_VERSION_V1);
     if (!g_pricing) { Logf("private_shops  resource_pricing is not installed"); return 1; }
-    if (TsmPricingHasMarket(g_pricing))
-        Logf("private_shops  Republic market book available - dispatches and imports feed supply");
 
     g_enterprise = (const TsmEnterpriseBaseApi*)H->consume(TSM_SERVICE_ENTERPRISE_BASE, TSM_ENTERPRISE_BASE_VERSION);
     if (!g_enterprise) { Logf("private_shops  enterprise_base is not installed"); return 1; }
@@ -1895,14 +1649,12 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
     g_simClock->registerTick([](void*, float, float) { RunShopTick(); }, nullptr);
 
     const char* restockSummary = g_restockAll ? "all" : "list";
-    Logf("private_shops  live v3.5: interval %d ms, slot-identity snapshots, "
+    Logf("private_shops  live v3.6: interval %d ms, slot-identity snapshots, "
          "restock %s (%d type(s)), "
-         "retail %d type(s), %d service fee(s), wholesale %.2f, procurement %.2f (flag fallback %s), foreign %s (target %.0f%%, markup %.2f), taxes %s, currency %s",
+         "retail %d type(s), %d service fee(s), wholesale %.2f, no state procurement, foreign %s (target %.0f%%, markup %.2f), taxes %s, currency %s",
          g_tickIntervalMs, restockSummary, g_restockTypeCount,
          g_retailTypeCount, g_serviceFeeCount,
          g_wholesaleRatio,
-         g_procurementMult,
-         g_procureFallback ? "on" : "off",
          g_foreignEnabled ? "on" : "off",
          g_foreignTargetRatio * 100.0f, g_foreignMarkup,
          g_taxes ? "on" : "off", TsmCurrencySymbol(g_currency));

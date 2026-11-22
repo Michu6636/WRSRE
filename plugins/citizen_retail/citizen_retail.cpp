@@ -5,6 +5,17 @@
 // verifying store inventory, and billing via the private sector
 // interceptor or crediting the state treasury.
 //
+// v3.0 updates (economy-direction 2026-11-22, code step 1):
+//   - NO MARKET MULTIPLIER. resource_pricing v5 removed the Republic
+//     market order book. The checkout charges amount x native price
+//     (no marketMult), the destitute bread-day is P_food x bread tons,
+//     and retail wants are no longer recorded as market demand - the
+//     per-citizen g_demandDay dedup and its ShopStocksResource probe
+//     went with that tap. The v2.0 notes below describe the removed path.
+//   - resource_pricing is consumed v5 -> v1. v1 has no CPI tail, so the
+//     runway degrades to the 2.15 default basket exactly as before.
+//   - Version -> 3.0; save format unchanged.
+//
 // v2.9 updates (checkout stub: sub/add rsp, 0x80 imm8 sign-extension - the crash):
 //   - BUG 3 (the ACCESS_VIOLATION at stub+0x85): step 3 / step 9 emitted
 //     `sub rsp, 0x80` / `add rsp, 0x80` with the imm8 opcode 48 83
@@ -377,15 +388,6 @@ static int ReadDemandCountRaw(void* person)
     return n;
 }
 
-// v2.0 (Task 2): which citizens already had their retail wants recorded
-// into the Republic order book on a given absolute day. Read by nothing
-// except the demand tap below; never persisted. This dedup is the whole
-// reason the demand signal stays sane: the walk re-sees a standing
-// citizen every 250 ms tick, and recording every sighting would inflate
-// one person's daily bread into hundreds of tons and pin every good at
-// the shortage ceiling forever.
-static std::unordered_map<uint64_t, int> g_demandDay;
-
 static TsmRetailInterceptor g_interceptor   = nullptr;
 static void*                g_interceptorUD = nullptr;
 
@@ -433,90 +435,6 @@ static void MarkShoppedToday(uint64_t id, int day)
     LeaveCriticalSection(&g_lock);
 }
 
-// Verifies that the building carries `res` in its storage, with no
-// requirement on the current on-shelf quantity. Used by the v2.0 demand
-// tap: a citizen whose whole venue stocks a resource is a REAL buyer of
-// it even when the shelves read 0.0 - those turnaways are what scarcity
-// is made of. A demand for a resource the venue never sells is not
-// demand, it is background hunger/exercise; do not record it.
-static bool ShopStocksResource(BYTE* shop, void* res)
-{
-    if (!TsmIsValidGamePtr(shop) || !TsmIsValidGamePtr(res)) return false;
-
-    void** storBegin = *(void***)(shop + TSM_BLD_STORAGES_BEGIN);
-    void** storEnd   = *(void***)(shop + TSM_BLD_STORAGES_END);
-    if (!storBegin || !storEnd || storEnd <= storBegin) return false;
-    if (!TsmIsValidGamePtr(storBegin)) return false;
-    if (!ReadablePtr(storBegin, sizeof(void*))) return false;
-
-    size_t storBytes = (size_t)((BYTE*)storEnd - (BYTE*)storBegin);
-    if (storBytes % TSM_STORAGE_STRIDE) return false;
-    size_t storCount = storBytes / TSM_STORAGE_STRIDE;
-
-    if (storCount > 64) storCount = 64;
-    if (!ReadablePtr(storBegin, sizeof(void*))) return false;
-
-    for (size_t si = 0; si < storCount; si++) {
-        BYTE* storage = (BYTE*)storBegin + si * TSM_STORAGE_STRIDE;
-        if (!ReadablePtr(storage, 0x10)) continue;
-
-        void** slotBegin = *(void***)(storage + TSM_ST_SLOTS_BEGIN);
-        void** slotEnd   = *(void***)(storage + TSM_ST_SLOTS_END);
-        if (!slotBegin || !slotEnd || slotEnd <= slotBegin) continue;
-        if (!TsmIsValidGamePtr(slotBegin)) continue;
-
-        size_t slotBytes = (size_t)((BYTE*)slotEnd - (BYTE*)slotBegin);
-        if (slotBytes % TSM_SLOT_STRIDE) continue;
-        size_t slotCount = slotBytes / TSM_SLOT_STRIDE;
-        if (slotCount > 64) slotCount = 64;
-        if (!ReadablePtr(slotBegin, sizeof(void*))) continue;
-
-        for (size_t sj = 0; sj < slotCount; sj++) {
-            BYTE* slot = (BYTE*)slotBegin + sj * TSM_SLOT_STRIDE;
-            void* r = *(void**)(slot + TSM_SLOT_RESOURCE);
-            if (r == res) return true;
-        }
-    }
-    return false;
-}
-
-// v2.0 (Task 2): per-citizen per-day dedup for the market demand tap.
-// Called strictly at most once per (id, resource) per day, so walking the
-// same citizen four times a second in a standing crowd cannot fabricate
-// demand. The caller holds no lock; these lists are the caller's own.
-static int DemandDayKeyed(uint64_t id, void* res)
-{
-    // Mix the stable citizen id with the resource record pointer into a
-    // per-day marker bucket.
-    uintptr_t a = (uintptr_t)id;
-    uintptr_t b = (uintptr_t)res;
-    uint64_t k = (a * 0x9E3779B97F4A7C15ull) ^ (b + 0x9E3779B97F4A7C15ull
-                 + (a << 6) + (a >> 2));
-    EnterCriticalSection(&g_lock);
-    auto it = g_demandDay.find(k);
-    int seen = (it != g_demandDay.end());
-    LeaveCriticalSection(&g_lock);
-    return seen;
-}
-
-static void NoteDemandDayKeyed(uint64_t id, void* res)
-{
-    uintptr_t a = (uintptr_t)id;
-    uintptr_t b = (uintptr_t)res;
-    uint64_t k = (a * 0x9E3779B97F4A7C15ull) ^ (b + 0x9E3779B97F4A7C15ull
-                 + (a << 6) + (a >> 2));
-    EnterCriticalSection(&g_lock);
-    g_demandDay[k] = 1;
-    LeaveCriticalSection(&g_lock);
-}
-
-static void ClearDemandDay(void)
-{
-    EnterCriticalSection(&g_lock);
-    g_demandDay.clear();
-    LeaveCriticalSection(&g_lock);
-}
-
 // Verifies that the building carries `res` in its storage and currently has stock.
 static bool ShopHasResourceInStock(BYTE* shop, void* res)
 {
@@ -558,7 +476,7 @@ static bool ShopHasResourceInStock(BYTE* shop, void* res)
     return false;
 }
 
-static int ProcessOneDemand(void* shop, void* person, const BYTE* demand)
+static int ProcessOneDemand(void* shop, void* /*person*/, const BYTE* demand)
 {
     int kind = *(const int*)(demand + 0x08);
     // Kind 1 = Food, Kind 2 = Goods (Meat, Clothes, Electronics), Kind 3 = Alcohol (Pub)
@@ -569,24 +487,6 @@ static int ProcessOneDemand(void* shop, void* person, const BYTE* demand)
 
     float amountNeeded = *(const float*)(demand + 0x00);
     if (!(amountNeeded > 0.00001f)) return 0;
-
-    // v2.0 (Task 2): record this citizen want in the Republic market book
-    // REGARDLESS of whether this shop has shelves - turned-away unmet
-    // demand is exactly what drives scarcity. Record once per
-    // (citizen, resource) per absolute day, and only when the venue
-    // sells the resource at all: checking stocks is redundant here
-    // because ProcessOneDemand is only reachable after WalkShop verified
-    // the shop carries the resource, but we re-verify anyway because the
-    // demand tap must never run on an unvalidated game pointer triple.
-    if (TsmPricingHasMarket(g_pricing) &&
-        TsmIsValidGamePtr(shop) && TsmIsValidGamePtr(person)) {
-        uint64_t cid = TsmCitizenID(person);
-        if (cid != 0 && ShopStocksResource((BYTE*)shop, res) &&
-            !DemandDayKeyed(cid, res)) {
-            g_pricing->recordDemand(res, (double)amountNeeded);
-            NoteDemandDayKeyed(cid, res);
-        }
-    }
 
     // Sanity check: Ensure this venue stocks this resource and has stock on hand
     if (!ShopHasResourceInStock((BYTE*)shop, res)) return 0;
@@ -607,11 +507,10 @@ static int CheckoutAffordabilityGate(void* shop, void* person, void* res, float 
         if (!g_currency || !g_pricing || !res || !person) return 1;
         if (!(amount > 0.00001f)) return 1;   // nothing to give, allow
 
-        // Unit price in active currency scaled by market multiplier.
+        // Native unit price in the active currency (no market multiplier).
         int cur = TsmCurrencyActive(g_currency);
         float pricePerTon = g_pricing->getPrice(res, cur);
-        float marketMult = TsmPricingMarketMult(g_pricing, res);
-        float cost = amount * pricePerTon * marketMult;
+        float cost = amount * pricePerTon;
         if (!(cost == cost) || cost < 0.0f) cost = 0.0f;
 
         // Configured sale floor: apply min_cost to the amount actually
@@ -946,14 +845,13 @@ static void WalkShop(BYTE* shop, int day)
 }
 
 // v2.1 (Task 7): the ONE absolute daily basket cost, cached per absolute
-// day. The walk asks every shopper to classify, and the provider's
-// basket takes the market-book lock internally, so the read is hoisted:
-// first shopper of the day queries resource_pricing v3, everyone else
+// day. The walk asks every shopper to classify, so the read is hoisted:
+// first shopper of the day queries resource_pricing v5, everyone else
 // reuses the answer. injectedDailyRent = 0 - the Level 1 provider's
 // neutral default daily rent rides along (retail must not reach into
-// enterprise_base for rent). The helper guards the v3 tail via
+// enterprise_base for rent). The helper guards the CPI field via
 // TsmPricingHasCpi and falls back to the documented ~2.15 RUB/day when
-// the provider is a v2 build. POD-only: no __try needed (the provider
+// only the v1 view resolved. POD-only: no __try needed (the provider
 // fault-guards its own reads; the helpers are pure float math).
 static float SolCpiDaily(int absDay)
 {
@@ -967,7 +865,7 @@ static float SolCpiDaily(int absDay)
     return c;
 }
 
-// v2.3 (Task 7): one day of staple bread = P_food x marketMult x g_breadTons
+// v2.3 (Task 7): one day of staple bread = P_food x g_breadTons
 // (0.0020 t default), in the ACTIVE currency. Mirrors enterprise_base's
 // destitute bread-day so the retail threshold stays in step with the CPI
 // basket. Returns 0.0f when pricing or the food record is unavailable -
@@ -980,8 +878,7 @@ static float DestituteBreadCost(void)
     void* food = g_pricing->getFood();
     if (!food) return 0.0f;
     float pFood = g_pricing->getPrice(food, cur);
-    float mult  = TsmPricingMarketMult(g_pricing, food);
-    float cost  = pFood * mult * g_breadTons;
+    float cost  = pFood * g_breadTons;
     if (!(cost == cost) || cost <= 0.0f) return 0.0f;
     return cost;
 }
@@ -1151,7 +1048,6 @@ static void RunShopWalk(void)
                 ++it;
             }
         }
-        g_demandDay.clear();
         LeaveCriticalSection(&g_lock);
     }
 
@@ -1407,7 +1303,7 @@ static void ReadSettings(void)
         if (f >= 0.0f && f <= 1000.0f && f == f) g_runwayLowDays = f;
     }
     // v2.3 (Task 7): tons of staple bread = 1 day of survival for the
-    // Destitute bread-cost threshold (P_food x marketMult x bread_tons).
+    // Destitute bread-cost threshold (P_food x bread_tons).
     g_breadTons = 0.0020f;
     if (H->configString(ini, "standard_of_living", "bread_tons",
                         v, sizeof(v), "") && v[0]) {
@@ -1436,7 +1332,7 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host, TsmPlugi
 {
     TsmBind(host);
     info->name    = "citizen_retail";
-    info->version = "2.9";
+    info->version = "3.0";
 
     ReadSettings();
     if (!g_enabled) {
@@ -1477,25 +1373,17 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
 
     g_pricing = (const TsmResourcePricingApi*)H->consume(TSM_SERVICE_RESOURCE_PRICING, TSM_RESOURCE_PRICING_VERSION);
     if (!g_pricing)
-        g_pricing = (const TsmResourcePricingApi*)H->consume(TSM_SERVICE_RESOURCE_PRICING, TSM_RESOURCE_PRICING_VERSION_V2);
-    if (!g_pricing)
         g_pricing = (const TsmResourcePricingApi*)H->consume(TSM_SERVICE_RESOURCE_PRICING, TSM_RESOURCE_PRICING_VERSION_V1);
     if (!g_pricing) {
         Logf("citizen_retail  resource_pricing is not installed - cannot price");
         return 1;
     }
     if (g_probe) {
-        if (TsmPricingHasMarket(g_pricing))
-            Logf("citizen_retail  Republic market book available - retail "
-                 "demands feed it, prices carry the live multiplier");
-        else
-            Logf("citizen_retail  Republic market book unavailable (v1 pricing) "
-                 "- retail prices use base prices");
         // v2.1 (Task 7): confirm the runway engine's basket source.
         if (TsmPricingHasCpi(g_pricing))
-            Logf("citizen_retail  CPI runway engine available (pricing v3)");
+            Logf("citizen_retail  CPI runway engine available (pricing v5)");
         else
-            Logf("citizen_retail  WARN  pricing has no CPI tail (pre-v3) - "
+            Logf("citizen_retail  WARN  pricing has no CPI tail (v1 view) - "
                  "runway degrades to the 2.15 default basket");
     }
 
@@ -1551,7 +1439,7 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
     // percentiles - the CPI basket is queried live per absolute day by
     // SolCpiDaily inside the walk, so there is nothing to precompute.
 
-    Logf("citizen_retail  live v2.9: interval %d ms, minimum charge %.2f %s, %d shop type(s)",
+    Logf("citizen_retail  live v3.0: interval %d ms, minimum charge %.2f %s, %d shop type(s)",
          g_tickIntervalMs, g_minCost, TsmCurrencySymbol(g_currency), g_shopTypeCount);
     Logf("citizen_retail  SoL flow+stock: %s, Affluent PPR>=2.0 && runway>=%.0f d, "
          "Middle PPR>=1.0 || runway>=%.0f d, Low < %.0f d, bread %.4f t%s",
@@ -1559,7 +1447,7 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
          (double)g_runwayAffluentDays, (double)g_runwayLowDays,
          (double)g_runwayLowDays,
          (double)g_breadTons,
-         TsmPricingHasCpi(g_pricing) ? " v3 CPI" : ", default 2.15");
+         TsmPricingHasCpi(g_pricing) ? " v5 CPI" : ", default 2.15");
     return 0;
 }
 

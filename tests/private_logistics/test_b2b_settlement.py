@@ -20,7 +20,7 @@ class B2bSettlementTest(unittest.TestCase):
             self.assertNotIn(retired, config)
         for helper in ('FreightFor(', 'TariffFor(', 'static void Pay('):
             self.assertNotIn(helper, source)
-        self.assertIn('global market quote locked at loading', (PLUGIN / 'b2b_settlement.h').read_text())
+        self.assertIn('global native price locked at loading', (PLUGIN / 'b2b_settlement.h').read_text())
         self.assertIn('sampled positive fuel decrease', source)
 
     def test_production_runtime(self):

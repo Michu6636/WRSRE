@@ -153,7 +153,7 @@ static void AssignmentSettlementEvent(const fleet::a::Event& e,
     BuildingName((void*)token.carrier,carrierName,sizeof(carrierName));
     Logf("[DO TRIP] %s assignment=%llu buyer=\"%s\" carrier=\"%s\" "
          "fuel_decrease_native=%.9g fuel_price_global_close=%.9g charge=%.9g paid=%.9g "
-         "eligible=%d reason=%s exact_burn=0 price_policy=global_market_at_observed_close",
+         "eligible=%d reason=%s exact_burn=0 price_policy=global_native_price_at_observed_close",
          dry?"dry_run":"live",(unsigned long long)c.id,buyerName,carrierName,
          c.sampledDecrease,(double)quote.perTonne,quote.amount,paid,
          assessment.billable?1:0,assessment.reason);

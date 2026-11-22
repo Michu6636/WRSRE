@@ -87,6 +87,8 @@ extern "C" {
 // provider can append its M2 rows (Owner, Capital, Sales, Wages/taxes,
 // Wage, Labor, Net profit, Investment pool) plus the new solvency Status
 // row and the Republic Market Condition row without silently truncating.
+// (enterprise_base v9.20 removed the Market Condition row with the market
+// multiplier; the budget is unchanged.)
 // The struct array grows; every provider and ui_panels itself are rebuilt
 // together by build.bat, and providers still clamp to out->capacity.
 // v2 note: the 12-row budget covers text rows AND widget rows together.

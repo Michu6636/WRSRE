@@ -993,19 +993,26 @@ when a new building is completed (§4.5.6).
 
 ---
 
-## 11. Change list (follow-up tasks, not done yet)
+## 11. Change list (follow-up tasks)
 
 Each item is a separate engineering task with its own task record
 (`docs/tasks/TEMPLATE.md`).
 
-1. **resource_pricing:** remove the market book and multiplier, fallback
-   prices and `usd_divisor`. Missing native price means `UNPRICED`. Bump the
+**Status, 2026-11-22.** Code step 1 is implemented on the host side (Windows
+build pending CI, no in-game run). It covers the market-book part of item 1,
+all of item 2, and the procurement part of item 3. See the
+[task record](../tasks/active/2026-11-22-remove-market-multiplier-and-procurement.md).
+Fallback prices, `usd_divisor`, `UNPRICED`, `wholesale_ratio` and foreign
+restock are still open.
+
+1. **resource_pricing:** remove the market book and multiplier *(done:
+   v5)*, fallback prices and `usd_divisor`. Missing native price means `UNPRICED`. Bump the
    API version. Keep the CPI basket.
 2. **Multiplier consumers:** `citizen_retail.cpp` 613 and 983,
    `enterprise_base.cpp` 1985 and 2504, `private_logistics.cpp` 455,
-   `private_shops.cpp` 948. Switch them to the plain native price.
+   `private_shops.cpp` 948. Switch them to the plain native price. *(Done.)*
 3. **private_shops:** delete the dispatch procurement (`"procurement"`,
-   `procurement_price_mult`, `procure_fallback`), the 0.70 delivery billing
+   `procurement_price_mult`, `procure_fallback`) *(done: v3.6)*, the 0.70 delivery billing
    (`wholesale_ratio`) and foreign restock. Keep pub service charges.
 4. **private_logistics:** exclude customs from `b2b_state_buy`. Defaults
    `billing = 1`, `dry_run = 0`. After G1: company export revenue and company
