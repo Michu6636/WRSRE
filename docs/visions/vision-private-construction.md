@@ -1,4 +1,4 @@
-# Vision: private construction offices
+# Vision: construction clients and builders (state and private offices)
 
 **Status:** tentative owner vision, recorded 2026-11-22. **Not scheduled.**
 [Economy direction D13](economy-direction-2026-11-22.md) still applies:
@@ -85,6 +85,8 @@ deliveries, which it is not.
 
 ## 2. The vision (Owner)
 
+### 2.1 First statement (2026-11-22)
+
 > Allow **construction offices to be privatised**. They can **purchase
 > vehicles** and use **the same system we use for private logistics** to find
 > buildings to construct: **private ones, or buildings that allow private
@@ -93,12 +95,65 @@ deliveries, which it is not.
 > take"**, and they construct by transporting the goods. **What to do about
 > workers will be decided later.** This is a tentative vision.
 
+### 2.2 Follow-up (2026-11-22)
+
+The owner noted that real governments also hire private builders for
+buildings the state will own. The mod must simulate the private sector
+building for itself and the state building separately, and perhaps let the
+state build with private contractors. The native instant build (USD or
+roubles, outside realistic mode) already almost simulates that.
+
+| ID | Owner statement | Status |
+|---|---|---|
+| O1 | **State construction offices can build private sites.** They already do with auto search on, or when the player assigns the site. In that case the money **goes to the player (state)**. | O1a (state offices may build private sites) is decided. O1b (the state receives the money) was stated with "maybe". |
+| O2 | **Workdays are billed to the site owner**, and the money goes **to the workers**, who are marked as **construction workers**, because construction offices have no fixed workplace for them. | Decided (the marker's form is open, §5.5) |
+| O3 | **The site owner pays for materials loaded and workdays done**, as the work happens, **not when the building is finished**. | Decided |
+
 ---
 
-## 3. How the native construction office works
+## 3. How real-life construction is organised
+
+Background for the design. It is a summary, not a rule the mod must copy.
+
+- **The client and the builder are different parties.** The client pays and
+  owns the result. The builder (contractor) is paid to build it. Who builds a
+  building does not decide who owns it.
+- **States use both their own crews and contractors.** Public service
+  provision does not mean the government also produces the asset. Most
+  government assets are bought from the private sector or built by private
+  firms under contract to government specifications
+  ([OECD 2008, Public-Private Partnerships](https://www.oecd.org/content/dam/oecd/en/publications/reports/2008/05/public-private-partnerships_g1gh8c7d/9789264046733-en.pdf)).
+  The OECD describes a range: complete government production, then
+  traditional procurement, PPPs, concessions and privatisation (same source).
+- **The Soviet Union moved from direct labour to contracts too.** In
+  Khrushchev's reform, many small building trusts working by direct labour
+  were to be replaced by specialised trusts working by contract. A general
+  contractor on each site signed contracts with specialised trusts, and
+  contracts between client and builder replaced direct labour
+  ([Warwick PERSA working paper 61](https://warwick.ac.uk/fac/soc/economics/staff/mharrison/archive/persa/061.pdf)).
+  Most construction machinery was owned by special machinery trusts and
+  rented to the building trust that needed it
+  ([US report, Industrialized building in the Soviet Union](https://www.govinfo.gov/content/pkg/GOVPUB-C13-7d84f08cc44cb9903107dd699b9bfa39/pdf/GOVPUB-C13-7d84f08cc44cb9903107dd699b9bfa39.pdf)).
+  In game terms, Soviet state builders were already separate organisations
+  that contracted with the state client.
+- **Turnkey contracts.** The same report describes combines that delivered
+  turnkey buildings, from precast factory to erection (same source). The
+  native instant build is a turnkey contract: the player pays a price and
+  receives a finished building, without managing materials or workers. The
+  mod already calls the USD labour rate in `private_construction` a
+  "Western turnkey contractor" rate (`contractor_wage_per_day_usd`).
+- **Clients pay as the work progresses.** Contractors are paid in interim
+  payments, usually monthly, for the value of work completed and materials
+  on site to date
+  ([interim valuation guide](https://www.surveyorsuccess.co.uk/article/construction-valuation-guide-interim-payments)).
+  O3 is the same principle, settled per load instead of per month.
+
+---
+
+## 4. How the native construction office works
 
 Summary from the community and official wikis and player reports, for
-design only. Native layouts still need Ghidra confirmation (§7).
+design only. Native layouts still need Ghidra confirmation (§9).
 
 - **Vehicles carry everything.** The office schedules construction vehicles
   to pick up construction materials at sources and take them to the site.
@@ -131,135 +186,178 @@ physically. The mod's job is ownership, permissions and money, not movement.
 
 ---
 
-## 4. Proposed model
+## 5. Recommended model: who pays and who builds are separate
 
-### 4.1 Privatising a construction office (Proposed)
+Each line is marked **Owner** (decided), **Proposed** (my recommendation,
+awaiting a decision) or **Open**.
 
-- The PRIV control already used for other buildings also appears on a
-  construction office. The office becomes a company in `enterprise_base`.
-- Price and starting capital follow the existing decisions:
-  - the fund pays the state per D24 when the office was state-built;
-  - starting capital and legal reserve per D29 (45 days of wages and inputs;
-    the office's inputs are fuel and vehicle upkeep);
-  - nationalisation per D27/D30.
-- Its vehicles stay in the office's own vehicle vector, as today.
+### 5.1 Two questions per site (Proposed)
 
-### 4.2 Buying vehicles (Owner: "can purchase vehicles")
+Every construction site answers two separate questions:
 
-- **Proposed:** a private office's vehicle purchases are paid from **its own
-  capital** at the game's native vehicle price, never by the treasury.
-  Selling a vehicle credits the company. This follows D20 (no money from
-  nothing) and D21 (dollar mode uses the dollar price, no exchange rate).
-- **Open:** where the native buy-vehicle button takes its money (§7, C4).
-  Until that is known, the mod must not let a private office buy vehicles
-  out of the treasury.
-- **Proposed:** the office's fuel tank is filled by normal deliveries, which
-  `private_logistics` settles as a B2B purchase like any other input.
+1. **Client: who pays, and who will own the building?** The state treasury,
+   or a private payer (the investment fund or a company).
+2. **Builder: who does the work?** A state construction office, a private
+   construction office, or the native instant build.
 
-### 4.3 Finding sites: the private logistics system (Owner)
+**Ownership follows the client, never the builder.** A private site built
+by a state office becomes private. A state site built by a private company
+stays state-owned.
 
-Reuse the `[AUTO DO]` pattern: a once-a-day reconcile that writes eligible
-targets into the native list and leaves movement to the game.
+| Client ↓ / Builder → | State construction office | Private construction office | Native instant build (USD/RUB) |
+|---|---|---|---|
+| **State** | Native game, no mod bills (as today) | **Public contract:** the treasury pays the company as work is done. Needs "Allow private construction" on the site (§5.3) | Native turnkey, unchanged |
+| **Private** | **The state as contractor (O1):** the owner pays as work is done (§5.4) | **Private contract:** the owner pays the company as work is done | **Open** (§10, Q4) |
 
-- **Eligible sites (Owner):**
-  1. sites owned privately (tagged for private construction, the existing
-     CON tile);
-  2. sites whose owner **allows private construction**.
-- **Proposed:** for (2), a new per-building checkbox **"Allow private
-  construction"** on state construction sites. It is **default OFF**, like
-  the state-storage loading/delivery permissions, persisted per building and
-  drawn through `ui_panels`.
-- **Proposed:** a private office never takes a state site without that
-  permission, and keeps the native range limit.
-- **Open:** should **state** offices still be allowed to build private sites?
-  Today they must finish the last percent (§1.4). Under this model they would
-  no longer have to.
+Several offices can work on the same site in the native game, so one site
+can have mixed builders. Per-load billing (§5.4) handles that without
+special cases, because each load is billed to the site's client whichever
+office brought it.
 
-### 4.4 Materials: the same "take goods" checkbox (Owner)
+### 5.2 What happens to the CON tile and `private_construction` (Proposed)
 
-- The office's **sources of materials** are written from the storages that
-  the private logistics rules already allow:
-  - **state** storages with **"Allow private DO loading (take goods)"**
-    checked;
-  - **private** storages under the same rule private DOs use today.
-- Goods move only in native vehicles: no stock writes and no teleport.
+- The CON tile keeps one meaning: **this site has a private client**. The
+  fund pays, and the building is private when finished.
+- It stops meaning "the plugin builds it". Today `private_construction` takes
+  the whole cost from the fund and writes progress itself, then waits for a
+  state office to finish the last percent (§1.4). Under this model, native
+  offices (state or private) build it, and the client pays per load.
+- The money-to-progress path stays until per-load billing works in game
+  (D13). Then it is retired, together with the 99 % hand-off and the
+  invisible-finish risk.
+- `NativeCostForBuilding`, the site registry and persistence stay. They
+  provide the budget preview ("this site will cost about X") and the
+  privately-built record D24 needs.
 
-### 4.5 Construction progress (Proposed)
+### 5.3 Does the state need a separate "build with private contractors" mode? (Proposed: no)
 
-- On sites built by a private office, progress comes **only** from the
-  native mechanism (materials and workers delivered). The mod stops writing
-  progress there.
-- This removes the 99 % hand-off to a state office and the invisible-finish
-  risk.
-- `private_construction`'s money-to-progress path stays as it is (D13) until
-  the private office path is proven in game. Then it is retired.
+- **Outside realistic mode**, the instant build already is the state hiring
+  a turnkey contractor, as the owner noted. Nothing more is needed.
+- **In realistic mode**, the per-site checkbox **"Allow private
+  construction"** (default OFF) is the contract. The player ticks it on a
+  state site, and private offices may then build it and bill the treasury.
+  This needs no new mode or menu, and the player chooses per site, which
+  matches "the state vs private balance is the player's choice".
+- **Proposed:** a state site without the checkbox is never touched by a
+  private office.
 
-### 4.6 Money flows (Proposed, every line needs owner approval)
+### 5.4 Paying as work is done (Owner: O3)
 
-Built on the existing rules: the native price (D2/D19), the buyer pays the
-seller on delivery (§4 of the economy direction), and no money from nothing
-(D20).
+Each event is billed once, at the moment it happens, to the site's client:
 
-| Flow | Payer → payee | Amount |
+| Event | Payer → payee | Amount |
 |---|---|---|
-| Materials loaded at a source | site owner → storage owner (state treasury or private company) | tons × native price, locked at loading (the same lot rule as goods) |
-| Transport | site owner → construction company | observed fuel × fuel price (the same rule as a DO trip) |
-| Construction service | site owner → construction company | **Open:** for example the `"workers"` (workdays) part of the native construction cost (`NativeCostForBuilding`) × the wage rate, or a contract price |
-| Wages, fuel and vehicles of the office | construction company → workers / sellers | the company's own costs |
+| Material **loaded** for the site at a storage | client → storage owner (state treasury or private company) | tons × native price at loading (the same lot rule as goods) |
+| Workday **done** at the site | client → the citizens who worked it (O2) | workdays × wage rate (**Open**, §10 Q2) |
+| Transport (fuel) | client → builder (treasury for a state office, company for a private office) | observed fuel × fuel price (the same rule as a DO trip) |
+| Contractor margin, private offices only | client → construction company | **Open** (§10 Q3). The existing `contractor_markup` INI knob is 1.00 (no margin) |
 
-- **Site owner:** the private company or the investment fund for a private
-  site, and the state treasury for a state site built by a private office.
-- **Proposed:** an unaffordable bill is never silently skipped. It goes into
-  debt with a visible log, like the delivery-debt rule in `private_shops`.
+- **O1b, the state as contractor:** with a state office on a private site,
+  the treasury receives payment for materials from state storages and for
+  transport. The workday money goes to the workers (O2). If O1b is
+  confirmed, the state's income is the materials and transport.
+- **Proposed:** materials loaded but not yet unloaded at the site stay paid.
+  If the site is cancelled or demolished, they are not refunded, which keeps
+  the rule simple.
+- **Proposed:** if the client cannot pay, the site is **halted**, not served
+  on credit. Its status says `UNPAID — construction halted`, the same way
+  real work stops when a client stops paying. Native research C9 checks
+  whether the game has a suspend flag the mod can set.
+- **Proposed:** a state client (public contract) pays from the treasury.
+  Below zero, the same halt rule applies.
 
-### 4.7 Workers (Owner: decide later)
+### 5.5 Workers (Owner: O2)
 
-**Open.** Options to discuss, none chosen:
+- **Owner:** workdays are billed to the client, and the money goes to the
+  citizens who did the work. They are marked as **construction workers**,
+  because offices have no fixed workplace for them.
+- **Proposed form of the marker:** a per-citizen, per-day flag
+  "construction worker at site X". `citizen_labor` uses it for that day's
+  wage and status instead of a workplace. The Almanac can count construction
+  workers like any other job.
+- **Proposed:** a construction workday replaces that day's normal job pay
+  and is never added on top of it. A citizen is paid once per day.
+- **Open, native research C8:** can the mod see *which* citizens worked at a
+  site on a given day? If it cannot, the money must not be guessed onto
+  random citizens (no made-up data). The workday bill is then shown as
+  `UNAVAILABLE` and not charged until the data exists.
 
-- **(a) Native as-is:** the office bus fetches workers from a designated stop,
-  and the mod treats them like any other workplace's workers.
-- **(b) Workers employed by the construction company:** payroll comes from
-  its capital through `citizen_labor`.
-- **(c) Workdays billed through the service charge in §4.6:** the site owner
-  pays and the company pays its workers.
+### 5.6 Private construction offices (Owner, from §2.1)
+
+- **Privatising (Proposed):** the PRIV tile appears on construction offices.
+  Price, starting capital and nationalisation follow D24, D29, D27 and D30.
+  The office's inputs for D29 are fuel and vehicle upkeep.
+- **Vehicles (Owner: "can purchase vehicles"):**
+  - **Proposed:** purchases are paid from the company's capital at the
+    native vehicle price, never by the treasury. Selling a vehicle credits
+    the company (D20, D21).
+  - **Open (C4):** where the native buy button takes its money. Until that
+    is known, a private office must not buy vehicles from the treasury.
+- **Finding sites (Owner):** the `[AUTO DO]` pattern (daily reconcile, native
+  list, game moves everything). Eligible sites: private-client sites, and
+  state sites with "Allow private construction" (§5.3). The native range
+  limit stays.
+- **Materials (Owner):** sources are written from the storages the private
+  logistics rules allow:
+  - state storages with "Allow private DO loading (take goods)" checked;
+  - private storages under the rule private DOs use today.
+
+  Goods move only in native vehicles.
+- **Fuel (Proposed):** the office's tank is filled by normal deliveries,
+  settled as a B2B purchase.
+- **Progress (Proposed):** comes only from the native mechanism. The mod
+  writes no progress on sites built by offices.
 
 ---
 
-## 5. Relation to existing decisions and code
+## 6. Relation to existing decisions and code
 
 - **D13:** private construction stays as it is for now. This vision is the
   later step.
 - **D12:** the fund "unlocks" high-demand building types for the player to
-  place. A private construction office is what would build those sites.
-- **D24:** no fund payment for a privately built building. This still holds.
-  A building completed by a private office for a private owner is privately
-  built.
+  place. They would be placed as private-client sites (§5.2).
+- **D24:** no fund payment for a privately built building. A private-client
+  site paid per load is privately built, whichever office built it.
+- **D20:** every flow in §5.4 moves existing money between parties.
 - **`private_logistics` `[AUTO DO]`:** the same discovery, daily reconcile,
-  permission table and per-building checkbox code, extended to construction
-  office lists.
-- **`private_construction`:** costs (`NativeCostForBuilding`), the site
-  registry and persistence are reusable. The progress-write path is what this
-  replaces.
+  permission table and checkbox code, extended to construction office lists.
+  The §1 fix keeps DOs off sites, which only construction offices serve.
+- **`private_construction`:** pricing, registry and persistence are reused.
+  The money-to-progress path is retired (§5.2).
 
 ---
 
-## 6. Phases (Proposed)
+## 7. Phases (Proposed)
 
 0. **Fix the §1 bug.** Done (§1.3).
 1. **Observe only:** log every construction office's sites, sources,
-   vehicles and auto-search range, and each site's progress source. No
-   writes.
-2. **Privatise offices**, with company-paid vehicle purchases.
-3. **Automatic sites and sources**, dry-run first, then applied. Same
-   switches as `[AUTO DO]`.
-4. **Money settlement** for materials, transport and service, dry-run first.
-5. **Native-only progress** for private-office sites; retire the
-   money-to-progress path once proven in game.
-6. **Workers**, after the §4.7 decision.
+   vehicles and auto-search range, plus every material load and workday at a
+   site, with the client and the office. No money and no writes.
+2. **Per-load billing, dry run:** compute §5.4 for every load and workday,
+   with state offices on private sites first (O1). This works before any
+   office is privatised.
+3. **Live billing**, then retire the money-to-progress path.
+4. **Worker pay** through `citizen_labor` (O2), after C8.
+5. **"Allow private construction" checkbox** on state sites.
+6. **Privatised offices**, company-paid vehicles, automatic sites and
+   sources (dry run first).
+
+Phases 1–3 deliver O1 and O3 with only state offices. That is the smallest
+useful step, and it removes the plugin's progress writes.
 
 ---
 
-## 7. Native research needed (proposed Ghidra targets)
+## 8. Mapping to game modes
+
+| Mode | State client | Private client |
+|---|---|---|
+| Instant build (not realistic) | native price, unchanged | **Open** (§10 Q4) |
+| Realistic, state office | native, no bills | owner pays per load (O1, O3) |
+| Realistic, private office | treasury pays per load (checkbox) | owner pays per load |
+
+---
+
+## 9. Native research needed (proposed Ghidra targets)
 
 Not added to the economy direction G queue until the owner schedules this
 work.
@@ -267,20 +365,28 @@ work.
 | ID | Question | Needed for |
 |---|---|---|
 | C1 | Construction office building type number(s) and type-descriptor fields | Recognising offices; PRIV tile |
-| C2 | Layout of the office's site assignment list, auto-search flag and range | §4.3 |
-| C3 | Layout of the office's "sources of materials" list, including the workers source | §4.4, §4.7 |
-| C4 | Native buy-vehicle and sell-vehicle path: who is debited and credited | §4.2 |
-| C5 | Where a construction vehicle's unload at a site is committed. DO trucks at a site logged `commit=0` at the B2B site RVA `0x68F792`; the construction path is probably different | §4.6 settlement |
-| C6 | Whether a site can be restricted to specific offices | §4.3 state-office question |
-| C7 | How native construction progress (`building+0x604`) advances per delivery and per workday | §4.5, §4.6 service price |
+| C2 | Layout of the office's site assignment list, auto-search flag and range | §5.6 |
+| C3 | Layout of the office's "sources of materials" list, including the workers source | §5.6, §5.5 |
+| C4 | Native buy-vehicle and sell-vehicle path: who is debited and credited | §5.6 |
+| C5 | Where a construction vehicle's load at a storage and unload at a site are committed. DO trucks at a site logged `commit=0` at the B2B site RVA `0x68F792`; the construction path is probably different | §5.4 per-load billing |
+| C6 | Whether a site can be restricted to specific offices | §5.3 |
+| C7 | How native construction progress (`building+0x604`) advances per delivery and per workday | §5.4 workday count |
+| C8 | Which citizens worked at a site on a given day (bus passengers and walk-ins) | §5.5 worker pay |
+| C9 | A native "suspend construction" flag the mod can set and clear | §5.4 halt rule |
 
 ---
 
-## 8. Open owner questions
+## 10. Open owner questions
 
-1. Is the **"Allow private construction"** checkbox (default OFF) the right
-   way for state sites to opt in?
-2. Should state offices keep building private sites?
-3. How is the construction service priced (§4.6)?
-4. Workers: (a), (b) or (c) in §4.7, or something else?
-5. Does the site owner pay materials at loading (proposed) or on completion?
+1. **O1b:** when a state office builds a private site, does the treasury
+   receive the materials and transport money (the owner said "maybe")?
+2. **Wage rate for a construction workday:** the normal `citizen_labor`
+   wage, or a separate construction rate? It must be a real configured or
+   native value, never a placeholder.
+3. **Contractor margin** for private offices: none (cost only), or a
+   percentage the player sets?
+4. **Instant build for a private client** (non-realistic mode): may the
+   fund pay the native instant price, or is the instant build state-only?
+5. **"Allow private construction" checkbox**, default OFF, as the state's
+   way to hire contractors (§5.3)?
+6. **Halt on non-payment** (§5.4) instead of debt?
