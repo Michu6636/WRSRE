@@ -7,7 +7,10 @@
 // sampled positive fuel decrease and the global fuel price at observed close.
 // Unknown starts, observation gaps, uncertain identities or missing prices are
 // explicitly unpriced. The assignment observer does not establish exact native
-// event coverage, fuel units, or exact burn. Dry-run defaults remain enabled.
+// event coverage, fuel units, or exact burn. Billing is LIVE by default
+// (billing=1, dry_run=0); set billing=0 or dry_run=1 to compute and log only.
+// A customs house is an export buyer: it creates no b2b_state_buy leg, because
+// the native customs sale credits the treasury and D5 waits for Ghidra G1.
 // No cargo-value freight, wholesale/margin factor, fragment tariff, wear,
 // upkeep, or other settlement component is applied.
 //
@@ -55,8 +58,8 @@ static tTransfer g_realTransfer = nullptr;
 
 static int   g_enabled         = 1;
 static wrsre::b2b::Engine g_b2bEngine;
-static int   g_billing         = 0; // Safe default: no money movement.
-static int   g_dryRun          = 1;      // SAFE DEFAULT: compute, log, do not pay
+static int   g_billing         = 1; // Live by default (D16).
+static int   g_dryRun          = 0; // Live by default; set 1 to compute only.
 static int   g_counterpartySettlement = 1;
 static int   g_allowBuyerOverdraft = 1;
 static double g_buyerOverdraftLimit = 5000.0;
@@ -138,7 +141,7 @@ static unsigned long long g_fuelTripsRun = 0;
 static int g_balanceLog = 1;
 static char gFuelResource[64] = "fuel";
 
-#define PL_VERSION "0.19.0-simplified-settlement"
+#define PL_VERSION "0.19.1-live-billing"
 static int g_panelObserverEnabled = 1;
 static int g_scheduleObserverEnabled = 1;
 static void PanelObserverLoading(void);
@@ -363,6 +366,15 @@ static uint32_t VehSlotIdx(void* veh)
     return wrsre::b2b::Engine::hashVehiclePtr((std::uintptr_t)veh);
 }
 static bool AutoBuildingKey(void* b, uint64_t* outKey, int* outType);
+
+// Verified building type of a customs house (world infrastructure probe).
+#define AUTO_CUSTOMS_TYPE 20
+
+static bool IsCustomsBuilding(void* b)
+{
+    return b && TsmIsValidGamePtr(b) && TsmBuildingType(b) == AUTO_CUSTOMS_TYPE;
+}
+
 static bool IsPrivate(void* b)
 {
     if (!b || !g_enterprise) return false;
@@ -817,6 +829,7 @@ static int DetourTransfer(void* game, void* p2, unsigned mode, void* res,
         if (mdMatched && md.destBld != 0 && (g_billing || g_dryRun)) {
             const std::uintptr_t buyerBld = md.destBld;
             const bool buyerPriv = IsPrivate((void*)buyerBld);
+            const bool buyerCustoms = IsCustomsBuilding((void*)buyerBld);
             char buyerName[64], resourceName[64];
             BuildingName((void*)buyerBld, buyerName, sizeof(buyerName));
             ResourceName(res, resourceName, sizeof(resourceName));
@@ -860,9 +873,23 @@ static int DetourTransfer(void* game, void* p2, unsigned mode, void* res,
                 auto cb = MakeTransferCallbacks(&localInsolvent, &localTreasurySkip);
                 auto plan = wrsre::b2b::planSettlement(
                     part.origin, part.sellerBld, sellerPriv, part.sellerKey,
-                    buyerBld, buyerPriv, goodsValue);
+                    buyerBld, buyerPriv, goodsValue, buyerCustoms);
                 plan.allowBuyerOverdraft = g_allowBuyerOverdraft != 0;
                 plan.buyerOverdraftLimit = g_buyerOverdraftLimit;
+                if (plan.customsExport) {
+                    // D5 is not implemented until Ghidra G1: the native
+                    // customs sale still credits the treasury. The state must
+                    // not pay the exporter as well, so there is no leg here.
+                    char sellerName[64];
+                    BuildingName(part.sellerBld ? (void*)part.sellerBld : nullptr,
+                                 sellerName, sizeof(sellerName));
+                    Logf("[B2B GOODS] export: Buyer \"%s\" [customs] <- Seller "
+                         "\"%s\" %.3ft @ %.2f = %.2f | no state payment "
+                         "(company export revenue waits for G1/D5)",
+                         buyerName, part.sellerBld ? sellerName : "Unknown",
+                         (double)part.tons, part.unitPrice, goodsValue);
+                    continue;
+                }
                 const auto exec = wrsre::b2b::executeAtomicTransfer(plan, cb, dryBuyerAlreadySpent);
                 if (cb.dryRun) dryBuyerAlreadySpent += exec.goodsPaid;
 
@@ -1121,7 +1148,6 @@ static void OnDay(void*, int day, int month, int year)
 // it is not the native per-selection batch count or a 100-target engine policy.
 // Existing/manual entries are retained even when already over the policy limit.
 #define AUTO_STORAGE_BUILDING_TYPE 5
-#define AUTO_CUSTOMS_TYPE         20
 #define AUTO_CUSTOMS_MAX          512
 #define AUTO_STATE_STORAGE_MAX    512
 #define AUTO_STATE_PERMISSION_MAX 512
@@ -2091,10 +2117,10 @@ static void ReadSettings(void)
     char v[256];
 
     g_enabled        = H->configInt(ini, "private_logistics", "enabled", 1);
-    g_billing        = H->configInt(ini, "private_logistics", "billing", 0);
+    g_billing        = H->configInt(ini, "private_logistics", "billing", 1);
     g_panelObserverEnabled = H->configInt(ini, "private_logistics", "panel_fuel_observer", 1);
     g_scheduleObserverEnabled = H->configInt(ini, "private_logistics", "schedule_observer", 1);
-    g_dryRun         = H->configInt(ini, "private_logistics", "dry_run", 1);
+    g_dryRun         = H->configInt(ini, "private_logistics", "dry_run", 0);
     // [b2b] section
     g_counterpartySettlement = H->configInt(ini, "b2b", "counterparty_settlement", 1);
     g_allowBuyerOverdraft = H->configInt(ini, "b2b", "allow_buyer_overdraft", 1);
@@ -2112,10 +2138,11 @@ static void ReadSettings(void)
          g_autoSourcePercent, g_autoDestinationPercent);
     if (g_autoSourcePercent != 10)
         Logf("[AUTO DO] source threshold override=%d%% (this test ships 10%%); an explicit deployed INI setting overrides the fallback", g_autoSourcePercent);
-    Logf("[AUTO DO] permission-test profile: billing=%d auto_targets=%d apply=%d (expected 0/1/1)",
+    Logf("[AUTO DO] profile: billing=%d auto_targets=%d apply=%d (shipped 1/1/1)",
          g_billing, g_autoTargetsEnabled, !g_autoTargetsDryRun);
-    if (g_billing || !g_autoTargetsEnabled || g_autoTargetsDryRun)
-        Logf("[AUTO DO] WARNING deployed INI overrides the permission-test defaults; rebuild/deploy the shipped INI for this test");
+    if (g_billing != 1 || !g_autoTargetsEnabled || g_autoTargetsDryRun)
+        Logf("[AUTO DO] NOTE deployed INI differs from the shipped defaults; "
+             "billing=1 auto_targets=1 apply=1 is the release profile");
     if (H->configInt(ini, "private_logistics", "state_storage_always_on", 0))
         Logf("[AUTO DO] state_storage_always_on is obsolete and ignored; per-building permissions are required");
     if (g_autoTargetLogLimit < 0) g_autoTargetLogLimit = 0;

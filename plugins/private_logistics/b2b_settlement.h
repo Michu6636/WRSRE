@@ -118,6 +118,11 @@ struct SettlementPlan {
     std::uintptr_t buyerBld            = 0;
     bool           sellerIsPriv        = false;
     bool           buyerIsPriv         = false;
+    // Buyer is a customs house. A private seller delivering here is
+    // exporting: the native customs sale owns that money (D5/G1), so the
+    // treasury must not also pay the seller through b2b_state_buy.
+    bool           buyerIsCustoms      = false;
+    bool           customsExport       = false;
     double         goodsValue          = 0.0;
     bool           internalGoods       = false;
     bool           allowBuyerOverdraft = false;
@@ -407,18 +412,26 @@ inline SettlementPlan planSettlement(
     OriginKind origin,
     std::uintptr_t sellerBld, bool sellerIsPriv, std::uint64_t sellerKey,
     std::uintptr_t buyerBld, bool buyerIsPriv,
-    double goodsValue)
+    double goodsValue, bool buyerIsCustoms = false)
 {
     SettlementPlan plan;
     plan.origin=origin;plan.sellerBld=sellerBld;plan.sellerKey=sellerKey;
     plan.buyerBld=buyerBld;
     plan.sellerIsPriv=sellerIsPriv && sellerBld!=0;
     plan.buyerIsPriv=buyerIsPriv && buyerBld!=0;
+    plan.buyerIsCustoms=buyerIsCustoms && buyerBld!=0;
     plan.goodsValue=std::isfinite(goodsValue) && goodsValue>0.0?goodsValue:0.0;
 
     if(origin==ORIGIN_UNKNOWN) return plan; // fail closed, never guess a seller
     if(origin==ORIGIN_PRIVATE) {
         if(!plan.sellerIsPriv) return plan;
+        // Exports are never paid by the state. Until G1 attributes the
+        // native customs sale to the exporting company (D5), the goods are
+        // recorded as an export and no leg is created: no b2b_state_buy.
+        if(plan.buyerIsCustoms) {
+            plan.customsExport=true;
+            return plan;
+        }
         if(plan.buyerIsPriv && sellerBld==buyerBld) {
             plan.internalGoods=true;return plan;
         }

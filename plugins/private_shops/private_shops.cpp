@@ -1,7 +1,18 @@
-// private_shops - private-sector restocking and pub service.
+// private_shops - private service fees (pub, hotel, cinema, hospital).
 //
-// Level 3. Consumes sim_clock, currency, persistence, resource_pricing,
-// enterprise_base and taxes; provides nothing.
+// Level 3. Consumes sim_clock, currency, persistence, enterprise_base and
+// taxes; provides nothing.
+//
+// v3.8 (economy-direction 2026-11-22, code step 3):
+//
+//   - NO STATE DELIVERY BILL. The 0.70 `wholesale_ratio` charge is gone.
+//     A delivery into a private building is settled once, by
+//     private_logistics, between the verified buyer and seller (D16/D19).
+//     Keeping both paths would charge the same goods twice.
+//   - NO FOREIGN RESTOCK. The plugin no longer writes TSM_SLOT_CONTENT
+//     or creates stock directly (economy direction §4.2 point 6).
+//   - Only service_fees remain. The one-shot building dump and the
+//     demand-lifetime probe are unchanged.
 //
 // v3.6 from v3.5 (economy-direction 2026-11-22, code step 1):
 //
@@ -251,25 +262,19 @@
 #include "../../src/sim_clock_api.h"
 #include "../../src/currency_api.h"
 #include "../../src/persistence_api.h"
-#include "../../src/resource_pricing_api.h"
-#include "../../src/price_guards.h"
 #include "../../src/enterprise_base_api.h"
-#include "../../src/b2b_logistics_api.h"
 #include "../../src/taxes_api.h"
 
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
 #include <stdint.h>
-#include "utility_filter.h"
 
 // ---------------------------------------------------------------- services
 
 static const TsmSimClockApi*        g_simClock    = nullptr;
 static const TsmCurrencyApi*        g_currency    = nullptr;
-static const TsmResourcePricingApi* g_pricing     = nullptr;
 static const TsmEnterpriseBaseApi*  g_enterprise  = nullptr;
-static const TsmB2bLogisticsApi*    g_b2bLogistics = nullptr;
 static const TsmTaxesApi*           g_taxes       = nullptr;
 static const TsmPersistenceApi*     g_persistence = nullptr;
 static int                          g_persHandle  = -1;
@@ -280,51 +285,14 @@ static int    g_enabled              = 1;
 static int    g_probe                = 1;
 static int    g_tickIntervalMs       = 300;
 
-static int    g_probePubStorage      = 1;   // v2.6 storage-semantics probe
 static int    g_probePubDemand       = 1;   // v2.6 demand-lifetime probe
 
 #define MAX_TYPE_LIST 32
-static int    g_restockTypes[MAX_TYPE_LIST];
-static int    g_restockTypeCount;
-static int    g_restockAll           = 0;   // `restock_types = all`
 
-// v2.9: retail is an explicit set, not a side effect of the restock-list
-// mode. Consulted unconditionally by IsRetailType.
+// v2.9: retail is an explicit set. Since step 3 it only labels the
+// one-shot diagnostic dump of private buildings.
 static int    g_retailTypes[MAX_TYPE_LIST];
 static int    g_retailTypeCount;
-
-static float  g_wholesaleRatio       = 0.70f;
-static int    g_foreignEnabled       = 0;  // Physical deliveries by default; opt in to foreign restock.
-
-// v3.7 (economy direction step 2, D8/D33): a delivery or restock whose
-// resource has no native price is refused as a whole. Log it once per
-// resource and context so a per-tick retry cannot flood the log. The stock
-// is never written and the bill is never partly charged.
-#define SHOP_UNPRICED_NAME 32
-static char g_unpricedLogged[16][SHOP_UNPRICED_NAME + 16];
-static int  g_unpricedLoggedCount = 0;
-
-static void NoteUnpricedShop(const char* context, void* res)
-{
-    char name[SHOP_UNPRICED_NAME] = {0};
-    if (!res || !TsmResourceName(res, name, sizeof(name)) || !name[0])
-        _snprintf_s(name, sizeof(name), _TRUNCATE, "?");
-    char key[SHOP_UNPRICED_NAME + 16] = {0};
-    _snprintf_s(key, sizeof(key), _TRUNCATE, "%s|%s", context, name);
-    for (int i = 0; i < g_unpricedLoggedCount; i++)
-        if (strcmp(g_unpricedLogged[i], key) == 0) return;
-    if (g_unpricedLoggedCount >= 16) return;
-    strncpy_s(g_unpricedLogged[g_unpricedLoggedCount++],
-              sizeof(g_unpricedLogged[0]), key, _TRUNCATE);
-    Logf("private_shops  ERROR UNPRICED  %s of \"%s\": no native price - "
-         "the %s is refused and nothing is billed (D33)", context, name, context);
-}
-static float  g_foreignTargetRatio   = 0.30f;
-// v3.4: the shelf empties to this fraction of its capacity before an order is
-// placed, and is then filled back to foreign_restock_target. Two numbers, so
-// the ORDER SIZE is chosen instead of being whatever gap the tick found.
-static float  g_restockReorderPoint  = 0.05f;
-static float  g_foreignMarkup        = 1.05f;
 
 // Service fees: a building type charges a given per-visit fee to a
 // citizen inside who carries the given demand kind. See the ini for
@@ -353,30 +321,10 @@ static float EffectiveFee(const ServiceFee& fee)
 
 // ---------------------------------------------------------------- per-shop state
 
-struct SlotSnapshot {
-    void* resource;
-    void* slot;          // v3.2: the slot this record describes. The
-                         // enumeration index is not stable (see the v3.2
-                         // header note); this pointer is what makes the
-                         // record trustworthy.
-    float content;
-};
-
-struct ShopState {
-    std::vector<SlotSnapshot> slots;
-    bool   snapshotDone     = false;
-    int    lastForeignDay   = -1;
-    double monthlyForeign   = 0.0;
-    double monthlyWholesale = 0.0;
-};
-
-static std::unordered_map<void*, ShopState> g_shops;
 static std::unordered_map<uint64_t, int>    g_serviceLastVisit;
 
-// v2.6 probes. g_storageProbed makes the storage-semantics dump one-shot
-// per building per world load; g_demandProbe accumulates the per-patron
-// demand-kind samples for service-fee buildings.
-static std::unordered_set<void*> g_storageProbed;
+// v2.6 probe. g_demandProbe accumulates the per-patron demand-kind
+// samples for service-fee buildings.
 
 struct DemandProbeState {
     long long withSamples    = 0;   // observations of a patron holding the kind
@@ -408,533 +356,15 @@ static const ServiceFee* FeeForType(int type)
     return nullptr;
 }
 
-// Retail is type 3, the retail_types set, any service-fee type, or - when
-// a restock list is configured - any listed restock type. v2.8-v3.5 used
-// this to keep customer sales out of state procurement; since v3.6 there
-// is no procurement and the classification only labels the one-shot
-// diagnostic dump of private buildings.
+// Retail is type 3, the retail_types set, or any service-fee type. Since
+// step 3 there is no restock list; the classification only labels the
+// one-shot diagnostic dump of private buildings.
 static bool IsRetailType(int type)
 {
     if (type == 3) return true;
     if (IsInList(g_retailTypes, g_retailTypeCount, type)) return true;
     if (FeeForType(type) != nullptr) return true;
-    if (!g_restockAll &&
-        IsInList(g_restockTypes, g_restockTypeCount, type)) return true;
     return false;
-}
-
-// ---------------------------------------------------------------- storage iteration
-
-typedef void (*SlotVisitor)(void* storage, void* slotBytes, void* resource,
-                            float content, float perSlotCap, size_t globalIndex,
-                            void* userData);
-
-static bool ForEachSlot(void* building, SlotVisitor cb, void* userData)
-{
-    BYTE* b = (BYTE*)building;
-    void** storBegin = *(void***)(b + TSM_BLD_STORAGES_BEGIN);
-    void** storEnd   = *(void***)(b + TSM_BLD_STORAGES_END);
-    if (!storBegin || !storEnd || storEnd <= storBegin) return false;
-    if (!TsmIsValidGamePtr(storBegin)) return false;
-    if (!ReadablePtr(storBegin, sizeof(void*))) return false;
-
-    size_t storBytes = (size_t)((BYTE*)storEnd - (BYTE*)storBegin);
-    if (storBytes % TSM_STORAGE_STRIDE) return false;
-    size_t storCount = storBytes / TSM_STORAGE_STRIDE;
-    if (storCount > 16) storCount = 16;
-
-    if (!ReadablePtr(storBegin, storCount * TSM_STORAGE_STRIDE)) return false;
-
-    size_t globalIndex = 0;
-
-    for (size_t si = 0; si < storCount; si++) {
-        BYTE* storage = (BYTE*)storBegin + si * TSM_STORAGE_STRIDE;
-        if (!ReadablePtr(storage, 0xA0)) continue;
-
-        void** slotBegin = *(void***)(storage + TSM_ST_SLOTS_BEGIN);
-        void** slotEnd   = *(void***)(storage + TSM_ST_SLOTS_END);
-        if (!slotBegin || !slotEnd || slotEnd <= slotBegin) continue;
-        if (!TsmIsValidGamePtr(slotBegin)) continue;
-
-        size_t slotBytes = (size_t)((BYTE*)slotEnd - (BYTE*)slotBegin);
-        if (slotBytes % TSM_SLOT_STRIDE) continue;
-        size_t slotCount = slotBytes / TSM_SLOT_STRIDE;
-        if (slotCount > 32) slotCount = 32;   // v2.6: department stores exceed 8
-
-        if (!ReadablePtr(slotBegin, slotCount * TSM_SLOT_STRIDE)) continue;
-
-        // v2.7: storage+0x8C is the capacity of the WHOLE storage, not
-        // of one slot. A visitor that wants "30% of capacity" has to be
-        // told each slot's share of it, or N slots each target 30% of
-        // the whole and the storage ends up at N*30%. Computed once per
-        // storage, here, rather than re-derived in every visitor.
-        //
-        // The cap is deliberately read after the slot vector is known
-        // good, and is only a hint: a storage that declares 0 leaves
-        // the visitor on its own fallback.
-        float storCap = *(float*)(storage + TSM_ST_CAPACITY);
-        if (!(storCap > 0.0f)) storCap = 0.0f;
-        float perSlot = (slotCount > 0) ? storCap / (float)slotCount : storCap;
-
-        for (size_t sj = 0; sj < slotCount; sj++) {
-            BYTE* slot = (BYTE*)slotBegin + sj * TSM_SLOT_STRIDE;
-            void* res  = *(void**)(slot + TSM_SLOT_RESOURCE);
-            char rname[64];
-            if (TsmIsValidGamePtr(res) &&
-                TsmResourceName(res, rname, sizeof(rname)) &&
-                wrsre_shops::IsUtilityResourceName(rname))
-            {
-                continue;
-            }
-            float cnt  = *(float*)(slot + TSM_SLOT_CONTENT);
-            cb(storage, slot, res, cnt, perSlot, globalIndex, userData);
-            globalIndex++;
-        }
-    }
-    return true;
-}
-
-// ---------------------------------------------------------------- storage semantics probe (v2.6)
-//
-// Dumps what the engine actually initialized on a building's storages:
-// declared capacity and transport class per storage block, then
-// resource, content and limit/quality per slot. RestockSlot decides
-// its restock target from slot+0x0C when that value reads as a goods
-// limit; a pub whose slots keep 0.0 or 1.0 there is telling us the
-// field is not a goods limit on this building type. One dump per
-// building per world load - this reports raw slot counts uncapped, so
-// what is logged is what is really there.
-
-static void ProbeStorageSemantics(void* building, int type)
-{
-    if (!g_probePubStorage) return;
-    if (g_storageProbed.count(building)) return;
-    g_storageProbed.insert(building);
-
-    BYTE* b = (BYTE*)building;
-    void** storBegin = *(void***)(b + TSM_BLD_STORAGES_BEGIN);
-    void** storEnd   = *(void***)(b + TSM_BLD_STORAGES_END);
-
-    wchar_t name[128] = {0};
-    g_enterprise->getBuildingCustomName(building, name, 128);
-
-    if (!storBegin || !storEnd || storEnd <= storBegin) {
-        Logf("private_shops  storage probe: \"%ls\" (type %d) has no storage vector",
-             name[0] ? name : L"(unnamed)", type);
-        return;
-    }
-    if (!TsmIsValidGamePtr(storBegin)) return;
-    if (!ReadablePtr(storBegin, sizeof(void*))) return;
-
-    size_t storBytes = (size_t)((BYTE*)storEnd - (BYTE*)storBegin);
-    if (storBytes % TSM_STORAGE_STRIDE) return;
-    size_t storCount = storBytes / TSM_STORAGE_STRIDE;
-
-    // The 64 bound is crash safety only; the probe reports the truth.
-    if (storCount > 64) storCount = 64;
-    if (!ReadablePtr(storBegin, storCount * TSM_STORAGE_STRIDE)) return;
-
-    Logf("private_shops  storage probe: \"%ls\" (type %d) - %zu storage block(s)",
-         name[0] ? name : L"(unnamed)", type, storCount);
-
-    for (size_t si = 0; si < storCount; si++) {
-        BYTE* storage = (BYTE*)storBegin + si * TSM_STORAGE_STRIDE;
-        if (!ReadablePtr(storage, 0xA0)) continue;
-
-        float capacity = *(float*)(storage + TSM_ST_CAPACITY);
-        int   cls      = *(int*)(storage + TSM_ST_CLASS);
-
-        // v3.3: +0x84/+0x85 are the ONLY thing that decides whether a
-        // drain is billed as consumption or paid as dispatch. Not printing
-        // them cost a session: the probe showed the contents and capacity
-        // while the question was always the flag.
-        BYTE impByte = *(const BYTE*)(storage + TSM_ST_IMPORT);
-        BYTE expByte = *(const BYTE*)(storage + TSM_ST_EXPORT);
-        Logf("private_shops    storage #%zu: declared capacity %.3f  "
-             "transport class %d  import=%d export=%d",
-             si, capacity, cls, (int)impByte, (int)expByte);
-
-        void** slotBegin = *(void***)(storage + TSM_ST_SLOTS_BEGIN);
-        void** slotEnd   = *(void***)(storage + TSM_ST_SLOTS_END);
-        if (!slotBegin || !slotEnd || slotEnd <= slotBegin) {
-            Logf("private_shops      (no slots)");
-            continue;
-        }
-        if (!TsmIsValidGamePtr(slotBegin)) continue;
-
-        size_t slotBytes = (size_t)((BYTE*)slotEnd - (BYTE*)slotBegin);
-        if (slotBytes % TSM_SLOT_STRIDE) continue;
-        size_t slotCount = slotBytes / TSM_SLOT_STRIDE;
-        if (slotCount > 64) slotCount = 64;
-        if (!ReadablePtr(slotBegin, slotCount * TSM_SLOT_STRIDE)) continue;
-
-        for (size_t sj = 0; sj < slotCount; sj++) {
-            BYTE* slot = (BYTE*)slotBegin + sj * TSM_SLOT_STRIDE;
-            void* res     = *(void**)(slot + TSM_SLOT_RESOURCE);
-            float content = *(float*)(slot + TSM_SLOT_CONTENT);
-            float limit   = *(float*)(slot + 0x0C);
-
-            char rname[64];
-            if (!(TsmIsValidGamePtr(res) && TsmResourceName(res, rname, sizeof(rname))))
-                _snprintf_s(rname, sizeof(rname), _TRUNCATE, "raw %p", res);
-
-            Logf("private_shops      slot #%zu: res \"%s\"  content %.3f  limit/quality %+.3f",
-                 sj, rname, content, limit);
-        }
-    }
-}
-
-static void GuardedStorageProbe(void* b, int type)
-{
-    __try { ProbeStorageSemantics(b, type); }
-    __except (FaultFilter("private_shops storage probe", GetExceptionInformation())) {}
-}
-
-// ---------------------------------------------------------------- foreign restocking
-
-struct RestockContext {
-    void*      shop;
-    ShopState* state;
-    double     capital;
-    int        bought;
-    double     spent;
-};
-
-static void RestockSlot(void* /*storage*/, void* slotBytes, void* res,
-                        float content, float perSlotCap, size_t globalIndex,
-                        void* ud)
-{
-    RestockContext* ctx = (RestockContext*)ud;
-    if (!ctx || !ctx->state) return;
-
-    if (globalIndex >= ctx->state->slots.size()) {
-        ctx->state->slots.resize(globalIndex + 1,
-                                 SlotSnapshot{ nullptr, nullptr, 0.0f });
-    }
-
-    if (!TsmIsValidGamePtr(res)) return;
-
-    // v2.7: three-tier target.
-    //
-    //   slot+0x0C reads +0.000 on every shop and pub storage the v2.6
-    //   probe dumped, so the first branch is dead on this build and
-    //   kept only for a modded storage that does initialize it.
-    //
-    //   The second branch is the one that now runs. perSlotCap is the
-    //   storage's declared capacity divided by its slot count (see
-    //   ForEachSlot), so summing the targets over one storage gives
-    //   capacity * ratio - never more than the shelf holds.
-    //
-    //   The flat 8 t of the third branch used to decide every restock,
-    //   and an absolute `target > 8.0f` clip used to bound the other
-    //   branches too. Both are gone: they made a 15 t shop and a 200 t
-    //   warehouse restock to the same 2.4 t per slot, which is not what
-    //   foreign_restock_target says it does. The clamp below is against
-    //   the slot's own share instead.
-    float limit = *(float*)((BYTE*)slotBytes + TSM_SLOT_QUALITY);
-
-    // v3.4: TWO NUMBERS, NOT ONE.
-    //
-    // The shelf used to be topped up whenever it fell below the target, so the
-    // order size was whatever the gap happened to be when the tick ran - a
-    // trickle nobody chose. Inventory is two decisions and real shops keep
-    // them apart:
-    //
-    //   reorder_point - how low the shelf may fall before an order is placed
-    //   target        - what it is filled to when it is
-    //
-    // The order is then (target - reorder_point): fixed, predictable, and big
-    // enough to be worth a truck. A shelf cycles between the two levels
-    // instead of hovering at one.
-    //
-    // reorder_point = 0 is legal - it is what "wait until the shop is empty"
-    // means - but the shop really is empty until the delivery arrives.
-    // D8: no invented 8 t cap. If the slot reports neither a quality limit
-    // nor a capacity, the order size is unknown - refuse the restock and say
-    // so once, rather than fill every shop to the same made-up number.
-    float base = 0.0f;
-    if (limit > 0.01f)            base = limit;
-    else if (perSlotCap > 0.01f)  base = perSlotCap;
-    if (!(base > 0.01f)) {
-        static bool loggedNoBase = false;
-        if (!loggedNoBase) {
-            loggedNoBase = true;
-            Logf("private_shops  WARN  foreign restock: a slot reports neither "
-                 "a quality limit nor a capacity - the order is refused (no "
-                 "invented 8 t cap)");
-        }
-        return;
-    }
-
-    float target  = base * g_foreignTargetRatio;
-    float reorder = base * g_restockReorderPoint;
-
-    if (perSlotCap > 0.01f && target > perSlotCap) target = perSlotCap;
-    if (!(reorder < target)) {
-        // reorder_point is the player's policy; an incoherent pair is not
-        // repaired with an invented 0.5 fraction.
-        static bool loggedBadReorder = false;
-        if (!loggedBadReorder) {
-            loggedBadReorder = true;
-            Logf("private_shops  WARN  foreign restock: reorder_point (%.3f) "
-                 "is not below the target (%.3f) - the order is refused",
-                 (double)g_restockReorderPoint, (double)g_foreignTargetRatio);
-        }
-        return;
-    }
-
-    if (content > reorder) return;
-
-    float deficit = target - content;
-    // v4: unified global currency - restock at the active price so the
-    // capital math stays in the treasury's unit.
-    const float perTon = g_pricing->getPrice(res, TsmCurrencyActive(g_currency));
-    if (!TsmNativePriceUsable(perTon)) {
-        NoteUnpricedShop("foreign restock", res);
-        return;                       // whole order refused, shelf untouched
-    }
-
-    double cost = (double)deficit * (double)perTon * (double)g_foreignMarkup;
-    if (cost <= 0.0) return;
-
-    if (ctx->capital < cost) {
-        if (ctx->capital <= 1.0) return;
-        double affordableTons = ctx->capital / ((double)perTon * (double)g_foreignMarkup);
-        double partialCost = affordableTons * (double)perTon * (double)g_foreignMarkup;
-        *(float*)((BYTE*)slotBytes + TSM_SLOT_CONTENT) = content + (float)affordableTons;
-        ctx->spent += partialCost;
-        ctx->capital = 0.0;
-    } else {
-        *(float*)((BYTE*)slotBytes + TSM_SLOT_CONTENT) = content + deficit;
-        ctx->spent += cost;
-        ctx->capital -= cost;
-    }
-    ctx->bought++;
-
-    ctx->state->slots[globalIndex].resource = res;
-    ctx->state->slots[globalIndex].slot     = slotBytes;
-    ctx->state->slots[globalIndex].content  = *(float*)((BYTE*)slotBytes + TSM_SLOT_CONTENT);
-}
-
-static void RunForeignRestock(void* building, ShopState& st, int day)
-{
-    if (!g_foreignEnabled) return;
-    if (st.lastForeignDay == day) return;
-    st.lastForeignDay = day;
-
-    double capital = g_enterprise->getCompanyCapital(building);
-
-    RestockContext ctx = { building, &st, capital, 0, 0.0 };
-    ForEachSlot(building, RestockSlot, &ctx);
-
-    if (ctx.spent <= 0.0) return;
-
-    g_enterprise->modifyCompanyCapital(building, -ctx.spent, TSM_CAP_FOREIGN);
-    st.monthlyForeign += ctx.spent;
-
-    if (g_probe) {
-        wchar_t name[128] = {0};
-        if (g_enterprise->getBuildingCustomName)
-            g_enterprise->getBuildingCustomName(building, name, 128);
-        if (!name[0] && g_enterprise->getBuildingObjectName) {
-            const char* obj = g_enterprise->getBuildingObjectName(building);
-            if (obj && obj[0]) {
-                size_t i = 0;
-                for (; i + 1 < _countof(name) && obj[i]; ++i)
-                    name[i] = (wchar_t)(unsigned char)obj[i];
-                name[i] = L'\0';
-            }
-        }
-        Logf("private_shops  \"%ls\" imported %d slot(s) for %.2f %s",
-             name[0] ? name : L"(unnamed)", ctx.bought, ctx.spent,
-             TsmCurrencySymbol(g_currency));
-    }
-}
-
-// ---------------------------------------------------------------- wholesale billing
-
-// v3.6 (2026-11-22, economy-direction D19/D23): the v2.8-v3.3 STATE
-// PROCUREMENT of private output is removed. A private factory whose export
-// storage drains is no longer paid by the treasury; its goods leave on the
-// game's own logistics and are settled between companies (private_logistics
-// B2B) or, for exports, paid by the game's customs directly. The v3.0 market
-// book recording is removed with resource_pricing v5. What remains here is
-// the wholesale bill for stock the state DELIVERS to a private building.
-
-struct WholesaleContext {
-    void*      shop;
-    ShopState* state;
-    double     capital;
-    int        billed;
-    double     charged;
-};
-
-// When private_logistics counterparty billing is live, truck transfers settle
-// directly between buyer, seller and carrier. Keep the slot snapshots current
-// so the state-delivery path below has a trustworthy baseline if counterparty
-// billing switches off again, but move no money.
-static void WholesaleSnapshotOnlySlot(void* /*storage*/, void* slotBytes, void* res,
-                                      float content, float /*perSlotCap*/,
-                                      size_t globalIndex, void* ud)
-{
-    WholesaleContext* ctx = (WholesaleContext*)ud;
-    if (!ctx || !ctx->state) return;
-    if (!TsmIsValidGamePtr(res)) return;
-
-    if (globalIndex >= ctx->state->slots.size()) {
-        ctx->state->slots.resize(globalIndex + 1,
-                                 SlotSnapshot{ nullptr, nullptr, 0.0f });
-    }
-    SlotSnapshot& snap = ctx->state->slots[globalIndex];
-    snap.resource = res;
-    snap.slot     = slotBytes;
-    snap.content  = content;
-}
-
-// perSlotCap is unused here: wholesale bills the delta the state
-// actually delivered, and the engine already bounded that delivery by
-// the storage's own capacity. The parameter exists to match
-// SlotVisitor.
-static void WholesaleSlot(void* storage, void* slotBytes, void* res,
-                          float content, float /*perSlotCap*/, size_t globalIndex,
-                          void* ud)
-{
-    WholesaleContext* ctx = (WholesaleContext*)ud;
-    if (!ctx || !ctx->state) return;
-    if (!TsmIsValidGamePtr(res)) return;
-
-    if (globalIndex >= ctx->state->slots.size()) {
-        ctx->state->slots.resize(globalIndex + 1,
-                                 SlotSnapshot{ nullptr, nullptr, 0.0f });
-    }
-
-    if (!ctx->state->snapshotDone) {
-        ctx->state->slots[globalIndex].resource = res;
-        ctx->state->slots[globalIndex].slot     = slotBytes;
-        ctx->state->slots[globalIndex].content  = content;
-        return;
-    }
-
-    SlotSnapshot& snap = ctx->state->slots[globalIndex];
-
-    // v3.2: identify the slot BEFORE any delta is computed.
-    //
-    // `globalIndex` is a running counter over storages x slots. It is not
-    // a stable name for a slot: ForEachSlot `continue`s past a storage
-    // that is unreadable or has an empty slot vector, the engine reorders
-    // the storage vector when a storage is built or demolished, and a
-    // storage's slot vector grows when the building stocks a new good.
-    // When any of those happens, this index now describes a different
-    // slot than the one `snap` was written from.
-    //
-    // The delta below is then (content of slot A) - (content of slot B).
-    // A layout shift could otherwise read as a delivery and bill one.
-    //
-    // A record that does not describe this slot is re-synced. A re-sync
-    // never bills: there is no trustworthy delta to bill.
-    if (snap.slot != slotBytes) {
-        if (g_probe) {
-            static int resyncs;
-            if (++resyncs <= 20) {
-                Logf("private_shops  [SLOT] index %zu now %p (was %p) - "
-                     "layout shifted, record re-synced, no delta billed",
-                     globalIndex, slotBytes, snap.slot);
-            }
-        }
-        snap.slot     = slotBytes;
-        snap.resource = res;
-        snap.content  = content;
-        return;
-    }
-
-    if (snap.resource != res) {
-        snap.resource = res;
-        snap.content  = content;
-        return;
-    }
-
-    // v3.6: growth in an EXPORT-flagged storage (direction byte +0x85,
-    // stamped by the parser, FUN_1400e40f0) is the building's own
-    // production filling its output, not a delivery - never billed. Until
-    // v3.5 this growth was billed at wholesale_ratio and the dispatch
-    // procurement paid it back at 0.90 when it left; with procurement gone
-    // the bill alone would drain every producing company. Import-flagged,
-    // unflagged (warehouse, shop shelf) storages still bill deliveries.
-    // Limit: an unflagged factory output storage is still billed.
-    const bool isExport = storage &&
-        *(const BYTE*)((const BYTE*)storage + TSM_ST_EXPORT) != 0;
-
-    float delta = content - snap.content;
-    if (delta <= 0.001f || isExport) {
-        snap.content = content;
-        return;
-    }
-
-    // v4: state wholesale delivery bills the active-currency price.
-    // v3.7 (D33): no native price means the whole delivery bill is refused.
-    // The goods already arrived natively, so the snapshot advances with the
-    // refused delivery: it is never billed later at a price the seller did not
-    // have, never partly billed, and never billed at zero.
-    const float perTon = g_pricing->getPrice(res, TsmCurrencyActive(g_currency));
-    if (!TsmNativePriceUsable(perTon)) {
-        NoteUnpricedShop("wholesale delivery", res);
-        snap.content = content;
-        return;
-    }
-
-    double wholesale = (double)delta * (double)perTon * (double)g_wholesaleRatio;
-    if (wholesale <= 0.0) { snap.content = content; return; }
-
-    // A native delivery has already happened. Settle its full wholesale cost,
-    // allowing company capital to become negative; never erase delivered stock
-    // to enforce affordability after the vehicle has relinquished the goods.
-    g_enterprise->chargeWholesaleDelivery(ctx->shop, wholesale);
-    ctx->capital -= wholesale;
-    ctx->charged += wholesale;
-    ctx->billed++;
-    snap.content = content;
-
-}
-
-static void RunWholesaleBilling(void* building, ShopState& st)
-{
-    WholesaleContext ctx = {
-        building, &st,
-        g_enterprise->getCompanyCapital(building),
-        0, 0.0
-    };
-    ForEachSlot(building,
-                TsmB2bCounterpartyActive(g_b2bLogistics) ? WholesaleSnapshotOnlySlot
-                                                         : WholesaleSlot,
-                &ctx);
-
-    auto fillName = [building](wchar_t* out, size_t cap) {
-        out[0] = L'\0';
-        if (g_enterprise->getBuildingCustomName)
-            g_enterprise->getBuildingCustomName(building, out, cap);
-        if (!out[0] && g_enterprise->getBuildingObjectName) {
-            const char* obj = g_enterprise->getBuildingObjectName(building);
-            if (obj && obj[0]) {
-                size_t i = 0;
-                for (; i + 1 < cap && obj[i]; ++i)
-                    out[i] = (wchar_t)(unsigned char)obj[i];
-                out[i] = L'\0';
-            }
-        }
-        if (!out[0]) wcsncpy_s(out, cap, L"(unnamed)", _TRUNCATE);
-    };
-
-    if (ctx.charged > 0.0) {
-        st.monthlyWholesale += ctx.charged;
-        if (g_probe) {
-            wchar_t name[128] = {0};
-            fillName(name, _countof(name));
-            const double capital = g_enterprise->getCompanyCapital(building);
-            Logf("private_shops  \"%ls\" charged %.2f for state delivery (%d slot(s)); capital %.2f%s",
-                 name, ctx.charged, ctx.billed, capital,
-                 capital < 0.0 ? " (debt; delivered stock retained)" : "");
-        }
-    }
 }
 
 // ---------------------------------------------------------------- service fees
@@ -1158,11 +588,6 @@ static void LogPrivateBuildings(BYTE* game)
 
         int type = TsmBuildingType(b);
 
-        // v2.6: the storage-semantics probe covers every finished pub,
-        // state or private, so state pubs and [P] pubs can be compared
-        // side by side in the same dump.
-        if (type == 24) GuardedStorageProbe(b, type);
-
         if (!g_enterprise->isBuildingPrivate(b)) continue;
         const char* obj = g_enterprise->getBuildingObjectName(b);
 
@@ -1172,31 +597,17 @@ static void LogPrivateBuildings(BYTE* game)
         const char* suffix = "";
         if (FeeForType(type))        suffix = "   [service fee]";
         else if (IsRetailType(type)) suffix = "   [retail]";
-        else if (g_restockAll || IsInList(g_restockTypes, g_restockTypeCount, type))
-            suffix = "   [restock]";
 
         Logf("private_shops    type %-4d  obj \"%s\"  name \"%ls\"%s",
              type, obj, custom[0] ? custom : L"(unnamed)", suffix);
         total++;
     }
     Logf("private_shops  %d private, finished building(s) total", total);
-    Logf("private_shops  to make one of these private-tradeable, add its type above to "
-         "restock_types (or use `all`) and/or service_fees in plugins\\private_shops.ini");
+    Logf("private_shops  to charge a service here, add the building type to "
+         "service_fees in plugins\\private_shops.ini");
 }
 
 // ---------------------------------------------------------------- the tick
-
-static void GuardedRestock(void* b, ShopState* st, int day)
-{
-    __try { RunForeignRestock(b, *st, day); }
-    __except (FaultFilter("private_shops foreign restock", GetExceptionInformation())) {}
-}
-
-static void GuardedWholesale(void* b, ShopState* st)
-{
-    __try { RunWholesaleBilling(b, *st); }
-    __except (FaultFilter("private_shops wholesale billing", GetExceptionInformation())) {}
-}
 
 static void GuardedService(void* b, int type, const ServiceFee& fee, int day)
 {
@@ -1249,34 +660,18 @@ static void RunShopTick()
         if (TsmIsDemolished(b)) continue;
 
         int type = TsmBuildingType(b);
-        bool isRestock = g_restockAll || IsInList(g_restockTypes, g_restockTypeCount, type);
         const ServiceFee* fee = FeeForType(type);
-        if (!isRestock && !fee) continue;
+        if (!fee) continue;
 
         if (!g_enterprise->isBuildingPrivate(b)) continue;
         if (!TsmIsFinished(b)) continue;
 
         live.insert(b);
-
-        if (isRestock) {
-            ShopState& st = g_shops[b];
-            GuardedStorageProbe(b, type);          // v2.6: first walk dumps slot limits
-            GuardedRestock(b, &st, day);
-            GuardedWholesale(b, &st);
-            st.snapshotDone = true;
-        }
-
-        if (fee) {
-            GuardedDemandProbe(b, type, *fee, day); // v2.6: demand lifetime audit
-            GuardedService(b, type, *fee, day);
-        }
+        GuardedDemandProbe(b, type, *fee, day); // v2.6: demand lifetime audit
+        GuardedService(b, type, *fee, day);
     }
 
     // Drop per-building state for anything that no longer exists.
-    for (auto it = g_shops.begin(); it != g_shops.end(); ) {
-        if (live.count(it->first)) ++it;
-        else                        it = g_shops.erase(it);
-    }
     for (auto it = g_demandProbe.begin(); it != g_demandProbe.end(); ) {
         if (live.count(it->first)) ++it;
         else                        it = g_demandProbe.erase(it);
@@ -1343,9 +738,7 @@ static void SaveShops(const char* dir)
 static void LoadShops(const char* dir)
 {
     EnterCriticalSection(&g_lock);
-    g_shops.clear();
     g_loggedPrivateBuildings = false;
-    g_storageProbed.clear();
     g_demandProbe.clear();
     LeaveCriticalSection(&g_lock);
 
@@ -1412,33 +805,6 @@ static void OnSaveLoad(TsmSaveEvent ev, const char* dir, void* /*ud*/)
 }
 
 // ---------------------------------------------------------------- settings
-
-static void ParseRestockTypes(const char* s)
-{
-    g_restockTypeCount = 0;
-    g_restockAll       = 0;
-
-    if (!s || !s[0]) {
-        g_restockTypes[g_restockTypeCount++] = 3;
-        g_restockTypes[g_restockTypeCount++] = 24;
-        return;
-    }
-
-    if (_stricmp(s, "all") == 0) { g_restockAll = 1; return; }
-    if (_stricmp(s, "none") == 0) { g_restockAll = 0; return; }
-
-    while (*s && g_restockTypeCount < MAX_TYPE_LIST) {
-        while (*s == ' ' || *s == ',' || *s == '\t') s++;
-        if (!*s) break;
-        g_restockTypes[g_restockTypeCount++] = atoi(s);
-        while (*s && *s != ',') s++;
-    }
-
-    if (g_restockTypeCount == 0) {
-        g_restockTypes[g_restockTypeCount++] = 3;
-        g_restockTypes[g_restockTypeCount++] = 24;
-    }
-}
 
 // v2.9: the retail set (since v3.6 a diagnostic label only - there is no
 // state procurement left to keep retail out of). Absent/empty key gives the default
@@ -1555,15 +921,9 @@ static void ReadSettings(void)
 
     g_enabled = H->configInt(ini, "private_shops", "enabled", 1);
     g_probe   = H->configInt(ini, "private_shops", "probe",   1);
-    g_probePubStorage = H->configInt(ini, "private_shops", "probe_pub_storage", 1);
     g_probePubDemand  = H->configInt(ini, "private_shops", "probe_pub_demand",  1);
     g_tickIntervalMs = H->configInt(ini, "private_shops",
                                     "tick_interval_ms", 300);
-
-    if (H->configString(ini, "private_shops", "restock_types", v, sizeof(v), ""))
-        ParseRestockTypes(v);
-    else
-        ParseRestockTypes(nullptr);
 
     if (H->configString(ini, "private_shops", "retail_types", v, sizeof(v), "") && v[0])
         ParseRetailTypes(v);
@@ -1590,8 +950,6 @@ static void ReadSettings(void)
         char pubList[128] = "24";
         H->configString(ini, "private_shops", "pub_types", pubList, sizeof(pubList), "24");
 
-        char combined[256];
-        _snprintf_s(combined, sizeof(combined), _TRUNCATE, "%s", "");
         const char* s = pubList;
         while (*s && g_serviceFeeCount < MAX_SERVICE_FEES) {
             while (*s == ' ' || *s == ',' || *s == '\t') s++;
@@ -1613,33 +971,11 @@ static void ReadSettings(void)
         }
     }
 
-    if (H->configString(ini, "private_shops", "wholesale_ratio", v, sizeof(v), "") && v[0]) {
-        float f = (float)atof(v);
-        if (f >= 0.0f && f <= 5.0f) g_wholesaleRatio = f;
-    }
-    // C1 FIX: clamp tiny ratios to 0.01 — prevents INF tons via divide-by-zero in WholesaleSlot affordable path
-    if (g_wholesaleRatio < 0.01f) {
-        Logf("private_shops  wholesale_ratio %.3f < 0.01 — clamped to 0.01 (C1 fix)", (double)g_wholesaleRatio);
-        g_wholesaleRatio = 0.01f;
-    }
     // v4: USD divisor for service_fees without an explicit :fee_usd field.
+    // Step 7 (D21) retires this and the *_usd conversion.
     if (H->configString(ini, "private_shops", "usd_divisor", v, sizeof(v), "") && v[0]) {
         float f = (float)atof(v);
         if (f >= 1.0f && f <= 1000.0f && f == f) g_usdDivisor = f;
-    }
-
-    g_foreignEnabled = H->configInt(ini, "private_shops", "foreign_restock_enabled", 0);
-    if (H->configString(ini, "private_shops", "foreign_restock_target", v, sizeof(v), "") && v[0]) {
-        float f = (float)atof(v);
-        if (f > 0.0f && f <= 1.0f) g_foreignTargetRatio = f;
-    }
-    if (H->configString(ini, "private_shops", "restock_reorder_point", v, sizeof(v), "") && v[0]) {
-        float f = (float)atof(v);
-        if (f >= 0.0f && f <= 1.0f) g_restockReorderPoint = f;
-    }
-    if (H->configString(ini, "private_shops", "foreign_restock_markup", v, sizeof(v), "") && v[0]) {
-        float f = (float)atof(v);
-        if (f > 0.0f && f <= 10.0f) g_foreignMarkup = f;
     }
 
     if (g_tickIntervalMs < 50)   g_tickIntervalMs = 50;
@@ -1657,7 +993,7 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host, TsmPlugi
 {
     TsmBind(host);
     info->name    = "private_shops";
-    info->version = "3.6";
+    info->version = "3.8";
 
     ReadSettings();
     if (!g_enabled) {
@@ -1679,15 +1015,8 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
         g_currency = (const TsmCurrencyApi*)H->consume(TSM_SERVICE_CURRENCY, TSM_CURRENCY_VERSION_V3);
     if (!g_currency) { Logf("private_shops  currency is not installed"); return 1; }
 
-    g_pricing = (const TsmResourcePricingApi*)H->consume(TSM_SERVICE_RESOURCE_PRICING, TSM_RESOURCE_PRICING_VERSION);
-    if (!g_pricing)
-        g_pricing = (const TsmResourcePricingApi*)H->consume(TSM_SERVICE_RESOURCE_PRICING, TSM_RESOURCE_PRICING_VERSION_V1);
-    if (!g_pricing) { Logf("private_shops  resource_pricing is not installed"); return 1; }
-
     g_enterprise = (const TsmEnterpriseBaseApi*)H->consume(TSM_SERVICE_ENTERPRISE_BASE, TSM_ENTERPRISE_BASE_VERSION);
     if (!g_enterprise) { Logf("private_shops  enterprise_base is not installed"); return 1; }
-
-    g_b2bLogistics = (const TsmB2bLogisticsApi*)H->consume(TSM_SERVICE_B2B_LOGISTICS, TSM_B2B_LOGISTICS_VERSION);
 
     g_taxes = (const TsmTaxesApi*)H->consume(TSM_SERVICE_TAXES, TSM_TAXES_VERSION);
     // v3.5: retain older taxes providers after the v3 snapshot API bump.
@@ -1707,15 +1036,10 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
 
     g_simClock->registerTick([](void*, float, float) { RunShopTick(); }, nullptr);
 
-    const char* restockSummary = g_restockAll ? "all" : "list";
-    Logf("private_shops  live v3.6: interval %d ms, slot-identity snapshots, "
-         "restock %s (%d type(s)), "
-         "retail %d type(s), %d service fee(s), wholesale %.2f, no state procurement, foreign %s (target %.0f%%, markup %.2f), taxes %s, currency %s",
-         g_tickIntervalMs, restockSummary, g_restockTypeCount,
-         g_retailTypeCount, g_serviceFeeCount,
-         g_wholesaleRatio,
-         g_foreignEnabled ? "on" : "off",
-         g_foreignTargetRatio * 100.0f, g_foreignMarkup,
+    Logf("private_shops  live v3.8: interval %d ms, %d service fee(s), "
+         "retail %d type(s), no delivery bill, no foreign restock, "
+         "no state procurement, taxes %s, currency %s",
+         g_tickIntervalMs, g_serviceFeeCount, g_retailTypeCount,
          g_taxes ? "on" : "off", TsmCurrencySymbol(g_currency));
 
     if (g_retailTypeCount > 0) {

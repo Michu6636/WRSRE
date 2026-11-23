@@ -42,7 +42,7 @@ the owner yet; *hypothesis* = needs verification before use.
 | D13 | **Private construction stays as it is** until the core loop is polished. | Decided (deferred) |
 | D14 | **Wage indexation.** State wages can be indexed to CPI by decree. Private enterprises adjust wages to CPI automatically. | Decided |
 | D15 | **No general education pay.** The premium applies only to **high-education job slots** in buildings that have two job tiers. Details in §6.2. | Decided (owner asked for a sanity check: §6.2 answers it) |
-| D16 | **Live B2B billing by default:** `billing = 1`, `dry_run = 0` in `private_logistics.ini`. | Decided (prerequisites in §4.4) |
+| D16 | **Live B2B billing by default:** `billing = 1`, `dry_run = 0` in `private_logistics.ini`. | Decided; landed in code step 3 (§4.4). In-game check pending |
 | D17 | **Politics later.** Factions, elections and approval go in a separate politics module, after the economy is right. | Decided (deferred) |
 | D18 | **Welfare level is player policy**, enacted as **one Tropico-style decree** with four tiers (None / Low / Medium / High) covering the unemployed, students and pensioners. Kept simple. | Decided (tiers approved; §6.4) |
 | D19 | **The state pays the native price for private goods delivered into state buildings**, and private buyers pay the state the native price for state goods (§4.3). | Decided (follow-up) |
@@ -211,28 +211,29 @@ sales do not cover wages. *Hypothesis: confirm with the `[PROC]` and
 
 ## 4. Private trade, exports and B2B settlement (D4, D5, D6, D16)
 
-### 4.1 What exists today (code)
+### 4.1 What exists today (code, after step 3)
 
 | Flow | Where | Rule today |
 |---|---|---|
-| Private factory output leaves its export storage | `private_shops.cpp` about 694–960 | Treasury pays `tons × native × marketMult × 0.90` (`procurement_price_mult`) as `"procurement"`, **whoever picks the goods up and wherever they go**. |
-| Goods arrive at a private building | `private_shops.cpp` `WholesaleSlot`, about 985–1000 | Company pays `tons × native × 0.70` (`g_wholesaleRatio`) to the treasury, whoever delivered. |
-| Foreign restock | `private_shops.cpp` `RestockSlot`, about 575–655 | **Writes shelf content directly** (`TSM_SLOT_CONTENT`), which teleports goods. Disabled (`foreign_restock = 0`). |
-| Vehicle-provenance B2B | `private_logistics` `0.19.0-simplified-settlement`, `b2b_settlement.h` | The buyer pays the verified loading seller `qty × native × marketMult`. The buyer pays a private DO's observed trip fuel. State legs are `b2b_state_buy` / `b2b_state_sell`. **Dry run:** `billing = 0`, `dry_run = 1`. |
+| Delivery to a private building | `private_logistics` `0.19.1-live-billing`, `b2b_settlement.h` | The unloading buyer pays the verified loading seller `qty × native` (no multiplier, no wholesale factor). One atomic transfer per verified delivery. |
+| Private DO trip fuel | `private_logistics` | The buyer pays the vehicle-owning private DO's observed trip fuel. |
+| Customs-house buyer | `private_logistics` `planSettlement` | A private seller's delivery here is an **export**: `customsExport`, no goods leg, **no `b2b_state_buy`**. The native customs sale still credits the treasury until G1/D5 attributes it. |
+| Delivery billing in `private_shops` | removed | The 0.70 `wholesale_ratio` bill is gone, so a delivery cannot be settled twice. Only `service_fees` move money there. |
+| Foreign restock | removed | No direct `TSM_SLOT_CONTENT` writes and no stock creation. |
+| State purchase / sale | `private_logistics` | `b2b_state_buy` (state buys private goods) and `b2b_state_sell` (private buys state goods) remain, at the native price. |
 
-The two `private_shops` paths and the `private_logistics` settlement overlap.
-If `billing` is switched on while `private_shops` wholesale is still on, the
-same delivery is settled twice. The B2B proposal (§7) already documents this.
+The defaults are live: `billing = 1`, `dry_run = 0`. Set either
+`billing = 0` or `dry_run = 1` to compute and log without paying.
 
 ### 4.2 Target
 
-1. **Delete the dispatch procurement path (D4).** Output leaving a private
-   factory is not a sale. It becomes a sale when it is **delivered**: to a
-   buyer (§4.3) or to a customs house (point 3).
-2. **Delete the `private_shops` delivery billing at 0.70.** It sells state
-   goods below their native price, which is a hidden subsidy, and it
-   duplicates B2B settlement. Delivery settlement belongs to `private_logistics`
-   alone.
+1. **Delete the dispatch procurement path (D4).** *(Done: step 1.)* Output
+   leaving a private factory is not a sale. It becomes a sale when it is
+   **delivered**: to a buyer (§4.3) or to a customs house (point 3).
+2. **Delete the `private_shops` delivery billing at 0.70.** *(Done: step 3.)*
+   It sold state goods below their native price, which is a hidden subsidy,
+   and it duplicated B2B settlement. Delivery settlement belongs to
+   `private_logistics` alone.
 3. **Company exports (D5).** When goods sold at a customs house came from a
    private company, the company receives the **exact native proceeds**. Today
    the native code credits the treasury (`TSM_GO_TREASURY_RUB` `0x588` /
@@ -243,16 +244,18 @@ same delivery is settled twice. The B2B proposal (§7) already documents this.
    Ghidra target **G1** (§9).
    - A delivery into a customs house must **not** also trigger `b2b_state_buy`.
      Otherwise the state pays the company once and the native sale credits
-     the state again.
+     the state again. *(Done before G1 in step 3: the plan now marks
+     `customsExport` and creates no leg. Only the attribution in the first
+     sentence still waits for G1.)*
 4. **Company imports** are symmetric. Goods a private company pulls from
    customs are charged to the company at the exact native import cost
    (including the native distance/shipping fee). Prerequisite: **G1**.
 5. **State exports and imports stay native (D6).** The mod does nothing.
-6. **Delete foreign restock.** It writes inventory directly, which violates
-   the vision's first rule ("never teleport goods").
+6. **Delete foreign restock.** *(Done: step 3.)* It wrote inventory
+   directly, which violates the vision's first rule ("never teleport goods").
 7. B2B goods price = **native price**, with no market multiplier and no
-   wholesale factor. The current 0.19 header already says "no extra
-   wholesale/margin factor". Only the multiplier remains to remove.
+   wholesale factor. *(Done: multiplier in step 1, wholesale factor removed
+   with the step-3 bill.)*
 
 ### 4.3 Domestic sales between private and state (decided: D19)
 
@@ -272,24 +275,30 @@ settlement, is:
 This keeps D1 neutral. A planned-economy player never triggers these legs,
 and a hybrid player sees each one in the ledger.
 
-### 4.4 Live billing by default (D16): prerequisites, in order
+### 4.4 Live billing by default (D16): prerequisites, in order — all done
 
-1. Remove the `private_shops` dispatch procurement and delivery billing
-   (§4.2, points 1–2), so that switching billing on cannot double-settle.
-2. Remove the market multiplier from `private_logistics` `UnitPrice`
-   (`private_logistics.cpp` about 446–457).
-3. Exclude customs houses from `b2b_state_buy` (§4.2, point 3), even before G1
-   lands, so exports are not paid by the state.
-4. Flip the defaults to `billing = 1`, `dry_run = 0` in `private_logistics.ini`
-   and in the `g_billing` / `g_dryRun` initialisers (`private_logistics.cpp`
-   about 56–57).
-5. Update [§12 of the design doc](../WRSRE%20DESIGN%20DOC.md) and
-   [`DO_OFFICES.md`](../private-logistics-runtime/DO_OFFICES.md). The old
-   "payments remain OFF" wording becomes historical.
+1. ~~Remove the `private_shops` dispatch procurement and delivery billing~~
+   *(done: procurement in step 1, 0.70 bill in step 3)*, so that switching
+   billing on cannot double-settle.
+2. ~~Remove the market multiplier from `private_logistics` `UnitPrice`~~
+   *(done: step 1)*.
+3. ~~Exclude customs houses from `b2b_state_buy`~~ *(done: step 3)*, even
+   before G1 lands, so exports are not paid by the state.
+4. ~~Flip the defaults to `billing = 1`, `dry_run = 0`~~ *(done: step 3)* in
+   `private_logistics.ini` and in the `g_billing` / `g_dryRun` initialisers.
+5. ~~Update §12 of the design doc and `DO_OFFICES.md`~~ *(done: step 3)*. The
+   old "payments remain OFF" wording is now historical.
+
+**Status 2026-11-22:** the shipped source is `private_logistics`
+`0.19.1-live-billing` and `private_shops` `3.8`; `private_shops` no longer
+bills deliveries or restocks. Host tests cover the customs exclusion and the
+absence of the removed paths; the Windows CI build and the owner's in-game
+factory → shop / `state_ledger` check are the remaining verification.
 
 Known limits, unchanged: observed-assignment coverage, fuel units and exact
 burn are still unproven at native level. Unpriced or uncertain events stay
-**refused and visible** rather than guessed (D8).
+**refused and visible** rather than guessed (D8). Company export revenue and
+import cost still wait for G1 (D5).
 
 ### 4.5 No money from nothing (D20, D24, D25, D26)
 
@@ -1068,6 +1077,16 @@ of dividing one number. The 0.70 `wholesale_ratio`, foreign restock and
 `private_logistics` billing defaults remain open for step 3. See the
 [task record](../tasks/active/2026-11-22-remove-fallbacks-and-made-up-data.md).
 
+**Status, 2026-11-22 (step 3).** Items 3 (the rest after procurement) and 4
+(the pre-G1 half) are implemented on `arena/5a89acc8-wrsre`:
+`private_shops` 3.8 has no 0.70 `wholesale_ratio` bill, no foreign restock and
+no direct slot writes; `private_logistics` 0.19.1 creates no `b2b_state_buy`
+leg when the buyer is a customs house, and ships `billing = 1`, `dry_run = 0`.
+Host tests pass. The Windows CI build, the owner's factory → shop check and
+the `state_ledger` reconciliation (I5) are still to do; company export
+revenue/import cost remains after G1. See the
+[task record](../tasks/active/2026-11-22-live-b2b-billing.md).
+
 **Order of work:** the items below are grouped into ordered steps in
 [`ROADMAP.md`](../ROADMAP.md) §3. Use the roadmap for "what next" and this
 list for the detail of each item.
@@ -1079,11 +1098,12 @@ list for the detail of each item.
    `enterprise_base.cpp` 1985 and 2504, `private_logistics.cpp` 455,
    `private_shops.cpp` 948. Switch them to the plain native price. *(Done.)*
 3. **private_shops:** delete the dispatch procurement (`"procurement"`,
-   `procurement_price_mult`, `procure_fallback`) *(done: v3.6)*, the 0.70 delivery billing
-   (`wholesale_ratio`) and foreign restock. Keep pub service charges.
-4. **private_logistics:** exclude customs from `b2b_state_buy`. Defaults
-   `billing = 1`, `dry_run = 0`. After G1: company export revenue and company
-   import cost.
+   `procurement_price_mult`, `procure_fallback`) *(done: v3.6)*, the 0.70
+   delivery billing (`wholesale_ratio`) and foreign restock *(done: v3.8)*.
+   Pub service charges remain.
+4. **private_logistics:** exclude customs from `b2b_state_buy` *(done before
+   G1)*. Defaults `billing = 1`, `dry_run = 0` *(done)*. After G1: company
+   export revenue and company import cost.
 5. **enterprise_base:** private shop price = landed cost × (1 + category
    margin) × (1 + VAT), with bounded monthly adaptation through
    `SetMarkupImpl`. Remove the single `default_markup`. Privatisation pays

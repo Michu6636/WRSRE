@@ -1,24 +1,24 @@
 # How distribution offices work in WRSRE
 
-> **2026-11-22 owner decision:** B2B billing must be **live by default** (`billing = 1`, `dry_run = 0`).
+> **2026-11-22 owner decision D16:** B2B billing is **live by default** (`billing = 1`, `dry_run = 0`). The flip landed in economy-direction **step 3**.
 >
-> **Current source:** `private_logistics` **`0.19.0-simplified-settlement`**. With both switches set that way, the plugin settles for real (`cb.dryRun = g_dryRun != 0 || g_billing == 0`):
-> - The unloading buyer pays the verified loading seller.
+> **Current source:** `private_logistics` **`0.19.1-live-billing`**. With the shipped defaults the plugin settles for real (`cb.dryRun = g_dryRun != 0 || g_billing == 0`):
+> - The unloading buyer pays the verified loading seller at the native price.
 > - The unloading buyer pays the vehicle-owning private DO's observed trip fuel.
+> - A customs house is an **export buyer**. It creates no `b2b_state_buy` leg and the treasury pays nothing; company export revenue waits for Ghidra G1 (D5).
 >
-> Before the defaults flip, see [economy direction §4.4](../visions/economy-direction-2026-11-22.md):
-> - Remove the `private_shops` procurement and delivery billing, so the same delivery is not settled twice.
-> - Remove the market multiplier.
-> - Exclude customs houses from `b2b_state_buy`.
+> The same step removed the `private_shops` 0.70 delivery bill and its foreign restocking, so one delivery cannot be settled twice. The market multiplier was removed in step 1. See [economy direction §4.4](../visions/economy-direction-2026-11-22.md).
 >
 > The 0.18.x text below, including "billing OFF" and "`billing=1` would opt into legacy behavior", is a historical record of the dry-ledger period.
 
-**Current working source:** `private_logistics` **0.18.19-road-targets** (bounded road target policy; host-tested, not yet Windows-built/deployed in this review). Last observed native version: **0.18.18-census-guard**, merged in [PR #43](https://github.com/Michu6636/WRSRE/pull/43) at `2d83fdc41d99f0a98ab00ea2ae2292dc6e78ba2f`, following **0.18.17-dry-ledger** from [PR #42](https://github.com/Michu6636/WRSRE/pull/42). The user reports a successful Windows build; Test15 now logs this version running natively across 30 daily summaries. It exposes the existing five-total-target automatic-connection restriction and unresolved secondary-goods dispatch symptoms; it is not a clean overall dispatch acceptance, a >64-slot stress test or a source/binary hash-parity check.
+**Historical source snapshot for the evidence sections below:** `private_logistics` **0.18.19-road-targets** (bounded road target policy; host-tested, not yet Windows-built/deployed in this review). Last observed native version: **0.18.18-census-guard**, merged in [PR #43](https://github.com/Michu6636/WRSRE/pull/43) at `2d83fdc41d99f0a98ab00ea2ae2292dc6e78ba2f`, following **0.18.17-dry-ledger** from [PR #42](https://github.com/Michu6636/WRSRE/pull/42). The user reports a successful Windows build; Test15 now logs this version running natively across 30 daily summaries. It exposes the existing five-total-target automatic-connection restriction and unresolved secondary-goods dispatch symptoms; it is not a clean overall dispatch acceptance, a >64-slot stress test or a source/binary hash-parity check.
 **Documentation review:** updated 2026-11-04 with the bounded target-policy implementation. All 147 private-logistics host tests pass (including extracted production reconciliation/preflight, optimized and ASan+UBSan); this is not a Windows build or native gameplay result. See `docs/tasks/active/TEST16_ROAD_TARGETS.md` for the exact policy and pending acceptance. Source behaviour and native observations remain distinguished; a logged version is not byte-for-byte compiler/source parity.
 
 ## 1. The short version
 
-A private distribution office (DO) uses the game's trucks, roads, storage rules and planner. The mod helps maintain its permitted connections, observes private road vehicles, and keeps a saveable notebook of approximate assignment fuel costs. **It does not currently turn that notebook into real bills or payments.**
+A private distribution office (DO) uses the game's trucks, roads, storage rules and planner. The mod helps maintain its permitted connections, observes private road vehicles, and keeps a saveable notebook of approximate assignment fuel costs.
+
+**Step 3 changed the money half.** Deliveries are now billed live by default: the unloading buyer pays the verified loading seller, and the buyer pays the private DO's observed trip fuel. That settlement is the `[B2B GOODS]` / `[DO TRIP]` path in `private_logistics`. The saved notebook described below is still a separate **observation ledger**: its record is an estimate, not a second invoice, and it does not add another charge on top of settlement.
 
 There are three separate layers:
 
@@ -62,7 +62,7 @@ At observed closure, the dry ledger freezes:
 
 The native-quantity-as-tonnes assumption is provisional. With the example's `0.20` provisional quantity and an illustrative quote of `200` per tonne, the estimate is `40` currency units. That example is not measured physical consumption or a bill. The shared price cache refreshes approximately every **30 real-world seconds**, checked on eligible observation passes; closure uses the then-cached quote, not a fresh historical reconstruction of each fuel purchase. Later price changes never reprice a closed record. No usable quote or no compared samples means unavailable cost, distinct from a valid compared zero decrease producing an available zero amount.
 
-This new estimate is fuel-only: it does not add a new profit margin, wage, depreciation reserve, vehicle purchase charge or upkeep fee. Older `litres_per_trip`, wear/margin, CPI-fallback and producer-payment settings describe separate legacy transfer-fragment models, not this ledger's formula. `billing=1` would opt into legacy behavior, **not finish or enable this new ledger's settlement**; the new observer/ledger requires billing OFF.
+This new estimate is fuel-only: it does not add a new profit margin, wage, depreciation reserve, vehicle purchase charge or upkeep fee. Older `litres_per_trip`, wear/margin, CPI-fallback and producer-payment settings describe separate legacy transfer-fragment models, not this ledger's formula. The ledger remains observation-only even now that `billing=1` is the default. The live payment is made once, by the separate `[B2B GOODS]` / `[DO TRIP]` settlement path, using the observed fuel decrease at closure; the ledger record does not settle it a second time.
 
 ## 6. Original target, cancellation and who would pay
 
@@ -70,7 +70,7 @@ On opening/adopting a candidate with exactly one original unloading target, the 
 
 The approved allocation rule is: **the original target remains responsible when its observed assignment is cancelled, removed or replaced**, not automatically refunded or charged to the replacement. The dry record retains that original snapshot even if the building disappears before closure. Travel after observed closure, return-to-office activity outside an assignment, and other unassigned decreases are not allocated to that target. They are outside-assignment overhead; this ledger does not create a separate payable overhead account.
 
-A stable saved snapshot is not verified company/wallet ownership and cannot distinguish a rebuilt identical asset at the same position. An estimated cost can exist with an unresolved target, but `would_owe_available` is false without a valid snapshot. Even when true, it means only a dry estimate associated with that snapshot. Logs retain `payer_verified=0`, `actual_debt=not_created`, `settlement=none`, `billing=off`. **No customer debit, carrier credit, unpaid-debt settlement or new money is created.** Verified economic parties and duplicate-proof settlement remain future work.
+A stable saved snapshot is not verified company/wallet ownership and cannot distinguish a rebuilt identical asset at the same position. An estimated cost can exist with an unresolved target, but `would_owe_available` is false without a valid snapshot. Even when true, it means only an estimate associated with that snapshot. The ledger record itself makes no transfer: logs retain `payer_verified=0`, `actual_debt=not_created` and `settlement=none`. **The ledger creates no customer debit, carrier credit, unpaid-debt settlement or new money.** Since step 3 there is a separate live settlement path with its own verified parties; this paragraph describes the ledger, not that path.
 
 ## 7. Saving and loading
 
@@ -102,7 +102,7 @@ Fuel/task observation would remain independent and frequent enough for its cover
 
 ## 9. Current settings and what the player can see
 
-The checked-in INI has `enabled=1`, **`billing=0`**, `dry_run=1`, `auto_targets_enabled=1`, **`auto_targets_dry_run=0`**, `auto_source_percent=10`, `auto_destination_percent=30`, `panel_fuel_observer=1` and `schedule_observer=1`. These are source defaults, not a claim about the installed INI. Target dry-run and payment dry-run are different switches: target writes are currently allowed, but payments are OFF. Setting `auto_targets_dry_run=1` would make target reconciliation report-only; that is not required to keep the cost ledger non-paying. Legacy per-leg payment settings do not override `billing=0`.
+The checked-in INI has `enabled=1`, **`billing=1`**, **`dry_run=0`**, `auto_targets_enabled=1`, **`auto_targets_dry_run=0`**, `auto_source_percent=10`, `auto_destination_percent=30`, `panel_fuel_observer=1` and `schedule_observer=1`. These are source defaults, not a claim about the installed INI. Target dry-run and payment dry-run are different switches: target writes and settlement are both allowed by the shipped profile. Set `billing=0` **or** `dry_run=1` to compute and log without paying. Setting `auto_targets_dry_run=1` makes target reconciliation report-only; it does not by itself stop payments.
 
 Fleet observation requires the existing diagnostic switches, matching executable fingerprints, tick/load services and enterprise discovery. The durable ledger additionally requires a working persistence API/handler. It fails unavailable rather than creating unverified hooks or guessing data. The diagnostic panel observer can coexist, but selected-panel assignment events do **not** feed the durable fleet ledger; there is no double billing through both observers. Reporting is currently logs and saved records, not a new invoice-management UI: `[AUTO DO]` describes target policy, `[FLEET FUEL]`/`[FLEET ASSIGNMENT]` describe observations, and `[DRY COST]` describes saved-accounting estimates/status. A new cost record is not a `[PAY]` transaction.
 
@@ -124,7 +124,7 @@ Next steps, each within its own approval scope:
 2. Preserve the successful cancellation/original-target result and Test14 named save/nonempty reload. Do not require repeated simple saves, demolition or broad baseline/pause research just to reconstruct a cancelled record absent from the earlier save.
 3. Further validation can compare exact restored closed-row fields and interrupted-copy contents; Test15 already observes the four-record/interrupted classification and no-rebind flag, so a basic repeat is not required. Stale-world isolation remains a separate case. These field-level loading checks can wait; the current priority is the target/secondary-goods dispatch problem.
 4. Measure large-save observation/daily-pass spikes and save/load overhead. Improve coverage/retention if necessary; do not call the current bounds an unlimited production system.
-5. Before real settlement, verify original-customer and carrier financial identities, prevent duplicate debits/credits across saves, and implement explicitly auditable insufficient-funds/unpaid-debt handling. No automatic charge, refund, write-off or replacement-payer substitution is authorized by a dry record. Improving exact fuel accounting can be incremental; the user has accepted the initial approximation.
+5. ~~Before real settlement, verify original-customer and carrier financial identities...~~ **Step 3 landed the settlement path.** It uses the verified loading seller and cargo lot, one atomic transfer per delivery, and the buyer-overdraft rule already covered by host tests. The owner's in-game factory → shop check and a `state_ledger` reconciliation are still pending. Company export revenue/import cost (D5) still needs Ghidra G1. Improving exact fuel accounting can be incremental; the user has accepted the initial approximation.
 
 ## 11. Implementation and evidence map
 
