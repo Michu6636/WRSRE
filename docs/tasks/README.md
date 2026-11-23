@@ -20,7 +20,7 @@ review rounds, separate validation statuses and resume checkpoint.
 
 ## Active index
 
-Reconciled 2026-11-22. `private_logistics` is now at `0.19.0-simplified-settlement`
+Reconciled 2026-11-23. `private_logistics` is now at `0.19.1-live-billing`
 and `ui_panels` well past v6.11, so every older packet below predates the current
 source. None of them is the current goal except the 2026-11-22 records.
 The ordered plan of future tasks is in [`../ROADMAP.md`](../ROADMAP.md).
@@ -28,8 +28,9 @@ The ordered plan of future tasks is in [`../ROADMAP.md`](../ROADMAP.md).
 - [active/2026-11-22-live-b2b-billing.md](active/2026-11-22-live-b2b-billing.md) —
   **CURRENT.** Roadmap step 3 / D16: live billing by default, no `private_shops`
   delivery bill or foreign restock, customs buyers excluded from
-  `b2b_state_buy`. Host tests and the Windows CI build pass; the owner's in-game check
-  is pending.
+  `b2b_state_buy`. Host tests, the Windows CI build and owner review pass; the
+  owner's in-game check is pending. Known limits: the customs import spread
+  waits for G1, and non-vehicle transfer coverage is unverified.
 - [active/2026-11-22-remove-fallbacks-and-made-up-data.md](active/2026-11-22-remove-fallbacks-and-made-up-data.md) —
   **COMPLETE, merged in PR #101.** Roadmap step 2 / D32–D35: no fallback
   prices, no default CPI basket, `UNPRICED`/`UNAVAILABLE` made visible,

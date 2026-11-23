@@ -2,9 +2,10 @@
 
 ## Contract
 
-- **Status:** active — implementation, host tests and the Windows CI build
-  complete; the owner's in-game check and the `state_ledger` reconciliation
-  are outstanding.
+- **Status:** active — implementation, host tests, the Windows CI build and
+  owner review complete; the owner's in-game check and the `state_ledger`
+  reconciliation are outstanding. The review's step-0 wording fix and two
+  known-limit notes are applied.
 - **Task record:** `docs/tasks/active/2026-11-22-live-b2b-billing.md`
 - **Baseline:** branch `arena/5a89acc8-wrsre`, from `main` at `823df769`
   (PR #101 merged). Working tree contains only this task's changes.
@@ -63,6 +64,7 @@
   - `docs/WRSRE DESIGN DOC.md`,
     `docs/private-logistics-runtime/DO_OFFICES.md`,
     `docs/ROADMAP.md`, `docs/visions/economy-direction-2026-11-22.md`,
+    `docs/visions/vision-private-logistics.md`,
     `docs/SUPERSEDED.md`, `docs/tasks/README.md`, this record
 - **Starting evidence:** PR #100/#101, the economy direction §4, and the
   step-2 reconciliation of `private_shops` wholesale/restock source.
@@ -85,7 +87,7 @@
 |---|---|---|---|---|
 | INVESTIGATION | `main` @ `823df769` | complete | complete | S1–S7 |
 | PLAN | this record | complete | complete | none |
-| IMPLEMENTATION | branch diff | pending owner review | pending owner review | Windows CI + in-game check |
+| IMPLEMENTATION | branch diff | complete (owner review 2026-11-23) | complete (review notes applied) | Windows CI + in-game check |
 
 ## Finding Ledger
 
@@ -98,6 +100,13 @@
 | S5 | medium | Docs contradicted the shipped defaults. | fixed | Design doc §12 Rev 6, `DO_OFFICES.md` §1/§5/§6/§9/§10, roadmap and economy direction updated. | `test_documentation.py` sweep | — |
 | S6 | medium | Removed behaviour was still asserted by tests. | fixed | Old tests replaced by a removal contract; B2B test extended. | full host sweep | — |
 | S7 | low | Dead utility filter remained. | fixed | Header and its test deleted with the restock path. | full host sweep | — |
+
+## Known limits (documented; no code change)
+
+| ID | Limit | Why it remains | Resolution |
+|---|---|---|---|
+| L1 | A private buyer of **imported** goods pays `b2b_state_sell` at the native price in the active currency. A customs house as the source is `ORIGIN_STATE`; the treasury's native customs **buy** price is usually higher and may be in the other currency, so the state carries the spread. | The code cannot observe the treasury's native customs purchase without G1. Charging the native price already approximates D5's "companies pay their own import cost" and avoids a second, invented price. | G1/D5: attribute the exact customs purchase cost to the importing company and stop charging the native-price state sale. Recorded in economy direction §4.4 and §9.1 (G1 row), and design doc §12.3. |
+| L2 | Only **vehicle** transfers are settled (`ShouldTrackMode1Cargo` requires `p2 != nullptr`). Goods moved by conveyor, pipeline or another non-vehicle link are probably not billed. | The engine routing for non-vehicle transfers has not been verified. Before step 3 the removed `private_shops` snapshot billed any stock increase in a private shop, so this is a possible coverage regression, not a double bill. | Runtime check pending. If confirmed, add an open item to the Ghidra queue (economy direction §9.1) for non-vehicle transfer provenance. Recorded in design doc §12.3 and `DO_OFFICES.md` §1. |
 
 ## Native claim evidence
 
@@ -122,21 +131,29 @@ existing private-logistics evidence. The only new branch is a policy decision
 | Round / gate | Diff/artifact hash | Focus 1 report | Focus 2 report | Repairs / new evidence |
 |---|---|---|---|---|
 | Implementation | branch diff | not requested yet | not requested yet | S1–S7 fixed |
+| Owner review (PR #102, 2026-11-23) | `0b50787` | Verified the removed bill/restock, customs exclusion and live defaults | Roadmap step-0 wording still implied an in-game step-1 check; two limits missing | Step-0 wording now says the step-1/step-2 in-game checks are pending; L1/L2 documented in this record, economy direction, design doc §12.3 and `DO_OFFICES.md` |
 
 ## Separate validation statuses
 
-- **STATIC REVIEW:** pending owner/reviewer — no independent review requested.
+- **STATIC REVIEW:** PASS — owner review of `0b50787` (PR #102 comment
+  `7091339329`) verified the removed bill/restock, customs exclusion and
+  live defaults. The requested roadmap wording fix and two known-limit notes
+  are applied; no code change was requested.
 - **BUILD/TEST EVIDENCE:** PASS — all 39 host test files and the Windows
-  MSVC/SEH build pass (CI run `45108139506`).
+  MSVC/SEH build pass (CI run `45108139506`; the documentation-only review
+  fix is rechecked by the follow-up CI run).
 - **RUNTIME VALIDATION:** NOT RUN — no live game or deployment in this
   environment.
 
 ## Blocker / resume checkpoint
 
-- **Current gate and next action:** report to the owner for the in-game
-  factory → shop and `state_ledger` check.
+- **Current gate and next action:** the review fixes are complete and CI is
+  being rechecked; merge PR #102 when the owner instructs. In-game
+  factory → shop, `state_ledger` and non-vehicle coverage checks remain with
+  the owner.
 - **Owned files / resource lock:** this branch; no Ghidra owner needed.
-- **Unresolved finding IDs:** none.
+- **Unresolved finding IDs:** none (S1–S7 fixed). L1 waits for G1; L2 is a
+  documented runtime check, not an open defect claim.
 - **Missing artifact/capability/authorization:** Windows build/game run.
 - **Strategy change tried:** none.
 
@@ -145,9 +162,13 @@ existing private-logistics evidence. The only new branch is a policy decision
 - **Changed files:** see the branch diff; the owned paths above.
 - **Acceptance results:** one-delivery/one-bill and customs exclusion are
   proven by host tests; the two live checks are pending.
-- **Ledger reconciliation:** S1–S7 all fixed, no open finding.
+- **Ledger reconciliation:** S1–S7 all fixed, no open finding. L1 is a
+  documented limit resolved by G1; L2 is a documented runtime check.
 - **Checks actually run:** the three targeted suites, the full 39-file host
   sweep and Windows CI run `45108139506`.
-- **Independent coverage:** none yet; owner review requested through the PR.
+- **Independent coverage:** PASS — owner review of `0b50787` (PR #102
+  comment `7091339329`); requested documentation changes applied.
 - **Remaining unknowns:** native in-game settlement and `state_ledger`
-  divergence; exact fuel burn and assignment coverage remain as documented.
+  divergence; the customs import spread (L1, G1); whether non-vehicle
+  transfers are billed (L2, unverified); exact fuel burn and assignment
+  coverage remain as documented.

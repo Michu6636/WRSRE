@@ -6,6 +6,8 @@
 > - The unloading buyer pays the verified loading seller at the native price.
 > - The unloading buyer pays the vehicle-owning private DO's observed trip fuel.
 > - A customs house is an **export buyer**. It creates no `b2b_state_buy` leg and the treasury pays nothing; company export revenue waits for Ghidra G1 (D5).
+> - **Imports:** a customs house as the **source** is `ORIGIN_STATE`, so a private buyer pays `b2b_state_sell` at the native price in the active currency. The treasury paid the higher native customs buy price, so the state carries the spread until G1/D5.
+> - **Vehicle transfers only (unverified):** settlement hooks require a vehicle. Goods moved by conveyor, pipeline or another non-vehicle link are probably not billed; that routing has not been checked. The removed `private_shops` snapshot used to bill any shop stock increase, so this is a possible coverage regression.
 >
 > The same step removed the `private_shops` 0.70 delivery bill and its foreign restocking, so one delivery cannot be settled twice. The market multiplier was removed in step 1. See [economy direction §4.4](../visions/economy-direction-2026-11-22.md).
 >

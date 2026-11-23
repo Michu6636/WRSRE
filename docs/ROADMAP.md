@@ -12,7 +12,7 @@ file in the same pull request (see "How to run a step").
 | Item | State |
 |---|---|
 | Owner decisions | Complete for the economy: D1–D34 in [economy direction](visions/economy-direction-2026-11-22.md) §1. No owner questions are open there. |
-| **Code step 1**: native prices only, no state procurement | Done in [PR #100](https://github.com/Michu6636/WRSRE/pull/100). Host tests and the CI Windows build pass. The owner ran the build (save "Test 02"), but **no step-1 acceptance result is recorded yet**. [Task record](tasks/active/2026-11-22-remove-market-multiplier-and-procurement.md). |
+| **Code step 1**: native prices only, no state procurement | Done in [PR #100](https://github.com/Michu6636/WRSRE/pull/100). Host tests and the CI Windows build pass. The owner ran the build (save "Test 02"), but **the in-game step-1 check has not been run yet**. [Task record](tasks/active/2026-11-22-remove-market-multiplier-and-procurement.md). |
 | **Bug fix**: private DOs served buildings under construction | Done in PR #100. Host tests and CI pass. **Not yet checked in game.** [Task record](tasks/active/2026-11-22-private-do-under-construction.md). |
 | **Code step 2**: no fallbacks or made-up data | Merged in [PR #101](https://github.com/Michu6636/WRSRE/pull/101) (`823df769`). Host tests and the Windows CI build passed. The owner's in-game check is still pending. [Task record](tasks/active/2026-11-22-remove-fallbacks-and-made-up-data.md). |
 | **Code step 3**: live B2B billing | Implemented on `arena/5a89acc8-wrsre` from `main` at `823df769`: `private_shops` 3.8 has no delivery bill or foreign restock, customs buyers create no `b2b_state_buy` leg, and `private_logistics` 0.19.1 ships `billing = 1`, `dry_run = 0`. Host tests and the Windows CI build pass; the owner's in-game check is pending. [Task record](tasks/active/2026-11-22-live-b2b-billing.md). |
@@ -48,10 +48,14 @@ This is the recommended order. The owner may reorder it. Item numbers
 
 - PR #100 merged by the owner's instruction on 2026-11-22 (step 1, the bug
   fix and the docs). Work continues in a new session from `main`.
-- **In-game check of step 1:** no `procured` / `[PROC]` log lines. Every
-  "charged … for state delivery" line followed a real input unload into that
-  building, never growth of its own output. Those 0.70 lines existed until
-  step 3 removed them.
+- **Step 1 in-game check (pending; not run yet):** no `procured` / `[PROC]`
+  log lines. Every remaining "charged … for state delivery" line must follow
+  a real input unload into that building, never growth of its own output.
+- **The old 0.70 check is replaced by step 3.** Step 3 removed the
+  `private_shops` 0.70 delivery lines, so the step-1 check cannot look for
+  them. The step-3 check covers that ground instead: one `[B2B GOODS]`
+  payment per factory → shop delivery and no `private_shops` delivery
+  charge.
 - **In-game check of the bug fix** on a save with a private site under
   construction. Expected log lines:
   - `[AUTO DO] day N under construction: K storage/consumer site(s) excluded`;
@@ -152,6 +156,11 @@ price (D16, D19). Prerequisites and their order are in the economy direction
 - **Acceptance:** one delivery equals one bill (no double settlement). The
   `state_ledger` reconciliation shows zero unexplained delta (I5). The owner
   checks factory → shop deliveries in game.
+- **Known limits (documented, no extra settlement):** a customs house as the
+  import **source** is charged as a native-price state sale, so the state
+  carries the customs spread until G1/D5. Settlement hooks need a vehicle, so
+  conveyor/pipeline transfers are probably unbilled — unverified. See
+  [economy direction §4.4](visions/economy-direction-2026-11-22.md#44-live-billing-by-default-d16-prerequisites-in-order--all-done).
 
 ### Step 4: privatisation money, welfare decree, housing trigger
 

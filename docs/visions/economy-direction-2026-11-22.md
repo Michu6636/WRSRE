@@ -292,13 +292,30 @@ and a hybrid player sees each one in the ledger.
 **Status 2026-11-22:** the shipped source is `private_logistics`
 `0.19.1-live-billing` and `private_shops` `3.8`; `private_shops` no longer
 bills deliveries or restocks. Host tests cover the customs exclusion and the
-absence of the removed paths; the Windows CI build and the owner's in-game
-factory → shop / `state_ledger` check are the remaining verification.
+absence of the removed paths; the Windows CI build passes. The owner's
+in-game factory → shop / `state_ledger` check and the non-vehicle coverage
+check below are still pending.
 
-Known limits, unchanged: observed-assignment coverage, fuel units and exact
-burn are still unproven at native level. Unpriced or uncertain events stay
-**refused and visible** rather than guessed (D8). Company export revenue and
-import cost still wait for G1 (D5).
+Known limits:
+
+- **Imports through customs are settled as state sales until G1.** A customs
+  house as the *source* of a load is `ORIGIN_STATE`, so a private buyer pays
+  `b2b_state_sell` at the **native price in the active currency**. That
+  roughly matches D5's "companies pay their own import cost", but the
+  treasury natively paid the customs **buy** price, which is usually higher
+  and may be in the other currency. The state therefore carries the spread
+  until G1 attributes the exact import cost. This is a known limit, not a
+  second bill.
+- **Only vehicle transfers are settled (unverified).** The settlement hooks
+  require a vehicle (`ShouldTrackMode1Cargo`), so goods moved by conveyor,
+  pipeline or another non-vehicle link are probably **not billed**. The
+  engine routing has not been checked. The removed `private_shops` snapshot
+  used to bill any stock increase in a private shop, so this is a possible
+  coverage regression as well as a documentation gap.
+- Observed-assignment coverage, fuel units and exact burn are still unproven
+  at native level. Unpriced or uncertain events stay **refused and visible**
+  rather than guessed (D8). Company export revenue and import cost still wait
+  for G1 (D5).
 
 ### 4.5 No money from nothing (D20, D24, D25, D26)
 
@@ -1019,7 +1036,7 @@ Owner question: "Do we need Ghidra to find loyalty, health and productivity?"
 
 | ID | Target | Needed for | Priority |
 |---|---|---|---|
-| G1 | Customs sale/purchase event: the site where the native code credits or debits treasury `0x588`/`0x580` for a delivered/received load, the amount, and the vehicle/cargo provenance available there | D5 company exports and company imports | **High** |
+| G1 | Customs sale/purchase event: the site where the native code credits or debits treasury `0x588`/`0x580` for a delivered/received load, the amount, and the vehicle/cargo provenance available there. Also needed to replace the current native-price `b2b_state_sell` import charge with the treasury's actual purchase cost, so the state no longer carries the customs spread. | D5 company exports and company imports | **High** |
 | G4 | Building `$WORKERS_NEEDED` / `$PROFESORS_NEEDED` counts (`0xDEC` is the basic max) and which slot each worker in `0xBC0` occupies; the person education field | D15 two-tier pay | High |
 | G5 | Native price of the `"workers"` pseudo-resource (H1). May need only a runtime log, not Ghidra | §6.1 wage anchor | High (cheap) |
 | G2 | Person health, loyalty and productivity fields | Almanac readouts, housing choice, politics module | Medium |

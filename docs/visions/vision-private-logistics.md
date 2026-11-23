@@ -1,22 +1,22 @@
 # Vision: `private_logistics`
 
-**Current-status review:** 2026-11-01, source **0.18.17-dry-ledger** (PR #42 merged).
-**Role now:** bounded private-DO target assistance, road-fleet observation and persistent approximate dry costs; **payments OFF**.
+**Current-status review:** 2026-11-23, source **0.19.1-live-billing** (roadmap step 3).
+**Role now:** bounded private-DO target assistance, road-fleet observation and persistent approximate costs; **B2B payments live by default** (`billing = 1`, `dry_run = 0`).
 
 > **2026-11-22 owner decisions ([economy direction](economy-direction-2026-11-22.md), §4) override this file:**
-> - B2B billing is to be **live by default** (`billing = 1`, `dry_run = 0`), after the double-settlement prerequisites in §4.4 there.
+> - B2B billing is **live by default** (`billing = 1`, `dry_run = 0`); the double-settlement prerequisites in §4.4 are done.
 > - Goods are priced at the **native price**, with no market multiplier and no factory share.
 > - The "90 % factory share" producer settlement is **withdrawn**: producers are paid by the buyer on delivery.
 > - Companies receive their own customs export proceeds, and customs deliveries must not trigger `b2b_state_buy`.
-> - Source is now `0.19.0-simplified-settlement`.
+> - Source is now `0.19.1-live-billing`.
 
 ## Current contract: read this before the historical vision
 
-The [main design document, section 12](../WRSRE%20DESIGN%20DOC.md) and [current DO implementation guide](../private-logistics-runtime/DO_OFFICES.md) describe what is implemented, how it works, evidence limits and next steps. The game still owns all physical logistics. State storage/factories now have independent default-OFF loading/delivery permissions; consumers are delivery-only. Private eligible sites follow their role; managed targets reconnect daily and use source10/destination30 policy. Target application is ON in source (`auto_targets_dry_run=0`) while billing remains OFF (`billing=0`).
+The [main design document, section 12](../WRSRE%20DESIGN%20DOC.md) and [current DO implementation guide](../private-logistics-runtime/DO_OFFICES.md) describe what is implemented, how it works, evidence limits and next steps. The game still owns all physical logistics. State storage/factories now have independent default-OFF loading/delivery permissions; consumers are delivery-only. Private eligible sites follow their role; managed targets reconnect daily and use source10/destination30 policy. Target application is ON in source (`auto_targets_dry_run=0`) and billing is live (`billing=1`, `dry_run=0`).
 
 Approximate positive-decrease costs freeze the cached quote at observed closure and retain the original unloading-target snapshot on cancellation/replacement. Outside-assignment overhead is not allocated. Closed records persist; active saved records reload interrupted/unpriced rather than being guessed onto current vehicles. Target snapshots are not verified financial payer IDs; no new debts, deductions or carrier payments exist. The legacy tariff/factory-payment settings are not the new ledger's settlement implementation.
 
-Observation is throttled to approximately one real-world second through existing ticks; price caching currently uses 30 real-world seconds. Large-save performance is unmeasured. Weekly game-clock price/cache updates are a **future idea only**, not implemented or authorized here. Host checks passed; the new Windows DLL build, native ledger reload and actual settlement remain outstanding. Earlier dispatch save/reload and Test12 named saving are not invalidated or required to be repeated. [The cumulative report](../private-logistics-runtime/VEHICLE_PANEL_FUEL_INVESTIGATION.md) retains complete evidence.
+Observation is throttled to approximately one real-world second through existing ticks; price caching currently uses 30 real-world seconds. Large-save performance is unmeasured. Weekly game-clock price/cache updates are a **future idea only**, not implemented or authorized here. Host checks and the Windows DLL build pass; the owner's in-game settlement / `state_ledger` check and exact native coverage remain outstanding. Earlier dispatch save/reload and Test12 named saving are not invalidated or required to be repeated. [The cumulative report](../private-logistics-runtime/VEHICLE_PANEL_FUEL_INVESTIGATION.md) retains complete evidence.
 
 ## Historical vision — 2026-10-22 (not current behavior or defaults)
 
