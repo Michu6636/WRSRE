@@ -28,8 +28,9 @@ The ordered plan of future tasks is in [`../ROADMAP.md`](../ROADMAP.md).
 - [active/2026-11-22-live-b2b-billing.md](active/2026-11-22-live-b2b-billing.md) —
   **CURRENT.** Roadmap step 3 / D16: live billing by default, no `private_shops`
   delivery bill or foreign restock, customs buyers excluded from
-  `b2b_state_buy`. Host tests, the Windows CI build and owner review pass; the
-  owner's in-game check is pending. Known limits: the customs import spread
+  `b2b_state_buy`. Merged in PR #102 (`73a9d1d`). First in-game run
+  2026-11-23 passed for what it exercised; the month-close `state_ledger`
+  check is pending, and fix-ups are roadmap step 3b (D40). Known limits: the customs import spread
   waits for G1, and non-vehicle transfer coverage is unverified.
 - [active/2026-11-22-remove-fallbacks-and-made-up-data.md](active/2026-11-22-remove-fallbacks-and-made-up-data.md) —
   **COMPLETE, merged in PR #101.** Roadmap step 2 / D32–D35: no fallback
