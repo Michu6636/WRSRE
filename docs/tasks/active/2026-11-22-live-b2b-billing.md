@@ -125,6 +125,7 @@ existing private-logistics evidence. The only new branch is a policy decision
 | Full host sweep | `python3` driver over every `tests/**/test_*.py` with `PYTHONPATH=.` (repo root) | 0 | 39 files, 0 failures | Host tests only |
 | Almanac host runner | `python3 tests/almanac_overlay_dev/run_host_tests.py` (repo root) | 0 | `build/almanac_overlay_dev/normal/summary.json` | Host tests only |
 | Windows CI | GitHub Actions run `45108139506` (`3d67406`) | 0 | 3/3 jobs: docs, MSVC+SEH build, host tests | Build only; no game run |
+| Review docs recheck | GitHub Actions run `45110774175` (`031b17d`) | 0 | 3/3 jobs: docs, MSVC+SEH build, host tests; local 39-file sweep and Almanac runner also pass | Documentation-only change; no code or native run |
 
 ## Review rounds
 
@@ -140,8 +141,8 @@ existing private-logistics evidence. The only new branch is a policy decision
   live defaults. The requested roadmap wording fix and two known-limit notes
   are applied; no code change was requested.
 - **BUILD/TEST EVIDENCE:** PASS — all 39 host test files and the Windows
-  MSVC/SEH build pass (CI run `45108139506`; the documentation-only review
-  fix is rechecked by the follow-up CI run).
+  MSVC/SEH build pass (CI runs `45108139506` and `45110774175`; the latter
+  covers the documentation-only review fix).
 - **RUNTIME VALIDATION:** NOT RUN — no live game or deployment in this
   environment.
 
@@ -165,7 +166,8 @@ existing private-logistics evidence. The only new branch is a policy decision
 - **Ledger reconciliation:** S1–S7 all fixed, no open finding. L1 is a
   documented limit resolved by G1; L2 is a documented runtime check.
 - **Checks actually run:** the three targeted suites, the full 39-file host
-  sweep and Windows CI run `45108139506`.
+  sweep, the Almanac runner and Windows CI runs `45108139506` and
+  `45110774175`.
 - **Independent coverage:** PASS — owner review of `0b50787` (PR #102
   comment `7091339329`); requested documentation changes applied.
 - **Remaining unknowns:** native in-game settlement and `state_ledger`
