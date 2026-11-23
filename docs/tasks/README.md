@@ -28,8 +28,8 @@ The ordered plan of future tasks is in [`../ROADMAP.md`](../ROADMAP.md).
 - [active/2026-11-22-live-b2b-billing.md](active/2026-11-22-live-b2b-billing.md) —
   **CURRENT.** Roadmap step 3 / D16: live billing by default, no `private_shops`
   delivery bill or foreign restock, customs buyers excluded from
-  `b2b_state_buy`. Host tests pass; Windows CI and the owner's in-game check
-  are pending.
+  `b2b_state_buy`. Host tests and the Windows CI build pass; the owner's in-game check
+  is pending.
 - [active/2026-11-22-remove-fallbacks-and-made-up-data.md](active/2026-11-22-remove-fallbacks-and-made-up-data.md) —
   **COMPLETE, merged in PR #101.** Roadmap step 2 / D32–D35: no fallback
   prices, no default CPI basket, `UNPRICED`/`UNAVAILABLE` made visible,

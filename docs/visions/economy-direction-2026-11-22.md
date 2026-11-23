@@ -1082,7 +1082,7 @@ of dividing one number. The 0.70 `wholesale_ratio`, foreign restock and
 `private_shops` 3.8 has no 0.70 `wholesale_ratio` bill, no foreign restock and
 no direct slot writes; `private_logistics` 0.19.1 creates no `b2b_state_buy`
 leg when the buyer is a customs house, and ships `billing = 1`, `dry_run = 0`.
-Host tests pass. The Windows CI build, the owner's factory → shop check and
+Host tests and the Windows CI build pass. The owner's factory → shop check and
 the `state_ledger` reconciliation (I5) are still to do; company export
 revenue/import cost remains after G1. See the
 [task record](../tasks/active/2026-11-22-live-b2b-billing.md).

@@ -2,8 +2,9 @@
 
 ## Contract
 
-- **Status:** active — implementation and host tests complete; Windows CI, the
-  owner's in-game check and the `state_ledger` reconciliation are outstanding.
+- **Status:** active — implementation, host tests and the Windows CI build
+  complete; the owner's in-game check and the `state_ledger` reconciliation
+  are outstanding.
 - **Task record:** `docs/tasks/active/2026-11-22-live-b2b-billing.md`
 - **Baseline:** branch `arena/5a89acc8-wrsre`, from `main` at `823df769`
   (PR #101 merged). Working tree contains only this task's changes.
@@ -114,6 +115,7 @@ existing private-logistics evidence. The only new branch is a policy decision
 | Permission defaults | `python3 -m unittest tests.private_logistics.test_permission_test_defaults -v` (repo root) | 0 | this record | INI/source only |
 | Full host sweep | `python3` driver over every `tests/**/test_*.py` with `PYTHONPATH=.` (repo root) | 0 | 39 files, 0 failures | Host tests only |
 | Almanac host runner | `python3 tests/almanac_overlay_dev/run_host_tests.py` (repo root) | 0 | `build/almanac_overlay_dev/normal/summary.json` | Host tests only |
+| Windows CI | GitHub Actions run `45108139506` (`3d67406`) | 0 | 3/3 jobs: docs, MSVC+SEH build, host tests | Build only; no game run |
 
 ## Review rounds
 
@@ -124,15 +126,15 @@ existing private-logistics evidence. The only new branch is a policy decision
 ## Separate validation statuses
 
 - **STATIC REVIEW:** pending owner/reviewer — no independent review requested.
-- **BUILD/TEST EVIDENCE:** PARTIAL — host tests pass; Windows CI has not run
-  for this branch yet.
+- **BUILD/TEST EVIDENCE:** PASS — all 39 host test files and the Windows
+  MSVC/SEH build pass (CI run `45108139506`).
 - **RUNTIME VALIDATION:** NOT RUN — no live game or deployment in this
   environment.
 
 ## Blocker / resume checkpoint
 
-- **Current gate and next action:** push the branch, wait for Windows CI, then
-  report to the owner for the in-game factory → shop and `state_ledger` check.
+- **Current gate and next action:** report to the owner for the in-game
+  factory → shop and `state_ledger` check.
 - **Owned files / resource lock:** this branch; no Ghidra owner needed.
 - **Unresolved finding IDs:** none.
 - **Missing artifact/capability/authorization:** Windows build/game run.
@@ -144,8 +146,8 @@ existing private-logistics evidence. The only new branch is a policy decision
 - **Acceptance results:** one-delivery/one-bill and customs exclusion are
   proven by host tests; the two live checks are pending.
 - **Ledger reconciliation:** S1–S7 all fixed, no open finding.
-- **Checks actually run:** the three targeted suites and the full host sweep;
-  the Windows CI result is pending.
+- **Checks actually run:** the three targeted suites, the full 39-file host
+  sweep and Windows CI run `45108139506`.
 - **Independent coverage:** none yet; owner review requested through the PR.
 - **Remaining unknowns:** native in-game settlement and `state_ledger`
   divergence; exact fuel burn and assignment coverage remain as documented.

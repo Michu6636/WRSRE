@@ -15,7 +15,7 @@ file in the same pull request (see "How to run a step").
 | **Code step 1**: native prices only, no state procurement | Done in [PR #100](https://github.com/Michu6636/WRSRE/pull/100). Host tests and the CI Windows build pass. The owner ran the build (save "Test 02"), but **no step-1 acceptance result is recorded yet**. [Task record](tasks/active/2026-11-22-remove-market-multiplier-and-procurement.md). |
 | **Bug fix**: private DOs served buildings under construction | Done in PR #100. Host tests and CI pass. **Not yet checked in game.** [Task record](tasks/active/2026-11-22-private-do-under-construction.md). |
 | **Code step 2**: no fallbacks or made-up data | Merged in [PR #101](https://github.com/Michu6636/WRSRE/pull/101) (`823df769`). Host tests and the Windows CI build passed. The owner's in-game check is still pending. [Task record](tasks/active/2026-11-22-remove-fallbacks-and-made-up-data.md). |
-| **Code step 3**: live B2B billing | Implemented on `arena/5a89acc8-wrsre` from `main` at `823df769`: `private_shops` 3.8 has no delivery bill or foreign restock, customs buyers create no `b2b_state_buy` leg, and `private_logistics` 0.19.1 ships `billing = 1`, `dry_run = 0`. Host tests pass; CI and the owner's in-game check are pending. [Task record](tasks/active/2026-11-22-live-b2b-billing.md). |
+| **Code step 3**: live B2B billing | Implemented on `arena/5a89acc8-wrsre` from `main` at `823df769`: `private_shops` 3.8 has no delivery bill or foreign restock, customs buyers create no `b2b_state_buy` leg, and `private_logistics` 0.19.1 ships `billing = 1`, `dry_run = 0`. Host tests and the Windows CI build pass; the owner's in-game check is pending. [Task record](tasks/active/2026-11-22-live-b2b-billing.md). |
 | Construction vision (state and private offices) | Owner decisions O1–O11 recorded; **not scheduled** (D13). [Vision](visions/vision-private-construction.md). |
 | PR #100 | Merged into `main` on 2026-11-22 by the owner's instruction. It holds step 1, the bug fix and the docs above. The in-game checks of step 0 are still to do. |
 
@@ -129,7 +129,7 @@ INI constant (invariant I6).
 abroad and writes no shelf contents; only service fees move money there.
 `private_logistics` 0.19.1 excludes a customs-house buyer from
 `b2b_state_buy` and ships `billing = 1`, `dry_run = 0`. Host tests pass;
-the Windows CI build, the owner's factory → shop check and the
+the Windows CI build passes; the owner's factory → shop check and the
 `state_ledger` reconciliation are still pending.
 [Task record](tasks/active/2026-11-22-live-b2b-billing.md).
 
