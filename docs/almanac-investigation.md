@@ -273,7 +273,7 @@ Important: tax rates are fractions for VAT/profit and a flat amount for property
 | Private shop counts | Retail/service type counts | `private_shops` config | Implemented | Count; live config | Current only | No aggregate API |
 | Foreign restock ratio | Share of foreign stock target | `g_foreignTargetRatio` | Implemented | Percent; per shop | Current only | Configurable |
 | DO target count | Eligible private DO targets | `private_logistics` diagnostics | Implemented diagnostics | Count; road offices; daily reconciliation | Current only | No public API |
-| DO fuel estimate | Approximate fuel cost of closed assignments | `private_logistics` cost book | Dry accounting only | Active currency; closed road assignments | Closed records persist | Payments OFF; sampling/tonne assumptions |
+| DO fuel estimate | Approximate fuel cost of closed assignments | `private_logistics` cost book | Dry ledger estimate, separate from live settlement | Active currency; closed road assignments | Closed records persist | Live B2B settlement is on by default since step 3; sampling/tonne assumptions remain |
 | B2B settlement | Direct buyer/seller settlement | Proposal only | Draft RFC | Not implemented | None | No live settlement |
 | Local town market scarcity | Municipality-level scarcity pricing | Design doc | Planned | Not implemented | None | Next priority |
 

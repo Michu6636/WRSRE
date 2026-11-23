@@ -1,3 +1,5 @@
+> **Historical plan (0.18.x testing period).** The `billing=0`, `dry_run=1` profile below was the safe observation profile of that period, not the shipped default anymore. Economy-direction step 3 landed live settlement (`billing = 1`, `dry_run = 0`) in `private_logistics` 0.19.1; see [DO_OFFICES.md](DO_OFFICES.md) section 9 for the current settings.
+
 # Autonomous private DOs — step 1 implementation and step 2 test
 
 ## Current scope — permissions remain in force (2026-11-01)

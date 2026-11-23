@@ -4357,6 +4357,10 @@ static const char* GetObjectNameImpl(void* b)
     return Internal_GetBuildingObjectName(b);
 }
 
+// Retained for ABI compatibility. private_shops stopped calling this in
+// economy-direction step 3; the live delivery settlement is the single
+// private_logistics buyer -> seller transfer. A new caller here would
+// double-charge the same goods.
 static void ChargeWholesaleImpl(void* building, double cost)
 {
     if (!TsmIsValidGamePtr(building)) return;

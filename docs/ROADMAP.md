@@ -12,9 +12,10 @@ file in the same pull request (see "How to run a step").
 | Item | State |
 |---|---|
 | Owner decisions | Complete for the economy: D1–D34 in [economy direction](visions/economy-direction-2026-11-22.md) §1. No owner questions are open there. |
-| **Code step 1**: native prices only, no state procurement | Done in [PR #100](https://github.com/Michu6636/WRSRE/pull/100). Host tests and the CI Windows build pass. The owner ran the build (save "Test 02"), but **no step-1 acceptance result is recorded yet**. [Task record](tasks/active/2026-11-22-remove-market-multiplier-and-procurement.md). |
+| **Code step 1**: native prices only, no state procurement | Done in [PR #100](https://github.com/Michu6636/WRSRE/pull/100). Host tests and the CI Windows build pass. The owner ran the build (save "Test 02"), but **the in-game step-1 check has not been run yet**. [Task record](tasks/active/2026-11-22-remove-market-multiplier-and-procurement.md). |
 | **Bug fix**: private DOs served buildings under construction | Done in PR #100. Host tests and CI pass. **Not yet checked in game.** [Task record](tasks/active/2026-11-22-private-do-under-construction.md). |
-| **Code step 2**: no fallbacks or made-up data | Implemented on `arena/c676e273-wrsre` from `main` at `71e2fb0` (PR #101). Host tests and the Windows CI build pass. Independent review and the in-game check are pending. [Task record](tasks/active/2026-11-22-remove-fallbacks-and-made-up-data.md). |
+| **Code step 2**: no fallbacks or made-up data | Merged in [PR #101](https://github.com/Michu6636/WRSRE/pull/101) (`823df769`). Host tests and the Windows CI build passed. The owner's in-game check is still pending. [Task record](tasks/active/2026-11-22-remove-fallbacks-and-made-up-data.md). |
+| **Code step 3**: live B2B billing | Implemented on `arena/5a89acc8-wrsre` from `main` at `823df769`: `private_shops` 3.8 has no delivery bill or foreign restock, customs buyers create no `b2b_state_buy` leg, and `private_logistics` 0.19.1 ships `billing = 1`, `dry_run = 0`. Host tests and the Windows CI build pass; the owner's in-game check is pending. [Task record](tasks/active/2026-11-22-live-b2b-billing.md). |
 | Construction vision (state and private offices) | Owner decisions O1–O11 recorded; **not scheduled** (D13). [Vision](visions/vision-private-construction.md). |
 | PR #100 | Merged into `main` on 2026-11-22 by the owner's instruction. It holds step 1, the bug fix and the docs above. The in-game checks of step 0 are still to do. |
 
@@ -47,10 +48,14 @@ This is the recommended order. The owner may reorder it. Item numbers
 
 - PR #100 merged by the owner's instruction on 2026-11-22 (step 1, the bug
   fix and the docs). Work continues in a new session from `main`.
-- **In-game check of step 1:** no `procured` / `[PROC]` log lines. Every
-  "charged … for state delivery" line follows a real input unload into that
-  building, never growth of its own output. Real deliveries are still billed
-  at 0.70 until step 3.
+- **Step 1 in-game check (pending; not run yet):** no `procured` / `[PROC]`
+  log lines. Every remaining "charged … for state delivery" line must follow
+  a real input unload into that building, never growth of its own output.
+- **The old 0.70 check is replaced by step 3.** Step 3 removed the
+  `private_shops` 0.70 delivery lines, so the step-1 check cannot look for
+  them. The step-3 check covers that ground instead: one `[B2B GOODS]`
+  payment per factory → shop delivery and no `private_shops` delivery
+  charge.
 - **In-game check of the bug fix** on a save with a private site under
   construction. Expected log lines:
   - `[AUTO DO] day N under construction: K storage/consumer site(s) excluded`;
@@ -61,11 +66,11 @@ This is the recommended order. The owner may reorder it. Item numbers
 
 ### Step 2: remove fallbacks and made-up data
 
-**Status 2026-11-22:** implemented on `arena/c676e273-wrsre` (PR #101); all
-host tests and the Windows CI build pass. `resource_pricing` v6 removes the
+**Status 2026-11-22:** merged in PR #101 (`823df769`); all host tests and the
+Windows CI build passed. `resource_pricing` v6 removes the
 fallback/default/divisor settings and answers `UNPRICED`/`UNAVAILABLE`;
 D32–D34 are wired into the consumers; the Almanac has no sample rows.
-Independent review and the in-game acceptance check are still to do.
+The in-game acceptance check is still to do.
 [Task record](tasks/active/2026-11-22-remove-fallbacks-and-made-up-data.md).
 
 **Goal:** every number comes from the game, a player policy or a documented
@@ -123,6 +128,15 @@ INI constant (invariant I6).
 
 ### Step 3: live B2B billing
 
+**Status 2026-11-22:** implemented on `arena/5a89acc8-wrsre` from `main` at
+`823df769`. `private_shops` 3.8 no longer bills deliveries or restocks from
+abroad and writes no shelf contents; only service fees move money there.
+`private_logistics` 0.19.1 excludes a customs-house buyer from
+`b2b_state_buy` and ships `billing = 1`, `dry_run = 0`. Host tests pass;
+the Windows CI build passes; the owner's factory → shop check and the
+`state_ledger` reconciliation are still pending.
+[Task record](tasks/active/2026-11-22-live-b2b-billing.md).
+
 **Goal:** private goods are paid for by the buyer on delivery at the native
 price (D16, D19). Prerequisites and their order are in the economy direction
 §4.4.
@@ -142,6 +156,11 @@ price (D16, D19). Prerequisites and their order are in the economy direction
 - **Acceptance:** one delivery equals one bill (no double settlement). The
   `state_ledger` reconciliation shows zero unexplained delta (I5). The owner
   checks factory → shop deliveries in game.
+- **Known limits (documented, no extra settlement):** a customs house as the
+  import **source** is charged as a native-price state sale, so the state
+  carries the customs spread until G1/D5. Settlement hooks need a vehicle, so
+  conveyor/pipeline transfers are probably unbilled — unverified. See
+  [economy direction §4.4](visions/economy-direction-2026-11-22.md#44-live-billing-by-default-d16-prerequisites-in-order--all-done).
 
 ### Step 4: privatisation money, welfare decree, housing trigger
 

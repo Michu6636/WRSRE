@@ -2,8 +2,8 @@
 
 ## Contract
 
-- **Status:** active — implementation, host tests and the Windows CI build
-  complete; independent review and the owner's in-game check are outstanding.
+- **Status:** complete — merged in PR #101 (`823df769`). The owner's in-game
+  check is the only outstanding acceptance item.
 - **Task record:** `docs/tasks/active/2026-11-22-remove-fallbacks-and-made-up-data.md`
 - **Baseline:** branch `arena/c676e273-wrsre`, from `main` at `71e2fb0`
   (PR #100 merged). Working tree contains only this task's changes.
@@ -130,7 +130,7 @@ recorded as **not available**, not passed. Static review below is a self-review.
 | F5 | medium | Silent destitute class when food unpriced | fixed | 0.0f is already handled as "no class"; with CPI unavailable the whole scaling path is skipped and logged | source review | no live citizen |
 | F6 | medium | Silent bread-day when food unpriced | fixed | explicit `TsmNativePriceUsable(pFood)` branch logs `ERROR UNPRICED` and skips the stage | `tests/enterprise_base/test_unpriced_bread.py` | source contract |
 | F7 | high | Partial construction estimate | fixed | `PriceOne` returns false; panel loop returns 0; native phase walk fails with `unpriced construction material`; site waits, never claims | `tests/private_construction/test_unpriced_estimate.py` (executes `PriceOne`) | native walk not executable on host |
-| F8 | high | Silent/piecemeal shop delivery bill | fixed | both paths test `TsmNativePriceUsable`; log once; wholesale snapshot advances with the refused delivery, restock writes nothing | `tests/private_shops/test_wholesale_debt.py` (executes the settlement tail) | restock path source-only |
+| F8 | high | Silent/piecemeal shop delivery bill | fixed (path later removed) | both paths tested `TsmNativePriceUsable`; log once; wholesale snapshot advanced with the refused delivery, restock wrote nothing. Step 3 removed both paths, so this test was replaced by `tests/private_shops/test_no_delivery_billing.py`. | `tests/private_shops/test_no_delivery_billing.py` | historical; code no longer exists |
 | F9 | high | Selective B2B settlement | fixed | `UnitPrice` logs once per resource; delivery pre-scan refuses ALL parts if any is unpriced; daily line reports `unpriced=N` | `tests/private_construction/test_unpriced_estimate.py` source checks, existing B2B tests | observed lifecycle not live |
 | F10 | high | Neutral scale/lending without CPI | fixed | `CurrentEconomicScale` returns 0.0f; `requestCreditDrawImpl` and `onDay` refuse; daily/save logs say UNAVAILABLE | `tests/republic_bank/test_credit_without_cpi.py` (executes the scale) | no native loan run |
 | F11 | low | `n/a` and a 2.15 log claim | fixed | both rows say `UNAVAILABLE (no CPI)`; startup log says UNAVAILABLE | `tests/taxes/test_cpi_unavailable.py` | source contract |

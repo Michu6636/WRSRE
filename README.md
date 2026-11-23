@@ -83,8 +83,8 @@ WRSRE/
 | `republic_bank` | Working-capital credit lines, daily overdraft rescue, monthly interest/sweep; rate control in the Almanac (City Hall slider obsolete) |
 | `citizen_labor` | Minimum wage, sector wages & overrides, private wage bidding, social transfers, payroll & wage-driven mobility (no skill premium exists; a high-education *slot* premium is planned) |
 | `citizen_retail` | Household retail checkout gate, CPI survival basket & store revenue settlement |
-| `private_shops` | Retail/service operations (dispatch procurement, 0.70 delivery billing, foreign restock and supply/demand recording are obsolete and scheduled for removal) |
-| `private_logistics` | Autonomous private DO target management, fuel/schedule observers & Ship 2 B2B counterparty settlement |
+| `private_shops` | Private service fees (pub, hotel, cinema, hospital); delivery billing and foreign restock removed in step 3 |
+| `private_logistics` | Autonomous private DO target management, fuel/schedule observers & live B2B settlement (`billing = 1`, `dry_run = 0` by default) |
 | `private_logistics_probe` | Read-only vehicle fuel/snapshot diagnostic telemetry |
 | `private_construction` | Private construction financing, site progress & turnkey ownership transfer |
 | `taxes` | VAT, corporate profit tax & property tax; controls in the Almanac (City Hall TAX tile/panel obsolete, scheduled for removal) |

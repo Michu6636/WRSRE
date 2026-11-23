@@ -177,9 +177,12 @@ typedef struct TsmEnterpriseBaseApi {
     float  (*getCompanyMarkup)(void* building);
     void   (*setCompanyMarkup)(void* building, float markup);
 
-    // --- wholesale ---------------------------------------------------------
+    // --- wholesale (retained for ABI compatibility) ------------------------
     // Debits the company, credits the treasury, fires the flow observer
-    // with category "wholesale_b2b".
+    // with category "wholesale_b2b". Unused since economy-direction step 3:
+    // private_shops no longer bills a delivery. Delivery settlement is the
+    // single private_logistics buyer -> seller transfer. Do not reintroduce
+    // a caller without removing that settlement first.
     void (*chargeWholesaleDelivery)(void* building, double wholesaleCost);
 
     // --- accruals ----------------------------------------------------------

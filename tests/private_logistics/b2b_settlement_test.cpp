@@ -331,6 +331,34 @@ int main() {
         std::printf("11. multi-lot dry-run shared buyer credit OK\n");
     }
 
+    // 12. Customs buyer: exports are not paid by the state (step 3).
+    {
+        auto customs = planSettlement(ORIGIN_PRIVATE, 1, true, 0xA1ULL,
+                                      20, false, 900.0, true);
+        assert(customs.customsExport);
+        assert(!customs.hasGoodsLeg);
+        assert(!customs.goodsLeg.treasuryLabel);
+        assert(approx(customs.goodsLeg.amount, 0.0));
+        assert(approx(customs.stateDelta, 0.0));
+
+        MockWorld w;
+        w.live[1] = true; w.cap[1] = 1000.0; w.keys[1] = 0xA1ULL;
+        const double openTreasury = w.treasury;
+        auto cb = w.makeCallbacks(true, 5000.0);
+        auto ex = executeAtomicTransfer(customs, cb);
+        assert(ex.ok && approx(ex.goodsPaid, 0.0));
+        assert(approx(w.cap[1], 1000.0));
+        assert(approx(w.treasury, openTreasury));
+
+        // Control: the same delivery to a non-customs state buyer is
+        // still b2b_state_buy, paid by the treasury.
+        auto stateBuyer = planSettlement(ORIGIN_PRIVATE, 1, true, 0xA1ULL,
+                                         55, false, 900.0, false);
+        assert(!stateBuyer.customsExport && stateBuyer.hasGoodsLeg);
+        assert(approx(stateBuyer.stateDelta, -900.0));
+        std::printf("12. customs export: no b2b_state_buy, no state payment OK\n");
+    }
+
     std::printf("ALL B2B SCENARIOS PASS\n");
     return 0;
 }
