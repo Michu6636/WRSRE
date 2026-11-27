@@ -11,13 +11,14 @@ file in the same pull request (see "How to run a step").
 
 | Item | State |
 |---|---|
-| Owner decisions | D1–D41 in [economy direction](visions/economy-direction-2026-11-22.md) §1. D35's rent value is open for the owner to tune. The later private export markets step has open questions in [its plan §6](visions/vision-private-export-markets.md#6-open-questions-for-the-owner-before-the-branch-starts). |
+| Owner decisions | D1–D48 in [economy direction](visions/economy-direction-2026-11-22.md) §1 (D21 and D37 amended 2026-11-23). D35's rent value is open for the owner to tune. No other owner questions are open. |
 | **Code step 1**: native prices only, no state procurement | Done in [PR #100](https://github.com/Michu6636/WRSRE/pull/100). Host tests and the CI Windows build pass. The owner ran the build (save "Test 02"), but **the in-game step-1 check has not been run yet**. [Task record](tasks/active/2026-11-22-remove-market-multiplier-and-procurement.md). |
 | **Bug fix**: private DOs served buildings under construction | Done in PR #100. Host tests and CI pass. **Not yet checked in game.** [Task record](tasks/active/2026-11-22-private-do-under-construction.md). |
 | **Code step 2**: no fallbacks or made-up data | Merged in [PR #101](https://github.com/Michu6636/WRSRE/pull/101) (`823df769`). Host tests and the Windows CI build passed. The owner's in-game check is still pending. [Task record](tasks/active/2026-11-22-remove-fallbacks-and-made-up-data.md). |
 | **Code step 3**: live B2B billing | Merged in [PR #102](https://github.com/Michu6636/WRSRE/pull/102) (`73a9d1d`): `private_shops` 3.8 has no delivery bill or foreign restock, customs buyers create no `b2b_state_buy` leg, and `private_logistics` 0.19.1 ships `billing = 1`, `dry_run = 0`. **First in-game run 2026-11-23 (10 days):** what happened worked; several paths were not exercised (see step 3). [Task record](tasks/active/2026-11-22-live-b2b-billing.md). |
 | **Step 3b**: fix-ups from that run | **Next.** State-paid DO trip fuel (D40), trip direction, honest billing log labels. |
-| Private export markets | **Later step (D41)**, own branch. Decisions D36–D39 recorded; [plan and investigation](visions/vision-private-export-markets.md). |
+| Company finances (step 4d) | **Planned.** Company health ladder: debt, credit hold, insolvency (D45). |
+| Private export markets | **Later step (D41)**, own branch. Decisions D36–D39, D42–D48 recorded; [plan and investigation](visions/vision-private-export-markets.md). |
 | Construction vision (state and private offices) | Owner decisions O1–O11 recorded; **not scheduled** (D13). [Vision](visions/vision-private-construction.md). |
 | PR #100 | Merged into `main` on 2026-11-22 by the owner's instruction. It holds step 1, the bug fix and the docs above. The in-game checks of step 0 are still to do. |
 
@@ -235,6 +236,18 @@ Three separate tasks, each with its own task record.
   `FindRelocationCandidate` and the eviction penalty, and replace the 0.5
   fallbacks with visible errors. Needs G6.
 
+- **4d. Company finances** (D45; [export plan §4](visions/vision-private-export-markets.md#4-owner-decisions-2026-11-23)):
+  the company health ladder for every private company. Healthy (≥ legal
+  reserve) → strained (no payouts to the fund) → in debt (buys on credit,
+  interest at the bank rate, a share of each income repays) → credit hold
+  (debt above the limit: no new purchases, enforced by switching off its
+  DOs' deliveries of bought inputs; selling never stops) → insolvent (a
+  decree chooses bail out, restructure or liquidate). Credit limit = the
+  company's legal reserve; the hold lifts at half the limit; a grace period
+  before insolvency. Needs 4a (reserve, fund). Propose the repayment share,
+  grace period and interest from captured data, and ask the owner before
+  shipping them.
+
 ### Step 5: wages
 
 - **Private wage fix** (D14; economy direction §6.3, "Code check
@@ -291,12 +304,16 @@ Three separate tasks, each with its own task record.
   (D12).
 - **Politics module**: factions, elections, approval (D17).
 - **A market model that changes native prices** (D2; Ghidra G3).
-- **Private export markets** (D41, own branch): customs checkboxes "Allow
-  private exports" / "Allow private imports", default OFF (D36); manual
-  customs targets untouched (D37); company export revenue measured exactly
-  and checked against the price (D38, D5); export-trip freight paid by the
-  foreign market (D39); company import cost. Needs step 3b, G1 or a runtime
-  probe, and the owner's answers to the open questions.
+- **Private export markets and foreign trade policy** (D41, own branch):
+  an Almanac "Foreign trade" page where every customs house is a route,
+  closed by default, with per-good bans, export duties, import tariffs and
+  monthly quotas (D36, D43); trade law also binds manual customs targets
+  (D37); company export revenue measured exactly (D38) and paid in the
+  active currency through a price-derived exchange rate (D42); export
+  freight paid by the foreign market (D39); import cost = the measured
+  treasury payment plus tariff (D44); new targets export the company's own
+  products (D47); one source per truckload (D46). Needs step 3b, step 4d,
+  G1 or a runtime probe, and G10 (per-resource toggles; investigate first).
   [Plan and investigation](visions/vision-private-export-markets.md).
 
 ---
@@ -306,6 +323,8 @@ Three separate tasks, each with its own task record.
 | ID | What | Needed by |
 |---|---|---|
 | G1 | Customs sale/purchase event and provenance | Private export markets (later, D41) |
+| G10 | Turning one resource on or off in a DO task (native selector entries) | Private export markets: bans, quotas, D47 |
+| G11 | A customs house's border and currency (optional) | Private export markets: trade page |
 | G4 | Worker slot counts and which slot a worker holds | Step 5 |
 | G5 | Native price of the `"workers"` pseudo-resource (a runtime log may do) | Step 8 |
 | G6 | Native living standard and dorm affordability | Step 4c |
@@ -350,9 +369,9 @@ Ghidra operator at a time; index results in `docs/ghidra-index/`.
 
 | Need | Document |
 |---|---|
-| Every economic decision (D1–D41) and the change list | [visions/economy-direction-2026-11-22.md](visions/economy-direction-2026-11-22.md) |
+| Every economic decision (D1–D48) and the change list | [visions/economy-direction-2026-11-22.md](visions/economy-direction-2026-11-22.md) |
 | Construction: state and private offices (O1–O11) | [visions/vision-private-construction.md](visions/vision-private-construction.md) |
-| Private export markets (later step, D36–D41) | [visions/vision-private-export-markets.md](visions/vision-private-export-markets.md) |
+| Private export markets and foreign trade policy (later step, D36–D48) | [visions/vision-private-export-markets.md](visions/vision-private-export-markets.md) |
 | Private logistics vision (partly overridden) | [visions/vision-private-logistics.md](visions/vision-private-logistics.md) |
 | Task records and their status | [tasks/README.md](tasks/README.md) |
 | Architecture and subsystem boundaries | [WRSRE DESIGN DOC.md](WRSRE%20DESIGN%20DOC.md) (the economy direction wins on conflicts) |

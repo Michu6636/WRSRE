@@ -2,7 +2,8 @@
 
 **Status:** Design decisions, updated the same day with the owner's follow-up
 answers (D19–D31), the step-2 answers (D32–D35), and the answers of
-2026-11-23 after the first step-3 in-game run (D36–D41). Code step 1 (§11) is implemented in PR #100. Everything
+2026-11-23 after the first step-3 in-game run (D36–D48, with D21 and D37
+amended). Code step 1 (§11) is implemented in PR #100. Everything
 else in §11 is still to do. **For the ordered plan of what to do next, read
 [`ROADMAP.md`](../ROADMAP.md).** This record shows how the code worked and
 lists the changes needed to match the decisions. Code citations refer to
@@ -48,7 +49,7 @@ the owner yet; *hypothesis* = needs verification before use.
 | D18 | **Welfare level is player policy**, enacted as **one Tropico-style decree** with four tiers (None / Low / Medium / High) covering the unemployed, students and pensioners. Kept simple. | Decided (tiers approved; §6.4) |
 | D19 | **The state pays the native price for private goods delivered into state buildings**, and private buyers pay the state the native price for state goods (§4.3). | Decided (follow-up) |
 | D20 | **No money is created from nothing.** Every amount comes out of a named account. Privatised buildings get their starting capital **from the private investment fund**. The only exception is the fund's **founding capital, created once per map** and never again. A second, later exception is the foreign-market freight of export trips (D39). | Decided; design in §4.5 |
-| D21 | **No exchange rate.** In dollar mode resources use the native dollar price, and everything else is derived the same way as in rubles. | Decided (follow-up); consequences in §3.2 point 4 |
+| D21 | **No exchange rate.** In dollar mode resources use the native dollar price, and everything else is derived the same way as in rubles. **Amended 2026-11-23 by D42:** no fixed or invented rate (`usd_divisor = 50` still goes in step 7), but a rate derived from native prices is allowed for currency surrender in foreign trade. | Decided (follow-up); consequences in §3.2 point 4 |
 | D22 | **The starting decree list (§7) is accepted** for now. | Decided (follow-up) |
 | D23 | **Housing uses the game's own flat check.** The native flat search (used today for 21-year-olds leaving home; new arrivals and demolition victims are also placed natively) is also triggered for ordinary established households. No parallel mod search. | Decided; §8 |
 | D24 | **The fund pays the state for a privatised building**, based on its native construction cost, a little below it. No price when the building was built privately. | Decided; §4.5.3 |
@@ -63,12 +64,19 @@ the owner yet; *hypothesis* = needs verification before use.
 | D33 | **Unpriced business bill: refuse the whole transaction, loud error.** A private construction estimate, wholesale delivery bill or B2B freight bill that includes a resource with no native price is refused as a whole, never billed partly. For example, private construction does not claim the site. Owner answer 2026-11-22. | Decided; code step 2 |
 | D34 | **CPI unavailable: pause what depends on it.** When the cost-of-living basket cannot be computed (food, meat or clothes has no price), wealth-class demand scaling is skipped that day, the runway and CPI show `UNAVAILABLE`, and the bank refuses new credit until CPI is available again. Owner answer 2026-11-22. | Decided; code step 2 |
 | D35 | **The USD CPI default rent is its own INI key.** The owner decided that (a) USD gets its own `default_daily_rent_usd` setting and (b) a dollar is about the same size as a rouble, not a rouble ÷ 50. The shipped **value 0.33** was proposed in the reviewer comment following the owner's "more or less the same"; the owner has **not chosen or confirmed it** — **open: owner may tune it**. Both `default_daily_rent` (RUB) and `default_daily_rent_usd` (USD) are required and behave the same way: missing, 0, negative, NaN or implausible means the basket is UNAVAILABLE and one log line names the key. 0 is rejected; there is no "no rent" setting. No rate is applied to either value. | Decided (structure and same-size relation); value open |
-| D36 | **Customs checkboxes, default OFF.** Each customs house gets two panel checkboxes: "Allow private exports" (private DOs deliver goods there) and "Allow private imports" (private DOs take goods from there). New and existing customs houses start with both OFF. Owner answer 2026-11-23. | Decided; **later step** (D41), [plan](vision-private-export-markets.md) |
-| D37 | **Manual customs targets stay untouched.** A customs target the player added by hand to a private DO keeps working as today; the checkboxes control only customs targets the mod adds. Owner answer 2026-11-23. | Decided; later step (D41) |
-| D38 | **Export revenue is measured exactly, then checked against the price.** The exporting company receives the treasury increase the native customs sale caused (`company_export`). `quantity × locked native price` is logged next to it, and a mismatch is a visible `WARN`. If nothing can be measured: loud `ERROR`, nothing paid, never the estimate. Owner answer 2026-11-23. | Decided; later step (D41); needs G1 or a runtime probe |
+| D36 | **Customs controls, default closed.** Private exports and private imports are off on every customs house until the player opens them. Owner answer 2026-11-23. **Amended by D43:** the controls live on the Almanac "Foreign trade" page; the customs panel shows the route's status. | Decided; **later step** (D41), [plan](vision-private-export-markets.md) |
+| D37 | **Manual customs targets stay untouched**, except that trade law applies to them: a closed route, a banned good or a full quota (D43) is enforced on them too. Owner answer 2026-11-23, amended the same day. | Decided; later step (D41) |
+| D38 | **Export revenue is measured exactly, then checked against the price.** The exporting company receives the treasury increase the native customs sale caused (`company_export`). `quantity × locked native price` is logged next to it, and a difference above 1 % is a visible `WARN`. If nothing can be measured: loud `ERROR`, nothing paid, never the estimate. Owner answer 2026-11-23. | Decided; later step (D41); needs G1 or a runtime probe |
 | D39 | **The foreign market pays the freight of an export trip.** A private DO's trip fuel for a trip that delivers to a customs house is credited to the DO as money from abroad, on top of the export proceeds; nothing is taken from the company or the treasury. A deliberate, named exception to D20, fully visible as `foreign_freight`. Owner answer 2026-11-23. | Decided; later step (D41) |
 | D40 | **The state pays a private DO's trip fuel when a state building receives the goods**, the same amount a private receiver pays, from the treasury. Owner answer 2026-11-23. | Decided; roadmap step 3b |
 | D41 | **Private export markets are a later, separate step** on their own branch: customs checkboxes (D36, D37), company export revenue (D38, D5), foreign freight (D39) and company import cost. Owner decision 2026-11-23. | Decided; [plan and investigation](vision-private-export-markets.md) |
+| D42 | **Price-derived exchange rate and currency surrender.** Rate = the geometric mean, over every resource with both native prices, of `USD price ÷ RUB price`; `UNAVAILABLE` without enough prices. Companies hold only the active currency: proceeds in the other currency stay in that treasury and the company is paid in the active currency at the rate (`fx_surrender`); imports the other way round. A later decree may set an official rate. Used only for currency surrender unless decided otherwise. Owner answer 2026-11-23. | Decided; later step (D41) |
+| D43 | **Almanac "Foreign trade" page.** Every customs house is a trade route (name read as the Almanac already does, border, mode). Per route: open/closed for private exports and for private imports. Per good, default for all routes with a per-route override: ban export, ban import, export duty %, import tariff %, quota in tonnes per game month. Applies to private trade; state trade stays native (D6). A route is a "nation" for rules only; prices stay native per border. Owner answer 2026-11-23. | Decided; later step (D41); per-good enforcement needs G10 |
+| D44 | **Import cost = the measured treasury payment at the customs house plus any import tariff** (`company_import`), closing the customs spread. Nothing measured: loud `ERROR`, nothing charged. Owner answer 2026-11-23. | Decided; later step (D41) |
+| D45 | **Company health ladder** for every private company: healthy (≥ legal reserve, D29), strained (below it: no payouts to the fund), in debt (< 0 within the credit limit: buys on credit, interest at the bank rate, a share of each income repays), credit hold (above the limit: no new purchases, but selling and exporting always continue), insolvent (long credit hold: a decree chooses bail out, restructure or liquidate). Credit limit = the company's legal reserve; the hold lifts at half the limit; a grace period precedes insolvency. Owner answer 2026-11-23. | Decided; roadmap step 4d; numbers calibrated there |
+| D46 | **One source per truckload.** A load mixing different sellers is refused for attribution and logged as an error (like D33); no split rule. Logs of 2026-11-23 show no mixed-seller delivery. Owner answer 2026-11-23. | Decided |
+| D47 | **A mod-added customs target exports only the company's own products** at first. The player may widen or narrow the list on the native DO screen; the mod never overwrites it except to enforce trade law (D43). Owner answer 2026-11-23. | Decided; later step (D41); needs G10 |
+| D48 | **Price impact is native supply and demand.** Private exports lower native prices like state exports do; the Almanac shows private trade per good and route each month. Owner answer 2026-11-23. | Decided; later step (D41) |
 
 ---
 
@@ -1055,6 +1063,8 @@ Owner question: "Do we need Ghidra to find loyalty, health and productivity?"
 | G7 | Native building wear/condition field, if it exists | §4.5.3 privatisation price | Medium |
 | G9 | Native building-type catalogue (every type descriptor, including unplaced types), to price a reference building's construction cost | §4.5.1 founding capital (later improvement) | Low |
 | G8 | Native production recipe in memory (`$PRODUCTION` / `$CONSUMPTION` per building type) and its units (believed to be per worker-day) | §4.5.7 starting capital | Medium |
+| G10 | Native per-resource selector entries of a DO task config (16-byte entries at `cfg+0x08..0x10` for loading and `cfg+0xD0..0xD8` for unloading): layout, how to add or remove one resource, what the native UI does, and whether the planner accepts it | Trade bans, quotas and D47 (later step, D41) | Medium (investigate before the export branch) |
+| G11 | Which border and currency a customs house belongs to | Trade page border column, D42 (optional: otherwise known after the first measured trade) | Low |
 | G3 | Native price recompute site (to later write market-adjusted native prices) | Future market model (D2) | Deferred |
 
 Follow [`docs/AGENTS.md`](../AGENTS.md): one Ghidra operator, index each
@@ -1080,11 +1090,10 @@ D28.
 Left open for later (raised in this doc, not yet put to the owner): whether the toggle cooldown also starts
 when a new building is completed (§4.5.6).
 
-Open for the later private export markets step (D41), to be answered before
-that branch starts: currency mismatch at a dollar customs house, resource
-selection on customs targets, the company import cost and who keeps unpaid
-imports, and the price impact of private exports. See
-[vision-private-export-markets.md §6](vision-private-export-markets.md#6-open-questions-for-the-owner-before-the-branch-starts).
+The questions for the later private export markets step were answered on
+2026-11-23 (D42–D48). What remains there is verification (G1, G10, G11) and
+calibration of the D45 numbers in step 4d. See
+[vision-private-export-markets.md](vision-private-export-markets.md).
 
 ---
 
@@ -1148,8 +1157,9 @@ list for the detail of each item.
 4. **private_logistics:** exclude customs from `b2b_state_buy` *(done before
    G1)*. Defaults `billing = 1`, `dry_run = 0` *(done)*. Step 3b: the
    receiver pays a private DO's trip fuel, and the treasury pays for state
-   receivers (D40). Later step (D41): customs checkboxes, company export
-   revenue, foreign freight and company import cost
+   receivers (D40). Later step (D41): the Almanac foreign-trade page
+   (D43), company export revenue (D38) with currency surrender (D42),
+   foreign freight (D39) and company import cost (D44)
    ([plan](vision-private-export-markets.md)).
 5. **enterprise_base:** private shop price = landed cost × (1 + category
    margin) × (1 + VAT), with bounded monthly adaptation through
