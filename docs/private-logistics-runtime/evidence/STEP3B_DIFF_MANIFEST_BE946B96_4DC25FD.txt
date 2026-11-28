@@ -1,0 +1,284 @@
+# Step 3b frozen changed-file/line manifest
+
+Base: `be946b96aafadcebe72581c4aa20887faa930fb4`
+Implementation commit: `4dc25fdbdbb514483bbfb26955f63928bbaf1538`
+Generated from `git diff --unified=0 be946b96aafadcebe72581c4aa20887faa930fb4 4dc25fdbdbb514483bbfb26955f63928bbaf1538`.
+32 changed paths; 3793 insertions; 238 deletions.
+Ranges are `old start,length -> new start,length`; new-side coordinates refer to the implementation commit.
+
+## `.github/workflows/ci.yml`
+- old 47,0 -> new 48,16
+- old 51,1 -> new 67,2
+- old 69,0 -> new 87,14
+
+## `docs/ROADMAP.md`
+- old 19,1 -> new 19,1
+- old 187,0 -> new 188,14
+- old 190,4 -> new 204,6
+- old 196,5 -> new 212,4
+- old 203,6 -> new 218,10
+- old 215,1 -> new 234,3
+- old 356,5 -> new 377,5
+
+## `docs/engine/private-industry-re.md`
+- old 6,0 -> new 7,7
+- old 37,1 -> new 44,1
+- old 195,1 -> new 202,1
+- old 201,1 -> new 208,1
+- old 703,1 -> new 710,1
+- old 705,1 -> new 712,5
+- old 732,3 -> new 743,3
+- old 785,1 -> new 796,1
+- old 790,2 -> new 801,2
+
+## `docs/private-logistics-runtime/DO_OFFICES.md`
+- old 5,1 -> new 5,1
+- old 7,1 -> new 7,1
+- old 10,1 -> new 10,2
+
+## `docs/private-logistics-runtime/evidence/STEP3B_OWNER_RUN_2026-11-27.md`
+- old 0,0 -> new 1,134
+
+## `docs/private-logistics-runtime/evidence/STEP3B_PYTHON_TESTS_2026-11-27.log`
+- old 0,0 -> new 1,966
+
+## `docs/private-logistics-runtime/evidence/do_receiver_check.py`
+- old 0,0 -> new 1,120
+
+## `docs/tasks/active/2026-11-27-step-3b-state-do-fuel.md`
+- old 0,0 -> new 1,694
+
+## `docs/visions/economy-direction-2026-11-22.md`
+- old 234,1 -> new 234,1
+- old 1142,0 -> new 1143,12
+- old 1158,3 -> new 1170,4
+
+## `plugins/private_logistics/assignment_settlement.h`
+- old 4,0 -> new 5,1
+- old 19,2 -> new 20,2
+
+## `plugins/private_logistics/b2b_settlement.h`
+- old 6,0 -> new 7,1
+- old 7,0 -> new 9,1
+- old 14,0 -> new 17,1
+- old 29,0 -> new 33,47
+- old 57,0 -> new 108,5
+- old 99,0 -> new 155,2
+- old 178,8 -> new 234,0
+- old 203,1 -> new 252,1
+- old 208,1 -> new 256,0
+- old 227,1 -> new 275,5
+- old 266,2 -> new 317,0
+- old 280,2 -> new 330,17
+- old 282,0 -> new 348,1
+- old 287,0 -> new 354,5
+- old 289,0 -> new 361,1
+- old 292,1 -> new 364,1
+- old 295,1 -> new 367,7
+- old 299,1 -> new 376,0
+- old 302,1 -> new 379,1
+- old 313,1 -> new 390,2
+- old 326,4 -> new 404,2
+- old 330,0 -> new 407,2
+- old 332,0 -> new 411,1
+- old 339,0 -> new 419,1
+- old 344,0 -> new 425,9
+- old 347,1 -> new 436,5
+- old 398,0 -> new 492,8
+
+## `plugins/private_logistics/do_fuel_settlement.h`
+- old 0,0 -> new 1,278
+
+## `plugins/private_logistics/dry_assignment_runtime.h`
+- old 5,0 -> new 6,3
+- old 13,2 -> new 16,5
+- old 17,1 -> new 23,6
+- old 19,1 -> new 30,1
+- old 58,1 -> new 69,1
+- old 70,1 -> new 81,1
+- old 73,1 -> new 84,12
+- old 76,1 -> new 98,107
+- old 78,1 -> new 206,12
+- old 81,1 -> new 220,43
+- old 83,2 -> new 264,6
+- old 85,0 -> new 271,1
+- old 93,4 -> new 279,3
+- old 98,2 -> new 283,9
+- old 107,1 -> new 299,2
+- old 113,1 -> new 306,2
+- old 114,0 -> new 309,3
+- old 116,3 -> new 313,8
+- old 121,4 -> new 323,21
+- old 126,4 -> new 345,16
+- old 130,0 -> new 362,7
+- old 131,0 -> new 370,8
+- old 133,7 -> new 379,5
+- old 141,6 -> new 385,26
+- old 149,1 -> new 412,0
+- old 151,2 -> new 414,6
+- old 153,0 -> new 421,3
+- old 154,0 -> new 425,4
+- old 156,9 -> new 430,36
+- old 183,1 -> new 484,1
+- old 212,1 -> new 513,1
+- old 221,3 -> new 521,0
+- old 244,1 -> new 542,1
+- old 246,0 -> new 545,5
+- old 247,0 -> new 551,7
+- old 257,1 -> new 567,1
+- old 261,1 -> new 571,1
+
+## `plugins/private_logistics/fleet_fuel_runtime.h`
+- old 58,1 -> new 58,1
+- old 113,1 -> new 113,1
+- old 147,1 -> new 147,1
+- old 184,1 -> new 184,1
+- old 197,1 -> new 197,1
+- old 203,1 -> new 203,1
+
+## `plugins/private_logistics/journey_tracker.h`
+- old 268,1 -> new 268,1
+
+## `plugins/private_logistics/panel_fuel_runtime.h`
+- old 9,1 -> new 9,1
+- old 281,1 -> new 281,1
+- old 328,1 -> new 328,1
+- old 352,1 -> new 352,1
+- old 366,1 -> new 366,1
+- old 377,1 -> new 377,1
+- old 449,1 -> new 449,1
+- old 535,1 -> new 535,1
+
+## `plugins/private_logistics/private_logistics.cpp`
+- old 6,1 -> new 6,1
+- old 26,0 -> new 27,1
+- old 72,0 -> new 74,4
+- old 75,0 -> new 81,1
+- old 144,1 -> new 150,1
+- old 148,0 -> new 155,12
+- old 227,1 -> new 245,1
+- old 353,1 -> new 371,1
+- old 356,3 -> new 374,1
+- old 361,1 -> new 377,1
+- old 363,1 -> new 379,1
+- old 365,2 -> new 381,1
+- old 380,1 -> new 395,3
+- old 518,0 -> new 536,28
+- old 627,0 -> new 673,4
+- old 707,1 -> new 756,2
+- old 727,3 -> new 777,5
+- old 730,0 -> new 783,3
+- old 799,1 -> new 854,5
+- old 817,2 -> new 876,5
+- old 820,1 -> new 881,0
+- old 822,1 -> new 883,1
+- old 825,1 -> new 886,3
+- old 827,0 -> new 891,20
+- old 829,1 -> new 912,21
+- old 926,1 -> new 1028,0
+- old 1051,2 -> new 1153,2
+- old 1068,0 -> new 1171,3
+- old 1081,1 -> new 1186,3
+- old 1090,2 -> new 1197,3
+- old 1093,2 -> new 1201,4
+- old 1096,2 -> new 1206,3
+- old 1102,1 -> new 1213,1
+- old 1104,1 -> new 1215,2
+- old 1111,1 -> new 1223,2
+- old 1113,1 -> new 1226,2
+- old 1115,1 -> new 1229,1
+- old 1117,1 -> new 1231,1
+- old 1123,1 -> new 1237,3
+- old 1125,1 -> new 1241,3
+- old 1131,2 -> new 1249,3
+- old 1615,0 -> new 1735,1
+- old 2705,4 -> new 2825,1
+- old 2817,2 -> new 2934,2
+- old 2820,1 -> new 2937,2
+
+## `plugins/private_logistics/step3b_policy.h`
+- old 0,0 -> new 1,46
+
+## `tests/agent_workflow/test_ci_workflow.py`
+- old 76,0 -> new 77,3
+
+## `tests/private_logistics/b2b_settlement_test.cpp`
+- old 1,0 -> new 2,2
+- old 5,0 -> new 8,1
+- old 72,0 -> new 76,374
+- old 73,0 -> new 451,6
+
+## `tests/private_logistics/dry_assignment_runtime_test.cpp`
+- old 6,0 -> new 7,1
+- old 12,0 -> new 14,2
+- old 57,0 -> new 61,6
+- old 62,1 -> new 71,2
+- old 65,1 -> new 75,3
+- old 67,0 -> new 80,5
+- old 73,2 -> new 90,2
+- old 89,1 -> new 106,6
+- old 94,1 -> new 116,4
+- old 95,0 -> new 121,3
+- old 97,0 -> new 126,1
+- old 112,0 -> new 142,5
+- old 127,1 -> new 161,1
+- old 267,2 -> new 301,5
+- old 274,0 -> new 312,165
+- old 283,0 -> new 486,36
+- old 289,1 -> new 527,3
+- old 302,1 -> new 542,4
+- old 309,0 -> new 553,41
+- old 330,0 -> new 615,1
+- old 335,1 -> new 620,1
+- old 352,0 -> new 638,4
+- old 353,0 -> new 643,1
+- old 356,1 -> new 646,1
+
+## `tests/private_logistics/endpoint_runtime_test.cpp`
+- old 134,1 -> new 134,1
+- old 194,1 -> new 194,1
+
+## `tests/private_logistics/fleet_approximation_cases.h`
+- old 141,1 -> new 141,1
+
+## `tests/private_logistics/journey_tracker_test.cpp`
+- old 246,1 -> new 246,1
+
+## `tests/private_logistics/schedule_runtime_test.cpp`
+- old 81,1 -> new 81,1
+- old 117,1 -> new 117,1
+
+## `tests/private_logistics/test_b2b_settlement.py`
+- old 3,0 -> new 4,1
+- old 23,1 -> new 24,1
+- old 49,0 -> new 51,17
+- old 51,4 -> new 69,2
+- old 58,2 -> new 74,3
+- old 70,0 -> new 88,8
+
+## `tests/private_logistics/test_dry_assignment_ledger.py`
+- old 15,1 -> new 15,1
+- old 17,0 -> new 18,1
+- old 19,2 -> new 20,1
+- old 22,1 -> new 22,1
+- old 25,1 -> new 25,6
+
+## `tests/private_logistics/test_panel_fuel_observer.py`
+- old 103,1 -> new 103,1
+- old 109,2 -> new 109,2
+
+## `tests/private_logistics/test_schedule_assignment_ledger.py`
+- old 43,1 -> new 43,1
+
+## `tests/private_logistics/test_schedule_observer.py`
+- old 90,1 -> new 90,1
+- old 101,1 -> new 101,1
+
+## `tests/private_logistics/test_site_permissions.py`
+- old 168,2 -> new 168,2
+
+## `tests/sim_clock/test_scheduled_phases.py`
+- old 1,0 -> new 2,1
+- old 102,0 -> new 104,3
+- old 105,1 -> new 109,1
+- old 109,1 -> new 113,1

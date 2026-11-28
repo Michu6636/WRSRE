@@ -2,11 +2,11 @@
 
 ## Contract
 
-- **Status:** active — investigation and plan revision 8 approved; implementation
-  in progress under the Copilot lead
+- **Status:** active — implementation review approved; PR CI and publication
+  gates remain in progress under the Copilot lead
 - **Task record:** `docs/tasks/active/2026-11-27-step-3b-state-do-fuel.md`
-- **Baseline:** `main` at `be946b9`, clean before this task; working branch
-  `step-3b-state-do-fuel`.
+- **Baseline:** `main` at `be946b96aafadcebe72581c4aa20887faa930fb4`, clean
+  before this task; working branch `step-3b-state-do-fuel`.
 - **Goal:** settle eligible private DO trip fuel to the actual goods receiver,
   correct a per-vehicle cargo-state eviction defect, make billing diagnostics
   truthful, and expose missing goods-cargo attribution.
@@ -61,6 +61,14 @@
   verified owner-run transfer-pair analysis; existing B2B matcher, cargo-slot
   index and assignment observer.
 
+## Frozen implementation snapshot
+
+- **Base:** `be946b96aafadcebe72581c4aa20887faa930fb4`.
+- **Implementation commit:** `4dc25fdbdbb514483bbfb26955f63928bbaf1538`.
+- **Commit-relative changed-file/line evidence:** [`STEP3B_DIFF_MANIFEST_BE946B96_4DC25FD.txt`](../../private-logistics-runtime/evidence/STEP3B_DIFF_MANIFEST_BE946B96_4DC25FD.txt) lists all 32 changed paths and every zero-context hunk range from `git diff --unified=0` for this base and commit; it records 3,793 insertions and 238 deletions.
+- **Snapshot boundary:** the manifest freezes the complete implementation diff through `4dc25fd`. Later review-status or publication metadata is intentionally outside that snapshot; the exact full diff remains reproducible from the two recorded commits.
+- **Code landmarks:** receiver/payer policy in [`step3b_policy.h`](../../../plugins/private_logistics/step3b_policy.h) and [`do_fuel_settlement.h`](../../../plugins/private_logistics/do_fuel_settlement.h); assignment evidence and transfer lifecycle in [`dry_assignment_runtime.h`](../../../plugins/private_logistics/dry_assignment_runtime.h); cargo indexing and matching in [`b2b_settlement.h`](../../../plugins/private_logistics/b2b_settlement.h); native detour, diagnostics and day-close integration in [`private_logistics.cpp`](../../../plugins/private_logistics/private_logistics.cpp).
+
 ## Prior findings imported
 
 | Finding ID | Source path/line/address | Exact statement | Initial status |
@@ -80,22 +88,22 @@
 |---|---|---|---|---|
 | INVESTIGATION | Owner-run evidence report, strict `do_receiver_check.py`, and this record | approved | approved | Supported for the observed run; historical sequence and build-identity limits retained |
 | PLAN | Current plan revision 8 in this task record | approved | approved | Both independent reviewers approved revision 8 |
-| IMPLEMENTATION | Current branch diff; exact commit hash to be frozen after documentation/evidence update | rejected pending fresh implementation review | rejected pending coverage repairs and fresh review | Code and focused tests updated; compiler/Windows evidence and PR CI pending |
+| IMPLEMENTATION | Commit `4dc25fdbdbb514483bbfb26955f63928bbaf1538` and changed-file/line manifest above | approved; no implementation findings | approved; no findings | Code and focused tests reviewed; Linux C++ coverage and PR CI pending |
 
 ## Finding Ledger
 
 | ID | Severity | Statement / source | Disposition | Deciding evidence / fix | Test / recheck | Limit |
 |---|---|---|---|---|---|---|
-| 3B-1 | high | State-receiver DO fuel refused by `private_parties_required`. | implemented; review/CI pending | Receiver-based payer selection and verified treasury transfer use `b2b_state_do_fuel`; failed balance/read-back paths skip or roll back. | `ScenarioStep3bPayerPolicy`, treasury read-back/rollback and live trip scenarios. | Actual fuel units and coverage remain provisional; native transfer effectiveness needs CI/game evidence. |
-| 3B-2 | high | `originalTarget` can be a loading site and is not the payer. | implemented; review/CI pending | Receiver is set only by committed consecutive mode-0/mode-1 evidence, same vehicle/home and matching destination; never reads `originalTarget` for payer choice. | Tests cover sequence gaps, signs/modes/sites/owner, ambiguity, zero/multiple receivers, identity changes, unfinished receiver, ring/token overflow, save-load/stale close and generation exhaustion. | One pre-change run does not prove all builds/routes; no post-change in-game validation is claimed. |
-| 3B-3 | medium | Observer/diagnostic hardcodes say `billing=off`. | implemented; review/CI pending | Non-settling diagnostics use `money_moved=0`; startup and day-close use the billing-state helper. | Billing policy tests plus source/output assertions in private-logistics wrappers. | Host/source checks do not prove live game output. |
-| 3B-4 | medium | Dry-cost lifecycle emits records/logs despite the billing gate. | implemented; review/CI pending | Live billing gates dry-cost sampling and emits the inactive notice once. | `step3b_live_billing_disables_dry_cost_startup` and wrapper checks. | Persistence and game lifecycle remain host-tested only. |
-| 3B-5 | medium | Day-close summaries omit payer-class totals and unknown direction. | implemented; review/CI pending | Day-close output includes private/state DO fuel and direction-unknown totals; trips name receiver, payer and reason. | Source/output assertions plus dry-ledger trip scenarios. | No runtime ledger reconciliation is claimed. |
-| 3B-6 | low | Customs must remain deferred under D41. | implemented; review/CI pending | Customs payer policy returns no payer and `customs_export_deferred`; customs/foreign-trade goods behavior remains deferred. | `ScenarioStep3bCustomsAndForeignTradeDeferred` and named Python marker assertion. | Foreign-trade branch remains separate. |
-| 3B-7 | high | Dry-run transfer success is logged as money paid. | implemented; review/CI pending | Dry/off paths do not call transfer callbacks; `paid` and payer totals remain zero while `would_pay` may be positive. | `ScenarioStep3bDryRunNeverPaid`; both modes asserted. | Live transfer success requires verified payer/payee mutation. |
-| 3B-8 | high | Treasury mutation is not verified by a balance read-back. | implemented; review/CI pending | DO-fuel transfer requires callbacks and finite reads; debit/credit read-back and observed-balance rollback are checked. | Treasury insufficiency, missing callback, no-op/partial debit/credit and identity/generation failures are asserted. | Host callbacks cannot prove native currency API effectiveness in game. |
-| 3B-9 | high | Matched deliveries without cargo attribution are silently skipped; vehicle cargo state is stored under an unverified `vehicle+0x10`/hash index and is cleared on pointer mismatch. | implemented; review/CI pending | Use documented `vehicle+0x04`, fail closed on invalid index, preserve pointer guard, emit capped missing-cargo diagnostics and count `no_cargo`. | Tests cover distinct/reused/invalid indices, `resetAll`, absent destination, count/log cap and exact diagnostic fields. | Old log does not record slot index or owner-change resets, so not every runtime loss is independently attributed. |
-| 3B-10 | medium | Delivery vehicle leg is mislabeled `load @UNPRICED ... bill refused`. | implemented; review/CI pending | The verified vehicle leg is logged as a vehicle leg without pricing/refusal language. | Python output assertion and receiver vehicle-leg predicate tests. | No runtime retest after change. |
+| 3B-1 | high | State-receiver DO fuel refused by `private_parties_required`. | implemented; CI pending | Receiver-based payer selection and verified treasury transfer use `b2b_state_do_fuel`; failed balance/read-back paths skip or roll back. | `ScenarioStep3bPayerPolicy`, treasury read-back/rollback and live trip scenarios. | Actual fuel units and coverage remain provisional; native transfer effectiveness needs CI/game evidence. |
+| 3B-2 | high | `originalTarget` can be a loading site and is not the payer. | implemented; CI pending | Receiver is set only by committed consecutive mode-0/mode-1 evidence, same vehicle/home and matching destination; never reads `originalTarget` for payer choice. | Tests cover sequence gaps, signs/modes/sites/owner, ambiguity, zero/multiple receivers, identity changes, unfinished receiver, ring/token overflow, save-load/stale close and generation exhaustion. | One pre-change run does not prove all builds/routes; no post-change in-game validation is claimed. |
+| 3B-3 | medium | Observer/diagnostic hardcodes say `billing=off`. | implemented; CI pending | Non-settling diagnostics use `money_moved=0`; startup and day-close use the billing-state helper. | Billing policy tests plus source/output assertions in private-logistics wrappers. | Host/source checks do not prove live game output. |
+| 3B-4 | medium | Dry-cost lifecycle emits records/logs despite the billing gate. | implemented; CI pending | Live billing gates dry-cost sampling and emits the inactive notice once. | `step3b_live_billing_disables_dry_cost_startup` and wrapper checks. | Persistence and game lifecycle remain host-tested only. |
+| 3B-5 | medium | Day-close summaries omit payer-class totals and unknown direction. | implemented; CI pending | Day-close output includes private/state DO fuel and direction-unknown totals; trips name receiver, payer and reason. | Source/output assertions plus dry-ledger trip scenarios. | No runtime ledger reconciliation is claimed. |
+| 3B-6 | low | Customs must remain deferred under D41. | implemented; CI pending | Customs payer policy returns no payer and `customs_export_deferred`; customs/foreign-trade goods behavior remains deferred. | `ScenarioStep3bCustomsAndForeignTradeDeferred` and named Python marker assertion. | Foreign-trade branch remains separate. |
+| 3B-7 | high | Dry-run transfer success is logged as money paid. | implemented; CI pending | Dry/off paths do not call transfer callbacks; `paid` and payer totals remain zero while `would_pay` may be positive. | `ScenarioStep3bDryRunNeverPaid`; both modes asserted. | Live transfer success requires verified payer/payee mutation. |
+| 3B-8 | high | Treasury mutation is not verified by a balance read-back. | implemented; CI pending | DO-fuel transfer requires callbacks and finite reads; debit/credit read-back and observed-balance rollback are checked. | Treasury insufficiency, missing callback, no-op/partial debit/credit and identity/generation failures are asserted. | Host callbacks cannot prove native currency API effectiveness in game. |
+| 3B-9 | high | Matched deliveries without cargo attribution are silently skipped; vehicle cargo state is stored under an unverified `vehicle+0x10`/hash index and is cleared on pointer mismatch. | implemented; CI pending | Use documented `vehicle+0x04`, fail closed on invalid index, preserve pointer guard, emit capped missing-cargo diagnostics and count `no_cargo`. | Tests cover distinct/reused/invalid indices, `resetAll`, absent destination, count/log cap and exact diagnostic fields. | Old log does not record slot index or owner-change resets, so not every runtime loss is independently attributed. |
+| 3B-10 | medium | Delivery vehicle leg is mislabeled `load @UNPRICED ... bill refused`. | implemented; CI pending | The verified vehicle leg is logged as a vehicle leg without pricing/refusal language. | Python output assertion and receiver vehicle-leg predicate tests. | No runtime retest after change. |
 
 ## Superseded plan proposal (revision 2)
 
@@ -658,13 +666,17 @@ This section supersedes the pre-implementation checkpoint above.
   corrected vehicle-leg output, truthful billing-state logs, version `0.19.2-step3b`,
   and the requested roadmap/economy/DO-office documentation are present.
 - **Review repair:** the first focus-1 review required the exact frozen diff
-  before implementation review; the first focus-2 review requested the
-  receipt-capacity assertion and broader receiver/cargo edge coverage. The
-  receipt wrapper assertion and named host scenarios for sequence/sign/owner
-  mismatch, ring/token overflow, generation exhaustion, save-load/stale close,
-  post-load assignment identity, unfinished/changed receivers, reset behavior,
-  and no-cargo cap/fields have been added. Fresh independent review of the
-  frozen final diff is still pending.
+  before implementation review; that request is addressed by the complete
+  commit-relative changed-file/line manifest above; focus 1 subsequently
+  inspected the complete 32-path diff for `4dc25fd` and found no implementation
+  defects. Focus 2 also reports no findings and approves static review. The
+  first focus-2 review requested the receipt-capacity assertion
+  and broader receiver/cargo edge coverage; the receipt wrapper assertion and
+  named host scenarios for sequence/sign/owner mismatch, ring/token overflow,
+  generation exhaustion, save-load/stale close, post-load assignment identity,
+  unfinished/changed receivers, reset behavior, and no-cargo cap/fields have
+  been added. Both independent implementation reviews are approved without
+  code-level findings.
 - **Python test evidence:** each of the 39 discovered `test_*.py` files was
   loaded separately with `python -m unittest discover`, repository-root cwd
   and `PYTHONPATH=.`. All 39 processes exited 0 (242 tests discovered, 32
@@ -678,12 +690,12 @@ This section supersedes the pre-implementation checkpoint above.
   Windows monolithic build, not PR Windows CI evidence.
 - **C++ host evidence:** the B2B host wrapper passed under MSVC. The dry-ledger
   host wrapper intentionally selects g++/clang++ and reports an explicit
-  skip when neither is available; a local MSVC probe compiled but did not
-  complete its synthetic executable, so it is not counted as a pass. Linux CI
+  skip when neither is available; the current dry-ledger test translation unit
+  compiles with MSVC, but an earlier manual execution crashed during its
+  synthetic run, so compile-only is not counted as a host-test pass. Linux CI
   remains required for the C++ host-test gate.
-- **STATIC REVIEW:** first implementation reports rejected pending the exact
-  diff / test repairs; the repairs are made, and final independent review is
-  pending.
+- **STATIC REVIEW:** both focus reviewers approved the implementation diff
+  without findings.
 - **BUILD/TEST EVIDENCE:** Python process runs passed with skips noted; local
   monolithic MSVC build passed; B2B C++ host test passed under MSVC; dry-ledger
   C++ host suite and Linux CI are still pending.
