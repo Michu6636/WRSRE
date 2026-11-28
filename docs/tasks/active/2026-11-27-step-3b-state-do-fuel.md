@@ -2,8 +2,8 @@
 
 ## Contract
 
-- **Status:** active — implementation review approved; PR CI and publication
-  gates remain in progress under the Copilot lead
+- **Status:** merged in PR #105 (supersedes #104) on the owner's order;
+  in-game check pending — see "Test fix and merge (2026-11-28)" at the end
 - **Task record:** `docs/tasks/active/2026-11-27-step-3b-state-do-fuel.md`
 - **Baseline:** `main` at `be946b96aafadcebe72581c4aa20887faa930fb4`, clean
   before this task; working branch `step-3b-state-do-fuel`.
@@ -715,3 +715,31 @@ This section supersedes the pre-implementation checkpoint above.
   - a pickup at a state building is charged to the receiving private company;
   - the start and day-close lines show `billing=live`;
   - no `billing=off` text appears while billing is live.
+
+## Test fix and merge (2026-11-28)
+
+This section supersedes the publication-gate notes above.
+
+- **First real run of the dry-ledger host suite:** PR #104 CI (run
+  46105541982) failed only in `tests/private_logistics/test_dry_assignment_ledger.py`.
+  The earlier "39 processes exited 0" result was on Windows, where this suite
+  skips, so it had never run before.
+- **Cause: test harness only.** (1) `-Werror` unused
+  `AssignmentObserveMode0FailureLocked` in the host translation unit;
+  (2) the segfault: the test stubbed `TreasuryReadable()` true but left
+  `g_currency` null; (3) three checks read `logs.back()` although the
+  `[DO TRIP]` line precedes the `[FLEET ASSIGNMENT]` close line; (4) a stale
+  expectation without `receiver_kind=`; (5) the Python wrapper expected a
+  scenario name that does not exist (`ScenarioStep3bTripPayerAndBilling`; the
+  real one is `assignment_close_charges_original_buyer_once_only_when_complete`).
+- **Fix:** commit `a54dff1` (test files plus a `[[maybe_unused]]` attribute).
+  Production behaviour is unchanged. With it: 18/18 dry-ledger and 29/29 fleet
+  scenarios pass under `-fsanitize=address,undefined`; all `test_*.py` files
+  exit 0 on Linux.
+- **Open, non-blocking:** add the slot index and a cause to `ERROR NO CARGO
+  RECORD`; `do_fuel_settlement.h` passes a literal `0` currency that the
+  adapter ignores; PyYAML is not installed in CI, so `test_ci_workflow.py`
+  skips.
+- **RUNTIME VALIDATION:** none yet. The owner's in-game checklist is in the
+  PR #105 body.
+

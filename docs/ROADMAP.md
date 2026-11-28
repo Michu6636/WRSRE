@@ -16,7 +16,7 @@ file in the same pull request (see "How to run a step").
 | **Bug fix**: private DOs served buildings under construction | Done in PR #100. Host tests and CI pass. **Not yet checked in game.** [Task record](tasks/active/2026-11-22-private-do-under-construction.md). |
 | **Code step 2**: no fallbacks or made-up data | Merged in [PR #101](https://github.com/Michu6636/WRSRE/pull/101) (`823df769`). Host tests and the Windows CI build passed. The owner's in-game check is still pending. [Task record](tasks/active/2026-11-22-remove-fallbacks-and-made-up-data.md). |
 | **Code step 3**: live B2B billing | Merged in [PR #102](https://github.com/Michu6636/WRSRE/pull/102) (`73a9d1d`): `private_shops` 3.8 has no delivery bill or foreign restock, customs buyers create no `b2b_state_buy` leg, and `private_logistics` 0.19.1 ships `billing = 1`, `dry_run = 0`. **First in-game run 2026-11-23 (10 days):** what happened worked; several paths were not exercised (see step 3). [Task record](tasks/active/2026-11-22-live-b2b-billing.md). |
-| **Step 3b**: fix-ups from that run | **In progress.** Receiver-based DO fuel (D40), cargo-attribution diagnostics, honest billing labels; PR and owner in-game checklist pending. |
+| **Step 3b**: fix-ups from that run | Merged in [PR #105](https://github.com/Michu6636/WRSRE/pull/105) (supersedes #104), `private_logistics` 0.19.2-step3b: receiver-based DO fuel (D40), `ERROR NO CARGO RECORD` + `no_cargo`, honest billing labels. Host tests and the Windows CI build pass. **Not yet checked in game.** [Task record](tasks/active/2026-11-27-step-3b-state-do-fuel.md). |
 | Company finances (step 4d) | **Planned.** Company health ladder: debt, credit hold, insolvency (D45). |
 | Private export markets | **Later step (D41)**, own branch. Decisions D36–D39, D42–D48 recorded; [plan and investigation](visions/vision-private-export-markets.md). |
 | Construction vision (state and private offices) | Owner decisions O1–O11 recorded; **not scheduled** (D13). [Vision](visions/vision-private-construction.md). |
@@ -185,8 +185,10 @@ price (D16, D19). Prerequisites and their order are in the economy direction
 **Goal:** a private DO is paid for every verified trip by whoever receives
 the goods, and the log tells the truth about billing.
 
-**Status 2026-11-27:** implementation is underway on
-`step-3b-state-do-fuel` (`0.19.2-step3b`). The owner-provided pre-change run
+**Status 2026-11-28:** merged in PR #105 (`0.19.2-step3b`); host tests and
+the Windows CI build pass; the owner's in-game check is still pending.
+
+**Background (2026-11-27):** The owner-provided pre-change run
 recorded 661 adjacent `0x68F792` → `0x68F7F9` delivery pairs and 32/32 DO
 assignments with exactly one receiver matching the logged target. That run
 shows this pair is used by road DO trucks and corrects the older sea/rail-only
