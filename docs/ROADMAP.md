@@ -29,8 +29,11 @@ file in the same pull request (see "How to run a step").
 - **No made-up data, ever (D8).** No sample, placeholder or invented fallback
   value. Missing data shows `UNAVAILABLE` or `ERROR <reason>`, very visibly.
 - **No money from nothing (D20).** Every credit has a matching debit. The only
-  exception is the fund's founding capital, created once per map.
-- **Native prices only (D2), one domestic market (D3), no exchange rate (D21).**
+  exception is the fund's founding capital, created once per map, and later
+  the foreign-market freight of export trips (D39).
+- **Native prices only (D2), one domestic market (D3), no fixed or invented
+  exchange rate (D21).** The only rate is the price-derived one for foreign
+  trade (D42, later step).
 - **The player chooses** the state/private balance (D1) and the welfare level
   (D18). Defaults must not force either.
 - **Do not assume.** If a step needs a decision that no document records, ask
@@ -213,7 +216,7 @@ the goods, and the log tells the truth about billing.
 
 ### Step 4: privatisation money, welfare decree, housing trigger
 
-Three separate tasks, each with its own task record.
+Four separate tasks, each with its own task record.
 
 - **4a. Privatisation money flows** (§11 item 5, second half; economy
   direction §4.5):
