@@ -243,7 +243,7 @@ static void formatted_output() {
     char buffer[1024]; assert(FormatSummary(out.summary, buffer, sizeof(buffer)));
     for (const char* needle : {"[JOURNEY_CORE] schema=1", "session=1", "vehicle=10",
             "office=100", "journey=1", "completed=1", "fuel_exact=1",
-            "actual_burn_t=0.125", "refill_t=0.25", "billing=off"})
+            "actual_burn_t=0.125", "refill_t=0.25", "money_moved=0"})
         assert(std::strstr(buffer, needle));
     char tiny[8] = "old"; assert(!FormatSummary(out.summary, tiny, sizeof(tiny)) && tiny[0] == 0);
     assert(!FormatSummary(out.summary, nullptr, 0));

@@ -265,7 +265,7 @@ inline bool FormatSummary(const Summary& s, char* buffer, std::size_t size) {
     const int n = std::snprintf(record, sizeof(record),
         "[JOURNEY_CORE] schema=1 session=%llu vehicle=%llu office=%llu journey=%llu "
         "start_seq=%llu end_seq=%llu completed=%u fuel_exact=%u "
-        "actual_burn_t=%.17g refill_t=%.17g burn_events=%llu reason=%s billing=off",
+        "actual_burn_t=%.17g refill_t=%.17g burn_events=%llu reason=%s money_moved=0",
         static_cast<unsigned long long>(s.identity.session),
         static_cast<unsigned long long>(s.identity.vehicle),
         static_cast<unsigned long long>(s.identity.office),

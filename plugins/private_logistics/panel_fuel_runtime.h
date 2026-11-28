@@ -6,7 +6,7 @@
 #include "schedule_observer.h"
 #include "schedule_assignment_ledger.h"
 
-static constexpr char kGateDiagnosticVersion[] = "0.19.1-live-billing";
+static constexpr char kGateDiagnosticVersion[] = "0.19.2-step3b";
 static bool g_scheduleReady = false;
 static volatile LONG g_scheduleFault = 0;
 static private_logistics_schedule::History g_scheduleHistory; // simulation tick only
@@ -278,7 +278,7 @@ static void ScheduleAssignmentLog(const PanelRecord& record,
              "hypothetical_cost_reason=%s fuel_price_per_tonne=%.9g currency=%d "
              "currency_policy=public_api_or_RUB_fallback price_timing=observation_drain "
              "id_scope=process_local_selected_panel native_boundary=unverified completion=unverified "
-             "exact_burn=0 actual_cost=not_computed settlement=none billing=off",
+             "exact_burn=0 actual_cost=not_computed settlement=none money_moved=0",
              record.epoch, record.sequence, (void*)fuel.root,
              (unsigned long long)c.id, (unsigned long long)c.epoch, (void*)c.root, (void*)c.home,
              private_logistics_assignment::KindName(event.kind), event.reason,
@@ -325,7 +325,7 @@ static void ScheduleObserverLog(const PanelRecord& record, bool gap)
          "raw4a0=%p raw610=%p raw650=%p fuel_valid=%d fuel_root_raw=%.9g "
          "aggregate_litres_candidate=%.2f visibility=panel_only phase=post_render "
          "native_event_coverage=unverified native_job_id=unverified buyer=unverified "
-         "completion=unverified exact_burn=0 billing=off",
+         "completion=unverified exact_burn=0 money_moved=0",
          record.epoch, record.sequence, (unsigned long long)record.milliseconds,
          (void*)fuel.root, (void*)home, private_logistics_schedule::StatusName(s.status),
          private_logistics_schedule::BaselineName(d.baseline), d.fields ? 1 : 0,
@@ -349,7 +349,7 @@ static void ScheduleObserverLog(const PanelRecord& record, bool gap)
          "structure_changed=%d config_availability_changed=%d task_flags_changed=%d "
          "scalar_settings_changed=%d settings_only=%d active_index_only=%d "
          "comparison_scope=captured_endpoints pattern_semantics=observed_flags_only "
-         "resource_identity=unverified native_job_boundary=unverified billing=off",
+         "resource_identity=unverified native_job_boundary=unverified money_moved=0",
          record.epoch, record.sequence, d.previousSample, (void*)fuel.root,
          changes.comparable ? 1 : 0, d.endpointAcrossGap ? 1 : 0,
          private_logistics_schedule::PatternName(previousPattern),
@@ -363,7 +363,7 @@ static void ScheduleObserverLog(const PanelRecord& record, bool gap)
              "endpoint_fields_differ=%d endpoint_storage_differ=%d endpoint_index_differ=%d "
              "endpoint_context_differ=%d compared_across_gap=1 continuity_valid=0 "
              "comparison=last_valid_captured_values native_event_time=unknown "
-             "native_event_coverage=unverified completion=unverified billing=off",
+             "native_event_coverage=unverified completion=unverified money_moved=0",
              record.epoch, record.sequence, (unsigned long long)record.milliseconds,
              (void*)fuel.root, (void*)home, d.previousSample, (unsigned long long)d.previousMs,
              previous.count, s.count, d.endpointFields ? 1 : 0, d.endpointStorage ? 1 : 0,
@@ -374,7 +374,7 @@ static void ScheduleObserverLog(const PanelRecord& record, bool gap)
             const auto& r = previous.rows[i];
             Logf("[PANEL SCHEDULE PREVIOUS ROW] epoch=%ld sample=%u compared_to_sample=%u "
                  "row=%u target_raw=%p config_fields_read=%d flag00=%u value04=%.9g "
-                 "flagc8=%u valuecc=%.9g values=cached_not_native_read billing=off",
+                 "flagc8=%u valuecc=%.9g values=cached_not_native_read money_moved=0",
                  record.epoch, d.previousSample, record.sequence, i, (void*)r.target,
                  r.configRead ? 1 : 0, (unsigned)r.flag00, (double)r.value04,
                  (unsigned)r.flagC8, (double)r.valueCC);
@@ -446,7 +446,7 @@ static void PanelObserverTick(void*, float, float)
          "captured_paused=%d coalesced_snapshots=%u sample_ids=accepted_records_only "
          "root514_read=%d root514=%u root4f0_read=%d root4f0=%p "
          "gate_global_read=%d gate_global=%d gate_diag=%s native_execution=unobserved "
-         "physical_fuel=unverified exact_burn=0 billing=off",
+         "physical_fuel=unverified exact_burn=0 money_moved=0",
          record.epoch, record.sequence, (unsigned long long)record.milliseconds,
          (void*)s.window, (void*)s.root, PanelStatus(s.status), s.aggregateValid ? 1 : 0,
          (double)s.current, (double)s.litresCandidate, (double)s.unadjustedCapacity,
@@ -532,7 +532,7 @@ static void PanelObserverStart(void)
     g_scheduleReady = g_scheduleObserverEnabled && ScheduleTargetMatches();
     Logf("[PANEL SCHEDULE] enabled=%d fingerprint=%s mode=read_only_selected_fields "
          "max_rows=16 last_flag5fd_row_config=not_read gap_endpoints=enabled_cached_values_only "
-         "classification=enabled_captured_values assignment_ledger=selected_panel_dry_run job_lifecycle=unverified billing=off",
+         "classification=enabled_captured_values assignment_ledger=selected_panel_dry_run job_lifecycle=unverified money_moved=0",
          g_scheduleObserverEnabled ? 1 : 0, g_scheduleReady ? "matched" : "disabled_or_mismatch");
     InitializeCriticalSection(&g_panelQueueLock);
     if (!g_simClock->registerTick(PanelObserverTick, nullptr)) {

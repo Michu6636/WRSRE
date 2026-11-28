@@ -87,7 +87,7 @@ class ScheduleObserverTest(unittest.TestCase):
             self.assertNotIn(forbidden, header)
         self.assertIn('if (s.status != private_logistics_schedule::Status::Complete) return;', runtime)
         self.assertIn('native_job_id=unverified buyer=unverified', runtime)
-        self.assertIn('completion=unverified exact_burn=0 billing=off', runtime)
+        self.assertIn('completion=unverified exact_burn=0 money_moved=0', runtime)
         self.assertIn('g_scheduleObserverEnabled && ScheduleTargetMatches()', runtime)
         self.assertEqual(runtime.count('InstallInlineHook('), 1)  # same existing hook
 
@@ -98,7 +98,7 @@ class ScheduleObserverTest(unittest.TestCase):
         history = header.split('class History {', 1)[1]
         self.assertNotIn('m.Get(', history)  # cached-value comparisons only
         self.assertEqual(header.count('m.Get('), 13)  # native read sites unchanged
-        self.assertIn('0.19.1-live-billing', cpp)
+        self.assertIn('0.19.2-step3b', cpp)
         self.assertIn('if (d.endpointCompared && d.endpointAcrossGap)', runtime)
         self.assertIn('compared_across_gap=1 continuity_valid=0', runtime)
         self.assertIn('native_event_time=unknown', runtime)

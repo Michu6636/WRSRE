@@ -100,14 +100,14 @@ class PanelFuelObserverTest(unittest.TestCase):
         for forbidden in ('windows.h', 'currency_api', 'modifyCompanyCapital', 'FuelSlotTons(',
                           'FormatSummary(', 'Consume(', 'WriteProcessMemory'):
             self.assertNotIn(forbidden, header + runtime)
-        self.assertIn('physical_fuel=unverified exact_burn=0 billing=off', runtime)
+        self.assertIn('physical_fuel=unverified exact_burn=0 money_moved=0', runtime)
         self.assertIn('unresolved_7c58', runtime)
 
     def test_gate_diagnostic_version_and_qualified_address(self):
         runtime = (PLUGIN / 'panel_fuel_runtime.h').read_text()
         cpp = (PLUGIN / 'private_logistics.cpp').read_text()
-        self.assertIn('#define PL_VERSION "0.19.1-live-billing"', cpp)
-        self.assertIn('"0.19.1-live-billing"', runtime)
+        self.assertIn('#define PL_VERSION "0.19.2-step3b"', cpp)
+        self.assertIn('"0.19.2-step3b"', runtime)
         self.assertIn('reinterpret_cast<std::uintptr_t>(g_exeBase)', runtime)
         self.assertNotRegex(runtime, r'\b(?:static_cast|reinterpret_cast)<Address>')
         self.assertIn('native_execution=unobserved', runtime)

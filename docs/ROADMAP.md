@@ -16,7 +16,7 @@ file in the same pull request (see "How to run a step").
 | **Bug fix**: private DOs served buildings under construction | Done in PR #100. Host tests and CI pass. **Not yet checked in game.** [Task record](tasks/active/2026-11-22-private-do-under-construction.md). |
 | **Code step 2**: no fallbacks or made-up data | Merged in [PR #101](https://github.com/Michu6636/WRSRE/pull/101) (`823df769`). Host tests and the Windows CI build passed. The owner's in-game check is still pending. [Task record](tasks/active/2026-11-22-remove-fallbacks-and-made-up-data.md). |
 | **Code step 3**: live B2B billing | Merged in [PR #102](https://github.com/Michu6636/WRSRE/pull/102) (`73a9d1d`): `private_shops` 3.8 has no delivery bill or foreign restock, customs buyers create no `b2b_state_buy` leg, and `private_logistics` 0.19.1 ships `billing = 1`, `dry_run = 0`. **First in-game run 2026-11-23 (10 days):** what happened worked; several paths were not exercised (see step 3). [Task record](tasks/active/2026-11-22-live-b2b-billing.md). |
-| **Step 3b**: fix-ups from that run | **Next.** State-paid DO trip fuel (D40), trip direction, honest billing log labels. |
+| **Step 3b**: fix-ups from that run | Merged in [PR #105](https://github.com/Michu6636/WRSRE/pull/105) (supersedes #104), `private_logistics` 0.19.2-step3b: receiver-based DO fuel (D40), `ERROR NO CARGO RECORD` + `no_cargo`, honest billing labels. Host tests and the Windows CI build pass. **Not yet checked in game.** [Task record](tasks/active/2026-11-27-step-3b-state-do-fuel.md). |
 | Company finances (step 4d) | **Planned.** Company health ladder: debt, credit hold, insolvency (D45). |
 | Private export markets | **Later step (D41)**, own branch. Decisions D36–D39, D42–D48 recorded; [plan and investigation](visions/vision-private-export-markets.md). |
 | Construction vision (state and private offices) | Owner decisions O1–O11 recorded; **not scheduled** (D13). [Vision](visions/vision-private-construction.md). |
@@ -185,34 +185,57 @@ price (D16, D19). Prerequisites and their order are in the economy direction
 **Goal:** a private DO is paid for every verified trip by whoever receives
 the goods, and the log tells the truth about billing.
 
+**Status 2026-11-28:** merged in PR #105 (`0.19.2-step3b`); host tests and
+the Windows CI build pass; the owner's in-game check is still pending.
+
+**Background (2026-11-27):** The owner-provided pre-change run
+recorded 661 adjacent `0x68F792` → `0x68F7F9` delivery pairs and 32/32 DO
+assignments with exactly one receiver matching the logged target. That run
+shows this pair is used by road DO trucks and corrects the older sea/rail-only
+classification; it is investigation evidence, not validation of the changed
+build. The log also reports 206 early no-cargo deliveries despite matching
+loads and sufficient tonnage. Source inspection found an unverified `+0x10` /
+pointer-hash cargo-slot key and destructive pointer-mismatch clearing; the log
+cannot attribute each lost record to that defect. The fix uses the documented
+`vehicle+0x04` index, fails closed when invalid, and adds capped errors and a
+`no_cargo` day counter without guessing another cause. No post-change in-game
+test has been run.
+
 - **Trip direction.** Today the trip's target is called the "buyer" even
   when the truck *loaded* there (`dry_assignment_runtime.h`,
-  `AssignmentSettlementEvent`). Determine from the native task directions or
-  the matched B2B load/unload events which building **received** the goods.
-  If that cannot be determined: pay nothing, `reason=direction_unknown`. The
-  treasury must never pay for a trip where the state was the seller.
+  `AssignmentSettlementEvent`). Use the committed, adjacent matched B2B
+  building/vehicle delivery pair for the same open truck assignment. Exactly
+  one distinct receiver is required; zero/multiple receivers, an invalid pair,
+  or overflow pays nothing with `reason=direction_unknown`. Never use
+  `originalTarget` to choose a payer. The treasury must never pay for a trip
+  where the state was the seller.
 - **D40.** Private receiver: that company pays (unchanged). State receiver
   (not customs): the **treasury** pays the private DO the same observed fuel
-  amount (`TransferFunds` with payer = treasury, label
-  `b2b_state_do_fuel`; the existing `treasury_skips` rule applies). Customs
-  receiver: not paid until the later export step (D39), with its own
-  reason, for example `customs_export_deferred`. State-owned DOs stay
-  untracked.
+  amount through a verified transfer with payer = `nullptr` and label
+  `b2b_state_do_fuel`; the existing `treasury_skips` handling applies.
+  Customs receiver: not paid in this step (`customs_export_deferred`); D39
+  belongs to the later export step. State-owned DOs stay untracked.
 - **Honest billing labels.** The observer and diagnostic lines
   (`[FLEET FUEL]`, `[FLEET ASSIGNMENT]`, `[PANEL *]`, `[DRY COST]`, journey
-  tracker) print a hardcoded `billing=off` although billing is live. Replace
-  it with `money_moved=0` (they never move money) and print the **real**
-  state from `g_billing` / `g_dryRun` (`billing=live`, `dry_run` or `off`)
-  once at start and in every day-close line. `[DRY COST]` runs only while
-  billing is off; with billing live, log that once instead of repeating
-  `saved=1 records=0`. Update the tests that look for the old text.
+  tracker) never move money, so they say `money_moved=0`. The plugin-start and
+  every day-close line report the real state from `g_billing` / `g_dryRun`
+  (`billing=live`, `billing=dry_run`, or `billing=off`). `[DRY COST]` runs
+  only while billing is off; with billing live, emit
+  `[DRY COST] inactive: billing live` once instead of repeating
+  `saved=1 records=0`.
+- Missing cargo and vehicle leg: log capped `[B2B GOODS] ERROR NO CARGO
+  RECORD` lines with a daily `no_cargo` count for matched deliveries lacking
+  cargo attribution. The `0x68F7F9` vehicle leg is displayed as a vehicle leg,
+  not `UNPRICED` or `bill refused`.
 - Day close: `do_fuel_private`, `do_fuel_state`, `direction_unknown`.
 - **Acceptance:** host tests for the payer choice (private receiver, state
   receiver, customs, unknown direction, state seller never paid by the
   treasury) and the billing label in all three states. In game: a private DO
   trip delivering to a state factory shows `paid>0` with `b2b_state_do_fuel`,
   a pickup trip at a state building is charged to the receiving company, and
-  the start and day-close lines show `billing=live`.
+  the start and day-close lines show `billing=live`; no `billing=off` text
+  appears while billing is live. Do not mark the in-game checklist complete
+  based on host tests or the pre-change owner log.
 
 ### Step 4: privatisation money, welfare decree, housing trigger
 
@@ -353,11 +376,11 @@ Ghidra operator at a time; index results in `docs/ghidra-index/`.
    move, so search for the names.
 3. **Implement** in small edits. Keep save compatibility, or state in the
    task record why it changes.
-4. **Test on the host:**
-   `for f in $(find tests -name 'test_*.py'); do PYTHONPATH=. python3 $f; done`.
-   Every test file must end with `unittest.main()`, because CI runs each file
-   directly. There is no local MSVC, so CI's `Windows (MSVC + SEH)` job is the
-   real build.
+4. **Test on the host:** CI discovers unittest cases in each file, even when
+   the file has no `unittest.main()` block:
+   `for f in $(find tests -name 'test_*.py' | sort); do PYTHONPATH=. python3 -m unittest discover -s "$(dirname "$f")" -p "$(basename "$f")" -v; done`.
+   There is no local MSVC, so CI's `Windows (MSVC + SEH)` job is the real
+   build.
 5. **Open a pull request.** CI runs docs hygiene, the host tests and the
    Windows build, and uploads the `windows-plugins` artifact (7 days).
 6. **Owner in-game check** with the artifact or `build.bat clean wrsre`.

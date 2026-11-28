@@ -2,6 +2,7 @@
 #ifndef PRIVATE_LOGISTICS_ASSIGNMENT_SETTLEMENT_H
 #define PRIVATE_LOGISTICS_ASSIGNMENT_SETTLEMENT_H
 #include "schedule_assignment_ledger.h"
+#include "step3b_policy.h"
 
 namespace private_logistics_assignment_settlement {
 namespace assignment = private_logistics_assignment;
@@ -16,8 +17,8 @@ inline Assessment Assess(const assignment::Event& event, bool discoveryComplete,
     Assessment a;
     const auto& c = event.candidate;
     if (event.kind != assignment::Kind::Closed) return a;
-    a.reason = "ambiguous_buyer";
-    if (!c.originalTarget || c.originalTargetRows != 1 || !c.home) return a;
+    a.reason = "missing_home";
+    if (!c.home) return a;
     a.reason = "unknown_start";
     if (c.unknownStart) return a;
     a.reason = "observation_gap";

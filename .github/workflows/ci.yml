@@ -45,10 +45,27 @@ jobs:
           mkdir -p build/test-logs
           fail=0
           failing=""
+          required=(
+            tests/private_logistics/test_b2b_settlement.py
+            tests/private_logistics/test_dry_assignment_ledger.py
+            tests/private_logistics/test_census_capacity.py
+            tests/private_logistics/test_fuel_diagnostics.py
+            tests/private_logistics/test_journey_tracker.py
+            tests/private_logistics/test_schedule_assignment_ledger.py
+            tests/private_logistics/test_fleet_fuel_observer.py
+            tests/private_logistics/test_panel_fuel_observer.py
+            tests/private_logistics/test_schedule_observer.py
+            tests/private_logistics/test_target_policy.py
+            tests/private_logistics/test_site_permissions.py
+            tests/private_logistics/test_storage_checkbox.py
+            tests/private_logistics/test_task_audit.py
+            tests/sim_clock/test_scheduled_phases.py
+          )
           while IFS= read -r f; do
             echo "::group::$f"
             log="build/test-logs/$(echo "$f" | tr '/' '_').log"
-            if python3 "$f" -v > "$log" 2>&1; then
+            if python3 -m unittest discover -s "$(dirname "$f")" \
+                -p "$(basename "$f")" -v > "$log" 2>&1; then
               echo "PASS $f"
               # A green tick that skipped a test is not coverage. Surface it.
               if grep -qE 'skipped=[0-9]+|skipped [0-9]+' "$log"; then
@@ -66,6 +83,20 @@ jobs:
               fail=1
               failing="$failing
           * \`$f\`"
+            fi
+            if printf '%s\n' "${required[@]}" | grep -Fxq "$f"; then
+              if ! grep -Eq '^Ran [1-9][0-9]* tests? in ' "$log"; then
+                echo "::error file=$f::required suite ran zero tests or omitted unittest summary"
+                fail=1
+                failing="$failing
+          * \`$f\` (missing nonzero unittest summary)"
+              fi
+              if grep -qE 'skipped=[0-9]+|skipped [0-9]+' "$log"; then
+                echo "::error file=$f::required suite skipped tests"
+                fail=1
+                failing="$failing
+          * \`$f\` (required coverage skipped)"
+              fi
             fi
             echo "::endgroup::"
           done < <(find tests -name 'test_*.py' | sort)

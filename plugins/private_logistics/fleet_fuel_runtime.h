@@ -55,7 +55,7 @@ static void FleetEvents(const fleet::a::Result& result) {
              "estimate_partial=%d discovery_complete=%d estimated_cost_available=%d estimated_cost=%.9g "
              "estimate_reason=%s estimate_currency=%d price_per_tonne=%.9g "
              "price_basis=current_cached_30s quantity_assumption=native_tonnes_provisional "
-             "actual_cost=not_computed settlement=none billing=off",
+             "actual_cost=not_computed settlement=none money_moved=0",
              (unsigned long long)c.epoch,(void*)c.root,(void*)c.home,(unsigned long long)c.id,
              fleet::a::KindName(e.kind),e.reason,(void*)c.originalTarget,c.originalTargetRows,
              c.first.sample,e.boundary.sample,(unsigned long long)c.first.ms,(unsigned long long)e.boundary.ms,
@@ -110,7 +110,7 @@ static void FleetVehicleLog(const fleet::Vehicle& v,const char* reason) {
          "estimated_cost_available=%d estimated_cost=%.9g estimate_reason=%s estimate_currency=%d "
          "price_per_tonne=%.9g price_basis=current_cached_30s quantity_assumption=native_tonnes_provisional "
          "estimate_scope=vehicle_observed_not_bill exact_burn=0 "
-         "actual_cost=not_computed settlement=none billing=off",
+         "actual_cost=not_computed settlement=none money_moved=0",
          (unsigned long long)v.previousEpoch,(void*)v.root,(void*)v.home,v.sample,
          (unsigned long long)v.lastMs,reason,v.previousValid?1:0,
          fleet::a::NativeTotal(v.previous),v.previous.count,(void*)v.previous.metadata[0],
@@ -144,7 +144,7 @@ static void FleetTickBody() {
     if(!complete && (!g_fleetCoverageWarned || now<g_fleetCoverageLogMs ||
                      now-g_fleetCoverageLogMs>=30000)) {
         Logf("[FLEET COVERAGE] complete=0 reason=invalid_duplicate_changed_or_capacity "
-             "max_enterprises=32 max_vehicles=64 no_missing_vehicle_cost_inferred=1 billing=off");
+             "max_enterprises=32 max_vehicles=64 no_missing_vehicle_cost_inferred=1 money_moved=0");
         g_fleetCoverageLogMs=now;
     }
     g_fleetCoverageWarned=!complete;
@@ -181,7 +181,7 @@ static void FleetObserverTick(void*,float,float) {
     __try {FleetTickBody();}
     __except(EXCEPTION_EXECUTE_HANDLER) {
         g_fleetFault=true;FleetBreakAll();
-        Logf("[FLEET FUEL] disabled_after_guarded_fault=1 exact_burn=0 billing=off");
+        Logf("[FLEET FUEL] disabled_after_guarded_fault=1 exact_burn=0 money_moved=0");
     }
 }
 static void FleetObserverStart() {
@@ -194,12 +194,12 @@ static void FleetObserverStart() {
         return;
     }
     if(!g_simClock->registerTick(FleetObserverTick,nullptr)) {
-        Logf("[FLEET FUEL] tick_registration_failed=1 billing=off");return;
+        Logf("[FLEET FUEL] tick_registration_failed=1 money_moved=0");return;
     }
     g_fleetStarted=true;
     Logf("[FLEET FUEL] started panel_required=0 source=private_enterprise_road_office_fleets "
          "interval_ms=1000 max_enterprises=32 max_vehicles=64 max_fleet=256 new_hooks=0 "
          "coverage=sampled_not_continuous units=unverified refill_coverage=unverified "
-         "exact_burn=0 actual_cost=not_computed settlement=none billing=off");
+         "exact_burn=0 actual_cost=not_computed settlement=none money_moved=0");
 }
 #endif

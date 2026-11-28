@@ -1,0 +1,966 @@
+﻿Step 3b Python suite run: python -m unittest discover per test_*.py file; cwd repository root; PYTHONPATH=.
+
+=== C:\WRSRE\tests\agent_workflow\test_build_monolith_clean.py ===
+python.exe : test_almanac_overlay_supports_monolith_entry_renaming (test_build_monolith_clean.BuildAndMonolithTests.tes
+t_almanac_overlay_supports_monolith_entry_renaming) ... ok
+At line:2 char:457
++ ... ; $output = & python -m unittest discover -s $f.DirectoryName -p $f.N ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_almanac_ov...enaming) ... ok:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+test_build_bat_is_crlf_and_paren_balanced (test_build_monolith_clean.BuildAndMonolithTests.test_build_bat_is_crlf_and_p
+aren_balanced) ... ok
+test_cl_and_link_redirect_intermediates_into_build_dirs (test_build_monolith_clean.BuildAndMonolithTests.test_cl_and_li
+nk_redirect_intermediates_into_build_dirs) ... ok
+test_clean_bat_runs_on_all_exit_paths_and_cleans_obj_dirs (test_build_monolith_clean.BuildAndMonolithTests.test_clean_b
+at_runs_on_all_exit_paths_and_cleans_obj_dirs) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.007s
+
+OK
+
+EXIT=0
+
+=== C:\WRSRE\tests\agent_workflow\test_ci_workflow.py ===
+python.exe : test_actions_are_pinned_to_a_major_version (test_ci_workflow.CiWorkflowTests.test_actions_are_pinned_to_a_
+major_version) ... ok
+At line:2 char:457
++ ... ; $output = & python -m unittest discover -s $f.DirectoryName -p $f.N ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_actions_ar...version) ... ok:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+test_almanac_runners_are_all_invoked (test_ci_workflow.CiWorkflowTests.test_almanac_runners_are_all_invoked) ... ok
+test_expected_jobs_exist (test_ci_workflow.CiWorkflowTests.test_expected_jobs_exist) ... ok
+test_hygiene_honours_gitattributes (test_ci_workflow.CiWorkflowTests.test_hygiene_honours_gitattributes)
+The encoding check must skip files marked `-text` rather than ... ok
+test_linux_job_runs_suites_and_warns_on_skips (test_ci_workflow.CiWorkflowTests.test_linux_job_runs_suites_and_warns_on
+_skips) ... ok
+test_triggers_include_pull_request_and_main (test_ci_workflow.CiWorkflowTests.test_triggers_include_pull_request_and_ma
+in) ... ok
+test_windows_job_is_not_continue_on_error (test_ci_workflow.CiWorkflowTests.test_windows_job_is_not_continue_on_error)
+The SEH test runs only on Windows; if the job is advisory, a ... ok
+test_windows_job_runs_the_seh_test_and_guards_against_skipping (test_ci_workflow.CiWorkflowTests.test_windows_job_runs_
+the_seh_test_and_guards_against_skipping) ... ok
+test_workflow_file_is_valid_yaml (test_ci_workflow.CiWorkflowTests.test_workflow_file_is_valid_yaml) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.122s
+
+OK
+
+EXIT=0
+
+=== C:\WRSRE\tests\agent_workflow\test_documentation.py ===
+python.exe : test_ghidra_comments_do_not_confuse_virtual_and_file_addresses (test_documentation.AgentDocumentationTests
+.test_ghidra_comments_do_not_confuse_virtual_and_file_addresses) ... ok
+At line:2 char:457
++ ... ; $output = & python -m unittest discover -s $f.DirectoryName -p $f.N ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_ghidra_com...dresses) ... ok:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+test_legacy_cline_entry_references_authoritative_rules (test_documentation.AgentDocumentationTests.test_legacy_cline_en
+try_references_authoritative_rules) ... ok
+test_local_markdown_links_resolve (test_documentation.AgentDocumentationTests.test_local_markdown_links_resolve) ... ok
+test_tracked_ghidra_scripts_match_readme_inventory (test_documentation.AgentDocumentationTests.test_tracked_ghidra_scri
+pts_match_readme_inventory) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.040s
+
+OK
+
+EXIT=0
+
+=== C:\WRSRE\tests\agent_workflow\test_imgui_pin.py ===
+python.exe : test_build_declares_the_pin_once (test_imgui_pin.ImGuiPinTests.test_build_declares_the_pin_once) ... ok
+At line:2 char:457
++ ... ; $output = & python -m unittest discover -s $f.DirectoryName -p $f.N ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_build_decl...in_once) ... ok:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+test_header_tag_matches_build (test_imgui_pin.ImGuiPinTests.test_header_tag_matches_build) ... ok
+test_no_hardcoded_tag_outside_the_definition (test_imgui_pin.ImGuiPinTests.test_no_hardcoded_tag_outside_the_definition
+)
+Every mention must use !IMGUI_TAG!/!IMGUI_NUM!, not the literal. ... ok
+test_tag_is_a_version_tag (test_imgui_pin.ImGuiPinTests.test_tag_is_a_version_tag) ... ok
+test_version_num_matches_the_tag (test_imgui_pin.ImGuiPinTests.test_version_num_matches_the_tag) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.004s
+
+OK
+
+EXIT=0
+
+=== C:\WRSRE\tests\agent_workflow\test_workflow_config.py ===
+python.exe : test_config_and_instruction_edits_are_protected (test_workflow_config.WorkflowConfigTests.test_config_and_
+instruction_edits_are_protected) ... ok
+At line:2 char:457
++ ... ; $output = & python -m unittest discover -s $f.DirectoryName -p $f.N ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_config_and...otected) ... ok:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+test_expected_profiles_and_no_repository_step_or_model_cap (test_workflow_config.WorkflowConfigTests.test_expected_prof
+iles_and_no_repository_step_or_model_cap) ... ok
+test_git_and_kilo_mutation_guards_cover_global_options (test_workflow_config.WorkflowConfigTests.test_git_and_kilo_muta
+tion_guards_cover_global_options) ... ok
+test_lead_can_delegate_only_to_expected_children_and_use_goals (test_workflow_config.WorkflowConfigTests.test_lead_can_
+delegate_only_to_expected_children_and_use_goals) ... ok
+test_prompt_references_resolve_to_short_tracked_bodies (test_workflow_config.WorkflowConfigTests.test_prompt_references
+_resolve_to_short_tracked_bodies) ... ok
+test_reviewers_are_deny_by_default_read_only (test_workflow_config.WorkflowConfigTests.test_reviewers_are_deny_by_defau
+lt_read_only) ... ok
+test_canonical_contracts_cover_the_five_objectives (test_workflow_config.WorkflowDocumentationTests.test_canonical_cont
+racts_cover_the_five_objectives) ... ok
+test_copilot_has_two_read_only_focus_reviewers (test_workflow_config.WorkflowDocumentationTests.test_copilot_has_two_re
+ad_only_focus_reviewers) ... ok
+test_root_entry_is_lean_and_lazy (test_workflow_config.WorkflowDocumentationTests.test_root_entry_is_lean_and_lazy) ...
+ ok
+test_task_template_has_durable_ledger_and_resume_fields (test_workflow_config.WorkflowDocumentationTests.test_task_temp
+late_has_durable_ledger_and_resume_fields) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 0.055s
+
+OK
+
+EXIT=0
+
+=== C:\WRSRE\tests\almanac_overlay_dev\test_no_synthetic_data.py ===
+python.exe : test_missing_service_shows_no_data (test_no_synthetic_data.NoSyntheticDataTest.test_missing_service_shows_
+no_data) ... ok
+At line:2 char:457
++ ... ; $output = & python -m unittest discover -s $f.DirectoryName -p $f.N ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_missing_se...no_data) ... ok:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+test_sample_tables_are_gone (test_no_synthetic_data.NoSyntheticDataTest.test_sample_tables_are_gone) ... ok
+test_testing_doc_no_longer_accepts_synthetic_rows (test_no_synthetic_data.NoSyntheticDataTest.test_testing_doc_no_longe
+r_accepts_synthetic_rows) ... ok
+test_unpriced_sales_are_an_error_fact (test_no_synthetic_data.NoSyntheticDataTest.test_unpriced_sales_are_an_error_fact
+) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.004s
+
+OK
+
+EXIT=0
+
+=== C:\WRSRE\tests\citizen_retail\test_unpriced_sale.py ===
+python.exe : test_gate_logs_and_counts_unpriced_sales (test_unpriced_sale.CheckoutPolicyTest.test_gate_logs_and_counts_
+unpriced_sales) ... ok
+At line:2 char:457
++ ... ; $output = & python -m unittest discover -s $f.DirectoryName -p $f.N ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_gate_logs_...d_sales) ... ok:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+test_missing_price_is_not_turned_into_min_cost (test_unpriced_sale.CheckoutPolicyTest.test_missing_price_is_not_turned_
+into_min_cost) ... skipped 'C++ compiler required'
+test_no_default_cpi_basket_remains (test_unpriced_sale.CheckoutPolicyTest.test_no_default_cpi_basket_remains) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.007s
+
+OK (skipped=1)
+
+EXIT=0
+
+=== C:\WRSRE\tests\currency\test_transactions.py ===
+python.exe : test_concurrent_full_charges_cannot_overdraw (test_transactions.CurrencyTransactions.test_concurrent_full_
+charges_cannot_overdraw) ... skipped 'g++/clang++ C++17 compiler required for portable harness'
+At line:2 char:457
++ ... ; $output = & python -m unittest discover -s $f.DirectoryName -p $f.N ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_concurrent...rtable harness':String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+test_full_charge_and_partial_charge_contracts (test_transactions.CurrencyTransactions.test_full_charge_and_partial_char
+ge_contracts) ... skipped 'g++/clang++ C++17 compiler required for portable harness'
+test_nonfinite_and_nonpositive_amounts (test_transactions.CurrencyTransactions.test_nonfinite_and_nonpositive_amounts)
+... skipped 'g++/clang++ C++17 compiler required for portable harness'
+test_observers_only_report_committed_treasury_changes (test_transactions.CurrencyTransactions.test_observers_only_repor
+t_committed_treasury_changes) ... skipped 'g++/clang++ C++17 compiler required for portable harness'
+test_overflow_and_corrupt_balances (test_transactions.CurrencyTransactions.test_overflow_and_corrupt_balances) ... skip
+ped 'g++/clang++ C++17 compiler required for portable harness'
+test_paired_transfers_and_active_currency (test_transactions.CurrencyTransactions.test_paired_transfers_and_active_curr
+ency) ... skipped 'g++/clang++ C++17 compiler required for portable harness'
+test_plugin_uses_tested_implementation_and_preserves_abi_versions (test_transactions.CurrencyTransactions.test_plugin_u
+ses_tested_implementation_and_preserves_abi_versions) ... ok
+test_real_native_write_faults (test_transactions.CurrencyTransactions.test_real_native_write_faults) ... skipped 'Windo
+ws MSVC required for real SEH'
+test_state_checkout_does_not_collect_partial_payment_before_aborting (test_transactions.CurrencyTransactions.test_state
+_checkout_does_not_collect_partial_payment_before_aborting) ... ok
+test_unavailable_memory_and_invalid_recipients (test_transactions.CurrencyTransactions.test_unavailable_memory_and_inva
+lid_recipients) ... skipped 'g++/clang++ C++17 compiler required for portable harness'
+
+----------------------------------------------------------------------
+Ran 10 tests in 0.007s
+
+OK (skipped=8)
+
+EXIT=0
+
+=== C:\WRSRE\tests\enterprise_base\test_unpriced_bread.py ===
+python.exe : test_unpriced_food_skips_the_stage_loudly (test_unpriced_bread.DestituteBreadTest.test_unpriced_food_skips
+_the_stage_loudly) ... ok
+At line:2 char:457
++ ... ; $output = & python -m unittest discover -s $f.DirectoryName -p $f.N ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_unpriced_f..._loudly) ... ok:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+OK
+
+EXIT=0
+
+=== C:\WRSRE\tests\private_construction\test_unpriced_estimate.py ===
+python.exe : test_b2b_freight_refuses_the_whole_delivery (test_unpriced_estimate.EstimateSourceContract.test_b2b_freigh
+t_refuses_the_whole_delivery) ... ok
+At line:2 char:457
++ ... ; $output = & python -m unittest discover -s $f.DirectoryName -p $f.N ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_b2b_freigh...elivery) ... ok:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+test_panel_and_native_paths_refuse_unpriced_materials (test_unpriced_estimate.EstimateSourceContract.test_panel_and_nat
+ive_paths_refuse_unpriced_materials) ... ok
+test_unpriced_material_refuses_the_estimate (test_unpriced_estimate.PriceOneTest.test_unpriced_material_refuses_the_est
+imate) ... skipped 'C++ compiler required'
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.011s
+
+OK (skipped=1)
+
+EXIT=0
+
+=== C:\WRSRE\tests\private_logistics_probe\test_checker.py ===
+python.exe : test_fail (test_checker.TestC1BurnMismatch.test_fail) ... ok
+At line:2 char:457
++ ... ; $output = & python -m unittest discover -s $f.DirectoryName -p $f.N ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_fail (test...st_fail) ... ok:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+test_truck_a_passes (test_checker.TestC1MultiVehicle.test_truck_a_passes) ... ok
+test_truck_b_passes_c2 (test_checker.TestC1MultiVehicle.test_truck_b_passes_c2) ... ok
+test_inconclusive (test_checker.TestC1NoTankLines.test_inconclusive) ... ok
+test_pass (test_checker.TestC1NormalTwoTrip.test_pass) ... ok
+test_report_overall_uses_c1 (test_checker.TestC1NormalTwoTrip.test_report_overall_uses_c1) ... ok
+test_inconclusive (test_checker.TestC1OnlyRefuelVehicle.test_inconclusive) ... ok
+test_inconclusive (test_checker.TestC1SingleReading.test_inconclusive) ... ok
+test_inconclusive (test_checker.TestC2NoRefuelVehicles.test_inconclusive) ... ok
+test_pass (test_checker.TestC2RefuelMidTrip.test_pass) ... ok
+test_fail (test_checker.TestC3DuplicateShipIds.test_fail) ... ok
+test_pass (test_checker.TestC3NoDuplicates.test_pass) ... ok
+test_pass (test_checker.TestC4ContiguousDays.test_pass) ... ok
+test_fail (test_checker.TestC4DayGap.test_fail) ... ok
+test_checker_catches_nan (test_checker.TestC5NaNFuel.test_checker_catches_nan) ... ok
+test_parser_handles_nan (test_checker.TestC5NaNFuel.test_parser_handles_nan) ... ok
+test_fail (test_checker.TestC5NegativeBurn.test_fail) ... ok
+test_pass (test_checker.TestC5NormalValues.test_pass) ... ok
+test_inconclusive (test_checker.TestC6DryRun.test_inconclusive) ... ok
+test_pass (test_checker.TestC6LiveBilling.test_pass) ... ok
+test_inconclusive (test_checker.TestC6NoBanner.test_inconclusive) ... ok
+test_inconclusive (test_checker.TestC7BaselineOnly.test_inconclusive) ... ok
+test_inconclusive (test_checker.TestC7DryRun.test_inconclusive) ... ok
+test_pass (test_checker.TestC7LiveBillingMatch.test_pass) ... ok
+test_fail (test_checker.TestC7TreasuryMismatch.test_fail) ... ok
+test_pass (test_checker.TestC8Agree.test_pass) ... ok
+test_fail (test_checker.TestC8MirrorDrift.test_fail) ... ok
+test_parse_b2b_transfer (test_checker.TestParser.test_parse_b2b_transfer) ... ok
+test_parse_banner (test_checker.TestParser.test_parse_banner) ... ok
+test_parse_payment_dry_run (test_checker.TestParser.test_parse_payment_dry_run) ... ok
+test_parse_tank_reading (test_checker.TestParser.test_parse_tank_reading) ... ok
+test_unrecognized_lines_counted (test_checker.TestParser.test_unrecognized_lines_counted) ... ok
+test_dry_run_report (test_checker.TestReportIntegration.test_dry_run_report) ... ok
+test_normal_two_trip_report (test_checker.TestReportIntegration.test_normal_two_trip_report) ... ok
+test_synthetic_tag_present (test_checker.TestReportIntegration.test_synthetic_tag_present) ... ok
+
+----------------------------------------------------------------------
+Ran 35 tests in 0.012s
+
+OK
+
+EXIT=0
+
+=== C:\WRSRE\tests\private_logistics_probe\test_default_config.py ===
+python.exe : test_missing_ini_defaults_on_and_explicit_disable_is_preserved (test_default_config.DefaultConfigTest.test
+_missing_ini_defaults_on_and_explicit_disable_is_preserved) ... ok
+At line:2 char:457
++ ... ; $output = & python -m unittest discover -s $f.DirectoryName -p $f.N ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_missing_in...eserved) ... ok:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+test_shipped_ini_is_enabled_without_synthetic_selftest (test_default_config.DefaultConfigTest.test_shipped_ini_is_enabl
+ed_without_synthetic_selftest) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.003s
+
+OK
+
+EXIT=0
+
+=== C:\WRSRE\tests\private_logistics_probe\test_native_snapshot.py ===
+python.exe : test_owned_payload_and_production_serializer_roundtrip (test_native_snapshot.TestNativeSnapshot.test_owned
+_payload_and_production_serializer_roundtrip) ... skipped 'Host C++ compiler unavailable; native test not executed'
+At line:2 char:457
++ ... ; $output = & python -m unittest discover -s $f.DirectoryName -p $f.N ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_owned_payl...t not executed':String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.007s
+
+OK (skipped=1)
+
+EXIT=0
+
+=== C:\WRSRE\tests\private_logistics_probe\test_probe_checker.py ===
+python.exe : test_no_field_swaps (test_probe_checker.TestCppSerialization.test_no_field_swaps)
+At line:2 char:457
++ ... ; $output = & python -m unittest discover -s $f.DirectoryName -p $f.N ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_no_field_s...no_field_swaps):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+Every field must map to its correct value - no swaps allowed. ... ok
+test_no_match_record (test_probe_checker.TestCppSerialization.test_no_match_record)
+no_match record: all fields unavailable (-1), never zero. ... ok
+test_real_cpp_output_parses (test_probe_checker.TestCppSerialization.test_real_cpp_output_parses)
+Real C++ emitter output must parse into SNAPSHOT records. ... ok
+test_all_finite (test_probe_checker.TestP10Finite.test_all_finite) ... ok
+test_nan_detected (test_probe_checker.TestP10Finite.test_nan_detected) ... ok
+test_empty_travel_consumption_per_trip (test_probe_checker.TestP11IndependentReconciliation.test_empty_travel_consumpti
+on_per_trip)
+Cross-trip start-end != sum(ded) due to empty travel burn, ... ok
+test_fail_mismatch (test_probe_checker.TestP11IndependentReconciliation.test_fail_mismatch)
+Change trip 2's fa to make fb-fa != ded on trip 2. ... ok
+test_missing_deduction_inconclusive (test_probe_checker.TestP11IndependentReconciliation.test_missing_deduction_inconcl
+usive)
+Unload EVENT with ded unavailable � P11 INCONCLUSIVE. ... ok
+test_no_events_inconclusive (test_probe_checker.TestP11IndependentReconciliation.test_no_events_inconclusive) ... ok
+test_pass (test_probe_checker.TestP11IndependentReconciliation.test_pass) ... ok
+test_refuel_makes_p11_inconclusive (test_probe_checker.TestP11IndependentReconciliation.test_refuel_makes_p11_inconclus
+ive)
+Visible fuel addition between trips � P11 INCONCLUSIVE. ... ok
+test_insufficient_coverage_inconclusive (test_probe_checker.TestP12Refuel.test_insufficient_coverage_inconclusive)
+When fa is unavailable on some events, P12 cannot assess ... ok
+test_no_refuel_pass (test_probe_checker.TestP12Refuel.test_no_refuel_pass) ... ok
+test_refuel_inconclusive (test_probe_checker.TestP12Refuel.test_refuel_inconclusive) ... ok
+test_available_pass (test_probe_checker.TestP13MonetaryCost.test_available_pass) ... ok
+test_unavailable_inconclusive (test_probe_checker.TestP13MonetaryCost.test_unavailable_inconclusive) ... ok
+test_all_present (test_probe_checker.TestP14RequiredEvidence.test_all_present) ... ok
+test_no_events (test_probe_checker.TestP14RequiredEvidence.test_no_events) ... ok
+test_no_session (test_probe_checker.TestP14RequiredEvidence.test_no_session) ... ok
+test_unknown_confidence (test_probe_checker.TestP15Confidence.test_unknown_confidence) ... ok
+test_valid_confidence (test_probe_checker.TestP15Confidence.test_valid_confidence) ... ok
+test_no_match_present (test_probe_checker.TestP16SelectionRecord.test_no_match_present) ... ok
+test_selection_present (test_probe_checker.TestP16SelectionRecord.test_selection_present) ... ok
+test_complete_measurement_valid (test_probe_checker.TestP17MeasurementValidity.test_complete_measurement_valid) ... ok
+test_unavailable_fields_are_minus_one (test_probe_checker.TestP17MeasurementValidity.test_unavailable_fields_are_minus_
+one)
+Missing/unreadable fields are -1 (FUEL_UNAVAILABLE), never 0. ... ok
+test_mirror_independent (test_probe_checker.TestP18MirrorIndependence.test_mirror_independent)
+mirror_valid=1 with fuel_slot_valid=0 is allowed; checker does not infer. ... ok
+test_identity_retained (test_probe_checker.TestP19IdentityRetention.test_identity_retained)
+Same vehicle pointer across state/mode changes. ... ok
+test_refuel_uncleared (test_probe_checker.TestP1ConsecutiveTrips.test_refuel_uncleared)
+Refuel makes chaining INCONCLUSIVE for that vehicle. ... ok
+test_two_trips_chain_pass (test_probe_checker.TestP1ConsecutiveTrips.test_two_trips_chain_pass) ... ok
+test_no_match_valid (test_probe_checker.TestP20ExactlyOneCandidate.test_no_match_valid) ... ok
+test_selection_valid (test_probe_checker.TestP20ExactlyOneCandidate.test_selection_valid) ... ok
+test_no_stale_events (test_probe_checker.TestP2SessionStale.test_no_stale_events) ... ok
+test_stale_event_detected (test_probe_checker.TestP2SessionStale.test_stale_event_detected) ... ok
+test_duplicate_fails_both_p3_and_p4 (test_probe_checker.TestP3SeqOrdering.test_duplicate_fails_both_p3_and_p4) ... ok
+test_monotonic_unique (test_probe_checker.TestP3SeqOrdering.test_monotonic_unique) ... ok
+test_non_monotonic (test_probe_checker.TestP3SeqOrdering.test_non_monotonic) ... ok
+test_duplicates_fail (test_probe_checker.TestP4Duplicates.test_duplicates_fail) ... ok
+test_no_duplicates (test_probe_checker.TestP4Duplicates.test_no_duplicates) ... ok
+test_log_cap (test_probe_checker.TestP5GapsDrops.test_log_cap) ... ok
+test_no_drops (test_probe_checker.TestP5GapsDrops.test_no_drops) ... ok
+test_ring_overflow (test_probe_checker.TestP5GapsDrops.test_ring_overflow) ... ok
+test_load_unload_match_pass (test_probe_checker.TestP6TripMismatch.test_load_unload_match_pass) ... ok
+test_unload_without_load_fails (test_probe_checker.TestP6TripMismatch.test_unload_without_load_fails) ... ok
+test_no_errors_pass (test_probe_checker.TestP7UnsupportedBoundaries.test_no_errors_pass) ... ok
+test_unsupported_unload_fails (test_probe_checker.TestP7UnsupportedBoundaries.test_unsupported_unload_fails) ... ok
+test_consistent_deduction (test_probe_checker.TestP8Deduction.test_consistent_deduction) ... ok
+test_inconsistent_deduction (test_probe_checker.TestP8Deduction.test_inconsistent_deduction) ... ok
+test_complete_pair (test_probe_checker.TestP9CompleteUnload.test_complete_pair) ... ok
+test_incomplete_no_unload (test_probe_checker.TestP9CompleteUnload.test_incomplete_no_unload) ... ok
+test_parse_snapshot_measurement_unavailable (test_probe_checker.TestProbeParserSnapshot.test_parse_snapshot_measurement
+_unavailable)
+Unavailable fields parse as -1 / FUEL_UNAVAILABLE, not 0. ... ok
+test_parse_snapshot_no_match (test_probe_checker.TestProbeParserSnapshot.test_parse_snapshot_no_match) ... ok
+test_parse_snapshot_selection (test_probe_checker.TestProbeParserSnapshot.test_parse_snapshot_selection) ... ok
+test_parse_snapshot_vehicle_lost (test_probe_checker.TestProbeParserSnapshot.test_parse_snapshot_vehicle_lost) ... ok
+test_parse_snapshot_world_reset (test_probe_checker.TestProbeParserSnapshot.test_parse_snapshot_world_reset) ... ok
+test_snapshot_full_report (test_probe_checker.TestProbeReportSnapshot.test_snapshot_full_report) ... ok
+
+----------------------------------------------------------------------
+Ran 55 tests in 0.027s
+
+OK
+
+EXIT=0
+
+=== C:\WRSRE\tests\private_logistics_v018_model\test_model.py ===
+python.exe : test_continuous_next_window_baselines (test_model.TestContinuousWindows.test_continuous_next_window_baseli
+nes) ... ok
+At line:2 char:457
++ ... ; $output = & python -m unittest discover -s $f.DirectoryName -p $f.N ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_continuous...selines) ... ok:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+test_dedup_after_eviction (test_model.TestLifecycle.test_dedup_after_eviction) ... ok
+test_duplicate_invoice_does_not_change_totals (test_model.TestLifecycle.test_duplicate_invoice_does_not_change_totals)
+... ok
+test_duplicates_and_eviction (test_model.TestLifecycle.test_duplicates_and_eviction) ... ok
+test_eviction_does_not_resurrect_settled_invoice (test_model.TestLifecycle.test_eviction_does_not_resurrect_settled_inv
+oice) ... ok
+test_expired_pending_invoice_settles_at_most_once (test_model.TestLifecycle.test_expired_pending_invoice_settles_at_mos
+t_once) ... ok
+test_invalid_non_finite_fail_safely (test_model.TestLifecycle.test_invalid_non_finite_fail_safely) ... ok
+test_partial_movement_cargo_separate_from_burn (test_model.TestLifecycle.test_partial_movement_cargo_separate_from_burn
+) ... ok
+test_rehoming_no_old_owner_charge (test_model.TestLifecycle.test_rehoming_no_old_owner_charge) ... ok
+test_rehoming_resets_consumption (test_model.TestLifecycle.test_rehoming_resets_consumption) ... ok
+test_save_load_identity_reset_before_daily_close (test_model.TestLifecycle.test_save_load_identity_reset_before_daily_c
+lose) ... ok
+test_too_young_invoice_does_not_expire (test_model.TestLifecycle.test_too_young_invoice_does_not_expire) ... ok
+test_vehicle_window_expiry_unpriceable_no_invented_invoice (test_model.TestLifecycle.test_vehicle_window_expiry_unprice
+able_no_invented_invoice) ... ok
+test_vehicle_window_expiry_without_invoice_creates_no_payment (test_model.TestLifecycle.test_vehicle_window_expiry_with
+out_invoice_creates_no_payment) ... ok
+test_zero_depletion_no_fallback_unpriceable (test_model.TestLifecycle.test_zero_depletion_no_fallback_unpriceable) ...
+ok
+test_first_delivery_anchors_but_does_not_settle (test_model.TestMeasurement.test_first_delivery_anchors_but_does_not_se
+ttle) ... ok
+test_first_delivery_no_fallback_refused (test_model.TestMeasurement.test_first_delivery_no_fallback_refused) ... ok
+test_first_delivery_settles_via_fallback_inspect_first_outcome (test_model.TestMeasurement.test_first_delivery_settles_
+via_fallback_inspect_first_outcome) ... ok
+test_first_load_baseline_only_no_settle (test_model.TestMeasurement.test_first_load_baseline_only_no_settle) ... ok
+test_no_slot_matrix (test_model.TestMeasurement.test_no_slot_matrix) ... ok
+test_readable_chain_billed_depletion_is_025 (test_model.TestMeasurement.test_readable_chain_billed_depletion_is_025) ..
+. ok
+test_refill_contamination_asserts_unusable_and_fallback (test_model.TestMeasurement.test_refill_contamination_asserts_u
+nusable_and_fallback) ... ok
+test_refill_contamination_persists_until_close (test_model.TestMeasurement.test_refill_contamination_persists_until_clo
+se) ... ok
+test_unreadable_delivery_then_readable_load_delivery (test_model.TestMeasurement.test_unreadable_delivery_then_readable
+_load_delivery) ... ok
+test_unreadable_interval_then_recovery (test_model.TestMeasurement.test_unreadable_interval_then_recovery) ... ok
+test_unreadable_interval_then_recovery_asserts_unusable (test_model.TestMeasurement.test_unreadable_interval_then_recov
+ery_asserts_unusable) ... ok
+test_constant_tariff_includes_density_factor (test_model.TestPricing.test_constant_tariff_includes_density_factor) ...
+ok
+test_constant_tariff_without_density_would_be_wrong (test_model.TestPricing.test_constant_tariff_without_density_would_
+be_wrong) ... ok
+test_cpi_cargo_scaling_not_depletion (test_model.TestPricing.test_cpi_cargo_scaling_not_depletion) ... ok
+test_value_pricing_independent_of_fallback (test_model.TestPricing.test_value_pricing_independent_of_fallback) ... ok
+test_zero_fuel_price_cpi_available (test_model.TestPricing.test_zero_fuel_price_cpi_available) ... ok
+test_zero_fuel_price_no_cpi_refused (test_model.TestPricing.test_zero_fuel_price_no_cpi_refused) ... ok
+test_actual_and_simulated_are_disjoint (test_model.TestSettlement.test_actual_and_simulated_are_disjoint) ... ok
+test_association_matrix_with_freight_eligible (test_model.TestSettlement.test_association_matrix_with_freight_eligible)
+ ... ok
+test_minimum_payment_refusal (test_model.TestSettlement.test_minimum_payment_refusal) ... ok
+test_successive_payments_exhaust_treasury (test_model.TestSettlement.test_successive_payments_exhaust_treasury) ... ok
+test_two_vehicles_exhaust_global_daily_cap (test_model.TestSettlement.test_two_vehicles_exhaust_global_daily_cap) ... o
+k
+test_simulation_affordability_cap_policy_explicit (test_model.TestSimulationPolicy.test_simulation_affordability_cap_po
+licy_explicit)
+Simulation (dry-run) does NOT deduct treasury and does NOT apply ... ok
+
+----------------------------------------------------------------------
+Ran 38 tests in 0.003s
+
+OK
+
+EXIT=0
+
+=== C:\WRSRE\tests\private_logistics\test_automatic_reconnection.py ===
+python.exe : test_existing_targets_are_still_deduplicated (test_automatic_reconnection.AutomaticReconnectionTest.test_e
+xisting_targets_are_still_deduplicated) ... ok
+At line:2 char:457
++ ... ; $output = & python -m unittest discover -s $f.DirectoryName -p $f.N ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_existing_t...licated) ... ok:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+test_missing_generated_target_is_not_a_permanent_veto (test_automatic_reconnection.AutomaticReconnectionTest.test_missi
+ng_generated_target_is_not_a_permanent_veto) ... ok
+test_state_opt_in_and_native_capacity_guards_are_not_removed (test_automatic_reconnection.AutomaticReconnectionTest.tes
+t_state_opt_in_and_native_capacity_guards_are_not_removed) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.004s
+
+OK
+
+EXIT=0
+
+=== C:\WRSRE\tests\private_logistics\test_b2b_settlement.py ===
+python.exe : test_customs_export_has_no_state_buy_leg (test_b2b_settlement.B2bSettlementTest.test_customs_export_has_no
+_state_buy_leg) ... ok
+At line:2 char:457
++ ... ; $output = & python -m unittest discover -s $f.DirectoryName -p $f.N ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_customs_ex...buy_leg) ... ok:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+test_live_billing_is_the_shipped_default (test_b2b_settlement.B2bSettlementTest.test_live_billing_is_the_shipped_defaul
+t) ... ok
+test_production_runtime (test_b2b_settlement.B2bSettlementTest.test_production_runtime) ... skipped 'C++ compiler requi
+red'
+test_simplified_settlement_has_no_legacy_payment_paths (test_b2b_settlement.B2bSettlementTest.test_simplified_settlemen
+t_has_no_legacy_payment_paths) ... ok
+test_step3b_delivery_and_billing_diagnostics (test_b2b_settlement.B2bSettlementTest.test_step3b_delivery_and_billing_di
+agnostics) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.017s
+
+OK (skipped=1)
+
+EXIT=0
+
+=== C:\WRSRE\tests\private_logistics\test_census_capacity.py ===
+python.exe : test_guard_dominates_slot_access_and_day_reconciliation_continues (test_census_capacity.CensusCapacityTest
+.test_guard_dominates_slot_access_and_day_reconciliation_continues) ... ok
+At line:2 char:457
++ ... ; $output = & python -m unittest discover -s $f.DirectoryName -p $f.N ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_guard_domi...ntinues) ... ok:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+test_optimized_production_census (test_census_capacity.CensusCapacityTest.test_optimized_production_census) ... skipped
+ 'C++ compiler required'
+test_sanitized_production_census (test_census_capacity.CensusCapacityTest.test_sanitized_production_census) ... skipped
+ 'C++ compiler required'
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.024s
+
+OK (skipped=2)
+
+EXIT=0
+
+=== C:\WRSRE\tests\private_logistics\test_cpp_structure.py ===
+python.exe : test_braces_balance_and_native_functions_are_at_file_scope (test_cpp_structure.NativeCppStructure.test_bra
+ces_balance_and_native_functions_are_at_file_scope) ... ok
+At line:2 char:457
++ ... ; $output = & python -m unittest discover -s $f.DirectoryName -p $f.N ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_braces_bal...e_scope) ... ok:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.048s
+
+OK
+
+EXIT=0
+
+=== C:\WRSRE\tests\private_logistics\test_dry_assignment_ledger.py ===
+python.exe : test_no_economic_hooks_or_pointer_wire_format (test_dry_assignment_ledger.DryAssignmentLedgerTest.test_no_
+economic_hooks_or_pointer_wire_format) ... ok
+At line:2 char:457
++ ... ; $output = & python -m unittest discover -s $f.DirectoryName -p $f.N ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_no_economi..._format) ... ok:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+test_production_runtime (test_dry_assignment_ledger.DryAssignmentLedgerTest.test_production_runtime) ... skipped 'g++ o
+r clang++ host compiler required; Linux CI runs this suite'
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.010s
+
+OK (skipped=1)
+
+EXIT=0
+
+=== C:\WRSRE\tests\private_logistics\test_fleet_fuel_observer.py ===
+python.exe : test_integration_and_no_economic_or_hook_writes (test_fleet_fuel_observer.FleetFuelObserverTest.test_integ
+ration_and_no_economic_or_hook_writes) ... ok
+At line:2 char:457
++ ... ; $output = & python -m unittest discover -s $f.DirectoryName -p $f.N ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_integratio..._writes) ... ok:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+test_production_reader_and_runtime (test_fleet_fuel_observer.FleetFuelObserverTest.test_production_reader_and_runtime)
+... skipped 'C++ compiler required'
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.009s
+
+OK (skipped=1)
+
+EXIT=0
+
+=== C:\WRSRE\tests\private_logistics\test_fuel_diagnostics.py ===
+python.exe : setUpClass (test_fuel_diagnostics.FuelDiagnosticsTest) ... skipped 'C++ compiler required'
+At line:2 char:457
++ ... ; $output = & python -m unittest discover -s $f.DirectoryName -p $f.N ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (setUpClass (tes...piler required':String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+
+----------------------------------------------------------------------
+Ran 0 tests in 0.007s
+
+OK (skipped=1)
+
+EXIT=0
+
+=== C:\WRSRE\tests\private_logistics\test_journey_tracker.py ===
+python.exe : setUpClass (test_journey_tracker.JourneyTrackerTest) ... skipped 'C++ compiler required'
+At line:2 char:457
++ ... ; $output = & python -m unittest discover -s $f.DirectoryName -p $f.N ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (setUpClass (tes...piler required':String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+
+----------------------------------------------------------------------
+Ran 0 tests in 0.005s
+
+OK (skipped=1)
+
+EXIT=0
+
+=== C:\WRSRE\tests\private_logistics\test_panel_fuel_observer.py ===
+python.exe : setUpClass (test_panel_fuel_observer.PanelFuelObserverTest) ... skipped 'C++ compiler required'
+At line:2 char:457
++ ... ; $output = & python -m unittest discover -s $f.DirectoryName -p $f.N ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (setUpClass (tes...piler required':String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+
+----------------------------------------------------------------------
+Ran 0 tests in 0.005s
+
+OK (skipped=1)
+
+EXIT=0
+
+=== C:\WRSRE\tests\private_logistics\test_permission_test_defaults.py ===
+python.exe : test_ini_and_fallback_match_permissions_test (test_permission_test_defaults.PermissionTestDefaults.test_in
+i_and_fallback_match_permissions_test) ... ok
+At line:2 char:457
++ ... ; $output = & python -m unittest discover -s $f.DirectoryName -p $f.N ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_ini_and_fa...ns_test) ... ok:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+test_manually_added_customs_is_not_rewritten_as_unsupported (test_permission_test_defaults.PermissionTestDefaults.test_
+manually_added_customs_is_not_rewritten_as_unsupported) ... ok
+test_new_and_present_targets_request_activation (test_permission_test_defaults.PermissionTestDefaults.test_new_and_pres
+ent_targets_request_activation) ... ok
+test_probe_defaults_match_required_capture_budget (test_permission_test_defaults.PermissionTestDefaults.test_probe_defa
+ults_match_required_capture_budget) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.004s
+
+OK
+
+EXIT=0
+
+=== C:\WRSRE\tests\private_logistics\test_schedule_assignment_ledger.py ===
+python.exe : setUpClass (test_schedule_assignment_ledger.AssignmentLedgerTest) ... skipped 'C++ compiler required'
+At line:2 char:457
++ ... ; $output = & python -m unittest discover -s $f.DirectoryName -p $f.N ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (setUpClass (tes...piler required':String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+
+----------------------------------------------------------------------
+Ran 0 tests in 0.007s
+
+OK (skipped=1)
+
+EXIT=0
+
+=== C:\WRSRE\tests\private_logistics\test_schedule_observer.py ===
+python.exe : setUpClass (test_schedule_observer.ScheduleObserverTest) ... skipped 'C++ compiler required'
+At line:2 char:457
++ ... ; $output = & python -m unittest discover -s $f.DirectoryName -p $f.N ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (setUpClass (tes...piler required':String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+
+----------------------------------------------------------------------
+Ran 0 tests in 0.006s
+
+OK (skipped=1)
+
+EXIT=0
+
+=== C:\WRSRE\tests\private_logistics\test_site_permissions.py ===
+python.exe : test_native_policy_and_taskcfg (test_site_permissions.SitePermissionsTest.test_native_policy_and_taskcfg)
+... skipped 'C++ compiler required'
+At line:2 char:457
++ ... ; $output = & python -m unittest discover -s $f.DirectoryName -p $f.N ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_native_pol...piler required':String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+test_production_integration_guards (test_site_permissions.SitePermissionsTest.test_production_integration_guards) ... o
+k
+test_under_construction_targets_are_gated (test_site_permissions.SitePermissionsTest.test_under_construction_targets_ar
+e_gated)
+Owner bug 2026-11-22: private DOs kept unloading at an unfinished ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.009s
+
+OK (skipped=1)
+
+EXIT=0
+
+=== C:\WRSRE\tests\private_logistics\test_storage_checkbox.py ===
+python.exe : test_private_and_unknown_buildings_do_not_show_widgets (test_storage_checkbox.StorageCheckboxTest.test_pri
+vate_and_unknown_buildings_do_not_show_widgets) ... ok
+At line:2 char:457
++ ... ; $output = & python -m unittest discover -s $f.DirectoryName -p $f.N ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_private_an...widgets) ... ok:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+test_production_handler (test_storage_checkbox.StorageCheckboxTest.test_production_handler) ... skipped 'C++ compiler r
+equired'
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.007s
+
+OK (skipped=1)
+
+EXIT=0
+
+=== C:\WRSRE\tests\private_logistics\test_target_policy.py ===
+python.exe : test_live_guard_precedes_native_allocation (test_target_policy.TargetPolicyTest.test_live_guard_precedes_n
+ative_allocation) ... ok
+At line:2 char:457
++ ... ; $output = & python -m unittest discover -s $f.DirectoryName -p $f.N ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_live_guard...ocation) ... ok:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+test_optimized_production_reconciliation (test_target_policy.TargetPolicyTest.test_optimized_production_reconciliation)
+ ... skipped 'C++ compiler required'
+test_sanitized_production_reconciliation (test_target_policy.TargetPolicyTest.test_sanitized_production_reconciliation)
+ ... skipped 'C++ compiler required'
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.011s
+
+OK (skipped=2)
+
+EXIT=0
+
+=== C:\WRSRE\tests\private_logistics\test_task_audit.py ===
+python.exe : test_office_observations_surround_existing_notification (test_task_audit.TaskAuditTest.test_office_observa
+tions_surround_existing_notification) ... ok
+At line:2 char:457
++ ... ; $output = & python -m unittest discover -s $f.DirectoryName -p $f.N ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_office_obs...ication) ... ok:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+test_production_logging_is_bounded_and_transparent (test_task_audit.TaskAuditTest.test_production_logging_is_bounded_an
+d_transparent) ... skipped 'C++ compiler required'
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.006s
+
+OK (skipped=1)
+
+EXIT=0
+
+=== C:\WRSRE\tests\private_shops\test_no_delivery_billing.py ===
+python.exe : test_only_service_fees_move_money (test_no_delivery_billing.NoDeliveryBillingTest.test_only_service_fees_m
+ove_money) ... ok
+At line:2 char:457
++ ... ; $output = & python -m unittest discover -s $f.DirectoryName -p $f.N ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_only_servi...e_money) ... ok:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+test_plugin_has_no_wholesale_or_foreign_path (test_no_delivery_billing.NoDeliveryBillingTest.test_plugin_has_no_wholesa
+le_or_foreign_path) ... ok
+test_removed_ini_keys_are_not_read (test_no_delivery_billing.NoDeliveryBillingTest.test_removed_ini_keys_are_not_read)
+... ok
+test_service_fee_defaults_survive (test_no_delivery_billing.NoDeliveryBillingTest.test_service_fee_defaults_survive) ..
+. ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.005s
+
+OK
+
+EXIT=0
+
+=== C:\WRSRE\tests\republic_bank\test_credit_without_cpi.py ===
+python.exe : test_new_credit_is_refused_when_scale_is_unavailable (test_credit_without_cpi.CreditRefusalContract.test_n
+ew_credit_is_refused_when_scale_is_unavailable) ... ok
+At line:2 char:457
++ ... ; $output = & python -m unittest discover -s $f.DirectoryName -p $f.N ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_new_credit...ailable) ... ok:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+test_no_usd_divisor_fallback_in_the_bank (test_credit_without_cpi.CreditRefusalContract.test_no_usd_divisor_fallback_in
+_the_bank) ... ok
+test_unavailable_cpi_answers_zero (test_credit_without_cpi.EconomicScaleTest.test_unavailable_cpi_answers_zero) ... ski
+pped 'C++ compiler required'
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.007s
+
+OK (skipped=1)
+
+EXIT=0
+
+=== C:\WRSRE\tests\republic_bank\test_ledger.py ===
+python.exe : test_ledger (test_ledger.LedgerTest.test_ledger) ... skipped 'C++ compiler required'
+At line:2 char:457
++ ... ; $output = & python -m unittest discover -s $f.DirectoryName -p $f.N ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_ledger (te...piler required':String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.005s
+
+OK (skipped=1)
+
+EXIT=0
+
+=== C:\WRSRE\tests\resource_pricing\test_no_fallbacks.py ===
+python.exe : test_cpi_helper_answers_zero_when_the_tail_is_missing (test_no_fallbacks.FallbackRemovalTest.test_cpi_help
+er_answers_zero_when_the_tail_is_missing) ... skipped 'C++ compiler required'
+At line:2 char:457
++ ... ; $output = & python -m unittest discover -s $f.DirectoryName -p $f.N ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_cpi_helper...piler required':String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+test_ini_has_no_fallback_price_or_divisor (test_no_fallbacks.FallbackRemovalTest.test_ini_has_no_fallback_price_or_divi
+sor) ... ok
+test_rent_keys_are_required_and_equal (test_no_fallbacks.FallbackRemovalTest.test_rent_keys_are_required_and_equal) ...
+ skipped 'C++ compiler required'
+test_source_has_no_fallback_table_or_default_price (test_no_fallbacks.FallbackRemovalTest.test_source_has_no_fallback_t
+able_or_default_price) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.014s
+
+OK (skipped=2)
+
+EXIT=0
+
+=== C:\WRSRE\tests\sim_clock\test_scheduled_phases.py ===
+python.exe : test_phase_ordering_and_structsize_fallback (test_scheduled_phases.SimClockPhaseTests.test_phase_ordering_
+and_structsize_fallback) ... skipped 'C++ compiler required (g++ or clang++)'
+At line:2 char:457
++ ... ; $output = & python -m unittest discover -s $f.DirectoryName -p $f.N ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_phase_orde...++ or clang++)':String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.005s
+
+OK (skipped=1)
+
+EXIT=0
+
+=== C:\WRSRE\tests\state_ledger\test_ledger_reconcile.py ===
+python.exe : setUpClass (test_ledger_reconcile.LedgerReconcileTest) ... skipped 'C++ compiler required'
+At line:2 char:457
++ ... ; $output = & python -m unittest discover -s $f.DirectoryName -p $f.N ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (setUpClass (tes...piler required':String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+
+----------------------------------------------------------------------
+Ran 0 tests in 0.005s
+
+OK (skipped=1)
+
+EXIT=0
+
+=== C:\WRSRE\tests\taxes\test_cpi_unavailable.py ===
+python.exe : test_readout_is_unavailable_without_cpi (test_cpi_unavailable.CpiReadoutTest.test_readout_is_unavailable_w
+ithout_cpi) ... ok
+At line:2 char:457
++ ... ; $output = & python -m unittest discover -s $f.DirectoryName -p $f.N ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_readout_is...out_cpi) ... ok:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+OK
+
+EXIT=0
+
+=== C:\WRSRE\tests\vehicle_gauge_strings\test_scanner.py ===
+python.exe : test_cli_embeds_results_and_source (test_scanner.ScannerTests.test_cli_embeds_results_and_source) ... ok
+At line:2 char:457
++ ... ; $output = & python -m unittest discover -s $f.DirectoryName -p $f.N ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (test_cli_embeds..._source) ... ok:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+test_embedded_match_with_suffix (test_scanner.ScannerTests.test_embedded_match_with_suffix) ... ok
+test_escaped_percent_is_not_float (test_scanner.ScannerTests.test_escaped_percent_is_not_float) ... ok
+test_invalid_and_truncated_rejected (test_scanner.ScannerTests.test_invalid_and_truncated_rejected) ... ok
+test_more_than_twelve_hits (test_scanner.ScannerTests.test_more_than_twelve_hits) ... ok
+test_nonterminated_reported (test_scanner.ScannerTests.test_nonterminated_reported) ... ok
+test_original_suffix_filter_would_miss (test_scanner.ScannerTests.test_original_suffix_filter_would_miss) ... ok
+test_pe32 (test_scanner.ScannerTests.test_pe32) ... ok
+test_pe64_coverage_and_va (test_scanner.ScannerTests.test_pe64_coverage_and_va) ... ok
+test_precision_and_separate_unit_formats (test_scanner.ScannerTests.test_precision_and_separate_unit_formats) ... ok
+test_prefix_preserved_and_interior_address (test_scanner.ScannerTests.test_prefix_preserved_and_interior_address) ... o
+k
+test_standalone_unit (test_scanner.ScannerTests.test_standalone_unit) ... ok
+test_utf16_localized_suffix (test_scanner.ScannerTests.test_utf16_localized_suffix) ... ok
+test_utf16_odd_alignment (test_scanner.ScannerTests.test_utf16_odd_alignment) ... ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 0.203s
+
+OK
+
+EXIT=0

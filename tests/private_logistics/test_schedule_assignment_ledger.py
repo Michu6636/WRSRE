@@ -40,7 +40,7 @@ class AssignmentLedgerTest(unittest.TestCase):
         self.assertIn('ScheduleAssignmentLog(record, d, changes, home);\n    if (!d.emit) return;', runtime)
         self.assertIn('g_scheduleLedger.Break();', runtime)
         self.assertIn('id_scope=process_local_selected_panel native_boundary=unverified', runtime)
-        self.assertIn('exact_burn=0 actual_cost=not_computed settlement=none billing=off', runtime)
+        self.assertIn('exact_burn=0 actual_cost=not_computed settlement=none money_moved=0', runtime)
         self.assertEqual(runtime.count('InstallInlineHook('), 1)
 
     def test_windows_macro_compatibility(self):

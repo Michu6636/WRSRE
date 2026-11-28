@@ -4,7 +4,9 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 #include <cstring>
+#include <limits>
 
 namespace wrsre {
 namespace b2b {
@@ -12,6 +14,7 @@ namespace b2b {
 static constexpr std::size_t PENDING_RING = 32;
 static constexpr std::size_t VEH_CARGO_SLOTS = 4;
 static constexpr std::size_t VEH_TRACK_MAX = 16384;
+static constexpr unsigned BUILDING_DELIVERY_SITE_RVA = 0x0068F792u;
 
 // At this verified native call site, mode 1 / negative tons is the vehicle
 // half of the delivery recorded at 0x68F792.  Its p9 is the same fleet owner
@@ -25,6 +28,53 @@ inline bool ShouldTrackMode1Cargo(bool committed, unsigned mode,
                                   bool isRefuel, unsigned siteRva) {
     if (!committed || mode == 0 || !hasVehicle || isRefuel) return false;
     return !isStaging || siteRva == DELIVERY_VEHICLE_SITE_RVA;
+}
+
+inline bool IsReceiverVehicleDeliveryLeg(bool committed, unsigned siteRva,
+                                         unsigned mode, float tons,
+                                         bool hasVehicle) {
+    return committed && siteRva == DELIVERY_VEHICLE_SITE_RVA &&
+           mode == 1 && tons < 0.0f && hasVehicle;
+}
+
+struct VehicleSlotIndex {
+    std::uint32_t index = 0;
+    bool valid = false;
+};
+
+inline VehicleSlotIndex CheckedVehicleSlotIndex(std::uint32_t index) {
+    return {index, index < VEH_TRACK_MAX};
+}
+
+struct NoCargoDay {
+    unsigned count = 0;
+    unsigned suppressed = 0;
+
+    bool Record(unsigned& sharedLogCount, unsigned dailyCap) {
+        ++count;
+        if (sharedLogCount >= dailyCap) {
+            ++suppressed;
+            return false;
+        }
+        ++sharedLogCount;
+        return true;
+    }
+
+    void Reset() {
+        count = 0;
+        suppressed = 0;
+    }
+};
+
+inline bool FormatNoCargoDiagnostic(char* output, std::size_t outputSize,
+                                    const char* buyer, const void* truck,
+                                    const char* resource, double tons) {
+    if (!output || outputSize == 0) return false;
+    const int written = std::snprintf(
+        output, outputSize,
+        "[B2B GOODS] ERROR NO CARGO RECORD buyer=%s truck=%p res=%s tons=%.3f",
+        buyer ? buyer : "unknown", truck, resource ? resource : "unknown", tons);
+    return written >= 0 && static_cast<std::size_t>(written) < outputSize;
 }
 
 // Matches TsmCapitalCategory in src/enterprise_base_api.h without pulling in
@@ -55,6 +105,11 @@ struct PendingDelivery {
     std::uintptr_t res        = 0;
     float          tons       = 0.0f; // positive magnitude
     double         t          = 0.0;
+    std::uint64_t  generation = 0;
+    std::uint64_t  sequence   = 0;
+    unsigned       siteRva    = 0;
+    unsigned       mode       = 0;
+    bool           committed = false;
     bool           active     = false;
 };
 
@@ -97,6 +152,8 @@ struct MatchedDelivery {
     DeliveryPart   parts[VEH_CARGO_SLOTS]{};
     unsigned       partCount       = 0;
     bool           deliveryMatched = false;
+    bool           deliveryAmbiguous = false;
+    bool           receiverEvidence = false;
     bool           cargoFound      = false;
 };
 
@@ -175,14 +232,6 @@ public:
         pendingDelivHead_ = 0;
     }
 
-    static std::uint32_t hashVehiclePtr(std::uintptr_t vehicle) {
-        std::uintptr_t h = vehicle;
-        h ^= h >> 33;
-        h *= 0xff51afd7ed558ccdULL;
-        h ^= h >> 33;
-        return static_cast<std::uint32_t>(h % VEH_TRACK_MAX);
-    }
-
     void recordMode0Load(std::uintptr_t sourceBld, std::uintptr_t res,
                          float absTons, double nowSec,
                          bool sourceIsPriv = false,
@@ -200,12 +249,11 @@ public:
         pendingLoadHead_ = (pendingLoadHead_ + 1) % static_cast<int>(PENDING_RING);
     }
 
-    bool matchMode1Load(std::uintptr_t vehicle, std::uint32_t vehSlotIdx,
+    bool matchMode1Load(std::uintptr_t vehicle, VehicleSlotIndex vehicleSlot,
                         std::uintptr_t res, float tons, double nowSec,
                         bool sourceIsPriv = false,
                         std::uint64_t sellerKey = 0) {
         if (!vehicle) return false;
-        if (vehSlotIdx >= VEH_TRACK_MAX) vehSlotIdx = hashVehiclePtr(vehicle);
         const float mag = (tons < 0.0f) ? -tons : tons;
         const float tol = TonnageTolerance(mag);
 
@@ -224,7 +272,11 @@ public:
             if (dt < -0.001 || dt > 2.0) continue;
             if (std::fabs(pl.tons - mag) > tol) continue;
 
-            VehCargoState& vcs = vehCargo_[vehSlotIdx];
+            pl.active = false;
+            if (!vehicleSlot.valid || vehicleSlot.index >= VEH_TRACK_MAX)
+                return true;
+
+            VehCargoState& vcs = vehCargo_[vehicleSlot.index];
             if (vcs.vehPtr != vehicle) {
                 vcs.vehPtr = vehicle;
                 for (std::size_t j = 0; j < VEH_CARGO_SLOTS; ++j)
@@ -263,8 +315,6 @@ public:
             }
             if (slot < 0) return false;
 
-            pl.active = false;
-
             VehCargoLot& lot = vcs.lots[slot];
             lot.res       = res;
             lot.origin    = origin;
@@ -277,29 +327,56 @@ public:
         return false;
     }
 
-    void recordMode0Delivery(std::uintptr_t destBld, std::uintptr_t fleetOwnerP9,
-                             std::uintptr_t res, float tons, double nowSec) {
+    bool matchMode1Load(std::uintptr_t vehicle, std::uint32_t vehSlotIdx,
+                        std::uintptr_t res, float tons, double nowSec,
+                        bool sourceIsPriv = false,
+                        std::uint64_t sellerKey = 0) {
+        return matchMode1Load(vehicle, CheckedVehicleSlotIndex(vehSlotIdx),
+                              res, tons, nowSec, sourceIsPriv, sellerKey);
+    }
+
+    PendingDelivery recordMode0Delivery(std::uintptr_t destBld,
+                                        std::uintptr_t fleetOwnerP9,
+                                        std::uintptr_t res, float tons,
+                                        double nowSec,
+                                        std::uint64_t generation = 0,
+                                        std::uint64_t sequence = 0,
+                                        unsigned siteRva = 0,
+                                        unsigned mode = 0,
+                                        bool committed = true) {
         PendingDelivery& e = pendingDeliv_[pendingDelivHead_ % PENDING_RING];
+        const PendingDelivery overwritten = e.active ? e : PendingDelivery{};
         e.destBld    = destBld;
         e.fleetOwner = fleetOwnerP9;
         e.res        = res;
         e.tons       = (tons < 0.0f) ? -tons : tons;
         e.t          = nowSec;
+        e.generation = generation;
+        e.sequence   = sequence;
+        e.siteRva    = siteRva;
+        e.mode       = mode;
+        e.committed  = committed;
         e.active     = true;
         pendingDelivHead_ = (pendingDelivHead_ + 1) % static_cast<int>(PENDING_RING);
+        return overwritten;
     }
 
-    bool matchMode1Delivery(std::uintptr_t vehicle, std::uint32_t vehSlotIdx,
+    bool matchMode1Delivery(std::uintptr_t vehicle, VehicleSlotIndex vehicleSlot,
                             std::uintptr_t vehicleHome, std::uintptr_t res,
                             float absTons, double nowSec,
-                            MatchedDelivery* out) {
+                            MatchedDelivery* out,
+                            std::uint64_t generation = 0,
+                            std::uint64_t sequence = 0,
+                            unsigned siteRva = 0,
+                            unsigned mode = 1,
+                            bool committed = true,
+                            bool ownerMatches = false) {
         if (!out) return false;
         *out = MatchedDelivery{};
         if (!vehicle) return false;
-        if (vehSlotIdx >= VEH_TRACK_MAX) vehSlotIdx = hashVehiclePtr(vehicle);
 
         out->vehicle     = vehicle;
-        out->vehSlotIdx  = vehSlotIdx;
+        out->vehSlotIdx  = vehicleSlot.index;
         out->res         = res;
         out->vehicleHome = vehicleHome;
 
@@ -310,7 +387,8 @@ public:
                         ? static_cast<int>(PENDING_RING) - 1
                         : pendingDelivHead_ - 1;
         bool deliveryMatched = false;
-        PendingDelivery pd{};
+        unsigned matchingCandidates = 0;
+        PendingDelivery* selected = nullptr;
         for (int i = 0; i < static_cast<int>(PENDING_RING); ++i) {
             int k = start - i;
             while (k < 0) k += static_cast<int>(PENDING_RING);
@@ -323,13 +401,14 @@ public:
             if (dt < -0.001 || dt > 2.0) continue;
             if (std::fabs(cand.tons - mag) > tol) continue;
 
-            cand.active = false;
-            pd = cand;
-            deliveryMatched = true;
-            break;
+            ++matchingCandidates;
+            if (!selected) selected = &cand; // Preserve newest-candidate goods behavior.
         }
+        deliveryMatched = selected != nullptr;
+        if (selected) selected->active = false;
 
         out->deliveryMatched = deliveryMatched;
+        out->deliveryAmbiguous = matchingCandidates > 1;
         if (!deliveryMatched) {
             out->carrierBld = vehicleHome;
             out->origin     = ORIGIN_UNKNOWN;
@@ -337,14 +416,28 @@ public:
             return false;
         }
 
+        const PendingDelivery pd = *selected;
         out->destBld    = pd.destBld;
         out->fleetOwner = pd.fleetOwner;
         out->tons       = mag;
         out->t          = pd.t;
         out->carrierBld = vehicleHome ? vehicleHome : pd.fleetOwner;
+        out->receiverEvidence = committed && mode == 1 &&
+            siteRva == DELIVERY_VEHICLE_SITE_RVA && ownerMatches &&
+            pd.committed && pd.mode == 0 &&
+            pd.siteRva == BUILDING_DELIVERY_SITE_RVA &&
+            generation == pd.generation &&
+            pd.sequence != (std::numeric_limits<std::uint64_t>::max)() &&
+            sequence == pd.sequence + 1 && !out->deliveryAmbiguous &&
+            vehicleHome != 0 && pd.fleetOwner == vehicleHome &&
+            pd.destBld != 0;
 
         // Pop cargo from vehicle slot only after confirming a real delivery match.
-        VehCargoState& vcs = vehCargo_[vehSlotIdx];
+        if (!vehicleSlot.valid || vehicleSlot.index >= VEH_TRACK_MAX) {
+            out->cargoFound = false;
+            return true;
+        }
+        VehCargoState& vcs = vehCargo_[vehicleSlot.index];
         if (vcs.vehPtr != 0 && vcs.vehPtr != vehicle) {
             vcs.vehPtr = vehicle;
             for (std::size_t j = 0; j < VEH_CARGO_SLOTS; ++j)
@@ -394,6 +487,14 @@ public:
         }
         out->cargoFound = cargoFound;
         return true;
+    }
+
+    bool matchMode1Delivery(std::uintptr_t vehicle, std::uint32_t vehSlotIdx,
+                            std::uintptr_t vehicleHome, std::uintptr_t res,
+                            float absTons, double nowSec,
+                            MatchedDelivery* out) {
+        return matchMode1Delivery(vehicle, CheckedVehicleSlotIndex(vehSlotIdx),
+                                  vehicleHome, res, absTons, nowSec, out);
     }
 
     PendingLoad*     pendingLoadPtr()  { return pendingLoad_; }

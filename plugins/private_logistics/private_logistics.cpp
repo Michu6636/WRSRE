@@ -3,7 +3,7 @@
 // Goods: unloading buyer -> verified loading seller. Each physical cargo lot
 // retains seller/resource/origin and the native global price locked at
 // loading (no market multiplier since resource_pricing v5); residual lots are never reassigned to another seller.
-// DO trip fuel: original unloading buyer -> vehicle-owning private DO, using
+// DO trip fuel: verified goods receiver -> vehicle-owning private DO, using
 // sampled positive fuel decrease and the global fuel price at observed close.
 // Unknown starts, observation gaps, uncertain identities or missing prices are
 // explicitly unpriced. The assignment observer does not establish exact native
@@ -24,6 +24,7 @@
 #include "../../src/b2b_logistics_api.h"
 #include "../../src/persistence_api.h"
 #include "b2b_settlement.h"
+#include "step3b_policy.h"
 #include "../../src/ui_panels_api.h"
 #include "site_permissions.h"
 #include "auto_target_policy.h"
@@ -70,9 +71,14 @@ static unsigned g_b2bDelivMode0      = 0;
 static unsigned g_b2bDelivMatched    = 0;
 static unsigned g_b2bSettleCount     = 0;
 static unsigned g_b2bUnpricedCount   = 0;   // D33: deliveries refused for want of a native price
+static wrsre::b2b::NoCargoDay g_b2bNoCargo;
+static unsigned g_directionUnknownCount = 0,g_customsExportDeferredCount = 0;
+static std::uint64_t g_assignmentGeneration = 1,g_transferSequence = 0;
+static bool g_receiverProofDisabled = false;
 static double   g_b2bPrincipalSum    = 0.0;
 static double   g_b2bTripFuelSum      = 0.0;
 static double   g_b2bStateNetSum     = 0.0;
+static double   g_doFuelPrivateSum = 0.0,g_doFuelStateSum = 0.0;
 static int   g_logCapPerDay    = 400;
 static int   g_ledgerCapacity  = 512;
 static int   g_siteLog         = 1;
@@ -141,11 +147,23 @@ static unsigned long long g_fuelTripsRun = 0;
 static int g_balanceLog = 1;
 static char gFuelResource[64] = "fuel";
 
-#define PL_VERSION "0.19.1-live-billing"
+#define PL_VERSION "0.19.2-step3b"
 static int g_panelObserverEnabled = 1;
 static int g_scheduleObserverEnabled = 1;
 static void PanelObserverLoading(void);
 static float g_minPayment      = 0.01f;
+static bool AssignmentBeginTransferSequence(std::uint64_t* generation,
+                                            std::uint64_t* sequence);
+static void AssignmentInvalidatePendingReceiverLocked(
+    const wrsre::b2b::PendingDelivery& pending);
+static void AssignmentObserveMode0FailureLocked(std::uint64_t generation,
+                                                 uintptr_t home);
+static void AssignmentObserveVehicleDeliveryLocked(
+    std::uint64_t generation,std::uint64_t sequence,uintptr_t vehicle,
+    uintptr_t home,const wrsre::b2b::MatchedDelivery& delivery,
+    std::uint64_t receiverKey,bool receiverKeyValid,
+    private_logistics_step3b::ReceiverKind receiverKind);
+static void AssignmentSaveLoadingLocked();
 
 static const TsmEnterpriseBaseApi*  g_enterprise = nullptr;
 static const TsmSimClockApi*        g_simClock   = nullptr;
@@ -224,7 +242,7 @@ static SiteSpec g_sites[MAX_SITES] = {
     { 0x001CB7FF, SITE_LOAD,      "loader: mode 0, +tons, then bld+0x970 storage-add; never observed" },
     { 0x0068EECA, SITE_LOAD,      "family A: mode 0, +tons, cargo-add follows; never observed" },
     { 0x0068F792, SITE_DELIVERY,  "family A DELIVERY: mode 0, +tons, param_2 = building, param_9 = fleet owner" },
-    { 0x0068F7F9, SITE_TRANSSHIP, "family A delivery, vehicle side: mode 1, -tons. NEVER BILLED" },
+    { 0x0068F7F9, SITE_TRANSSHIP, "family A delivery vehicle leg; value settles on building side" },
     { 0x006945B3, SITE_TRANSSHIP, "family A: mode 0, -tons; never observed" },
     { 0x00694F40, SITE_LOAD,      "family A LOAD: mode 0, -tons, param_2 = the building the goods leave" },
     { 0x006953C4, SITE_TRANSSHIP, "family A load, vehicle side: mode 1, +tons. NEVER BILLED" }
@@ -350,20 +368,17 @@ static int SiteIndex(unsigned rva)
 // helpers
 // ---------------------------------------------------------------------------
 
-static uint32_t VehSlotIdx(void* veh)
+static wrsre::b2b::VehicleSlotIndex VehSlotIdx(void* veh)
 {
     if (!veh || !TsmIsValidGamePtr(veh) ||
-        !ReadablePtr((const BYTE*)veh + 0x10, sizeof(uint32_t))) {
-        return wrsre::b2b::Engine::hashVehiclePtr((std::uintptr_t)veh);
-    }
+        !ReadablePtr((const BYTE*)veh + 0x04, sizeof(uint32_t))) return {};
     uint32_t idx = 0;
     __try {
-        idx = *(const uint32_t*)((const BYTE*)veh + 0x10);
+        idx = *(const uint32_t*)((const BYTE*)veh + 0x04);
     } __except (EXCEPTION_EXECUTE_HANDLER) {
-        return wrsre::b2b::Engine::hashVehiclePtr((std::uintptr_t)veh);
+        return {};
     }
-    if (idx < (uint32_t)wrsre::b2b::VEH_TRACK_MAX) return idx;
-    return wrsre::b2b::Engine::hashVehiclePtr((std::uintptr_t)veh);
+    return wrsre::b2b::CheckedVehicleSlotIndex(idx);
 }
 static bool AutoBuildingKey(void* b, uint64_t* outKey, int* outType);
 
@@ -377,7 +392,9 @@ static bool IsCustomsBuilding(void* b)
 
 static bool IsPrivate(void* b)
 {
-    if (!b || !g_enterprise) return false;
+    if (!b || !g_enterprise || !g_enterprise->isBuildingPrivate ||
+        g_enterprise->structSize<offsetof(TsmEnterpriseBaseApi,isBuildingPrivate)+
+                                  sizeof(g_enterprise->isBuildingPrivate)) return false;
     if (!TsmIsValidGamePtr(b)) return false;
     if (!ReadablePtr(b, TSM_BLD_MIN_READABLE)) return false;
     return g_enterprise->isBuildingPrivate(b) != 0;
@@ -516,6 +533,34 @@ static bool TreasuryReadable(void)
                                      sizeof(g_currency->getTreasuryBalance);
 }
 
+static bool TreasuryWritable(void)
+{
+    return g_currency && g_currency->moveTreasury &&
+           g_currency->structSize >= offsetof(TsmCurrencyApi, moveTreasury) +
+                                     sizeof(g_currency->moveTreasury);
+}
+
+static bool CompanyCapitalReadable(void)
+{
+    return g_enterprise && g_enterprise->getCompanyCapital &&
+           g_enterprise->structSize >= offsetof(TsmEnterpriseBaseApi, getCompanyCapital) +
+                                      sizeof(g_enterprise->getCompanyCapital);
+}
+
+static bool CompanyCapitalWritable(void)
+{
+    return g_enterprise && g_enterprise->modifyCompanyCapital &&
+           g_enterprise->structSize >= offsetof(TsmEnterpriseBaseApi, modifyCompanyCapital) +
+                                      sizeof(g_enterprise->modifyCompanyCapital);
+}
+
+static bool EnterprisePrivateReady(void)
+{
+    return g_enterprise && g_enterprise->isBuildingPrivate &&
+           g_enterprise->structSize >= offsetof(TsmEnterpriseBaseApi,isBuildingPrivate) +
+                                      sizeof(g_enterprise->isBuildingPrivate);
+}
+
 static wrsre::b2b::FundsTransferCallbacks MakeTransferCallbacks(
     unsigned* insolvent, unsigned* treasurySkip)
 {
@@ -625,6 +670,10 @@ static int DetourTransfer(void* game, void* p2, unsigned mode, void* res,
         }
     }
 
+    std::uint64_t transferGeneration=0,transferSequence=0;
+    const bool receiverSequenceValid=
+        AssignmentBeginTransferSequence(&transferGeneration,&transferSequence);
+
     // At mode 0 p2 is the building. At mode 1 it is the vehicle and its home
     // depot is the fleet owner - read it BEFORE the call, because the callee
     // clobbers registers and the vehicle can be re-homed later in the tick.
@@ -704,7 +753,8 @@ static int DetourTransfer(void* game, void* p2, unsigned mode, void* res,
     const bool trackMode1Cargo = wrsre::b2b::ShouldTrackMode1Cargo(
         committed, mode, p2 != nullptr, isStaging,
         known == SITE_REFUEL, siteRva);
-    const uint32_t mode1VehSlot = trackMode1Cargo ? VehSlotIdx(p2) : 0;
+    const auto mode1VehSlot = trackMode1Cargo ? VehSlotIdx(p2)
+                                               : wrsre::b2b::VehicleSlotIndex{};
 
     EnterCriticalSection(&g_lock);
 
@@ -724,10 +774,15 @@ static int DetourTransfer(void* game, void* p2, unsigned mode, void* res,
     // Record PendingDelivery on mode-0 delivery leg (0x68F792).
     if (committed && mode == 0 && tons > 0.0f && building && known != SITE_REFUEL) {
         g_b2bDelivMode0++;
-        g_b2bEngine.recordMode0Delivery((std::uintptr_t)building,
-                                        (std::uintptr_t)(owner ? owner : nullptr),
-                                        (std::uintptr_t)res, tons, NowSeconds());
+        const auto overwritten=g_b2bEngine.recordMode0Delivery(
+            (std::uintptr_t)building,(std::uintptr_t)(owner ? owner : nullptr),
+            (std::uintptr_t)res,tons,NowSeconds(),transferGeneration,
+            transferSequence,siteRva,mode,receiverSequenceValid);
+        AssignmentInvalidatePendingReceiverLocked(overwritten);
     }
+    if(mode==0 && siteRva==wrsre::b2b::BUILDING_DELIVERY_SITE_RVA &&
+       tons>0.0f && (!committed || !building))
+        AssignmentObserveMode0FailureLocked(transferGeneration,(uintptr_t)owner);
 
     if (committed) g_callsCommitted++;
     else           g_callsNoop++;
@@ -796,7 +851,11 @@ static int DetourTransfer(void* game, void* p2, unsigned mode, void* res,
         char bname[64], rname[64];
         BuildingName(building, bname, sizeof(bname));
         ResourceName(res, rname, sizeof(rname));
-        if (TsmNativePriceUsable((float)s.unitPrice)) {
+        if (siteRva==wrsre::b2b::DELIVERY_VEHICLE_SITE_RVA && mode!=0 && isStaging) {
+            Logf("[B2B] #%u vehicle=%p home=%p res=%s %.2ft "
+                 "(site 0x%06X, mode %u)",
+                 shipId,p2,vehicleHome,rname,(double)tons,siteRva,mode);
+        } else if (TsmNativePriceUsable((float)s.unitPrice)) {
             Logf("[B2B] #%u %-6s bld=%p \"%s\" priv=%d res=%s %.2ft @%.2f = %.2f "
                  "(site 0x%06X, mode %u)",
                  shipId, KindName(s.kind), building, bname,
@@ -814,19 +873,63 @@ static int DetourTransfer(void* game, void* p2, unsigned mode, void* res,
     }
 
     // ---- Ship 2 counterparty settlement (mode-1 delivery commit: 0x68F7F9) --
-    // trackMode1Cargo admits that verified site even when p9 == vehicleHome;
-    // the mode-0 building leg is only recorded, so it cannot settle twice.
+    // The building leg records the receiver; this vehicle leg only joins it.
+    wrsre::b2b::MatchedDelivery md{};
+    bool mdMatched=false;
+    const bool mode1DeliverySite=wrsre::b2b::IsReceiverVehicleDeliveryLeg(
+        committed,siteRva,mode,tons,p2!=nullptr);
     if (g_counterpartySettlement && trackMode1Cargo && tons < 0.0f) {
-        wrsre::b2b::MatchedDelivery md;
         EnterCriticalSection(&g_lock);
-        const bool mdMatched = g_b2bEngine.matchMode1Delivery(
+        mdMatched = g_b2bEngine.matchMode1Delivery(
             (std::uintptr_t)p2, mode1VehSlot,
             (std::uintptr_t)vehicleHome, (std::uintptr_t)res,
-            fabsf(tons), NowSeconds(), &md);
+            fabsf(tons), NowSeconds(), &md,transferGeneration,
+            transferSequence,siteRva,mode,committed && receiverSequenceValid,
+            owner==vehicleHome);
         if (mdMatched) g_b2bDelivMatched++;
         LeaveCriticalSection(&g_lock);
+    }
 
-        if (mdMatched && md.destBld != 0 && (g_billing || g_dryRun)) {
+    if(g_counterpartySettlement && mode1DeliverySite) {
+        std::uint64_t receiverKey=0;int receiverType=0;
+        const bool receiverKeyValid=md.receiverEvidence && md.destBld &&
+            !TsmIsDecayed((void*)md.destBld) &&
+            AutoBuildingKey((void*)md.destBld,&receiverKey,&receiverType);
+        const auto receiverKind=!receiverKeyValid
+            ? private_logistics_step3b::ReceiverKind::Unknown
+            : IsCustomsBuilding((void*)md.destBld)
+                ? private_logistics_step3b::ReceiverKind::Customs
+                : IsPrivate((void*)md.destBld)
+                    ? private_logistics_step3b::ReceiverKind::Private
+                    : private_logistics_step3b::ReceiverKind::State;
+        EnterCriticalSection(&g_lock);
+        AssignmentObserveVehicleDeliveryLocked(transferGeneration,transferSequence,
+            (uintptr_t)p2,(uintptr_t)vehicleHome,md,receiverKey,receiverKeyValid,
+            receiverKind);
+        LeaveCriticalSection(&g_lock);
+    }
+
+    if(mdMatched && !md.cargoFound) {
+        char buyerName[64],resourceName[64];
+        BuildingName(md.destBld?(void*)md.destBld:nullptr,buyerName,sizeof(buyerName));
+        ResourceName(res,resourceName,sizeof(resourceName));
+        bool emitNoCargo=false;
+        EnterCriticalSection(&g_lock);
+        emitNoCargo=g_b2bNoCargo.Record(
+            g_payLoggedToday,(unsigned)g_logCapPerDay);
+        if(!emitNoCargo) ++g_paySuppressed;
+        LeaveCriticalSection(&g_lock);
+        if(emitNoCargo) {
+            char diagnostic[256];
+            if(wrsre::b2b::FormatNoCargoDiagnostic(
+                   diagnostic,sizeof(diagnostic),
+                   md.destBld?buyerName:"unknown",p2,resourceName,
+                   (double)fabsf(tons)))
+                Logf("%s",diagnostic);
+        }
+    }
+
+    if (mdMatched && md.destBld != 0 && (g_billing || g_dryRun)) {
             const std::uintptr_t buyerBld = md.destBld;
             const bool buyerPriv = IsPrivate((void*)buyerBld);
             const bool buyerCustoms = IsCustomsBuilding((void*)buyerBld);
@@ -923,7 +1026,6 @@ static int DetourTransfer(void* game, void* p2, unsigned mode, void* res,
                 }
             }
         }
-    }
 
     return r;
 }
@@ -1048,8 +1150,8 @@ static void OnDay(void*, int day, int month, int year)
     unsigned calls,committed,noop,unknown,stag,nonPriv;
     unsigned siteSupp,attrSupp,paySupp,skTreasury,skBuyerInsolv;
     unsigned b2bLoad0,b2bLoadM,b2bDeliv0,b2bDelivM,b2bSettleN,fuelEvents;
-    unsigned b2bUnpriced;
-    double b2bPrin,b2bFrt,b2bStateNet,fuelValue;
+    unsigned b2bUnpriced,noCargo,directionUnknown,customsDeferred;
+    double b2bPrin,b2bFrt,b2bStateNet,doFuelPrivate,doFuelState,fuelValue;
     static double cIn[BAL_CARRIERS];
     static void* cPt[BAL_CARRIERS];
     int cCount;
@@ -1066,6 +1168,9 @@ static void OnDay(void*, int day, int month, int year)
     b2bSettleN=g_b2bSettleCount;b2bPrin=g_b2bPrincipalSum;
     b2bFrt=g_b2bTripFuelSum;b2bStateNet=g_b2bStateNetSum;
     b2bUnpriced=g_b2bUnpricedCount;
+    noCargo=g_b2bNoCargo.count;doFuelPrivate=g_doFuelPrivateSum;
+    doFuelState=g_doFuelStateSum;directionUnknown=g_directionUnknownCount;
+    customsDeferred=g_customsExportDeferredCount;
     fuelEvents=g_fuelEvents;fuelValue=g_wouldPayFuel;
     cCount=g_balCarrierCount;
     for(int i=0;i<BAL_CARRIERS;++i) {
@@ -1078,7 +1183,9 @@ static void OnDay(void*, int day, int month, int year)
     g_skipTreasury=0;g_skipBuyerInsolvent=0;
     g_b2bLoadsMode0=g_b2bLoadsMatched=g_b2bDelivMode0=g_b2bDelivMatched=0;
     g_b2bSettleCount=0;g_b2bPrincipalSum=g_b2bTripFuelSum=g_b2bStateNetSum=0.0;
-    g_b2bUnpricedCount=0;
+    g_b2bUnpricedCount=0;g_b2bNoCargo.Reset();
+    g_doFuelPrivateSum=g_doFuelStateSum=0.0;
+    g_directionUnknownCount=g_customsExportDeferredCount=0;
     g_fuelEvents=0;g_wouldPayFuel=0.0;g_fuelRes=nullptr;
     g_siteLoggedToday=g_attrLoggedToday=g_payLoggedToday=0;
     if(g_summaryDay>day) g_summaryDay=-1;
@@ -1087,49 +1194,61 @@ static void OnDay(void*, int day, int month, int year)
     LeaveCriticalSection(&g_lock);
 
     Logf("[B2B] day %d closed: %u calls, %u committed, %u no-op | unknown %u, "
-         "staging %u, non-private %u | suppressed site %u attrib %u pay %u",
-         closedDay,calls,committed,noop,unknown,stag,nonPriv,siteSupp,attrSupp,paySupp);
+         "staging %u, non-private %u | suppressed site %u attrib %u pay %u billing=%s",
+         closedDay,calls,committed,noop,unknown,stag,nonPriv,siteSupp,attrSupp,paySupp,
+         private_logistics_step3b::BillingStateName(g_billing!=0,g_dryRun!=0));
     Logf("[B2B DAY] day %d joins: load %u/%u, delivery %u/%u | settlements=%u "
-         "unpriced=%u goods=%.2f observed_assignment_fuel=%.2f state_net=%+.2f "
-         "buyer_insolvent=%u treasury_skips=%u (%s)",
+         "unpriced=%u no_cargo=%u goods=%.2f observed_assignment_fuel=%.2f "
+         "do_fuel_private=%.2f do_fuel_state=%.2f direction_unknown=%u "
+         "customs_export_deferred=%u state_net=%+.2f buyer_insolvent=%u "
+         "treasury_skips=%u billing=%s",
          closedDay,b2bLoadM,b2bLoad0,b2bDelivM,b2bDeliv0,b2bSettleN,b2bUnpriced,
-         b2bPrin,b2bFrt,b2bStateNet,skBuyerInsolv,skTreasury,
-         (g_dryRun||!g_billing)?"dry_run":"live");
+         noCargo,b2bPrin,b2bFrt,doFuelPrivate,doFuelState,directionUnknown,
+         customsDeferred,b2bStateNet,skBuyerInsolv,skTreasury,
+         private_logistics_step3b::BillingStateName(g_billing!=0,g_dryRun!=0));
 
     for(int i=0;i<g_siteCount;++i) {
         const SiteTally& t=snap[i];if(!t.calls) continue;
         Logf("[B2B SITE] day %d  0x%06X %-9s calls=%u commit=%u in=%.3f out=%.3f "
-             "value=%.2f | arg9!=0 %u home!=0 %u",
+             "value=%.2f | arg9!=0 %u home!=0 %u billing=%s",
              closedDay,g_sites[i].rva,ClassName(g_sites[i].known),t.calls,
-             t.committed,t.tonsIn,t.tonsOut,t.value,t.sawBld,t.sawHome);
+             t.committed,t.tonsIn,t.tonsOut,t.value,t.sawBld,t.sawHome,
+             private_logistics_step3b::BillingStateName(g_billing!=0,g_dryRun!=0));
     }
 
     if(g_balanceLog) {
         const int cur=g_currency?TsmCurrencyActive(g_currency):0;
         double treas=0.0;bool have=false;
         if(TreasuryReadable()) {treas=g_currency->getTreasuryBalance(cur);have=true;}
-        if(!have) Logf("[BAL] day %d treasury unavailable",closedDay);
+        if(!have) Logf("[BAL] day %d treasury unavailable billing=%s",closedDay,
+                       private_logistics_step3b::BillingStateName(g_billing!=0,g_dryRun!=0));
         else if(!g_treasuryHaveClose)
-            Logf("[BAL] day %d treasury %.2f baseline",closedDay,treas);
+            Logf("[BAL] day %d treasury %.2f baseline billing=%s",closedDay,treas,
+                 private_logistics_step3b::BillingStateName(g_billing!=0,g_dryRun!=0));
         else Logf("[B2B BAL] day %d treasury %.2f -> %.2f (%+.2f) | "
-                  "goods_state_net=%+.2f | %s",
+                  "goods_state_net=%+.2f billing=%s",
                   closedDay,g_treasuryAtClose,treas,treas-g_treasuryAtClose,b2bStateNet,
-                  g_dryRun?"dry_run":"live");
+                  private_logistics_step3b::BillingStateName(g_billing!=0,g_dryRun!=0));
         if(have) {g_treasuryAtClose=treas;g_treasuryHaveClose=true;}
         for(int i=0;i<cCount;++i) {
             void* b=cPt[i];if(!b||!g_enterprise||!g_enterprise->getCompanyCapital) continue;
             const double capital=g_enterprise->getCompanyCapital(b);
             char name[64];BuildingName(b,name,sizeof(name));
-            Logf("[DO BAL] day %d %s capital %.2f (%+.2f) | trip_fuel_income=%.2f",
+            Logf("[DO BAL] day %d %s capital %.2f (%+.2f) | trip_fuel_income=%.2f "
+                 "do_fuel_private=%.2f do_fuel_state=%.2f direction_unknown=%u "
+                 "customs_export_deferred=%u billing=%s",
                  closedDay,name,capital,
-                 g_balCarrierPrev[i]<0.0?0.0:capital-g_balCarrierPrev[i],cIn[i]);
+                 g_balCarrierPrev[i]<0.0?0.0:capital-g_balCarrierPrev[i],cIn[i],
+                 doFuelPrivate,doFuelState,directionUnknown,customsDeferred,
+                 private_logistics_step3b::BillingStateName(g_billing!=0,g_dryRun!=0));
             g_balCarrierPrev[i]=capital;
         }
     }
 
     CensusFleets(closedDay);
-    Logf("[FUEL] day %d refuel sites: %u call(s), %.2f observed fuel value",
-         closedDay,fuelEvents,fuelValue);
+    Logf("[FUEL] day %d refuel sites: %u call(s), %.2f observed fuel value billing=%s",
+         closedDay,fuelEvents,fuelValue,
+         private_logistics_step3b::BillingStateName(g_billing!=0,g_dryRun!=0));
     AutoTargetsOnDay(day, closedDay);
 }
 
@@ -1613,6 +1732,7 @@ static void AutoPersistenceEvent(TsmSaveEvent event, const char* dir, void*)
         InterlockedIncrement(&g_fuelDiagnosticEpoch);
         PanelObserverLoading();
         EnterCriticalSection(&g_lock);
+        AssignmentSaveLoadingLocked();
         g_b2bEngine.resetAll();
         LeaveCriticalSection(&g_lock);
     }
@@ -2702,10 +2822,7 @@ extern "C" __declspec(dllexport) int TsmPluginInit(const TsmHost* host,
 
     g_realTransfer = (tTransfer)(g_exeBase + TSM_RVA_TRANSFER);
 
-    Logf("private_logistics v%s - settlement %s", PL_VERSION,
-         !g_billing ? "OBSERVE ONLY (moves no money)" :
-         g_dryRun ? "ARMED IN DRY RUN (computes eligible transfers, moves nothing)"
-                  : "LIVE (moves money)");
+    Logf("private_logistics v%s - settlement initialization starting",PL_VERSION);
     static TsmB2bLogisticsApi g_b2bLogisticsApi = { sizeof(TsmB2bLogisticsApi), nullptr };
     g_b2bLogisticsApi.isCounterpartyBillingActive = []() -> int {
         return (g_enabled && g_billing && !g_dryRun && g_counterpartySettlement) ? 1 : 0;
@@ -2814,10 +2931,11 @@ extern "C" __declspec(dllexport) int TsmPluginStart(void)
 
     if (g_simClock) g_simClock->registerDay(OnDay, nullptr);
 
-    Logf("private_logistics live v%s: billing=%d dry_run=%d sites=%d | "
-         "goods=locked_global_native_price, DO=observed_assignment_fuel_x_global_close | "
+    Logf("private_logistics v%s: initialized billing=%s sites=%d | "
+         "goods=locked_global_native_price, DO=verified_receiver_assignment_fuel_x_global_close | "
          "no wholesale, cargo-value freight, fragment tariff, margin, wear or upkeep",
-         PL_VERSION,g_billing,g_dryRun,g_siteCount);
+         PL_VERSION,private_logistics_step3b::BillingStateName(g_billing!=0,g_dryRun!=0),
+         g_siteCount);
     Logf("private_logistics [AUTO DO] enabled=%d dry_run=%d cadence=once/day; "
          "private endpoints -> private road/rail DOs; existing entries preserved",
          g_autoTargetsEnabled,g_autoTargetsDryRun);

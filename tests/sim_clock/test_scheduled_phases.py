@@ -1,4 +1,5 @@
 import os
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -100,13 +101,16 @@ int main() {
 
 class SimClockPhaseTests(unittest.TestCase):
     def test_phase_ordering_and_structsize_fallback(self):
+        compiler = shutil.which("g++") or shutil.which("clang++")
+        if not compiler:
+            self.skipTest("C++ compiler required (g++ or clang++)")
         with tempfile.TemporaryDirectory() as tmp:
             src = os.path.join(tmp, "probe.cpp")
-            exe = os.path.join(tmp, "probe")
+            exe = os.path.join(tmp, "probe.exe" if os.name == "nt" else "probe")
             with open(src, "w", encoding="utf-8") as f:
                 f.write(PROBE_CPP)
             res = subprocess.run(
-                ["g++", "-std=c++17", "-Wall", "-Wextra", "-Werror",
+                [compiler, "-std=c++17", "-Wall", "-Wextra", "-Werror",
                  "-I", SRC_DIR, src, "-o", exe],
                 capture_output=True, text=True
             )
