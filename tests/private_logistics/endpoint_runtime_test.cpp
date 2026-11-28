@@ -131,7 +131,7 @@ static void runtime_closing_boundary_prices_native_not_ui() {
     CHECK(line.find("event=observed_close")!=std::string::npos);
     CHECK(line.find("net_change_valid=1 net_change_native=-0.5")!=std::string::npos);
     CHECK(line.find("hypothetical_cost_if_no_refill_available=1 hypothetical_cost_if_no_refill=100 ")!=std::string::npos);
-    CHECK(line.find("actual_cost=not_computed settlement=none billing=off")!=std::string::npos);
+    CHECK(line.find("actual_cost=not_computed settlement=none money_moved=0")!=std::string::npos);
     std::puts(line.c_str()); // Archive actual emitted output, not a reconstructed example.
 }
 static void runtime_quiet_rise_suppresses_hypothesis() {
@@ -191,5 +191,5 @@ static void closure_retains_original_target() {
     CHECK(logs.back().find(TargetToken(0x20000))!=std::string::npos);
     CHECK(logs.back().find("original_target_resolved=0")!=std::string::npos);
     CHECK(logs.back().find("hypothetical_cost_if_no_refill_available=1")!=std::string::npos);
-    CHECK(logs.back().find("actual_cost=not_computed settlement=none billing=off")!=std::string::npos);
+    CHECK(logs.back().find("actual_cost=not_computed settlement=none money_moved=0")!=std::string::npos);
 }

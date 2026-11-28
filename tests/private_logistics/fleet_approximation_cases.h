@@ -138,7 +138,7 @@ static void assignment_logs_label_refill_estimate_without_charging_money() {
     for(const char* text:{"observed_close","compared_pairs=3","estimate_partial=1",
         "estimated_cost_available=1","estimate_reason=approximate_positive_drops",
         "price_basis=current_cached_30s","quantity_assumption=native_tonnes_provisional",
-        "exact_burn=0","settlement=none billing=off"}) CHECK(log.find(text)!=std::string::npos);
+        "exact_burn=0","settlement=none money_moved=0"}) CHECK(log.find(text)!=std::string::npos);
     CHECK(fleetPriceCalls==1 && fleetLookups==1);
 }
 static void backward_clock_skips_pair_and_rebases() {

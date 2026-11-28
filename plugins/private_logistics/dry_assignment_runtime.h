@@ -3,6 +3,9 @@
 #define PRIVATE_LOGISTICS_DRY_ASSIGNMENT_RUNTIME_H
 #include "dry_assignment_codec.h"
 #include "assignment_settlement.h"
+#include "do_fuel_settlement.h"
+#include <cstdio>
+#include <limits>
 #include <new>
 namespace dry=private_logistics_dry;
 static dry::Book g_dryBook;
@@ -10,13 +13,21 @@ struct DryToken {std::uint64_t epoch=0,id=0;uintptr_t root=0;unsigned row=dry::L
 static DryToken g_dryTokens[64]; // Ephemeral only. Never encoded or restored.
 
 struct AssignmentToken {
-    std::uint64_t epoch=0,id=0,buyerKey=0,carrierKey=0;
-    uintptr_t root=0,buyer=0,carrier=0;
+    std::uint64_t generation=0,epoch=0,id=0,homeKey=0,receiverKey=0,openSequence=0;
+    uintptr_t root=0,vehicle=0,home=0,receiver=0;
+    private_logistics_step3b::ReceiverKind receiverKind=
+        private_logistics_step3b::ReceiverKind::Unknown;
+    bool directionUnknown=false;
 };
 static AssignmentToken g_assignmentTokens[64];
-struct AssignmentReceipt { std::uint64_t epoch=0,id=0; uintptr_t root=0; };
+enum class AssignmentReceiptState : unsigned char { Empty, InProgress, Committed, Failed };
+struct AssignmentReceipt {
+    std::uint64_t generation=0,epoch=0,id=0;
+    uintptr_t root=0;
+    AssignmentReceiptState state=AssignmentReceiptState::Empty;
+};
 static AssignmentReceipt g_assignmentReceipts[256];
-static unsigned g_assignmentReceiptHead=0;
+static unsigned g_assignmentReceiptCount=0;
 static LONG g_dryEpoch=0;
 static bool g_dryReady=false,g_dryCapacityWarned=false;
 static int g_dryPersistenceHandle=0;
@@ -55,7 +66,7 @@ static void DryCostLog(const dry::Record& r) {
          "sampled_decrease_native=%.9g sampled_increase_native=%.9g compared_pairs=%u partial=%d "
          "estimated_cost_available=%d would_owe_available=%d estimated_cost=%.9g currency=%d "
          "frozen_price_per_tonne=%.9g price_policy=freeze_at_observed_close units=native_tonnes_provisional "
-         "actual_debt=not_created settlement=none billing=off",
+         "actual_debt=not_created settlement=none money_moved=0",
          (unsigned long long)r.id,r.stage==dry::Stage::Closed?"closed":"interrupted",(unsigned)r.reason,
          r.target.valid?1:0,(unsigned long long)dry::TargetKey(r.target),r.target.valid?r.target.asset:"unresolved",
          r.target.type,double(r.target.x),double(r.target.z),r.decrease,r.increase,r.pairs,r.flags?1:0,
@@ -67,22 +78,197 @@ static bool AssignmentPartyCurrent(uintptr_t building,std::uint64_t expectedKey)
     std::uint64_t key=0;int type=0;
     return AutoBuildingKey((void*)building,&key,&type) && key==expectedKey;
 }
-static int AssignmentTokenIndex(const fleet::a::Candidate& c)
+static int AssignmentTokenIndex(const fleet::a::Candidate& c,std::uint64_t generation)
 {
     for(unsigned i=0;i<64;++i) if(g_assignmentTokens[i].root==c.root &&
-        g_assignmentTokens[i].id==c.id && g_assignmentTokens[i].epoch==c.epoch) return (int)i;
+        g_assignmentTokens[i].id==c.id && g_assignmentTokens[i].epoch==c.epoch &&
+        g_assignmentTokens[i].generation==generation) return (int)i;
     return -1;
 }
-static bool AssignmentDuplicate(const fleet::a::Candidate& c)
+static int AssignmentReceiptIndex(std::uint64_t generation,
+                                  const fleet::a::Candidate& c)
 {
-    for(const auto& r:g_assignmentReceipts) if(r.root==c.root && r.id==c.id && r.epoch==c.epoch) return true;
+    for(unsigned i=0;i<g_assignmentReceiptCount;++i) {
+        const auto& r=g_assignmentReceipts[i];
+        if(r.generation==generation && r.root==c.root &&
+           r.id==c.id && r.epoch==c.epoch) return (int)i;
+    }
+    return -1;
+}
+static void AssignmentMarkUnknownByHomeLocked(std::uint64_t generation,
+                                               uintptr_t home)
+{
+    for(auto& token:g_assignmentTokens) if(token.root &&
+        token.generation==generation && (!home || token.home==home))
+        token.directionUnknown=true;
+}
+
+static bool AssignmentBeginTransferSequence(std::uint64_t* generation,
+                                            std::uint64_t* sequence)
+{
+    if(!generation || !sequence) return false;
+    EnterCriticalSection(&g_lock);
+    bool valid=!g_receiverProofDisabled &&
+        g_transferSequence<(std::numeric_limits<std::uint64_t>::max)();
+    if(valid) {
+        ++g_transferSequence;
+    } else {
+        g_receiverProofDisabled=true;
+        AssignmentMarkUnknownByHomeLocked(g_assignmentGeneration,0);
+    }
+    *generation=g_assignmentGeneration;
+    *sequence=g_transferSequence;
+    LeaveCriticalSection(&g_lock);
+    return valid;
+}
+
+static void AssignmentSaveLoadingLocked()
+{
+    if(g_assignmentGeneration<(std::numeric_limits<std::uint64_t>::max)()) {
+        ++g_assignmentGeneration;
+        g_transferSequence=0;
+    } else {
+        g_receiverProofDisabled=true;
+        AssignmentMarkUnknownByHomeLocked(g_assignmentGeneration,0);
+    }
+    for(auto& token:g_assignmentTokens) token=AssignmentToken{};
+}
+
+static void AssignmentInvalidatePendingReceiverLocked(
+    const wrsre::b2b::PendingDelivery& pending)
+{
+    if(!pending.active) return;
+    AssignmentMarkUnknownByHomeLocked(pending.generation,pending.fleetOwner);
+}
+
+static void AssignmentObserveMode0FailureLocked(std::uint64_t generation,
+                                                 uintptr_t home)
+{
+    AssignmentMarkUnknownByHomeLocked(generation,home);
+}
+
+static void AssignmentObserveVehicleDeliveryLocked(
+    std::uint64_t generation,std::uint64_t sequence,uintptr_t vehicle,
+    uintptr_t home,const wrsre::b2b::MatchedDelivery& delivery,
+    std::uint64_t receiverKey,bool receiverKeyValid,
+    private_logistics_step3b::ReceiverKind receiverKind)
+{
+    for(auto& token:g_assignmentTokens) {
+        if(!token.root || token.generation!=generation ||
+           token.vehicle!=vehicle || token.home!=home) continue;
+        if(g_receiverProofDisabled || token.directionUnknown ||
+           sequence<=token.openSequence || !delivery.deliveryMatched ||
+           delivery.deliveryAmbiguous || !delivery.receiverEvidence ||
+           !delivery.destBld || !receiverKeyValid) {
+            token.directionUnknown=true;
+            continue;
+        }
+        if(!token.receiver) {
+            token.receiver=(uintptr_t)delivery.destBld;
+            token.receiverKey=receiverKey;
+            token.receiverKind=receiverKind;
+        } else if(token.receiver!=(uintptr_t)delivery.destBld ||
+                  token.receiverKey!=receiverKey ||
+                  token.receiverKind!=receiverKind) {
+            token.directionUnknown=true;
+        }
+    }
+}
+
+struct AssignmentTransferContext {
+    std::uint64_t generation=0;
+    int receipt=-1;
+    private_logistics_step3b::PayerKind payer=
+        private_logistics_step3b::PayerKind::None;
+    int currency=0;
+};
+
+static double AssignmentTransferTreasuryBalance(void* userData,int)
+{
+    const auto* context=(const AssignmentTransferContext*)userData;
+    return context && TreasuryReadable()
+        ? g_currency->getTreasuryBalance(context->currency)
+        : std::numeric_limits<double>::quiet_NaN();
+}
+
+static void AssignmentTransferTreasuryMove(void* userData,double amount,
+                                            const char* label)
+{
+    const auto* context=(const AssignmentTransferContext*)userData;
+    if(context && TreasuryWritable())
+        g_currency->moveTreasury(amount,label);
+}
+
+static bool AssignmentTransferPartyCurrent(
+    void*,std::uintptr_t building,std::uint64_t key,
+    private_logistics_step3b::ReceiverKind expected)
+{
+    if(!AssignmentPartyCurrent(building,key) ||
+       !AutoBuildingFinished((void*)building)) return false;
+    switch(expected) {
+    case private_logistics_step3b::ReceiverKind::Private:
+        return IsPrivate((void*)building);
+    case private_logistics_step3b::ReceiverKind::State:
+        return !IsPrivate((void*)building) && !IsCustomsBuilding((void*)building);
+    case private_logistics_step3b::ReceiverKind::Customs:
+        return IsCustomsBuilding((void*)building);
+    case private_logistics_step3b::ReceiverKind::Unknown:
+        return false;
+    }
     return false;
 }
-static void AssignmentRemember(const fleet::a::Candidate& c)
+
+static bool AssignmentTransferGenerationCurrent(void* userData)
 {
-    auto& r=g_assignmentReceipts[g_assignmentReceiptHead++%256];
-    r={c.epoch,c.id,c.root};
+    const auto* context=(const AssignmentTransferContext*)userData;
+    EnterCriticalSection(&g_lock);
+    const bool current=context && !g_receiverProofDisabled &&
+        context->receipt>=0 &&
+        (unsigned)context->receipt<g_assignmentReceiptCount &&
+        g_assignmentGeneration==context->generation &&
+        g_assignmentReceipts[context->receipt].generation==context->generation &&
+        g_assignmentReceipts[context->receipt].state==AssignmentReceiptState::InProgress;
+    LeaveCriticalSection(&g_lock);
+    return current;
 }
+
+static bool AssignmentTransferCommit(void* userData,
+    private_logistics_step3b::PayerKind payer,double amount)
+{
+    const auto* context=(const AssignmentTransferContext*)userData;
+    if(!context || payer!=context->payer ||
+       !std::isfinite(amount) || amount<=0.0) return false;
+    EnterCriticalSection(&g_lock);
+    const bool current=!g_receiverProofDisabled &&
+        context->receipt>=0 &&
+        (unsigned)context->receipt<g_assignmentReceiptCount &&
+        g_assignmentGeneration==context->generation &&
+        g_assignmentReceipts[context->receipt].generation==context->generation &&
+        g_assignmentReceipts[context->receipt].state==AssignmentReceiptState::InProgress;
+    if(current) {
+        g_assignmentReceipts[context->receipt].state=AssignmentReceiptState::Committed;
+        ++g_b2bSettleCount;
+        g_b2bTripFuelSum+=amount;
+        if(payer==private_logistics_step3b::PayerKind::PrivateCompany)
+            g_doFuelPrivateSum+=amount;
+        else if(payer==private_logistics_step3b::PayerKind::Treasury)
+            g_doFuelStateSum+=amount;
+    }
+    LeaveCriticalSection(&g_lock);
+    return current;
+}
+
+static void AssignmentFinishReceipt(int receipt,std::uint64_t generation,
+                                     AssignmentReceiptState state)
+{
+    EnterCriticalSection(&g_lock);
+    if(receipt>=0 && (unsigned)receipt<g_assignmentReceiptCount &&
+       g_assignmentReceipts[receipt].generation==generation &&
+       g_assignmentReceipts[receipt].state==AssignmentReceiptState::InProgress)
+        g_assignmentReceipts[receipt].state=state;
+    LeaveCriticalSection(&g_lock);
+}
+
 static void AssignmentSettlementEvent(const fleet::a::Event& e,
                                       const PanelEndpointPrice& quote,bool complete)
 {
@@ -90,13 +276,19 @@ static void AssignmentSettlementEvent(const fleet::a::Event& e,
     const auto& c=e.candidate;
     const bool opening=e.kind==fleet::a::Kind::Opened || e.kind==fleet::a::Kind::Adopted;
     if(opening) {
-        std::uint64_t buyerKey=0,carrierKey=0;int type=0;
-        if(c.originalTargetRows==1 && c.originalTarget && c.home &&
-           AutoBuildingKey((void*)c.originalTarget,&buyerKey,&type) &&
-           AutoBuildingKey((void*)c.home,&carrierKey,&type)) {
+        std::uint64_t homeKey=0;int type=0;
+        if(c.root && c.home && c.epoch==(std::uint64_t)InterlockedCompareExchange(&g_panelEpoch,0,0) &&
+           IsPrivate((void*)c.home) && AutoBuildingKey((void*)c.home,&homeKey,&type)) {
             EnterCriticalSection(&g_lock);
-            if(AssignmentTokenIndex(c)<0) for(auto& t:g_assignmentTokens) if(!t.root) {
-                t={c.epoch,c.id,buyerKey,carrierKey,c.root,c.originalTarget,c.home};break;
+            if(AssignmentTokenIndex(c,g_assignmentGeneration)<0 &&
+               !g_receiverProofDisabled) {
+                for(auto& token:g_assignmentTokens) if(!token.root) {
+                    token.generation=g_assignmentGeneration;
+                    token.epoch=c.epoch;token.id=c.id;token.root=c.root;
+                    token.vehicle=c.root;token.home=c.home;token.homeKey=homeKey;
+                    token.openSequence=g_transferSequence;
+                    break;
+                }
             }
             LeaveCriticalSection(&g_lock);
         }
@@ -104,64 +296,173 @@ static void AssignmentSettlementEvent(const fleet::a::Event& e,
     }
     if(e.kind==fleet::a::Kind::Abandoned) {
         EnterCriticalSection(&g_lock);
-        const int token=AssignmentTokenIndex(c);if(token>=0) g_assignmentTokens[token]=AssignmentToken{};
+        const int token=AssignmentTokenIndex(c,g_assignmentGeneration);
+        if(token>=0) g_assignmentTokens[token]=AssignmentToken{};
         LeaveCriticalSection(&g_lock);
         return;
     }
     if(e.kind!=fleet::a::Kind::Closed) return;
 
-    auto assessment=private_logistics_assignment_settlement::Assess(e,complete,quote.available,quote.amount);
+    const auto assessment=private_logistics_assignment_settlement::Assess(
+        e,complete,quote.available,quote.amount);
     AssignmentToken token{};
+    std::uint64_t generation=0;
+    int receipt=-1;
+    bool duplicate=false,receiptFull=false;
     EnterCriticalSection(&g_lock);
-    const bool duplicate=AssignmentDuplicate(c);
-    const int index=AssignmentTokenIndex(c);
-    if(index>=0) {token=g_assignmentTokens[index];g_assignmentTokens[index]=AssignmentToken{};}
+    generation=g_assignmentGeneration;
+    const int tokenIndex=(c.epoch==(std::uint64_t)InterlockedCompareExchange(&g_panelEpoch,0,0))
+        ? AssignmentTokenIndex(c,generation) : -1;
+    if(tokenIndex>=0) {
+        token=g_assignmentTokens[tokenIndex];
+        g_assignmentTokens[tokenIndex]=AssignmentToken{};
+    }
+    duplicate=AssignmentReceiptIndex(generation,c)>=0;
     LeaveCriticalSection(&g_lock);
     if(duplicate) return;
-    if(!token.root && assessment.billable) {assessment.billable=false;assessment.reason="identity_missing";}
-    if(assessment.billable && (!AssignmentPartyCurrent(token.buyer,token.buyerKey) ||
-                               !AssignmentPartyCurrent(token.carrier,token.carrierKey))) {
-        assessment.billable=false;assessment.reason="identity_changed_or_demolished";
-    }
-    // A site under construction cannot receive goods (the engine refuses the
-    // unload), so a trip to it delivered nothing and is never charged.
-    if(assessment.billable && !AutoBuildingFinished((void*)token.buyer)) {
-        assessment.billable=false;assessment.reason="target_under_construction";
-    }
 
-    double paid=0.0;
-    const bool dry=g_dryRun!=0 || g_billing==0;
-    if(assessment.billable) {
-        const bool buyerPriv=IsPrivate((void*)token.buyer);
-        const bool carrierPriv=IsPrivate((void*)token.carrier);
-        if(!buyerPriv || !carrierPriv) {
-            assessment.billable=false;assessment.reason="private_parties_required";
+    const bool trackedToken=token.root && token.generation==generation &&
+        token.epoch==c.epoch && token.id==c.id && token.root==c.root &&
+        token.vehicle==c.root && token.home==(uintptr_t)c.home;
+    const bool privateOffice=trackedToken ||
+        (c.home && !TsmIsDecayed((void*)c.home) && IsPrivate((void*)c.home));
+    if(!privateOffice) return;
+
+    EnterCriticalSection(&g_lock);
+    if(g_assignmentGeneration!=generation) {
+        duplicate=true;
+    } else if(AssignmentReceiptIndex(generation,c)>=0) {
+        duplicate=true;
+    } else if(trackedToken) {
+        if(g_assignmentReceiptCount>=256) {
+            receiptFull=true;
         } else {
-            unsigned insolvent=0,treasurySkip=0;
-            auto cb=MakeTransferCallbacks(&insolvent,&treasurySkip);
-            EnterCriticalSection(&g_lock);AssignmentRemember(c);LeaveCriticalSection(&g_lock);
-            if(wrsre::b2b::TransferFunds(cb,(void*)token.buyer,wrsre::b2b::CAP_CAT_WHOLESALE,
-                                         (void*)token.carrier,wrsre::b2b::CAP_CAT_WHOLESALE,
-                                         quote.amount,"b2b_do_assignment_fuel")) paid=quote.amount;
-            else {assessment.billable=false;assessment.reason="transfer_failed";}
-            EnterCriticalSection(&g_lock);
-            g_skipBuyerInsolvent+=insolvent;g_skipTreasury+=treasurySkip;
-            if(paid>0.0) {++g_b2bSettleCount;g_b2bTripFuelSum+=paid;}
-            LeaveCriticalSection(&g_lock);
-            if(!dry && paid>0.0) {
-                TrackCarrier((void*)token.carrier);NoteCarrierIncome((void*)token.carrier,paid);
-            }
+            receipt=(int)g_assignmentReceiptCount++;
+            g_assignmentReceipts[receipt]={generation,c.epoch,c.id,c.root,
+                                            AssignmentReceiptState::InProgress};
         }
     }
-    char buyerName[64],carrierName[64];
-    BuildingName((void*)token.buyer,buyerName,sizeof(buyerName));
-    BuildingName((void*)token.carrier,carrierName,sizeof(carrierName));
-    Logf("[DO TRIP] %s assignment=%llu buyer=\"%s\" carrier=\"%s\" "
-         "fuel_decrease_native=%.9g fuel_price_global_close=%.9g charge=%.9g paid=%.9g "
-         "eligible=%d reason=%s exact_burn=0 price_policy=global_native_price_at_observed_close",
-         dry?"dry_run":"live",(unsigned long long)c.id,buyerName,carrierName,
-         c.sampledDecrease,(double)quote.perTonne,quote.amount,paid,
-         assessment.billable?1:0,assessment.reason);
+    LeaveCriticalSection(&g_lock);
+    if(duplicate) return;
+
+    private_logistics_step3b::ReceiverKind receiverKind=
+        private_logistics_step3b::ReceiverKind::Unknown;
+    bool receiverKnown=trackedToken && !token.directionUnknown && token.receiver &&
+        AssignmentPartyCurrent(token.receiver,token.receiverKey);
+    const char* reason=assessment.reason;
+    if(receiverKnown) {
+        if(IsCustomsBuilding((void*)token.receiver))
+            receiverKind=private_logistics_step3b::ReceiverKind::Customs;
+        else if(IsPrivate((void*)token.receiver))
+            receiverKind=private_logistics_step3b::ReceiverKind::Private;
+        else
+            receiverKind=private_logistics_step3b::ReceiverKind::State;
+        receiverKnown=receiverKind==token.receiverKind;
+    }
+    if(!receiverKnown) reason="direction_unknown";
+    else if(!AutoBuildingFinished((void*)token.receiver)) reason="receiver_unfinished";
+    else if(receiverKind==private_logistics_step3b::ReceiverKind::Customs)
+        reason="customs_export_deferred";
+    else if(!trackedToken || !AssignmentPartyCurrent(token.home,token.homeKey) ||
+            !IsPrivate((void*)token.home))
+        reason="identity_changed_or_demolished";
+
+    const auto decision=private_logistics_step3b::ChoosePayer(receiverKnown
+        ? receiverKind : private_logistics_step3b::ReceiverKind::Unknown);
+    const bool billable=assessment.billable && receiverKnown &&
+        AutoBuildingFinished((void*)token.receiver) &&
+        AssignmentPartyCurrent(token.home,token.homeKey) && IsPrivate((void*)token.home) &&
+        decision.payer!=private_logistics_step3b::PayerKind::None &&
+        !receiptFull && receipt>=0;
+    double wouldPay=billable?quote.amount:0.0;
+    double paid=0.0;
+    bool attemptedLive=false;
+    private_logistics_step3b::DoFuelResult transfer{};
+    if(!receiptFull && receipt>=0 && billable) {
+        if(g_billing && !g_dryRun) {
+            attemptedLive=true;
+            unsigned insolvent=0,treasurySkip=0;
+            auto funds=MakeTransferCallbacks(&insolvent,&treasurySkip);
+            AssignmentTransferContext context{
+                generation,receipt,decision.payer,quote.currency};
+            private_logistics_step3b::DoFuelCallbacks callbacks{};
+            callbacks.userData=&context;
+            callbacks.isLivePrivate=EnterprisePrivateReady()?funds.isLivePrivate:nullptr;
+            callbacks.getCapital=CompanyCapitalReadable()?funds.getCapital:nullptr;
+            callbacks.modifyCapital=CompanyCapitalWritable()?funds.modifyCapital:nullptr;
+            callbacks.getTreasury=TreasuryReadable()
+                ? AssignmentTransferTreasuryBalance : nullptr;
+            callbacks.moveTreasury=TreasuryWritable()
+                ? AssignmentTransferTreasuryMove : nullptr;
+            callbacks.partyCurrent=&AssignmentTransferPartyCurrent;
+            callbacks.generationCurrent=&AssignmentTransferGenerationCurrent;
+            callbacks.commit=&AssignmentTransferCommit;
+            callbacks.allowBuyerOverdraft=funds.allowBuyerOverdraft;
+            callbacks.buyerOverdraftLimit=funds.buyerOverdraftLimit;
+            callbacks.minPayment=g_minPayment;
+            callbacks.payerCategory=wrsre::b2b::CAP_CAT_WHOLESALE;
+            callbacks.payeeCategory=wrsre::b2b::CAP_CAT_WHOLESALE;
+            callbacks.skipBuyerInsolvent=&insolvent;
+            callbacks.skipTreasury=&treasurySkip;
+            transfer=private_logistics_step3b::ExecuteDoFuelTransfer(
+                callbacks,decision,token.receiver,token.receiverKey,token.home,
+                token.homeKey,quote.amount,true);
+            paid=transfer.paid?quote.amount:0.0;
+            EnterCriticalSection(&g_lock);
+            g_skipBuyerInsolvent+=insolvent;g_skipTreasury+=treasurySkip;
+            LeaveCriticalSection(&g_lock);
+            if(!transfer.paid) {
+                reason=transfer.reason;
+                AssignmentFinishReceipt(receipt,generation,AssignmentReceiptState::Failed);
+            } else {
+                reason=transfer.reason;
+                TrackCarrier((void*)token.home);NoteCarrierIncome((void*)token.home,paid);
+            }
+        } else {
+            reason=decision.reason;
+            AssignmentFinishReceipt(receipt,generation,AssignmentReceiptState::Committed);
+        }
+    } else if(receipt>=0) {
+        if(receiptFull) reason="receipt_capacity";
+        else if(!receiverKnown) reason="direction_unknown";
+        AssignmentFinishReceipt(receipt,generation,AssignmentReceiptState::Failed);
+    }
+
+    if(!receiverKnown) {
+        EnterCriticalSection(&g_lock);++g_directionUnknownCount;LeaveCriticalSection(&g_lock);
+    } else if(receiverKind==private_logistics_step3b::ReceiverKind::Customs) {
+        EnterCriticalSection(&g_lock);++g_customsExportDeferredCount;LeaveCriticalSection(&g_lock);
+    }
+    char receiverName[64],carrierName[64];
+    if(receiverKnown) BuildingName((void*)token.receiver,receiverName,sizeof(receiverName));
+    else std::snprintf(receiverName,sizeof(receiverName),"unknown");
+    if(token.home) BuildingName((void*)token.home,carrierName,sizeof(carrierName));
+    else std::snprintf(carrierName,sizeof(carrierName),"unknown");
+    char payerName[64];
+    if(decision.payer==private_logistics_step3b::PayerKind::Treasury)
+        std::snprintf(payerName,sizeof(payerName),"treasury");
+    else if(decision.payer==private_logistics_step3b::PayerKind::PrivateCompany)
+        std::snprintf(payerName,sizeof(payerName),"%s",receiverName);
+    else
+        std::snprintf(payerName,sizeof(payerName),"none");
+    if(receiptFull) reason="receipt_capacity";
+    Logf("[DO TRIP] assignment=%llu receiver=\"%s\" receiver_kind=%s payer=\"%s\" "
+         "carrier=\"%s\" fuel_decrease_native=%.9g fuel_price_global_close=%.9g "
+         "charge=%.9g would_pay=%.9g paid=%.9g eligible=%d reason=%s billing=%s "
+         "money_moved=%.9g exact_burn=0 price_policy=global_native_price_at_observed_close",
+         (unsigned long long)c.id,receiverName,
+         receiverKind==private_logistics_step3b::ReceiverKind::Private?"private":
+         receiverKind==private_logistics_step3b::ReceiverKind::State?"state":
+         receiverKind==private_logistics_step3b::ReceiverKind::Customs?"customs":"unknown",
+         payerName,carrierName,c.sampledDecrease,(double)quote.perTonne,quote.amount,
+         wouldPay,paid,billable?1:0,reason,
+         private_logistics_step3b::BillingStateName(g_billing!=0,g_dryRun!=0),paid);
+    if(attemptedLive && !transfer.paid)
+        Logf("[DO TRIP] ERROR assignment=%llu reason=%s payer_delta=%.9g payee_delta=%.9g "
+             "payer_rollback_verified=%d payee_rollback_verified=%d",
+             (unsigned long long)c.id,transfer.reason,transfer.payerDelta,
+             transfer.payeeDelta,transfer.payerRollbackVerified?1:0,
+             transfer.payeeRollbackVerified?1:0);
 }
 static void DryCostEvent(const fleet::a::Event& e,const PanelEndpointPrice& quote,bool complete) {
     AssignmentSettlementEvent(e,quote,complete);
@@ -180,7 +481,7 @@ static void DryCostEvent(const fleet::a::Event& e,const PanelEndpointPrice& quot
         if(row==dry::Limit) {
             const bool warn=!g_dryCapacityWarned;g_dryCapacityWarned=true;
             LeaveCriticalSection(&g_lock);
-            if(warn) Logf("[DRY COST] capacity_exhausted=1 prior_records_retained=1 no_eviction=1 billing=off");
+            if(warn) Logf("[DRY COST] capacity_exhausted=1 prior_records_retained=1 no_eviction=1 money_moved=0");
             return;
         }
         g_dryTokens[token]={c.epoch,c.id,c.root,row};
@@ -209,7 +510,7 @@ static void DryCostPersistence(TsmSaveEvent event,const char* dir,void*) {
         LeaveCriticalSection(&g_lock);
         if(size) {
             const int ok=g_persistence->writeAtomic(dir,DryCostFile,data,size);
-            Logf("[DRY COST] saved=%d records=%u bytes=%llu billing=off",ok,count,(unsigned long long)size);
+            Logf("[DRY COST] saved=%d records=%u bytes=%llu money_moved=0",ok,count,(unsigned long long)size);
         } else Logf("[DRY COST] save_skipped_invalid_or_blocked=1 existing_file_retained=1");
         std::free(data);return;
     }
@@ -218,9 +519,6 @@ static void DryCostPersistence(TsmSaveEvent event,const char* dir,void*) {
     EnterCriticalSection(&g_lock);
     g_dryReady=false;g_dryEpoch=epoch;g_dryBook.count=0;g_dryBook.next=1;
     for(auto& t:g_dryTokens) t=DryToken{};
-    for(auto& t:g_assignmentTokens) t=AssignmentToken{};
-    for(auto& r:g_assignmentReceipts) r=AssignmentReceipt{};
-    g_assignmentReceiptHead=0;
     g_dryCapacityWarned=false;
     LeaveCriticalSection(&g_lock);
     const int state=DryFileState(dir,DryCostFile);
@@ -241,10 +539,22 @@ static void DryCostPersistence(TsmSaveEvent event,const char* dir,void*) {
     LeaveCriticalSection(&g_lock);
     delete loaded;
     Logf("[DRY COST] loaded=%d records=%u interrupted_unpriced=%u "
-         "missing_file=%d blocked=%d prior_active_not_rebound=1 billing=off",
+         "missing_file=%d blocked=%d prior_active_not_rebound=1 money_moved=0",
          (ok && current)?1:0,count,interrupted,state==0?1:0,(!ok || !current)?1:0);
 }
+static void AssignmentOnlyEvent(const fleet::a::Event& e,
+                                const PanelEndpointPrice& quote,bool complete)
+{
+    AssignmentSettlementEvent(e,quote,complete);
+}
 static void DryCostStart() {
+    g_fleetCostEvent=AssignmentOnlyEvent;
+    g_fleetCostSample=nullptr;
+    if(g_billing) {
+        Logf("[DRY COST] inactive: billing %s",
+             private_logistics_step3b::BillingStateName(g_billing!=0,g_dryRun!=0));
+        return;
+    }
     if(!g_fleetStarted || !g_persistence ||
        g_persistence->structSize<offsetof(TsmPersistenceApi,readFile)+sizeof(g_persistence->readFile) ||
        !g_persistence->registerHandler || !g_persistence->readFile || !g_persistence->writeAtomic) return;
@@ -254,10 +564,10 @@ static void DryCostStart() {
     g_dryPersistenceHandle=g_persistence->registerHandler("private_logistics_costs",DryCostPersistence,nullptr);
     if(!g_dryPersistenceHandle) {
         EnterCriticalSection(&g_lock);g_dryReady=false;LeaveCriticalSection(&g_lock);
-        Logf("[DRY COST] registration_failed=1 billing=off");return;
+        Logf("[DRY COST] registration_failed=1 money_moved=0");return;
     }
     g_fleetCostEvent=DryCostEvent;g_fleetCostSample=DryCostSample;
     Logf("[DRY COST] started file=%s max_records=4096 closed_quotes_immutable=1 "
-         "open_save_policy=interrupted_unpriced no_money_writes=1 billing=off",DryCostFile);
+         "open_save_policy=interrupted_unpriced no_money_writes=1 money_moved=0",DryCostFile);
 }
 #endif

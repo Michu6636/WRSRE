@@ -78,7 +78,7 @@ int main() {
     logs.clear();capture();drain();CHECK(contains("current_pattern=load_unload_pattern"));
     putFloat(configs+4,0.509832323f);logs.clear();capture();drain();
     CHECK(contains("structure_changed=0 config_availability_changed=0 task_flags_changed=0 scalar_settings_changed=1 settings_only=1"));
-    CHECK(contains("native_job_boundary=unverified billing=off"));
+    CHECK(contains("native_job_boundary=unverified money_moved=0"));
     put(targets+8,Address(0xABCF0000));logs.clear();capture();drain();
     CHECK(contains("row_count_changed=0 ordered_targets_changed=1 structure_changed=1"));
     CHECK(contains("settings_only=0"));
@@ -114,7 +114,7 @@ int main() {
     CHECK(contains("[PANEL ASSIGNMENT]") && contains("event=observed_update reason=same_observed_targets"));
     CHECK(!contains("event=observed_close") && !contains("event=observed_open"));
     CHECK(g_scheduleLedger.Current().id==originalId && g_scheduleLedger.Current().first.sample==firstLedgerSample);
-    CHECK(contains("cost=not_computed settlement=none billing=off"));
+    CHECK(contains("cost=not_computed settlement=none money_moved=0"));
     std::puts("PASS schedule_runtime_ledger_quiet_endpoints_and_scalar_index_keep_id");
     put(targets+8,Address(0xABC10000));logs.clear();capture();drain();
     CHECK(contains("event=observed_close reason=observed_targets_replaced"));

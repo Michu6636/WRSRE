@@ -4,12 +4,15 @@
 #include "../../src/persistence_api.h"
 #include <memory>
 static CRITICAL_SECTION g_lock;
+static bool g_testLockInitialized=false;
 static void EnterCriticalSection(CRITICAL_SECTION* p) {CHECK(TryEnterCriticalSection(p));}
 using DWORD=unsigned long;
 constexpr DWORD INVALID_FILE_ATTRIBUTES=0xFFFFFFFF,FILE_ATTRIBUTE_DIRECTORY=16;
 constexpr DWORD ERROR_FILE_NOT_FOUND=2,ERROR_PATH_NOT_FOUND=3;
 constexpr unsigned MAX_PATH=260;
 static int fileState=0,identityReads=0;
+static uintptr_t changedIdentityBuilding=0;
+static std::uint64_t changedIdentityKey=0;
 static DWORD GetFileAttributesA(const char*) {return fileState==1?0:INVALID_FILE_ATTRIBUTES;}
 static DWORD GetLastError() {return fileState==0?ERROR_FILE_NOT_FOUND:5;}
 struct TsmBuildingSpan {void** begin=nullptr;void** end=nullptr;size_t count=0;};
@@ -55,23 +58,37 @@ static void* ReadCosts(const char*,const char*,size_t* n) {
 static int g_dryRun=1,g_allowBuyerOverdraft=1,g_counterpartySettlement=1;
 static double g_buyerOverdraftLimit=5000,g_b2bTripFuelSum=0,g_b2bStateNetSum=0;
 static unsigned g_b2bSettleCount=0,g_skipBuyerInsolvent=0,g_skipTreasury=0;
+static double g_doFuelPrivateSum=0,g_doFuelStateSum=0,g_minPayment=.01,mockTreasury=1e12;
+static unsigned g_directionUnknownCount=0,g_customsExportDeferredCount=0;
+static const char* lastTreasuryLabel=nullptr;
+static std::uint64_t g_assignmentGeneration=1,g_transferSequence=0;
+static bool g_receiverProofDisabled=false;
+static wrsre::b2b::Engine g_assignmentEvidenceEngine;
 static std::unordered_map<uintptr_t,double> capitals;
 static bool TsmIsDecayed(void*) {return false;}
 static bool AutoBuildingKey(void* b,std::uint64_t* key,int*) {
     if(!b || g_lock.busy) return false;
-    *key=(std::uint64_t)(uintptr_t)b;
+    *key=(uintptr_t)b==changedIdentityBuilding
+        ? changedIdentityKey : (std::uint64_t)(uintptr_t)b;
     return true;
 }
-static bool IsPrivate(void* b) {return b!=nullptr;}
+static uintptr_t stateReceiver=0,customsReceiver=0;
+static bool IsPrivate(void* b) {return b!=nullptr && (uintptr_t)b!=stateReceiver && (uintptr_t)b!=customsReceiver;}
+static bool IsCustomsBuilding(void* b) {return b && (uintptr_t)b==customsReceiver;}
 static uintptr_t unfinishedBuilding=0;
 static bool AutoBuildingFinished(void* b) {return b!=nullptr && (uintptr_t)b!=unfinishedBuilding;}
+static bool EnterprisePrivateReady() {return true;}
+static bool CompanyCapitalReadable() {return true;}
+static bool CompanyCapitalWritable() {return true;}
+static bool TreasuryReadable() {return true;}
+static bool TreasuryWritable() {return true;}
 static wrsre::b2b::FundsTransferCallbacks MakeTransferCallbacks(unsigned* insolvent,unsigned* treasury) {
     wrsre::b2b::FundsTransferCallbacks cb{};
     cb.isLivePrivate=[](void*,void* b){return b!=nullptr;};
     cb.getCapital=[](void*,void* b){return capitals[(uintptr_t)b];};
     cb.modifyCapital=[](void*,void* b,double d,int){capitals[(uintptr_t)b]+=d;};
-    cb.getTreasury=[](void*,int){return 1e12;};
-    cb.moveTreasury=[](void*,double,const char*){};
+    cb.getTreasury=[](void*,int){return mockTreasury;};
+    cb.moveTreasury=[](void*,double d,const char* label){mockTreasury+=d;lastTreasuryLabel=label;};
     cb.checkSellerKey=[](void*,void* b,std::uint64_t key){return key==(std::uint64_t)(uintptr_t)b;};
     cb.allowBuyerOverdraft=g_allowBuyerOverdraft!=0;cb.buyerOverdraftLimit=g_buyerOverdraftLimit;cb.minPayment=.01;
     cb.dryRun=g_dryRun!=0 || g_billing==0;cb.skipBuyerInsolvent=insolvent;cb.skipTreasury=treasury;
@@ -86,15 +103,27 @@ static void BuildingName(void* b,char* out,size_t n) {
 #include "dry_assignment_runtime.h"
 static void PrepareDry() {
     g_fleetCostEvent=nullptr;g_fleetCostSample=nullptr;PrepareRuntime();
-    InitializeCriticalSection(&g_lock);g_panelEpoch=2;g_fleetStarted=true;
+    std::setvbuf(stdout,nullptr,_IONBF,0);
+    if(!g_testLockInitialized) {
+        InitializeCriticalSection(&g_lock);
+        g_testLockInitialized=true;
+    }
+    g_panelEpoch=2;g_fleetStarted=true;
     g_dryBook.count=0;g_dryBook.next=1;g_dryReady=false;g_dryCapacityWarned=false;
     for(auto& t:g_dryTokens) t=DryToken{};
     for(auto& t:g_assignmentTokens) t=AssignmentToken{};
     for(auto& r:g_assignmentReceipts) r=AssignmentReceipt{};
-    g_assignmentReceiptHead=0;g_b2bSettleCount=0;g_b2bTripFuelSum=0;g_b2bStateNetSum=0;
+    g_assignmentReceiptCount=0;g_assignmentGeneration=1;g_transferSequence=0;
+    g_receiverProofDisabled=false;g_doFuelPrivateSum=g_doFuelStateSum=0;
+    g_directionUnknownCount=g_customsExportDeferredCount=0;
+    g_b2bSettleCount=0;g_b2bTripFuelSum=0;g_b2bStateNetSum=0;
     g_dryRun=1;g_counterpartySettlement=1;capitals.clear();capitals[Ptr(0x20000)]=10000;capitals[Ptr(0x50000)]=0;
+    g_skipBuyerInsolvent=g_skipTreasury=0;
+    lastTreasuryLabel=nullptr;
+    stateReceiver=customsReceiver=unfinishedBuilding=0;mockTreasury=1e12;
     fileState=0;disk.clear();writes=0;failWrite=failRead=failRegister=false;
     identityReads=0;positionX=10;positionZ=20;MakeWorld();
+    changedIdentityBuilding=0;changedIdentityKey=0;
     std::memcpy(g_exeBase+0x80000,"factory_asset",14);enterprises.getBuildingObjectName=ObjectName;
     persistence={};persistence.structSize=sizeof(persistence);persistence.registerHandler=RegisterCosts;
     persistence.writeAtomic=WriteCosts;persistence.readFile=ReadCosts;
@@ -110,6 +139,11 @@ static void Feed(fleet::Vehicle& v,const sch::Snapshot& s,float raw,unsigned ms)
 }
 static PanelEndpointPrice Quote200() {PanelEndpointPrice p{};p.available=true;p.perTonne=200;p.currency=0;return p;}
 static void ReadyQuote() {g_fleetPrice=Quote200();g_fleetPriceCached=true;g_fleetPriceMs=1000;}
+static const std::string* LastTripLog() {
+    for(auto line=logs.rbegin();line!=logs.rend();++line)
+        if(line->find("[DO TRIP] ")==0) return &*line;
+    return nullptr;
+}
 static void frozen_quote_cancellation_identity_and_duplicate_close() {
     PrepareDry();ReadyQuote();auto v=Truck();auto empty=Task();empty.count=0;
     Feed(v,empty,.9f,1000);Feed(v,Task(),.8f,2000);
@@ -124,7 +158,7 @@ static void frozen_quote_cancellation_identity_and_duplicate_close() {
     CHECK(Near(frozen.amount/200,.4) && frozen.available && dry::TargetKey(frozen.target)==key);
     g_fleetPrice.perTonne=999;FleetEvents(closed);Feed(v,office,.3f,6000);
     CHECK(g_dryBook.rows[0].amount==frozen.amount && g_dryBook.count==1);
-    CHECK(logs.back().find("billing=off")!=std::string::npos);
+    CHECK(logs.back().find("money_moved=0")!=std::string::npos);
 }
 static void replacement_separates_original_and_new_target() {
     PrepareDry();ReadyQuote();auto v=Truck();Feed(v,Task(),.8f,1000);Feed(v,Task(),.7f,2000);
@@ -264,13 +298,181 @@ static void snapshot_key_is_pointer_independent_and_guarded() {
 }
 static void persistence_registration_and_capacity_fail_closed() {
     PrepareDry();g_fleetCostEvent=nullptr;g_fleetCostSample=nullptr;
-    persistence.structSize=offsetof(TsmPersistenceApi,readFile);DryCostStart();CHECK(!g_fleetCostEvent);
-    persistence.structSize=sizeof(persistence);failRegister=true;DryCostStart();CHECK(!g_dryReady && !g_fleetCostEvent);
+    persistence.structSize=offsetof(TsmPersistenceApi,readFile);DryCostStart();
+    CHECK(g_fleetCostEvent==AssignmentOnlyEvent && g_fleetCostSample==nullptr);
+    persistence.structSize=sizeof(persistence);failRegister=true;DryCostStart();
+    CHECK(!g_dryReady && g_fleetCostEvent==AssignmentOnlyEvent &&
+          g_fleetCostSample==nullptr);
     failRegister=false;DryCostStart();CHECK(g_dryReady && g_fleetCostEvent);
     g_dryBook.count=dry::Limit;g_dryBook.next=dry::Limit+1;
     auto v=Truck();Feed(v,Task(),.8f,1000);CHECK(g_dryBook.count==dry::Limit && g_dryCapacityWarned);
     char longDirectory[MAX_PATH+1];std::memset(longDirectory,'x',MAX_PATH);longDirectory[MAX_PATH]=0;
     CHECK(DryFileState(longDirectory,DryCostFile)==-1);
+}
+static void step3b_live_billing_disables_dry_cost_startup() {
+    PrepareDry();
+    const int priorHandle=g_dryPersistenceHandle;
+    savedCallback=nullptr;
+    logs.clear();g_billing=1;g_dryRun=0;
+    DryCostStart();
+    CHECK(g_fleetCostEvent==AssignmentOnlyEvent && g_fleetCostSample==nullptr);
+    CHECK(g_dryPersistenceHandle==priorHandle && savedCallback==nullptr);
+    unsigned inactive=0;
+    for(const auto& line:logs)
+        if(line.find("[DRY COST] inactive: billing live")!=std::string::npos) ++inactive;
+    CHECK(inactive==1);
+}
+static void RecordAssignmentReceiver(const fleet::a::Candidate& candidate,
+                                     uintptr_t receiver);
+static void ScenarioStep3bReceiptCapacityFailsClosed() {
+    PrepareDry();ReadyQuote();g_billing=1;g_dryRun=0;
+    auto v=Truck();auto empty=Task();empty.count=0;
+    Feed(v,empty,.9f,1000);Feed(v,Task(),.8f,2000);Feed(v,Task(),.6f,3000);
+    const auto candidate=v.ledger.Current();
+    RecordAssignmentReceiver(candidate,Ptr(0x20000));
+    EnterCriticalSection(&g_lock);
+    g_assignmentReceipts[0]={9,9,9,9,AssignmentReceiptState::Committed};
+    g_assignmentReceiptCount=256;
+    LeaveCriticalSection(&g_lock);
+    FleetEvents(v.Observe(empty,Fuel(v.root,.5f),2,4000));
+    CHECK(capitals[Ptr(0x20000)]==10000 && capitals[Ptr(0x50000)]==0);
+    CHECK(g_assignmentReceiptCount==256);
+    const auto* trip=LastTripLog();CHECK(trip);
+    CHECK(trip->find("reason=receipt_capacity")!=std::string::npos);
+
+    EnterCriticalSection(&g_lock);
+    AssignmentSaveLoadingLocked();
+    LeaveCriticalSection(&g_lock);
+    CHECK(g_assignmentGeneration==2 && g_assignmentReceiptCount==256);
+    CHECK(g_assignmentReceipts[0].generation==9 &&
+          g_assignmentReceipts[0].state==AssignmentReceiptState::Committed);
+    CHECK(AssignmentReceiptIndex(g_assignmentGeneration,candidate)<0);
+}
+static void ScenarioStep3bReceiverIdentityAndSaveBoundaries() {
+    auto empty=Task();empty.count=0;
+    PrepareDry();ReadyQuote();g_billing=1;g_dryRun=0;
+    stateReceiver=Ptr(0x20000);
+    auto v=Truck();Feed(v,empty,.9f,1000);Feed(v,Task(),.8f,2000);
+    Feed(v,Task(),.6f,3000);
+    RecordAssignmentReceiver(v.ledger.Current(),stateReceiver);
+    unfinishedBuilding=stateReceiver;
+    FleetEvents(v.Observe(empty,Fuel(v.root,.5f),2,4000));
+    CHECK(mockTreasury==1e12 && capitals[Ptr(0x50000)]==0);
+    CHECK(LastTripLog()->find("reason=receiver_unfinished")!=std::string::npos);
+
+    PrepareDry();ReadyQuote();g_billing=1;g_dryRun=0;
+    stateReceiver=Ptr(0x20000);
+    v=Truck();Feed(v,empty,.9f,1000);Feed(v,Task(),.8f,2000);
+    Feed(v,Task(),.6f,3000);
+    RecordAssignmentReceiver(v.ledger.Current(),stateReceiver);
+    changedIdentityBuilding=stateReceiver;changedIdentityKey=0xABC;
+    FleetEvents(v.Observe(empty,Fuel(v.root,.5f),2,4000));
+    CHECK(mockTreasury==1e12 && capitals[Ptr(0x50000)]==0);
+    CHECK(LastTripLog()->find("reason=direction_unknown")!=std::string::npos);
+
+    PrepareDry();ReadyQuote();g_billing=1;g_dryRun=0;
+    v=Truck();Feed(v,empty,.9f,1000);Feed(v,Task(),.8f,2000);
+    Feed(v,Task(),.6f,3000);
+    RecordAssignmentReceiver(v.ledger.Current(),Ptr(0x20000));
+    changedIdentityBuilding=Ptr(0x50000);changedIdentityKey=0xDEF;
+    FleetEvents(v.Observe(empty,Fuel(v.root,.5f),2,4000));
+    CHECK(capitals[Ptr(0x20000)]==10000 && capitals[Ptr(0x50000)]==0);
+    CHECK(LastTripLog()->find("reason=identity_changed_or_demolished")!=std::string::npos);
+
+    PrepareDry();ReadyQuote();g_billing=1;g_dryRun=0;
+    v=Truck();Feed(v,empty,.9f,1000);Feed(v,Task(),.8f,2000);
+    Feed(v,Task(),.6f,3000);
+    const auto candidate=v.ledger.Current();
+    RecordAssignmentReceiver(candidate,Ptr(0x20000));
+    RecordAssignmentReceiver(candidate,Ptr(0xB0000));
+    FleetEvents(v.Observe(empty,Fuel(v.root,.5f),2,4000));
+    CHECK(capitals[Ptr(0x20000)]==10000 && capitals[Ptr(0x50000)]==0);
+    CHECK(LastTripLog()->find("reason=direction_unknown")!=std::string::npos);
+
+    PrepareDry();ReadyQuote();g_billing=1;g_dryRun=0;
+    v=Truck();Feed(v,empty,.9f,1000);Feed(v,Task(),.8f,2000);
+    Feed(v,Task(),.6f,3000);
+    const auto staleCandidate=v.ledger.Current();
+    RecordAssignmentReceiver(staleCandidate,Ptr(0x20000));
+    EnterCriticalSection(&g_lock);
+    g_assignmentReceipts[0]={g_assignmentGeneration,staleCandidate.epoch,
+        staleCandidate.id,staleCandidate.root,AssignmentReceiptState::Committed};
+    g_assignmentReceiptCount=1;
+    AssignmentSaveLoadingLocked();
+    LeaveCriticalSection(&g_lock);
+    CHECK(g_assignmentGeneration==2);
+    CHECK(AssignmentReceiptIndex(1,staleCandidate)==0);
+    CHECK(AssignmentReceiptIndex(2,staleCandidate)<0);
+    const auto staleClose=v.Observe(empty,Fuel(v.root,.5f),2,4000);
+    FleetEvents(staleClose);
+    CHECK(capitals[Ptr(0x20000)]==10000 && capitals[Ptr(0x50000)]==0);
+    CHECK(g_assignmentReceiptCount==1);
+    CHECK(LastTripLog()->find("reason=direction_unknown")!=std::string::npos);
+    fleet::a::Event reopened{};
+    reopened.kind=fleet::a::Kind::Opened;
+    reopened.candidate=staleCandidate;
+    AssignmentSettlementEvent(reopened,Quote200(),true);
+    CHECK(AssignmentTokenIndex(staleCandidate,2)>=0);
+    CHECK(AssignmentReceiptIndex(2,staleCandidate)<0);
+    RecordAssignmentReceiver(staleCandidate,Ptr(0x20000));
+    fleet::a::Event postLoadClose{};
+    postLoadClose.kind=fleet::a::Kind::Closed;
+    postLoadClose.candidate=staleCandidate;
+    postLoadClose.candidate.sampledPairs=1;
+    postLoadClose.candidate.sampledDecrease=.3;
+    auto postLoadQuote=Quote200();
+    postLoadQuote.amount=60;
+    AssignmentSettlementEvent(postLoadClose,postLoadQuote,true);
+    CHECK(std::abs(capitals[Ptr(0x20000)]-9940)<.001);
+    CHECK(std::abs(capitals[Ptr(0x50000)]-60)<.001);
+    CHECK(std::abs(g_doFuelPrivateSum-60)<.001);
+    CHECK(AssignmentReceiptIndex(2,staleCandidate)==1);
+}
+static void ScenarioStep3bProofOverflowFailsClosed() {
+    PrepareDry();
+    g_assignmentEvidenceEngine.resetAll();
+    auto candidate=fleet::a::Candidate{};
+    candidate.epoch=2;candidate.id=1;candidate.root=Ptr(0x30000);
+    candidate.home=Ptr(0x50000);
+    for(unsigned i=0;i<wrsre::b2b::PENDING_RING;++i)
+        g_assignmentEvidenceEngine.recordMode0Delivery(
+            Ptr(0x20000+i),candidate.home,Ptr(0x777),1.0f,double(i),
+            g_assignmentGeneration,i,wrsre::b2b::BUILDING_DELIVERY_SITE_RVA,0,true);
+    const auto overwritten=g_assignmentEvidenceEngine.recordMode0Delivery(
+        Ptr(0x20080),candidate.home,Ptr(0x777),1.0f,40.0,
+        g_assignmentGeneration,40,wrsre::b2b::BUILDING_DELIVERY_SITE_RVA,0,true);
+    CHECK(overwritten.active);
+    g_assignmentTokens[0].generation=g_assignmentGeneration;
+    g_assignmentTokens[0].epoch=candidate.epoch;
+    g_assignmentTokens[0].id=candidate.id;
+    g_assignmentTokens[0].root=candidate.root;
+    g_assignmentTokens[0].vehicle=candidate.root;
+    g_assignmentTokens[0].home=candidate.home;
+    AssignmentInvalidatePendingReceiverLocked(overwritten);
+    CHECK(g_assignmentTokens[0].directionUnknown);
+
+    PrepareDry();
+    for(unsigned i=0;i<64;++i) {
+        g_assignmentTokens[i].generation=g_assignmentGeneration;
+        g_assignmentTokens[i].epoch=2;
+        g_assignmentTokens[i].id=i+1;
+        g_assignmentTokens[i].root=Ptr(0x10000+i);
+    }
+    fleet::a::Event opened{};
+    opened.kind=fleet::a::Kind::Opened;
+    opened.candidate=candidate;
+    AssignmentSettlementEvent(opened,Quote200(),true);
+    CHECK(AssignmentTokenIndex(candidate,g_assignmentGeneration)<0);
+
+    PrepareDry();
+    g_assignmentGeneration=(std::numeric_limits<std::uint64_t>::max)();
+    EnterCriticalSection(&g_lock);
+    AssignmentSaveLoadingLocked();
+    LeaveCriticalSection(&g_lock);
+    CHECK(g_receiverProofDisabled);
+    std::uint64_t generation=0,sequence=0;
+    CHECK(!AssignmentBeginTransferSequence(&generation,&sequence));
+    CHECK(generation==(std::numeric_limits<std::uint64_t>::max)() && sequence==0);
 }
 static void simultaneous_vehicles_keep_independent_frozen_records() {
     PrepareDry();ReadyQuote();auto x=Truck(),y=Vehicle(Ptr(0x90000));y.home=x.home;
@@ -281,12 +483,50 @@ static void simultaneous_vehicles_keep_independent_frozen_records() {
     Feed(y,empty,.3f,3000);CHECK(Near(g_dryBook.rows[0].amount/200,.2));
     CHECK(Near(g_dryBook.rows[1].amount/200,.3) && g_dryBook.rows[0].id!=g_dryBook.rows[1].id);
 }
+static void RecordAssignmentReceiver(const fleet::a::Candidate& candidate,uintptr_t receiver) {
+    const int index=AssignmentTokenIndex(candidate,g_assignmentGeneration);
+    CHECK(index>=0);
+    const auto token=g_assignmentTokens[index];
+    wrsre::b2b::MatchedDelivery delivery{};
+    delivery.deliveryMatched=true;
+    delivery.receiverEvidence=true;
+    delivery.destBld=receiver;
+    const auto kind=receiver==customsReceiver
+        ? private_logistics_step3b::ReceiverKind::Customs
+        : receiver==stateReceiver
+            ? private_logistics_step3b::ReceiverKind::State
+            : private_logistics_step3b::ReceiverKind::Private;
+    EnterCriticalSection(&g_lock);
+    AssignmentObserveVehicleDeliveryLocked(g_assignmentGeneration,
+        token.openSequence+1,token.vehicle,token.home,delivery,
+        (std::uint64_t)receiver,true,kind);
+    LeaveCriticalSection(&g_lock);
+}
+static void ScenarioStep3bDryRunNeverPaid() {
+    auto empty=Task();empty.count=0;
+    for(int billingState=0;billingState<2;++billingState) {
+        PrepareDry();ReadyQuote();g_billing=billingState?1:0;g_dryRun=billingState?1:0;
+        auto v=Truck();Feed(v,empty,.9f,1000);Feed(v,Task(),.8f,2000);
+        Feed(v,Task(),.6f,3000);
+        RecordAssignmentReceiver(v.ledger.Current(),Ptr(0x20000));
+        FleetEvents(v.Observe(empty,Fuel(v.root,.5f),2,4000));
+        CHECK(capitals[Ptr(0x20000)]==10000 && capitals[Ptr(0x50000)]==0);
+        CHECK(g_b2bTripFuelSum==0 && g_b2bSettleCount==0);
+        const auto* trip=LastTripLog();CHECK(trip);
+        CHECK(trip->find("would_pay=60")!=std::string::npos);
+        CHECK(trip->find("paid=0")!=std::string::npos);
+        CHECK(trip->find("money_moved=0")!=std::string::npos);
+        CHECK(trip->find(billingState?"billing=dry_run":"billing=off")!=std::string::npos);
+    }
+}
 static void assignment_close_charges_original_buyer_once_only_when_complete() {
     PrepareDry();ReadyQuote();g_billing=1;g_dryRun=0;
     auto v=Truck();auto empty=Task();empty.count=0;
     Feed(v,empty,.9f,1000);Feed(v,Task(),.8f,2000);
     Feed(v,Task(),.6f,3000);
-    const auto closed=v.Observe(empty,Fuel(v.root,.5f),2,4000);FleetEvents(closed);
+    RecordAssignmentReceiver(v.ledger.Current(),Ptr(0x20000));
+    const auto closed=v.Observe(empty,Fuel(v.root,.5f),2,4000);
+    FleetEvents(closed);
     CHECK(std::abs(capitals[Ptr(0x20000)]-9940)<.001);
     CHECK(std::abs(capitals[Ptr(0x50000)]-60)<.001);
     CHECK(std::abs(g_b2bTripFuelSum-60)<.001 && g_b2bSettleCount==1);
@@ -299,13 +539,57 @@ static void assignment_close_charges_original_buyer_once_only_when_complete() {
     replacement.rows[0].target=Ptr(0x10001);replacement.rows[1].target=Ptr(0xB0000);
     capitals[Ptr(0xB0000)]=10000;
     Feed(v,empty,.9f,1000);Feed(v,Task(),.8f,2000);Feed(v,Task(),.7f,3000);
-    Feed(v,replacement,.6f,4000);Feed(v,empty,.5f,5000);
+    RecordAssignmentReceiver(v.ledger.Current(),Ptr(0x20000));
+    Feed(v,replacement,.6f,4000);
+    RecordAssignmentReceiver(v.ledger.Current(),Ptr(0xB0000));
+    Feed(v,empty,.5f,5000);
     // The replacement is a different task: the original unloader pays its own
     // 0.2 decrease (40), and the new unloader separately pays the new task's
     // observed 0.1 decrease (20). Neither pays the other's task.
     CHECK(std::abs(capitals[Ptr(0x20000)]-9960)<.001);
     CHECK(std::abs(capitals[Ptr(0xB0000)]-9980)<.001);
     CHECK(std::abs(capitals[Ptr(0x50000)]-60)<.001);
+
+    PrepareDry();ReadyQuote();g_billing=1;g_dryRun=0;
+    stateReceiver=Ptr(0x20000);
+    v=Truck();Feed(v,empty,.9f,1000);Feed(v,Task(),.8f,2000);
+    Feed(v,Task(),.6f,3000);
+    const double treasuryBefore=mockTreasury;
+    RecordAssignmentReceiver(v.ledger.Current(),stateReceiver);
+    FleetEvents(v.Observe(empty,Fuel(v.root,.5f),2,4000));
+    CHECK(std::abs(mockTreasury-(treasuryBefore-60))<.001);
+    CHECK(std::abs(capitals[Ptr(0x50000)]-60)<.001);
+    CHECK(lastTreasuryLabel && std::strcmp(lastTreasuryLabel,"b2b_state_do_fuel")==0);
+    CHECK(std::abs(g_doFuelStateSum-60)<.001 && g_doFuelPrivateSum==0);
+
+    PrepareDry();ReadyQuote();g_billing=1;g_dryRun=0;
+    customsReceiver=Ptr(0x20000);
+    v=Truck();Feed(v,empty,.9f,1000);Feed(v,Task(),.8f,2000);
+    Feed(v,Task(),.6f,3000);
+    RecordAssignmentReceiver(v.ledger.Current(),customsReceiver);
+    FleetEvents(v.Observe(empty,Fuel(v.root,.5f),2,4000));
+    CHECK(mockTreasury==1e12 && capitals[Ptr(0x50000)]==0);
+    CHECK(g_customsExportDeferredCount==1 && g_doFuelStateSum==0);
+    CHECK(logs.back().find("reason=customs_export_deferred")!=std::string::npos);
+
+    PrepareDry();ReadyQuote();g_billing=1;g_dryRun=0;
+    v=Truck();Feed(v,empty,.9f,1000);Feed(v,Task(),.8f,2000);
+    Feed(v,Task(),.6f,3000);
+    FleetEvents(v.Observe(empty,Fuel(v.root,.5f),2,4000));
+    CHECK(capitals[Ptr(0x20000)]==10000 && capitals[Ptr(0x50000)]==0);
+    CHECK(g_directionUnknownCount==1);
+    CHECK(logs.back().find("receiver=\"unknown\" payer=\"none\"")!=std::string::npos);
+    CHECK(logs.back().find("reason=direction_unknown")!=std::string::npos);
+
+    PrepareDry();ReadyQuote();g_billing=1;g_dryRun=0;mockTreasury=0;
+    stateReceiver=Ptr(0x20000);
+    v=Truck();Feed(v,empty,.9f,1000);Feed(v,Task(),.8f,2000);
+    Feed(v,Task(),.6f,3000);
+    RecordAssignmentReceiver(v.ledger.Current(),stateReceiver);
+    FleetEvents(v.Observe(empty,Fuel(v.root,.5f),2,4000));
+    CHECK(mockTreasury==0 && capitals[Ptr(0x50000)]==0);
+    CHECK(g_skipTreasury>0);
+    CHECK(logs.back().find("reason=treasury_insufficient")!=std::string::npos);
 
     PrepareDry();ReadyQuote();g_billing=1;g_dryRun=0;g_counterpartySettlement=0;
     v=Truck();Feed(v,empty,.9f,1000);Feed(v,Task(),.8f,2000);Feed(v,empty,.7f,3000);
@@ -328,11 +612,12 @@ static void assignment_close_charges_original_buyer_once_only_when_complete() {
     // otherwise complete trip is never charged.
     PrepareDry();ReadyQuote();g_billing=1;g_dryRun=0;unfinishedBuilding=Ptr(0x20000);
     v=Truck();Feed(v,empty,.9f,1000);Feed(v,Task(),.8f,2000);Feed(v,Task(),.6f,3000);
+    RecordAssignmentReceiver(v.ledger.Current(),Ptr(0x20000));
     FleetEvents(v.Observe(empty,Fuel(v.root,.5f),2,4000));
     CHECK(capitals[Ptr(0x20000)]==10000 && capitals[Ptr(0x50000)]==0);
     CHECK(g_b2bSettleCount==0);
     bool logged=false;
-    for(const auto& line:logs) logged|=line.find("reason=target_under_construction")!=std::string::npos;
+    for(const auto& line:logs) logged|=line.find("reason=receiver_unfinished")!=std::string::npos;
     CHECK(logged);
     unfinishedBuilding=0;
 }
@@ -350,8 +635,13 @@ int main() {
     RUN(unavailable_price_is_frozen_unavailable_and_zero_is_real_zero);
     RUN(snapshot_key_is_pointer_independent_and_guarded);
     RUN(persistence_registration_and_capacity_fail_closed);
+    RUN(step3b_live_billing_disables_dry_cost_startup);
+    RUN(ScenarioStep3bReceiptCapacityFailsClosed);
+    RUN(ScenarioStep3bReceiverIdentityAndSaveBoundaries);
+    RUN(ScenarioStep3bProofOverflowFailsClosed);
     RUN(simultaneous_vehicles_keep_independent_frozen_records);
+    RUN(ScenarioStep3bDryRunNeverPaid);
     RUN(assignment_close_charges_original_buyer_once_only_when_complete);
 #undef RUN
-    std::puts("13 dry-ledger scenarios PASS (production runtime, synthetic memory/services; no Windows/game proof)");
+    std::puts("18 dry-ledger scenarios PASS (production runtime, synthetic memory/services; no Windows/game proof)");
 }

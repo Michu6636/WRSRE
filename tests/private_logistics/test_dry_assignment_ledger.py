@@ -12,17 +12,22 @@ class DryAssignmentLedgerTest(unittest.TestCase):
     def test_production_runtime(self):
         compiler = shutil.which('g++') or shutil.which('clang++')
         if not compiler:
-            self.skipTest('C++ compiler required')
+            self.skipTest('g++ or clang++ host compiler required; Linux CI runs this suite')
         with tempfile.TemporaryDirectory() as directory:
             exe = Path(directory) / 'dry'
+            source = str(Path(__file__).with_name('dry_assignment_runtime_test.cpp'))
             result = subprocess.run([compiler, '-std=c++17', '-O2', '-Wall', '-Wextra',
-                                     '-Werror', '-pedantic', '-I', str(PLUGIN),
-                                     str(Path(__file__).with_name('dry_assignment_runtime_test.cpp')),
+                                     '-Werror', '-pedantic', '-I', str(PLUGIN), source,
                                      '-o', str(exe)], capture_output=True, text=True)
-            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             result = subprocess.run([str(exe)], capture_output=True, text=True)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-            self.assertIn('13 dry-ledger scenarios PASS', result.stdout)
+            self.assertIn('PASS ScenarioStep3bTripPayerAndBilling', result.stdout)
+            self.assertIn('PASS ScenarioStep3bDryRunNeverPaid', result.stdout)
+            self.assertIn('PASS ScenarioStep3bReceiptCapacityFailsClosed', result.stdout)
+            self.assertIn('PASS ScenarioStep3bReceiverIdentityAndSaveBoundaries', result.stdout)
+            self.assertIn('PASS ScenarioStep3bProofOverflowFailsClosed', result.stdout)
+            self.assertIn('18 dry-ledger scenarios PASS', result.stdout)
             self.assertIn('29 fleet scenarios PASS', result.stdout)
 
     def test_no_economic_hooks_or_pointer_wire_format(self):

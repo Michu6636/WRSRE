@@ -4,6 +4,13 @@
 Target: SOVIET64.exe v1.1.1.9 (PE timestamp 0x6A3EB6AD), base 0x140000000, ASLR on.
 Mode: investigation only. RVAs in text; file-based (0x140+RVA) only in dumps.
 
+> **Route correction (2026-11-27):** older rounds below called the
+> `0x68F792`/`0x68F7F9` pair sea/rail-only. The owner-provided runtime log
+> shows this exact delivery pair on road DO trucks (661/661 logged pairs in
+> that run). See H15 and the [step-3b evidence report](../private-logistics-runtime/evidence/STEP3B_OWNER_RUN_2026-11-27.md).
+> This corrects the route label for the pair; it does not classify every site
+> in `FUN_14068B330` or establish universal event coverage.
+
 ## Consolidated offset table
 
 | object | offset | meaning | confidence |
@@ -34,7 +41,7 @@ Mode: investigation only. RVAs in text; file-based (0x140+RVA) only in dumps.
 | Vehicle purchase | FUN_1401AAD70 (RVA 0x1AAD70) | treasury deduct + spawn + +0x4F8 set | proven |
 | Transfer FUN_140420350 | AL==1 = movement committed; param_6 (stk+0x28) out = clamped moved tons; no dry-run mode | proven r10 |
 | +0x4F0=+0x4F8 writer | FUN_1403FBDC0 (RVA 0x3FBDC0) at 0x3FC2F4 - detach/return-to-base, NOT the transfer | proven r10 |
-| Sea/rail FUN_14068B330 | 6 transfer sites (0x68EECA m0+, 0x68F792 m0+, 0x68F7F9 m1-, 0x6945B3 m0-, 0x694F40 m0-, 0x6953C4 m1+); mode touches side (m0=order pool, m1=cargo slot), sign = direction | proven r10 |
+| FUN_14068B330 family transfer sites | 6 transfer sites (0x68EECA m0+, 0x68F792 m0+, 0x68F7F9 m1-, 0x6945B3 m0-, 0x694F40 m0-, 0x6953C4 m1+); mode touches side (m0=order pool, m1=cargo slot), sign = direction. The 0x68F792/0x68F7F9 pair is observed on road DO deliveries; the family is not sea/rail-only. | proven r10; road use confirmed in one owner run |
 | Vehicle | sizeof 0x1AD8; +0x04 global vehicle index; +0x19E0 cross-world mirror vec | proven r10 |
 | Vehicle | +0x510 int type index (compared vs bld desc +0x820 slot count) | proven r10 |
 | World | +0x7C08/+0x7C78 catalog vec stride 0x110, entry+0x100 -> type object; +0x7CB8 count | likely r10 |
@@ -192,13 +199,13 @@ So `order+0x50[i]` is a pointer to a record whose `+0x28` is a pointer to a **co
 
 **Verdict / the positive alternative.** The destination is **not recoverable from the transfer's arguments or the order's destination field**. It is recoverable from the **completed-delivery log** the transfer appends to: the log entry at `*(*(order+0x50)[i] + 0x28)` carries the building it was unloaded into, which round-3 R7's writer (`asm_q3_planner.txt`) stores in that same record. That entry â€” not the order and not the call frame â€” is where the payer lives. A hook at `0x1B2898` must therefore read the delivery's log entry (or re-run the storage selection) to name the buyer.
 
-**Contrast with `0x6953C4` (H4.1):** the ship/rail path passes the destination **explicitly** in `RSI` (`MOV qword ptr [RSP+0x40],RSI`), so sea/rail billing is a straight `param_9` read. The road path is strictly harder. Building sea/rail first and leaving road on the "state pays" default is the right call.
+**Historical route note:** this earlier H4.1 contrast treated the transfer family as sea/rail-only and recommended leaving road on the "state pays" default. That route classification is superseded for the `0x68F792`/`0x68F7F9` delivery pair by the owner-run evidence summarized above. The original register/caller question at `0x6953C4` remains a separate, site-specific question.
 
 **Offset(s):** `order+0x50[i]` â†’ record `+0x28` â†’ log entry; log entry `+0x188` (done float), `+0x198` (Resource*). Destination-building field inside the log entry: **unresolved** (one more field read would settle it).
 **Function(s):** `FUN_140420350` (RVA `0x420350`), transfer; caller `FUN_1401B1290` (RVA `0x1B1290`). Thread: game tick.
 **Evidence:** `scratch/asm_h1_caller.txt` (caller frame), `scratch/d_q4_line.c:87-147,190-211`, `scratch/asm_q3_planner.txt` (R7 writer). Two sources per claim: (a) caller frame shows no destination arg; (b) decompile shows the only Building* is the source and `+0x198` holds the resource.
 **Confidence:** proven (no destination in caller/order) / likely (log entry is the destination of record).
-**Changes:** forecloses "read buyer at the call site"; S2 must bill sea/rail via `param_9` now, road via the completed-delivery log once its building field is confirmed.
+**Changes (historical recommendation, route scope superseded):** forecloses "read buyer at the call site"; the earlier S2 proposal treated sea/rail via `param_9` separately from road. The owner-run evidence later confirmed the `0x68F792`/`0x68F7F9` pair on road DO trucks; see H15.
 
 ### H2 — G3: vehicle purchase *(blocks the private-logistics cost model)*
 **Answer:** **Found.** FUN_1401aad70 (RVA 0x1AAD70) is the vehicle purchase transaction: it checks the vehicle type (0x14), reads the price, verifies treasury sufficiency, deducts cost from game+0x580 (USD) and game+0x588 (RUB), creates the vehicle via FUN_1403e4a00, and sets 
@@ -700,9 +707,13 @@ Call-site patching sees 100% of invocations.
   point into; 0x952AC4 holds a chained RUNTIME_FUNCTION triple {0x420350, 0x42037A,
   0x952A70} (funclet chain info). Exception-handling metadata, not invocations.
 
-### H15 - the sea/rail path: mode values at the FUN_14068B330 sites
+### H15 - FUN_14068B330 family: mode values at its six transfer sites
 
-0x6953C4 is NOT the only sea/rail site: FUN_14068B330 contains **six** transfer calls.
+0x6953C4 is NOT the only site in this function family: FUN_14068B330 contains
+**six** transfer calls. The owner-provided run observed the paired
+`0x68F792`/`0x68F7F9` calls on road DO deliveries, so the former sea/rail-only
+classification for that pair is superseded. The run does not classify every
+other site or prove complete road coverage.
 All six classified from disasm (asm_h15_*.txt):
 
 | site | mode | tons | out (param_6) | param_9 | after-call |
@@ -729,9 +740,9 @@ All six classified from disasm (asm_h15_*.txt):
    goods-flow "delivery" at a given dock is the mode-1-positive leg or its
    mode-0-negative partner depends on the dock operation direction; the hook should
    key off the measured side-effect (site + sign), not off a mode shorthand.
-3. So ships and trains ARE carrier customers: patching the FUN_14068B330 call sites
-   covers them, and there is no seventh site (H14 census cross-check: all six sea/rail
-   sites are in the 16; the other 10 are road/loader).
+3. The six call sites are in the 16-site transfer census; the owner run proves
+   that at least the `0x68F792`/`0x68F7F9` delivery pair also serves road DO
+   trucks. Other-site route coverage remains unclassified by that run.
 
 ### H16 - vehicle pricing: FUN_1403F7CE0 and the vehicle's type id
 
@@ -782,13 +793,13 @@ Neither route needs the descriptor field offset.
 |---|---|---|---|
 | H13 - dry-run invocations? | A: real movements only; the +0x4F0 rewrite was in FUN_1403FBDC0, not the transfer | proven | 0x420350, 0x3FBDC0, 0x3FC2F4 |
 | H14 - all refs direct calls? | 19 refs = 16 call rel32 + 3 unwind-metadata data refs; no indirect path | proven | 0x420350 |
-| H15 - modes at 0x6953C4 / other sea-rail sites? | Always mode 1; six sites total; gate billing on site AND tons>0 | proven | 0x68EECA..0x6953C4 |
+| H15 - modes at 0x6953C4 / other FUN_14068B330 sites? | Always mode 1 at 0x6953C4; six sites total; gate billing on site AND tons>0. The 0x68F792/0x68F7F9 pair is also observed on road DO deliveries. | proven mode/site census; road pair observed in one run | 0x68EECA..0x6953C4 |
 | H16 - pricing/type chain? | 0x3F7CE0 = line P&L (Res+0x58/+0x5C); vehicle has no +0x318; veh+0x510 = type index; $COST read at media level or via 0x3E3F40/param_4 | likely | 0x3F7CE0, 0x1AAD70, 0x3E3F40 |
 
 ### Investigation status
 Tier 1 (H13/H14) is clean: the two hooks that move money bill exactly the real
-movements and see every invocation. Tier 2 (H15/H16) delivered: sea/rail sites
-classified with a sign-gating rule, and a no-drift pricing route that needs no
+movements and see every invocation. Tier 2 (H15/H16) delivered: transfer sites classified with a sign-gating
+rule, and a no-drift pricing route that needs no
 descriptor RE. H17 stays parked until S4. Per the brief, **the investigation is
 closed** - the remaining work is code, per
 20_PLAN/BUILD_PLAN_private_logistics_v1.md.

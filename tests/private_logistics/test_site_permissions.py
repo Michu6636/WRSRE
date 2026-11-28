@@ -165,8 +165,8 @@ class SitePermissionsTest(unittest.TestCase):
         self.assertIn('e.hasStorage = site.permission != 0 && finished;', source)
         self.assertIn('AutoDirectionsForBuildState(\n                AutoEffectiveDirections(isPrivate, permissions, capabilities), targetFinished)', source)
         runtime = (plugin / 'dry_assignment_runtime.h').read_text()
-        self.assertIn('!AutoBuildingFinished((void*)token.buyer)', runtime)
-        self.assertIn('reason="target_under_construction"', runtime)
+        self.assertIn('!AutoBuildingFinished((void*)token.receiver)', runtime)
+        self.assertIn('reason="receiver_unfinished"', runtime)
 
 
 if __name__ == '__main__':

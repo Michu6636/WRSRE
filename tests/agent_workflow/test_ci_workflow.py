@@ -74,6 +74,9 @@ class CiWorkflowTests(unittest.TestCase):
         blob = WORKFLOW.read_text(encoding="utf-8")
         self.assertIn("find tests -name 'test_*.py'", blob,
                       "Linux job must discover and run the test suites")
+        self.assertIn("python3 -m unittest discover", blob,
+                      "each discovered file must load unittest cases even "
+                      "when it has no unittest.main() block")
         self.assertIn("skipped", blob,
                       "Linux job must surface suites that skipped tests")
 

@@ -1,8 +1,11 @@
 #include "b2b_settlement.h"
+#include "step3b_policy.h"
+#include "do_fuel_settlement.h"
 #include <cassert>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
+#include <cstring>
 
 using namespace wrsre::b2b;
 
@@ -70,7 +73,387 @@ struct MockWorld {
 
 static Engine g_testEngine;
 
+struct Step3bTransferMock {
+    std::uintptr_t receiver=0x100,carrier=0x200;
+    private_logistics_step3b::ReceiverKind receiverKind=
+        private_logistics_step3b::ReceiverKind::State;
+    double treasury=100.0,receiverCapital=100.0,carrierCapital=0.0;
+    bool generation=true,commitAllowed=true,noOpDebit=false,partialDebit=false;
+    bool noOpCredit=false,partialCredit=false,generationChangesAfterDebit=false;
+    bool receiverChangesAfterCredit=false;
+    unsigned skipTreasury=0,commits=0;
+    const char* label=nullptr;
+
+    static bool IsLivePrivate(void* ud,void* building) {
+        auto* self=static_cast<Step3bTransferMock*>(ud);
+        return (std::uintptr_t)building==self->carrier ||
+            ((std::uintptr_t)building==self->receiver &&
+             self->receiverKind==private_logistics_step3b::ReceiverKind::Private);
+    }
+    static double GetCapital(void* ud,void* building) {
+        auto* self=static_cast<Step3bTransferMock*>(ud);
+        return (std::uintptr_t)building==self->receiver
+            ? self->receiverCapital : self->carrierCapital;
+    }
+    static void ModifyCapital(void* ud,void* building,double delta,int) {
+        auto* self=static_cast<Step3bTransferMock*>(ud);
+        if((std::uintptr_t)building==self->receiver) self->receiverCapital+=delta;
+        else if(delta>0.0 && self->noOpCredit) return;
+        else if(delta>0.0 && self->partialCredit) self->carrierCapital+=delta*.5;
+        else self->carrierCapital+=delta;
+        if((std::uintptr_t)building==self->carrier && delta>0.0 &&
+           self->receiverChangesAfterCredit)
+            self->receiverKind=private_logistics_step3b::ReceiverKind::Unknown;
+    }
+    static double GetTreasury(void* ud,int) {
+        return static_cast<Step3bTransferMock*>(ud)->treasury;
+    }
+    static void MoveTreasury(void* ud,double delta,const char* label) {
+        auto* self=static_cast<Step3bTransferMock*>(ud);
+        self->label=label;
+        if(delta<0.0 && self->noOpDebit) return;
+        if(delta<0.0 && self->partialDebit) self->treasury+=delta*.5;
+        else self->treasury+=delta;
+        if(delta<0.0 && self->generationChangesAfterDebit) self->generation=false;
+    }
+    static bool PartyCurrent(void* ud,std::uintptr_t building,std::uint64_t key,
+                             private_logistics_step3b::ReceiverKind expected) {
+        auto* self=static_cast<Step3bTransferMock*>(ud);
+        if(key!=building) return false;
+        if(building==self->carrier)
+            return expected==private_logistics_step3b::ReceiverKind::Private;
+        return building==self->receiver && expected==self->receiverKind;
+    }
+    static bool GenerationCurrent(void* ud) {
+        return static_cast<Step3bTransferMock*>(ud)->generation;
+    }
+    static bool Commit(void* ud,private_logistics_step3b::PayerKind,double) {
+        auto* self=static_cast<Step3bTransferMock*>(ud);
+        if(!self->commitAllowed) return false;
+        ++self->commits;
+        return true;
+    }
+    private_logistics_step3b::DoFuelCallbacks Callbacks() {
+        private_logistics_step3b::DoFuelCallbacks cb{};
+        cb.userData=this;cb.isLivePrivate=IsLivePrivate;cb.getCapital=GetCapital;
+        cb.modifyCapital=ModifyCapital;cb.getTreasury=GetTreasury;
+        cb.moveTreasury=MoveTreasury;cb.partyCurrent=PartyCurrent;
+        cb.generationCurrent=GenerationCurrent;cb.commit=Commit;
+        cb.skipTreasury=&skipTreasury;
+        return cb;
+    }
+};
+
+static void ScenarioStep3bPayerPolicy() {
+    const auto privateReceiver=private_logistics_step3b::ChoosePayer(
+        private_logistics_step3b::ReceiverKind::Private);
+    assert(privateReceiver.payer==private_logistics_step3b::PayerKind::PrivateCompany);
+    assert(std::strcmp(privateReceiver.reason,"private_receiver_pays")==0);
+
+    const auto stateReceiver=private_logistics_step3b::ChoosePayer(
+        private_logistics_step3b::ReceiverKind::State);
+    assert(stateReceiver.payer==private_logistics_step3b::PayerKind::Treasury);
+    assert(std::strcmp(stateReceiver.treasuryLabel,"b2b_state_do_fuel")==0);
+
+    const auto customsReceiver=private_logistics_step3b::ChoosePayer(
+        private_logistics_step3b::ReceiverKind::Customs);
+    assert(customsReceiver.payer==private_logistics_step3b::PayerKind::None);
+    assert(std::strcmp(customsReceiver.reason,"customs_export_deferred")==0);
+
+    const auto unknown=private_logistics_step3b::ChoosePayer(
+        private_logistics_step3b::ReceiverKind::Unknown);
+    assert(unknown.payer==private_logistics_step3b::PayerKind::None);
+    assert(std::strcmp(unknown.reason,"direction_unknown")==0);
+
+    // Seller identity is not a payer input: a private receiver always pays.
+    const auto stateSellerPrivateReceiver=private_logistics_step3b::ChoosePayer(
+        private_logistics_step3b::ReceiverKind::Private);
+    assert(stateSellerPrivateReceiver.payer==
+           private_logistics_step3b::PayerKind::PrivateCompany);
+    assert(stateSellerPrivateReceiver.payer!=private_logistics_step3b::PayerKind::Treasury);
+    assert(std::strcmp(private_logistics_step3b::BillingStateName(false,true),"off")==0);
+    assert(std::strcmp(private_logistics_step3b::BillingStateName(true,true),"dry_run")==0);
+    assert(std::strcmp(private_logistics_step3b::BillingStateName(true,false),"live")==0);
+    std::puts("PASS ScenarioStep3bPayerPolicy");
+}
+
+static void ScenarioStep3bCustomsAndForeignTradeDeferred() {
+    using namespace private_logistics_step3b;
+    Step3bTransferMock world;
+    const auto decision=ChoosePayer(ReceiverKind::Customs);
+    auto cb=world.Callbacks();
+    const auto transfer=ExecuteDoFuelTransfer(
+        cb,decision,world.receiver,world.receiver,world.carrier,world.carrier,50.0,true);
+    assert(!transfer.paid && std::strcmp(transfer.reason,"customs_export_deferred")==0);
+    assert(world.treasury==100.0 && world.carrierCapital==0.0 && world.commits==0);
+    const auto goodsExport=planSettlement(ORIGIN_PRIVATE,1,true,1,20,false,50.0,true);
+    assert(goodsExport.customsExport && !goodsExport.hasGoodsLeg);
+    std::puts("PASS ScenarioStep3bCustomsAndForeignTradeDeferred");
+}
+
+static void ScenarioStep3bTreasuryReadbackAndRollback() {
+    using namespace private_logistics_step3b;
+    const auto decision=ChoosePayer(ReceiverKind::State);
+    Step3bTransferMock world;
+    auto cb=world.Callbacks();
+    auto result=ExecuteDoFuelTransfer(cb,decision,world.receiver,world.receiver,
+                                      world.carrier,world.carrier,50.0,true);
+    assert(result.paid && world.treasury==50.0 && world.carrierCapital==50.0);
+    assert(world.commits==1 && std::strcmp(world.label,"b2b_state_do_fuel")==0);
+
+    world=Step3bTransferMock{};world.treasury=20.0;cb=world.Callbacks();
+    result=ExecuteDoFuelTransfer(cb,decision,world.receiver,world.receiver,
+                                 world.carrier,world.carrier,50.0,true);
+    assert(!result.paid && std::strcmp(result.reason,"treasury_insufficient")==0);
+    assert(world.skipTreasury==1 && world.treasury==20.0 && world.carrierCapital==0.0);
+
+    world=Step3bTransferMock{};cb=world.Callbacks();cb.moveTreasury=nullptr;
+    result=ExecuteDoFuelTransfer(cb,decision,world.receiver,world.receiver,
+                                 world.carrier,world.carrier,50.0,true);
+    assert(!result.paid && std::strcmp(result.reason,"treasury_unavailable")==0);
+    assert(world.skipTreasury==1);
+    assert(world.treasury==100.0 && world.carrierCapital==0.0);
+
+    world=Step3bTransferMock{};cb=world.Callbacks();cb.partyCurrent=nullptr;
+    result=ExecuteDoFuelTransfer(cb,decision,world.receiver,world.receiver,
+                                 world.carrier,world.carrier,50.0,true);
+    assert(!result.paid && std::strcmp(result.reason,"missing_callbacks")==0);
+    assert(world.treasury==100.0 && world.carrierCapital==0.0);
+
+    world=Step3bTransferMock{};world.noOpDebit=true;cb=world.Callbacks();
+    result=ExecuteDoFuelTransfer(cb,decision,world.receiver,world.receiver,
+                                 world.carrier,world.carrier,50.0,true);
+    assert(!result.paid && std::strcmp(result.reason,"payer_debit_mismatch")==0);
+    assert(result.payerRollbackVerified && world.treasury==100.0);
+
+    world=Step3bTransferMock{};world.partialDebit=true;cb=world.Callbacks();
+    result=ExecuteDoFuelTransfer(cb,decision,world.receiver,world.receiver,
+                                 world.carrier,world.carrier,50.0,true);
+    assert(!result.paid && std::strcmp(result.reason,"payer_debit_mismatch")==0);
+    assert(result.payerDelta==25.0 && result.payerRollbackVerified);
+    assert(world.treasury==100.0 && world.carrierCapital==0.0);
+
+    world=Step3bTransferMock{};world.noOpCredit=true;cb=world.Callbacks();
+    result=ExecuteDoFuelTransfer(cb,decision,world.receiver,world.receiver,
+                                 world.carrier,world.carrier,50.0,true);
+    assert(!result.paid && std::strcmp(result.reason,"do_credit_mismatch")==0);
+    assert(result.payeeRollbackVerified && result.payerRollbackVerified);
+    assert(world.treasury==100.0 && world.carrierCapital==0.0);
+
+    world=Step3bTransferMock{};world.partialCredit=true;cb=world.Callbacks();
+    result=ExecuteDoFuelTransfer(cb,decision,world.receiver,world.receiver,
+                                 world.carrier,world.carrier,50.0,true);
+    assert(!result.paid && result.payeeDelta==25.0);
+    assert(result.payeeRollbackVerified && result.payerRollbackVerified);
+    assert(world.treasury==100.0 && world.carrierCapital==0.0);
+
+    world=Step3bTransferMock{};world.commitAllowed=false;cb=world.Callbacks();
+    result=ExecuteDoFuelTransfer(cb,decision,world.receiver,world.receiver,
+                                 world.carrier,world.carrier,50.0,true);
+    assert(!result.paid && std::strcmp(result.reason,"receipt_or_generation_changed")==0);
+    assert(world.treasury==100.0 && world.carrierCapital==0.0);
+
+    world=Step3bTransferMock{};world.generationChangesAfterDebit=true;cb=world.Callbacks();
+    result=ExecuteDoFuelTransfer(cb,decision,world.receiver,world.receiver,
+                                 world.carrier,world.carrier,50.0,true);
+    assert(!result.paid && result.payerRollbackVerified);
+    assert(world.treasury==100.0 && world.carrierCapital==0.0);
+
+    world=Step3bTransferMock{};world.receiverChangesAfterCredit=true;cb=world.Callbacks();
+    result=ExecuteDoFuelTransfer(cb,decision,world.receiver,world.receiver,
+                                 world.carrier,world.carrier,50.0,true);
+    assert(!result.paid && result.payeeRollbackVerified && result.payerRollbackVerified);
+    assert(world.treasury==100.0 && world.carrierCapital==0.0);
+    std::puts("PASS ScenarioStep3bTreasuryReadbackAndRollback");
+}
+
+static void ScenarioStep3bReceiverEvidenceFailsClosed() {
+    assert(IsReceiverVehicleDeliveryLeg(
+        true,DELIVERY_VEHICLE_SITE_RVA,1,-1.0f,true));
+    assert(!IsReceiverVehicleDeliveryLeg(
+        false,DELIVERY_VEHICLE_SITE_RVA,1,-1.0f,true));
+    assert(!IsReceiverVehicleDeliveryLeg(
+        true,DELIVERY_VEHICLE_SITE_RVA,1,1.0f,true));
+    assert(!IsReceiverVehicleDeliveryLeg(
+        true,DELIVERY_VEHICLE_SITE_RVA,0,-1.0f,true));
+    assert(!IsReceiverVehicleDeliveryLeg(
+        true,BUILDING_DELIVERY_SITE_RVA,1,-1.0f,true));
+    assert(!IsReceiverVehicleDeliveryLeg(
+        true,DELIVERY_VEHICLE_SITE_RVA,1,-1.0f,false));
+
+    g_testEngine.resetAll();
+    const auto overwritten=g_testEngine.recordMode0Delivery(
+        0x200,0x500,0x777,1.650f,1.0,7,10,BUILDING_DELIVERY_SITE_RVA,0,true);
+    assert(!overwritten.active);
+    MatchedDelivery matched{};
+    const VehicleSlotIndex invalidIndex{};
+    assert(g_testEngine.matchMode1Delivery(
+        0x300,invalidIndex,0x500,0x777,1.650f,1.01,&matched,7,11,
+        DELIVERY_VEHICLE_SITE_RVA,1,true,true));
+    assert(matched.deliveryMatched && matched.receiverEvidence);
+    assert(matched.destBld==0x200 && !matched.cargoFound);
+
+    g_testEngine.recordMode0Delivery(
+        0x200,0x500,0x777,1.650f,2.0,7,20,BUILDING_DELIVERY_SITE_RVA,0,true);
+    assert(g_testEngine.matchMode1Delivery(
+        0x300,invalidIndex,0x500,0x777,1.650f,2.01,&matched,7,22,
+        DELIVERY_VEHICLE_SITE_RVA,1,true,true));
+    assert(!matched.receiverEvidence);
+
+    g_testEngine.recordMode0Delivery(
+        0x200,0x500,0x777,1.650f,2.5,7,25,BUILDING_DELIVERY_SITE_RVA,0,true);
+    assert(g_testEngine.matchMode1Delivery(
+        0x300,invalidIndex,0x500,0x777,1.650f,2.51,&matched,7,26,
+        DELIVERY_VEHICLE_SITE_RVA,1,true,false));
+    assert(!matched.receiverEvidence);
+
+    g_testEngine.recordMode0Delivery(
+        0x200,0x500,0x777,1.650f,2.6,7,27,BUILDING_DELIVERY_SITE_RVA,1,true);
+    assert(g_testEngine.matchMode1Delivery(
+        0x300,invalidIndex,0x500,0x777,1.650f,2.61,&matched,7,28,
+        DELIVERY_VEHICLE_SITE_RVA,1,true,true));
+    assert(!matched.receiverEvidence);
+
+    g_testEngine.recordMode0Delivery(
+        0x200,0x500,0x777,1.650f,2.7,7,29,0x1234,0,true);
+    assert(g_testEngine.matchMode1Delivery(
+        0x300,invalidIndex,0x500,0x777,1.650f,2.71,&matched,7,30,
+        DELIVERY_VEHICLE_SITE_RVA,1,true,true));
+    assert(!matched.receiverEvidence);
+
+    g_testEngine.recordMode0Delivery(
+        0x200,0x500,0x777,1.650f,2.8,7,31,BUILDING_DELIVERY_SITE_RVA,0,false);
+    assert(g_testEngine.matchMode1Delivery(
+        0x300,invalidIndex,0x500,0x777,1.650f,2.81,&matched,7,32,
+        DELIVERY_VEHICLE_SITE_RVA,1,true,true));
+    assert(!matched.receiverEvidence);
+
+    g_testEngine.recordMode0Delivery(
+        0x200,0x500,0x777,1.650f,2.9,7,33,BUILDING_DELIVERY_SITE_RVA,0,true);
+    assert(g_testEngine.matchMode1Delivery(
+        0x300,invalidIndex,0x500,0x777,1.650f,2.91,&matched,7,34,
+        DELIVERY_VEHICLE_SITE_RVA,2,true,true));
+    assert(!matched.receiverEvidence);
+
+    g_testEngine.recordMode0Delivery(
+        0x200,0x500,0x777,1.650f,3.0,7,30,BUILDING_DELIVERY_SITE_RVA,0,true);
+    assert(g_testEngine.matchMode1Delivery(
+        0x300,invalidIndex,0x501,0x777,1.650f,3.01,&matched,7,31,
+        DELIVERY_VEHICLE_SITE_RVA,1,true,true));
+    assert(!matched.receiverEvidence);
+
+    g_testEngine.recordMode0Delivery(
+        0x200,0x500,0x777,1.650f,4.0,7,40,BUILDING_DELIVERY_SITE_RVA,0,true);
+    g_testEngine.recordMode0Delivery(
+        0x201,0x500,0x777,1.650f,4.0,7,40,BUILDING_DELIVERY_SITE_RVA,0,true);
+    assert(g_testEngine.matchMode1Delivery(
+        0x300,invalidIndex,0x500,0x777,1.650f,4.01,&matched,7,41,
+        DELIVERY_VEHICLE_SITE_RVA,1,true,true));
+    assert(matched.deliveryAmbiguous && !matched.receiverEvidence);
+    std::puts("PASS ScenarioStep3bReceiverEvidenceFailsClosed");
+}
+
+static void ScenarioStep3bCargoIndexAndMissingRecord() {
+    g_testEngine.resetAll();
+    assert(CheckedVehicleSlotIndex(0).valid);
+    assert(!CheckedVehicleSlotIndex(static_cast<std::uint32_t>(VEH_TRACK_MAX)).valid);
+    const VehicleSlotIndex invalidIndex{};
+    const auto outOfRange=CheckedVehicleSlotIndex(
+        static_cast<std::uint32_t>(VEH_TRACK_MAX));
+    g_testEngine.recordMode0Load(0x100,0x777,1.0f,1.0,true,0xAA,25.0);
+    assert(g_testEngine.matchMode1Load(0x300,invalidIndex,0x777,1.0f,1.01));
+    assert(!g_testEngine.matchMode1Load(0x301,0,0x777,1.0f,1.02));
+    g_testEngine.recordMode0Load(0x101,0x777,1.5f,1.1,true,0xAB,25.0);
+    assert(g_testEngine.matchMode1Load(0x301,outOfRange,0x777,1.5f,1.11));
+
+    g_testEngine.recordMode0Delivery(
+        0x200,0x500,0x777,1.0f,2.0,1,1,BUILDING_DELIVERY_SITE_RVA,0,true);
+    MatchedDelivery missing{};
+    assert(g_testEngine.matchMode1Delivery(
+        0x300,invalidIndex,0x500,0x777,1.0f,2.01,&missing,1,2,
+        DELIVERY_VEHICLE_SITE_RVA,1,true,true));
+    assert(missing.deliveryMatched && missing.destBld==0x200 && !missing.cargoFound);
+
+    g_testEngine.recordMode0Load(0x100,0x777,2.0f,3.0,true,0xAA,25.0);
+    assert(g_testEngine.matchMode1Load(0x300,3,0x777,2.0f,3.01));
+    g_testEngine.recordMode0Load(0x101,0x777,3.0f,4.0,true,0xBB,25.0);
+    assert(g_testEngine.matchMode1Load(0x301,4,0x777,3.0f,4.01));
+    MatchedDelivery first{},second{};
+    g_testEngine.recordMode0Delivery(0x200,0x500,0x777,2.0f,5.0);
+    assert(g_testEngine.matchMode1Delivery(0x300,3,0x500,0x777,2.0f,5.01,&first));
+    g_testEngine.recordMode0Delivery(0x201,0x500,0x777,3.0f,6.0);
+    assert(g_testEngine.matchMode1Delivery(0x301,4,0x500,0x777,3.0f,6.01,&second));
+    assert(first.cargoFound && second.cargoFound);
+    assert(first.parts[0].sellerKey==0xAA && second.parts[0].sellerKey==0xBB);
+
+    g_testEngine.recordMode0Load(0x102,0x777,4.0f,7.0,true,0xCC,25.0);
+    assert(g_testEngine.matchMode1Load(0x302,3,0x777,4.0f,7.01));
+    g_testEngine.recordMode0Delivery(0x202,0x500,0x777,4.0f,8.0);
+    assert(g_testEngine.matchMode1Delivery(0x302,3,0x500,0x777,4.0f,8.01,&first));
+    assert(first.cargoFound && first.parts[0].sellerKey==0xCC);
+
+    g_testEngine.recordMode0Load(0x103,0x777,1.0f,9.0,true,0xDD,25.0);
+    assert(g_testEngine.matchMode1Load(0x400,5,0x777,1.0f,9.01));
+    g_testEngine.recordMode0Load(0x104,0x888,0.5f,9.1,true,0xEE,25.0);
+    assert(g_testEngine.matchMode1Load(0x401,5,0x888,0.5f,9.11));
+    g_testEngine.recordMode0Delivery(0x203,0x500,0x777,1.0f,10.0);
+    assert(g_testEngine.matchMode1Delivery(0x400,5,0x500,0x777,1.0f,10.01,&first));
+    assert(first.deliveryMatched && !first.cargoFound);
+
+    g_testEngine.resetAll();
+    g_testEngine.recordMode0Load(0x100,0x777,2.0f,1.0,true,0xAA,25.0);
+    assert(g_testEngine.matchMode1Load(0x300,0,0x777,2.0f,1.01));
+    assert(g_testEngine.vehCargoPtr()[0].vehPtr==0x300);
+    assert(g_testEngine.vehCargoPtr()[0].lots[0].tons==2.0f);
+    g_testEngine.recordMode0Delivery(0x200,0x500,0x777,2.0f,2.0);
+    assert(!g_testEngine.pendingLoadPtr()[0].active);
+    assert(g_testEngine.pendingDelivPtr()[0].active);
+    g_testEngine.resetAll();
+    assert(!g_testEngine.pendingLoadPtr()[0].active);
+    assert(!g_testEngine.pendingDelivPtr()[0].active);
+    assert(g_testEngine.vehCargoPtr()[0].vehPtr==0);
+    assert(g_testEngine.vehCargoPtr()[0].lots[0].tons==0.0f);
+    std::puts("PASS ScenarioStep3bCargoIndexAndMissingRecord");
+}
+
+static void ScenarioStep3bNoCargoDiagnosticCapAndFields() {
+    g_testEngine.resetAll();
+    const VehicleSlotIndex invalidIndex{};
+    g_testEngine.recordMode0Delivery(0,0x500,0x777,1.0f,1.0);
+    MatchedDelivery missing{};
+    assert(g_testEngine.matchMode1Delivery(
+        0x300,invalidIndex,0x500,0x777,1.0f,1.01,&missing));
+    assert(missing.deliveryMatched && !missing.cargoFound && missing.destBld==0);
+
+    NoCargoDay diagnostics;
+    unsigned sharedLogCount=0;
+    assert(diagnostics.Record(sharedLogCount,1));
+    assert(!diagnostics.Record(sharedLogCount,1));
+    assert(diagnostics.count==2 && diagnostics.suppressed==1);
+    assert(sharedLogCount==1);
+    char line[256];
+    char expected[256];
+    const void* truck=reinterpret_cast<const void*>(
+        static_cast<std::uintptr_t>(0x300));
+    assert(FormatNoCargoDiagnostic(
+        line,sizeof(line),missing.destBld?"DLC3_pub":"unknown",truck,
+        "fabric",1.25));
+    std::snprintf(expected,sizeof(expected),
+        "[B2B GOODS] ERROR NO CARGO RECORD buyer=unknown truck=%p "
+        "res=fabric tons=1.250",truck);
+    assert(std::strcmp(line,expected)==0);
+    diagnostics.Reset();
+    assert(diagnostics.count==0 && diagnostics.suppressed==0);
+    std::puts("PASS ScenarioStep3bNoCargoDiagnosticCapAndFields");
+}
+
 int main() {
+    ScenarioStep3bPayerPolicy();
+    ScenarioStep3bCustomsAndForeignTradeDeferred();
+    ScenarioStep3bTreasuryReadbackAndRollback();
+    ScenarioStep3bReceiverEvidenceFailsClosed();
+    ScenarioStep3bCargoIndexAndMissingRecord();
+    ScenarioStep3bNoCargoDiagnosticCapAndFields();
     // 1. Load join + single-consumption (two identical trucks never steal one load)
     {
         g_testEngine.resetAll();

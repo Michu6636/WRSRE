@@ -231,7 +231,7 @@ sales do not cover wages. *Hypothesis: confirm with the `[PROC]` and
 | Flow | Where | Rule today |
 |---|---|---|
 | Delivery to a private building | `private_logistics` `0.19.1-live-billing`, `b2b_settlement.h` | The unloading buyer pays the verified loading seller `qty × native` (no multiplier, no wholesale factor). One atomic transfer per verified delivery. |
-| Private DO trip fuel | `private_logistics` | Paid only when both the trip's "buyer" and the DO are private (`reason=private_parties_required` otherwise). The "buyer" is the trip's target, which may be where the truck *loaded*. Step 3b: the receiver pays, and the treasury pays for state receivers (D40). |
+| Private DO trip fuel | `private_logistics` `0.19.2-step3b` on the step-3b branch | Payer is selected from the verified goods receiver, never the task's original target: private receiver → that company; state non-customs receiver → treasury (`b2b_state_do_fuel`); customs → deferred; unknown direction → unpaid. Receiver evidence requires one committed, adjacent building/vehicle delivery pair during the observed assignment. This branch is not yet a completed in-game validation. |
 | Customs-house buyer | `private_logistics` `planSettlement` | A private seller's delivery here is an **export**: `customsExport`, no goods leg, **no `b2b_state_buy`**. The native customs sale still credits the treasury until G1/D5 attributes it. |
 | Delivery billing in `private_shops` | removed | The 0.70 `wholesale_ratio` bill is gone, so a delivery cannot be settled twice. Only `service_fees` move money there. |
 | Foreign restock | removed | No direct `TSM_SLOT_CONTENT` writes and no stock creation. |
@@ -1140,6 +1140,18 @@ Not yet seen in game: a private seller paid by the state, a month-close
 from that run are roadmap step 3b (D40, trip direction, honest billing log
 labels). Private exports are deferred to a later step (D41).
 
+**Status, 2026-11-27 (step 3b implementation).** The `0.19.2-step3b`
+working branch uses the adjacent delivery pair to identify the receiver and
+applies D40 payer rules; customs/export/foreign trade remain out of scope
+(D41). The owner-provided pre-change log contains 661 road-DO delivery pairs
+and 32/32 matching single-receiver assignments. It also reports 206 matched
+deliveries with no cargo record despite sufficient earlier loads. Source
+inspection found an unverified cargo-slot key and pointer-mismatch clearing,
+which can explain record loss but does not establish the per-delivery cause.
+The branch adds fail-closed slot indexing and capped missing-cargo diagnostics.
+These are investigation and host-test claims only; no post-change in-game
+result is claimed.
+
 **Order of work:** the items below are grouped into ordered steps in
 [`ROADMAP.md`](../ROADMAP.md) §3. Use the roadmap for "what next" and this
 list for the detail of each item.
@@ -1155,9 +1167,10 @@ list for the detail of each item.
    delivery billing (`wholesale_ratio`) and foreign restock *(done: v3.8)*.
    Pub service charges remain.
 4. **private_logistics:** exclude customs from `b2b_state_buy` *(done before
-   G1)*. Defaults `billing = 1`, `dry_run = 0` *(done)*. Step 3b: the
-   receiver pays a private DO's trip fuel, and the treasury pays for state
-   receivers (D40). Later step (D41): the Almanac foreign-trade page
+   G1)*. Defaults `billing = 1`, `dry_run = 0` *(done)*. Step 3b:
+   receiver-based private DO trip fuel and treasury payment for state
+   receivers are implemented on an unmerged branch (D40); owner in-game
+   validation remains pending. Later step (D41): the Almanac foreign-trade page
    (D43), company export revenue (D38) with currency surrender (D42),
    foreign freight (D39) and company import cost (D44)
    ([plan](vision-private-export-markets.md)).
