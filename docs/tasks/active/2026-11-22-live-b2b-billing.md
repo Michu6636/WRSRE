@@ -2,9 +2,10 @@
 
 ## Contract
 
-- **Status:** active — implementation, host tests, the Windows CI build and
-  owner review complete; the owner's in-game check and the `state_ledger`
-  reconciliation are outstanding. The review's step-0 wording fix and two
+- **Status:** active — merged in PR #102 (`73a9d1d`). First in-game run
+  2026-11-23 passed for what it exercised (see "Separate validation
+  statuses"); the `state_ledger` month-close reconciliation and the
+  unexercised paths are outstanding. Fix-ups are roadmap step 3b. The review's step-0 wording fix and two
   known-limit notes are applied.
 - **Task record:** `docs/tasks/active/2026-11-22-live-b2b-billing.md`
 - **Baseline:** branch `arena/5a89acc8-wrsre`, from `main` at `823df769`
@@ -143,8 +144,18 @@ existing private-logistics evidence. The only new branch is a policy decision
 - **BUILD/TEST EVIDENCE:** PASS — all 39 host test files and the Windows
   MSVC/SEH build pass (CI runs `45108139506` and `45110774175`; the latter
   covers the documentation-only review fix).
-- **RUNTIME VALIDATION:** NOT RUN — no live game or deployment in this
-  environment.
+- **RUNTIME VALIDATION:** PARTIAL — merged as `73a9d1d`. First owner run
+  2026-11-23 (save "2209 - Testville", 10 game days, no month close): no
+  `[PROC]`, no `ERROR UNPRICED`, no buyer-insolvent or treasury skips;
+  state-to-state deliveries at 0.00; a privatised clothing factory paid the
+  treasury the native price for state fabric (45 lots, 358.61 RUB, day total
+  matches); one private-to-private DO trip paid (1.01 RUB). Not exercised:
+  `b2b_state_buy`, private-to-private goods, the month-close `state_ledger`
+  reconciliation (I5), dollar mode. Found: 22 private DO trips to state
+  buildings unpaid (`private_parties_required`) and a hardcoded
+  `billing=off` in diagnostic lines; both moved to roadmap step 3b (D40).
+  Private exports are a later step (D41,
+  [plan](../../visions/vision-private-export-markets.md)).
 
 ## Blocker / resume checkpoint
 

@@ -9,7 +9,8 @@
 | Path | Contents |
 |---|---|
 | [`ROADMAP.md`](ROADMAP.md) | **What to do next, in order** — current state, the step plan, the verification queue and how to run a step. Start here. |
-| [`visions/economy-direction-2026-11-22.md`](visions/economy-direction-2026-11-22.md) | **Owner decisions of 2026-11-22 (D1–D31); overrides older economic docs where they conflict** |
+| [`visions/economy-direction-2026-11-22.md`](visions/economy-direction-2026-11-22.md) | **Owner decisions of 2026-11-22 and later (D1–D48); overrides older economic docs where they conflict** |
+| [`visions/vision-private-export-markets.md`](visions/vision-private-export-markets.md) | **Later step (D41):** private exports and imports through customs houses, the Almanac foreign-trade page, exchange rate and company finances — decisions D36–D48, investigation and design |
 | [`WRSRE DESIGN DOC.md`](WRSRE%20DESIGN%20DOC.md) | Master economic architecture, subsystem boundaries & design invariants (Rev 5 banner) |
 | [`DEVELOPMENT_README.md`](DEVELOPMENT_README.md) | Developer onboarding, plugin ABI conventions & debugging workflow |
 | [`DLC_UPDATE_PLAYBOOK.md`](DLC_UPDATE_PLAYBOOK.md) | Re-targeting RVAs/offsets after game updates via `tools/scan_exe_update.py` |
