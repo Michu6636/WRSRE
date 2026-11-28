@@ -22,7 +22,7 @@ class DryAssignmentLedgerTest(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             result = subprocess.run([str(exe)], capture_output=True, text=True)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-            self.assertIn('PASS ScenarioStep3bTripPayerAndBilling', result.stdout)
+            self.assertIn('PASS assignment_close_charges_original_buyer_once_only_when_complete', result.stdout)
             self.assertIn('PASS ScenarioStep3bDryRunNeverPaid', result.stdout)
             self.assertIn('PASS ScenarioStep3bReceiptCapacityFailsClosed', result.stdout)
             self.assertIn('PASS ScenarioStep3bReceiverIdentityAndSaveBoundaries', result.stdout)

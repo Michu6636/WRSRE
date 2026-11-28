@@ -101,8 +101,14 @@ static void BuildingName(void* b,char* out,size_t n) {
     std::snprintf(out,n,"%s",ObjectName(b));
 }
 #include "dry_assignment_runtime.h"
+static TsmCurrencyApi g_mockCurrency{};
+static bool AnyLog(const char* a,const char* b=nullptr){for(auto& l:logs) if(l.find(a)!=std::string::npos && (!b||l.find(b)!=std::string::npos)) return true;return false;}
 static void PrepareDry() {
     g_fleetCostEvent=nullptr;g_fleetCostSample=nullptr;PrepareRuntime();
+    g_mockCurrency.structSize=sizeof(TsmCurrencyApi);
+    g_mockCurrency.getTreasuryBalance=[](int){return mockTreasury;};
+    g_mockCurrency.moveTreasury=[](double d,const char* label){mockTreasury+=d;lastTreasuryLabel=label;};
+    g_currency=&g_mockCurrency;
     std::setvbuf(stdout,nullptr,_IONBF,0);
     if(!g_testLockInitialized) {
         InitializeCriticalSection(&g_lock);
@@ -570,7 +576,7 @@ static void assignment_close_charges_original_buyer_once_only_when_complete() {
     FleetEvents(v.Observe(empty,Fuel(v.root,.5f),2,4000));
     CHECK(mockTreasury==1e12 && capitals[Ptr(0x50000)]==0);
     CHECK(g_customsExportDeferredCount==1 && g_doFuelStateSum==0);
-    CHECK(logs.back().find("reason=customs_export_deferred")!=std::string::npos);
+    CHECK(AnyLog("[DO TRIP]","reason=customs_export_deferred"));
 
     PrepareDry();ReadyQuote();g_billing=1;g_dryRun=0;
     v=Truck();Feed(v,empty,.9f,1000);Feed(v,Task(),.8f,2000);
@@ -578,8 +584,8 @@ static void assignment_close_charges_original_buyer_once_only_when_complete() {
     FleetEvents(v.Observe(empty,Fuel(v.root,.5f),2,4000));
     CHECK(capitals[Ptr(0x20000)]==10000 && capitals[Ptr(0x50000)]==0);
     CHECK(g_directionUnknownCount==1);
-    CHECK(logs.back().find("receiver=\"unknown\" payer=\"none\"")!=std::string::npos);
-    CHECK(logs.back().find("reason=direction_unknown")!=std::string::npos);
+    CHECK(AnyLog("[DO TRIP]","receiver=\"unknown\" receiver_kind=unknown payer=\"none\""));
+    CHECK(AnyLog("[DO TRIP]","reason=direction_unknown"));
 
     PrepareDry();ReadyQuote();g_billing=1;g_dryRun=0;mockTreasury=0;
     stateReceiver=Ptr(0x20000);
@@ -589,7 +595,7 @@ static void assignment_close_charges_original_buyer_once_only_when_complete() {
     FleetEvents(v.Observe(empty,Fuel(v.root,.5f),2,4000));
     CHECK(mockTreasury==0 && capitals[Ptr(0x50000)]==0);
     CHECK(g_skipTreasury>0);
-    CHECK(logs.back().find("reason=treasury_insufficient")!=std::string::npos);
+    CHECK(AnyLog("[DO TRIP]","reason=treasury_insufficient"));
 
     PrepareDry();ReadyQuote();g_billing=1;g_dryRun=0;g_counterpartySettlement=0;
     v=Truck();Feed(v,empty,.9f,1000);Feed(v,Task(),.8f,2000);Feed(v,empty,.7f,3000);

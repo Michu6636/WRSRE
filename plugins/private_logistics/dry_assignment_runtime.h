@@ -141,7 +141,7 @@ static void AssignmentInvalidatePendingReceiverLocked(
     AssignmentMarkUnknownByHomeLocked(pending.generation,pending.fleetOwner);
 }
 
-static void AssignmentObserveMode0FailureLocked(std::uint64_t generation,
+[[maybe_unused]] static void AssignmentObserveMode0FailureLocked(std::uint64_t generation,
                                                  uintptr_t home)
 {
     AssignmentMarkUnknownByHomeLocked(generation,home);
