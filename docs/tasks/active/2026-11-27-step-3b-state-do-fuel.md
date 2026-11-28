@@ -701,6 +701,17 @@ This section supersedes the pre-implementation checkpoint above.
   C++ host suite and Linux CI are still pending.
 - **RUNTIME VALIDATION:** owner-provided pre-change run only, as documented
   above. No post-change game validation has been run or is claimed.
-- **Publication gate:** no PR has been opened yet. Push/open the branch after
-  fresh review and final checks; keep it unmerged and include the four owner
-  checklist items verbatim in the PR body.
+- **Publication gate:** push was attempted and rejected by GitHub because the
+  current Personal Access Token lacks `workflow` scope for the changed
+  `.github/workflows/ci.yml`. The remote branch remains at
+  `e7b5cfe3524cd30ee5f67ee63f07b436c61ae125`; local `HEAD` is
+  `700effe098ecd0de0921e46d24ed049689eff8ef` and contains the reviewed
+  implementation plus this evidence update. No PR was opened. The owner must
+  push with credentials authorized to update workflow files, then open an
+  unmerged PR.
+- **PR body checklist (ready to paste):**
+  - a private DO delivering to a state factory shows `paid>0` with
+    `b2b_state_do_fuel` and the treasury goes down by that amount;
+  - a pickup at a state building is charged to the receiving private company;
+  - the start and day-close lines show `billing=live`;
+  - no `billing=off` text appears while billing is live.
